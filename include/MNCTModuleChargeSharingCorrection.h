@@ -1,0 +1,82 @@
+/*
+ * MNCTModuleChargeSharingCorrection.h
+ *
+ * Copyright (C) 2009-2009 by Mark Bandstra.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
+#ifndef __MNCTModuleChargeSharingCorrection__
+#define __MNCTModuleChargeSharingCorrection__
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Standard libs:
+
+// ROOT libs:
+
+// MEGAlib libs:
+#include "MGlobal.h"
+#include "MNCTModule.h"
+
+// Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+class MNCTModuleChargeSharingCorrection : public MNCTModule
+{
+  // public interface:
+ public:
+  //! Default constructor
+  MNCTModuleChargeSharingCorrection();
+  //! Default destructor
+  virtual ~MNCTModuleChargeSharingCorrection();
+
+  //! Initialize the module
+  virtual bool Initialize();
+
+  //! Main data analysis routine, which updates the event to a new level 
+  virtual bool AnalyzeEvent(MNCTEvent* Event);
+
+  //! Show the options GUI
+  virtual void ShowOptionsGUI();
+
+
+  // protected methods:
+ protected:
+
+  // private methods:
+ private:
+
+
+
+  // protected members:
+ protected:
+
+
+  // private members:
+ private:
+  //bool m_IsCalibrationLoaded[10];
+  //bool m_IsCalibrationLoadedPixel[10][37][37];
+  //unsigned long ShareHitNumber0,ShareHitNumber1;
+  //unsigned long SingleHitNumber,OtherHitNumber;  
+  //unsigned long ShareEventNumber0,ShareEventNumber1, SingleEventNumber,OtherEventNumber;
+
+#ifdef ___CINT___
+ public:
+  ClassDef(MNCTModuleChargeSharingCorrection, 0) // no description
+#endif
+
+};
+
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////

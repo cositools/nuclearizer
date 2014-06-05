@@ -1,0 +1,19 @@
+# Linear depth calibration data (by pixel) for D00
+#
+# Format: [Positive Strip #], [Negative Strip #], [CTD Mean Front], [CTD Mean Back], 
+#            [CTD FWHM Front], [CTD FWHM Back]
+#
+# Provides mean timing in a given pixel for events at front and back
+# surfaces of the detector.  Back is defined as the face of detectors
+# closest to the dewar, and Front is the other face.
+#
+# Data file used in analysis for front: XXXX
+# Data file used in analysis for back: XXXX
+# Nuclear line used in analysis: Am-241 60 keV
+#
+# Bad fits have been replaced with average values.
+#
+# Analysis performed by Mark Bandstra on XXXX
+#
+# If this file is blank, it means the calibration has not yet been performed.
+#

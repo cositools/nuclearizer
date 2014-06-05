@@ -1,0 +1,19 @@
+#-----------------------------------------------------------------------------
+# This file describes the anti-coincidence volumes and is loaded by MNCTDetectorArray class. 
+#
+# NOTE:
+#   1. Put '#' at begining of line for comments.
+#   2. Use one line for one volume. Order of lines does not matter.
+#   3. Empty line may cause unpredictable error.
+#   4. Make sure the volume name are consistant
+#      with geometry, calibration, and data files.
+#----------------------------------------------------------------------------- 
+#
+# Geometry: NCT mass model(2009, 10 detectors)
+# Parameters:
+#   Volume: detector's volume name in geometry file
+#   Threshold: Energy threshold of trigger
+#
+# Format:
+# <Volume> <Threshold> 
+# [string] [double]
