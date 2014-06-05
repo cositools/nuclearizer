@@ -2,7 +2,7 @@
  * MNCTEvent.cxx
  *
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -27,6 +27,8 @@
 #include "MNCTEvent.h"
 
 // Standard libs:
+#include <iomanip>
+using namespace std;
 
 // ROOT libs:
 
@@ -51,7 +53,7 @@ MNCTEvent::MNCTEvent()
   m_PhysicalEvent = 0; // Set pointer to zero before delete
 
   Clear();
-//  mout << "create MNCTEvent!!\n" ;//debug
+//  mout<<"create MNCTEvent!!\n" ;//debug
 }
 
 
@@ -88,7 +90,7 @@ MNCTEvent::~MNCTEvent()
   // Delete this instance of MNCTEvent
   delete m_PhysicalEvent;
   
-//  mout << "delete MNCTEvent!!\n" ;//debug
+//  mout<<"delete MNCTEvent!!\n" ;//debug
 }
 
 
@@ -99,11 +101,11 @@ void MNCTEvent::Clear()
 {
   //! Reset all data
 
-  m_ID = 0;
+  m_ID = g_UnsignedIntNotDefined;
   m_TI = 0;
   m_CL = 0;
   m_FC = 0;
-  m_Time = 0.0;
+  m_Time = 0;
   m_MJD = 0.0;
   m_Latitude = 0.0;
   m_Longitude = 0.0;
@@ -115,11 +117,11 @@ void MNCTEvent::Clear()
 
   m_Veto = false;
   m_Trigger = true;
+  m_AspectGood = true;
 
-  for (int DetectorID=0; DetectorID<=9; DetectorID++)
-    {
-      m_InDetector[DetectorID]=false;
-    }
+  for (int DetectorID = 0; DetectorID <= 9; DetectorID++) {
+    m_InDetector[DetectorID] = false;
+  }
 
   m_StripHits.clear();
  // Delete all hits
@@ -251,7 +253,10 @@ MNCTHit* MNCTEvent::GetHit(unsigned int i)
   return 0;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
+
 MNCTHit* MNCTEvent::GetHitSim(unsigned int i) 
 { 
   //! Return hit i
@@ -264,6 +269,86 @@ MNCTHit* MNCTEvent::GetHitSim(unsigned int i)
 
   return 0;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTEvent::Parse(MString& Line, int Version)
+{
+  //! Stream the content from a line of an ASCII file  
+
+  /*
+  
+  bool Error = false;
+
+  const char* Data = Line.Data();
+  if (Data[0] == 'T' && Data[1] == 'I') {
+    m_Time.Set(Data);
+  } else if (Data[0] == 'I' && Data[1] == 'D') {
+    if (sscanf(Data, "ID %lu", &m_ID) != 1) {
+      Error = true;
+    } 
+  } else if (Data[0] == 'S' && Data[1] == 'H') {
+    MNCTStripHit* H = new MNCTStripHit();
+    if (SH->Parse(Line, Version) == true) {
+      m_StripHits.push_back(SH);
+    } else {
+      delete H;
+      Error = true;
+    }
+  } else {
+    Error = true;
+  }
+  
+  if (Error == true) {
+    merr<<"Unable to parse line:"<<endl;
+    merr<<Data<<endl;
+    return false;
+  }
+
+  m_Empty = false;
+
+  */
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTEvent::Stream(ofstream& S, int Version, int Mode)
+{
+  //! Stream the content to an ASCII file 
+
+  S<<"SE"<<endl;
+  S<<"ID "<<m_ID<<endl;
+  S<<"TI "<<m_Time<<endl;
+
+  if (m_AspectAdded == true && m_AspectGood == true) {
+    S<<"LT "<<setprecision(8)<<m_Latitude<<endl;
+    S<<"LN "<<setprecision(8)<<m_Longitude<<endl;
+    S<<"AL "<<setprecision(8)<<m_Altitude<<endl;
+    S<<"GX "<<setprecision(8)<<m_GX[0]<<" "<<m_GX[1]<<endl;
+    S<<"GZ "<<setprecision(8)<<m_GZ[0]<<" "<<m_GZ[1]<<endl;
+    S<<"HX "<<setprecision(8)<<m_HX[0]<<" "<<m_HX[1]<<endl;
+    S<<"HZ "<<setprecision(8)<<m_HZ[0]<<" "<<m_HZ[1]<<endl;
+  }
+  
+  if (Mode == 0) { // Dat mode
+    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+      m_StripHits[h]->Stream(S, Version);  
+    }
+  } else { // evta mode
+    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+      m_Hits[h]->Stream(S, Version);  
+    }
+  }
+  
+  return true;
+}
+
 
 // MNCTEvent.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

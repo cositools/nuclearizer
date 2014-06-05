@@ -69,6 +69,7 @@ MNCTModuleDetectorEffectsEngine::MNCTModuleDetectorEffectsEngine() : MNCTModule(
   m_XmlTag = "DetectorEffectsEngineForSimulatedData";
 
   // Set all modules, which have to be done before this module
+  AddPreceedingModuleType(c_EventLoaderSimulation);
   //AddPreceedingModuleType(c_DetectorEffectsEngine);
   //AddPreceedingModuleType(c_EnergyCalibration);
   //AddPreceedingModuleType(c_ChargeSharingCorrection);
@@ -94,6 +95,7 @@ MNCTModuleDetectorEffectsEngine::MNCTModuleDetectorEffectsEngine() : MNCTModule(
   AddSucceedingModuleType(c_StripPairing);
   AddSucceedingModuleType(c_Aspect);
   AddSucceedingModuleType(c_EventReconstruction);
+  AddSucceedingModuleType(c_EventSaver);
   AddSucceedingModuleType(c_Else);
 
   // Set if this module has an options GUI
@@ -174,7 +176,7 @@ bool MNCTModuleDetectorEffectsEngine::AnalyzeEvent(MNCTEvent* Event)
 
   Event->SetTrigger(false);//trigger flag will be updated below
   Event->SetTime(Event->GetTime()+m_TimeOffset0*100000.0+m_TimeOffset);//update time by adding time offset
-  Event->SetTI((unsigned int)Event->GetTime());//to pretend to be flight data
+  Event->SetTI((unsigned int) Event->GetTime().GetAsSeconds());//to pretend to be flight data
   //Event->SetCL((unsigned long)(fmod(Event->GetTime(),429.4)*10000000));//just a dummy!!
   m_NEvent++;
   

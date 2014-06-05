@@ -87,6 +87,7 @@ MNCTModuleDetectorCoincidence::MNCTModuleDetectorCoincidence() : MNCTModule()
   AddSucceedingModuleType(c_DepthCorrection);
   AddSucceedingModuleType(c_StripPairing);
   AddSucceedingModuleType(c_EventReconstruction);
+  AddSucceedingModuleType(c_EventSaver);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!

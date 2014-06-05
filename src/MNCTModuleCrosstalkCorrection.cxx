@@ -70,6 +70,7 @@ MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MNCTModule()
   m_XmlTag = "CrosstalkCorrection";
 
   // Set all modules, which have to be done before this module
+  AddPreceedingModuleType(c_EventLoader);
   //AddPreceedingModuleType(c_DetectorEffectsEngine);
   AddPreceedingModuleType(c_EnergyCalibration);
   //AddPreceedingModuleType(c_ChargeSharingCorrection);
@@ -94,6 +95,7 @@ MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MNCTModule()
   AddSucceedingModuleType(c_StripPairing);
   AddSucceedingModuleType(c_Aspect);
   AddSucceedingModuleType(c_EventReconstruction);
+  AddSucceedingModuleType(c_EventSaver);
   AddSucceedingModuleType(c_Else);
 
   // Set if this module has an options GUI

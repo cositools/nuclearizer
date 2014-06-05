@@ -67,8 +67,8 @@ class MNCTEvent
   unsigned long GetCL() const { return m_CL;}
 
   //! Set and get the Time of this event
-  void SetTime(double Time) { m_Time = Time; }
-  double GetTime() const { return m_Time; }
+  void SetTime(MTime Time) { m_Time = Time; }
+  MTime GetTime() const { return m_Time; }
 
   //! Set and get the Modified Julian Date of this event
   void SetMJD(double MJD) { m_MJD = MJD; }
@@ -110,6 +110,11 @@ class MNCTEvent
   void SetTrigger(bool Trigger = true) { m_Trigger = Trigger; }
   //! Return the trigger flag
   bool GetTrigger() const { return m_Trigger; }
+
+  //! Set the aspect good flag
+  void SetAspectGood(bool AspectGood = true) { m_AspectGood = AspectGood; }
+  //! Return the aspect good flag
+  bool GetAspectGood() const { return m_AspectGood; }
 
   //! Return the number of strip hits
   unsigned int GetNStripHits() const { return m_StripHits.size(); }
@@ -177,9 +182,9 @@ class MNCTEvent
   //! Return the strips paired flag
   bool IsStripsPaired() const { return m_StripsPaired; }
 
-  //! 
+  //! Set the aspect added flag
   void SetAspectAdded(bool Flag = true) { m_AspectAdded = Flag; }
-  //!
+  //! Get the aspect added flag
   bool IsAspectAdded() {return m_AspectAdded; }
 
   //! Set the reconstructed flag
@@ -192,7 +197,10 @@ class MNCTEvent
   //!Return the Quality of this Event
   double GetEventQuality() const { return m_EventQuality; }
 
-
+  //! Parse some content from a line
+  bool Parse(MString& Line, int Version);
+  //! Dump the content into a file stream
+  bool Stream(ofstream& S, int Version, int Mode = 0);
 
 
   // protected methods:
@@ -222,7 +230,7 @@ class MNCTEvent
   unsigned long m_CL;
 
   //! Time and MJD of this event
-  double m_Time;
+  MTime m_Time;
   double m_MJD;
 
   //! Location of this event
@@ -244,6 +252,9 @@ class MNCTEvent
 
   //! Trigger flag of this event
   bool m_Trigger;
+
+  //! True if the aspect data of the event is good
+  bool m_AspectGood;
 
   //! Whether event contains strip hits in given detector
   bool m_InDetector[10];
@@ -273,7 +284,8 @@ class MNCTEvent
   bool m_AspectAdded;
   bool m_Reconstructed;
 
-
+  
+  
 #ifdef ___CINT___
  public:
   ClassDef(MNCTEvent, 0) // no description

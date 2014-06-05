@@ -96,6 +96,7 @@ MNCTModuleAspect::MNCTModuleAspect() : MNCTModule()
   AddSucceedingModuleType(c_StripPairing);
   AddSucceedingModuleType(c_EventReconstruction);
   AddSucceedingModuleType(c_Else);
+  AddSucceedingModuleType(c_EventSaver);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
@@ -160,7 +161,8 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   if ((Event->GetTI()<1242000000) || (Event->GetCL()>4294967295UL))
     {
       // time information is wrong.  Veto the event
-      Event->SetVeto(true);
+      //Event->SetVeto(true);
+      Event->SetAspectGood(false);
       m_NBadEvent++;
       return true;
     }	
@@ -172,13 +174,13 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   if (m_Segment==-1)
     {
       // no segment found.  Cannot correct the event.
-      Event->SetVeto(true);
+      Event->SetAspectGood(false);
       m_NBadEvent++;
       return true;
     }
   
-  double T_corrected=Event->GetTime();
-  if (m_RunTimeCorrection)T_corrected = CorrectedUnixTime(Event);
+  MTime T_corrected = Event->GetTime().GetAsSeconds();
+  if (m_RunTimeCorrection) T_corrected = CorrectedUnixTime(Event);
   Event->SetTime(T_corrected);
 
   Event->SetTime(T_corrected+m_AspectDelay);
@@ -187,13 +189,13 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   // get interpolated aspect data
   vector<double> AspectData = InterpolatedAspectData(Event);
   
-  if (AspectData.size()!=6)
-    {
-      // some kind of failure in finding the aspect; veto the event
-      Event->SetVeto(true);
-      m_NBadEvent++;
-      return true;
-    }
+  if (AspectData.size() != 6) {
+    // some kind of failure in finding the aspect; veto the event
+    Event->SetAspectGood(false);
+    cout<<"Bad code: We do not want to veto events with bad aspect, but set some kind of bad aspect flag!!!"<<endl; 
+    m_NBadEvent++;
+    return true;
+  }
   
   // Assign the GPS time to the event (GCU time had been used to interpolate the aspect)
   if(m_RunTimeCorrection)Event->SetTime(GPSTime(Event));
@@ -208,7 +210,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
 
   // calculate local sidereal time
   m_TCCalculator.SetLocation(Lat,Lon);
-  m_TCCalculator.SetUnixTime(Event->GetTime());
+  m_TCCalculator.SetUnixTime(Event->GetTime().GetAsSeconds());
   //double LAST_deg = m_TCCalculator.LAST_degrees();
   //mout << "  LAST=" << LAST_deg << '\n';
   
@@ -264,6 +266,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
 
   // We're done; update the event
   Event->SetAspectAdded(true);
+  Event->SetAspectGood(true);
 
   return true;
 }
@@ -910,7 +913,7 @@ vector<int> MNCTModuleAspect::AspectTableIndices(MNCTEvent* E,
 
   if (m_Segment!=-1)
     {
-      double T = E->GetTime();
+      double T = E->GetTime().GetAsSeconds();
       // lower keeps the last entry before the event
       // higher keeps the next entry after the event
       int index_lower, index_upper, index_center;
@@ -1040,7 +1043,7 @@ vector<double> MNCTModuleAspect::InterpolatedAspectData(MNCTEvent* E)
       if ( (ind_1sec.size()==2) && (ind_4sec.size()==2) )
 	{
 	  // Found good data surrounding the event in the aspect files.
-	  double T=E->GetTime();
+	  double T=E->GetTime().GetAsSeconds();
 	  int t_col_n=0;
 	  if (m_RunTimeCorrection)t_col_n=7;
 	  else t_col_n=8;

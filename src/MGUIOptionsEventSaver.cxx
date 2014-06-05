@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsTemplate.cxx
+ * MGUIOptionsEventSaver.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsTemplate.h"
+#include "MGUIOptionsEventSaver.h"
 
 // Standard libs:
 
@@ -30,21 +30,21 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MNCTModule.h"
-#include "MNCTModuleTemplate.h"
+#include "MNCTModuleEventSaver.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MGUIOptionsTemplate)
+ClassImp(MGUIOptionsEventSaver)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTemplate::MGUIOptionsTemplate(MNCTModule* Module) 
+MGUIOptionsEventSaver::MGUIOptionsEventSaver(MNCTModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -54,7 +54,7 @@ MGUIOptionsTemplate::MGUIOptionsTemplate(MNCTModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTemplate::~MGUIOptionsTemplate()
+MGUIOptionsEventSaver::~MGUIOptionsEventSaver()
 {
   // kDeepCleanup is activated 
 }
@@ -63,15 +63,26 @@ MGUIOptionsTemplate::~MGUIOptionsTemplate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsTemplate::Create()
+void MGUIOptionsEventSaver::Create()
 {
   PreCreate();
 
-  // Modify here
-  TGLabel* Label = new TGLabel(this, "No options defined in the base class...");
-  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-	AddFrame(Label, LabelLayout);
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);  
+  
+  m_Mode = new MGUIERBList(this, "Please select a mode:");
+  m_Mode->Add("Dat file containing all information");
+  m_Mode->Add("Evta file containing only the reconstructed hits");
+  m_Mode->SetSelected(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetMode());
+  m_Mode->Create();
+  AddFrame(m_Mode, LabelLayout);
 
+  
+  m_FileSelector = new MGUIEFileSelector(this, "Please select a data file:",
+    dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetFileName());
+  m_FileSelector->SetFileType("Data file", "*.dat");
+  AddFrame(m_FileSelector, LabelLayout);
+
+  
   PostCreate();
 }
 
@@ -79,7 +90,7 @@ void MGUIOptionsTemplate::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTemplate::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsEventSaver::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -110,13 +121,16 @@ bool MGUIOptionsTemplate::ProcessMessage(long Message, long Parameter1, long Par
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTemplate::OnApply()
+bool MGUIOptionsEventSaver::OnApply()
 {
 	// Modify this to store the data in the module!
 
+  dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetMode(m_Mode->GetSelected());
+  dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+	
 	return true;
 }
 
 
-// MGUIOptionsTemplate: the end...
+// MGUIOptionsEventSaver: the end...
 ////////////////////////////////////////////////////////////////////////////////

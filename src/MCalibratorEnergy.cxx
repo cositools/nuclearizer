@@ -1,8 +1,8 @@
 /*
- * MNCTHit.cxx
+ * MCalibratorEnergy.cxx
  *
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -18,94 +18,67 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MNCTHit
+// MCalibratorEnergy
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MNCTHit.h"
+#include "MCalibratorEnergy.h"
 
 // Standard libs:
 
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MStreams.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MNCTHit)
+ClassImp(MCalibratorEnergy)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTHit::MNCTHit()
+MCalibratorEnergy::MCalibratorEnergy() : m_ReadOut(0), m_HasMultipleEntries(false)
 {
-  // Construct an instance of MNCTHit
-
-  Clear();
+  // Construct an instance of MCalibratorEnergy
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTHit::~MNCTHit()
+MCalibratorEnergy::~MCalibratorEnergy()
 {
-  // Delete this instance of MNCTHit
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MNCTHit::Clear()
-{
-  // Reset all data
-
-  m_Position = g_VectorNotDefined;
-  m_Energy = g_DoubleNotDefined;
-  m_PositionResolution = g_VectorNotDefined;
-  m_EnergyResolution = g_DoubleNotDefined;
-
-  m_StripHits.clear();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MNCTStripHit* MNCTHit::GetStripHit(unsigned int i) 
-{ 
-  //! Return strip hit i
-
-  if (i < m_StripHits.size()) {
-    return m_StripHits[i];
-  }
-
-  merr<<"Index out of bounds!"<<show;
-
-  return 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MNCTHit::Stream(ofstream& S, int Version)
-{
-  //! Stream the content to an ASCII file 
+  // Delete this instance of MCalibratorEnergy
   
-  S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<endl;
- 
-  return true;
+  delete m_ReadOut;
 }
 
 
-// MNCTHit.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MCalibratorEnergy::ToString() const
+{
+  return MString("Calibrator - base class"); 
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+std::ostream& operator<<(std::ostream& os, const MCalibratorEnergy& C)
+{
+  os<<C.ToString();
+  return os;
+}
+
+
+// MCalibratorEnergy.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

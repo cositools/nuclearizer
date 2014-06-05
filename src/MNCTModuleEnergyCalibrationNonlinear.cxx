@@ -68,6 +68,7 @@ MNCTModuleEnergyCalibrationNonlinear::MNCTModuleEnergyCalibrationNonlinear() : M
   m_XmlTag = "EnergyCalibrationNonlinear";
 
   // Set all modules, which have to be done before this module
+  AddPreceedingModuleType(c_EventLoader);
   //AddPreceedingModuleType(c_DetectorEffectsEngine);
   //AddPreceedingModuleType(c_EnergyCalibration);
   //AddPreceedingModuleType(c_ChargeSharingCorrection);
@@ -92,6 +93,7 @@ MNCTModuleEnergyCalibrationNonlinear::MNCTModuleEnergyCalibrationNonlinear() : M
   AddSucceedingModuleType(c_StripPairing);
   AddSucceedingModuleType(c_Aspect);
   AddSucceedingModuleType(c_Else);
+  AddSucceedingModuleType(c_EventSaver);
   AddSucceedingModuleType(c_EventReconstruction);
 
   // Set if this module has an options GUI

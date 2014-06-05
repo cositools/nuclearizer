@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsTemplate.cxx
+ * MGUIOptionsMeasurementLoader.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsTemplate.h"
+#include "MGUIOptionsMeasurementLoader.h"
 
 // Standard libs:
 
@@ -30,21 +30,21 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MNCTModule.h"
-#include "MNCTModuleTemplate.h"
+#include "MNCTModuleMeasurementLoader.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MGUIOptionsTemplate)
+ClassImp(MGUIOptionsMeasurementLoader)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTemplate::MGUIOptionsTemplate(MNCTModule* Module) 
+MGUIOptionsMeasurementLoader::MGUIOptionsMeasurementLoader(MNCTModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -54,7 +54,7 @@ MGUIOptionsTemplate::MGUIOptionsTemplate(MNCTModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTemplate::~MGUIOptionsTemplate()
+MGUIOptionsMeasurementLoader::~MGUIOptionsMeasurementLoader()
 {
   // kDeepCleanup is activated 
 }
@@ -63,15 +63,17 @@ MGUIOptionsTemplate::~MGUIOptionsTemplate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsTemplate::Create()
+void MGUIOptionsMeasurementLoader::Create()
 {
   PreCreate();
 
-  // Modify here
-  TGLabel* Label = new TGLabel(this, "No options defined in the base class...");
+  m_FileSelector = new MGUIEFileSelector(this, "Please select a data file:",
+    dynamic_cast<MNCTModuleMeasurementLoader*>(m_Module)->GetFileName());
+  m_FileSelector->SetFileType("Data file", "*.dat");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-	AddFrame(Label, LabelLayout);
+  AddFrame(m_FileSelector, LabelLayout);
 
+  
   PostCreate();
 }
 
@@ -79,7 +81,7 @@ void MGUIOptionsTemplate::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTemplate::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsMeasurementLoader::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -110,13 +112,15 @@ bool MGUIOptionsTemplate::ProcessMessage(long Message, long Parameter1, long Par
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTemplate::OnApply()
+bool MGUIOptionsMeasurementLoader::OnApply()
 {
 	// Modify this to store the data in the module!
 
+  dynamic_cast<MNCTModuleMeasurementLoader*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+	
 	return true;
 }
 
 
-// MGUIOptionsTemplate: the end...
+// MGUIOptionsMeasurementLoader: the end...
 ////////////////////////////////////////////////////////////////////////////////

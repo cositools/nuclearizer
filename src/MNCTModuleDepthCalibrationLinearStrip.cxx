@@ -93,6 +93,7 @@ MNCTModuleDepthCalibrationLinearStrip::MNCTModuleDepthCalibrationLinearStrip() :
   AddSucceedingModuleType(c_Aspect);
   AddSucceedingModuleType(c_EventReconstruction);
   AddSucceedingModuleType(c_Else);
+  AddSucceedingModuleType(c_EventSaver);
 
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!

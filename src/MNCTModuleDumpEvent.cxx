@@ -59,18 +59,13 @@ MNCTModuleDumpEvent::MNCTModuleDumpEvent() : MNCTModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Dump raw events";
+  m_Name = "Dump raw events (NCT format)";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagDumpEvent";
 
   // Set all modules, which have to be done before this module
-//  AddPreceedingModuleType(c_DetectorEffectsEngine);
-//  AddPreceedingModuleType(c_EnergyCalibration);
-//  AddPreceedingModuleType(c_ChargeSharingCorrection);
-  AddPreceedingModuleType(c_DepthCorrection);
-//  AddPreceedingModuleType(c_StripPairing);
-//  AddPreceedingModuleType(c_EventReconstruction);
+  AddPreceedingModuleType(c_EventLoader);
 
   // Set all types this modules handles
 //  AddModuleType(c_DetectorEffectsEngine);
@@ -78,7 +73,7 @@ MNCTModuleDumpEvent::MNCTModuleDumpEvent() : MNCTModule()
 //  AddModuleType(c_ChargeSharingCorrection);
 //  AddModuleType(c_DepthCorrection);
 //  AddModuleType(c_StripPairing);
-  AddModuleType(c_Else);
+  AddModuleType(c_EventSaver);
 //  AddModuleType(c_EventReconstruction);
 
   // Set all modules, which can follow this module

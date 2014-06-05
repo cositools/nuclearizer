@@ -1,5 +1,5 @@
 /*
- * MNCTModuleTemplate.h
+ * MNCTModuleMeasurementLoaderGRIPS2013.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MNCTModuleTemplate__
-#define __MNCTModuleTemplate__
+#ifndef __MNCTModuleMeasurementLoaderGRIPS2013__
+#define __MNCTModuleMeasurementLoaderGRIPS2013__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,9 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+
+// Nuclearizer libs:
+#include "MNCTModuleMeasurementLoader.h"
 
 // Forward declarations:
 
@@ -30,23 +32,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleTemplate : public MNCTModule
+class MNCTModuleMeasurementLoaderGRIPS2013 : public MNCTModuleMeasurementLoader
 {
   // public interface:
  public:
   //! Default constructor
-  MNCTModuleTemplate();
+  MNCTModuleMeasurementLoaderGRIPS2013();
   //! Default destructor
-  virtual ~MNCTModuleTemplate();
+  virtual ~MNCTModuleMeasurementLoaderGRIPS2013();
+
+  //! The Open method has to be derived from MFileEvents to initialize the include file:
+  virtual bool Open(MString FileName, unsigned int Way);
 
   //! Initialize the module
   virtual bool Initialize();
 
+  //! Initialize the module
+  virtual void Finalize();
+
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MNCTEvent* Event);
-
-  //! Show the options GUI
-  virtual void ShowOptionsGUI();
 
   //! Read the configuration data from an XML node
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
@@ -56,6 +61,8 @@ class MNCTModuleTemplate : public MNCTModule
 
   // protected methods:
  protected:
+  //! Reads one event from file - return zero in case of no more events present or an Error occured
+  bool ReadNextEvent(MNCTEvent* Event);
 
   // private methods:
  private:
@@ -68,13 +75,19 @@ class MNCTModuleTemplate : public MNCTModule
 
   // private members:
  private:
-
-
+  //! Start of the observation time
+  MTime m_StartObservationTime;
+  //! Clock time belonging to the start of the observation time
+  unsigned long m_StartClock; 
+  //! End of the observation time
+  MTime m_EndObservationTime;
+  //! Clock time belonging to the end of the observation time
+  unsigned long m_EndClock;
 
 
 #ifdef ___CINT___
  public:
-  ClassDef(MNCTModuleTemplate, 0) // no description
+  ClassDef(MNCTModuleMeasurementLoaderGRIPS2013, 0) // no description
 #endif
 
 };

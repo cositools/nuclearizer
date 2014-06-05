@@ -175,8 +175,59 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
 
 bool MInterfaceNuclearizer::Analyze()
 {
+  // New GRIPS mode
   
+  // Start a timer:
   MTimer Timer;
+
+  // Load the geometry:
+  if (m_Data->LoadGeometry() == false) return false;
+
+  // Initialize the modules:
+  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    if (m_Data->GetModule(m)->Initialize() == false) {
+      mout<<"Initialization of module "<<m_Data->GetModule(m)->GetName()<<" failed"<<endl;
+      return false;
+    }
+  }
+      
+  // Do the pipeline
+  MNCTEvent* Event = new MNCTEvent(); // will be loaded on start
+  while (true) {
+    // Reset the event to zero
+    Event->Clear();
+    
+    // Loop over all modules:
+    for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+      // Do the analysis
+      if (m_Data->GetModule(m)->AnalyzeEvent(Event) == false) {
+        if (Event->GetID() != g_UnsignedIntNotDefined) {
+          mout<<"Analysis failed for event "<<Event->GetID()
+              <<" in module \""<<m_Data->GetModule(m)->GetName()<<"\""<<endl;
+        } 
+        break;
+      }
+      if (Event->IsDataRead() == false) break;
+      // Only analyze non-vetoed, triggered events
+      if (Event->GetVeto() == true || Event->GetTrigger() == false) {
+        break;
+      }
+    }
+    if (Event->IsDataRead() == false) break;
+  }
+  
+  // Finalize the modules:
+  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    m_Data->GetModule(m)->Finalize();
+  }
+
+  
+  mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+  
+  return true;
+  
+  // Old NCT mode:
+  /*
   
   // Load file
   MNCTFile* Reader = new MNCTFile(m_Data->GetGeometryFileName());
@@ -278,6 +329,7 @@ bool MInterfaceNuclearizer::Analyze()
   // Delete & thus close the files:
   delete Reader;
   delete Writer;
+  */
   
   mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
   

@@ -51,6 +51,9 @@ class MNCTModule
   void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
 
   // Module types:
+  static const int c_EventLoader              = 14;
+  static const int c_EventLoaderSimulation    = 11;
+  static const int c_EventLoaderMeasurement   = 12;
   static const int c_DetectorEffectsEngine    = 1;
   static const int c_EventFilter              = 2;
   static const int c_EnergyCalibration        = 3;
@@ -61,6 +64,7 @@ class MNCTModule
   static const int c_CrosstalkCorrection      = 8;
   static const int c_EventReconstruction      = 9;
   static const int c_Else                     = 10;
+  static const int c_EventSaver               = 13;
   
   // IMPORTANT:
   // If you add one analysis level, make sure you also handle it in:
@@ -84,6 +88,9 @@ class MNCTModule
 
   //! Initialize the module --- has to be overwritten
   virtual bool Initialize() = 0;
+
+  //! Finalize the module --- can be overwritten
+  virtual void Finalize() { return; }
 
   //! Report anything what we want after analsis
   virtual MString Report();

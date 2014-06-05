@@ -1,19 +1,19 @@
 /*
- * MGUINuclearizerMain.cxx
- *
- *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
- * All rights reserved.
- *
- *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
- *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
- */
+* MGUINuclearizerMain.cxx
+*
+*
+* Copyright (C) by Andreas Zoglauer.
+* All rights reserved.
+*
+*
+* This code implementation is the intellectual property of
+* Andreas Zoglauer.
+*
+* By copying, distributing or modifying the Program (or any work
+* based on the Program) you indicate your acceptance of this statement,
+* and all its terms.
+*
+*/
 
 
 // Include the header:
@@ -30,12 +30,15 @@
 #include <TGLabel.h>
 #include <TGWindow.h>
 #include <TGFrame.h>
-#include <MString.h>
 #include <TGClient.h>
 #include <TGResourcePool.h>
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MGUIAbout.h"
+#include "MGUIGeometry.h"
+
+// Nuclearizer libs:
 #include "MNCTModule.h"
 #include "MGUIModuleSelector.h"
 #include "MGUIEFileSelector.h"
@@ -52,7 +55,7 @@ ClassImp(MGUINuclearizerMain)
 
 
 MGUINuclearizerMain::MGUINuclearizerMain(MInterfaceNuclearizer* Interface,
-                                         MNCTData* Data)
+                                        MNCTData* Data)
   : TGMainFrame(gClient->GetRoot(), 350, 300, kVerticalFrame),
     m_Interface(Interface), m_Data(Data)
 {
@@ -92,6 +95,39 @@ void MGUINuclearizerMain::Create()
   SetWindowName("Nuclearizer");  
 
 
+  // In the beginning we build the menus and define their layout, ... 
+  TGLayoutHints* MenuBarItemLayoutLeft = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
+  //TGLayoutHints* MenuBarItemLayoutRight = new TGLayoutHints(kLHintsTop | kLHintsRight, 0, 0, 0, 0);
+  
+  // We continue with the menu bar and its layout ...
+  TGLayoutHints* MenuBarLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);
+  
+  TGMenuBar* MenuBar = new TGMenuBar(this, 1, 1, kHorizontalFrame | kRaisedFrame);
+  AddFrame(MenuBar, MenuBarLayout);
+
+  TGPopupMenu* MenuOptions = new TGPopupMenu(gClient->GetRoot());
+  MenuOptions->AddLabel("Configuration file");
+  MenuOptions->AddEntry("Open", c_LoadConfig);
+  MenuOptions->AddEntry("Save As", c_SaveConfig);
+  MenuOptions->AddSeparator();
+  MString Geo = MString("Geometry file");
+  if (m_Data->GetGeometry() != 0) {
+    Geo += " (current: ";
+    Geo += m_Data->GetGeometry()->GetName(); 
+    Geo += ")";
+  }
+  MenuOptions->AddLabel(Geo);
+  MenuOptions->AddEntry("Open", c_Geometry);
+  MenuOptions->AddSeparator();
+  MenuOptions->AddEntry("Exit", c_Exit);
+  MenuOptions->Associate(this);
+  MenuBar->AddPopup("Options", MenuOptions, MenuBarItemLayoutLeft);
+
+  TGPopupMenu* MenuInfo = new TGPopupMenu(fClient->GetRoot());
+  MenuInfo->AddEntry("About", c_About);
+  MenuInfo->Associate(this);
+  MenuBar->AddPopup("Info", MenuInfo, MenuBarItemLayoutLeft);
+
 
   // Main label
   const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1");
@@ -100,8 +136,8 @@ void MGUINuclearizerMain::Create()
 
   TGLabel* MainLabel = new TGLabel(this, "The Nuclearizer");
   MainLabel->SetTextFont(LargeFont);
-  TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-	AddFrame(MainLabel, MainLabelLayout);
+  TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 30, 0);
+  AddFrame(MainLabel, MainLabelLayout);
 
 
 
@@ -110,66 +146,72 @@ void MGUINuclearizerMain::Create()
   if (!iFont) iFont = gClient->GetResourcePool()->GetDefaultFont();
   FontStruct_t ItalicFont = iFont->GetFontStruct();
 
-  TGLabel* SubTitle = new TGLabel(this, "The NCT data and simulation calibrator");
+  TGLabel* SubTitle = new TGLabel(this, "NCT & GRIPS measurement and simulation calibrator");
   SubTitle->SetTextFont(ItalicFont);
-  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, 10);
-	AddFrame(SubTitle, SubTitleLayout);
+  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, 20);
+  AddFrame(SubTitle, SubTitleLayout);
 
-
+  
+  
+  
+  
   TGLayoutHints* SectionLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, 10);
   TGLayoutHints* FileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0, 0, 5, 5);
 
+  /*
   // Section 1: File loading
   TGGroupFrame* Loading = new TGGroupFrame(this, "Section: File loading");
   AddFrame(Loading, SectionLayout);
 
   m_FileSelectorLoad = new MGUIEFileSelector(Loading, "Select a simulation or data file:", 
-                                             m_Data->GetLoadFileName());
+                                            m_Data->GetLoadFileName());
   m_FileSelectorLoad->SetFileType("Simulation file", "*.sim");
   m_FileSelectorLoad->SetFileType("Real data file", "*.dat");
   Loading->AddFrame(m_FileSelectorLoad, FileSelectorLayout);
 
   m_FileSelectorGeometry = new MGUIEFileSelector(Loading, "Select a geometry file:", 
-                                                 m_Data->GetGeometryFileName());
+                                                m_Data->GetGeometryFileName());
   m_FileSelectorGeometry->SetFileType("Geometry file", "*.geo.setup");
   Loading->AddFrame(m_FileSelectorGeometry, FileSelectorLayout);
-
+  */
 
   // Section 2: Modules
-  m_ModuleFrame = new TGGroupFrame(this, "Section: Module selection");
+  m_ModuleFrame = new TGGroupFrame(this, "Choose the module sequence for your detector setup");
   AddFrame(m_ModuleFrame, SectionLayout);
 
   m_ModuleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 3, 3);
   UpdateModules();
 
-
+  /*
   // Section 3: File saving
   TGGroupFrame* Saving = new TGGroupFrame(this, "Section: File saving");
   AddFrame(Saving, SectionLayout);
 
   m_FileSelectorSave = new MGUIEFileSelector(Saving, "", 
-                                             m_Data->GetSaveFileName());
+                                            m_Data->GetSaveFileName());
   m_FileSelectorSave->SetFileType("Events file", "*.evta");
   Saving->AddFrame(m_FileSelectorSave, FileSelectorLayout);
-
+  */
 
   // Start & Exit buttons
-	// Frame around the buttons:
-	TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-	TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 10);
-	AddFrame(ButtonFrame, ButtonFrameLayout);
-	
+  // Frame around the buttons:
+  TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
+  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 10);
+  AddFrame(ButtonFrame, ButtonFrameLayout);
+  
   // The buttons itself
-	TGTextButton*	StartButton = new TGTextButton(ButtonFrame, "Start", c_Start); 
+  TGTextButton*	StartButton = new TGTextButton(ButtonFrame, "Start", c_Start); 
   StartButton->Associate(this);
-  TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 20, 0, 0, 0);
-	ButtonFrame->AddFrame(StartButton, StartButtonLayout);
-	
-	TGTextButton* ExitButton = new TGTextButton(ButtonFrame, "     Exit     ", c_Exit); 
+  TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40, 40, 0, 0);
+  ButtonFrame->AddFrame(StartButton, StartButtonLayout);
+  
+  /*
+  TGTextButton* ExitButton = new TGTextButton(ButtonFrame, "     Exit     ", c_Exit); 
   ExitButton->Associate(this);
   TGLayoutHints* ExitButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
   ButtonFrame->AddFrame(ExitButton, ExitButtonLayout);
-
+  */
+  
   // Give this element the default size of its content:
   Resize(GetDefaultWidth(), GetDefaultHeight()); 
 
@@ -240,15 +282,15 @@ bool MGUINuclearizerMain::HandleKey(Event_t* Event)
     OnExit();
     break;
   case kKey_Return:
-	case kKey_Enter:
+  case kKey_Enter:
     OnStart();
     break;
-	case kKey_l:
-	case kKey_L:
+  case kKey_l:
+  case kKey_L:
     OnLoadConfiguration();
     break;
-	case kKey_s:
-	case kKey_S:
+  case kKey_s:
+  case kKey_S:
     OnSaveConfiguration();
     break;
   default:
@@ -263,7 +305,7 @@ bool MGUINuclearizerMain::HandleKey(Event_t* Event)
 
 
 bool MGUINuclearizerMain::ProcessMessage(long Message, long Parameter1, 
-                                         long Parameter2)
+                                        long Parameter2)
 {
   // Process the messages for this application
 
@@ -295,6 +337,26 @@ bool MGUINuclearizerMain::ProcessMessage(long Message, long Parameter1,
     case kCM_MENU:
       switch (Parameter1) {
 
+      case c_LoadConfig:
+        Status = OnLoadConfiguration();
+        break;
+
+      case c_SaveConfig:
+        Status = OnSaveConfiguration();
+        break;
+
+      case c_Geometry:
+        Status = OnGeometry();
+        break;
+
+      case c_Exit:
+        Status = OnExit();
+        break;
+
+      case c_About:
+        Status = OnAbout();
+        break;
+
       default:
         break;
       }
@@ -306,6 +368,17 @@ bool MGUINuclearizerMain::ProcessMessage(long Message, long Parameter1,
   }
   
   return Status;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUINuclearizerMain::CloseWindow()
+{
+  // Call exit for controlled good-bye
+
+  OnExit();
 }
 
 
@@ -378,19 +451,25 @@ bool MGUINuclearizerMain::OnStart()
 
 bool MGUINuclearizerMain::OnApply()
 {
+  /*
   if (MFile::Exists(m_FileSelectorLoad->GetFileName()) == false) {
     mgui<<"The data file \""<<m_FileSelectorLoad->GetFileName()<<"\" does not exist."<<show;
     return false;
   }
+  */
+  /*
   if (MFile::Exists(m_FileSelectorGeometry->GetFileName()) == false) {
     mgui<<"The geometry file \""<<m_FileSelectorGeometry->GetFileName()<<"\" does not exist."<<show;
     return false;
   }
-
+  */
+  
+  /*
   m_Data->SetLoadFileName(m_FileSelectorLoad->GetFileName());
   m_Data->SetSaveFileName(m_FileSelectorSave->GetFileName());
   m_Data->SetGeometryFileName(m_FileSelectorGeometry->GetFileName());
-
+  */
+  
   return true;
 }
 
@@ -452,6 +531,52 @@ bool MGUINuclearizerMain::OnSaveConfiguration()
     m_Data->Save(MString(Info.fFilename));
   } 
 
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUINuclearizerMain::OnGeometry()
+{
+  // Show the geometry dialog
+  // Returns the geometry file name
+
+  MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_Data->GetGeometryFileName());
+  gClient->WaitForUnmap(Geo);
+  MString Name = Geo->GetGeometryFileName();
+  delete Geo;
+  for (unsigned int i = 0; i < 100; ++i) {
+    gSystem->ProcessEvents();
+  }
+
+  m_Data->SetGeometryFileName(Name);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUINuclearizerMain::OnAbout()
+{
+  // Launch the about dialog
+
+  MGUIAbout* About = new MGUIAbout(gClient->GetRoot(), this);
+  About->SetProgramName("Nuclearizer");
+  //About->SetIconPath(g_MEGAlibPath + "/resource/icons/mimrec/Small.xpm");
+  //About->SetLeadProgrammer("Andreas Zoglauer");
+  About->SetCopyright("(C) by Andreas Zoglauer, Mark Bandstra,\nJau-Shian Liang, and Daniel Perez-Becker\nAll rights reserved");
+  //About->SetReference("Implementation details of the imaging approach", 
+  //                    "A. Zoglauer et al., \"Design, implementation, and optimization of MEGAlib's image reconstruction tool Mimrec \", NIM A 652, 2011");
+  //About->SetReference("A detailed description of list-mode likelihood image reconstruction - in German", 
+  //                    "A. Zoglauer, \"Methods of image reconstruction for the MEGA Compton telescope\", Diploma thesis, TU Munich, 2000");
+  //About->SetReference("Chapter 5: List-mode image reconstruction applied to the MEGA telecope", 
+  //                    "A. Zoglauer, \"First Light for the Next Generation of Compton and Pair Telescopes\", Doctoral thesis, TU Munich, 2005");
+  About->Create();
+  
   return true;
 }
 

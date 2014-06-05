@@ -1,12 +1,12 @@
 /*
- * MGUINuclearizerMain.h
- *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
- * All rights reserved.
- *
- * Please see the source-file for the copyright-notice.
- *
- */
+* MGUINuclearizerMain.h
+*
+* Copyright (C) by Andreas Zoglauer.
+* All rights reserved.
+*
+* Please see the source-file for the copyright-notice.
+*
+*/
 
 
 #ifndef __MGUINuclearizerMain__
@@ -42,7 +42,7 @@ class MGUIEFileSelector;
 class MGUINuclearizerMain : public TGMainFrame
 {
   // Public members:
- public:
+public:
   //! Default constructor
   MGUINuclearizerMain(MInterfaceNuclearizer* Interface, MNCTData* Data);
   //! Default destructor
@@ -52,34 +52,40 @@ class MGUINuclearizerMain : public TGMainFrame
   virtual void Create();
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
+  //! Called when the "x" is pressed
+  virtual void CloseWindow();
 
   //! Handle some keys
   bool HandleKey(Event_t* Event);
- 
+
   // protected members:
- protected:
+protected:
   //! Update the module section
   void UpdateModules();
 
   //! Actions when the change button has been pressed
-	virtual bool OnChange(unsigned int ModuleID);
+  virtual bool OnChange(unsigned int ModuleID);
   //! Actions when the remove button has been pressed
-	virtual bool OnRemove(unsigned int ModuleID);
+  virtual bool OnRemove(unsigned int ModuleID);
   //! Actions when the options button has been pressed
-	virtual bool OnOptions(unsigned int ModuleID);
+  virtual bool OnOptions(unsigned int ModuleID);
   //! Actions when the apply button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
   //! Actions when the start button has been pressed
-	virtual bool OnStart();
+  virtual bool OnStart();
   //! Actions when the exit button has been pressed
-	virtual bool OnExit();
+  virtual bool OnExit();
   //! Actions when the save key has been pressed
   virtual bool OnSaveConfiguration();
   //! Actions when the load key has been pressed
   virtual bool OnLoadConfiguration();
+  //! Actions when the load key has been pressed
+  virtual bool OnGeometry();
+  //! Actions when the about button has been pressed
+  virtual bool OnAbout();
 
   // private members:
- private:
+private:
   //! Reference to all interface functions
   MInterfaceNuclearizer* m_Interface;
   //! Reference to all GUI data
@@ -104,14 +110,18 @@ class MGUINuclearizerMain : public TGMainFrame
 
 
   // IDs:
-  static const int c_Start   =   1;
-  static const int c_Exit    =   2;
-  static const int c_Remove  = 400;
-  static const int c_Options = 500;
-  static const int c_Change  = 600;
+  static const int c_Start      =   1;
+  static const int c_Exit       =   2;
+  static const int c_LoadConfig =   3;
+  static const int c_SaveConfig =   4;
+  static const int c_Geometry   =   5;
+  static const int c_About      =   6;
+  static const int c_Remove     = 400;
+  static const int c_Options    = 500;
+  static const int c_Change     = 600;
 
 #ifdef ___CINT___
- public:
+public:
   ClassDef(MGUINuclearizerMain, 0) // main window of the Nuclearizer GUI
 #endif
 

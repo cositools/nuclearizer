@@ -1,7 +1,7 @@
 /*
- * MNCTModuleTemplate.h
+ * MNCTModuleEnergyCalibrationUniversal.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MNCTModuleTemplate__
-#define __MNCTModuleTemplate__
+#ifndef __MNCTModuleEnergyCalibrationUniversal__
+#define __MNCTModuleEnergyCalibrationUniversal__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,23 +22,31 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+
+// Neclearizer libe:
 #include "MNCTModule.h"
+#include "MCalibratorEnergy.h"
 
 // Forward declarations:
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-class MNCTModuleTemplate : public MNCTModule
+//! A universal energy calibrator
+class MNCTModuleEnergyCalibrationUniversal : public MNCTModule
 {
   // public interface:
  public:
   //! Default constructor
-  MNCTModuleTemplate();
+  MNCTModuleEnergyCalibrationUniversal();
   //! Default destructor
-  virtual ~MNCTModuleTemplate();
+  virtual ~MNCTModuleEnergyCalibrationUniversal();
 
+  //! Set the calibration file name
+  void SetFileName(const MString& FileName) { m_FileName = FileName; }
+  //! Get the calibration file name
+  MString GetFileName() const { return m_FileName; }
+  
   //! Initialize the module
   virtual bool Initialize();
 
@@ -56,6 +64,8 @@ class MNCTModuleTemplate : public MNCTModule
 
   // protected methods:
  protected:
+   //! The calibration file name
+   MString m_FileName;
 
   // private methods:
  private:
@@ -68,13 +78,14 @@ class MNCTModuleTemplate : public MNCTModule
 
   // private members:
  private:
-
-
-
-
+  //! Calibrators arranged by detectors
+  vector<vector<MCalibratorEnergy*> > m_Calibrators;
+  //! Associated detector IDs
+  vector<unsigned int> m_DetectorIDs; 
+   
 #ifdef ___CINT___
  public:
-  ClassDef(MNCTModuleTemplate, 0) // no description
+  ClassDef(MNCTModuleEnergyCalibrationUniversal, 0) // no description
 #endif
 
 };

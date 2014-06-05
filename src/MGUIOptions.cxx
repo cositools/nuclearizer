@@ -1,19 +1,19 @@
 /*
- * MGUIOptions.cxx
- *
- *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
- * All rights reserved.
- *
- *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
- *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
- */
+* MGUIOptions.cxx
+*
+*
+* Copyright (C) by Andreas Zoglauer.
+* All rights reserved.
+*
+*
+* This code implementation is the intellectual property of
+* Andreas Zoglauer.
+*
+* By copying, distributing or modifying the Program (or any work
+* based on the Program) you indicate your acceptance of this statement,
+* and all its terms.
+*
+*/
 
 
 // Include the header:
@@ -83,7 +83,7 @@ void MGUIOptions::PreCreate()
   TGLabel* MainLabel = new TGLabel(this, MString("Options for module \"") + m_Module->GetName() + MString("\":"));
   MainLabel->SetTextFont(LargeFont);
   TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-	AddFrame(MainLabel, MainLabelLayout);
+  AddFrame(MainLabel, MainLabelLayout);
 }
 
 
@@ -93,18 +93,18 @@ void MGUIOptions::PreCreate()
 void MGUIOptions::PostCreate()
 {
   // OK and cancel buttons
-	// Frame around the buttons:
-	TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-	TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 10);
-	AddFrame(ButtonFrame, ButtonFrameLayout);
-	
+  // Frame around the buttons:
+  TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
+  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 10);
+  AddFrame(ButtonFrame, ButtonFrameLayout);
+  
   // The buttons itself
-	TGTextButton*	OKButton = new TGTextButton(ButtonFrame, "OK", e_Ok); 
+  TGTextButton*	OKButton = new TGTextButton(ButtonFrame, "OK", e_Ok); 
   OKButton->Associate(this);
   TGLayoutHints* OKButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 20, 0, 0, 0);
-	ButtonFrame->AddFrame(OKButton, OKButtonLayout);
-	
-	TGTextButton* CancelButton = new TGTextButton(ButtonFrame, "     Cancel     ", e_Cancel); 
+  ButtonFrame->AddFrame(OKButton, OKButtonLayout);
+  
+  TGTextButton* CancelButton = new TGTextButton(ButtonFrame, "     Cancel     ", e_Cancel); 
   CancelButton->Associate(this);
   TGLayoutHints* CancelButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
   ButtonFrame->AddFrame(CancelButton, CancelButtonLayout);
@@ -140,15 +140,15 @@ bool MGUIOptions::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Process the messages for this window
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       switch (Parameter1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -156,7 +156,7 @@ bool MGUIOptions::ProcessMessage(long Message, long Parameter1, long Parameter2)
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
         
       default:
@@ -180,14 +180,14 @@ bool MGUIOptions::ProcessMessage(long Message, long Parameter1, long Parameter2)
 
 bool MGUIOptions::OnOk()
 {
-	// The Ok button has been pressed
+  // The Ok button has been pressed
 
-	if (OnApply() == true) {
-		CloseWindow();
-		return true;
-	}
-	
-	return false;
+  if (OnApply() == true) {
+    CloseWindow();
+    return true;
+  }
+  
+  return false;
 }
 
 
@@ -196,11 +196,11 @@ bool MGUIOptions::OnOk()
 
 bool MGUIOptions::OnCancel()
 {
-	// The Cancel button has been pressed
+  // The Cancel button has been pressed
 
-	CloseWindow();
+  CloseWindow();
 
-	return true;
+  return true;
 }
 
 
@@ -209,9 +209,9 @@ bool MGUIOptions::OnCancel()
 
 bool MGUIOptions::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-	return true;
+  return true;
 }
 
 

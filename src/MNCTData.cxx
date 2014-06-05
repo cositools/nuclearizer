@@ -36,8 +36,12 @@
 #include "MXmlDocument.h"
 #include "MXmlNode.h"
 #include "MNCTModule.h"
+#include "MNCTModuleMeasurementLoaderROA.h"
+#include "MNCTModuleMeasurementLoaderNCT2009.h"
+#include "MNCTModuleMeasurementLoaderGRIPS2013.h"
 #include "MNCTModuleDetectorEffectsEngine.h"
 #include "MNCTModuleEnergyCalibration.h"
+#include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleEnergyCalibrationLinear.h"
 #include "MNCTModuleEnergyCalibrationNonlinear.h"
 #include "MNCTModuleCrosstalkCorrection.h"
@@ -53,6 +57,7 @@
 #include "MNCTModuleAspect.h"
 #include "MNCTModuleEventFilter.h"
 #include "MNCTModuleDumpEvent.h"
+#include "MNCTModuleEventSaver.h"
 //#include "MNCTModuleEventReconstruction.h"
 
 
@@ -75,9 +80,14 @@ MNCTData::MNCTData()
   Clear();
 
   // Add in this list all available modules:
+  m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderROA());
+  m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderGRIPS2013());
+  m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderNCT2009());
+  
   m_AvailableModules.push_back(new MNCTModuleDetectorEffectsEngine());
   m_AvailableModules.push_back(new MNCTModuleEventFilter());
   //m_AvailableModules.push_back(new MNCTModuleEnergyCalibration());
+  m_AvailableModules.push_back(new MNCTModuleEnergyCalibrationUniversal());
   m_AvailableModules.push_back(new MNCTModuleEnergyCalibrationLinear());
   m_AvailableModules.push_back(new MNCTModuleEnergyCalibrationNonlinear());
   m_AvailableModules.push_back(new MNCTModuleCrosstalkCorrection());
@@ -92,6 +102,7 @@ MNCTData::MNCTData()
   m_AvailableModules.push_back(new MNCTModuleStripPairingGreedy_a());
   m_AvailableModules.push_back(new MNCTModuleAspect());
   m_AvailableModules.push_back(new MNCTModuleDumpEvent());
+  m_AvailableModules.push_back(new MNCTModuleEventSaver());
   //m_AvailableModules.push_back(new MNCTModuleEventReconstruction());
 
   // All the rest:
@@ -198,7 +209,7 @@ vector<MNCTModule*> MNCTData::ReturnPossibleVolumes(unsigned int Position)
 vector<MNCTModule*> MNCTData::ReturnPossibleVolumes(vector<MNCTModule*>& Previous)
 {
   vector<MNCTModule*> List;
-
+  
   for (unsigned int i = 0; i < m_AvailableModules.size(); ++i) {
     //cout<<"Module: "<<m_AvailableModules[i]->GetName()<<endl;
 
@@ -278,6 +289,7 @@ vector<MNCTModule*> MNCTData::ReturnPossibleVolumes(vector<MNCTModule*>& Previou
 //     }
       
     if (Passed == true) {
+      //mout<<"Passed :)"<<endl;
       List.push_back(m_AvailableModules[i]);
     }
   }
@@ -335,7 +347,7 @@ bool MNCTData::Validate()
   for (unsigned int m1 = 0; m1 < m_Modules.size(); ++m1) {
     for (unsigned int m2 = m1+1; m2 < m_Modules.size(); ++m2) {
       if (m_Modules[m1] == m_Modules[m2]) {
-        //mout<<"Module: "<<m_Modules[m1]->GetName()<<" appears twice: "<<m1<<" & "<<m2<<endl;
+        mout<<"Module: "<<m_Modules[m1]->GetName()<<" appears twice: "<<m1<<" & "<<m2<<endl;
         if (m2 < ValidUntil) {
           ValidUntil = m2;
         }
@@ -354,7 +366,7 @@ bool MNCTData::Validate()
         }
       }
       if (Found == false) {
-        //mout<<"Predecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
+        mout<<"Predecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
         if (m < ValidUntil) {
           ValidUntil = m;
         }
@@ -380,7 +392,7 @@ bool MNCTData::Validate()
           }
         }
         if (Found == false) {
-          //mout<<"Succecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
+          mout<<"Succecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
           if (s < ValidUntil) {
             ValidUntil = s;
           }
@@ -396,6 +408,7 @@ bool MNCTData::Validate()
 
   //cout<<"Valid until: "<<ValidUntil<<endl;
   while (ValidUntil < m_Modules.size()) {
+    cout<<"Erasing some modules!"<<endl;
     m_Modules.erase(m_Modules.begin()+ValidUntil);
   }
 

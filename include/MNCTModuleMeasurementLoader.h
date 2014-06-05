@@ -1,5 +1,5 @@
 /*
- * MNCTModuleTemplate.h
+ * MNCTModuleMeasurementLoader.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MNCTModuleTemplate__
-#define __MNCTModuleTemplate__
+#ifndef __MNCTModuleMeasurementLoader__
+#define __MNCTModuleMeasurementLoader__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,6 +22,9 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MFileEvents.h"
+
+// Nuclearizer libs
 #include "MNCTModule.h"
 
 // Forward declarations:
@@ -30,15 +33,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleTemplate : public MNCTModule
+class MNCTModuleMeasurementLoader : public MNCTModule, public MFileEvents
 {
   // public interface:
  public:
   //! Default constructor
-  MNCTModuleTemplate();
+  MNCTModuleMeasurementLoader();
   //! Default destructor
-  virtual ~MNCTModuleTemplate();
-
+  virtual ~MNCTModuleMeasurementLoader();
+  
   //! Initialize the module
   virtual bool Initialize();
 
@@ -49,9 +52,9 @@ class MNCTModuleTemplate : public MNCTModule
   virtual void ShowOptionsGUI();
 
   //! Read the configuration data from an XML node
-  virtual bool ReadXmlConfiguration(MXmlNode* Node);
+  virtual bool ReadXmlConfiguration(MXmlNode* Node) = 0;
   //! Create an XML node tree from the configuration
-  virtual MXmlNode* CreateXmlConfiguration();
+  virtual MXmlNode* CreateXmlConfiguration() = 0;
 
 
   // protected methods:
@@ -64,7 +67,12 @@ class MNCTModuleTemplate : public MNCTModule
 
   // protected members:
  protected:
-
+  //! Name of the detector which we are reading
+  MString m_Detector;
+  //! The number of events in the file
+  unsigned int m_NEventsInFile;
+  //! The number of good events in file
+  unsigned int m_NGoodEventsInFile;
 
   // private members:
  private:
@@ -74,7 +82,7 @@ class MNCTModuleTemplate : public MNCTModule
 
 #ifdef ___CINT___
  public:
-  ClassDef(MNCTModuleTemplate, 0) // no description
+  ClassDef(MNCTModuleMeasurementLoader, 0) // no description
 #endif
 
 };

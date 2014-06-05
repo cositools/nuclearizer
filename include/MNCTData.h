@@ -75,6 +75,9 @@ class MNCTData
   //! Return the name of the geometry file
   MString GetGeometryFileName() const { return m_GeometryFileName; }
 
+  //! Return the geometry itself
+  MDGeometryQuest* GetGeometry() const { return m_Geometry; }
+  
   //! Set the name of the file to be loaded
   void SetLoadFileName(MString LoadFileName) { m_LoadFileName = LoadFileName; }
   //! Return the name of the file to be loaded

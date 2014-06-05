@@ -1,13 +1,13 @@
 /*
- * MNCTModuleTemplate.cxx
+ * MNCTModuleEventSaver.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * Jau-Shian Liang.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -18,62 +18,51 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MNCTModuleTemplate
+// MNCTModuleEventSaver
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MNCTModuleTemplate.h"
+#include "MNCTModuleEventSaver.h"
 
 // Standard libs:
 
 // ROOT libs:
-#include "TGClient.h"
 
 // MEGAlib libs:
 #include "MNCTModule.h"
-#include "MGUIOptionsTemplate.h"
+#include "MGUIOptionsEventSaver.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MNCTModuleTemplate)
+ClassImp(MNCTModuleEventSaver)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleTemplate::MNCTModuleTemplate() : MNCTModule()
+MNCTModuleEventSaver::MNCTModuleEventSaver() : MNCTModule()
 {
   // Construct an instance of MNCTModuleTemplate
 
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Template";
+  m_Name = "Save events (GRIPS/Universal format)";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "XmlTagTemplate";
+  m_XmlTag = "XmlTagEventSaver";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_DetectorEffectsEngine);
-  AddPreceedingModuleType(c_EnergyCalibration);
-  AddPreceedingModuleType(c_ChargeSharingCorrection);
-  AddPreceedingModuleType(c_DepthCorrection);
-  AddPreceedingModuleType(c_StripPairing);
-  AddPreceedingModuleType(c_EventReconstruction);
-
+  AddPreceedingModuleType(c_EventLoader);
+  
   // Set all types this modules handles
-  AddModuleType(c_DetectorEffectsEngine);
-  AddModuleType(c_EnergyCalibration);
-  AddModuleType(c_ChargeSharingCorrection);
-  AddModuleType(c_DepthCorrection);
-  AddModuleType(c_StripPairing);
-  AddModuleType(c_EventReconstruction);
+  AddModuleType(c_EventSaver);
 
   // Set all modules, which can follow this module
   AddSucceedingModuleType(c_DetectorEffectsEngine);
@@ -82,44 +71,82 @@ MNCTModuleTemplate::MNCTModuleTemplate() : MNCTModule()
   AddSucceedingModuleType(c_DepthCorrection);
   AddSucceedingModuleType(c_StripPairing);
   AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_Else);
   AddSucceedingModuleType(c_EventReconstruction);
+  AddSucceedingModuleType(c_EventSaver);
 
   // Set if this module has an options GUI
-  // Overwrite ShowOptionsGUI() with the call to the GUI!
-  m_HasOptionsGUI = false;
-  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
-  // and implement all your GUI options
+  m_HasOptionsGUI = true;
+  
+  m_Mode = c_DatFile;
+  m_FileName = "$(NUCLEARIZER)/Dummy.dat";
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleTemplate::~MNCTModuleTemplate()
+MNCTModuleEventSaver::~MNCTModuleEventSaver()
 {
   // Delete this instance of MNCTModuleTemplate
+  m_Out.close();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleTemplate::Initialize()
+bool MNCTModuleEventSaver::Initialize()
+{
+  // Initialize the module
+  
+  m_Out.open(m_FileName);
+  if (m_Out.is_open() == false) {
+    merr<<"Unable to open file: "<<m_FileName<<endl;
+    return false;
+  }
+  
+  if (m_Mode == c_DatFile) {
+    m_Out<<endl;
+    m_Out<<"Version 1"<<endl;
+    m_Out<<"Type DAT"<<endl;
+    m_Out<<endl;
+  } else if (m_Mode == c_EvtaFile) {
+    m_Out<<endl;
+    m_Out<<"Version 21"<<endl;
+    m_Out<<"Type EVTA"<<endl;
+    m_Out<<endl;
+  } else {
+    merr<<"Unsupported mode: "<<m_Mode<<endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleEventSaver::Finalize()
 {
   // Initialize the module 
 
-  return true;
+  m_Out<<"EN"<<endl;
+  m_Out.close();
+  
+  return;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleTemplate::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEventSaver::AnalyzeEvent(MNCTEvent* Event) 
 {
-  // Main data analysis routine, which updates the event to a new level 
+  // Main data analysis routine, which updates the event to a new level
 
+  Event->Stream(m_Out, 1, m_Mode);
+  
   return true;
 }
 
@@ -127,11 +154,11 @@ bool MNCTModuleTemplate::AnalyzeEvent(MNCTEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNCTModuleTemplate::ShowOptionsGUI()
+void MNCTModuleEventSaver::ShowOptionsGUI()
 {
   //! Show the options GUI --- has to be overwritten!
 
-  MGUIOptionsTemplate* Options = new MGUIOptionsTemplate(this);
+  MGUIOptionsEventSaver* Options = new MGUIOptionsEventSaver(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }
@@ -140,16 +167,18 @@ void MNCTModuleTemplate::ShowOptionsGUI()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleTemplate::ReadXmlConfiguration(MXmlNode* Node)
+bool MNCTModuleEventSaver::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
-
-  /*
-  MXmlNode* SomeTagNode = Node->GetNode("SomeTag");
-  if (SomeTagNode != 0) {
-    m_SomeTagValue = SomeTagNode->GetValue();
+  
+  MXmlNode* FileNameNode = Node->GetNode("FileName");
+  if (FileNameNode != 0) {
+    m_FileName = FileNameNode->GetValue();
   }
-  */
+  MXmlNode* ModeNode = Node->GetNode("Mode");
+  if (ModeNode != 0) {
+    m_Mode = ModeNode->GetValueAsUnsignedInt();
+  }
 
   return true;
 }
@@ -158,19 +187,17 @@ bool MNCTModuleTemplate::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MNCTModuleTemplate::CreateXmlConfiguration() 
+MXmlNode* MNCTModuleEventSaver::CreateXmlConfiguration() 
 {
   //! Create an XML node tree from the configuration
 
-  MXmlNode* Node = new MXmlNode(0, m_XmlTag);
-  
-  /*
-  MXmlNode* SomeTagNode = new MXmlNode(Node, "SomeTag", "SomeValue");
-  */
+  MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
+  new MXmlNode(Node, "FileName", m_FileName);
+  new MXmlNode(Node, "Mode", m_Mode);
 
   return Node;
 }
 
 
-// MNCTModuleTemplate.cxx: the end...
+// MNCTModuleEventSaver.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

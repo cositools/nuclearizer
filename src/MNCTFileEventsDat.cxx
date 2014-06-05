@@ -262,7 +262,8 @@ MNCTEvent* MNCTFileEventsDat::ReadNextEvent()
       } else if (Line.BeginsWith("TI")) {
         if (sscanf(Line.Data(), "TI %llu\n", &clock_TI) == 1) {
           Event->SetTI(clock_TI);
-	  Event->SetTime(clock_TI);
+          MTime T((long) clock_TI, 0l);
+          Event->SetTime(T);
 	  //mout << "MNCTFileEventsDat::ReadNextEvent:  ID: " << eventID 
 	  //   << " TI: " << clock_TI << " " << Event->GetTI() << endl;
         } else {

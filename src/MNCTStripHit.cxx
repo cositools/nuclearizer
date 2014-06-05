@@ -2,7 +2,7 @@
  * MNCTStripHit.cxx
  *
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -27,6 +27,8 @@
 #include "MNCTStripHit.h"
 
 // Standard libs:
+#include <iomanip>
+using namespace std;
 
 // ROOT libs:
 
@@ -48,8 +50,9 @@ MNCTStripHit::MNCTStripHit()
 {
   // Construct an instance of MNCTStripHit
 
+  m_ReadOutElement = new MReadOutElementDoubleStrip();
+  
   Clear();
-//  mout << "creat StripHit!! \n";
 }
 
 
@@ -59,7 +62,8 @@ MNCTStripHit::MNCTStripHit()
 MNCTStripHit::~MNCTStripHit()
 {
   // Delete this instance of MNCTStripHit
-//  mout << "delete StripHit!! \n";
+  
+  delete m_ReadOutElement;
 }
 
 
@@ -70,12 +74,46 @@ void MNCTStripHit::Clear()
 {
   // Reset all data
 
-  m_DetectorID = g_UnsignedIntNotDefined;
-  m_StripID = g_UnsignedIntNotDefined;
-  m_IsXStrip = true;
+  m_ReadOutElement->Clear();
+  m_HasTriggered = false;
+  m_UncorrectedADCUnits = g_DoubleNotDefined;
   m_ADCUnits = g_DoubleNotDefined;
   m_Energy = g_DoubleNotDefined;
+  m_EnergyResolution = g_DoubleNotDefined;
   m_Timing = g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTStripHit::Parse(MString& Line, int Version)
+{
+  // to be written later 
+  
+  return  true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTStripHit::Stream(ofstream& S, int Version)
+{
+  //! Stream the content to an ASCII file 
+  
+  S<<"SH "
+   <<m_ReadOutElement->GetDetectorID()<<" "
+   <<((m_ReadOutElement->IsPositiveStrip() == true) ? "p" : "n")<<" "
+   <<m_ReadOutElement->GetStripID()<<" "
+   <<m_HasTriggered<<" "
+   <<setprecision(9)<<m_Timing<<" "
+   <<m_UncorrectedADCUnits<<" "
+   <<m_ADCUnits<<" "
+   <<m_Energy<<" "
+   <<m_EnergyResolution<<endl;
+ 
+  return true;
 }
 
 
