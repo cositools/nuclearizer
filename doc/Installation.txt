@@ -2,10 +2,13 @@ Nuclearizer installation
 
 (0) Make sure boost is installed
     Especially on Mac, do:
-    + Download
+    + Download the latest version from boost.org
+    + Unpack it
+    + Switch to the bost directory
     + ./bootstrap.sh
     + ./b2 (or whatever it recommends)
     + sudo ./b2 install
+    + sudo chmod -R o+rX /usr/local
 
 (1) Install MEGAlib
 

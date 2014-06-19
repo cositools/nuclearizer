@@ -154,7 +154,7 @@ $(SOBJ): $(OBJS)
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(OBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
 	
 $(PROGRAM): $(SOBJ) $(POBJ)
-	@echo "Linking $(subst $(BN)/,,$(PROGRAM)) ... Please stand by ... $(ALLLIBS)"
+	@echo "Linking $(subst $(BN)/,,$(PROGRAM)) ... Please stand by ... "
 	@$(LD) $(LDFLAGS) $(POBJ) $(SOBJ) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(PROGRAM)
 	@echo "$(subst $(BN)/,,$(PROGRAM)) created!"
 
