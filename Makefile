@@ -107,7 +107,7 @@ $(LB)/MCalibratorEnergyPointwiseLinear.o \
 
 SOBJ = $(LB)/libNuclearizer.$(DLL)
 
-ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lFretalonBase -L$(MEGALIB)/lib -L$(LB)
+ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectralyzeGui -lSpectralyze -lFretalonBase -L$(MEGALIB)/lib -L$(LB)
 
 # ROOT Mathematical Libraries
 ALLLIBS		+= -lMathCore
@@ -151,13 +151,7 @@ $(OBJS): $(LB)/%.o: src/%.cxx include/%.h
 
 $(SOBJ): $(OBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	@$(LD) $(SOFLAGS) $(OBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
-	@$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(OBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
-endif
-	
 	
 $(PROGRAM): $(SOBJ) $(POBJ)
 	@echo "Linking $(subst $(BN)/,,$(PROGRAM)) ... Please stand by ... $(ALLLIBS)"
