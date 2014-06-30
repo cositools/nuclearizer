@@ -35,13 +35,14 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MGUIDefaults.h"
 #include "MGUIAbout.h"
 #include "MGUIGeometry.h"
+#include "MGUIModuleSelector.h"
+#include "MGUIEFileSelector.h"
 
 // Nuclearizer libs:
 #include "MNCTModule.h"
-#include "MGUIModuleSelector.h"
-#include "MGUIEFileSelector.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -94,6 +95,7 @@ void MGUINuclearizerMain::Create()
   // We start with a name and an icon...
   SetWindowName("Nuclearizer");  
 
+  double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
 
   // In the beginning we build the menus and define their layout, ... 
   TGLayoutHints* MenuBarItemLayoutLeft = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
@@ -130,25 +132,36 @@ void MGUINuclearizerMain::Create()
 
 
   // Main label
-  const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1");
-  if (!lFont) lFont = gClient->GetResourcePool()->GetDefaultFont();
-  FontStruct_t LargeFont = lFont->GetFontStruct();
+  MString TitleIconName("$(NUCLEARIZER)/resource/Nuclearizer.xpm");
+  MFile::ExpandFileName(TitleIconName);
+  
+  TGLayoutHints* TitleIconLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2, 2, 10, 0);
+  if (MFile::Exists(TitleIconName) == true) {
+    const TGPicture* TitlePicture = fClient->GetPicture(TitleIconName, FontScaler*300, FontScaler*300/5);
+    if (TitlePicture == 0) {
+      mgui<<"Can't find picture "<<TitleIconName<<"! Aborting!"<<error;
+      return;
+    }
+    TGIcon* TitleIcon = new TGIcon(this, TitlePicture, TitlePicture->GetWidth()+2, TitlePicture->GetHeight()+2);
+    AddFrame(TitleIcon, TitleIconLayout);
+  } else {
+    const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1");
+    if (!lFont) lFont = gClient->GetResourcePool()->GetDefaultFont();
+    FontStruct_t LargeFont = lFont->GetFontStruct();
 
-  TGLabel* MainLabel = new TGLabel(this, "The Nuclearizer");
-  MainLabel->SetTextFont(LargeFont);
-  TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 30, 0);
-  AddFrame(MainLabel, MainLabelLayout);
-
+    TGLabel* MainLabel = new TGLabel(this, "The Nuclearizer");
+    MainLabel->SetTextFont(LargeFont);
+    TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 30, 0);
+    AddFrame(MainLabel, MainLabelLayout);
+  }
 
 
   // Sub-title
-  const TGFont* iFont = gClient->GetFont("-*-helvetica-medium-o-*-*-12-*-*-*-*-*-iso8859-1");
-  if (!iFont) iFont = gClient->GetResourcePool()->GetDefaultFont();
-  FontStruct_t ItalicFont = iFont->GetFontStruct();
+  FontStruct_t ItalicFont = MGUIDefaults::GetInstance()->GetItalicMediumFont()->GetFontStruct();
 
-  TGLabel* SubTitle = new TGLabel(this, "NCT & GRIPS measurement and simulation calibrator");
+  TGLabel* SubTitle = new TGLabel(this, "The NCT & GRIPS measurement and simulation calibrator");
   SubTitle->SetTextFont(ItalicFont);
-  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, 20);
+  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, FontScaler*12);
   AddFrame(SubTitle, SubTitleLayout);
 
   
