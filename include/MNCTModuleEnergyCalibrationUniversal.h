@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <map>
 
 // ROOT libs:
 
@@ -25,6 +26,7 @@
 
 // Neclearizer libe:
 #include "MNCTModule.h"
+#include "MReadOutElementDoubleStrip.h"
 #include "MCalibratorEnergy.h"
 
 // Forward declarations:
@@ -75,13 +77,14 @@ class MNCTModuleEnergyCalibrationUniversal : public MNCTModule
   // protected members:
  protected:
 
-
   // private members:
  private:
   //! Calibrators arranged by detectors
   vector<vector<MCalibratorEnergy*> > m_Calibrators;
   //! Associated detector IDs
-  vector<unsigned int> m_DetectorIDs; 
+  vector<unsigned int> m_DetectorIDs;
+  // Calibration map between read out element and fitted function
+  map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
    
 #ifdef ___CINT___
  public:

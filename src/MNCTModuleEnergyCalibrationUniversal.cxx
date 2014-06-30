@@ -22,14 +22,15 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+// Standard libs:
+#include <fstream>
+#include <iostream>
+#include <map>
+using namespace std;
 
 // Include the header:
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 
-// Standard libs:
-#include <fstream>
-#include <iostream>
-using namespace std;
 
 // ROOT libs:
 #include "TGClient.h"
@@ -132,11 +133,11 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     if (NTokens == 0) continue;
     if (Parser.GetTokenizerAt(i)->IsTokenAt(Pos, "CP") == false) continue;
     
-    // Only CP - calibration points at this stage
+    // Check the calibration points at this stage. This would be better if we just looked at the number of lines fit through melinator to make sure there will be a good fit resulting, but for now, I've left it as is...
 
-    // Read the read out element
+    // Read the read out element (I changed very little in the below code. Just updated the ReadOutElements corresponding to the correct Pos.
     ++Pos;
-    if (NTokens <= 4) {
+    if (NTokens <= 15) {
       cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
           <<"Line parser: Not enough tokens for a calibration point (failed at read-out element)"<<endl;
       return false;
@@ -144,19 +145,14 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     MReadOutElement* ReadOutElement = 0;
     MString ReadOutElementString = Parser.GetTokenizerAt(i)->GetTokenAtAsString(Pos);
     ReadOutElementString.ToLower();
-    if (ReadOutElementString == "doublestrip") {
+    if (ReadOutElementString == "dss") {
       ++Pos;
-      if (Pos+3 > NTokens) {
-        cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
-            <<"Line parser: Not enough tokens for a calibration point (failed at doublestrip)"<<endl;
-        return false;
-      }
       MReadOutElementDoubleStrip* R = new MReadOutElementDoubleStrip();
       R->SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(Pos));
       ++Pos;
-      R->IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(Pos) == "p");
-      ++Pos;
       R->SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(Pos));
+      ++Pos;
+      R->IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(Pos) == "p");
       ReadOutElement = R;
     } else {
       cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
@@ -164,86 +160,42 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       return false;
     }
     
-    // Check if we already have a calibrator for this readout element
-    MCalibratorEnergy* Calibrator = 0;
-    unsigned int DetectorID = ReadOutElement->GetDetectorID();
-    unsigned int DetectorIndex = g_UnsignedIntNotDefined;
-    for (unsigned int d = 0; d < m_DetectorIDs.size(); ++d) {
-      if (m_DetectorIDs[d] == DetectorID) {
-        DetectorIndex = d;
-        break;
-      }
-    }
-    if (DetectorIndex != g_UnsignedIntNotDefined) {
-      for (unsigned int c = 0; c < m_Calibrators[DetectorIndex].size(); ++c) {
-        if (*ReadOutElement == *(m_Calibrators[DetectorIndex][c]->GetReadOutElement())) {
-          Calibrator = m_Calibrators[DetectorIndex][c];
-          // We don't need the read-out element any more
-          delete ReadOutElement;
-          if (Calibrator->HasMultipleEntries() == false) {
-            cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
-                <<"Line parser: This calibrator does not allow multiple entries!"<<endl;
-            return false;
-          }
-        }
-      }
-    }
     
-    
-    // Read the calibrator
+    // Read the calibrator, i.e. read the fit function from the .ecal Melinator file.
+
     ++Pos;
-    if (Pos+2 > NTokens) {
-      cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
-          <<"Line parser: Not enough tokens for this calibration point (failed at calibrator)"<<endl;
-      return false;
-    }
-    MString CalibratorType = Parser.GetTokenizerAt(i)->GetTokenAtAsString(Pos);
+    MString CalibratorType = Parser.GetTokenizerAt(i+1)->GetTokenAtAsString(Pos);
     CalibratorType.ToLower();
-    if (CalibratorType == "pointwiselinear") {
-      MCalibratorEnergyPointwiseLinear* PWL = 0;
-      if (Calibrator == 0) {
-        PWL = new MCalibratorEnergyPointwiseLinear();
-        PWL->SetReadOutElement(ReadOutElement); // PWL owns read-out element now
-      } else {
-        PWL = dynamic_cast<MCalibratorEnergyPointwiseLinear*>(Calibrator);
-      }
-      ++Pos;
-      if (Pos+2 > NTokens) {
-        cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
-            <<"Line parser: Not enough tokens for this calibration point (pointwiselinear)"<<endl;
-        return false;
-      }
-      double ADC = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(Pos);
-      ++Pos;
-      double Energy = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(Pos);      
-      PWL->Add(ADC, Energy);
-      if (Calibrator == 0) {
-        Calibrator = PWL;
-        if (DetectorIndex != g_UnsignedIntNotDefined) {
-          m_Calibrators[DetectorIndex].push_back(PWL);
-        } else {
-          m_DetectorIDs.push_back(PWL->GetReadOutElement()->GetDetectorID());
-          vector<MCalibratorEnergy*> v;
-          v.push_back(PWL);
-          m_Calibrators.push_back(v);
-        }
-      }
+
+    //Eventually, I'll be including other possible fits, but for now, let's just get this working with poly3...
+    if (CalibratorType == "poly3") {
+        ++Pos;
+	double a0 = Parser.GetTokenizerAt(i+1)->GetTokenAtAsDouble(Pos);
+	++Pos;
+	double a1 = Parser.GetTokenizerAt(i+1)->GetTokenAtAsDouble(Pos);
+	++Pos;
+	double a2 = Parser.GetTokenizerAt(i+1)->GetTokenAtAsDouble(Pos);
+	++Pos;
+	double a3 = Parser.GetTokenizerAt(i+1)->GetTokenAtAsDouble(Pos);
+
+	//From the fit parameters I just extracted from the .ecal file, I can define a function
+	TF1 * melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8000.);
+	melinatorfit->FixParameter(0,a0);
+	melinatorfit->FixParameter(1,a1);
+	melinatorfit->FixParameter(2,a2);
+	melinatorfit->FixParameter(3,a3);
+
+	//Define the map by saving the fit function I just created as a map to the current ReadOutElement
+	m_Calibration[*dynamic_cast<MReadOutElementDoubleStrip*>(ReadOutElement)] = melinatorfit;;
+
+
+	//And, closing the "if poly3" statemnet...
     } else {
       cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
           <<"Line parser: Unknown calibrator type: "<<CalibratorType<<endl;
       return false;
     }
-    
   }
-  
-  // List the calibrators:
-  for (unsigned int d = 0; d < m_Calibrators.size(); ++d) {
-    for (unsigned int s = 0; s < m_Calibrators[d].size(); ++s) {
-      cout<<m_Calibrators[d][s]->ToString()<<endl; 
-    }
-  }
-  
-  
   return true;
 }
 
@@ -253,39 +205,27 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
 
 bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event) 
 {
-  // Main data analysis routine, which updates the event to a new level 
+  // Main data analysis routine, which updates the event to a new level, i.e. takes the raw ADC value from the .roa file loaded through nuclearizer and converts it into energy units.
 
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     MNCTStripHit* SH = Event->GetStripHit(i);
-    //if (SH->HasTriggered() == false) continue;
     MReadOutElement* R = SH->GetReadOutElement();
-    unsigned int DetectorID = R->GetDetectorID();
-    unsigned int DetectorIndex = g_UnsignedIntNotDefined;
-    for (unsigned int d = 0; d < m_DetectorIDs.size(); ++d) {
-      if (m_DetectorIDs[d] == DetectorID) {
-        DetectorIndex = d;
-        break;
-      }
-    }
-    if (DetectorIndex != g_UnsignedIntNotDefined) {
-      for (unsigned int c = 0; c < m_Calibrators[DetectorIndex].size(); ++c) {
-        if (*R == *(m_Calibrators[DetectorIndex][c]->GetReadOutElement())) {
-          double Energy = m_Calibrators[DetectorIndex][c]->GetEnergy(SH->GetADCUnits());
-          if (Energy < 0) Energy = 0;
-          SH->SetEnergy(Energy);
-          //cout<<m_Calibrators[DetectorIndex][c]->ToString()<<endl;
-          //cout<<"Energy: "<<SH->GetADCUnits()<<" --> "<<Energy<<endl;
-        }
-      }
+
+    TF1* Fit = m_Calibration[*dynamic_cast<MReadOutElementDoubleStrip*>(R)];
+    if (Fit == 0) {
+      cout<<"Error: Fit not found for read-out element "<<&R<<endl;
     } else {
-      cout<<"Read-out element ("<<R->ToString()<<") is not calibrated"<<endl; 
+      double Energy = Fit->Eval(SH->GetADCUnits());
+      if (Energy < 0) Energy = 0;
+      SH->SetEnergy(Energy);
+      cout<<"Energy: "<<SH->GetADCUnits()<<" --> "<<Energy<<endl;
     }
-  }
+  } 
 
   Event->SetEnergyCalibrated(true);
-
   return true;
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
