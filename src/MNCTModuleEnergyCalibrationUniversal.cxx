@@ -2,12 +2,12 @@
  * MNCTModuleEnergyCalibrationUniversal.cxx
  *
  *
- * Copyright (C) 2008-2009 by Mark Bandstra.
+ * Copyright (C) by Andreas Zoglauer, Mark Bandstra, Carolyn Kierans.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Mark Bandstra.
+ * Andreas Zoglauer, Mark Bandstra, Carolyn Kierans.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
