@@ -145,6 +145,7 @@ void MGUINuclearizerMain::Create()
     TGIcon* TitleIcon = new TGIcon(this, TitlePicture, TitlePicture->GetWidth()+2, TitlePicture->GetHeight()+2);
     AddFrame(TitleIcon, TitleIconLayout);
   } else {
+    mgui<<"Can't find picture "<<TitleIconName<<"! Using text!"<<error;
     const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1");
     if (!lFont) lFont = gClient->GetResourcePool()->GetDefaultFont();
     FontStruct_t LargeFont = lFont->GetFontStruct();
@@ -159,7 +160,7 @@ void MGUINuclearizerMain::Create()
   // Sub-title
   FontStruct_t ItalicFont = MGUIDefaults::GetInstance()->GetItalicMediumFont()->GetFontStruct();
 
-  TGLabel* SubTitle = new TGLabel(this, "The NCT & GRIPS measurement and simulation calibrator");
+  TGLabel* SubTitle = new TGLabel(this, "A measurement and simulation calibrator for COSI and GRIPS");
   SubTitle->SetTextFont(ItalicFont);
   TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, FontScaler*12);
   AddFrame(SubTitle, SubTitleLayout);
