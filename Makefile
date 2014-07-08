@@ -39,13 +39,17 @@ include $(MEGALIB)/config/Makefile.config
 
 CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
 
-# Name of the program
-PROGRAM = $(BN)/Nuclearizer
+# Names of the programs
+NUCLEARIZERPRG = $(BN)/nuclearizer
+NUCLEARIZERCXX = src/MNuclearizerMain.cxx
 
-# All files:
-POBJ = $(LB)/MNuclearizerMain.o \
+DEEPRG = $(BN)/deecosi
+DEECXX = src/MNCTDetectorEffectsEngineCOSI.cxx
 
-OBJS = \
+ALLPROGRAMS = $(NUCLEARIZERPRG) $(DEEPRG)
+
+# The nuclearizer library
+NUCLEARIZERLIB = \
 $(LB)/MInterfaceNuclearizer.o \
 $(LB)/MGUIMainNuclearizer.o \
 $(LB)/MGUIEModule.o \
@@ -105,12 +109,14 @@ $(LB)/MNCTPreprocessor.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
 
-SOBJ = $(LB)/libNuclearizer.$(DLL)
+# The shared library
+NUCLEARIZERSHAREDLIB = $(LB)/libNuclearizer.$(DLL)
 
+# External libraries
+# MEGAlib
 ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectralyzeGui -lSpectralyze -lFretalonBase -L$(MEGALIB)/lib -L$(LB)
-
-# ROOT Mathematical Libraries
-ALLLIBS		+= -lMathCore
+# ROOT
+ALLLIBS += -lMathCore
 
 #----------------------------------------------------------------
 # Built-in targets
@@ -124,16 +130,13 @@ ALLLIBS		+= -lMathCore
 # Command rules
 #
 
-all: $(PROGRAM)
-	@$(PROGRAM)
-
-# Only compile, do not start the program
-only: $(PROGRAM)
+# Compile all libraries and programs
+all: $(ALLPROGRAMS)
 
 # Clean-up
 clean:
-	@-rm -f $(POBJ) $(OBJS) $(SOBJ)
-	@-rm -f $(PROGRAM)
+	@-rm -f $(NUCLEARIZERO) $(DEEO) $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIB)
+	@-rm -f $(NUCLEARIZERPRG) $(DEEPRG)
 	@-rm -f *~ include/*~ src/*~
 
 
@@ -141,22 +144,21 @@ clean:
 # Explicit rules & dependencies:
 #
 
-$(POBJ): $(LB)/%.o: src/%.cxx include/%.h
+$(NUCLEARIZERLIB): $(LB)/%.o: src/%.cxx include/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(OBJS): $(LB)/%.o: src/%.cxx include/%.h
-	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
-
-$(SOBJ): $(OBJS)
+$(NUCLEARIZERSHAREDLIB): $(NUCLEARIZERLIB)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(OBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
-	
-$(PROGRAM): $(SOBJ) $(POBJ)
-	@echo "Linking $(subst $(BN)/,,$(PROGRAM)) ... Please stand by ... "
-	@$(LD) $(LDFLAGS) $(POBJ) $(SOBJ) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(PROGRAM)
-	@echo "$(subst $(BN)/,,$(PROGRAM)) created!"
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(GLIBS) $(LIBS) -o $(NUCLEARIZERSHAREDLIB)
+
+$(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
+	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZERPRG)) ... Please stand by ... "
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZERCXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZERPRG)
+
+$(DEEPRG): $(NUCLEARIZERSHAREDLIB) $(DEECXX)
+	@echo "Linking and compiling $(subst $(BN)/,,$(DEEPRG)) ... Please stand by ... "
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DEECXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(DEEPRG)
 
 
 #
