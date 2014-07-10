@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iterator>
 #include <boost/multi_array.hpp>
+using namespace std;
 
 // ROOT libs:
 
@@ -45,13 +46,13 @@ class MNCTArray
 {
  public:
   //! for loading a multi-dimension array from an ASCII file
-  static double_array4& Array_loader4(char* filename,int a,int b,int c,int d);
-  static double_array3& Array_loader3(char* filename,int a,int b,int c);
-  static double_array2& Array_loader2(char* filename,int a,int b);
+  static double_array4& Array_loader4(MString filename,int a,int b,int c,int d);
+  static double_array3& Array_loader3(MString filename,int a,int b,int c);
+  static double_array2& Array_loader2(MString filename,int a,int b);
 
-  static double_array4& csv_loader4(string filename,int a,int b,int c,int d, string mode="one");
-  static double_array3& csv_loader3(string filename,int a,int b,int c, string mode="one");
-  static double_array2& csv_loader2(string filename,int a,int b, string mode="one");
+  static double_array4& csv_loader4(MString filename,int a,int b,int c,int d, string mode="one");
+  static double_array3& csv_loader3(MString filename,int a,int b,int c, string mode="one");
+  static double_array2& csv_loader2(MString filename,int a,int b, string mode="one");
 
  protected:
 

@@ -1,7 +1,7 @@
 /*
- * MGUIOptionsDetectorEffectsEngine.h
+ * MGUIOptionsSimulationLoader.h
  *
- * Copyright (C) 2008-2008 by Jau-Shian Liang.
+ * Copyright (C) by Jau-Shian Liang.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsDetectorEffectsEngine__
-#define __MGUIOptionsDetectorEffectsEngine__
+#ifndef __MGUIOptionsSimulationLoader__
+#define __MGUIOptionsSimulationLoader__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,6 +32,7 @@
 #include "MGUIERBList.h"
 #include "MNCTModule.h"
 #include "MGUIOptions.h"
+#include "MGUIEFileSelector.h"
 
 // Forward declarations:
 
@@ -39,14 +40,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsDetectorEffectsEngine : public MGUIOptions
+class MGUIOptionsSimulationLoader : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsDetectorEffectsEngine(MNCTModule* Module);
+  MGUIOptionsSimulationLoader(MNCTModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsDetectorEffectsEngine();
+  virtual ~MGUIOptionsSimulationLoader();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -63,7 +64,10 @@ class MGUIOptionsDetectorEffectsEngine : public MGUIOptions
 
   // protected members:
  protected:
-  //
+  //! Select which file to load
+  MGUIEFileSelector* m_FileSelector;
+
+  // DEE options
   TGNumberEntry* m_TimeOffset0NumEntry;
   TGNumberEntry* m_TimeOffsetNumEntry;
   TGCheckButton* m_DeadStripButton;
@@ -81,7 +85,7 @@ class MGUIOptionsDetectorEffectsEngine : public MGUIOptions
 
 #ifdef ___CINT___
  public:
-  ClassDef(MGUIOptionsDetectorEffectsEngine, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsSimulationLoader, 1) // basic class for dialog windows
 #endif
 
 };

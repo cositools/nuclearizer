@@ -80,11 +80,11 @@ class MNCTModuleMeasurementLoaderNCT2009 : public MNCTModuleMeasurementLoader
   //! Start of the observation time
   MTime m_StartObservationTime;
   //! Clock time belonging to the start of the observation time
-  unsigned long m_StartClock; 
+  //unsigned long m_StartClock; 
   //! End of the observation time
   MTime m_EndObservationTime;
   //! Clock time belonging to the end of the observation time
-  unsigned long m_EndClock;
+  //unsigned long m_EndClock;
 
 
 #ifdef ___CINT___

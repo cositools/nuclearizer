@@ -75,12 +75,13 @@ $(LB)/MNCTData.o \
 $(LB)/MNCTModule.o \
 $(LB)/MNCTModuleTemplate.o \
 $(LB)/MGUIOptionsTemplate.o \
+$(LB)/MNCTModuleSimulationLoader.o \
+$(LB)/MGUIOptionsSimulationLoader.o \
 $(LB)/MNCTModuleMeasurementLoader.o \
 $(LB)/MNCTModuleMeasurementLoaderROA.o \
 $(LB)/MNCTModuleMeasurementLoaderGRIPS2013.o \
 $(LB)/MNCTModuleMeasurementLoaderNCT2009.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
-$(LB)/MNCTModuleDetectorEffectsEngine.o \
 $(LB)/MNCTModuleEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibrationUniversal.o \
 $(LB)/MGUIOptionsEnergyCalibrationUniversal.o \
@@ -102,7 +103,6 @@ $(LB)/MNCTModuleEventFilter.o \
 $(LB)/MNCTModuleDumpEvent.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MNCTModuleEventSaver.o \
-$(LB)/MGUIOptionsDetectorEffectsEngine.o \
 $(LB)/MGUIOptionsAspect.o \
 $(LB)/MGUIOptionsEventFilter.o \
 $(LB)/MNCTPreprocessor.o \
@@ -132,6 +132,10 @@ ALLLIBS += -lMathCore
 
 # Compile all libraries and programs
 all: $(ALLPROGRAMS)
+
+# Compile all libraries and programs
+run: $(ALLPROGRAMS)
+	$(NUCLEARIZERPRG)
 
 # Clean-up
 clean:

@@ -18,7 +18,7 @@
 
 // Standard libs:
 #include <vector>
-#include <string>
+using namespace std;
 
 // ROOT libs:
 
@@ -45,8 +45,7 @@ class MNCTDetectorArray
   class Detector
   {
     public:
-//    MDVolumeSequence *DetectorVolume;
-    MDVolume *DetectorVolume;
+    MString DetectorName;
     int DetectorID;
 
     bool XStripInverse;//Is X-strip order inverse?
@@ -79,10 +78,10 @@ class MNCTDetectorArray
   void SetLoadDeadStrip(bool yn){m_LoadDeadStrip = yn;}
   void SetLoadCoincidence(bool yn){m_LoadCoincidence = yn;}
   void SetLoadAntiCoincidence(bool yn){m_LoadAntiCoincidence = yn;}
-  void SetDetectorFile(string DetectorFile){m_DetectorFile = DetectorFile;}
-  void SetDeadStripFile(string DeadStripFile){m_DeadStripFile = DeadStripFile;}
-  void SetCoincidenceFile(string CoinFile){m_CoinFile = CoinFile;}
-  void SetAntiCoincidenceFile(string AntiCoinFile){m_AntiCoinFile = AntiCoinFile;}
+  void SetDetectorFile(MString DetectorFile){m_DetectorFile = DetectorFile;}
+  void SetDeadStripFile(MString DeadStripFile){m_DeadStripFile = DeadStripFile;}
+  void SetCoincidenceFile(MString CoinFile){m_CoinFile = CoinFile;}
+  void SetAntiCoincidenceFile(MString AntiCoinFile){m_AntiCoinFile = AntiCoinFile;}
 
   //! Get the detector number
   int GetDetectorNum(){return m_DetectorNumber;}
@@ -98,9 +97,13 @@ class MNCTDetectorArray
   double GetGap(){return m_Gap;}
   double GetGuardringWidth(){return m_GuardringWidth;}
  
-  //! Conversion betwean detector ID and volume
-  int GetID(const MDVolume* DetectorVolume){return FindVolume(DetectorVolume)->DetectorID;}
-  MDVolume* GetVolume(int DetectorID){return FindID(DetectorID)->DetectorVolume;}
+  
+  //! Return the detector ID using the detector name
+  int GetID(MString DetectorName) const;
+  
+  //! Conversion between detector ID and volume
+  //int GetID(const MDVolume* DetectorVolume){return FindVolume(DetectorVolume)->DetectorID;}
+  //MDVolume* GetVolume(int DetectorID){return FindID(DetectorID)->DetectorVolume;}
  
   //! Return the detail information of NCTdetector
   bool IsXStripInverse(int DetectorID){return FindID(DetectorID)->XStripInverse;}
@@ -116,7 +119,7 @@ class MNCTDetectorArray
   double GetDeadRegion(int DetectorID){return FindID(DetectorID)->DeadRegion;}
 
   //! Check detector and dead strip
-  bool IsNCTDetector(const MDVolume* DetectorVolume);
+  bool IsNCTDetector(const MString& DetectorName);
   bool IsDeadStrip(const MNCTStrip& Strip);
   bool IsDeadStrip(int DetectorID, bool XStrip, int StripID);
 
@@ -149,20 +152,20 @@ class MNCTDetectorArray
   
   //! Find detector details by detector ID or detector volume
   Detector* FindID(int DetectorID);
-  Detector* FindVolume(const MDVolume* DetectorVolume);
+  //Detector* FindVolume(const MDVolume* DetectorVolume);
 
   // private methods:
  private:
   //! load detail detector information
-  void Load_Detector(string filename);
+  void Load_Detector(MString filename);
   //! Load dead strips
-  void Load_DeadStrip(string filename);
+  void Load_DeadStrip(MString filename);
 
   //! Load coincidence volumes
-  void Load_Coincidence(string filename);
+  void Load_Coincidence(MString filename);
 
   //! Load anti-coincidence volumes
-  void Load_AntiCoincidence(string filename);
+  void Load_AntiCoincidence(MString filename);
 
   //! Find all detector volume
   void FindAllDetectorVolumes();
@@ -181,10 +184,10 @@ class MNCTDetectorArray
   bool m_LoadAntiCoincidence;
 
   //! input file name
-  string m_DetectorFile;//detail information of detectors
-  string m_DeadStripFile;//a list of dead strips
-  string m_CoinFile;//list of conincidence volume
-  string m_AntiCoinFile;//list of anti-coincidence volume
+  MString m_DetectorFile;//detail information of detectors
+  MString m_DeadStripFile;//a list of dead strips
+  MString m_CoinFile;//list of conincidence volume
+  MString m_AntiCoinFile;//list of anti-coincidence volume
 
   //! 
   unsigned int m_DetectorNumber;

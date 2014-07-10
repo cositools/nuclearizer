@@ -47,28 +47,31 @@ ClassImp(MNCTDetectorResponse.h)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
 MNCTDetectorResponse::MNCTDetectorResponse()
 {
-
   Clear();
-
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
 MNCTDetectorResponse::~MNCTDetectorResponse()
 {
   DeleteResponseArray();
-
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 bool MNCTDetectorResponse::Activate()
 {
   // Initialize the module
 
-  if(!m_IsNCTDetectorArraySet)return false;
+  if (m_IsNCTDetectorArraySet == false) return false;
 
   SetParameters();
   LoadResponseArray();//<--need check
@@ -81,7 +84,9 @@ bool MNCTDetectorResponse::Activate()
   return true;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 void MNCTDetectorResponse::Clear()
 {
@@ -95,7 +100,9 @@ void MNCTDetectorResponse::Clear()
   m_IsResponseArrayLoaded = false;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 void MNCTDetectorResponse::LoadResponseArray()
 {
@@ -103,20 +110,20 @@ void MNCTDetectorResponse::LoadResponseArray()
   if(m_IsNCTDetectorArraySet && m_IsParametersSet && !m_IsResponseArrayLoaded)
   {
     cout << "Loading response array files...\n";
-    string Path=getenv("NUCLEARIZER_CAL");
-    m_DCalArr=	&MNCTArray::csv_loader4(Path+"/Response/TCal_Data2Sim.csv",10,37,37,2,"many");
-    m_Depth2TArr=&MNCTArray::csv_loader3(Path+"/Response/TCal_Z2Time.csv",10,2,6,"many");
-    m_E2ADCArr=&MNCTArray::csv_loader4(Path+"/Response/ECal_NCT09_Linear.csv",10,2,37,2,"many");
-    m_nonlinearE2ADCArr=&MNCTArray::csv_loader4(Path+"/Response/ECal_NCT09_Nonlinear.csv",10,2,37,5,"many");
+
+    m_DCalArr=&MNCTArray::csv_loader4("$(NUCLEARIZER)/resource/dee/TCal_Data2Sim.csv",10,37,37,2,"many");
+    m_Depth2TArr=&MNCTArray::csv_loader3("$(NUCLEARIZER)/resource/dee/TCal_Z2Time.csv",10,2,6,"many");
+    m_E2ADCArr=&MNCTArray::csv_loader4("$(NUCLEARIZER)/resource/dee/ECal_NCT09_Linear.csv",10,2,37,2,"many");
+    m_nonlinearE2ADCArr=&MNCTArray::csv_loader4("$(NUCLEARIZER)/resource/dee/ECal_NCT09_Nonlinear.csv",10,2,37,5,"many");
     
     m_FastArr= new double_array4(boost::extents[10][2][37][2]);//Just a dummy!!
     m_SlowArr= new double_array4(boost::extents[10][2][37][2]);//Just a dummy!!
 //    m_NoiseArr= new double_array3(boost::extents[2][2][37]);//Just a dummy!!
     
-//    m_FastArr=	&MNCTArray::Array_loader4("thresholds_fast.arr",2,2,37,2);
-//    m_SlowArr=	&MNCTArray::Array_loader4("thresholds_slow.arr",2,2,37,2);
-    m_NoiseArr=	&MNCTArray::csv_loader4(Path+"/Response/ECal_NCT09_Noise.csv",10,2,37,3,"many");
-    m_nonlinearNoiseArr= &MNCTArray::csv_loader4(Path+"/Response/ECal_NCT09_Nonlinear_Noise.csv",10,2,37,3,"many");
+//    m_FastArr=  &MNCTArray::Array_loader4("thresholds_fast.arr",2,2,37,2);
+//    m_SlowArr=  &MNCTArray::Array_loader4("thresholds_slow.arr",2,2,37,2);
+    m_NoiseArr= &MNCTArray::csv_loader4("$(NUCLEARIZER)/resource/dee/ECal_NCT09_Noise.csv",10,2,37,3,"many");
+    m_nonlinearNoiseArr= &MNCTArray::csv_loader4("$(NUCLEARIZER)/resource/dee/ECal_NCT09_Nonlinear_Noise.csv",10,2,37,3,"many");
 
     //cout << "debug: " << (*m_NoiseArr)[2][1][1][0] << '\n'; //debug
     cout << '\n';
@@ -130,7 +137,9 @@ void MNCTDetectorResponse::LoadResponseArray()
   }
 } 
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 void MNCTDetectorResponse::DeleteResponseArray()
 {
@@ -149,7 +158,10 @@ void MNCTDetectorResponse::DeleteResponseArray()
   }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
+
 void MNCTDetectorResponse::SetParameters()
 {
   if(m_IsNCTDetectorArraySet)
@@ -163,8 +175,8 @@ void MNCTDetectorResponse::SetParameters()
     cout << "calculating potential for energy sharing\n\n";
     for(int i=0;i<(int)m_DetN;i++)
     {
-      double Vd=127.06*m_NCTDetectors->GetImpurity(i);
-      double HV=abs(m_NCTDetectors->GetVoltage(i));
+      double Vd = 127.06*m_NCTDetectors->GetImpurity(i);
+      double HV = abs(m_NCTDetectors->GetVoltage(i));
       e0.push_back(2.*Vd/1.5);
       e1.push_back((HV-Vd)/1.5);
       //cout << e0[i] << ' ' << e1[i]<< '\n';//debug
@@ -175,6 +187,7 @@ void MNCTDetectorResponse::SetParameters()
   }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -184,7 +197,10 @@ bool MNCTDetectorResponse::GuardringTriger(double energy)
   return (energy>=grthreshold);
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
+
 vector<MNCTStripEnergyDepth> MNCTDetectorResponse::noEnergySharing(const MNCTHitInVoxel& HitInVoxel, bool IsXStrip)
 {
   int det=HitInVoxel.GetDetectorID();
@@ -224,9 +240,9 @@ vector<MNCTStripEnergyDepth> MNCTDetectorResponse::noEnergySharing(const MNCTHit
 }
   
 
-
 ////////////////////////////////////////////////////////////////////////////////
-//eng=share_eng(x,z,e,0,0,0)
+
+
 vector<MNCTStripEnergyDepth> MNCTDetectorResponse::EnergySharing(const MNCTHitInVoxel& HitInVoxel, bool IsXStrip)
 {
   //Original IDL code: Zong-Kai
@@ -326,31 +342,38 @@ vector<MNCTStripEnergyDepth> MNCTDetectorResponse::EnergySharing(const MNCTHitIn
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
+
+
 double MNCTDetectorResponse::Depth2Time(MNCTStrip Strip, double depth)
 {
-	double time=0;
-	for(int i=0; i<m_Depth2TArr_n; i++){
-		time+=(*m_Depth2TArr)[Strip.GetDetectorID()][Strip.IsXStrip()][i]*pow(depth,(double)i);
-	}
-	return time;
-}
-////////////////////////////////////////////////////////////////////////////////i
-int MNCTDetectorResponse::Time2TriggerTime(MNCTStrip XStrip, MNCTStrip YStrip, bool Xstrip, double time)
-{
-	double trigger_time=0;
-	if (Xstrip){
- 	  trigger_time = (*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][1]*time + 0.5*(*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][0];
-	}else{
-	  trigger_time = (*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][1]*time - 0.5*(*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][0];
-	}
-
-	return (int)trigger_time;
+  double time=0;
+  for(int i=0; i<m_Depth2TArr_n; i++){
+    time+=(*m_Depth2TArr)[Strip.GetDetectorID()][Strip.IsXStrip()][i]*pow(depth,(double)i);
+  }
+  return time;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+int MNCTDetectorResponse::Time2TriggerTime(MNCTStrip XStrip, MNCTStrip YStrip, bool Xstrip, double time)
+{
+  double trigger_time=0;
+  if (Xstrip){
+    trigger_time = (*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][1]*time + 0.5*(*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][0];
+  }else{
+    trigger_time = (*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][1]*time - 0.5*(*m_DCalArr)[XStrip.GetDetectorID()][XStrip.GetStripID()][YStrip.GetStripID()][0];
+  }
+
+  return (int)trigger_time;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 double MNCTDetectorResponse::EnergyNoise(double energy, MNCTStrip Strip)
 {
   int det=Strip.GetDetectorID();
@@ -371,7 +394,9 @@ double MNCTDetectorResponse::EnergyNoise(double energy, MNCTStrip Strip)
   //return NoiseError->Gaus(0,2.5);
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 int MNCTDetectorResponse::Energy2ADC(double energy, MNCTStrip Strip)
 {
@@ -391,6 +416,8 @@ int MNCTDetectorResponse::Energy2ADC(double energy, MNCTStrip Strip)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
 double MNCTDetectorResponse::NonlinearEnergyNoise(double energy, MNCTStrip Strip)
 {
   int det=Strip.GetDetectorID();
@@ -406,7 +433,9 @@ double MNCTDetectorResponse::NonlinearEnergyNoise(double energy, MNCTStrip Strip
   return NoiseError->Gaus(0,sqrt(xmond)*MNCTMath::FWHM2sigma());
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 int MNCTDetectorResponse::NonlinearEnergy2ADC(double energy, MNCTStrip Strip)
 {
@@ -433,6 +462,8 @@ int MNCTDetectorResponse::NonlinearEnergy2ADC(double energy, MNCTStrip Strip)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
 double MNCTDetectorResponse::delta(double x, double a2, double a3, double a4)
 {
   return a2*x*x+a3*exp(-pow(x/a4,3.0));
@@ -440,6 +471,7 @@ double MNCTDetectorResponse::delta(double x, double a2, double a3, double a4)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
 
 double MNCTDetectorResponse::FastThreshold(MNCTStrip Strip)
 {
@@ -456,6 +488,7 @@ double MNCTDetectorResponse::FastThreshold(MNCTStrip Strip)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 double MNCTDetectorResponse::SlowThreshold(MNCTStrip Strip)
 {
   //int det=Strip.GetDetectorID();
@@ -467,8 +500,6 @@ double MNCTDetectorResponse::SlowThreshold(MNCTStrip Strip)
   double slow=18.0;//default value
   return slow;
 }
-
-
 
 
 // MNCTDetectorResponse.cxx: the end...

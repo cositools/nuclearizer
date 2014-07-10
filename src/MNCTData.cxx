@@ -39,7 +39,7 @@
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleMeasurementLoaderNCT2009.h"
 #include "MNCTModuleMeasurementLoaderGRIPS2013.h"
-#include "MNCTModuleDetectorEffectsEngine.h"
+#include "MNCTModuleSimulationLoader.h"
 #include "MNCTModuleEnergyCalibration.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleEnergyCalibrationLinear.h"
@@ -80,11 +80,11 @@ MNCTData::MNCTData()
   Clear();
 
   // Add in this list all available modules:
+  m_AvailableModules.push_back(new MNCTModuleSimulationLoader());
   m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderROA());
   m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderGRIPS2013());
   m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderNCT2009());
   
-  m_AvailableModules.push_back(new MNCTModuleDetectorEffectsEngine());
   m_AvailableModules.push_back(new MNCTModuleEventFilter());
   //m_AvailableModules.push_back(new MNCTModuleEnergyCalibration());
   m_AvailableModules.push_back(new MNCTModuleEnergyCalibrationUniversal());

@@ -59,8 +59,6 @@ class MNCTFileEventsDat : public MFileEvents
  private:
   //! The geometry file name
   MString m_GeometryFileName;
-  //! The MEGAlib geometry description
-  MDGeometryQuest* m_Geometry;
 
   // reads a single-detector event from file
   MNCTEvent* ReadNextEvent();

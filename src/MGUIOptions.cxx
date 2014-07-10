@@ -33,7 +33,9 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MGUIDefaults.h"
 #include "MNCTModule.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -76,13 +78,9 @@ void MGUIOptions::PreCreate()
   SetWindowName("Module options");  
 
   // Main label
-  const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-14-*-*-*-*-*-iso8859-1");
-  if (!lFont) lFont = gClient->GetResourcePool()->GetDefaultFont();
-  FontStruct_t LargeFont = lFont->GetFontStruct();
-
   TGLabel* MainLabel = new TGLabel(this, MString("Options for module \"") + m_Module->GetName() + MString("\":"));
-  MainLabel->SetTextFont(LargeFont);
-  TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  MainLabel->SetTextFont(MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct());
+  TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, MGUIDefaults::GetInstance()->GetFontScaler()*20);
   AddFrame(MainLabel, MainLabelLayout);
 }
 
@@ -95,7 +93,7 @@ void MGUIOptions::PostCreate()
   // OK and cancel buttons
   // Frame around the buttons:
   TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 10);
+  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, MGUIDefaults::GetInstance()->GetFontScaler()*20, 10);
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
   // The buttons itself

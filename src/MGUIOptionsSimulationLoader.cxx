@@ -1,8 +1,8 @@
 /*
- * MGUIOptionsDetectorEffectsEngine.cxx
+ * MGUIOptionsSimulationLoader.cxx
  *
  *
- * Copyright (C) 2008-2008 by Jau-Shian Liang.
+ * Copyright (C) by Jau-Shian Liang.
  * All rights reserved.
  *
  *
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsDetectorEffectsEngine.h"
+#include "MGUIOptionsSimulationLoader.h"
 
 // Standard libs:
 
@@ -31,21 +31,21 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MNCTModule.h"
-#include "MNCTModuleDetectorEffectsEngine.h"
+#include "MNCTModuleSimulationLoader.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MGUIOptionsDetectorEffectsEngine)
+ClassImp(MGUIOptionsSimulationLoader)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsDetectorEffectsEngine::MGUIOptionsDetectorEffectsEngine(MNCTModule* Module) 
+MGUIOptionsSimulationLoader::MGUIOptionsSimulationLoader(MNCTModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -55,7 +55,7 @@ MGUIOptionsDetectorEffectsEngine::MGUIOptionsDetectorEffectsEngine(MNCTModule* M
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsDetectorEffectsEngine::~MGUIOptionsDetectorEffectsEngine()
+MGUIOptionsSimulationLoader::~MGUIOptionsSimulationLoader()
 {
   // kDeepCleanup is activated 
 }
@@ -64,37 +64,49 @@ MGUIOptionsDetectorEffectsEngine::~MGUIOptionsDetectorEffectsEngine()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsDetectorEffectsEngine::Create()
+void MGUIOptionsSimulationLoader::Create()
 {
   PreCreate();
 
-  // Modify here
+  
+  m_FileSelector = new MGUIEFileSelector(this, "Please select a simulation file:",
+    dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetFileName());
+  m_FileSelector->SetFileType("Simulation file", "*.sim");
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 10, 10, 10, 10);
+  AddFrame(m_FileSelector, LabelLayout);
+
+  
+  TGLabel* DEEIntro = new TGLabel(this, "Detector effects engine options:");
+  AddFrame(DEEIntro, LabelLayout);
+  
+  
+  
   TGHorizontalFrame* NumberEntryFrame = new TGHorizontalFrame(this, 150, 25);
   TGLabel* NumberEntryLabel = new TGLabel(NumberEntryFrame, "TimeOffset (Time += TimeOffset):   ");
   m_TimeOffset0NumEntry = new TGNumberEntry(NumberEntryFrame,0,9,-1,TGNumberFormat::kNESInteger);
-  m_TimeOffset0NumEntry->SetNumber(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetTimeOffset0());
+  m_TimeOffset0NumEntry->SetNumber(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetTimeOffset0());
   m_TimeOffsetNumEntry = new TGNumberEntry(NumberEntryFrame,0,9);
-  m_TimeOffsetNumEntry->SetNumber(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetTimeOffset());
+  m_TimeOffsetNumEntry->SetNumber(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetTimeOffset());
   TGLabel* NumberEntryLabel20 = new TGLabel(NumberEntryFrame, " X 10^5 + ");
   TGLabel* NumberEntryLabel2 = new TGLabel(NumberEntryFrame, "sec   ");
   //testNumEntry->SetText("test!!!!"); 
   
   m_DeadStripButton = new TGCheckButton(this, "Check dead strip (dead_strip.list)", 1);
-  m_DeadStripButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetLoadDeadStrip());
+  m_DeadStripButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetLoadDeadStrip());
   m_CoincidenceButton = new TGCheckButton(this, "Check coincidence (CoincidenceVolume.list)", 1);
-  m_CoincidenceButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetLoadCoincidence());
+  m_CoincidenceButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetLoadCoincidence());
   m_AntiCoincidenceButton = new TGCheckButton(this, "Check anti-coincidence (AntiCoincidenceVolume.list)", 1);
-  m_AntiCoincidenceButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetLoadAntiCoincidence());
+  m_AntiCoincidenceButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetLoadAntiCoincidence());
   m_ChargeSharingButton =  new TGCheckButton(this, "Run charge sharing", 1);
-  m_ChargeSharingButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetRunEnergySharing());
+  m_ChargeSharingButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetRunEnergySharing());
   m_CrosstalkButton =  new TGCheckButton(this, "Run crosstalk", 1);
-  m_CrosstalkButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetRunCrosstalk());
+  m_CrosstalkButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetRunCrosstalk());
   m_NonlinearGainButton =  new TGCheckButton(this, "Nonlinear Energy/ADC", 1);
-  m_NonlinearGainButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetNonlinearGain());
+  m_NonlinearGainButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetNonlinearGain());
   m_KeepLLDOnlyButton = new TGCheckButton(this, "Keep LLD_Only hits (timing = -9999)", 1);
-  m_KeepLLDOnlyButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetKeepLLDOnly());
+  m_KeepLLDOnlyButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetKeepLLDOnly());
   m_VerboseButton = new TGCheckButton(this, "Verbose", 1);
-  m_VerboseButton->SetOn(dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->GetVerbose());
+  m_VerboseButton->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetVerbose());
 
   TGLayoutHints* NumEntryFrameLayout = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 10, 10, 5, 5);
   TGLayoutHints* NumEntryLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 1, 1, 2, 2);
@@ -124,7 +136,7 @@ void MGUIOptionsDetectorEffectsEngine::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsDetectorEffectsEngine::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsSimulationLoader::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -155,19 +167,23 @@ bool MGUIOptionsDetectorEffectsEngine::ProcessMessage(long Message, long Paramet
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsDetectorEffectsEngine::OnApply()
+bool MGUIOptionsSimulationLoader::OnApply()
 {
-	// Modify this to store the data in the module!
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetTimeOffset0(m_TimeOffset0NumEntry->GetIntNumber());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetTimeOffset(m_TimeOffsetNumEntry->GetNumber());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetLoadDeadStrip(m_DeadStripButton->IsOn());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetLoadCoincidence(m_CoincidenceButton->IsOn());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetLoadAntiCoincidence(m_AntiCoincidenceButton->IsOn());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetRunEnergySharing(m_ChargeSharingButton->IsOn());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetRunCrosstalk(m_CrosstalkButton->IsOn());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetNonlinearGain(m_NonlinearGainButton->IsOn());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetKeepLLDOnly(m_KeepLLDOnlyButton->IsOn());
-  dynamic_cast<MNCTModuleDetectorEffectsEngine*>(m_Module)->SetVerbose(m_VerboseButton->IsOn());
+  // Modify this to store the data in the module!
+  
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetTimeOffset0(m_TimeOffset0NumEntry->GetIntNumber());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetTimeOffset(m_TimeOffsetNumEntry->GetNumber());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetLoadDeadStrip(m_DeadStripButton->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetLoadCoincidence(m_CoincidenceButton->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetLoadAntiCoincidence(m_AntiCoincidenceButton->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetRunEnergySharing(m_ChargeSharingButton->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetRunCrosstalk(m_CrosstalkButton->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetNonlinearGain(m_NonlinearGainButton->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetKeepLLDOnly(m_KeepLLDOnlyButton->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetVerbose(m_VerboseButton->IsOn());
+  
   return true;
 }
 

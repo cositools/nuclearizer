@@ -132,7 +132,7 @@ void MGUINuclearizerMain::Create()
 
 
   // Main label
-  MString TitleIconName("$(NUCLEARIZER)/resource/Nuclearizer.xpm");
+  MString TitleIconName("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
   MFile::ExpandFileName(TitleIconName);
   
   TGLayoutHints* TitleIconLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2, 2, 10, 0);
@@ -170,42 +170,15 @@ void MGUINuclearizerMain::Create()
   
   
   TGLayoutHints* SectionLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, 10);
-  TGLayoutHints* FileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0, 0, 5, 5);
+  
 
-  /*
-  // Section 1: File loading
-  TGGroupFrame* Loading = new TGGroupFrame(this, "Section: File loading");
-  AddFrame(Loading, SectionLayout);
-
-  m_FileSelectorLoad = new MGUIEFileSelector(Loading, "Select a simulation or data file:", 
-                                            m_Data->GetLoadFileName());
-  m_FileSelectorLoad->SetFileType("Simulation file", "*.sim");
-  m_FileSelectorLoad->SetFileType("Real data file", "*.dat");
-  Loading->AddFrame(m_FileSelectorLoad, FileSelectorLayout);
-
-  m_FileSelectorGeometry = new MGUIEFileSelector(Loading, "Select a geometry file:", 
-                                                m_Data->GetGeometryFileName());
-  m_FileSelectorGeometry->SetFileType("Geometry file", "*.geo.setup");
-  Loading->AddFrame(m_FileSelectorGeometry, FileSelectorLayout);
-  */
-
-  // Section 2: Modules
+  // Modules
   m_ModuleFrame = new TGGroupFrame(this, "Choose the module sequence for your detector setup");
   AddFrame(m_ModuleFrame, SectionLayout);
 
   m_ModuleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 3, 3);
   UpdateModules();
 
-  /*
-  // Section 3: File saving
-  TGGroupFrame* Saving = new TGGroupFrame(this, "Section: File saving");
-  AddFrame(Saving, SectionLayout);
-
-  m_FileSelectorSave = new MGUIEFileSelector(Saving, "", 
-                                            m_Data->GetSaveFileName());
-  m_FileSelectorSave->SetFileType("Events file", "*.evta");
-  Saving->AddFrame(m_FileSelectorSave, FileSelectorLayout);
-  */
 
   // Start & Exit buttons
   // Frame around the buttons:

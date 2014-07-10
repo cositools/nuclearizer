@@ -86,6 +86,9 @@ private:
     //! The simulated energy deposit
     double m_Energy;
   
+    //! True if this is a guard ring
+    bool m_IsGuardRing;
+    
     //! A list of original strip hits making up this strip hit
     vector<MNCTDEEStripHit> m_SubStripHits;
   };
@@ -246,11 +249,15 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     
     // Step (1): Convert positions into strip hits
     list<MNCTDEEStripHit> StripHits;
+    
+    // The real strips
     for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
       MSimHT* HT = Event->GetHTAt(h);
       MDVolumeSequence* VS = HT->GetVolumeSequence();
       MDDetector* Detector = VS->GetDetector();
       MString DetectorName = Detector->GetName();
+      DetectorName.RemoveAllInPlace("Detector_");
+      int DetectorID = DetectorName.ToInt();
       
       MNCTDEEStripHit pSide;
       MNCTDEEStripHit nSide;
@@ -259,35 +266,6 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       nSide.m_ROE.IsPositiveStrip(false);
 
       // Convert detector name in detector ID
-      int DetectorID = 0;
-      if (DetectorName == "Detector_01") {
-        DetectorID = 1;
-      } else if (DetectorName == "Detector_02") {
-        DetectorID = 2;
-      } else if (DetectorName == "Detector_03") {
-        DetectorID = 3;
-      } else if (DetectorName == "Detector_04") {
-        DetectorID = 4;
-      } else if (DetectorName == "Detector_05") {
-        DetectorID = 5;
-      } else if (DetectorName == "Detector_06") {
-        DetectorID = 6;
-      } else if (DetectorName == "Detector_07") {
-        DetectorID = 7;
-      } else if (DetectorName == "Detector_08") {
-        DetectorID = 8;
-      } else if (DetectorName == "Detector_09") {
-        DetectorID = 9;
-      } else if (DetectorName == "Detector_10") {
-        DetectorID = 10;
-      } else if (DetectorName == "Detector_11") {
-        DetectorID = 11;
-      } else if (DetectorName == "Detector_12") {
-        DetectorID = 12;
-      } else {
-        merr<<"Unknown detector name: "<<DetectorName<<endl;
-        continue;
-      }
       pSide.m_ROE.SetDetectorID(DetectorID);
       nSide.m_ROE.SetDetectorID(DetectorID);
       
@@ -307,6 +285,24 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       
       StripHits.push_back(pSide);
       StripHits.push_back(nSide);
+    }
+    
+    // and the guard ring hits
+    for (unsigned int h = 0; h < Event->GetNGRs(); ++h) {
+      MSimGR* GR = Event->GetGRAt(h);
+      MDVolumeSequence* VS = GR->GetVolumeSequence();
+      MDDetector* Detector = VS->GetDetector();
+      MString DetectorName = Detector->GetName();
+      DetectorName.RemoveAllInPlace("Detector_");
+      int DetectorID = DetectorName.ToInt();
+      
+      MNCTDEEStripHit GuardRingHit;
+      GuardRingHit.m_ROE.IsPositiveStrip(true); // <-- not important
+      GuardRingHit.m_ROE.SetDetectorID(DetectorID);
+      GuardRingHit.m_ROE.SetStripID(38); // ?
+      
+      GuardRingHit.m_Energy = GR->GetEnergy();
+      GuardRingHit.m_Position = MVector(0, 0, 0); // <-- not important
     }
     
     
@@ -360,7 +356,11 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     }
     
     
-    // Step (5): Apply thresholds and triggers
+    // Step (5): Apply thresholds and triggers including guard ring hits
+    //            (a) use the trigger threshold calibration and invert it here 
+    //            (b) take care of guard ring hits with their special thresholds
+    //            (c) take care of hits in dead strips
+    //            (d) throw out hits which did not trigger
     list<MNCTDEEStripHit>::iterator i = MergedStripHits.begin();
     while (i != MergedStripHits.end()) {
       if ((*i).m_Energy < 0) { // Dummy threshold of 0 keV sharp

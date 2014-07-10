@@ -225,15 +225,15 @@ void MNCTEvent::AddStripHit(MNCTStripHit* StripHit)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 void MNCTEvent::RemoveStripHit(unsigned int i)
 {
   //! Remove a strip hit
-  if ( (i>=0) && (i<m_StripHits.size()) )
-    {
-      vector<MNCTStripHit*>::iterator it;
-      it = m_StripHits.begin()+i;
-      m_StripHits.erase(it);
-    }
+  if (i < m_StripHits.size()) {
+    vector<MNCTStripHit*>::iterator it;
+    it = m_StripHits.begin()+i;
+    m_StripHits.erase(it);
+  }
 }
 
 

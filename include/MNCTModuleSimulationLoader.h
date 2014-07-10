@@ -1,7 +1,7 @@
 /*
- * MNCTModuleDetectorEffectsEngine.h
+ * MNCTModuleSimulationLoader.h
  *
- * Copyright (C) 2008-2008 by Jau-Shian Liang.
+ * Copyright (C) by Jau-Shian Liang, Andreas Zoglauer.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MNCTModuleDetectorEffectsEngine__
-#define __MNCTModuleDetectorEffectsEngine__
+#ifndef __MNCTModuleSimulationLoader__
+#define __MNCTModuleSimulationLoader__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -20,13 +20,14 @@
 #include <cmath>
 
 // ROOT libs:
+#include "TRandom.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MNCTModule.h"
 #include "MDGeometryQuest.h"
+#include "MFileEventsSim.h"
 #include "MVector.h"
-#include "TRandom.h"
 #include "MNCTArray.h"
 #include "MNCTMath.h"
 #include "MNCTDetectorArray.h"
@@ -39,20 +40,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleDetectorEffectsEngine : public MNCTModule
+class MNCTModuleSimulationLoader : public MNCTModule, public MFileEventsSim
 {
   // public interface:
  public:
   //! Default constructor
-  MNCTModuleDetectorEffectsEngine();
+  MNCTModuleSimulationLoader();
   //! Default destructor
-  virtual ~MNCTModuleDetectorEffectsEngine();
+  virtual ~MNCTModuleSimulationLoader();
 
   //! Initialize the module
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MNCTEvent* Event);
+
+  //! Apply the detector effects
+  virtual bool ApplyDetectorEffects(MNCTEvent* Event);
 
   //! 
   virtual MString Report();
@@ -129,7 +133,7 @@ class MNCTModuleDetectorEffectsEngine : public MNCTModule
 
 #ifdef ___CINT___
  public:
-  ClassDef(MNCTModuleDetectorEffectsEngine, 0) // no description
+  ClassDef(MNCTModuleSimulationLoader, 0) // no description
 #endif
 
 };
