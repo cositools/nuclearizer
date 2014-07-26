@@ -146,7 +146,7 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       ToSend.push_back(static_cast<uint8_t>(c));
     }
     Handshaker->Send(ToSend);
-    cout<<"Sent connection request"<<endl;
+    cout<<"Sent connection request: "<<msg.str()<<endl;
     
     Wait = 10000;
     bool Restart = false;
