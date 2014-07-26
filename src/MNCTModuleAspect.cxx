@@ -191,7 +191,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   
   if (AspectData.size() != 6) {
     // some kind of failure in finding the aspect; veto the event
-    Event->SetAspectGood(false);
+    Event->SetAspect(0);
     cout<<"Bad code: We do not want to veto events with bad aspect, but set some kind of bad aspect flag!!!"<<endl; 
     m_NBadEvent++;
     return true;
@@ -214,9 +214,11 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   //double LAST_deg = m_TCCalculator.LAST_degrees();
   //mout << "  LAST=" << LAST_deg << '\n';
   
-  Event->SetLatitude(Lat);
-  Event->SetLongitude(Lon);
-  Event->SetAltitude(Alt);
+  MNCTAspect* A = new MNCTAspect();
+  
+  A->SetLatitude(Lat);
+  A->SetLongitude(Lon);
+  A->SetAltitude(Alt);
 
   // determine elevation and azimuth angles of x and z
   vector<double> Cryo_X = m_TCCalculator.CryoX_to_Horizon(dGPS_Pitch, dGPS_Roll, dGPS_Heading);
@@ -230,7 +232,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
     {
       v_gz = m_TCCalculator.Equatorial2Galactic(v_gz);
     }
-  Event->SetGZ(v_gz);
+  A->SetGalacticPointingZAxis(v_gz[0], v_gz[1]);
   if(m_Verbose) mout << "Aspect: GZ " << v_gz[0] << ' ' << v_gz[1] << endl;
   
   //GX
@@ -241,7 +243,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
     {
       v_gx = m_TCCalculator.Equatorial2Galactic(v_gx);
     }
-  Event->SetGX(v_gx);
+  A->SetGalacticPointingXAxis(v_gx[0], v_gx[1]);
   if(m_Verbose) mout << "Aspect: GX " << v_gx[0] << ' ' << v_gx[1] << endl;
   
   //HZ (cryostat Z expressed in local horizon coordinates (azi,alt))
@@ -249,7 +251,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   v_hz.clear();
   v_hz.push_back(-1.0*Cryo_Z[0]);
   v_hz.push_back(Cryo_Z[1]);
-  Event->SetHZ(v_hz);
+  A->SetHorizonPointingXAxis(v_hz[0], v_hz[1]);
   if(m_Verbose) mout << "Aspect: HZ " << v_hz[0] << ' ' << v_hz[1] << endl;
   
   //HX (cryostat X expressed in local horizon coordinates (azi,alt))
@@ -257,7 +259,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   v_hx.clear();
   v_hx.push_back(-1.0*Cryo_X[0]);
   v_hx.push_back(Cryo_X[1]);
-  Event->SetHX(v_hx);
+  A->SetHorizonPointingXAxis(v_hx[0], v_hx[1]);
   if(m_Verbose) mout << "Aspect: HX " << v_hx[0] << ' ' << v_hx[1] << endl << endl;
   
   //Update output time
@@ -265,8 +267,7 @@ bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event)
   Event->SetTime(time_after_MJDZero);
 
   // We're done; update the event
-  Event->SetAspectAdded(true);
-  Event->SetAspectGood(true);
+  Event->SetAspect(A);
 
   return true;
 }

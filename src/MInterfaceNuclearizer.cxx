@@ -196,8 +196,32 @@ bool MInterfaceNuclearizer::Analyze()
   while (true) {
     // Reset the event to zero
     Event->Clear();
+
+    // Some modules need to be made ready for the next event, do this here
+    bool AllReady = true;
+    bool AllOK = true;
+    do {
+      AllReady = true;
+      AllOK = true;
+      for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+        if (m_Data->GetModule(m)->IsReady() == false) {
+          mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not yet ready..."<<endl;
+          AllReady = false;
+        }
+        if (m_Data->GetModule(m)->IsOK() == false) {
+          mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not longer healthy... aborting..."<<endl;
+          AllOK = false;
+        }
+      }
+      if (AllReady == false && AllOK == true) {
+        cout<<"Not all modules ready (probably waiting for more data)... sleeping 100 ms"<<endl;
+        gSystem->Sleep(100);
+      }
+    } while (AllReady == false && AllOK == true);
+    if (AllOK == false) break;
     
-    // Loop over all modules:
+      
+    // Loop over all modules and do the analysis
     for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
       // Do the analysis
       if (m_Data->GetModule(m)->AnalyzeEvent(Event) == false) {
@@ -220,116 +244,6 @@ bool MInterfaceNuclearizer::Analyze()
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
     m_Data->GetModule(m)->Finalize();
   }
-
-  
-  mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
-  
-  return true;
-  
-  // Old NCT mode:
-  /*
-  
-  // Load file
-  MNCTFile* Reader = new MNCTFile(m_Data->GetGeometryFileName());
-  Reader->Open(m_Data->GetLoadFileName(), MFile::c_Read);
-  int HighestAnalysisLevel = m_Data->GetHighestAnalysisLevel();
-  
-  if (m_Data->LoadGeometry() == false) return false;
-  
-  // The save file
-  MNCTFile* Writer = new MNCTFile();
-  Writer->Open(m_Data->GetSaveFileName(), MFile::c_Create, HighestAnalysisLevel);
-  
-  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
-    if (m_Data->GetModule(m)->Initialize() == false) {
-      mout<<"Initialization of module "<<m_Data->GetModule(m)->GetName()<<" failed"<<endl;
-      return false;
-    }
-  }
-  
-  // set up a progress bar
-  Reader->ShowProgress(m_UseGui);
-  Reader->SetProgressTitle("Progress", "Progress of processing events...");
-  
-  
-  MNCTEvent* Event;
-  if (Reader->IsReadSim()) {
-    mout << "Read simulation file!!!" <<endl;
-    while ((Event = Reader->GetNextEvent()) != 0) {
-      // Do the pipeline
-      for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
-        // Only analyze non-vetoed, triggered events
-        if (Event->GetVeto() == true || Event->GetTrigger() == false) {
-          break;
-        }
-        // Do the analysis
-        if (m_Data->GetModule(m)->AnalyzeEvent(Event) == false) {
-          mout<<"Analysis failed for event "<<Event->GetID()
-          <<" in module \""<<m_Data->GetModule(m)->GetName()<<"\""<<endl;
-          break;
-        }
-      }
-      if ((Event->GetTrigger()&& HighestAnalysisLevel == MNCTData::c_DataSimed 
-        && !Event->GetVeto()) || Event->IsDepthCalibrated() ) {
-        Writer->Write(Event, HighestAnalysisLevel);
-        }
-        delete Event;
-    }
-    
-    // Report information what we want
-    mout << "====================================================" << endl;
-    mout << "Module Report:" << endl;
-    for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
-      mout << '[' << m_Data->GetModule(m)->GetName() << ']' << endl;
-      mout << m_Data->GetModule(m)->Report();
-      mout << endl;
-    }
-    
-  } else {
-    // Initialize the preprocessor
-    mout << "Read dat file: " << m_Data->GetLoadFileName() << endl;
-    MNCTPreprocessor* Preprocessor = new MNCTPreprocessor(Reader);
-    Preprocessor->Initialize();
-    
-    while ((Event = Preprocessor->GetNextEvent()) != 0) {
-      // Do the pipeline
-      for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
-        // Only analyze non-vetoed, triggered events
-        if (Event->GetVeto() == true || Event->GetTrigger() == false) {
-          break;
-        }
-        // Do the analysis
-        if (m_Data->GetModule(m)->AnalyzeEvent(Event) == false) {
-          mout<<"Analysis failed for event "<<Event->GetID()
-          <<" in module \""<<m_Data->GetModule(m)->GetName()<<"\""<<endl;
-          break;
-        }
-      }
-      
-      
-      // Write the event
-      if (Event->IsDepthCalibrated() == true && !(Event->GetVeto())) {
-        Writer->Write(Event, HighestAnalysisLevel);
-      }
-      delete Event;
-    }
-    
-    // Report information what we want
-    mout << "====================================================" << endl;
-    mout << "Module Report:" << endl ;
-    for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
-      mout << '[' << m_Data->GetModule(m)->GetName() << ']' << endl;
-      mout << m_Data->GetModule(m)->Report();
-      mout << endl;
-    }
-    
-    delete Preprocessor;
-  }
-  
-  // Delete & thus close the files:
-  delete Reader;
-  delete Writer;
-  */
   
   mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
   

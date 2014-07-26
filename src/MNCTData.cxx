@@ -39,6 +39,7 @@
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleMeasurementLoaderNCT2009.h"
 #include "MNCTModuleMeasurementLoaderGRIPS2013.h"
+#include "MNCTModuleReceiverCOSI2014.h"
 #include "MNCTModuleSimulationLoader.h"
 #include "MNCTModuleEnergyCalibration.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
@@ -84,6 +85,7 @@ MNCTData::MNCTData()
   m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderROA());
   m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderGRIPS2013());
   m_AvailableModules.push_back(new MNCTModuleMeasurementLoaderNCT2009());
+  m_AvailableModules.push_back(new MNCTModuleReceiverCOSI2014());
   
   m_AvailableModules.push_back(new MNCTModuleEventFilter());
   //m_AvailableModules.push_back(new MNCTModuleEnergyCalibration());

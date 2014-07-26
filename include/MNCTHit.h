@@ -1,7 +1,7 @@
 /*
  * MNCTHit.h
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.

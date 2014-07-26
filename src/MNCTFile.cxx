@@ -36,6 +36,7 @@
 #include "MAssert.h"
 #include "MNCTData.h"
 #include "MNCTEvent.h"
+#include "MNCTAspect.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -312,15 +313,15 @@ bool MNCTFile::Write(MNCTEvent* Event, int HighestAnalysisLevel)
   //    out.unsetf(ios_base::fixed);
       out << "PQ " << setprecision(7) << Event->GetEventQuality() << endl;
 
-      if(Event->IsAspectAdded())
-	{
-	  out << "LT " << setprecision(6) << Event->GetLatitude() << endl;
-	  out << "LN " << setprecision(7) << Event->GetLongitude() << endl;
-	  out << "AL " << setprecision(5) << Event->GetAltitude() << endl;
-	  out << "GX " << setprecision(6) << (Event->GetGX())[0] << ' ' << (Event->GetGX())[1] <<endl;
-	  out << "GZ " << setprecision(6) << (Event->GetGZ())[0] << ' ' << (Event->GetGZ())[1] <<endl;
-	  out << "HX " << setprecision(6) << (Event->GetHX())[0] << ' ' << (Event->GetHX())[1] <<endl;
-	  out << "HZ " << setprecision(6) << (Event->GetHZ())[0] << ' ' << (Event->GetHZ())[1] <<endl;
+      if (Event->GetAspect() != 0) {
+        MNCTAspect* A = Event->GetAspect();
+	  out << "LT " << setprecision(6) << A->GetLatitude() << endl;
+	  out << "LN " << setprecision(7) << A->GetLongitude() << endl;
+	  out << "AL " << setprecision(5) << A->GetAltitude() << endl;
+	  out << "GX " << setprecision(6) << A->GetGalacticPointingXAxisLongitude() << ' ' << A->GetGalacticPointingXAxisLatitude() <<endl;
+	  out << "GZ " << setprecision(6) << A->GetGalacticPointingZAxisLongitude() << ' ' << A->GetGalacticPointingZAxisLatitude() <<endl;
+	  out << "HX " << setprecision(6) << A->GetHorizonPointingXAxisAzimuthNorth() << ' ' << A->GetHorizonPointingXAxisElevation() <<endl;
+	  out << "HZ " << setprecision(6) << A->GetHorizonPointingZAxisAzimuthNorth() << ' ' << A->GetHorizonPointingZAxisElevation() <<endl;
 	}
 
       for (unsigned int h = 0; h < Event->GetNHits(); ++h) {

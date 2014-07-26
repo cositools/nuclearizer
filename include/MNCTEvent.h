@@ -22,6 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MNCTAspect.h"
 #include "MNCTStripHit.h"
 #include "MNCTGuardringHit.h"
 #include "MNCTHit.h"
@@ -74,30 +75,37 @@ class MNCTEvent
   void SetMJD(double MJD) { m_MJD = MJD; }
   double GetMJD() const { return m_MJD; }
 
+  /*
   //! Set and get the latitude, longitude, and altitude of this event
-  void SetLatitude(double lat) { m_Latitude = lat; }
-  double GetLatitude() const { return m_Latitude; }
-  void SetLongitude(double lon) { m_Longitude = lon; }
-  double GetLongitude() const { return m_Longitude; }
-  void SetAltitude(double alt) { m_Altitude = alt; }
-  double GetAltitude() const { return m_Altitude; }
+  void SetLatitude(double lat) { m_Aspect->SetLatutide(lat); }
+  double GetLatitude() const { return m_Aspect->GetLatitude(); }
+  void SetLongitude(double lon) { m_Aspect->SetLongitude(lon); }
+  double GetLongitude() const { return m_Aspect->GetLongitude(); }
+  void SetAltitude(double alt) { m_Aspect->SetAltitude(alt); }
+  double GetAltitude() const { return m_Aspect->GetAltitude(); }
 
   //! Set Aspect of this event (galactic coordinates)
-  void SetGX(vector<double> GX) {m_GX = GX;}
-  void SetGZ(vector<double> GZ) {m_GZ = GZ;}
+  void SetGX(MVector GX) { m_Aspect->SetGalacticPointingXAxis(GX); }
+  void SetGZ(MVector GZ) { m_Aspect->SetGalacticPointingZAxis(GZ); }
 
   //! Get Aspect of this event (galactic coordinates)
-  vector<double> GetGX() const { return m_GX;}
-  vector<double> GetGZ() const { return m_GZ;}
+  MVector GetGX() const { return m_Aspect->GetGalacticPointingXAxis(); }
+  MVector GetGZ() const { return m_Aspect->SetGalacticPointingZAxis(); }
 
   //! Set Aspect of this event (local horizon coordinates)
-  void SetHX(vector<double> HX) {m_HX = HX;}
-  void SetHZ(vector<double> HZ) {m_HZ = HZ;}
+  void SetHX(MVector HX) { m_Aspect->SetHorizonPointingXAxis(HX); }
+  void SetHZ(MVector HZ) { m_Aspect->SetHorizonPointingZAxis(HZ); }
 
   //! Get Aspect of this event (local horizon coordinates)
-  vector<double> GetHX() const { return m_HX;}
-  vector<double> GetHZ() const { return m_HZ;}
-
+  MVector GetHX() const { return m_Aspect->GetHorizonPointingXAxis(); }
+  MVector GetHZ() const { return m_Aspect->GetHorizonPointingZAxis(); }
+  */
+  
+  //! Set the aspect
+  void SetAspect(MNCTAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
+  //! Get the aspect - will be zero if the aspect has not been set!
+  MNCTAspect* GetAspect() { return m_Aspect; }
+  
   //! Find out if the event contains strip hits in a given detector
   bool InDetector(int DetectorID);
 
@@ -233,6 +241,7 @@ class MNCTEvent
   MTime m_Time;
   double m_MJD;
 
+  /*
   //! Location of this event
   double m_Latitude;
   double m_Longitude;
@@ -243,7 +252,11 @@ class MNCTEvent
   vector<double> m_GZ;
   vector<double> m_HX;
   vector<double> m_HZ;
-
+  */
+  
+  //! The aspect information - will be zero if not set!
+  MNCTAspect* m_Aspect;
+  
   //! Quality of this event
   double m_EventQuality;
 

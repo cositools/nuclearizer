@@ -58,6 +58,8 @@ $(LB)/MGUIModuleSelector.o \
 $(LB)/MNCTArray.o \
 $(LB)/MNCTCoincidenceVolume.o \
 $(LB)/MNCTDetectorArray.o \
+$(LB)/MNCTAspect.o \
+$(LB)/MNCTAspectReconstruction.o \
 $(LB)/MNCTEvent.o \
 $(LB)/MNCTHit.o \
 $(LB)/MNCTHitInVoxel.o \
@@ -82,6 +84,8 @@ $(LB)/MNCTModuleMeasurementLoaderROA.o \
 $(LB)/MNCTModuleMeasurementLoaderGRIPS2013.o \
 $(LB)/MNCTModuleMeasurementLoaderNCT2009.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
+$(LB)/MNCTModuleReceiverCOSI2014.o \
+$(LB)/MGUIOptionsReceiverCOSI2014.o \
 $(LB)/MNCTModuleEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibrationUniversal.o \
 $(LB)/MGUIOptionsEnergyCalibrationUniversal.o \

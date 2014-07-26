@@ -51,7 +51,8 @@ MNCTEvent::MNCTEvent()
   // Construct an instance of MNCTEvent
 
   m_PhysicalEvent = 0; // Set pointer to zero before delete
-
+  m_Aspect = 0;
+  
   Clear();
 //  mout<<"create MNCTEvent!!\n" ;//debug
 }
@@ -90,6 +91,7 @@ MNCTEvent::~MNCTEvent()
   // Delete this instance of MNCTEvent
   delete m_PhysicalEvent;
   
+  delete m_Aspect;
 //  mout<<"delete MNCTEvent!!\n" ;//debug
 }
 
@@ -107,17 +109,9 @@ void MNCTEvent::Clear()
   m_FC = 0;
   m_Time = 0;
   m_MJD = 0.0;
-  m_Latitude = 0.0;
-  m_Longitude = 0.0;
-  m_Altitude = 0.0;
-  m_GX.clear();
-  m_GZ.clear();
-  m_HX.clear();
-  m_HZ.clear();
 
   m_Veto = false;
   m_Trigger = true;
-  m_AspectGood = true;
 
   for (int DetectorID = 0; DetectorID <= 9; DetectorID++) {
     m_InDetector[DetectorID] = false;
@@ -151,6 +145,9 @@ void MNCTEvent::Clear()
 
   delete m_PhysicalEvent;
   m_PhysicalEvent = 0;
+  
+  delete m_Aspect;
+  m_Aspect = 0;
 }
 
 
@@ -326,14 +323,8 @@ bool MNCTEvent::Stream(ofstream& S, int Version, int Mode)
   S<<"ID "<<m_ID<<endl;
   S<<"TI "<<m_Time<<endl;
 
-  if (m_AspectAdded == true && m_AspectGood == true) {
-    S<<"LT "<<setprecision(8)<<m_Latitude<<endl;
-    S<<"LN "<<setprecision(8)<<m_Longitude<<endl;
-    S<<"AL "<<setprecision(8)<<m_Altitude<<endl;
-    S<<"GX "<<setprecision(8)<<m_GX[0]<<" "<<m_GX[1]<<endl;
-    S<<"GZ "<<setprecision(8)<<m_GZ[0]<<" "<<m_GZ[1]<<endl;
-    S<<"HX "<<setprecision(8)<<m_HX[0]<<" "<<m_HX[1]<<endl;
-    S<<"HZ "<<setprecision(8)<<m_HZ[0]<<" "<<m_HZ[1]<<endl;
+  if (m_Aspect != 0) {
+    m_Aspect->Stream(S, Version);
   }
   
   if (Mode == 0) { // Dat mode

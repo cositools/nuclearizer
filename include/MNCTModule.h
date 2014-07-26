@@ -54,6 +54,7 @@ class MNCTModule
   static const int c_EventLoader              = 14;
   static const int c_EventLoaderSimulation    = 11;
   static const int c_EventLoaderMeasurement   = 12;
+  static const int c_EventOrdering            = 15;
   static const int c_DetectorEffectsEngine    = 1;
   static const int c_EventFilter              = 2;
   static const int c_EnergyCalibration        = 3;
@@ -109,6 +110,11 @@ class MNCTModule
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
 
+  //! Return if the module is ready to analyze events
+  virtual bool IsReady() { return m_IsReady; }
+
+  //! Return if the status of the module is OK
+  virtual bool IsOK() { return m_IsOK; }
 
   // protected methods:
  protected:
@@ -149,6 +155,12 @@ class MNCTModule
   //! True, if this module has an options GUI
   bool m_HasOptionsGUI;
 
+  //! True, if the module is ready to analyze events
+  bool m_IsReady;
+  
+  //! True, if the status of the module is OK
+  bool m_IsOK;
+  
   // private members:
  private:
 

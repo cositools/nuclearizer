@@ -1,8 +1,8 @@
 /*
- * MNCTModule.cxx
+ * MNCTAspectReconstruction.cxx
  *
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -18,82 +18,92 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MNCTModule
+// MNCTAspectReconstruction
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MNCTModule.h"
+#include "MNCTAspectReconstruction.h"
 
 // Standard libs:
 
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MNCTModule)
+ClassImp(MNCTAspectReconstruction)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModule::MNCTModule()
+MNCTAspectReconstruction::MNCTAspectReconstruction()
 {
-  // Construct an instance of MNCTModule
+  // Construct an instance of MNCTAspectReconstruction
 
-  m_Name = "Base class...";
-  m_XmlTag = "BaseClass"; // No spaces allowed
+  Clear();
+}
 
-  m_HasOptionsGUI = false;
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MNCTAspectReconstruction::~MNCTAspectReconstruction()
+{
+  // Delete this instance of MNCTAspectReconstruction
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTAspectReconstruction::Clear()
+{
+  // Reset all data
+
+  for (auto A: m_Aspects) {
+    delete A;
+  }
+  m_Aspects.clear();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTAspectReconstruction::AddAspectFrame(vector<uint8_t> Frame)
+{
+  // Add and reconstruction one or more aspect frames - return false on error
+
+  MNCTAspect* Aspect = new MNCTAspect;
   
-  m_IsOK = true;
-  m_IsReady = false;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MNCTModule::~MNCTModule()
-{
-  // Delete this instance of MNCTModule
-}
-
-////////////////////////////////////////////////////////////////////////////////
-MString MNCTModule::Report()
-{
-
-  return "";
-}
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MNCTModule::ReadXmlConfiguration(MXmlNode* Node)
-{
-  //! Read the configuration data from an XML node
-
+  // Fill the Aspect object with data from Frame
+  
+  
+  // Add it, but make sure m_Aspect stays sorted by time! 
+  m_Aspects.push_back(Aspect);
+  
   return true;
 }
-
+  
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MNCTModule::CreateXmlConfiguration() 
+MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime Time)
 {
-  //! Create an XML node tree from the configuration
+  //! Get the aspect for the given time, return 0 if we do not have enough data for the given time
 
-  MXmlNode* Node = new MXmlNode(0, m_XmlTag);
-
-  return Node;
+  return m_Aspects.front(); // <--- this is definitely wrong
 }
 
 
-// MNCTModule.cxx: the end...
+// MNCTAspectReconstruction.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
