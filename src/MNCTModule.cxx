@@ -53,7 +53,7 @@ MNCTModule::MNCTModule()
   m_HasOptionsGUI = false;
   
   m_IsOK = true;
-  m_IsReady = false;
+  m_IsReady = true;
 }
 
 
