@@ -530,15 +530,18 @@ bool MGUINuclearizerMain::OnGeometry()
   // Show the geometry dialog
   // Returns the geometry file name
 
-  MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_Data->GetGeometryFileName());
+  MString Name = m_Data->GetGeometryFileName();
+  MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), gClient->GetRoot(), Name);
   gClient->WaitForUnmap(Geo);
-  MString Name = Geo->GetGeometryFileName();
-  delete Geo;
-  for (unsigned int i = 0; i < 100; ++i) {
-    gSystem->ProcessEvents();
-  }
+  if (Geo->OkPressed() == true) {
+    Name = Geo->GetGeometryFileName();
+    delete Geo;
+    for (unsigned int i = 0; i < 100; ++i) {
+      gSystem->ProcessEvents();
+    }
 
-  m_Data->SetGeometryFileName(Name);
+    m_Data->SetGeometryFileName(Name);
+  }
 
   return true;
 }
