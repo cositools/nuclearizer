@@ -107,6 +107,8 @@ $(LB)/MNCTModuleEventFilter.o \
 $(LB)/MNCTModuleDumpEvent.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MNCTModuleEventSaver.o \
+$(LB)/MNCTModuleTransmitterRealta.o \
+$(LB)/MGUIOptionsTransmitterRealta.o \
 $(LB)/MGUIOptionsAspect.o \
 $(LB)/MGUIOptionsEventFilter.o \
 $(LB)/MNCTPreprocessor.o \

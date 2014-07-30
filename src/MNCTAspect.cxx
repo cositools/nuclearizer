@@ -88,7 +88,6 @@ void MNCTAspect::Clear()
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -105,6 +104,20 @@ bool MNCTAspect::Stream(ofstream& S, int Version)
   S<<"HZ "<<setprecision(8)<<m_HorizonPointingZAxisAzimuthNorth<<" "<<m_HorizonPointingZAxisElevation<<endl;
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTAspect::StreamEvta(ostream& S)
+{
+  // Stream the content in MEGAlib's evta format 
+       
+  S<<"GX "<<setprecision(8)<<m_GalacticPointingXAxisLongitude<<" "<<m_GalacticPointingXAxisLatitude<<endl;
+  S<<"GZ "<<setprecision(8)<<m_GalacticPointingZAxisLongitude<<" "<<m_GalacticPointingZAxisLatitude<<endl;
+  S<<"HX "<<setprecision(8)<<m_HorizonPointingXAxisAzimuthNorth<<" "<<m_HorizonPointingXAxisElevation<<endl;
+  S<<"HZ "<<setprecision(8)<<m_HorizonPointingZAxisAzimuthNorth<<" "<<m_HorizonPointingZAxisElevation<<endl;
 }
 
 

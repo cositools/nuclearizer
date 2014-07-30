@@ -59,6 +59,7 @@
 #include "MNCTModuleEventFilter.h"
 #include "MNCTModuleDumpEvent.h"
 #include "MNCTModuleEventSaver.h"
+#include "MNCTModuleTransmitterRealta.h"
 //#include "MNCTModuleEventReconstruction.h"
 
 
@@ -105,6 +106,7 @@ MNCTData::MNCTData()
   m_AvailableModules.push_back(new MNCTModuleAspect());
   m_AvailableModules.push_back(new MNCTModuleDumpEvent());
   m_AvailableModules.push_back(new MNCTModuleEventSaver());
+  m_AvailableModules.push_back(new MNCTModuleTransmitterRealta());
   //m_AvailableModules.push_back(new MNCTModuleEventReconstruction());
 
   // All the rest:

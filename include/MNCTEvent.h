@@ -209,6 +209,8 @@ class MNCTEvent
   bool Parse(MString& Line, int Version);
   //! Dump the content into a file stream
   bool Stream(ofstream& S, int Version, int Mode = 0);
+  //! Stream the content in MEGAlib's evta format 
+  void StreamEvta(ostream& S);
 
 
   // protected methods:

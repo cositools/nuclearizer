@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsReceiverCOSI2014.cxx
+ * MGUIOptionsTransmitterRealta.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsReceiverCOSI2014.h"
+#include "MGUIOptionsTransmitterRealta.h"
 
 // Standard libs:
 
@@ -30,21 +30,21 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MNCTModule.h"
-#include "MNCTModuleReceiverCOSI2014.h"
+#include "MNCTModuleTransmitterRealta.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MGUIOptionsReceiverCOSI2014)
+ClassImp(MGUIOptionsTransmitterRealta)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsReceiverCOSI2014::MGUIOptionsReceiverCOSI2014(MNCTModule* Module) 
+MGUIOptionsTransmitterRealta::MGUIOptionsTransmitterRealta(MNCTModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -54,7 +54,7 @@ MGUIOptionsReceiverCOSI2014::MGUIOptionsReceiverCOSI2014(MNCTModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsReceiverCOSI2014::~MGUIOptionsReceiverCOSI2014()
+MGUIOptionsTransmitterRealta::~MGUIOptionsTransmitterRealta()
 {
   // kDeepCleanup is activated 
 }
@@ -63,23 +63,20 @@ MGUIOptionsReceiverCOSI2014::~MGUIOptionsReceiverCOSI2014()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsReceiverCOSI2014::Create()
+void MGUIOptionsTransmitterRealta::Create()
 {
   PreCreate();
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 
-  m_DistributorName = new MGUIEEntry(this, "Distributor name/IP: ", false,
-                              dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorName());
-  AddFrame(m_DistributorName, LabelLayout);
+  m_HostName = new MGUIEEntry(this, "Host name/IP: ", false,
+                              dynamic_cast<MNCTModuleTransmitterRealta*>(m_Module)->GetHostName());
+  AddFrame(m_HostName, LabelLayout);
 
-  m_DistributorPort = new MGUIEEntry(this, "Distributor listening port: ", false,
-                              dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorPort());
-  AddFrame(m_DistributorPort, LabelLayout);
+  m_HostPort = new MGUIEEntry(this, "Host listening port: ", false,
+                              dynamic_cast<MNCTModuleTransmitterRealta*>(m_Module)->GetHostPort());
+  AddFrame(m_HostPort, LabelLayout);
 
-  m_DistributorStreamID = new MGUIEEntry(this, "Stream ID: ", false,
-                              dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorStreamID());
-  AddFrame(m_DistributorStreamID, LabelLayout);
 
   PostCreate();
 }
@@ -88,7 +85,7 @@ void MGUIOptionsReceiverCOSI2014::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsReceiverCOSI2014::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsTransmitterRealta::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -119,17 +116,16 @@ bool MGUIOptionsReceiverCOSI2014::ProcessMessage(long Message, long Parameter1, 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsReceiverCOSI2014::OnApply()
+bool MGUIOptionsTransmitterRealta::OnApply()
 {
   // Modify this to store the data in the module!
 
-  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorName(m_DistributorName->GetAsString());
-  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorPort(m_DistributorPort->GetAsInt());
-  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorStreamID(m_DistributorStreamID->GetAsString());
+  dynamic_cast<MNCTModuleTransmitterRealta*>(m_Module)->SetHostName(m_HostName->GetAsString());
+  dynamic_cast<MNCTModuleTransmitterRealta*>(m_Module)->SetHostPort(m_HostPort->GetAsInt());
   
   return true;
 }
 
 
-// MGUIOptionsReceiverCOSI2014: the end...
+// MGUIOptionsTransmitterRealta: the end...
 ////////////////////////////////////////////////////////////////////////////////

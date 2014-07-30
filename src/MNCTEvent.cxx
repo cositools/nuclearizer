@@ -341,5 +341,26 @@ bool MNCTEvent::Stream(ofstream& S, int Version, int Mode)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTEvent::StreamEvta(ostream& S)
+{
+  //! Stream the content in MEGAlib's evta format 
+
+  S<<"SE"<<endl;
+  S<<"ID "<<m_ID<<endl;
+  S<<"TI "<<m_Time<<endl;
+
+  if (m_Aspect != 0) {
+    m_Aspect->StreamEvta(S);
+  }
+  
+  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+    m_Hits[h]->StreamEvta(S);  
+  }
+}
+  
+
 // MNCTEvent.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

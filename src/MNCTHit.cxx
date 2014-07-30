@@ -107,5 +107,16 @@ bool MNCTHit::Stream(ofstream& S, int Version)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTHit::StreamEvta(ostream& S)
+{
+  //! Stream the content to an ASCII file 
+  
+  S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy<<endl;
+}
+
+
 // MNCTHit.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
