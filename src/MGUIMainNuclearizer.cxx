@@ -556,15 +556,16 @@ bool MGUINuclearizerMain::OnAbout()
 
   MGUIAbout* About = new MGUIAbout(gClient->GetRoot(), this);
   About->SetProgramName("Nuclearizer");
-  //About->SetIconPath(g_MEGAlibPath + "/resource/icons/mimrec/Small.xpm");
+  About->SetIconPath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
   //About->SetLeadProgrammer("Andreas Zoglauer");
-  About->SetCopyright("(C) by Andreas Zoglauer, Mark Bandstra,\nJau-Shian Liang, and Daniel Perez-Becker\nAll rights reserved");
-  //About->SetReference("Implementation details of the imaging approach", 
-  //                    "A. Zoglauer et al., \"Design, implementation, and optimization of MEGAlib's image reconstruction tool Mimrec \", NIM A 652, 2011");
-  //About->SetReference("A detailed description of list-mode likelihood image reconstruction - in German", 
-  //                    "A. Zoglauer, \"Methods of image reconstruction for the MEGA Compton telescope\", Diploma thesis, TU Munich, 2000");
-  //About->SetReference("Chapter 5: List-mode image reconstruction applied to the MEGA telecope", 
-  //                    "A. Zoglauer, \"First Light for the Next Generation of Compton and Pair Telescopes\", Doctoral thesis, TU Munich, 2005");
+  About->SetUpdates("");
+  About->SetProgrammers("Alan Chiu, Alex Lowell, Andreas Zoglauer,\nAres Hernandez, Carolyn Kierans, Clio Sleator,\nDaniel Perez-Becker, Eric Bellm, Jau-Shian Liang,\nMark Bandstra", true);
+  About->SetCopyright("All rights reserved");
+  About->ShowReferencesTab(false);
+  About->ShowPeopleTab(false);
+  About->ShowBugsTab(false);
+  About->ShowDisclaimerTab(false);
+  
   About->Create();
   
   return true;
