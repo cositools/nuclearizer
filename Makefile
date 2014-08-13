@@ -44,8 +44,8 @@ ifeq ($(ARCH),macosx)
 CXXFLAGS += -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7
 PYTHONLIBS  += -L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/ -lpython2.7
 else
-CXXFLAGS += -I/usr/include/python2.7
-PYTHONLIBS  += -lpython2.7
+CXXFLAGS += `python-config --includes`
+PYTHONLIBS += `python-config --libs`
 endif
 
 # Names of the programs
