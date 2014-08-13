@@ -42,6 +42,46 @@ class MNCTAspect
   //! Reset all data
   void Clear();
 
+
+////////////////////////////////////////////////////////////////////////////////
+  
+  //Ares' 1st set of adjustments begin here (there are more later).
+  
+  
+  //! Set the m_GPS_or_magnetometer
+  void SetTime(MTime tim) { m_Time = tim; }
+  //! Get the m_GPS_or_magnetometer
+  MTime GetTime() const { return m_Time; }
+  
+  
+  //! Set the m_GPS_or_magnetometer
+  void SetFlag(int fla) { m_Flag = fla; }
+  //! Get the m_GPS_or_magnetometer
+  int GetFlag() const { return m_Flag; }
+  //! Set the m_GPS_or_magnetometer
+  void SetGPS_Or_Magnetometer(int GPS) { m_GPS_Or_Magnetometer = GPS; }
+  //! Get the m_GPS_or_magnetometer
+  int GetGPS_Or_Magnetometer() const { return m_GPS_Or_Magnetometer; }
+ 
+  //! Set the heading
+  void SetHeading(double hea) { m_Heading = hea; }
+  //! Get the heading
+  double GetHeading() const { return m_Heading; }
+  //! Set the pitch
+  void SetPitch(double pit) { m_Pitch = pit; }
+  //! Get the pitch
+  double GetPitch() const { return m_Pitch; }
+  //! Set the roll
+  void SetRoll(double rol) { m_Roll = rol; }
+  //! Get the roll
+  double GetRoll() const { return m_Roll; }
+    
+  
+  //Ares' 1st set of adjustments end here (there are more later).
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+
   //! Set the latitude
   void SetLatitude(double lat) { m_Latitude = lat; }
   //! Get the latitude
@@ -109,6 +149,31 @@ class MNCTAspect
  private:
   //! Time when this aspect was measured
   MTime m_Time;
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  //Ares' 2nd (and last) set of adjustments begin here.
+  
+  
+  //! 0=No Problem;1=Data is not trustworthy.
+  int m_Flag;
+
+  //! 0=GPS;1=magnetometer
+  int m_GPS_Or_Magnetometer;
+
+  //! This heading is used to determine whether or not data should be flagged as untrustworthy.
+  double m_Heading;
+  //! This pitch is used to determine whether or not data should be flagged as untrustworthy.
+  double m_Pitch;
+  //! This roll is used to determine whether or not data should be flagged as untrustworthy.
+  double m_Roll;
+ 
+  
+  //Ares' 2nd (and last) set of adjustments end here.
+  
+////////////////////////////////////////////////////////////////////////////////
+  
   
   //! Latitude of the measurement
   double m_Latitude;

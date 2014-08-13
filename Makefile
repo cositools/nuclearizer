@@ -38,6 +38,8 @@ include $(MEGALIB)/config/Makefile.config
 #
 
 CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
+# Python
+CXXFLAGS += -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/ -lpython2.7
 
 # Names of the programs
 NUCLEARIZERPRG = $(BN)/nuclearizer
@@ -168,6 +170,7 @@ $(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
 
 $(DEEPRG): $(NUCLEARIZERSHAREDLIB) $(DEECXX)
 	@echo "Linking and compiling $(subst $(BN)/,,$(DEEPRG)) ... Please stand by ... "
+	@echo $(CXX) $(CXXFLAGS) $(LDFLAGS) $(DEECXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(DEEPRG)
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DEECXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(DEEPRG)
 
 

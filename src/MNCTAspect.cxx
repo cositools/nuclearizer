@@ -72,6 +72,26 @@ void MNCTAspect::Clear()
 
   m_Time.Set(0);
   
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  //Ares' adjustments begin here.
+  
+  
+  m_Flag = 1;
+
+  m_Heading = 0;
+  m_Pitch = 0;
+  m_Roll = 0;
+
+  m_GPS_Or_Magnetometer = 0;
+    
+  
+  //Ares' adjustments end here.
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  
   m_Latitude = 0;
   m_Longitude = 0;
   m_Altitude = 0;
