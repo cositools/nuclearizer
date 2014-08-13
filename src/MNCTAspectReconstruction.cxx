@@ -1394,7 +1394,7 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime Time){
   Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
   MTime time_after_last_data;
   MTime time_until_next_data;
-  for(int i = 0; i <= m_Aspects.size() - 1; i++){
+  for(unsigned int i = 0; i < m_Aspects.size(); i++){
   	cout << "flag value is: " << endl;
   	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time < 0){
@@ -1427,7 +1427,7 @@ if(Desired_MNCTAspect->GetGPS_Or_Magnetometer() == 2){
   Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
   MTime time_after_last_data;
   MTime time_until_next_data;
-  for(int i = 0; i <= m_Aspects.size() - 1; i++){
+  for(unsigned int i = 0; i < m_Aspects.size(); i++){
   	cout << "flag value is: " << endl;
   	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time < 0){
@@ -1467,7 +1467,7 @@ MNCTAspect* MNCTAspectReconstruction::GetAspectGPS(MTime Time){
   Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
   MTime time_after_last_data;
   MTime time_until_next_data;
-  for(int i = 0; i <= m_Aspects.size() - 1; i++){
+  for(unsigned int i = 0; i < m_Aspects.size(); i++){
   	cout << "flag value is: " << endl;
   	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time < 0){
@@ -1505,7 +1505,7 @@ MNCTAspect* MNCTAspectReconstruction::GetAspectMagnetometer(MTime Time){
   Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
   MTime time_after_last_data;
   MTime time_until_next_data;
-  for(int i = 0; i <= m_Aspects.size() - 1; i++){
+  for(unsigned int i = 0; i < m_Aspects.size(); i++){
   	cout << "flag value is: " << endl;
   	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time < 0){
