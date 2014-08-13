@@ -39,7 +39,14 @@ include $(MEGALIB)/config/Makefile.config
 
 CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
 # Python
-CXXFLAGS += -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/ -lpython2.7
+
+ifeq ($(ARCH),macosx)
+CXXFLAGS += -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7
+PYTHONLIBS  += -L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/ -lpython2.7
+else
+CXXFLAGS += -I/usr/include/python2.7
+PYTHONLIBS  += -lpython2.7
+endif
 
 # Names of the programs
 NUCLEARIZERPRG = $(BN)/nuclearizer
@@ -127,7 +134,7 @@ ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectr
 ALLLIBS += -lMathCore
 
 #----------------------------------------------------------------
-# Built-in targets
+# Built-in targets$(PYTHONLIBS)
 #
 
 .EXPORT_ALL_VARIABLES: all header sources doc clean
@@ -162,16 +169,15 @@ $(NUCLEARIZERLIB): $(LB)/%.o: src/%.cxx include/%.h
 
 $(NUCLEARIZERSHAREDLIB): $(NUCLEARIZERLIB)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(GLIBS) $(LIBS) -o $(NUCLEARIZERSHAREDLIB)
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
 
 $(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZERPRG)) ... Please stand by ... "
-	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZERCXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZERPRG)
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZERCXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERPRG)
 
 $(DEEPRG): $(NUCLEARIZERSHAREDLIB) $(DEECXX)
 	@echo "Linking and compiling $(subst $(BN)/,,$(DEEPRG)) ... Please stand by ... "
-	@echo $(CXX) $(CXXFLAGS) $(LDFLAGS) $(DEECXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(DEEPRG)
-	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DEECXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(DEEPRG)
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DEECXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(DEEPRG)
 
 
 #
