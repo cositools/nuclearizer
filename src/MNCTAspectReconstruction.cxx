@@ -38,14 +38,15 @@
 #include "cstdio"
 #include "cstdlib"
 
-#include<iostream>
-#include<fstream>
+#include <iostream>
+#include <fstream>
 #include <sstream>
-#include<string>
-#include<cmath>
-#include<cstring>
-#include<stdio.h>
-#include<string.h>
+#include <string>
+#include <cmath>
+#include <cstring>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
 
 using namespace std;
 
@@ -1361,7 +1362,7 @@ cout << i << endl;
 
 
 cout << "preparing to list vector elements with flags" << endl;
-for(int i = 0; i < m_Aspects.size(); i++){
+for(unsigned int i = 0; i < m_Aspects.size(); i++){
 	if(m_Aspects[i]->GetFlag() == 1){
 		cout << i << endl;
 		}
