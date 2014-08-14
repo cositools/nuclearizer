@@ -2,12 +2,12 @@
  * MNCTModuleStripPairingGreedy_a.cxx
  *
  *
- * Copyright (C) 2008-2008 by Daniel Perez-Becker.
+ * Copyright (C) by Clio Sleator & Daniel Perez-Becker.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * Clio Sleator & Daniel Perez-Becker.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -53,34 +53,22 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MNCTModule()
 	// Set all module relevant information
 
 	// Set the module name --- has to be unique
-	m_Name = "Strip pairing b";
+	m_Name = "Strip pairing - Clio's \"Greedy\" version";
 
 	// Set the XML tag --- has to be unique --- no spaces allowed
 	m_XmlTag = "StripPairingGreedy_b";
 
 	// Set all modules, which have to be done before this module
-	//AddPreceedingModuleType(c_DetectorEffectsEngine);
-	AddPreceedingModuleType(c_EnergyCalibration);
-	//AddPreceedingModuleType(c_ChargeSharingCorrection);
-	//AddPreceedingModuleType(c_DepthCorrection);
-	//AddPreceedingModuleType(c_StripPairingGreedy_a);
-	//AddPreceedingModuleType(c_EventReconstruction);
+  AddPreceedingModuleType(c_EventLoader);
+  AddPreceedingModuleType(c_EnergyCalibration);
 
 	// Set all types this modules handles
-	//AddModuleType(c_DetectorEffectsEngine);
-	//AddModuleType(c_EnergyCalibration);
-	//AddModuleType(c_ChargeSharingCorrection);
-	//AddModuleType(c_DepthCorrection);
 	AddModuleType(c_StripPairing);
-	//AddModuleType(c_EventReconstruction);
 
 	// Set all modules, which can follow this module
-	//AddSucceedingModuleType(c_DetectorEffectsEngine);
-	//AddSucceedingModuleType(c_EnergyCalibration);
 	AddSucceedingModuleType(c_ChargeSharingCorrection);
 	AddSucceedingModuleType(c_DepthCorrection);
 	AddSucceedingModuleType(c_Aspect);
-	//AddSucceedingModuleType(c_StripPairingGreedy_a);
 	AddSucceedingModuleType(c_Else);
 	AddSucceedingModuleType(c_EventReconstruction);
 	AddSucceedingModuleType(c_EventSaver);
@@ -176,7 +164,7 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector
 	int n_y = 0;
 
 	//Find the number of hits per side for this detector
-	for (int i = 0; i < Event->GetNStripHits(); i++){
+	for (unsigned int i = 0; i < Event->GetNStripHits(); i++){
 		if (detector == Event->GetStripHit(i)->GetDetectorID()){
 			if (Event->GetStripHit(i)->IsXStrip() == true){
 				n_x += 1;
@@ -206,7 +194,7 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector
 		int stripID;
 		float stripEnergy, stripSigma;
 
-		for (int i=0; i<Event->GetNStripHits(); i++){
+		for (unsigned int i=0; i<Event->GetNStripHits(); i++){
 			if (detector == Event->GetStripHit(i)->GetDetectorID()){
 				if (Event->GetStripHit(i)->IsXStrip() == true){
 					stripID = Event->GetStripHit(i)->GetStripID();
@@ -273,7 +261,7 @@ void MNCTModuleStripPairingGreedy_b::CalculateDetectorQuality(){
 	float detectorQuality = 0;
 	int counter = 0;
 
-	for (int i=0; i<hitQualityFactor.size(); i++){
+	for (unsigned int i=0; i<hitQualityFactor.size(); i++){
 		detectorQuality = detectorQuality + hitQualityFactor.at(i);
 		counter += 1;
 	}
@@ -320,11 +308,11 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MNCTEvent* Event, int detector){
 
 	bool addHit = false;
 
-	for (int pair=0; pair<decodedFinalPairs.size(); pair++){
+	for (unsigned int pair=0; pair<decodedFinalPairs.size(); pair++){
 		MNCTHit* Hit = new MNCTHit();
 		//x side
-		for (int strip=0; strip<decodedFinalPairs.at(pair).at(0).size(); strip++){
-			for (int n = 0; n<Event->GetNStripHits(); n++){
+		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(0).size(); strip++){
+			for (unsigned int n = 0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
 					if (Event->GetStripHit(n)->IsXStrip() == true){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(0).at(strip)){
@@ -340,8 +328,8 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MNCTEvent* Event, int detector){
 			}
 		}
 		//y side
-		for (int strip=0; strip<decodedFinalPairs.at(pair).at(1).size(); strip++){
-			for (int n=0; n<Event->GetNStripHits(); n++){
+		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(1).size(); strip++){
+			for (unsigned int n=0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
 					if (Event->GetStripHit(n)->IsXStrip() == false){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(1).at(strip)){
@@ -1066,7 +1054,7 @@ void MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 
 	//print final pairs
 //	cout << "final pairs: " << endl;
-	for (int i=0; i<finalPairs.size(); i++){
+	for (unsigned int i=0; i<finalPairs.size(); i++){
 		cout << finalPairs.at(i).at(0) << '\t' << finalPairs.at(i).at(1) << endl;
 	}
 };
@@ -1167,8 +1155,8 @@ bool MNCTModuleStripPairingGreedy_b::CheckAllStripsWerePaired(){
 		//n indexes original hits
 		for (int n=0; n<nHitsOrig.at(axis); n++){
 			//i, j, k index decodedFinalPairs
-			for (int i=0; i<decodedFinalPairs.size(); i++){
-				for (int k=0; k<decodedFinalPairs.at(i).at(axis).size(); k++){
+			for (unsigned int i=0; i<decodedFinalPairs.size(); i++){
+				for (unsigned int k=0; k<decodedFinalPairs.at(i).at(axis).size(); k++){
 					if (stripsHit.at(axis).at(n) == decodedFinalPairs.at(i).at(axis).at(k)){
 						counter += 1;
 					}
