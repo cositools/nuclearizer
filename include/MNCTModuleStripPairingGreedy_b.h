@@ -1,7 +1,7 @@
 /*
  * MNCTModuleStripPairingGreedy_b.h
  *
- * Copyright (C) 2008-2008 by Daniel Perez-Becker
+ * Copyright (C) by Clio Sleator & Daniel Perez-Becker
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
