@@ -111,6 +111,7 @@ $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
 $(LB)/MNCTModuleStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
+$(LB)/MNCTModuleStripPairingGreedy_b.o \
 $(LB)/MNCTModuleAspect.o \
 $(LB)/MNCTModuleEventFilter.o \
 $(LB)/MNCTModuleDumpEvent.o \
