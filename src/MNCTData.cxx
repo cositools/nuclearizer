@@ -440,6 +440,9 @@ bool MNCTData::Load(MString FileName)
   if (VersionNode != 0) {
     Version = VersionNode->GetValueAsInt();
   }
+  if (Version != 1) {
+    mout<<"Info: While we do have a higher version than 1, everything is still fixed at version 1"<<endl;
+  }
 
   MXmlNode* ModuleSequence = Document->GetNode("ModuleSequence");
   if (ModuleSequence != 0) {
@@ -559,13 +562,13 @@ int MNCTData::GetHighestAnalysisLevel() const
   bool FoundEventReconstruction = false;
   bool FoundStripPairing = false;
   bool FoundDepthCorrection = false;
-  bool FoundChargeSharingCorrection = false;
-  bool FoundCrosstalkCorrection = false;
+  //bool FoundChargeSharingCorrection = false;
+  //bool FoundCrosstalkCorrection = false;
   bool FoundEnergyCalibration = false;
-  bool FoundAspect = false;
-  bool FoundElse = false;
+  //bool FoundAspect = false;
+  //bool FoundElse = false;
   bool FoundDetectorEffectsEngine = false;
-  bool FoundEventFilter = false;
+  //bool FoundEventFilter = false;
 
   for (unsigned int m = 0; m < m_Modules.size(); ++m) {
     for (unsigned int t = 0; t < m_Modules[m]->GetNModuleTypes(); ++t) {
@@ -575,20 +578,20 @@ int MNCTData::GetHighestAnalysisLevel() const
         FoundStripPairing = true;
       } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_DepthCorrection) {
         FoundDepthCorrection = true;
-      } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_ChargeSharingCorrection) {
-        FoundChargeSharingCorrection = true;
+      //} else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_ChargeSharingCorrection) {
+      //  FoundChargeSharingCorrection = true;
       } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_EnergyCalibration) {
         FoundEnergyCalibration = true;
-      } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_Aspect){
-        FoundAspect = true;
-      } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_Else){
-        FoundElse = true;
-      } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_EventFilter){
-        FoundEventFilter = true;
+      //} else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_Aspect){
+      //  FoundAspect = true;
+      //} else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_Else){
+      //  FoundElse = true;
+      //} else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_EventFilter){
+      //  FoundEventFilter = true;
       } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_DetectorEffectsEngine) {
         FoundDetectorEffectsEngine = true;
-      } else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_CrosstalkCorrection) {
-        FoundCrosstalkCorrection = true;
+      //} else if (m_Modules[m]->GetModuleType(t) == MNCTModule::c_CrosstalkCorrection) {
+      //  FoundCrosstalkCorrection = true;
       } else {
         merr<<"Not implemented module type: "<<m_Modules[m]->GetModuleType(t)<<endl;
       }
