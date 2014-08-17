@@ -145,7 +145,7 @@ bool MNCTModuleEventSaver::AnalyzeEvent(MNCTEvent* Event)
 {
   // Main data analysis routine, which updates the event to a new level
 
-  Event->Stream(m_Out, 1, m_Mode);
+  Event->StreamEvta(m_Out);
   
   return true;
 }
