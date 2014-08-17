@@ -26,6 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MVector.h"
 #include "MNCTAspect.h"
+#include "MNCTAspectPacket.h"
 
 // Forward declarations:
 
@@ -46,7 +47,7 @@ class MNCTAspectReconstruction
   void Clear();
 
   //! Add and reconstruction one or more aspect frames - return false on error
-  bool AddAspectFrame(vector<uint8_t> Frame); 
+  bool AddAspectFrame(MNCTAspectPacket PacketA); 
 
   //! Get the aspect for the given time, return 0 if we do not have enough data for the given time
   MNCTAspect* GetAspect(MTime Time);

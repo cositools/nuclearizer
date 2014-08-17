@@ -59,6 +59,7 @@ using namespace std;
 
 
 #include "MNCTAspectReconstruction.h"
+#include "MNCTAspectPacket.h"
 
 // Standard libs:
 
@@ -133,236 +134,14 @@ void MNCTAspectReconstruction::Clear()
 
 // Add and reconstruction one or more aspect frames - return false on error
 			
-bool MNCTAspectReconstruction::AddAspectFrame(vector<uint8_t> Frame)
+bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 {
-	
-	
-//Here we make a class of objects known as "Packets."
-	
-	
-	class Packet{
-		public:
-			int GPS_or_magnetometer; //0=GPS;1=magnetometer;2=no good data at
-			/*specified time (when the GetAspect, GetAspectGPS, and 
-			GetAspectMagnetometer search functions fail to find an MNCTAspect
-			object at a specified time they return a dummy MNCTAspect object
-			with its m_GPS_Or_Magnetometer attribute equal to 2*/
-			string date_and_time;
-			unsigned int nanoseconds;
-			double geographic_longitude;
-			double geographic_latitude;
-			double elevation;
-			double heading;
-			double pitch;
-			double roll;
-		};	
-	
-	
-	
-	Packet PacketA;
-	
-//Alex's code should go here. It should use the raw GPS and magnetometer data frames to
-//create "Packets" like in the form specified above. When that is done, please delete
-//the 10 dummy data packets below.	
-	
-//This for loop is temporary and used to create the 10 dummy data packets below. Please
-//delete it later!!!!!!!	
-	
-for(int i = 0; i < 10; i++)	
-{	
-	
+
+
 	
   MNCTAspect* Aspect = new MNCTAspect;
 
   
-// Fill the Aspect object with data from Frame. The data from the frame must have
-// been parsed and inserted into PacketA via Alex's code.
-  
-
-/*
-If you want to test this program for a dummy GPS data instead of dummy magnetometer
-data please uncomment out the batch of code below and comment out the 10 batches 
-(and their for loop) underneath. When all is said and done, the GPS and magnetometer 
-dummy data packets here will give two wildly different pointing directions. Do not 
-be alarmed. This dummy data originates from an instance when the gps and magnetometer 
-were not properly aligned during data collection. Hence the discrepancy. If the gps 
-and magnetometer are aligned in flight, real data should produce pointing directions
-that are the same for both.
-*/
-		
-		
-/*	Packet PacketA;
-		PacketA.GPS_or_magnetometer = 0;	
-		PacketA.date_and_time = "2014/6/19 21:33:59";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 377.85;
-		PacketA.heading = 154.6264;
-		PacketA.pitch = -0.71;
-		PacketA.roll = -1.65; */
-
-//The 10 dummy packets of magnetometer data begin below
-
-if(i == 0){ 
-
-			
-	
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:33:59";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 0.1;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-		
-if(i == 1){ 		
-		
-		
-	
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:00";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 100.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-		
-if(i == 2){ 		
-		
-	
-	
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:01";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 200.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}	
-	
-if(i == 3){ 		
-		
-		
-		
-	
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:02";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 300.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-		
-if(i == 4){ 		
-		
-		
-	
-	
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:03";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 400.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-	
-if(i == 9){ 
-		
-		
-	
-		
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:04";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 500.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-	
-if(i == 8){ 	
-		
-		
-
-
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:05";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 600.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-	
-if(i == 7){ 	
-		
-		
-
-
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:06";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 700.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-		
-if(i == 6){ 		
-		
-		
-
-
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:07";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 800.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-	
-if(i == 5){ 	
-		
-		
-
-
-		PacketA.GPS_or_magnetometer = 1;
-		PacketA.date_and_time = "2014/6/19 21:34:08";
-		PacketA.nanoseconds = 0;
-		PacketA.geographic_longitude = -122.2333333;
-		PacketA.geographic_latitude = 37.8666667;
-		PacketA.elevation = 900.0;
-		PacketA.heading = 155.33698;
-		PacketA.pitch = 4.54129;
-		PacketA.roll = 355.76718;
-	}
-		
-		
-//The 10 packets of magnetometer data end here.
 
 	
 //Here we record the geographic longitude & latitude, as well as the height above sea
@@ -650,17 +429,17 @@ system to their form in the telescope's coordinate system. At this point, they a
 		
 		"	Zpointing1 = [[sum(a*b for a,b in zip(ZYX_row,Zpointing0_col)) for Zpointing0_col in zip(*Zpointing0)] for ZYX_row in ZYX]\n"
 		"	print 'Zpointing1 is: ', Zpointing1 \n"
-		"	Zpointing2 = [[0.0 - Zpointing1[1][0]],[0.0 - Zpointing1[0][0]],[0.0 - Zpointing1[2][0]]]\n"
+		"	Zpointing2 = [[Zpointing1[1][0]],[Zpointing1[0][0]],[0.0 - Zpointing1[2][0]]]\n"
 		"	print 'Zpointing2 is: ', Zpointing2 \n"
 		
 		"	Ypointing1 = [[sum(a*b for a,b in zip(ZYX_row,Ypointing0_col)) for Ypointing0_col in zip(*Ypointing0)] for ZYX_row in ZYX]\n"
 		"	print 'Ypointing1 is: ', Ypointing1 \n"
-		"	Ypointing2 = [[0.0 - Ypointing1[1][0]],[0.0 - Ypointing1[0][0]],[0.0 - Ypointing1[2][0]]]\n"
+		"	Ypointing2 = [[Ypointing1[1][0]],[Ypointing1[0][0]],[0.0 - Ypointing1[2][0]]]\n"
 		"	print 'Ypointing2 is: ', Ypointing2 \n"
 		
 		"	Xpointing1 = [[sum(a*b for a,b in zip(ZYX_row,Xpointing0_col)) for Xpointing0_col in zip(*Xpointing0)] for ZYX_row in ZYX]\n"
 		"	print 'Xpointing1 is: ', Xpointing1 \n"
-		"	Xpointing2 = [[0.0 - Xpointing1[1][0]],[0.0 - Xpointing1[0][0]],[0.0 - Xpointing1[2][0]]]\n"
+		"	Xpointing2 = [[Xpointing1[1][0]],[Xpointing1[0][0]],[0.0 - Xpointing1[2][0]]]\n"
 		"	print 'Xpointing2 is: ', Xpointing2 \n"
 
 //Okay now, here's the same thing over again, except this time we are in the second scenario (below) with
@@ -740,80 +519,104 @@ they are now called ZYorXpointing2.*/
 
 //Below we determine the azimuth for the Zpointing2 vector based off of knowing what its x and y components are.
 
-		"a = arctangent(math.fabs(Zpointing2[1][0]/Zpointing2[0][0]))\n"
-		"if Zpointing2[0][0] >= 0.0 and Zpointing2[1][0] >= 0.0:\n"
-		"	Zazimuth = 90.0 - a\n"
-		"if Zpointing2[0][0] >= 0 and Zpointing2[1][0] <= 0.0:\n"
-		"	Zazimuth= 90.0 + a\n"
-		"if Zpointing2[0][0] <= 0.0 and Zpointing2[1][0] <= 0.0:\n"
-		"	Zazimuth = 270.0 - a\n"
-		"if Zpointing2[0][0] <= 0.0 and Zpointing2[1][0] >=0.0 :\n"
-		"	Zazimuth = 270.0 + a\n"
 		"if Zpointing2[0][0] == 0.0 and Zpointing2[1][0] > 0.0:\n"
 		"	Zazimuth = 90.0\n"
-		"if Zpointing2[0][0] < 0.0 and Zpointing2[1][0] == 0.0:\n"
+		"elif Zpointing2[0][0] < 0.0 and Zpointing2[1][0] == 0.0:\n"
 		"	Zazimuth = 180.0\n"
-		"if Zpointing2[0][0] == 0.0 and Zpointing2[1][0] < 0.0:\n"
+		"elif Zpointing2[0][0] == 0.0 and Zpointing2[1][0] < 0.0:\n"
 		"	Zazimuth = 270.0\n"
-		"if Zpointing2[0][0] > 0.0 and Zpointing2[1][0] == 0.0:\n"
+		"elif Zpointing2[0][0] > 0.0 and Zpointing2[1][0] == 0.0:\n"
 		"	Zazimuth = 0.0\n"
-		"if Zpointing2[0][0] == 0.0 and Zpointing2[1][0] == 0.0:\n"
+		"elif Zpointing2[0][0] == 0.0 and Zpointing2[1][0] == 0.0:\n"
 		"	Zazimuth = 0.0\n"
+
+		"else:\n"
+		
+		"	a = arctangent(math.fabs(Zpointing2[1][0]/Zpointing2[0][0]))\n"
+		"	if Zpointing2[0][0] >= 0.0 and Zpointing2[1][0] >= 0.0:\n"
+		"		Zazimuth = 90.0 - a\n"
+		"	if Zpointing2[0][0] >= 0 and Zpointing2[1][0] <= 0.0:\n"
+		"		Zazimuth= 90.0 + a\n"
+		"	if Zpointing2[0][0] <= 0.0 and Zpointing2[1][0] <= 0.0:\n"
+		"		Zazimuth = 270.0 - a\n"
+		"	if Zpointing2[0][0] <= 0.0 and Zpointing2[1][0] >=0.0 :\n"
+		"		Zazimuth = 270.0 + a\n"
+
 		
 //Below we determine the azimuth for the Ypointing2 vector based off of knowing what its x and y components are.		
 
-		"c = arctangent(math.fabs(Ypointing2[1][0]/Ypointing2[0][0]))\n"
-		"if Ypointing2[0][0] >= 0 and Ypointing2[1][0] >= 0:\n"
-		"	Yazimuth = 90 - c\n"
-		"if Ypointing2[0][0] >= 0 and Ypointing2[1][0] <= 0:\n"
-		"	Yazimuth= 90 + c\n"
-		"if Ypointing2[0][0] <= 0 and Ypointing2[1][0] <= 0:\n"
-		"	Yazimuth = 270 - c\n"
-		"if Ypointing2[0][0] <= 0 and Ypointing2[1][0] >=0 :\n"
-		"	Yazimuth = 270 + c\n"
 		"if Ypointing2[0][0] == 0.0 and Ypointing2[1][0] > 0.0:\n"
 		"	Yazimuth = 90.0\n"
-		"if Ypointing2[0][0] < 0.0 and Ypointing2[1][0] == 0.0:\n"
+		"elif Ypointing2[0][0] < 0.0 and Ypointing2[1][0] == 0.0:\n"
 		"	Yazimuth = 180.0\n"
-		"if Ypointing2[0][0] == 0.0 and Ypointing2[1][0] < 0.0:\n"
+		"elif Ypointing2[0][0] == 0.0 and Ypointing2[1][0] < 0.0:\n"
 		"	Yazimuth = 270.0\n"
-		"if Ypointing2[0][0] > 0.0 and Ypointing2[1][0] == 0.0:\n"
+		"elif Ypointing2[0][0] > 0.0 and Ypointing2[1][0] == 0.0:\n"
 		"	Yazimuth = 0.0\n"
-		"if Ypointing2[0][0] == 0.0 and Ypointing2[1][0] == 0.0:\n"
+		"elif Ypointing2[0][0] == 0.0 and Ypointing2[1][0] == 0.0:\n"
 		"	Yazimuth = 0.0\n"
+		
+		"else:\n"		
+		
+		"	c = arctangent(math.fabs(Ypointing2[1][0]/Ypointing2[0][0]))\n"
+		"	if Ypointing2[0][0] >= 0 and Ypointing2[1][0] >= 0:\n"
+		"		Yazimuth = 90 - c\n"
+		"	if Ypointing2[0][0] >= 0 and Ypointing2[1][0] <= 0:\n"
+		"		Yazimuth= 90 + c\n"
+		"	if Ypointing2[0][0] <= 0 and Ypointing2[1][0] <= 0:\n"
+		"		Yazimuth = 270 - c\n"
+		"	if Ypointing2[0][0] <= 0 and Ypointing2[1][0] >=0 :\n"
+		"		Yazimuth = 270 + c\n"
+
 		
 //Below we determine the azimuth for the Xpointing2 vector based off of knowing what its x and y components are.
 		
-		"b = arctangent(math.fabs(Xpointing2[1][0]/Xpointing2[0][0]))\n"
-		"if Xpointing2[0][0] >= 0 and Xpointing2[1][0] >= 0:\n"
-		"	Xazimuth = 90 - b\n"
-		"if Xpointing2[0][0] >= 0 and Xpointing2[1][0] <= 0:\n"
-		"	Xazimuth= 90 + b\n"
-		"if Xpointing2[0][0] <= 0 and Xpointing2[1][0] <= 0:\n"
-		"	Xazimuth = 270 - b\n"
-		"if Xpointing2[0][0] <= 0 and Xpointing2[1][0] >=0 :\n"
-		"	Xazimuth = 270 + b\n"
 		"if Xpointing2[0][0] == 0.0 and Xpointing2[1][0] > 0.0:\n"
 		"	Xazimuth = 90.0\n"
-		"if Xpointing2[0][0] < 0.0 and Xpointing2[1][0] == 0.0:\n"
+		"elif Xpointing2[0][0] < 0.0 and Xpointing2[1][0] == 0.0:\n"
 		"	Xazimuth = 180.0\n"
-		"if Xpointing2[0][0] == 0.0 and Xpointing2[1][0] < 0.0:\n"
+		"elif Xpointing2[0][0] == 0.0 and Xpointing2[1][0] < 0.0:\n"
 		"	Xazimuth = 270.0\n"
-		"if Xpointing2[0][0] > 0.0 and Xpointing2[1][0] == 0.0:\n"
+		"elif Xpointing2[0][0] > 0.0 and Xpointing2[1][0] == 0.0:\n"
 		"	Xazimuth = 0.0\n"
-		"if Xpointing2[0][0] == 0.0 and Xpointing2[1][0] == 0.0:\n"
+		"elif Xpointing2[0][0] == 0.0 and Xpointing2[1][0] == 0.0:\n"
 		"	Xazimuth = 0.0\n"
+		
+		"else:\n"		
+		
+		"	b = arctangent(math.fabs(Xpointing2[1][0]/Xpointing2[0][0]))\n"
+		"	if Xpointing2[0][0] >= 0 and Xpointing2[1][0] >= 0:\n"
+		"		Xazimuth = 90 - b\n"
+		"	if Xpointing2[0][0] >= 0 and Xpointing2[1][0] <= 0:\n"
+		"		Xazimuth= 90 + b\n"
+		"	if Xpointing2[0][0] <= 0 and Xpointing2[1][0] <= 0:\n"
+		"		Xazimuth = 270 - b\n"
+		"	if Xpointing2[0][0] <= 0 and Xpointing2[1][0] >=0 :\n"
+		"		Xazimuth = 270 + b\n"
+
 		
 //Below we determine the "altitude" for the pointing vectors based off of knowing what its x, y, and z 
 //components are. Again, we are using pyephem's definition of altitude for now.	
 		
 		"Zhypot = math.hypot(Zpointing2[0][0],Zpointing2[1][0])\n"
-		"Yhypot = math.hypot(Ypointing2[0][0],Ypointing2[1][0])\n"
-		"Xhypot = math.hypot(Xpointing2[0][0],Xpointing2[1][0])\n"
+		"if Zhypot == 0.0:\n"
+		"	Zaltitude = 90.0\n"	
+		"else:\n"
+		"	Zaltitude = arctangent(Zpointing2[2][0]/Zhypot)\n"		
 		
-		"Zaltitude = arctangent(math.fabs(Zpointing2[2][0]/Zhypot))\n"
-		"Yaltitude = arctangent(math.fabs(Ypointing2[2][0]/Yhypot))\n"
-		"Xaltitude = arctangent(math.fabs(Xpointing2[2][0]/Xhypot))\n"
+		
+		"Yhypot = math.hypot(Ypointing2[0][0],Ypointing2[1][0])\n"
+		"if Yhypot == 0.0:\n"
+		"	Yaltitude = 90.0\n"	
+		"else:\n"		
+		"	Yaltitude = arctangent(Ypointing2[2][0]/Yhypot)\n"		
+		
+		
+		"Xhypot = math.hypot(Xpointing2[0][0],Xpointing2[1][0])\n"
+		"if Xhypot == 0.0:\n"
+		"	Xaltitude = 90.0\n"	
+		"else:\n"		
+		"	Xaltitude = arctangent(Xpointing2[2][0]/Xhypot)\n"		
 		
 //Okay, here we finish up are write down our azimuths and "altitudes" into a text file knwon as
 //"example4.txt." Again, "altitude" is pyephem's altitude.
@@ -1081,7 +884,7 @@ and declination. We then convert these coordinates to Galactic coordinates*/
 	cout << " degrees North" << endl;
 	cout << "Zgalactic longitude is: ";
 	cout << Zgalon;
-	cout << " hours East" << endl;
+	cout << " degrees East" << endl;
 	
 //Now its time we do the same for the Y pointing direction.
 
@@ -1133,7 +936,7 @@ and declination. We then convert these coordinates to Galactic coordinates*/
 	cout << " degrees North" << endl;
 	cout << "Ygalactic longitude is: ";
 	cout << Ygalon;
-	cout << " hours East" << endl;
+	cout << " degrees East" << endl;
 	
 //Okay, again, same deal here except this time for the X pointing direction.
 
@@ -1184,7 +987,7 @@ and declination. We then convert these coordinates to Galactic coordinates*/
 	cout << " degrees North" << endl;
 	cout << "Xgalactic longitude is: ";
 	cout << Xgalon;
-	cout << " hours East" << endl;
+	cout << " degrees East" << endl;
 	
 //Alright, here comes the moment of truth. Now we take everything we just recorded about our aspect
 //information and save it all into an MNCTAspect object.
@@ -1227,9 +1030,9 @@ and declination. We then convert these coordinates to Galactic coordinates*/
 	
   sort(m_Aspects.begin(), m_Aspects.end(), less_than_m_Time());
   
-}  
 
-cout << "finished sorting" << endl;
+
+
   
 /*Now we're really done, right? Nope. Next, we must check with the previous batch of old aspect data 
 we have and see if it is too different from the new data. If it is, we flag our data as untrustworthy.
@@ -1240,23 +1043,31 @@ MNCTAspect object, by MNCTAspect object slowly add in flags everywhere they are 
 
 
 for (unsigned int i = 0; i < m_Aspects.size(); i++){
-	
-cout << "currently inside of suspicious for loop" << endl;
-cout << "currentvalue of i is: "; 
+cout << "currently checking MNCTAspect object # ";
 cout << i << endl;
-cout<<(long) m_Aspects[i] <<endl;
+cout << "GPS_or_magnetometer of this is: ";
+cout << m_Aspects[i]->GetGPS_Or_Magnetometer() << endl;
 	
 /*First things first. We retrieve our old GPS aspect data (if we are checking if a batch of data from
 the magnetometer needs a flag, this old data will just go unused) using the GetPreviousGPS() function.
 The way this function works will be described later.*/
 
 double old_GPS_Xgalon = GetPreviousGPS(m_Aspects[i]->GetTime())->GetGalacticPointingXAxisLongitude();
+cout << "finished looking for previous GPS Xgalon and found: ";
+cout << old_GPS_Xgalon << endl;
 double old_GPS_Zgalon = GetPreviousGPS(m_Aspects[i]->GetTime())->GetGalacticPointingZAxisLongitude();
+cout << "finished looking for previous GPS Zgalon and found: ";
+cout << old_GPS_Zgalon << endl;
 double old_GPS_Xgalat = GetPreviousGPS(m_Aspects[i]->GetTime())->GetGalacticPointingXAxisLatitude();
+cout << "finished looking for previous GPS Xgalat and found: ";
+cout << old_GPS_Xgalat << endl;
 double old_GPS_Zgalat = GetPreviousGPS(m_Aspects[i]->GetTime())->GetGalacticPointingZAxisLatitude();
+cout << "finished looking for previous GPS Zgalat and found: ";
+cout << old_GPS_Zgalat << endl;
 double old_GPS_GPS_or_magnetometer = GetPreviousGPS(m_Aspects[i]->GetTime())->GetGPS_Or_Magnetometer();
+cout << "finished looking for previous GPS GPS_or_magnetometer and found: ";
+cout << old_GPS_GPS_or_magnetometer << endl;
 
-cout << "currently inside of suspicious for loop" << endl;
 
 /*Since we had to create a new for loop, we must retrieve the aspect information for each and every 
 MNCTAspect object we inspect to see if it needs a flag. We do so below: */
@@ -1275,98 +1086,97 @@ the GPS needs a flag, this old data will just go unused) using the GetPreviousMa
 The way this function works will be described later.*/
 
 
-cout << "" << endl;
-cout << "preparing to look for previous Xgalon" << endl;
-cout << "" << endl;
+
 double old_M_Xgalon = GetPreviousMagnetometer(m_Aspects[i]->GetTime())->GetGalacticPointingXAxisLongitude();
-cout << "" << endl;
-cout << "finished looking for previous Xgalon and found: ";
+cout << "finished looking for previous magnetometer Xgalon and found: ";
 cout << old_M_Xgalon << endl;
-cout << "" << endl;
 
-cout << "" << endl;
-cout << "preparing to look for previous Zgalon" << endl;
-cout << "" << endl;
 double old_M_Zgalon = GetPreviousMagnetometer(m_Aspects[i]->GetTime())->GetGalacticPointingZAxisLongitude();
-cout << "" << endl;
-cout << "finished looking for previous Zgalon and found: ";
+cout << "finished looking for previous magnetometer Zgalon and found: ";
 cout << old_M_Zgalon << endl;
-cout << "" << endl;
 
-cout << "" << endl;
-cout << "preparing to look for previous Xgalat" << endl;
-cout << "" << endl;
 double old_M_Xgalat = GetPreviousMagnetometer(m_Aspects[i]->GetTime())->GetGalacticPointingXAxisLatitude();
-cout << "" << endl;
-cout << "finished looking for previous Xgalat and found: ";
+cout << "finished looking for previous magnetometer Xgalat and found: ";
 cout << old_M_Xgalat << endl;
-cout << "" << endl;
 
-cout << "" << endl;
-cout << "preparing to look for previous Zgalat" << endl;
-cout << "" << endl;
 double old_M_Zgalat = GetPreviousMagnetometer(m_Aspects[i]->GetTime())->GetGalacticPointingZAxisLatitude();
-cout << "" << endl;
-cout << "finished looking for previous Zgalat and found: ";
+cout << "finished looking for previous magnetometer Zgalat and found: ";
 cout << old_M_Zgalat << endl;
-cout << "" << endl;
 
-cout << "" << endl;
-cout << "preparing to look for previous GPS_or_magnetometer" << endl;
-cout << "" << endl;
 double old_M_GPS_or_magnetometer = GetPreviousMagnetometer(m_Aspects[i]->GetTime())->GetGPS_Or_Magnetometer();
-cout << "" << endl;
-cout << "finished looking for previous GPS_or_magnetometer and found: ";
+cout << "finished looking for previous magnetometer GPS_or_magnetometer and found: ";
 cout << old_M_GPS_or_magnetometer << endl;
-cout << "" << endl;
 
 //Good. Good. Now it's time for the actual inspection and flagging (if necessary). First, for the GPS:
 
-	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && (abs(Vincenty(old_GPS_Zgalat,Zgalat,old_GPS_Zgalon,Zgalon)) > 10.0 || abs(Vincenty(old_GPS_Xgalat,Xgalat,old_GPS_Xgalon,Xgalon)) > 10.0 || heading >= 360.0 || heading <=-360.0 || pitch >= 360.0 || pitch <= -360.0 || roll >= 360.0 || roll <= -360.0)){
+if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0){
+
+	if(abs(Vincenty(old_GPS_Zgalat,Zgalat,old_GPS_Zgalon,Zgalon)) > 10.0 || abs(Vincenty(old_GPS_Xgalat,Xgalat,old_GPS_Xgalon,Xgalon)) > 10.0 || heading >= 360.0 || heading <=-360.0 || pitch >= 360.0 || pitch <= -360.0 || roll >= 360.0 || roll <= -360.0 || heading == 0.0 || pitch == 0.0 || roll == 0.0){
 		m_Aspects[i]->SetFlag(1);
+		cout << "flag applied" << endl;
+		if(old_GPS_GPS_or_magnetometer == 2 && heading < 360.0 && heading > -360.0 && pitch < 360.0 && pitch > -360.0 && roll < 360.0 && roll > -360.0 && heading != 0.0 && pitch != 0.0 && roll != 0.0){
+			m_Aspects[i]->SetFlag(0);
+			cout << "flag removed due to lack of any previous data at all" << endl;
+			}	
+		if(GetPreviousGPS(m_Aspects[i]->GetTime())->GetFlag() == 1 && heading < 360.0 && heading > -360.0 && pitch < 360.0 && pitch > -360.0 && roll < 360.0 && roll > -360.0 && heading != 0.0 && pitch != 0.0 && roll != 0.0){
+			m_Aspects[i]->SetFlag(0);
+			cout << "flag removed due to previous data having a flag (if previous data exists)" << endl;
+			}
 		}
 	else{
 		m_Aspects[i]->SetFlag(0);
+		cout << i;
+		cout << " passed the Vincenty test" << endl; 
+		cout << "Here is the result: ";
+		cout << abs(Vincenty(old_GPS_Zgalat,Zgalat,old_GPS_Zgalon,Zgalon)) << endl; 
 		}
-	if(old_GPS_GPS_or_magnetometer == 2){
-		m_Aspects[i]->SetFlag(0);
-		}	
-	
+}	
 //Alright, now for the magnetometer:
 
-cout << "preparing to decide if a flag should be placed on element # ";
-cout << i << endl;
 
-	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && (abs(Vincenty(old_M_Zgalat,Zgalat,old_M_Zgalon,Zgalon)) > 10.0 || abs(Vincenty(old_M_Xgalat,Xgalat,old_M_Xgalon,Xgalon)) > 10.0 || heading >= 360.0 || heading <=-360.0 || pitch >= 360.0 || pitch <= -360.0 || roll >= 360.0 || roll <= -360.0)){
+if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1){
+
+	if(abs(Vincenty(old_M_Zgalat,Zgalat,old_M_Zgalon,Zgalon)) > 10.0 || abs(Vincenty(old_M_Xgalat,Xgalat,old_M_Xgalon,Xgalon)) > 10.0 || heading >= 360.0 || heading <=-360.0 || pitch >= 360.0 || pitch <= -360.0 || roll >= 360.0 || roll <= -360.0 || heading == 0.0 || pitch == 0.0 || roll == 0.0){
 		m_Aspects[i]->SetFlag(1);
-		cout << "flag has been placed on element # ";
-		cout << i << endl;
+		cout << "flag applied" << endl;
+		if(old_GPS_GPS_or_magnetometer == 2 && heading < 360.0 && heading > -360.0 && pitch < 360.0 && pitch > -360.0 && roll < 360.0 && roll > -360.0 && heading != 0.0 && pitch != 0.0 && roll != 0.0){
+			m_Aspects[i]->SetFlag(0);
+			cout << "flag removed due to lack of any previous data at all" << endl;
+			}	
+		if(GetPreviousGPS(m_Aspects[i]->GetTime())->GetFlag() == 1 && heading < 360.0 && heading > -360.0 && pitch < 360.0 && pitch > -360.0 && roll < 360.0 && roll > -360.0 && heading != 0.0 && pitch != 0.0 && roll != 0.0){
+			m_Aspects[i]->SetFlag(0);
+			cout << "flag removed due to previous data having a flag (if previous data exists)" << endl;
+			}
 		}
 	else{
 		m_Aspects[i]->SetFlag(0);
-		}
-	if(old_M_GPS_or_magnetometer == 2 && heading < 360.0 && heading > -360.0 && pitch < 360.0 && pitch > -360.0 && roll < 360.0 && roll > -360.0){
-		m_Aspects[i]->SetFlag(0);
-		cout << "flag has been removed from element # ";
 		cout << i;
-		cout << " due to inability to find the preceding element for comparison" << endl;
+		cout << " passed the Vincenty test" << endl; 
+		cout << "Here is the result: ";
+		cout << abs(Vincenty(old_M_Zgalat,Zgalat,old_M_Zgalon,Zgalon)) << endl; 
 		}				
-		
-cout << "finished deciding if a flag should be placed on element # ";
-cout << i << endl;
+}
+	
+	
+	
+	
+	
+	
+	
 	
 } 
 
 //Here ends the second for loop. Now, just as a precaution, we open a 3rd for loop to review which MNCTAspect objects
 //had flags put on them.
 
-
+	
 cout << "preparing to list vector elements with flags" << endl;
 for(unsigned int i = 0; i < m_Aspects.size(); i++){
 	if(m_Aspects[i]->GetFlag() == 1){
 		cout << i << endl;
 		}
 	}		
+    cout << "finished listing vector elements with flags" << endl;
  
 //Alright, we're done here... Just kidding! We still need to review all of the other functions in this file!
  
@@ -1396,8 +1206,6 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime Time){
   MTime time_after_last_data;
   MTime time_until_next_data;
   for(unsigned int i = 0; i < m_Aspects.size(); i++){
-  	cout << "flag value is: " << endl;
-  	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time < 0){
   		time_after_last_data = Time - m_Aspects[i]->GetTime();
   		Lower_MNCTAspect = m_Aspects[i];
@@ -1429,8 +1237,6 @@ if(Desired_MNCTAspect->GetGPS_Or_Magnetometer() == 2){
   MTime time_after_last_data;
   MTime time_until_next_data;
   for(unsigned int i = 0; i < m_Aspects.size(); i++){
-  	cout << "flag value is: " << endl;
-  	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time < 0){
   		time_after_last_data = Time - m_Aspects[i]->GetTime();
   		Lower_MNCTAspect = m_Aspects[i];
@@ -1469,8 +1275,6 @@ MNCTAspect* MNCTAspectReconstruction::GetAspectGPS(MTime Time){
   MTime time_after_last_data;
   MTime time_until_next_data;
   for(unsigned int i = 0; i < m_Aspects.size(); i++){
-  	cout << "flag value is: " << endl;
-  	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time < 0){
   		time_after_last_data = Time - m_Aspects[i]->GetTime();
   		Lower_MNCTAspect = m_Aspects[i];
@@ -1507,8 +1311,6 @@ MNCTAspect* MNCTAspectReconstruction::GetAspectMagnetometer(MTime Time){
   MTime time_after_last_data;
   MTime time_until_next_data;
   for(unsigned int i = 0; i < m_Aspects.size(); i++){
-  	cout << "flag value is: " << endl;
-  	cout << m_Aspects[i]->GetFlag() << endl;
   	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time < 0){
   		time_after_last_data = Time - m_Aspects[i]->GetTime();
   		Lower_MNCTAspect = m_Aspects[i];
@@ -1653,7 +1455,7 @@ double MNCTAspectReconstruction::arctangent2(double y, double x){
 //between two points on a sphere if given the longitude and latitude of each.
 	
 double MNCTAspectReconstruction::Vincenty(double old_glat, double new_glat, double old_glon, double new_glon){
-	double great_circle_distance = arctangent2(sqrt(pow(cosine(new_glat) * sine(abs(new_glon - old_glon)),2) + pow(cosine(old_glat) * sine(old_glat) - sine(old_glat) * cosine(new_glat) * cos(abs(new_glon - old_glon)),2)),sine(old_glat)*sine(new_glat) + cosine(old_glat) * cosine(new_glat) * cosine(abs(new_glon - old_glon)));
+	double great_circle_distance = arctangent2(sqrt(pow(cosine(new_glat) * sine(abs(new_glon - old_glon)),2) + pow(cosine(old_glat) * sine(new_glat) - sine(old_glat) * cosine(new_glat) * cosine(abs(new_glon - old_glon)),2)),sine(old_glat)*sine(new_glat) + cosine(old_glat) * cosine(new_glat) * cosine(abs(new_glon - old_glon)));
 	return great_circle_distance;
 	}
 
