@@ -237,7 +237,7 @@ bool MInterfaceNuclearizer::Analyze()
         break;
       }
     }
-    if (Event->IsDataRead() == false) break;
+    //if (Event->IsDataRead() == false) break;
   }
   
   // Finalize the modules:
