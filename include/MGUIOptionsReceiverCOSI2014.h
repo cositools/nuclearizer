@@ -31,6 +31,7 @@
 #include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
 #include "MGUIEEntry.h"
+#include "MGUIERBList.h"
 
 // Nuclearizer libs:
 #include "MNCTModule.h"
@@ -61,7 +62,7 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -73,7 +74,12 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
   MGUIEEntry* m_DistributorPort;
   MGUIEEntry* m_DistributorStreamID;
 
-#ifdef ___CINT___
+  MGUIEEntry* m_SendToName;
+  MGUIEEntry* m_SendToPort;
+
+  MGUIERBList* m_DataMode;
+  
+  #ifdef ___CINT___
  public:
   ClassDef(MGUIOptionsReceiverCOSI2014, 1) // basic class for dialog windows
 #endif

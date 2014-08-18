@@ -218,8 +218,10 @@ bool MInterfaceNuclearizer::Analyze()
         gSystem->Sleep(100);
       }
     } while (AllReady == false && AllOK == true);
-    if (AllOK == false) break;
-    
+    if (AllOK == false) {
+      cout<<"One module had problems, exiting analysis loop"<<endl;
+      break;
+    }
       
     // Loop over all modules and do the analysis
     for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
@@ -237,7 +239,7 @@ bool MInterfaceNuclearizer::Analyze()
         break;
       }
     }
-    //if (Event->IsDataRead() == false) break;
+    // if (Event->IsDataRead() == false) break;
   }
   
   // Finalize the modules:

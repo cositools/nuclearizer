@@ -28,7 +28,7 @@ using namespace std;
 
 // Nuclearizer libs
 #include "MNCTModule.h"
-#include "MNCTAspectReconstruction.h"
+//#include "MNCTAspectReconstruction.h"
 
 // Forward declarations:
 
@@ -36,10 +36,18 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The data modes: analyze raw events, Compton events, or all events
+enum class MNCTModuleReceiverCOSI2014DataModes : unsigned int { c_Raw = 0, c_Compton = 1, c_All = 2 };    
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
 class MNCTModuleReceiverCOSI2014 : public MNCTModule
 {
   // public interface:
  public:
+   
   //! Default constructor
   MNCTModuleReceiverCOSI2014();
   //! Default destructor
@@ -60,6 +68,22 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   //! Set the ID of the stream which should be transmitted
   void SetDistributorStreamID(MString DistributorStreamID) { m_DistributorStreamID = DistributorStreamID; }
 
+  //! Return the local receiving host name
+  MString GetLocalReceivingHostName() const { return m_LocalReceivingHostName; }
+  //! Set the name of the local receiveing host
+  void SetLocalReceivingHostName(MString LocalReceivingHostName) { m_LocalReceivingHostName = LocalReceivingHostName; }
+  
+  //! Return the port of the local receiving host computer
+  int GetLocalReceivingPort() const { return m_LocalReceivingPort; }
+  //! Set the port of the local receiving host computer
+  void SetLocalReceivingPort(int LocalReceivingPort) { m_LocalReceivingPort = LocalReceivingPort; }
+ 
+  //! Get the data selection mode
+  MNCTModuleReceiverCOSI2014DataModes GetDataSelectionMode() const { return m_DataSelectionMode; }
+  //! Set the data selection mode
+  void SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes Mode) { m_DataSelectionMode = Mode; } 
+ 
+ 
   //! Return if the module is ready to analyze events
   virtual bool IsReady();
   
@@ -79,7 +103,6 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
-
 
   // protected methods:
  protected:
@@ -105,18 +128,29 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   MString m_DistributorStreamID;
 
   //! Where to send the data to
-  MString m_LocalReceivingHost;
+  MString m_LocalReceivingHostName;
   //! Port to send the data to
   int m_LocalReceivingPort;
 
+  //! The data selection mode (raw, Compton, all)
+  MNCTModuleReceiverCOSI2014DataModes m_DataSelectionMode;
+  
   //! The transceiver
   MTransceiverTcpIpBinary* m_Receiver;
   
   //! The aspect reconstructor
-  MNCTAspectReconstruction* m_AspectReconstructor;
+  //MNCTAspectReconstruction* m_AspectReconstructor;
 
   //! The internal event list
   deque<MNCTEvent*> m_Events;
+
+  //added by AWL
+  bool m_UseComptonDataframes;
+  bool m_UseRawDataframes;
+  uint32_t m_NumRawDataframes;
+  uint32_t m_NumComptonDataframes;
+  uint32_t m_NumAspectPackets;
+  uint32_t m_NumOtherPackets;
   
   
   
@@ -128,6 +162,58 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 };
 
 #endif
+
+//AWL adding my struct definitions for the dataframe parsing
+
+
+struct trigger{
+
+	uint8_t Board;
+	int8_t Channel;
+	uint8_t HasTiming;
+	uint8_t HasADC;
+	uint16_t ADCBytes;
+	uint8_t TimingByte;
+
+};
+
+struct event{
+
+	uint64_t EventTime; 
+	uint8_t ErrorBoardList;
+	uint8_t ErrorInfo;
+	uint8_t EventID;
+	uint8_t TrigAndVetoInfo;
+	uint8_t FTPattern;
+	uint8_t LTPattern;
+	uint8_t ParseError;
+	uint8_t CCId; 
+	uint8_t InternalCompton; 
+	uint8_t Touchable; 
+
+	uint32_t NumTriggers;
+	struct trigger * Triggers; 
+
+};
+
+struct dataframe {
+
+	uint8_t Valid; 
+	uint8_t CCId;
+	uint8_t RawOrCompton; //0 if this struct came from a raw data frame, or 1 if from compton
+	uint32_t ReportedNumEvents;
+	uint64_t SysTime;
+	uint32_t LifetimeBits;
+	uint8_t NumNormal;
+	uint8_t NumLLD;
+	uint8_t NumTOnly;
+	uint8_t NumNoData;
+	uint8_t HasSysErr;
+
+	uint32_t NumEvents; //the number of events which is <= 41
+	struct event * Events[41]; //an array of pointers to dynamically allocated event structures
+
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////

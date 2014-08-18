@@ -69,6 +69,9 @@ void MGUIOptionsReceiverCOSI2014::Create()
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 
+  TGLabel* HandshakerLabel = new TGLabel(this, "Connection to the distributor:");
+  AddFrame(HandshakerLabel, LabelLayout);
+  
   m_DistributorName = new MGUIEEntry(this, "Distributor name/IP: ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorName());
   AddFrame(m_DistributorName, LabelLayout);
@@ -81,6 +84,27 @@ void MGUIOptionsReceiverCOSI2014::Create()
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorStreamID());
   AddFrame(m_DistributorStreamID, LabelLayout);
 
+  
+  TGLabel* SendToLabel = new TGLabel(this, "Connection where the data should be sent to:");
+  AddFrame(SendToLabel, LabelLayout);
+
+  m_SendToName = new MGUIEEntry(this, "Name/IP of the machine where we send the data to: ", false,
+                              dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetLocalReceivingHostName());
+  AddFrame(m_SendToName, LabelLayout);
+
+  m_SendToPort = new MGUIEEntry(this, "Port on the machine where we send the data to: ", false,
+                              dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetLocalReceivingPort());
+  AddFrame(m_SendToPort, LabelLayout);
+
+  
+  m_DataMode = new MGUIERBList(this, "Choose the data to look at: ");
+  m_DataMode->Add("Raw mode");
+  m_DataMode->Add("Compton mode");
+  m_DataMode->Add("Both");
+  m_DataMode->SetSelected((int) dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDataSelectionMode());
+  m_DataMode->Create();
+  AddFrame(m_DataMode, LabelLayout);
+  
   PostCreate();
 }
 
@@ -126,6 +150,17 @@ bool MGUIOptionsReceiverCOSI2014::OnApply()
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorName(m_DistributorName->GetAsString());
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorPort(m_DistributorPort->GetAsInt());
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorStreamID(m_DistributorStreamID->GetAsString());
+
+  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingHostName(m_SendToName->GetAsString());
+  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingPort(m_SendToPort->GetAsInt());
+
+  if (m_DataMode->GetSelected() == 0) {
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes::c_Raw);     
+  } else if (m_DataMode->GetSelected() == 1) {
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes::c_Compton);     
+  } else if (m_DataMode->GetSelected() == 2) {
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes::c_All);     
+  }
   
   return true;
 }

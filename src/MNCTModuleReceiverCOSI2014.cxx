@@ -81,7 +81,16 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   m_HasOptionsGUI = true;
   
   m_Receiver = 0;
+  
+  m_DistributorName = "localhost";
+  m_DistributorPort = 9091;
+  m_DistributorStreamID = "OP";
+  
+  m_LocalReceivingHost = "192.168.37.18";
+  m_LocalReceivingPort = 12345;
 
+  m_DataSelectionMode = MNCTModuleReceiverCOSI2014DataModes::c_All;
+  
   m_UseComptonDataframes = true;
   m_UseRawDataframes = true;
   m_NumRawDataframes = 0;
@@ -92,7 +101,6 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
 
   LoadStripMap();
   LoadCCMap();
-
 }
 
 
@@ -151,9 +159,9 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
     
     ostringstream msg;
     if (m_DistributorStreamID == "ALL" || m_DistributorStreamID == "") { 
-      msg<<"START:"<<m_LocalReceivingHost<<":"<<m_LocalReceivingPort;
+      msg<<"START:"<<m_LocalReceivingHostName<<":"<<m_LocalReceivingPort;
     } else {
-      msg<<"START:"<<m_LocalReceivingHost<<":"<<m_LocalReceivingPort<<":"<<m_DistributorStreamID;        
+      msg<<"START:"<<m_LocalReceivingHostName<<":"<<m_LocalReceivingPort<<":"<<m_DistributorStreamID;        
     }
     vector<uint8_t> ToSend;
     for (char c: msg.str()) {
@@ -162,13 +170,20 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
     Handshaker->Send(ToSend);
     cout<<"Sent connection request: "<<msg.str()<<endl;
     
-    Wait = 1000;
+    MTimer Waiting;
+    Wait = 0;
     bool Restart = false;
     while (Handshaker->IsConnected() == true && Restart == false && Interrupt == false) {
-      gSystem->Sleep(100); 
-      cout<<"CONNECTION ESTABLISHED"<<endl;
+      cout<<"Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
+      ++Wait;
+      if (Wait < 10) {
+        gSystem->Sleep(100);
+      } else {
+        gSystem->Sleep(1000);
+      }
       // Need a timeout here
-      if (--Wait == 0) {
+      if (Waiting.GetElapsed() > 60) {
+        cout<<"Connected but didn't receive anything -- timeout & restarting"<<endl;
         cout<<"Connected but didn't receive anything -- timeout & restarting"<<endl;
         Handshaker->Disconnect();
         delete Handshaker;
@@ -200,7 +215,7 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
           break;
         }
       } else {
-        //cout<<"Nothing received..."<<endl; 
+        cout<<"Nothing received..."<<endl; 
       }
     }
     if (HandshakeSuccessful == false && Handshaker != 0) {
@@ -213,7 +228,7 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
   
   // Set up the transceiver and connect:
   delete m_Receiver;
-  m_Receiver = new MTransceiverTcpIpBinary("Final receiver", m_LocalReceivingHost, m_LocalReceivingPort);
+  m_Receiver = new MTransceiverTcpIpBinary("Final receiver", m_LocalReceivingHostName, m_LocalReceivingPort);
   m_Receiver->SetVerbosity(3);
   m_Receiver->Connect(true, 10);
   m_Receiver->SetMaximumBufferSize(100000000);
@@ -229,9 +244,6 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
 {
   // Initialize the module 
 
-  m_LocalReceivingHost = "192.168.37.18";
-  m_LocalReceivingPort = 12345;
-
   for (auto E: m_Events) {
     delete E;
   }
@@ -244,8 +256,8 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
   }
   
   // Load aspect reconstruction module
-  delete m_AspectReconstructor;
-  m_AspectReconstructor = new MNCTAspectReconstruction();
+  //delete m_AspectReconstructor;
+  //m_AspectReconstructor = new MNCTAspectReconstruction();
   
   return true;
 }
@@ -386,6 +398,11 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
+  if (m_Events.size() == 0) {
+    cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: No events"<<endl;
+    cout<<"This function should have never been called when we have no events"<<endl;
+    return false;
+  }
   
   // TODO: Just *copy* the data from the OLDEST event in the list to this event  
 
@@ -443,6 +460,22 @@ bool MNCTModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
     m_DistributorStreamID = DistributorStreamIDNode->GetValue();
   }
 
+  MXmlNode* LocalReceivingHostNameNode = Node->GetNode("LocalReceivingHostName");
+  if (LocalReceivingHostNameNode != 0) {
+    m_LocalReceivingHostName = LocalReceivingHostNameNode->GetValue();
+  }
+  MXmlNode* LocalReceivingPortNode = Node->GetNode("LocalReceivingPort");
+  if (LocalReceivingPortNode != 0) {
+    m_LocalReceivingPort = LocalReceivingPortNode->GetValueAsInt();
+  }
+  
+
+  MXmlNode* DataSelectionModeNode = Node->GetNode("DataSelectionMode");
+  if (DataSelectionModeNode != 0) {
+    m_DataSelectionMode = (MNCTModuleReceiverCOSI2014DataModes) LocalReceivingHostNameNode->GetValueAsInt();
+  }
+  
+  
   return true;
 }
 
@@ -458,6 +491,12 @@ MXmlNode* MNCTModuleReceiverCOSI2014::CreateXmlConfiguration()
   new MXmlNode(Node, "DistributorName", m_DistributorName);
   new MXmlNode(Node, "DistributorPort", m_DistributorPort);
   new MXmlNode(Node, "DistributorStreamID", m_DistributorStreamID);
+
+  new MXmlNode(Node, "LocalReceivingHostName", m_LocalReceivingHostName);
+  new MXmlNode(Node, "LocalReceivingPort", m_LocalReceivingPort);
+
+  new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
+
   
   return Node;
 }
