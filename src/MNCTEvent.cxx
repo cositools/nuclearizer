@@ -117,8 +117,13 @@ void MNCTEvent::Clear()
     m_InDetector[DetectorID] = false;
   }
 
+  // Delete all strip hits
+  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+    delete m_StripHits[h];
+  }
   m_StripHits.clear();
- // Delete all hits
+
+  // Delete all hits
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     delete m_Hits[h];
   }

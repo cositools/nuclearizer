@@ -58,6 +58,8 @@ MNCTHit::MNCTHit()
 MNCTHit::~MNCTHit()
 {
   // Delete this instance of MNCTHit
+  
+  // This strip hits are not deleted since they where not generated here
 }
 
 
