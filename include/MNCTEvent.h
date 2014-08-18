@@ -64,8 +64,8 @@ class MNCTEvent
   unsigned long long GetTI() const { return m_TI;}
 
   //! set and get clock tick
-  void SetCL(unsigned long CL) { m_CL = CL;}
-  unsigned long GetCL() const { return m_CL;}
+  void SetCL(uint64_t CL) { m_CL = CL;}
+  uint64_t GetCL() const { return m_CL;}
 
   //! Set and get the Time of this event
   void SetTime(MTime Time) { m_Time = Time; }
@@ -237,7 +237,7 @@ class MNCTEvent
 
   //! Clock tick (Unix and UHF)
   unsigned long long m_TI;
-  unsigned long m_CL;
+  uint64_t m_CL;
 
   //! Time and MJD of this event
   MTime m_Time;
@@ -272,7 +272,7 @@ class MNCTEvent
   bool m_AspectGood;
 
   //! Whether event contains strip hits in given detector
-  bool m_InDetector[10];
+  bool m_InDetector[12];
 
   //! List of strip hits
   vector<MNCTStripHit*> m_StripHits;
@@ -311,4 +311,4 @@ class MNCTEvent
 #endif
 
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

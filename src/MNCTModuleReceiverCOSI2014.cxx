@@ -29,6 +29,7 @@
 #include "MNCTModuleReceiverCOSI2014.h"
 
 // Standard libs:
+#include <algorithm>
 
 // ROOT libs:
 #include "TGClient.h"
@@ -47,6 +48,7 @@ ClassImp(MNCTModuleReceiverCOSI2014)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+bool MNCTEventTimeCompare(MNCTEvent * E1, MNCTEvent * E2);
 
 
 MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
@@ -73,7 +75,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   AddSucceedingModuleType(c_EventSaver);
   
   // Set the module name --- has to be unique
-  m_Name = "Data packet receiver, sorter, and aspect reconstructor for COSI 2014";
+  m_Name.AppendInPlace("Data packet receiver, sorter, and aspect reconstructor for COSI 2014");
   
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagReceiverCOSI2014";  
@@ -81,16 +83,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   m_HasOptionsGUI = true;
   
   m_Receiver = 0;
-  
-  m_DistributorName = "localhost";
-  m_DistributorPort = 9091;
-  m_DistributorStreamID = "OP";
-  
-  m_LocalReceivingHost = "192.168.37.18";
-  m_LocalReceivingPort = 12345;
 
-  m_DataSelectionMode = MNCTModuleReceiverCOSI2014DataModes::c_All;
-  
   m_UseComptonDataframes = true;
   m_UseRawDataframes = true;
   m_NumRawDataframes = 0;
@@ -98,9 +91,11 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   m_NumAspectPackets = 0;
   m_NumOtherPackets = 0;
   MAX_TRIGS = 80;
+  LastTimestamps.resize(12);
 
   LoadStripMap();
   LoadCCMap();
+
 }
 
 
@@ -170,20 +165,13 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
     Handshaker->Send(ToSend);
     cout<<"Sent connection request: "<<msg.str()<<endl;
     
-    MTimer Waiting;
-    Wait = 0;
+    Wait = 1000;
     bool Restart = false;
     while (Handshaker->IsConnected() == true && Restart == false && Interrupt == false) {
-      cout<<"Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
-      ++Wait;
-      if (Wait < 10) {
-        gSystem->Sleep(100);
-      } else {
-        gSystem->Sleep(1000);
-      }
+      gSystem->Sleep(100); 
+      cout<<"CONNECTION ESTABLISHED"<<endl;
       // Need a timeout here
-      if (Waiting.GetElapsed() > 60) {
-        cout<<"Connected but didn't receive anything -- timeout & restarting"<<endl;
+      if (--Wait == 0) {
         cout<<"Connected but didn't receive anything -- timeout & restarting"<<endl;
         Handshaker->Disconnect();
         delete Handshaker;
@@ -215,7 +203,7 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
           break;
         }
       } else {
-        cout<<"Nothing received..."<<endl; 
+        //cout<<"Nothing received..."<<endl; 
       }
     }
     if (HandshakeSuccessful == false && Handshaker != 0) {
@@ -244,10 +232,17 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
 {
   // Initialize the module 
 
+  m_LocalReceivingHostName = "192.168.37.18";
+  m_LocalReceivingPort = 12345;
+
   for (auto E: m_Events) {
     delete E;
   }
   m_Events.clear();
+  for (auto E: m_EventsBuf) {
+    delete E;
+  }
+  m_EventsBuf.clear();
   
   // Do handshake and open transceiver
   if (DoHandshake() == false) {
@@ -256,8 +251,8 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
   }
   
   // Load aspect reconstruction module
-  //delete m_AspectReconstructor;
-  //m_AspectReconstructor = new MNCTAspectReconstruction();
+  delete m_AspectReconstructor;
+  m_AspectReconstructor = new MNCTAspectReconstruction();
   
   return true;
 }
@@ -271,126 +266,221 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 
 	uint8_t Type;
 	uint16_t Len;
+	vector <MNCTEvent*> NewEvents;
 	vector<unsigned char> SyncWord;
 	dataframe * Dataframe;
+	int ParseErr;
+	bool SyncError;
+	int CCId;
 
 	SyncWord.push_back(0xEB);
 	SyncWord.push_back(0x90);
 
-  // Do the actual work here, not in analyze event!
-  
-  // Check if the receiver is still up and running, if not reconnect
-  // TODO: Add time out to DoHandshake
-  if (m_Receiver == 0 || m_Receiver->IsConnected() == false) {
-    if (DoHandshake() == false) {
-      merr<<"Failed to connect to distributor"<<endl;
-      return false;
-    }
-    if (m_Receiver == 0 || m_Receiver->IsConnected() == false) {
-      merr<<"Unable to establish connection!"<<endl;
-      return false;
-    }
-  }
+	// Do the actual work here, not in analyze event!
 
-  // Retrieve the latest data from the transceiver
-  vector<uint8_t> Received;
-  m_Receiver->SyncedReceive(Received, SyncWord, 1);
+	// Check if the receiver is still up and running, if not reconnect
+	// TODO: Add time out to DoHandshake
+	if (m_Receiver == 0 || m_Receiver->IsConnected() == false) {
+		if (DoHandshake() == false) {
+			merr<<"Failed to connect to distributor"<<endl;
+			return false;
+		}
+		if (m_Receiver == 0 || m_Receiver->IsConnected() == false) {
+			merr<<"Unable to establish connection!"<<endl;
+			return false;
+		}
+	}
 
-  //where do I set whether m_Receiver will sync to eb90?
+	// Retrieve the latest data from the transceiver
+	vector<uint8_t> Received;
+	m_Receiver->SyncedReceive(Received, SyncWord, 1);
 
-  if( Received.size() >= 10 ){
-	  if( (Received[0] == 0xeb) && (Received[1] == 0x90) ){
-		  //received data is synced, get the size
-		  Len = 0;
-		  Len = ((uint16_t)Received[8]<<8) | ((uint16_t)Received[9]);
-		  Type = Received[2];
+	//where do I set whether m_Receiver will sync to eb90?
+	//don't use SyncReceived(), do the syncing manually here
 
-		  if( Received.size() >= Len ){
-			  if( Received.size() != Len ){
-				  cout<<"packet length mismatch, got "<<Received.size()<<"/"<<Len<<" bytes"<<endl;
-			  }
-			  vector<uint8_t> TruncReceived = Received;
-			  TruncReceived.erase(TruncReceived.begin(), TruncReceived.begin()+10);
+	if( Received.size() >= 10 ){
+		if( (Received[0] == 0xeb) && (Received[1] == 0x90) ){
+			//received data is synced, get the size
+			Len = 0;
+			Len = ((uint16_t)Received[8]<<8) | ((uint16_t)Received[9]);
+			Type = Received[2];
 
-
-			  switch( Type ){
-				  case 0x00:
-					  //raw dataframe
-					  if( m_UseRawDataframes ){
-						  //convert dataframe to class
-						  //clear out first ten bytes 
-						  Dataframe = new dataframe();
-						  RawDataframe2Struct( TruncReceived, Dataframe );
-							cout<<"dataframe contained"<<Dataframe->Events.size()<<" events"<<endl;
-						  delete Dataframe;
-						  m_NumRawDataframes++;
-					  }
-					  break;
-				  case 0x01:
-					  //compton dataframe
-					  if( m_UseComptonDataframes ){
-						  //convert to dataframe class
-						  //cout<<"got compton dataframe!"<<endl;
-						  m_NumComptonDataframes++;
-					  }
-					  break;
-				  case 0x05:
-					  //aspect packet
-					  cout<<"got aspect packet!"<<endl;
-					  m_NumAspectPackets++;
-					  break;
-				  default:
-					  //don't care
-					  m_NumOtherPackets++;
-
-			  }
-		  } else {
-			  cout<<"not enough bytes, got "<<Received.size()<<"/"<<Len<<endl;
-		  }
-	  } else {
-		  cout<<"out of sync [0]="<<std::hex<<Received[0]<<std::dec<<" [1]="<<Received[1]<<endl;
-	  }
-  }
+			if( Received.size() >= Len ){
+				if( Received.size() != Len ){
+					cout<<"packet length mismatch, got "<<Received.size()<<"/"<<Len<<" bytes"<<endl;
+				}
+				vector<uint8_t> TruncReceived = Received;
+				TruncReceived.erase(TruncReceived.begin(), TruncReceived.begin()+10);
 
 
+				switch( Type ){
+					case 0x00:
+						//raw dataframe
+						if( m_UseRawDataframes ){
+							//convert dataframe to class
+							//clear out first ten bytes 
+							Dataframe = new dataframe();
+							ParseErr = RawDataframe2Struct( Received, Dataframe );
+							if( ParseErr >= 0 ){
+								ConvertToMNCTEvents( Dataframe, &NewEvents );
+								CCId = Dataframe->CCId;
+							}
+							delete Dataframe;
+							m_NumRawDataframes++;
+						}
+						break;
+					case 0x01:
+						//compton dataframe
+						if( m_UseComptonDataframes ){
+							//convert to dataframe class
+							//cout<<"got compton dataframe!"<<endl;
+							m_NumComptonDataframes++;
+						}
+						break;
+					case 0x05:
+						//aspect packet
+						cout<<"got aspect packet!"<<endl;
+						m_NumAspectPackets++;
+						break;
+					default:
+						//don't care
+						m_NumOtherPackets++;
+
+				}
+			} else {
+				cout<<"not enough bytes, got "<<Received.size()<<"/"<<Len<<endl;
+				cout<<std::hex<<(int)Received[0]<<" "<<(int)Received[1]<<std::dec<<endl;
+			}
+		} else {
+			cout<<"out of sync [0]="<<std::hex<<Received[0]<<std::dec<<" [1]="<<Received[1]<<endl;
+		}
+	}
+
+	for( auto E: NewEvents ){
+		//push the events onto the deque
+		//before we push the event into m_EventsBuf, check if we have a sync problem
+		if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
+			//sync problem detected...
+			cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
+			FlushEventsBuf();
+			LastTimestamps[CCId] = E->GetCL();
+		}
+
+		m_EventsBuf.push_back(E);
+		//printf("unix = %d  CL = %llx\n", E->GetTI(), E->GetCL());
+	}
+
+	//now sort m_EventsBuf
+	SortEventsBuf();
 
 
-  // TODO: Split it into packets & determine what they are and where they go
-  
-  // TODO: Parse the events into MNCTEvent*'s and store the
-  
-  // TODO: Hand over the aspects to the aspect reconstructor
-  //m_AspectReconstructor->AddFrame(...);
-  
-  // TODO: If we have events at least N seconds in the future from all card cages
-  // from the oldest event, we are good to *sort* the events until a certain time
-  // and do coincidence search
-  // Otherwise, we are not yet ready and have to return false
-  
-  // TODO: Add to as many events as possible reconstructed aspect information
+	//look thru m_EventsBuf for multi-detector events
+	CheckEventsBuf();
 
-  /*
-  for (auto E: m_Events) {
-    if (E->GetAspect() == 0) {
-      MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
-      if (A != 0) {
-        E->SetAspect(A);
-      }
-    }
-  }
-  
-  // TODO: If the oldest event has a reconstructed event, we are ready for the analyze function,
-  // thus we return true otehrwise false
-  if (m_Events.begin() != m_Events.end()) {
-    if (m_Events.front()->GetAspect() != 0) {
-      return true;
-    }
-  }
-  */
-  
-  return true;
+
+
+	/*
+		for (auto E: m_Events) {
+		if (E->GetAspect() == 0) {
+		MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
+		if (A != 0) {
+		E->SetAspect(A);
+		}
+		}
+		}
+
+	// TODO: If the oldest event has a reconstructed event, we are ready for the analyze function,
+	// thus we return true otehrwise false
+	if (m_Events.begin() != m_Events.end()) {
+	if (m_Events.front()->GetAspect() != 0) {
+	return true;
+	}
+	}
+	 */
+
+	return true;
 }
 
+bool MNCTModuleReceiverCOSI2014::FlushEventsBuf(void){
+
+	int MergedEventCounter = 0;
+
+	//don't check m_EventTimeWindow, we are flushing the buffer
+	while( m_EventsBuf.size() > 0){
+		MNCTEvent * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
+		deque<MNCTEvent*> EventList;
+		EventList.push_back(FirstEvent);
+		//now check if the next events are within the compton window
+		while( m_EventsBuf.size() > 0 ){
+			if( (m_EventsBuf[0]->GetCL() - FirstEvent->GetCL()) <= m_ComptonWindow ){
+				EventList.push_back( m_EventsBuf.front() ); m_EventsBuf.pop_front();
+			} else {
+				break;
+			}
+		}
+		//at this point, EventList contains all of the events to be merged, merge them
+		MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
+		//now push this merged event onto the internal events deque
+		m_Events.push_back( NewMergedEvent );
+		++MergedEventCounter;
+	}
+
+	if( m_EventsBuf.size() == 0 ) return true; else return false;
+}
+
+bool MNCTModuleReceiverCOSI2014::CheckEventsBuf(void){
+
+	int MergedEventCounter = 0;
+
+	if( m_EventsBuf.size() > 0 ){
+		while(m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() >= m_EventTimeWindow ){
+			MNCTEvent * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
+			deque<MNCTEvent*> EventList;
+			EventList.push_back(FirstEvent);
+			//now check if the next events are within the compton window
+			while( m_EventsBuf.size() > 0 ){
+				if( (m_EventsBuf[0]->GetCL() - FirstEvent->GetCL()) <= m_ComptonWindow ){
+					EventList.push_back( m_EventsBuf.front() ); m_Events.pop_front();
+				} else {
+					break;
+				}
+			}
+			//at this point, EventList contains all of the events to be merged, merge them
+			MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
+			//now push this merged event onto the internal events deque
+			m_Events.push_back( NewMergedEvent );
+			++MergedEventCounter;
+			if( m_EventsBuf.size() == 0 ) break;
+		}
+
+	}
+
+	if( MergedEventCounter > 0 ) return true; else return false;
+}
+
+MNCTEvent * MNCTModuleReceiverCOSI2014::MergeEvents( deque<MNCTEvent*> * EventList ){
+
+	//assert: there is at least one event in event list
+	MNCTEvent * BaseEvent;
+
+	//take the first event, and then merge hits from all other coincident
+	//events into this base event
+	BaseEvent = EventList->front(); EventList->pop_front();
+	for( auto E: *EventList ){
+		for( int j = 0; j < E->GetNStripHits(); ++j ){
+			BaseEvent->AddStripHit( E->GetStripHit(j) );
+			//need to remove the strip hit from the old event so that when we delete 
+			//non-base event, the memory pointed to by strip hit is not also deleted
+			E->RemoveStripHit(j);
+		}
+		//now we should free the memory for the MNCTEvent that we just copied the 
+		//strip hit from
+		delete E;
+	}
+
+	return BaseEvent;
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -398,11 +488,6 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
-  if (m_Events.size() == 0) {
-    cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: No events"<<endl;
-    cout<<"This function should have never been called when we have no events"<<endl;
-    return false;
-  }
   
   // TODO: Just *copy* the data from the OLDEST event in the list to this event  
 
@@ -460,22 +545,6 @@ bool MNCTModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
     m_DistributorStreamID = DistributorStreamIDNode->GetValue();
   }
 
-  MXmlNode* LocalReceivingHostNameNode = Node->GetNode("LocalReceivingHostName");
-  if (LocalReceivingHostNameNode != 0) {
-    m_LocalReceivingHostName = LocalReceivingHostNameNode->GetValue();
-  }
-  MXmlNode* LocalReceivingPortNode = Node->GetNode("LocalReceivingPort");
-  if (LocalReceivingPortNode != 0) {
-    m_LocalReceivingPort = LocalReceivingPortNode->GetValueAsInt();
-  }
-  
-
-  MXmlNode* DataSelectionModeNode = Node->GetNode("DataSelectionMode");
-  if (DataSelectionModeNode != 0) {
-    m_DataSelectionMode = (MNCTModuleReceiverCOSI2014DataModes) LocalReceivingHostNameNode->GetValueAsInt();
-  }
-  
-  
   return true;
 }
 
@@ -491,12 +560,6 @@ MXmlNode* MNCTModuleReceiverCOSI2014::CreateXmlConfiguration()
   new MXmlNode(Node, "DistributorName", m_DistributorName);
   new MXmlNode(Node, "DistributorPort", m_DistributorPort);
   new MXmlNode(Node, "DistributorStreamID", m_DistributorStreamID);
-
-  new MXmlNode(Node, "LocalReceivingHostName", m_LocalReceivingHostName);
-  new MXmlNode(Node, "LocalReceivingPort", m_LocalReceivingPort);
-
-  new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
-
   
   return Node;
 }
@@ -528,8 +591,8 @@ int MNCTModuleReceiverCOSI2014::RawDataframe2Struct( vector<uint8_t> Buf, datafr
 		return -1;
 	}
 
-	if( Buf.size() != 1350 ){
-		cout<<"dataframe must be 1350 bytes! returning -1..."<<endl;
+	if( Buf.size() != 1360 ){
+		cout<<"dataframe must be 1360 bytes! returning -1..."<<endl;
 		return -1;
 	} else {
 		Length = Buf.size();
@@ -537,22 +600,27 @@ int MNCTModuleReceiverCOSI2014::RawDataframe2Struct( vector<uint8_t> Buf, datafr
 
 	//check that we get the first 0xae 0xe0 in the right place
 
-	if( Buf[12] == 0xae && Buf[13] == 0xe0 ){
+	if( Buf[22] == 0xae && Buf[23] == 0xe0 ){
 		//great
 	} else {
 		return -3;
 	}
 
-	DataOut->CCId = Buf[0] & 0x0f;
-	DataOut->ReportedNumEvents = Buf[1];
-	DataOut->SysTime = ((uint64_t)Buf[7] << 40) | ((uint64_t)Buf[6] << 32) | ((uint64_t)Buf[5] << 24) | ((uint64_t)Buf[4] << 16) | ((uint64_t)Buf[3] << 8) | Buf[2];
+	//add the telem header stuff here!
+	DataOut->PacketType = Buf[2];
+	DataOut->UnixTime = ((uint32_t)Buf[3]<<16) | ((uint32_t)Buf[4]<<8) | ((uint32_t)Buf[5]);
+	DataOut->PacketCounter = ((uint16_t)Buf[6]<<8) | ((uint16_t)Buf[7]);
+	DataOut->CCId = Buf[10] & 0x0f;
+	DataOut->ReportedNumEvents = Buf[11];
+	DataOut->SysTime = ((uint64_t)Buf[17] << 40) | ((uint64_t)Buf[16] << 32) | ((uint64_t)Buf[15] << 24) | ((uint64_t)Buf[14] << 16) | ((uint64_t)Buf[13] << 8) | Buf[12];
 	DataOut->SysTime = DataOut->SysTime & 0xffffffffffff;
-	DataOut->LifetimeBits = (((((uint32_t)Buf[10] << 24) | ((uint32_t)Buf[9] << 16)) | ((uint32_t)Buf[8] << 8)) | ((uint32_t)Buf[7]));
+	DataOut->LifetimeBits = (((((uint32_t)Buf[21] << 24) | ((uint32_t)Buf[20] << 16)) | ((uint32_t)Buf[19] << 8)) | ((uint32_t)Buf[18]));
 	DataOut->RawOrCompton = "raw";
 	DataOut->HasSysErr = false;
 
-	x = 12; //jump to index of first 0xAE
-	NumEvents = Buf[1];
+	//x = 12; //jump to index of first 0xAE
+	x = 22; //now the input is a full 1360 packet
+	NumEvents = Buf[11];
 	Tx = 0; Ax = 0;
 	EventCounter = 0;
 
@@ -573,7 +641,7 @@ int MNCTModuleReceiverCOSI2014::RawDataframe2Struct( vector<uint8_t> Buf, datafr
 			}
 
 			if( k >= (Length - 1) ){
-				return 0;
+				return -100;
 			} 
 
 		}
@@ -744,7 +812,7 @@ loop_exit:
 				x = x + 32;
 			} else {
 				//reached the end of the packet, return normally 
-				return 0;
+				return -100;
 			}
 		}
 		//now check if we find the 0xAE in the right spot.
@@ -760,9 +828,30 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 	MNCTEvent * NewEvent;
 	MNCTStripHit * StripHit;
 	CEvents->clear(); //
+	bool RolloverOccurred, EndRollover, MiddleRollover;
+	uint64_t Clk;
+
+	//make sure we have some events
+	if( DataIn->Events.size() == 0 ){
+		return false;
+	}
+
 	//since the MNCTEvents are going to be pushed into a deque for the coincedence search, we want to call 
 	//new and delete so that the pointers to these MNCTEvents will be valid until the MNCTEvent is popped
 	//out of the deque.
+
+	//check for rollovers in this dataframe.  need this info in order to properly shift bits 48..33 of the 
+	//systime into the individual events times (which are only 32 bits)
+	RolloverOccurred = false;
+	if( (DataIn->SysTime & 0xffffffff) < DataIn->Events[0].EventTime ){
+		//there was a rollover
+		RolloverOccurred = true; EndRollover = false; MiddleRollover = false;
+		if( DataIn->Events.back().EventTime < DataIn->Events.front().EventTime ){
+			MiddleRollover = true;
+		} else {
+			EndRollover = true;
+		}
+	}
 
 	//negative side -> DC -> boards 4-7 -> X
 	//positive side -> AC -> boards 0-3 -> Y
@@ -780,6 +869,31 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 			if( T.HasTiming ) StripHit->SetTiming((double)T.TimingByte);
 			NewEvent->AddStripHit( StripHit );
 		}
+		//now need to set parameters for the MNCTEvent
+		NewEvent->SetID(E.EventID);
+		NewEvent->SetFC(DataIn->PacketCounter);
+		NewEvent->SetTI(DataIn->UnixTime);
+		Clk = 0;
+		if( RolloverOccurred ){
+			if( MiddleRollover ){
+				if( E.EventTime >= DataIn->Events.front().EventTime ){
+					Clk = E.EventTime | ((DataIn->SysTime - 0x0000000100000000) & 0x0000ffff00000000);
+				} else {
+					Clk = E.EventTime | (DataIn->SysTime & 0x0000ffff00000000);
+				}
+			} else {
+				//the rollover happened between the last event timestamp and the DataIn systime
+				//NOTE the systime in the dataframe header is always latched AFTER the last event timestamp
+				Clk = E.EventTime | ((DataIn->SysTime - 0x0000000100000000) & 0x0000ffff00000000);
+			}
+		} else {
+			//no rollover, just shift in the upper two bytes of DataIn->SysTime
+			Clk = E.EventTime | (DataIn->SysTime & 0x0000ffff00000000);
+		}
+		NewEvent->SetCL( Clk );
+
+		//set the MJD only when there is aspect info
+
 		CEvents->push_back(NewEvent);
 	}
 
@@ -853,6 +967,33 @@ void MNCTModuleReceiverCOSI2014::LoadStripMap(void){
 
 	return;
 }
+
+bool MNCTModuleReceiverCOSI2014::SortEventsBuf(void){
+
+	std::sort(m_EventsBuf.begin(), m_EventsBuf.end(), MNCTEventTimeCompare);
+	return true;
+
+}
+
+bool MNCTEventTimeCompare(MNCTEvent * E1, MNCTEvent * E2){
+
+	//new events are added to the queue using push_back(), so older events are closer to [0]
+	//older stuff comes before newer stuff, 
+
+	/*
+	if( E1->GetTI() == E2->GetTI() ){
+		if( E1->GetCL() < E2->GetCL() ) return true; else return false;
+	} else {
+		if( E1->GetTI() < E2->GetTI() ) return true; else return false;
+	}*/
+
+	//sort based on 48 bit clock value
+	if( E1->GetCL() < E2->GetCL() ) return true; else return false;
+
+
+}
+
+
 
 
 
