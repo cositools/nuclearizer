@@ -78,7 +78,7 @@ void MGUIOptionsEventSaver::Create()
 
   
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
-    dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetFileName());
+  dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Data file", "*.dat");
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 

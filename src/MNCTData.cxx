@@ -104,7 +104,7 @@ MNCTData::MNCTData()
   //m_AvailableModules.push_back(new MNCTModuleStripPairing());
   //m_AvailableModules.push_back(new MNCTModuleStripPairingGreedy());
   m_AvailableModules.push_back(new MNCTModuleStripPairingGreedy_a());
-	m_AvailableModules.push_back(new MNCTModuleStripPairingGreedy_b());
+  m_AvailableModules.push_back(new MNCTModuleStripPairingGreedy_b());
   m_AvailableModules.push_back(new MNCTModuleAspect());
   m_AvailableModules.push_back(new MNCTModuleDumpEvent());
   m_AvailableModules.push_back(new MNCTModuleEventSaver());

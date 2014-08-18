@@ -63,11 +63,11 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MNCTModule
 
   // private members:
  private:
-  bool m_IsCalibrationLoaded[10];
-  bool m_IsCalibrationLoadedPixel[10][37][37];
-  double m_Pixel_CTD2Depth[10][37][37][4];
-  double m_Pixel_CTD_FWHM_Positive[10][37][37];
-  double m_Pixel_CTD_FWHM_Negative[10][37][37];
+  bool m_IsCalibrationLoaded[12];
+  bool m_IsCalibrationLoadedPixel[12][37][37];
+  double m_Pixel_CTD2Depth[12][37][37][4];
+  double m_Pixel_CTD_FWHM_Positive[12][37][37];
+  double m_Pixel_CTD_FWHM_Negative[12][37][37];
   double m_Default_CTD2Depth[4];
   double m_Default_CTD_FWHM;
   unsigned long ShareHitNumber0,ShareHitNumber1;

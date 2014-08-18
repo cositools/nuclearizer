@@ -1,7 +1,7 @@
 /*
  * MNCTEvent.h
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -160,6 +160,22 @@ class MNCTEvent
   MPhysicalEvent* GetPhysicalEvent() { return m_PhysicalEvent; }
 
 
+  //! Set the energy-calibration-incomplete flag
+  void SetEnergyCalibrationIncomplete(bool Flag = true) { m_EnergyCalibrationIncomplete = Flag; }
+  //! Get the energy-calibration-incomplete  flag
+  bool IsEnergyCalibrationIncomplete() const { return m_EnergyCalibrationIncomplete; }
+
+  //! Set the strip-pairing-incomplete flag
+  void SetStripPairingIncomplete(bool Flag = true) { m_StripPairingIncomplete = Flag; }
+  //! Get the strip-pairing-incomplete  flag
+  bool IsStripPairingIncomplete() const { return m_StripPairingIncomplete; }
+
+  //! Set the depth-calibration-incomplete flag
+  void SetDepthCalibrationIncomplete(bool Flag = true) { m_DepthCalibrationIncomplete = Flag; }
+  //! Get the depth-calibration-incomplete  flag
+  bool IsDepthCalibrationIncomplete() const { return m_DepthCalibrationIncomplete; }
+
+
   //! Set the data read flag
   void SetDataRead(bool Flag = true) { m_DataRead = Flag; }
   //! Return the data read flag
@@ -288,6 +304,12 @@ class MNCTEvent
 
   //! The physical event from event reconstruction
   MPhysicalEvent* m_PhysicalEvent; 
+
+  // Flags indicating the quality of the event
+  bool m_EnergyCalibrationIncomplete;
+  bool m_StripPairingIncomplete;
+  bool m_DepthCalibrationIncomplete;
+
 
   // Flags indicating the analysis level of the event
   bool m_DataRead;

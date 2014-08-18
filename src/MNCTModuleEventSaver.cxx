@@ -144,9 +144,29 @@ void MNCTModuleEventSaver::Finalize()
 bool MNCTModuleEventSaver::AnalyzeEvent(MNCTEvent* Event) 
 {
   // Main data analysis routine, which updates the event to a new level
+ 
+    Event->StreamEvta(m_Out);
+    return true;
 
-  Event->StreamEvta(m_Out);
-  
+  double Energy = 0;
+  for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+    Energy += Event->GetHit(h)->GetEnergy();
+  }
+
+  if (Energy > 650 && Energy < 680) {
+    Event->StreamEvta(m_Out);
+    if (Event->GetNHits() > 0) {  
+      m_Out<<Event->GetHit(0)->GetStripHit(0)->GetDetectorID()<<": "<<Energy<<" Quality: "<<Event->GetHit(0)->GetHitQuality()<<endl;
+    }
+    for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+      m_Out<<"Hit "<<h<<endl;
+      for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+        Event->GetHit(h)->GetStripHit(s)->Stream(m_Out, 1);
+      }
+    }
+  }
+
+
   return true;
 }
 

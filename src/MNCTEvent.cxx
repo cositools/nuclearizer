@@ -136,6 +136,10 @@ void MNCTEvent::Clear()
   }
   m_GuardringHits.clear();
 
+  m_EnergyCalibrationIncomplete = false;
+  m_StripPairingIncomplete = false;
+  m_DepthCalibrationIncomplete = false;
+
   m_DataRead = false;
   m_EnergyCalibrated = false;
   m_ChargeSharingCorrected = false;
@@ -336,6 +340,18 @@ bool MNCTEvent::Stream(ofstream& S, int Version, int Mode)
       m_Hits[h]->Stream(S, Version);  
     }
   }
+
+  if (m_EnergyCalibrationIncomplete == true) {
+    S<<"BD EnergyCalibrationIncomplete"<<endl;
+  }
+
+  if (m_StripPairingIncomplete == true) {
+    S<<"BD StripPairingIncomplete"<<endl;
+  }
+
+  if (m_DepthCalibrationIncomplete == true) {
+    S<<"BD DetpthCalibrationIncomplete"<<endl;
+  }
   
   return true;
 }
@@ -359,6 +375,19 @@ void MNCTEvent::StreamEvta(ostream& S)
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     m_Hits[h]->StreamEvta(S);  
   }
+
+  if (m_EnergyCalibrationIncomplete == true) {
+    S<<"BD EnergyCalibrationIncomplete"<<endl;
+  }
+
+  if (m_StripPairingIncomplete == true) {
+    S<<"BD StripPairingIncomplete"<<endl;
+  }
+
+  if (m_DepthCalibrationIncomplete == true) {
+    S<<"BD DepthCalibrationIncomplete"<<endl;
+  }
+
 }
   
 

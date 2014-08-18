@@ -144,7 +144,7 @@ bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MNCTEvent* Event)
   float EventQualityCounter=0.;
   
   
-  int n_detectors=10; //Number of detectors (labeled 0 to n_detectors-1) Make the program read this variable automatically 
+  int n_detectors=12; //Number of detectors (labeled 0 to n_detectors-1) Make the program read this variable automatically 
   // Attention: Make sure too loop over all detectors
   
   int detector=0; 
@@ -875,6 +875,25 @@ bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MNCTEvent* Event)
     
     
     // printf("__________________________________________\n");
+
+
+
+    //Carolyn's edit to get rid of poorly matched strips...
+    for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+      //mout<<"Daniel's Hit "<<h<<endl;
+      //for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+      //  mout<<"Energy: "<<Event->GetHit(h)->GetStripHit(s)->GetEnergy()<<endl;
+      //}
+      if (Event->GetHit(h)->GetNStripHits() == 2) {
+      double deviation = 2.0*((Event->GetHit(h)->GetStripHit(0)->GetEnergy()) - (Event->GetHit(h)->GetStripHit(1)->GetEnergy()))/((Event->GetHit(h)->GetStripHit(0)->GetEnergy()) + (Event->GetHit(h)->GetStripHit(1)->GetEnergy()));
+      //mout<<"deviation: "<<deviation<<endl;
+      if (abs(deviation) > 0.5) {
+	Event->SetStripPairingIncomplete(true);
+      }
+    }
+    }
+
+
     
     return true;
   }

@@ -140,7 +140,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     if (NTokens <= 15) {
       cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
           <<"Line parser: Not enough tokens for a calibration point (failed at read-out element)"<<endl;
-      return false;
+      //return false;
     }
     MReadOutElement* ReadOutElement = 0;
     MString ReadOutElementString = Parser.GetTokenizerAt(i)->GetTokenAtAsString(Pos);
@@ -190,6 +190,9 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
 
 
 	//And, closing the "if poly3" statemnet...
+    } else if (CalibratorType == "pakw") {
+      
+      // Ignore
     } else {
       cout<<m_XmlTag<<": "<<Parser.GetTokenizerAt(i)->GetText()<<endl
           <<"Line parser: Unknown calibrator type: "<<CalibratorType<<endl;
@@ -214,9 +217,15 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event)
     TF1* Fit = m_Calibration[*dynamic_cast<MReadOutElementDoubleStrip*>(R)];
     if (Fit == 0) {
       cout<<"Error: Fit not found for read-out element "<<&R<<endl;
+      Event->SetEnergyCalibrationIncomplete(true);
     } else {
       double Energy = Fit->Eval(SH->GetADCUnits());
-      if (Energy < 0) Energy = 0;
+      if (Energy < 0 && SH->GetADCUnits() > 100) {
+	Event->SetEnergyCalibrationIncomplete(true);
+	Energy = 0;
+      } else if (Energy < 0) {
+	Energy = 0;
+      }
       SH->SetEnergy(Energy);
       cout<<"Energy: "<<SH->GetADCUnits()<<" --> "<<Energy<<endl;
     }
