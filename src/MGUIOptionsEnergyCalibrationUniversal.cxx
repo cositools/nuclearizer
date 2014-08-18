@@ -67,11 +67,11 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
 {
   PreCreate();
 
-  m_FileSelector = new MGUIEFileSelector(this, "Please select an energy calibration file:",
+  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
     dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Energy calibration file", "*.ecal");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  AddFrame(m_FileSelector, LabelLayout);
+  m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
   
   PostCreate();

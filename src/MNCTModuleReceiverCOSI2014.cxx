@@ -30,6 +30,7 @@
 
 // Standard libs:
 #include <algorithm>
+using namespace std;
 
 // ROOT libs:
 #include "TGClient.h"
@@ -75,7 +76,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   AddSucceedingModuleType(c_EventSaver);
   
   // Set the module name --- has to be unique
-  m_Name.AppendInPlace("Data packet receiver, sorter, and aspect reconstructor for COSI 2014");
+  m_Name = "Data packet receiver, sorter, and aspect reconstructor for COSI 2014";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagReceiverCOSI2014";  
@@ -84,6 +85,16 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   
   m_Receiver = 0;
 
+  m_DistributorName = "localhost";
+  m_DistributorPort = 9091;
+  m_DistributorStreamID = "OP";
+  
+  m_LocalReceivingHostName = "localhost";
+  m_LocalReceivingPort = 12345;
+
+  m_DataSelectionMode = MNCTModuleReceiverCOSI2014DataModes::c_All;
+  
+  
   m_UseComptonDataframes = true;
   m_UseRawDataframes = true;
   m_NumRawDataframes = 0;
@@ -95,7 +106,6 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
 
   LoadStripMap();
   LoadCCMap();
-
 }
 
 
@@ -165,13 +175,19 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
     Handshaker->Send(ToSend);
     cout<<"Sent connection request: "<<msg.str()<<endl;
     
-    Wait = 1000;
+    MTimer Waiting;
+    Wait = 0;
     bool Restart = false;
     while (Handshaker->IsConnected() == true && Restart == false && Interrupt == false) {
-      gSystem->Sleep(100); 
-      cout<<"CONNECTION ESTABLISHED"<<endl;
+      cout<<"Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
+      ++Wait;
+      if (Wait < 10) {
+        gSystem->Sleep(100);
+      } else {
+        gSystem->Sleep(1000);
+      }
       // Need a timeout here
-      if (--Wait == 0) {
+      if (Waiting.GetElapsed() > 60) {
         cout<<"Connected but didn't receive anything -- timeout & restarting"<<endl;
         Handshaker->Disconnect();
         delete Handshaker;
@@ -488,6 +504,12 @@ MNCTEvent * MNCTModuleReceiverCOSI2014::MergeEvents( deque<MNCTEvent*> * EventLi
 bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
+
+  if (m_Events.size() == 0) {
+    cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: No events"<<endl;
+    cout<<"This function should have never been called when we have no events"<<endl;
+    return false;
+  }
   
   // TODO: Just *copy* the data from the OLDEST event in the list to this event  
 
@@ -545,6 +567,21 @@ bool MNCTModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
     m_DistributorStreamID = DistributorStreamIDNode->GetValue();
   }
 
+  MXmlNode* LocalReceivingHostNameNode = Node->GetNode("LocalReceivingHostName");
+  if (LocalReceivingHostNameNode != 0) {
+    m_LocalReceivingHostName = LocalReceivingHostNameNode->GetValue();
+  }
+  MXmlNode* LocalReceivingPortNode = Node->GetNode("LocalReceivingPort");
+  if (LocalReceivingPortNode != 0) {
+    m_LocalReceivingPort = LocalReceivingPortNode->GetValueAsInt();
+  }
+  
+
+  MXmlNode* DataSelectionModeNode = Node->GetNode("DataSelectionMode");
+  if (DataSelectionModeNode != 0) {
+    m_DataSelectionMode = (MNCTModuleReceiverCOSI2014DataModes) LocalReceivingHostNameNode->GetValueAsInt();
+  }
+
   return true;
 }
 
@@ -560,6 +597,11 @@ MXmlNode* MNCTModuleReceiverCOSI2014::CreateXmlConfiguration()
   new MXmlNode(Node, "DistributorName", m_DistributorName);
   new MXmlNode(Node, "DistributorPort", m_DistributorPort);
   new MXmlNode(Node, "DistributorStreamID", m_DistributorStreamID);
+
+  new MXmlNode(Node, "LocalReceivingHostName", m_LocalReceivingHostName);
+  new MXmlNode(Node, "LocalReceivingPort", m_LocalReceivingPort);
+
+  new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
   
   return Node;
 }

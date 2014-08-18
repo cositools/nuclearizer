@@ -69,13 +69,13 @@ void MGUIOptionsTransmitterRealta::Create()
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 
-  m_HostName = new MGUIEEntry(this, "Host name/IP: ", false,
+  m_HostName = new MGUIEEntry(m_OptionsFrame, "Host name/IP: ", false,
                               dynamic_cast<MNCTModuleTransmitterRealta*>(m_Module)->GetHostName());
-  AddFrame(m_HostName, LabelLayout);
+  m_OptionsFrame->AddFrame(m_HostName, LabelLayout);
 
-  m_HostPort = new MGUIEEntry(this, "Host listening port: ", false,
+  m_HostPort = new MGUIEEntry(m_OptionsFrame, "Host listening port: ", false,
                               dynamic_cast<MNCTModuleTransmitterRealta*>(m_Module)->GetHostPort());
-  AddFrame(m_HostPort, LabelLayout);
+  m_OptionsFrame->AddFrame(m_HostPort, LabelLayout);
 
 
   PostCreate();

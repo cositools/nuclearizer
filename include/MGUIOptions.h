@@ -63,11 +63,11 @@ class MGUIOptions : public TGTransientFrame
   void PostCreate();
 
   //! Actions after the OK button has been pressed
-	virtual bool OnOk();
+  virtual bool OnOk();
   //! Actions after the Cancel button has been pressed
-	virtual bool OnCancel();
+  virtual bool OnCancel();
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -75,7 +75,13 @@ class MGUIOptions : public TGTransientFrame
   //! The module
   MNCTModule* m_Module;
 
-	enum BasicButtonIDs { e_Ok = 1, e_Cancel, e_Apply };
+  //! The font scaler (normal font size is 12 - if we have anything larger we need to scale some GUIs)
+  double m_FontScaler;
+
+  //! The main frame to which to add all other content
+  TGVerticalFrame* m_OptionsFrame;
+  
+  enum BasicButtonIDs { e_Ok = 1, e_Cancel, e_Apply };
 
   // private members:
  private:

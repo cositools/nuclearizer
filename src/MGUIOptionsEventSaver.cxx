@@ -69,18 +69,18 @@ void MGUIOptionsEventSaver::Create()
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);  
   
-  m_Mode = new MGUIERBList(this, "Please select a mode:");
+  m_Mode = new MGUIERBList(m_OptionsFrame, "Please select a mode:");
   m_Mode->Add("Dat file containing all information");
   m_Mode->Add("Evta file containing only the reconstructed hits");
   m_Mode->SetSelected(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetMode());
   m_Mode->Create();
-  AddFrame(m_Mode, LabelLayout);
+  m_OptionsFrame->AddFrame(m_Mode, LabelLayout);
 
   
-  m_FileSelector = new MGUIEFileSelector(this, "Please select a data file:",
+  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
     dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Data file", "*.dat");
-  AddFrame(m_FileSelector, LabelLayout);
+  m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
   
   PostCreate();

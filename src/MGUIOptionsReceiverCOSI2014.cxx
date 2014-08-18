@@ -67,43 +67,44 @@ void MGUIOptionsReceiverCOSI2014::Create()
 {
   PreCreate();
 
-  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, m_FontScaler*20, m_FontScaler*2);
+  TGLayoutHints* ContentLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, m_FontScaler*2, m_FontScaler*2);
 
-  TGLabel* HandshakerLabel = new TGLabel(this, "Connection to the distributor:");
-  AddFrame(HandshakerLabel, LabelLayout);
+  TGLabel* HandshakerLabel = new TGLabel(m_OptionsFrame, "Connection to the distributor:");
+  m_OptionsFrame->AddFrame(HandshakerLabel, LabelLayout);
   
-  m_DistributorName = new MGUIEEntry(this, "Distributor name/IP: ", false,
+  m_DistributorName = new MGUIEEntry(m_OptionsFrame, "Distributor name/IP: ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorName());
-  AddFrame(m_DistributorName, LabelLayout);
+  m_OptionsFrame->AddFrame(m_DistributorName, ContentLayout);
 
-  m_DistributorPort = new MGUIEEntry(this, "Distributor listening port: ", false,
+  m_DistributorPort = new MGUIEEntry(m_OptionsFrame, "Distributor listening port: ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorPort());
-  AddFrame(m_DistributorPort, LabelLayout);
+  m_OptionsFrame->AddFrame(m_DistributorPort, ContentLayout);
 
-  m_DistributorStreamID = new MGUIEEntry(this, "Stream ID: ", false,
+  m_DistributorStreamID = new MGUIEEntry(m_OptionsFrame, "Stream ID: ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorStreamID());
-  AddFrame(m_DistributorStreamID, LabelLayout);
+  m_OptionsFrame->AddFrame(m_DistributorStreamID, ContentLayout);
 
   
-  TGLabel* SendToLabel = new TGLabel(this, "Connection where the data should be sent to:");
-  AddFrame(SendToLabel, LabelLayout);
+  TGLabel* SendToLabel = new TGLabel(m_OptionsFrame, "Connection where the data should be sent to:");
+  m_OptionsFrame->AddFrame(SendToLabel, LabelLayout);
 
-  m_SendToName = new MGUIEEntry(this, "Name/IP of the machine where we send the data to: ", false,
+  m_SendToName = new MGUIEEntry(m_OptionsFrame, "Name/IP of the machine where we send the data to: ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetLocalReceivingHostName());
-  AddFrame(m_SendToName, LabelLayout);
+  m_OptionsFrame->AddFrame(m_SendToName, ContentLayout);
 
-  m_SendToPort = new MGUIEEntry(this, "Port on the machine where we send the data to: ", false,
+  m_SendToPort = new MGUIEEntry(m_OptionsFrame, "Port on the machine where we send the data to: ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetLocalReceivingPort());
-  AddFrame(m_SendToPort, LabelLayout);
+  m_OptionsFrame->AddFrame(m_SendToPort, ContentLayout);
 
   
-  m_DataMode = new MGUIERBList(this, "Choose the data to look at: ");
+  m_DataMode = new MGUIERBList(m_OptionsFrame, "Choose the data to look at: ");
   m_DataMode->Add("Raw mode");
   m_DataMode->Add("Compton mode");
   m_DataMode->Add("Both");
   m_DataMode->SetSelected((int) dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDataSelectionMode());
   m_DataMode->Create();
-  AddFrame(m_DataMode, LabelLayout);
+  m_OptionsFrame->AddFrame(m_DataMode, LabelLayout);
   
   PostCreate();
 }

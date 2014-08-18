@@ -53,6 +53,8 @@ MGUIOptions::MGUIOptions(MNCTModule* Module)
 {
   // standard constructor
 
+  m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 }
@@ -76,12 +78,22 @@ void MGUIOptions::PreCreate()
 
   // We start with a name and an icon...
   SetWindowName("Module options");  
-
+  
   // Main label
-  TGLabel* MainLabel = new TGLabel(this, MString("Options for module \"") + m_Module->GetName() + MString("\":"));
+  TGLabel* MainLabelHeader = new TGLabel(this, "Options for module");
+  //MainLabel->SetTextFont(MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct());
+  TGLayoutHints* MainLabelHeaderLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, m_FontScaler*20, m_FontScaler*20, m_FontScaler*10, m_FontScaler*2);
+  AddFrame(MainLabelHeader, MainLabelHeaderLayout);
+  
+  TGLabel* MainLabel = new TGLabel(this, m_Module->GetName());
   MainLabel->SetTextFont(MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct());
-  TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, MGUIDefaults::GetInstance()->GetFontScaler()*20);
+  TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, m_FontScaler*20, m_FontScaler*20, m_FontScaler*2, 0);
   AddFrame(MainLabel, MainLabelLayout);
+  
+  m_OptionsFrame = new TGVerticalFrame(this);
+  TGLayoutHints* OptionFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, m_FontScaler*30, m_FontScaler*30, m_FontScaler*20, m_FontScaler*20);
+  AddFrame(m_OptionsFrame, OptionFrameLayout);
+  
 }
 
 
@@ -93,7 +105,7 @@ void MGUIOptions::PostCreate()
   // OK and cancel buttons
   // Frame around the buttons:
   TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, MGUIDefaults::GetInstance()->GetFontScaler()*20, 10);
+  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, m_FontScaler*20, 10);
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
   // The buttons itself
