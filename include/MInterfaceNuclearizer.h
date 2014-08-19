@@ -50,6 +50,9 @@ class MInterfaceNuclearizer
 
   //! Exit the application
   void Exit();
+  
+  //! Set the interrupt which will break the analysis
+  void SetInterrupt(bool Flag = true);
 
   // protected methods:
  protected:
@@ -73,6 +76,9 @@ class MInterfaceNuclearizer
   //! The store for all user data of the GUI:
   MNCTData* m_Data;
 
+  //! The interrupt flag
+  bool m_Interrupt;
+  
 #ifdef ___CINT___
  public:
   ClassDef(MInterfaceNuclearizer, 0) // image reconstruction management class 

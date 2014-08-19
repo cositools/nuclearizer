@@ -75,6 +75,8 @@ protected:
   virtual bool OnStart();
   //! Actions when the exit button has been pressed
   virtual bool OnExit();
+  //! Actions when the stop button has been pressed
+  virtual bool OnStop();
   //! Actions when the save key has been pressed
   virtual bool OnSaveConfiguration();
   //! Actions when the load key has been pressed
@@ -116,6 +118,7 @@ private:
   static const int c_SaveConfig =   4;
   static const int c_Geometry   =   5;
   static const int c_About      =   6;
+  static const int c_Stop       =   7;
   static const int c_Remove     = 400;
   static const int c_Options    = 500;
   static const int c_Change     = 600;

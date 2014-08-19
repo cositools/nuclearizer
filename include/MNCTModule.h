@@ -87,6 +87,9 @@ class MNCTModule
   //! Return the succeeding module at position i (no error checks performed)
   int GetSucceedingModuleType(unsigned int i) { return m_SucceedingModules.at(i); }
 
+  //! Raise an interrupt
+  void SetInterrupt(bool Flag = true) { m_Interrupt = Flag; }
+  
   //! Initialize the module --- has to be overwritten
   virtual bool Initialize() = 0;
 
@@ -160,6 +163,9 @@ class MNCTModule
   
   //! True, if the status of the module is OK
   bool m_IsOK;
+  
+  //! Interrupt whatever it is doing and break
+  bool m_Interrupt;
   
   // private members:
  private:
