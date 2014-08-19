@@ -113,7 +113,7 @@ void MNCTEvent::Clear()
   m_Veto = false;
   m_Trigger = true;
 
-  for (int DetectorID = 0; DetectorID <= 9; DetectorID++) {
+  for (int DetectorID = 0; DetectorID <= 11; DetectorID++) {
     m_InDetector[DetectorID] = false;
   }
 
@@ -175,7 +175,7 @@ void MNCTEvent::DeleteHits()
 bool MNCTEvent::InDetector(int DetectorID)
 {
   //! Find out if the event contains strip hits in a given detector
-  if ( (DetectorID>=0) && (DetectorID<=9) )
+  if ( (DetectorID>=0) && (DetectorID<=11) )
     {
       return m_InDetector[DetectorID];
     }
