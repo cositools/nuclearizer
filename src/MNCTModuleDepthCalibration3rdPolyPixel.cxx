@@ -1,4 +1,4 @@
- /*
+/*
  * MNCTModuleDepthCalibration3rdPolyPixel.cxx
  *
  *
@@ -26,7 +26,7 @@
 // Include the header:
 #include "MNCTModuleDepthCalibration3rdPolyPixel.h"
 
-// Standard libs:
+// // Standard libs:
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -135,14 +135,14 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     string DetectorNumberString;
     stringstream temp;
     if (DetectorNumber < 10) {
-    temp << setfill('0') << setw(2) << DetectorNumber;
-    DetectorNumberString = temp.str();
+      temp << setfill('0') << setw(2) << DetectorNumber;
+      DetectorNumberString = temp.str();
     } else {
-    temp << setw(2) << DetectorNumber;
-    DetectorNumberString = temp.str();
+      temp << setw(2) << DetectorNumber;
+      DetectorNumberString = temp.str();
     }
     MString FileName = (MString)std::getenv ("NUCLEARIZER_CAL")
-    +"/depth_3rdPoly_pixel_D"+ DetectorNumberString + ".csv";
+    +"/depth_3rdPoly_pixel_CC"+ DetectorNumberString + ".csv";
     
     // Reset flags telling if calibration has been loaded
     m_IsCalibrationLoaded[DetectorNumber] = false;
@@ -159,6 +159,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     if (File.is_open() == false) {
       mout<<"***Warning: Unable to open file: "<<FileName<<endl
       <<"   Is your NUCLEARIZER_CAL environment variable set?"<<endl;
+      return false;
     } else {
       MString Line;
       while(!File.eof()) {
@@ -172,8 +173,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
             &ctd2z2,&ctd2z3,&FWHM_positive,&FWHM_negative) == 8) {
             //mout << "load parameter:[(s+),p0,p3,fwhm(+)]" << " " << PositiveStripNumber << " " 
             //<< ctd2z0 << " " << ctd2z3 << " " << FWHM_positive << endl;
-          
-          m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][0] = ctd2z0;
+            
+            m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][0] = ctd2z0;
           m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][1] = ctd2z1;
           m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][2] = ctd2z2;
           m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][3] = ctd2z3;
@@ -212,6 +213,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     } else {
       mout << "***Warning: Unable to fully load 3rd polynomial depth calibration (by pixel) for D" 
       << DetectorNumber << ".  Defaults were used for some or all strips." << endl;
+      // return false;
     }
     
   } // 'DetectorNumber' loop
@@ -238,7 +240,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
   
   //mout << endl << "Event ID: " << Event->GetID() << endl;
   for (unsigned int i_hit=0; i_hit<NHits; i_hit++) {
-	MNCTHit *H = Event->GetHit(i_hit);
+    MNCTHit *H = Event->GetHit(i_hit);
     unsigned int NStripHits = H->GetNStripHits();
     unsigned int NXStripHits = 0, NYStripHits = 0;
     int DetectorNumber;
@@ -254,44 +256,44 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
     MNCTStripHit *SHX, *SHY;
     //int DetectorNumber = SHX->GetDetectorID();
     MString DetectorName;
-	
-	//All of the "DetectorNumbers" within this file and elsewhere in Nuclearizer refer to CC #. When we call upon the geometry file later on here to determine the globale position of all the detector, we want to be calling the DetectorName not the CC #. Here is the conversion:
-	if (DetectorNumber == 0) {
-	  DetectorName = "Detector4_CC00";
-	}
-	if (DetectorNumber == 1) {
-	  DetectorName = "Detector1_CC01";
-	}
-	if (DetectorNumber == 2) {
-	  DetectorName = "Detector2_CC02";
-	}
-	if (DetectorNumber == 3) {
-	  DetectorName = "Detector3_CC03";
-	}
-	if (DetectorNumber == 4) {
-	  DetectorName = "Detector6_CC04";
-	}	
-	if (DetectorNumber == 5) {
-	  DetectorName = "Detector7_CC05";
-	}
-	if (DetectorNumber == 6) {
-	  DetectorName = "Detector5_CC06";
-	}
-	if (DetectorNumber == 7) {
-	  DetectorName = "Detector8_CC07";
-	}
-	if (DetectorNumber == 8) {
-	  DetectorName = "Detector11_CC08";
-	}
-	if (DetectorNumber == 9) {
-	  DetectorName = "Detector12_CC09";
-	}
-	if (DetectorNumber == 10) {
-	  DetectorName = "Detector9_CC10";
-	}
-	if (DetectorNumber == 11) {
-	  DetectorName = "Detector10_CC11";
-	}
+    
+    //All of the "DetectorNumbers" within this file and elsewhere in Nuclearizer refer to CC #. When we call upon the geometry file later on here to determine the globale position of all the detector, we want to be calling the DetectorName not the CC #. Here is the conversion:
+    if (DetectorNumber == 0) {
+      DetectorName = "Detector4_CC00";
+    }
+    if (DetectorNumber == 1) {
+      DetectorName = "Detector1_CC01";
+    }
+    if (DetectorNumber == 2) {
+      DetectorName = "Detector2_CC02";
+    }
+    if (DetectorNumber == 3) {
+      DetectorName = "Detector3_CC03";
+    }
+    if (DetectorNumber == 4) {
+      DetectorName = "Detector6_CC04";
+    }	
+    if (DetectorNumber == 5) {
+      DetectorName = "Detector7_CC05";
+    }
+    if (DetectorNumber == 6) {
+      DetectorName = "Detector5_CC06";
+    }
+    if (DetectorNumber == 7) {
+      DetectorName = "Detector8_CC07";
+    }
+    if (DetectorNumber == 8) {
+      DetectorName = "Detector11_CC08";
+    }
+    if (DetectorNumber == 9) {
+      DetectorName = "Detector12_CC09";
+    }
+    if (DetectorNumber == 10) {
+      DetectorName = "Detector9_CC10";
+    }
+    if (DetectorNumber == 11) {
+      DetectorName = "Detector10_CC11";
+    }
     
     if ( (NStripHits == 2) && (NXStripHits == 1) && (NYStripHits == 1) ) {
       Flag_CanBeCalibrated = 1;
@@ -323,8 +325,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
     for (unsigned int i_s_hit=0; i_s_hit < NStripHits; i_s_hit++){
       if (H->GetStripHit(i_s_hit)->IsXStrip() == true){
         Tmp_XStrip[i_sxhit] = H->GetStripHit(i_s_hit)->GetStripID();
-        mout<<"XStrip:"<<Tmp_XStrip[i_sxhit]<<",eNERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()
-            <<",Tmp_E:"<<Tmp_XEnergy<<endl;
+        if (m_Verbosity >= c_Info) mout<<"XStrip:"<<Tmp_XStrip[i_sxhit]<<", ENERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()<<", Tmp_E:"<<Tmp_XEnergy<<endl;
         if ( Tmp_XEnergy < H->GetStripHit(i_s_hit)->GetEnergy() ){
           Tmp_XEnergy = H->GetStripHit(i_s_hit)->GetEnergy();
           XTiming = H->GetStripHit(i_s_hit)->GetTiming();
@@ -362,8 +363,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         (((Tmp_XStrip[0]-Tmp_XStrip[1])==1) || ((Tmp_XStrip[0]-Tmp_XStrip[1])==-1))){
         ShareHitNumber0++;
       //mout<<"EventID,"<<Event->GetID()<<"Share Hit, OK,"<<ShareHitNumber0<<endl;
-        EventTypeFlag1=1;
-        Flag_CanBeCalibrated = 2;
+      EventTypeFlag1=1;
+      Flag_CanBeCalibrated = 2;
         }
     } else {
       Flag_CanBeCalibrated = 0;
@@ -381,8 +382,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
       // Require 2 strip hits: 1 X strip and 1 Y strip
       //if ( (NStripHits == 2) && (NXStripHits == 1) && (NYStripHits == 1) ) 
       if (Flag_CanBeCalibrated == 1 || Flag_CanBeCalibrated == 2) {
-	  //mout<<"Flag: "<<Flag_CanBeCalibrated<<", ID: "<<Event->GetID()<<", XStrip/Timing: "<<
-      //        XStripNumber<<"/"<<XTiming<<", YStrip/Timing: "<<YStripNumber<<"/"<<YTiming<<endl;
+        //mout<<"Flag: "<<Flag_CanBeCalibrated<<", ID: "<<Event->GetID()<<", XStrip/Timing: "<<
+        //        XStripNumber<<"/"<<XTiming<<", YStrip/Timing: "<<YStripNumber<<"/"<<YTiming<<endl;
         
         
         // Calibration parameters
@@ -403,18 +404,18 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         for (n_parameters=0;n_parameters<4;n_parameters++) {
           depth=depth+ctd2z[n_parameters]*pow(CTD,n_parameters);
         }
-
-		//mout << "Depth?! = "<< depth<<endl;
-
+        
+        //mout << "Depth?! = "<< depth<<endl;
+        
         //The depth is the distance from the negative side, not always from front.
         //The negative side on D9 and D7 are at back, near dewar.
-
+        
         //COSI 14 - Det 1-3 (CC 01, 02, 03) have DC on top, 
-	          //Det 4-6 (CC 00, 06, 04) have DC on bottom, 
-	          //Det 7-9 (CC 05, 07, 10) have DC on top, 
-	          //Det 10-12 (CC 11, 08, 09) have DC on bottom 
-	                   //- DC on top means Z_Front = depth;
-       
+        //Det 4-6 (CC 00, 06, 04) have DC on bottom, 
+        //Det 7-9 (CC 05, 07, 10) have DC on top, 
+        //Det 10-12 (CC 11, 08, 09) have DC on bottom 
+        //- DC on top means Z_Front = depth;
+        
         if ( (DetectorNumber == 0) || (DetectorNumber == 6) || (DetectorNumber == 4) || (DetectorNumber = 11) || (DetectorNumber == 8) || (DetectorNumber == 9) ) {
           Z_Front = 1.5 - depth;
         } else {
@@ -454,58 +455,36 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         //mout<<"calculated FWHM:"<<Z_FWHM<<endl;
         //output done
         // Calculate X and Y positions based on strip number.  These are referenced from the middle.
-        double X_Middle=0., Y_Middle=0.;
-         if (DetectorNumber == 0 ||  DetectorNumber == 6 || DetectorNumber == 4) {
-       	  // For detector stack #4-6
-          X_Middle = ((double)XStripNumber - 19.0)*0.2;
-          Y_Middle = -1.0*((double)YStripNumber - 19.0)*0.2;
-        } else if (DetectorNumber == 1 || DetectorNumber == 2 || DetectorNumber == 3) {
-          // For detector stack #1-3
-          X_Middle = -1.0*((double)XStripNumber - 19.0)*0.2;
-          Y_Middle = -1.0*((double)YStripNumber - 19.0)*0.2;
-        } else if (DetectorNumber == 8 || DetectorNumber == 9 || DetectorNumber == 11) {
-          // For detector stack # 10-12
-          X_Middle = -1.0*((double)XStripNumber - 19.0)*0.2;
-          Y_Middle = ((double)YStripNumber - 19.0)*0.2;
-        } else {
-       	  // For detector stack # 7-9
-       	  X_Middle = ((double)XStripNumber - 19.0)*0.2;
-       	  Y_Middle = ((double)YStripNumber - 19.0)*0.2;
-      	}        
-
-
-
-
-
-
-
+        double X_Middle = ((double)XStripNumber - 19.0)*0.2;
+        double Y_Middle = ((double)YStripNumber - 19.0)*0.2;
+        
         // Set depth and depth resolution for the hit, relative to the center of the detector volume
         MVector PositionInDetector(X_Middle, Y_Middle, Z_Middle);
         //MVector PositionResolution(2.0/2.35, 2.0/2.35, Z_FWHM/2.35);
         MVector PositionResolution(2.0/2.35, Z_FWHM/2.35, 2.0/2.35);
         MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetectorName);
         //mout << "Pos in det:    " << PositionInDetector << endl;
-        mout << "Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
+        if (m_Verbosity >= c_Info) mout << "Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
         DepthCalibrated=true;
-        mout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
-           << " Y:" << YStripNumber << " (" << Y_Middle << " cm)  "
-           << " X Timing: " << XTiming << " Y Timing: " << YTiming 
-           //<< " Z_X: " << Z_X << " Z_Y: " << Z_Y 
-           << " Z: " << Z_Front << " cm  Z res.: " << Z_FWHM << " cm" << endl;
+        if (m_Verbosity >= c_Info) mout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
+          << " Y:" << YStripNumber << " (" << Y_Middle << " cm)  "
+          << " X Timing: " << XTiming << " Y Timing: " << YTiming 
+          //<< " Z_X: " << Z_X << " Z_Y: " << Z_Y 
+          << " Z: " << Z_Front << " cm  Z res.: " << Z_FWHM << " cm" << endl;
       } else {  
-	//closes "if (Flag_CanBeCalibrated == 1 || Flag_CanBeCalibrated == 2) {"
+        //closes "if (Flag_CanBeCalibrated == 1 || Flag_CanBeCalibrated == 2) {"
         MVector PositionInGlobal(-9999.0,-9999.0,-9999.0);
         MVector PositionResolution(0.0,0.0,0.0);
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
-        mout << "Depth calibration cannot calculate depth for hit.  "
-           << "Doesn't contain exactly one X and one Y strip hit." << endl;
+        if (m_Verbosity >= c_Error) mout << "Depth calibration cannot calculate depth for hit.  "
+          << "Doesn't contain exactly one X and one Y strip hit." << endl;
         //DepthCalibrated=false;
         //mout<<"Doesn't contain exactly one X and one Y strip hit. ID: "<<Event->GetID()
         //    <<" , NXStripHits:"<<NXStripHits<<", NYStripHits:"<<NYStripHits<<endl;
-	Event->SetDepthCalibrationIncomplete(true);
+        Event->SetDepthCalibrationIncomplete(true);
       }
   }
   //mout<<"DepthCal for this event is done..."<<endl;

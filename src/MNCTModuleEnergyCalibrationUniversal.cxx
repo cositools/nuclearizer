@@ -62,25 +62,25 @@ ClassImp(MNCTModuleEnergyCalibrationUniversal)
 MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : MNCTModule()
 {
   // Construct an instance of MNCTModuleEnergyCalibrationUniversal
-
+  
   // Set all module relevant information
-
+  
   // Set the module name --- has to be unique
   m_Name = "Universal energy calibrator";
-
+  
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "EnergyCalibrationUniversal";
-
+  
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(c_EventLoader);
-
+  
   // Set all types this modules handles
   AddModuleType(c_EnergyCalibration);
-
+  
   // Set all modules, which can follow this module
-   AddSucceedingModuleType(c_NoRestriction);
-
-
+  AddSucceedingModuleType(c_NoRestriction);
+  
+  
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
 }
@@ -104,7 +104,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
   
   MParser Parser;
   if (Parser.Open(m_FileName, MFile::c_Read) == false) {
-    mout<<"Unable to open file "<<m_FileName<<endl;
+    if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Unable to open calibration file "<<m_FileName<<endl;
     return false;
   }
   
@@ -128,10 +128,10 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
           CM_ROEToLine[R] = i;
         }
       } else {
-        cout<<m_XmlTag<<": Line parser: Unknown read out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
+        if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Line parser: Unknown read-out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
         return false;
       }
-    }
+      }
   }
   
   
@@ -142,15 +142,15 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       unsigned int i = CP_ROEToLine[CM.first];
       if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == true) {
         if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
-          cout<<m_XmlTag<<": Not enough calibration points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CM.first<<endl;
+          if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": Not enough calibration points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CM.first<<endl;
           continue;
         }
       } else {
-        cout<<m_XmlTag<<": Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
+        if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
         continue;
       }
     } else {
-      cout<<m_XmlTag<<": No good calibration for the following strip found: "<<CM.first<<endl;
+      if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": No good calibration for the following strip found: "<<CM.first<<endl;
       continue;
     }
     
@@ -175,10 +175,10 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       melinatorfit->FixParameter(3, a3);
       
       //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-      m_Calibration[CM.first] = melinatorfit;;
+      m_Calibration[CM.first] = melinatorfit;
       
     } else {
-      cout<<m_XmlTag<<": Line parser: Unknown calibrator type ("<<CalibratorType<<") for strip"<<CM.first<<endl;
+      if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Line parser: Unknown calibrator type ("<<CalibratorType<<") for strip"<<CM.first<<endl;
       continue;
     }
   }
@@ -193,29 +193,29 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
 bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event) 
 {
   // Main data analysis routine, which updates the event to a new level, i.e. takes the raw ADC value from the .roa file loaded through nuclearizer and converts it into energy units.
-
+  
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     MNCTStripHit* SH = Event->GetStripHit(i);
     MReadOutElement* R = SH->GetReadOutElement();
-
+    
     TF1* Fit = m_Calibration[*dynamic_cast<MReadOutElementDoubleStrip*>(R)];
     if (Fit == 0) {
-      cout<<"Error: Fit not found for read-out element "<<*R<<endl;
+      if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<*R<<endl;
       Event->SetEnergyCalibrationIncomplete(true);
     } else {
       double Energy = Fit->Eval(SH->GetADCUnits());
       if (Energy < 0 && SH->GetADCUnits() > 100) {
-	Event->SetEnergyCalibrationIncomplete(true);
-	Energy = 0;
+        Event->SetEnergyCalibrationIncomplete(true);
+        Energy = 0;
       } else if (Energy < 0) {
-	Energy = 0;
+        Energy = 0;
       }
       SH->SetEnergy(Energy);
       SH->SetEnergyResolution(2.0);
-      cout<<"Energy: "<<SH->GetADCUnits()<<" --> "<<Energy<<endl;
+      if (m_Verbosity >= c_Info) mout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     }
   } 
-
+  
   Event->SetEnergyCalibrated(true);
   return true;
 }
@@ -228,7 +228,7 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event)
 void MNCTModuleEnergyCalibrationUniversal::ShowOptionsGUI()
 {
   // Show the options GUI
-
+  
   MGUIOptionsEnergyCalibrationUniversal* Options = new MGUIOptionsEnergyCalibrationUniversal(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
@@ -246,7 +246,7 @@ bool MNCTModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
   if (FileNameNode != 0) {
     m_FileName = FileNameNode->GetValue();
   }
- 
+  
   return true;
 }
 

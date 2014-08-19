@@ -391,7 +391,38 @@ void MNCTEvent::StreamEvta(ostream& S)
   if (m_DepthCalibrationIncomplete == true) {
     S<<"BD DepthCalibrationIncomplete"<<endl;
   }
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTEvent::StreamRoa(ostream& S)
+{
+  //! Stream the content in MEGAlib's evta format 
+
+  S<<"SE"<<endl;
+  S<<"ID "<<m_ID<<endl;
+  S<<"TI "<<m_Time<<endl;
+
+  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+    m_StripHits[h]->StreamRoa(S);  
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTEvent::IsGoodEvent() const
+{
+  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+
+  if (m_EnergyCalibrationIncomplete == true) return false;
+  if (m_StripPairingIncomplete == true) return false;
+  if (m_DepthCalibrationIncomplete == true) return false;
+
+  return true;
 }
   
 

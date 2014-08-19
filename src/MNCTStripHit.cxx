@@ -98,7 +98,7 @@ bool MNCTStripHit::Parse(MString& Line, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTStripHit::Stream(ofstream& S, int Version)
+bool MNCTStripHit::Stream(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
   
@@ -114,6 +114,22 @@ bool MNCTStripHit::Stream(ofstream& S, int Version)
    <<m_EnergyResolution<<endl;
  
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTStripHit::StreamRoa(ostream& S)
+{
+  //! Stream the content in MEGAlib's evta format 
+
+  S<<"UH " 
+   <<m_ReadOutElement->GetDetectorID()<<" "
+   <<m_ReadOutElement->GetStripID()<<" "
+   <<((m_ReadOutElement->IsPositiveStrip() == true) ? "p" : "n")<<" "
+   <<m_ADCUnits<<" "
+   <<m_Timing<<endl;
 }
 
 

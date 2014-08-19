@@ -76,6 +76,13 @@ class MNCTModule
   // -> ALL module constructors!
   // -> MNCTData::GetHighestAnalysislevel()
 
+  // Verbosity:
+  static const int c_Quiet    = 0;
+  static const int c_Error    = 1;
+  static const int c_Warning  = 2;
+  static const int c_Info     = 3;
+  
+  
   //! Return the number of the preceeding modules
   unsigned int GetNPreceedingModuleTypes() { return m_PreceedingModules.size(); }
   //! Return the preceeding module at position i (no error checks performed)
@@ -93,6 +100,9 @@ class MNCTModule
 
   //! Raise an interrupt
   void SetInterrupt(bool Flag = true) { m_Interrupt = Flag; }
+
+  //! Set the verbosity (0: Quiet, 1: Errors, 2: Warnings, 3: Info)
+  void SetVerbosity(int Verbosity) { m_Verbosity = Verbosity; }
   
   //! Initialize the module --- has to be overwritten
   virtual bool Initialize() = 0;
@@ -170,6 +180,9 @@ class MNCTModule
   
   //! Interrupt whatever it is doing and break
   bool m_Interrupt;
+  
+  //! Chatty-ness of the module
+  int m_Verbosity;
   
   // private members:
  private:

@@ -137,8 +137,48 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MNCTEvent* Event){
 //	cout << "size: " << detectorQualityFactors.size() << endl;
 	CalculateEventQuality(Event, nDetectors);
 	detectorQualityFactors.clear();
-	return true;
-
+  
+  //Carolyn's edit to get rid of poorly matched strips...
+  for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+    double pEnergy = 0.0;
+    double pUncertainty = 0.0;
+    double nEnergy = 0.0;
+    double nUncertainty = 0.0;
+    
+    for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+      if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+        pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+        pUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
+      } else {
+        nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+        nUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
+      }
+    }
+    
+    pUncertainty = sqrt(pUncertainty);
+    nUncertainty = sqrt(nUncertainty);
+    
+    double Difference = fabs(pEnergy - nEnergy);
+    if (Difference > 4*max(pUncertainty, nUncertainty)) {
+      Event->SetStripPairingIncomplete(true);
+      if (m_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+    } else {
+      if (m_Verbosity >= c_Info) cout<<"Good strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+    }
+  }  
+  
+  if (m_Verbosity >= c_Info) {
+    cout<<"After strip pairing..."<<endl;
+    for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+      cout<<"Hit "<<h<<endl;
+      Event->GetHit(h)->Stream(cout, 1); 
+      for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+        Event->GetHit(h)->GetStripHit(s)->Stream(cout, 1); 
+      }
+    }
+  }
+  
+  return true;
 };
 
 //this function takes the MNCTEvent and get all the info from it.
@@ -1049,7 +1089,8 @@ void MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 		else {
 			hitE = (eX+eY)/2;
 		}
-		hitEnergy.push_back(hitE);
+		// At this stage we can only use ONE side, the above formula we can only use AFTER charge charging/cross talk correction!
+		hitEnergy.push_back(eY); //hitEnergy.push_back(hitE);
 
 //		PrintWeightMatrix();
 		//call ConflictingStrips to avoid repeating strips

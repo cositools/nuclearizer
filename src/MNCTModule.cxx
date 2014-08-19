@@ -56,6 +56,8 @@ MNCTModule::MNCTModule()
   m_IsReady = true;
   
   m_Interrupt = false;
+  
+  m_Verbosity = 1;
 }
 
 

@@ -175,6 +175,8 @@ class MNCTEvent
   //! Get the depth-calibration-incomplete  flag
   bool IsDepthCalibrationIncomplete() const { return m_DepthCalibrationIncomplete; }
 
+  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+  bool IsGoodEvent() const;
 
   //! Set the data read flag
   void SetDataRead(bool Flag = true) { m_DataRead = Flag; }
@@ -227,6 +229,8 @@ class MNCTEvent
   bool Stream(ofstream& S, int Version, int Mode = 0);
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
+  //! Stream the content in MEGAlib's roa format 
+  void StreamRoa(ostream& S);
 
 
   // protected methods:
@@ -259,19 +263,6 @@ class MNCTEvent
   MTime m_Time;
   double m_MJD;
 
-  /*
-  //! Location of this event
-  double m_Latitude;
-  double m_Longitude;
-  double m_Altitude;
-
-  //! Aspect information (horizon, celestial, galactic coordinates)
-  vector<double> m_GX;
-  vector<double> m_GZ;
-  vector<double> m_HX;
-  vector<double> m_HZ;
-  */
-  
   //! The aspect information - will be zero if not set!
   MNCTAspect* m_Aspect;
   

@@ -82,6 +82,8 @@ MInterfaceNuclearizer::MInterfaceNuclearizer()
   m_Data->Load(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
   
   m_Interrupt = false;
+  
+  m_Verbosity = 2;
 }
 
 
@@ -111,6 +113,8 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
   Usage<<"             If no configuration file is give ~/.nuclearizer.xml.cfg is used"<<endl;
   Usage<<"      -a --auto:"<<endl;
   Usage<<"             Automatically start analysis without GUI"<<endl;
+  Usage<<"      -v --verbosity:"<<endl;
+  Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info"<<endl;
   Usage<<"      -h --help:"<<endl;
   Usage<<"             You know the answer..."<<endl;
   Usage<<endl;
@@ -147,6 +151,9 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
     if (Option == "--configuration" || Option == "-c") {
       m_Data->Load(argv[++i]);
       cout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
+    } else if (Option == "--verbosity" || Option == "-v") {
+      m_Verbosity = atoi(argv[++i]);
+      cout<<"Command-line parser: Verbosity "<<m_Verbosity<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
     }
@@ -203,6 +210,7 @@ bool MInterfaceNuclearizer::Analyze()
   // Initialize the modules:
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
     m_Data->GetModule(m)->SetInterrupt(false);
+    m_Data->GetModule(m)->SetVerbosity(m_Verbosity);
     if (m_Data->GetModule(m)->Initialize() == false) {
       if (m_Interrupt == true) {
         break;
@@ -231,7 +239,7 @@ bool MInterfaceNuclearizer::Analyze()
           AllReady = false;
         }
         if (m_Data->GetModule(m)->IsOK() == false) {
-          mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not longer healthy... aborting..."<<endl;
+          mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not longer OK... exiting analysis loop..."<<endl;
           AllOK = false;
         }
       }

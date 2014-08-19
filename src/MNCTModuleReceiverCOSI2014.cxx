@@ -275,6 +275,23 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
   // Load aspect reconstruction module
   delete m_AspectReconstructor;
   m_AspectReconstructor = new MNCTAspectReconstruction();
+    
+  if (m_RoaFileName != "") {
+    MTime Now;
+    MString TimeStamp(".");
+    TimeStamp += Now.GetShortString();
+    TimeStamp += ".roa";
+    MString FileName = m_RoaFileName;
+    if (m_RoaFileName.EndsWith(".roa")) {
+      FileName.ReplaceAllInPlace(".roa", TimeStamp);
+    } else {
+      FileName += TimeStamp; 
+    }
+    m_Out.open(FileName);
+    m_Out<<"TYPE ROA"<<endl;
+    m_Out<<"UF doublesidedstrip adcwithtiming"<<endl;
+    m_Out<<endl;
+  }
   
   return true;
 }
@@ -423,6 +440,8 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 
 	} 
 
+	// Be sure to switch back to normal printing:
+	cout<<dec;
 
 	if( m_Events.size() > 0 ){
 		return true;
@@ -658,6 +677,10 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event)
   Event->SetMJD( NewEvent->GetMJD() );
   Event->SetDataRead();
 
+  if (m_RoaFileName != "") {
+    Event->StreamRoa(m_Out);
+  }
+  
   delete NewEvent;
   
 
@@ -681,6 +704,10 @@ void MNCTModuleReceiverCOSI2014::Finalize()
   // TODO: Clear all lists
   delete m_Receiver;
   m_Receiver = 0;
+  
+  if (m_RoaFileName != "") {
+    m_Out.close();
+  }
   
   return;
 }
@@ -733,6 +760,12 @@ bool MNCTModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
   if (DataSelectionModeNode != 0) {
     m_DataSelectionMode = (MNCTModuleReceiverCOSI2014DataModes) LocalReceivingHostNameNode->GetValueAsInt();
   }
+  
+
+  MXmlNode* RoaFileNameNode = Node->GetNode("RoaFileName");
+  if (RoaFileNameNode != 0) {
+    m_RoaFileName = RoaFileNameNode->GetValueAsString();
+  }
 
   return true;
 }
@@ -754,6 +787,8 @@ MXmlNode* MNCTModuleReceiverCOSI2014::CreateXmlConfiguration()
   new MXmlNode(Node, "LocalReceivingPort", m_LocalReceivingPort);
 
   new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
+
+  new MXmlNode(Node, "RoaFileName", m_RoaFileName);
   
   return Node;
 }
@@ -1058,7 +1093,7 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 			StripHit = new MNCTStripHit();
 			StripHit->SetDetectorID(m_CCMap[DataIn->CCId]);
 			//go from board channel, to side strip
-			if( T.Board >= 4 && T.Board < 8 ) PosSide = true; else if( T.Board >= 0 && T.Board < 4 ) PosSide = false; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
+			if( T.Board >= 4 && T.Board < 8 ) PosSide = false; else if( T.Board >= 0 && T.Board < 4 ) PosSide = true; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
 			StripHit->IsPositiveStrip(PosSide);
 			if( T.Channel >= 0 && T.Channel < 10 ) StripHit->SetStripID(m_StripMap[T.Board][T.Channel]+1); else {cout<<"bad trigger channel = "<<T.Channel<<endl; delete StripHit; continue;}
 			if( T.HasADC ) StripHit->SetADCUnits((double)T.ADCBytes);

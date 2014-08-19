@@ -79,6 +79,9 @@ class MInterfaceNuclearizer
   //! The interrupt flag
   bool m_Interrupt;
   
+  //! Chatty-ness of nuclearizer
+  int m_Verbosity;
+  
 #ifdef ___CINT___
  public:
   ClassDef(MInterfaceNuclearizer, 0) // image reconstruction management class 

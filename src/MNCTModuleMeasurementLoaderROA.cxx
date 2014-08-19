@@ -148,15 +148,16 @@ bool MNCTModuleMeasurementLoaderROA::Open(MString FileName, unsigned int Way)
 bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MNCTEvent* Event)
 {
   // Return next single event from file... or 0 if there are no more.
-
-  cout<<"Reading"<<endl;
   
   Event->Clear();
 
   MReadOutSequence ROS;
   m_ROAFile.ReadNext(ROS);
 
-  if (ROS.GetNumberOfReadOuts() == 0) return false;
+  if (ROS.GetNumberOfReadOuts() == 0) {
+    cout<<m_Name<<": No more read-outs available in File"<<endl;
+    return false;
+  }
   
   m_NEventsInFile++;
   m_NGoodEventsInFile++;

@@ -99,7 +99,7 @@ MNCTStripHit* MNCTHit::GetStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTHit::Stream(ofstream& S, int Version)
+bool MNCTHit::Stream(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
   

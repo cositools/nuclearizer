@@ -76,7 +76,7 @@ class MNCTHit
   void AddStripHit(MNCTStripHit* StripHit) { return m_StripHits.push_back(StripHit); }
   
   //! Dump the content into a file stream
-  bool Stream(ofstream& S, int Version);
+  bool Stream(ostream& S, int Version);
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
   

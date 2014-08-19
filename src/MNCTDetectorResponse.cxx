@@ -205,7 +205,7 @@ vector<MNCTStripEnergyDepth> MNCTDetectorResponse::noEnergySharing(const MNCTHit
 {
   int det=HitInVoxel.GetDetectorID();
   int strip;
-  double dx;
+  //double dx;
   double z=HitInVoxel.GetDisplace().GetZ();
   double energy=HitInVoxel.GetEnergy();
   double depth;
@@ -213,12 +213,12 @@ vector<MNCTStripEnergyDepth> MNCTDetectorResponse::noEnergySharing(const MNCTHit
   
   if(IsXStrip == false )
   {
-    dx=HitInVoxel.GetDisplace().GetY();
+    //dx=HitInVoxel.GetDisplace().GetY();
     strip=HitInVoxel.GetYStripID();
   }
   else
   {
-    dx=HitInVoxel.GetDisplace().GetX();
+    //dx=HitInVoxel.GetDisplace().GetX();
     strip=HitInVoxel.GetXStripID();
   }
 

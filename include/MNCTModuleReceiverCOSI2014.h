@@ -18,6 +18,7 @@
 
 // Standard libs:
 #include <list>
+#include <fstream>
 using namespace std;
 
 // ROOT libs:
@@ -83,6 +84,10 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   //! Set the data selection mode
   void SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes Mode) { m_DataSelectionMode = Mode; } 
  
+  //! Get the file name
+  MString GetRoaFileName() const { return m_RoaFileName; }
+  //! Set the file name
+  void SetRoaFileName(const MString& Name) { m_RoaFileName = Name; }
  
   //! Return if the module is ready to analyze events
   virtual bool IsReady();
@@ -138,12 +143,18 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 
   //! The data selection mode (raw, Compton, all)
   MNCTModuleReceiverCOSI2014DataModes m_DataSelectionMode;
+
+  //! ROA save file name
+  MString m_RoaFileName;
   
   //! The transceiver
   MTransceiverTcpIpBinary* m_Receiver;
   
   //! The aspect reconstructor
   MNCTAspectReconstruction* m_AspectReconstructor;
+   
+  //! Output stream for dat file
+  ofstream m_Out;
 
   //! The internal event list
   deque<MNCTEvent*> m_Events;//final, merged events

@@ -130,6 +130,11 @@ bool MNCTModuleTransmitterRealta::AnalyzeEvent(MNCTEvent* Event)
   Event->SetDataRead(true);
   */
   
+  if (Event->IsDepthCalibrationIncomplete() == true) return true;
+  if (Event->IsStripPairingIncomplete() == true) return true;
+  if (Event->IsEnergyCalibrationIncomplete() == true) return true;
+
+  
   ostringstream estream;
   Event->StreamEvta(estream);
   estream<<"EN"<<endl;

@@ -870,10 +870,10 @@ bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MNCTEvent* Event)
       double deviation = 2.0*((Event->GetHit(h)->GetStripHit(0)->GetEnergy()) - (Event->GetHit(h)->GetStripHit(1)->GetEnergy()))/((Event->GetHit(h)->GetStripHit(0)->GetEnergy()) + (Event->GetHit(h)->GetStripHit(1)->GetEnergy()));
       //mout<<"deviation: "<<deviation<<endl;
       if (abs(deviation) > 0.5) {
-	Event->SetStripPairingIncomplete(true);
+        Event->SetStripPairingIncomplete(true);
       }
     }
-    }
+  }
 
 
     

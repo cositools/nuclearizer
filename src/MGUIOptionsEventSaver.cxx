@@ -94,8 +94,8 @@ bool MGUIOptionsEventSaver::ProcessMessage(long Message, long Parameter1, long P
 {
   // Modify here if you have more buttons
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -123,12 +123,12 @@ bool MGUIOptionsEventSaver::ProcessMessage(long Message, long Parameter1, long P
 
 bool MGUIOptionsEventSaver::OnApply()
 {
-	// Modify this to store the data in the module!
+  // Modify this to store the data in the module!
 
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetMode(m_Mode->GetSelected());
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
-	
-	return true;
+  
+  return true;
 }
 
 

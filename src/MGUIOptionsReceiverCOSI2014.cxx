@@ -106,6 +106,13 @@ void MGUIOptionsReceiverCOSI2014::Create()
   m_DataMode->Create();
   m_OptionsFrame->AddFrame(m_DataMode, LabelLayout);
   
+  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "If a file is selected, then the input stream is saved as roa :",
+  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetRoaFileName());
+  m_FileSelector->SetFileType("Read-out file", "*.roa");
+  m_OptionsFrame->AddFrame(m_FileSelector, ContentLayout);
+
+  
+  
   PostCreate();
 }
 
@@ -162,6 +169,8 @@ bool MGUIOptionsReceiverCOSI2014::OnApply()
   } else if (m_DataMode->GetSelected() == 2) {
     dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes::c_All);     
   }
+  
+  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetRoaFileName(m_FileSelector->GetFileName());  
   
   return true;
 }

@@ -340,13 +340,11 @@ MNCTEvent* MNCTFileEventsDat::GetNextEvent()
   // So remember to test for more events!
   
   MNCTEvent* Event;
-  bool Canceled = false;
   unsigned long CL_period = 4294967295UL;
   
   // if progress window has been canceled, exit.
   if (UpdateProgress() == false)
   {
-    Canceled = true;
     Event = 0;
   }
   else

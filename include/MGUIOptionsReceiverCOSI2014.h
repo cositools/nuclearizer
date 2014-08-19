@@ -78,6 +78,9 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
   MGUIEEntry* m_SendToPort;
 
   MGUIERBList* m_DataMode;
+
+  //! Select if we save the file to roa
+  MGUIEFileSelector* m_FileSelector;
   
   #ifdef ___CINT___
  public:
