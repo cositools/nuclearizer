@@ -185,14 +185,11 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector
 
 	if( (n_x > 0) && (n_y > 0) && (fabs(n_x - n_y) < 5) && (n_x < 8) && (n_y < 8)) {
 
-		nHits.push_back(n_x);
-		nHits.push_back(n_y);
-		nHitsOrig = nHits;
-
 		vector<int> xStripsHit, yStripsHit;
 		vector<float> xEnergy, yEnergy, xSigma, ySigma;
 		int stripID;
 		float stripEnergy, stripSigma;
+		double inf = numeric_limits<double>::infinity();
 
 		for (unsigned int i=0; i<Event->GetNStripHits(); i++){
 			if (detector == Event->GetStripHit(i)->GetDetectorID()){
@@ -200,17 +197,22 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector
 					stripID = Event->GetStripHit(i)->GetStripID();
 					stripEnergy = Event->GetStripHit(i)->GetEnergy();
 					stripSigma = Event->GetStripHit(i)->GetEnergyResolution();
-					xStripsHit.push_back(stripID);
-					xEnergy.push_back(stripEnergy);
-					xSigma.push_back(stripSigma);
+					//make sure energy and error are NOT inf, 0, nan
+					if (stripEnergy!=0 && stripEnergy!=inf && !isnan(stripEnergy) && stripSigma!=0 && stripSigma!=inf && !isnan(stripSigma)){
+						xStripsHit.push_back(stripID);
+						xEnergy.push_back(stripEnergy);
+						xSigma.push_back(stripSigma);
+					}
 				}
 				else {
 					stripID = Event->GetStripHit(i)->GetStripID();
 					stripEnergy = Event->GetStripHit(i)->GetEnergy();
 					stripSigma = Event->GetStripHit(i)->GetEnergyResolution();
-					yStripsHit.push_back(stripID);
-					yEnergy.push_back(stripEnergy);
-					ySigma.push_back(stripSigma);
+					if (stripEnergy!=0 && stripEnergy!=inf && !isnan(stripEnergy) && stripSigma!=0 && stripSigma!=inf && !isnan(stripSigma)){
+						yStripsHit.push_back(stripID);
+						yEnergy.push_back(stripEnergy);
+						ySigma.push_back(stripSigma);
+					}
 				}
 			}
 		}	
@@ -221,6 +223,15 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector
 		energy.push_back(yEnergy);
 		sig.push_back(xSigma);
 		sig.push_back(ySigma);
+
+		//change n_x and n_y in case some strips had bad values for energy / error
+		n_x = stripsHit.at(0).size();
+		n_y = stripsHit.at(1).size();
+		nHits.push_back(n_x);
+		nHits.push_back(n_y);
+		nHitsOrig = nHits;
+
+
 
 
 		//sort strips (and energy and resolution) in numerical order by strip ID
@@ -316,7 +327,6 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MNCTEvent* Event, int detector){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
 					if (Event->GetStripHit(n)->IsXStrip() == true){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(0).at(strip)){
-							cout << "here: " << decodedFinalPairs.at(pair).at(0).at(strip) << '\t';
 							Hit->AddStripHit(Event->GetStripHit(n));
 							Hit->SetHitQuality(hitQualityFactor.at(pair));
 							Hit->SetEnergyResolution(energyResolution.at(pair));
@@ -333,7 +343,6 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MNCTEvent* Event, int detector){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
 					if (Event->GetStripHit(n)->IsXStrip() == false){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(1).at(strip)){
-							cout << decodedFinalPairs.at(pair).at(1).at(strip) << endl;
 							Hit->AddStripHit(Event->GetStripHit(n));
 						}
 					}
@@ -778,6 +787,7 @@ float MNCTModuleStripPairingGreedy_b::CalculateWeight(int xIndex, int yIndex){
 	float yS = sig.at(1).at(yIndex);
 
 	weight = (xE-yE)*(xE-yE)/((xS*xS)+(yS*yS));
+	cout << "weight: x=" << xIndex << ", y=" << yIndex << ": "<< weight << endl;
 	return weight;
 
 };
@@ -917,9 +927,9 @@ vector<int> MNCTModuleStripPairingGreedy_b::FindMinWeight(){
 				min_weight = weight;
 				xIndex = i;
 				yIndex = j;
-//				cout << "minWeight: " << min_weight << endl;
-//				cout << "xIndex: " << xIndex << endl;
-//				cout << "yIndex: " << yIndex << endl;
+			//	cout << "minWeight: " << min_weight << endl;
+			//	cout << "xIndex: " << xIndex << endl;
+			//	cout << "yIndex: " << yIndex << endl;
 			}
 		}
 	}
@@ -996,6 +1006,8 @@ void MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 	int n_y = nHits.at(1);
 
 	CalculateWeightMatrix();
+	PrintXYStripsHit();
+	PrintWeightMatrix();
 	int nElements = n_x*n_y;
 	int nNegElem = 0;
 	int xIndex, yIndex;
@@ -1215,8 +1227,9 @@ void MNCTModuleStripPairingGreedy_b::PrintWeightMatrix(){
 	cout << nHits.at(0) << endl;
 	cout << weightMatrix.size() << endl;
 	cout << weightMatrix.at(0).size() << endl;
-	cout << weightMatrix.at(1).size() << endl;
+//	cout << weightMatrix.at(1).size() << endl;
 
+	cout << "printing matrix" << endl;
 	for (int i=0; i<nHits.at(1); i++){
 		for (int j=0; j<nHits.at(0); j++){
 			cout << weightMatrix.at(j).at(i) << '\t';
