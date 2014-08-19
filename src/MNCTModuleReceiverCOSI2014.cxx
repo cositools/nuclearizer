@@ -105,6 +105,8 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   MAX_TRIGS = 80;
   LastTimestamps.resize(12);
   dx = 0;
+  m_EventTimeWindow = 5 * 10000000;
+  m_ComptonWindow = 2;
 
   LoadStripMap();
   LoadCCMap();
@@ -292,6 +294,10 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 	bool SyncError;
 	int CCId;
 
+	if( m_Events.size() > 0 ){
+		return true;
+	}
+
 	SyncWord.push_back(0xEB);
 	SyncWord.push_back(0x90);
 
@@ -378,20 +384,16 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 					FlushEventsBuf();
 					LastTimestamps[CCId] = E->GetCL();
 				}
-				delete E;
 
 				m_EventsBuf.push_back(E);
 			}
 			NewEvents.clear();
 
-
-			/*
 			cout<<"T ::: ";;
 			for( auto E: LastTimestamps ){
 				cout<<std::hex<<E<<" ";
 			}
 			cout<<endl;
-			*/
 
 			//now sort m_EventsBuf
 			SortEventsBuf();
@@ -591,6 +593,7 @@ bool MNCTModuleReceiverCOSI2014::CheckEventsBuf(void){
 			//at this point, EventList contains all of the events to be merged, merge them
 			MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
+			NewMergedEvent->SetDataRead(true);
 			m_Events.push_back( NewMergedEvent );
 			++MergedEventCounter;
 			if( m_EventsBuf.size() == 0 ) break;
@@ -610,11 +613,9 @@ MNCTEvent * MNCTModuleReceiverCOSI2014::MergeEvents( deque<MNCTEvent*> * EventLi
 	//events into this base event
 	BaseEvent = EventList->front(); EventList->pop_front();
 	for( auto E: *EventList ){
-		for( int j = 0; j < E->GetNStripHits(); ++j ){
-			BaseEvent->AddStripHit( E->GetStripHit(j) );
-			//need to remove the strip hit from the old event so that when we delete 
-			//non-base event, the memory pointed to by strip hit is not also deleted
-			E->RemoveStripHit(j);
+		while( E->GetNStripHits() > 0){
+			BaseEvent->AddStripHit( E->GetStripHit(0) );
+			E->RemoveStripHit(0);
 		}
 		//now we should free the memory for the MNCTEvent that we just copied the 
 		//strip hit from
@@ -631,12 +632,32 @@ MNCTEvent * MNCTModuleReceiverCOSI2014::MergeEvents( deque<MNCTEvent*> * EventLi
 bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
+	MNCTEvent * NewEvent;
   
   if (m_Events.size() == 0) {
     cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: No events"<<endl;
     cout<<"This function should have never been called when we have no events"<<endl;
     return false;
   }
+
+  NewEvent = m_Events[0];
+  m_Events.pop_front();
+
+  while( NewEvent->GetNStripHits() > 0 ){
+	  Event->AddStripHit( NewEvent->GetStripHit(0) );
+	  NewEvent->RemoveStripHit(0);
+  }
+
+  Event->SetID( NewEvent->GetID() );
+  Event->SetFC( NewEvent->GetFC() );
+  Event->SetTI( NewEvent->GetTI() );
+  Event->SetCL( NewEvent->GetCL() );
+  Event->SetTime( NewEvent->GetTime() );
+  Event->SetMJD( NewEvent->GetMJD() );
+  Event->SetDataRead();
+
+  delete NewEvent;
+  
 
   // TODO: Just *copy* the data from the OLDEST event in the list to this event  
 
@@ -928,7 +949,8 @@ loop_exit:
 				}
 
 				if( TrigBuf[i].HasADC ){
-					TrigBuf[i].ADCBytes = (Buf[Ax] << 8) | Buf[Ax + 1];
+					TrigBuf[i].ADCBytes = (Buf[Ax+1] << 8) | Buf[Ax];
+					TrigBuf[i].ADCBytes &= 0x1fff;
 					Ax += 2;
 				}
 			}
@@ -1035,8 +1057,8 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 			if( T.Board >= 4 && T.Board < 8 ) PosSide = false; else if( T.Board >= 0 && T.Board < 4 ) PosSide = true; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
 			StripHit->IsPositiveStrip(PosSide);
 			if( T.Channel >= 0 && T.Channel < 10 ) StripHit->SetStripID(m_StripMap[T.Board][T.Channel]); else {cout<<"bad trigger channel = "<<T.Channel<<endl; delete StripHit; continue;}
-			if( T.HasADC ) StripHit->SetUncorrectedADCUnits((double)T.ADCBytes);
-			if( T.HasTiming ) StripHit->SetTiming((double)T.TimingByte);
+			if( T.HasADC ) StripHit->SetADCUnits((double)T.ADCBytes);
+			if( T.HasTiming ) StripHit->SetTiming((double) (T.TimingByte & 0x3f));
 			NewEvent->AddStripHit( StripHit );
 		}
 		//now need to set parameters for the MNCTEvent
