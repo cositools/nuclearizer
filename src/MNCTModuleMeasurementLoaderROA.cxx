@@ -109,6 +109,7 @@ bool MNCTModuleMeasurementLoaderROA::AnalyzeEvent(MNCTEvent* Event)
   
   if (ReadNextEvent(Event) == false) {
     cout<<"MNCTModuleMeasurementLoaderROA: No more events!"<<endl;
+    m_IsOK = false;
     return false;
   }
   
