@@ -214,14 +214,13 @@ MNCTStripHit* MNCTEvent::GetStripHit(unsigned int i)
   return 0;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void MNCTEvent::AddStripHit(MNCTStripHit* StripHit)
 {
   //! Add a strip hit
   int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=9) )
+  if ( (DetectorID>=0) && (DetectorID<=11) )
     {
       m_InDetector[DetectorID]=true;
     }

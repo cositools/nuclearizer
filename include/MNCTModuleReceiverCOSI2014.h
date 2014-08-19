@@ -160,6 +160,8 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   unsigned long long m_EventTimeWindow;
   vector<uint64_t> LastTimestamps;
   uint64_t m_ComptonWindow;
+  vector<uint8_t> m_SBuf;//search buffer for the incoming TCP data stream
+  int dx; //index into search buffer
 
   int m_StripMap[8][10];
   int m_CCMap[12];
@@ -225,6 +227,8 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   bool FlushEventsBuf(void);
   bool CheckEventsBuf(void);
   MNCTEvent * MergeEvents( deque<MNCTEvent*> * EventList );
+  bool FindNextPacket( vector<uint8_t> & NextPacket, int * idx = NULL );
+  bool ResyncSBuf(void);
 
   
   
@@ -237,57 +241,6 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 
 #endif
 
-//AWL adding my struct definitions for the dataframe parsing
-
-
-struct trigger{
-
-	uint8_t Board;
-	int8_t Channel;
-	uint8_t HasTiming;
-	uint8_t HasADC;
-	uint16_t ADCBytes;
-	uint8_t TimingByte;
-
-};
-
-struct event{
-
-	uint64_t EventTime; 
-	uint8_t ErrorBoardList;
-	uint8_t ErrorInfo;
-	uint8_t EventID;
-	uint8_t TrigAndVetoInfo;
-	uint8_t FTPattern;
-	uint8_t LTPattern;
-	uint8_t ParseError;
-	uint8_t CCId; 
-	uint8_t InternalCompton; 
-	uint8_t Touchable; 
-
-	uint32_t NumTriggers;
-	struct trigger * Triggers; 
-
-};
-
-struct dataframe {
-
-	uint8_t Valid; 
-	uint8_t CCId;
-	uint8_t RawOrCompton; //0 if this struct came from a raw data frame, or 1 if from compton
-	uint32_t ReportedNumEvents;
-	uint64_t SysTime;
-	uint32_t LifetimeBits;
-	uint8_t NumNormal;
-	uint8_t NumLLD;
-	uint8_t NumTOnly;
-	uint8_t NumNoData;
-	uint8_t HasSysErr;
-
-	uint32_t NumEvents; //the number of events which is <= 41
-	struct event * Events[41]; //an array of pointers to dynamically allocated event structures
-
-};
 
 
 ////////////////////////////////////////////////////////////////////////////////

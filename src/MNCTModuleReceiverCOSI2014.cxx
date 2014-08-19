@@ -30,6 +30,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <cstdio>
 using namespace std;
 
 // ROOT libs:
@@ -83,8 +84,6 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   
   m_HasOptionsGUI = true;
   
-  m_Receiver = 0;
-
   m_DistributorName = "localhost";
   m_DistributorPort = 9091;
   m_DistributorStreamID = "OP";
@@ -95,6 +94,8 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   m_DataSelectionMode = MNCTModuleReceiverCOSI2014DataModes::c_All;
   
   
+  m_Receiver = 0;
+
   m_UseComptonDataframes = true;
   m_UseRawDataframes = true;
   m_NumRawDataframes = 0;
@@ -103,9 +104,11 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   m_NumOtherPackets = 0;
   MAX_TRIGS = 80;
   LastTimestamps.resize(12);
+  dx = 0;
 
   LoadStripMap();
   LoadCCMap();
+
 }
 
 
@@ -293,6 +296,13 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 	SyncWord.push_back(0x90);
 
 	// Do the actual work here, not in analyze event!
+	/*
+	for( auto E: m_Events ){
+     //m_Events.pop_front();
+	  delete E;
+	}
+	m_Events.clear();
+	*/
 
 	// Check if the receiver is still up and running, if not reconnect
 	// TODO: Add time out to DoHandshake
@@ -309,112 +319,229 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 
 	// Retrieve the latest data from the transceiver
 	vector<uint8_t> Received;
-	m_Receiver->SyncedReceive(Received, SyncWord, 1);
+	m_Receiver->Receive(Received);
 
-	//where do I set whether m_Receiver will sync to eb90?
-	//don't use SyncReceived(), do the syncing manually here
+	//apend the received data to m_SBuf
+	m_SBuf.insert( m_SBuf.end(), Received.begin(), Received.end() );
+	//FindNextPacket handles all the resyncing etc...
 
-	if( Received.size() >= 10 ){
-		if( (Received[0] == 0xeb) && (Received[1] == 0x90) ){
-			//received data is synced, get the size
-			Len = 0;
-			Len = ((uint16_t)Received[8]<<8) | ((uint16_t)Received[9]);
-			Type = Received[2];
+	vector<uint8_t> NextPacket;
+	//dx = 0;
+	while( FindNextPacket( NextPacket ) ){ //loop until there are no more complete packets
 
-			if( Received.size() >= Len ){
-				if( Received.size() != Len ){
-					cout<<"packet length mismatch, got "<<Received.size()<<"/"<<Len<<" bytes"<<endl;
+		Type = NextPacket[2];
+
+		switch( Type ){
+			case 0x00:
+				//raw dataframe
+				if( m_UseRawDataframes ){
+					//convert dataframe to class
+					//clear out first ten bytes 
+					//LEAK
+					Dataframe = new dataframe();
+					ParseErr = RawDataframe2Struct( NextPacket, Dataframe );
+					if( ParseErr >= 0 ){
+						ConvertToMNCTEvents( Dataframe, &NewEvents );
+						CCId = Dataframe->CCId;
+					}
+					//cout<<"made "<<NewEvents.size()<<" MNCTEvents"<<endl;
+					delete Dataframe;
+					//LEAK
+					m_NumRawDataframes++;
 				}
-				vector<uint8_t> TruncReceived = Received;
-				TruncReceived.erase(TruncReceived.begin(), TruncReceived.begin()+10);
-
-
-				switch( Type ){
-					case 0x00:
-						//raw dataframe
-						if( m_UseRawDataframes ){
-							//convert dataframe to class
-							//clear out first ten bytes 
-							Dataframe = new dataframe();
-							ParseErr = RawDataframe2Struct( Received, Dataframe );
-							if( ParseErr >= 0 ){
-								ConvertToMNCTEvents( Dataframe, &NewEvents );
-								CCId = Dataframe->CCId;
-							}
-							delete Dataframe;
-							m_NumRawDataframes++;
-						}
-						break;
-					case 0x01:
-						//compton dataframe
-						if( m_UseComptonDataframes ){
-							//convert to dataframe class
-							//cout<<"got compton dataframe!"<<endl;
-							m_NumComptonDataframes++;
-						}
-						break;
-					case 0x05:
-						//aspect packet
-						cout<<"got aspect packet!"<<endl;
-						m_NumAspectPackets++;
-						break;
-					default:
-						//don't care
-						m_NumOtherPackets++;
-
+				break;
+			case 0x01:
+				//compton dataframe
+				if( m_UseComptonDataframes ){
+					//convert to dataframe class
+					//cout<<"got compton dataframe!"<<endl;
+					m_NumComptonDataframes++;
 				}
-			} else {
-				cout<<"not enough bytes, got "<<Received.size()<<"/"<<Len<<endl;
-				cout<<std::hex<<(int)Received[0]<<" "<<(int)Received[1]<<std::dec<<endl;
+				break;
+			case 0x05:
+				//aspect packet
+				cout<<"got aspect packet!"<<endl;
+				m_NumAspectPackets++;
+				break;
+			default:
+				//don't care
+				m_NumOtherPackets++;
+
+		}
+		if( NewEvents.size() > 0 ){
+			for( auto E: NewEvents ){
+				//push the events onto the deque
+				//before we push the event into m_EventsBuf, check if we have a sync problem
+				if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
+					//sync problem detected...
+					//cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
+					FlushEventsBuf();
+					LastTimestamps[CCId] = E->GetCL();
+				}
+				delete E;
+
+				m_EventsBuf.push_back(E);
 			}
-		} else {
-			cout<<"out of sync [0]="<<std::hex<<Received[0]<<std::dec<<" [1]="<<Received[1]<<endl;
+			NewEvents.clear();
+
+
+			/*
+			cout<<"T ::: ";;
+			for( auto E: LastTimestamps ){
+				cout<<std::hex<<E<<" ";
+			}
+			cout<<endl;
+			*/
+
+			//now sort m_EventsBuf
+			SortEventsBuf();
+			//look thru m_EventsBuf for multi-detector events
+			CheckEventsBuf();
+			/*
+				for (auto E: m_Events) {
+				if (E->GetAspect() == 0) {
+				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
+				if (A != 0) {
+				E->SetAspect(A);
+				}
+				}
+				}
+
+			// TODO: If the oldest event has a reconstructed event, we are ready for the analyze function,
+			// thus we return true otehrwise false
+			if (m_Events.begin() != m_Events.end()) {
+			if (m_Events.front()->GetAspect() != 0) {
+			return true;
+			}
+			}
+			 */
+		}
+
+	} 
+
+
+	if( m_Events.size() > 0 ){
+		return true;
+	} else {
+		return false;
+	}
+
+}
+
+bool MNCTModuleReceiverCOSI2014::FindNextPacket(vector<uint8_t>& NextPacket , int * idx){
+
+	//return true if a complete packet was found, return packet in NextPacket
+	//return false if a complete packet was not found.  also copy the leftover bytes
+	//back to the beginning
+
+	//idx is the value of dx that points to the beginning of the packet in m_SBuf
+
+	//assert: search buf is either synced or empty
+
+	uint16_t Len;
+	bool FoundPacket;
+
+	FoundPacket = false;
+	NextPacket.clear();
+
+	if( (dx + 2) > m_SBuf.size() ){
+		//not enough bytes to check for sync
+		return false;
+	}
+
+	while( !(m_SBuf[dx] == 0xeb && m_SBuf[dx+1] == 0x90) ){
+		ResyncSBuf();
+		if( m_SBuf.size() == 0 ){
+			return false;
 		}
 	}
 
-	for( auto E: NewEvents ){
-		//push the events onto the deque
-		//before we push the event into m_EventsBuf, check if we have a sync problem
-		if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
-			//sync problem detected...
-			cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
-			FlushEventsBuf();
-			LastTimestamps[CCId] = E->GetCL();
-		}
-
-		m_EventsBuf.push_back(E);
-		//printf("unix = %d  CL = %llx\n", E->GetTI(), E->GetCL());
+	//we are synced and the buffer is not empty
+	if( (dx + 10) > m_SBuf.size() ){
+		//not enough bytes to compute len
+		return false;
 	}
 
-	//now sort m_EventsBuf
-	SortEventsBuf();
+	Len = ((uint16_t)m_SBuf[dx+8]<<8) | ((uint16_t)m_SBuf[dx+9]);
+	if( Len > 1360 ){
+		//got a weird value, could be a spurious eb90, Resync() and exit
+		ResyncSBuf();
+		return false;
+	}
 
+	if( (dx + Len) > m_SBuf.size() ){
+		//we don't have the complete packet
+		//this should happen often since TCP will give us a bunch of bytes w/o boundaries 
+		//move the data up so as to clear out the packets we have already processed
+		m_SBuf.assign( m_SBuf.begin() + dx, m_SBuf.end() );
+		dx = 0;
+		return false;
+	}
 
-	//look thru m_EventsBuf for multi-detector events
-	CheckEventsBuf();
+	FoundPacket = true;
 
+	//we have a complete packet, extract it
+	NextPacket.assign( m_SBuf.begin() + dx, m_SBuf.begin() + dx + Len);
+	//store the location of beginning of this packet
+	if( idx != NULL ){
+		*idx = dx;
+	}
+	//increment the index...we should be pointing at the next 0xeb 
+	dx += Len;
 
+	//check if our buffer is too big, move it up if it is
+	if( m_SBuf.size() > 1000000 ){
+		//a mega byte
+		m_SBuf.assign( m_SBuf.begin() + dx, m_SBuf.end() );
+		dx = 0;
+	}
 
-	/*
-		for (auto E: m_Events) {
-		if (E->GetAspect() == 0) {
-		MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
-		if (A != 0) {
-		E->SetAspect(A);
-		}
-		}
-		}
-
-	// TODO: If the oldest event has a reconstructed event, we are ready for the analyze function,
-	// thus we return true otehrwise false
-	if (m_Events.begin() != m_Events.end()) {
-	if (m_Events.front()->GetAspect() != 0) {
 	return true;
-	}
-	}
-	 */
 
-	return true;
+}
+
+bool MNCTModuleReceiverCOSI2014::ResyncSBuf(void){
+
+
+	//this method makes sure that either m_SBuf[dx] = 0xeb and m_SBuf[dx+1] = 0x90
+	//or that the buffer is empty and dx = 0;
+
+	//start from the +1th element when searching for 0xeb, or check if the current
+	//Buf[dx] is eb, and if it is then + 1
+
+	cout<<"resyncing input stream!"<<endl;
+
+	int i;
+	bool FoundSync;
+
+	if( m_SBuf.size() == 0 ){
+		dx = 0;
+		FoundSync = false;
+		return FoundSync;
+	}
+
+	//we might be pointing at a spurious 0xeb 0x90, rare case... add 1 so that
+	//the for loop below doesn't think its on a valid sync word
+	if (m_SBuf[dx] == 0xeb) ++dx;
+
+	FoundSync = false;
+	for( i = dx; i > m_SBuf.size()-1; ++i ){
+		if( m_SBuf[i] == 0xeb ){
+			if( m_SBuf[i+1] == 0x90 ){
+				FoundSync = true;
+				dx = i;
+				break;
+			}
+		}
+	}
+
+	if( !FoundSync ){
+		m_SBuf.clear();
+		dx = 0;
+	} 
+
+	return FoundSync;
+
 }
 
 bool MNCTModuleReceiverCOSI2014::FlushEventsBuf(void){
@@ -456,7 +583,7 @@ bool MNCTModuleReceiverCOSI2014::CheckEventsBuf(void){
 			//now check if the next events are within the compton window
 			while( m_EventsBuf.size() > 0 ){
 				if( (m_EventsBuf[0]->GetCL() - FirstEvent->GetCL()) <= m_ComptonWindow ){
-					EventList.push_back( m_EventsBuf.front() ); m_Events.pop_front();
+					EventList.push_back( m_EventsBuf.front() ); m_EventsBuf.pop_front();
 				} else {
 					break;
 				}
@@ -504,13 +631,13 @@ MNCTEvent * MNCTModuleReceiverCOSI2014::MergeEvents( deque<MNCTEvent*> * EventLi
 bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
-
+  
   if (m_Events.size() == 0) {
     cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: No events"<<endl;
     cout<<"This function should have never been called when we have no events"<<endl;
     return false;
   }
-  
+
   // TODO: Just *copy* the data from the OLDEST event in the list to this event  
 
   // TODO: Remove the oldest events from the list
@@ -869,9 +996,10 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 	bool PosSide;
 	MNCTEvent * NewEvent;
 	MNCTStripHit * StripHit;
-	CEvents->clear(); //
 	bool RolloverOccurred, EndRollover, MiddleRollover;
 	uint64_t Clk;
+
+	CEvents->clear(); //
 
 	//make sure we have some events
 	if( DataIn->Events.size() == 0 ){
@@ -947,19 +1075,19 @@ void MNCTModuleReceiverCOSI2014::LoadCCMap(void){
 
 	//takes you from CC Id to det ID
 
-	m_CCMap[0] = 4;
-	m_CCMap[1] = 1;
-	m_CCMap[2] = 2;
-	m_CCMap[3] = 3;
-	m_CCMap[4] = 6;
-	m_CCMap[5] = 7;
-	m_CCMap[6] = 5;
-	m_CCMap[7] = 8;
-	m_CCMap[8] = 11;
-	m_CCMap[9] = 12;
-	m_CCMap[10] = 9;
-	m_CCMap[11] = 8;
 
+	m_CCMap[0] = 3;
+	m_CCMap[1] = 0;
+	m_CCMap[2] = 1;
+	m_CCMap[3] = 2;
+	m_CCMap[4] = 5;
+	m_CCMap[5] = 6;
+	m_CCMap[6] = 4;
+	m_CCMap[7] = 7;
+	m_CCMap[8] = 10;
+	m_CCMap[9] = 11;
+	m_CCMap[10] = 8;
+	m_CCMap[11] = 7;
 }
 
 void MNCTModuleReceiverCOSI2014::LoadStripMap(void){
