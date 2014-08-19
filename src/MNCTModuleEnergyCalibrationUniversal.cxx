@@ -211,6 +211,7 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event)
 	Energy = 0;
       }
       SH->SetEnergy(Energy);
+      SH->SetEnergyResolution(2.0);
       cout<<"Energy: "<<SH->GetADCUnits()<<" --> "<<Energy<<endl;
     }
   } 
