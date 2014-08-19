@@ -159,7 +159,8 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MNCTEvent* Event){
     nUncertainty = sqrt(nUncertainty);
     
     double Difference = fabs(pEnergy - nEnergy);
-    if (Difference > 4*max(pUncertainty, nUncertainty)) {
+    // Difference must be more than 10 keV for cross talk + 2 sigma energy resolution on *both* sides
+    if (Difference > 2*pUncertainty + 2*nUncertainty + 10) {
       Event->SetStripPairingIncomplete(true);
       if (m_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
     } else {
