@@ -85,7 +85,7 @@ void MGUIEModule::Create()
   AddFrame(Title, TitleLayout);
 
   // The buttons:
-	
+  
   MString ChangeText;
   if (m_Module == 0) {
     ChangeText = "Add";
@@ -93,23 +93,23 @@ void MGUIEModule::Create()
     ChangeText = "Change";    
   }
 
-	m_ChangeButton = new TGTextButton(this, ChangeText, 600+m_ID); 
-  m_ChangeButton->SetMinWidth(70);
+  m_ChangeButton = new TGTextButton(this, ChangeText, 600+m_ID); 
+  m_ChangeButton->SetMinWidth(m_FontScaler*70);
   TGLayoutHints* ChangeButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
   AddFrame(m_ChangeButton, ChangeButtonLayout);
  
-	m_RemoveButton = new TGTextButton(this, "Remove", 400+m_ID); 
-  m_RemoveButton->SetMinWidth(70);
+  m_RemoveButton = new TGTextButton(this, "Remove", 400+m_ID); 
+  m_RemoveButton->SetMinWidth(m_FontScaler*70);
   TGLayoutHints* RemoveButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
-	AddFrame(m_RemoveButton, RemoveButtonLayout);
+  AddFrame(m_RemoveButton, RemoveButtonLayout);
   if (m_Module == 0) {
     m_RemoveButton->SetState(kButtonDisabled);
   }
  
-	m_OptionsButton = new TGTextButton(this, "Options", 500+m_ID); 
-  m_OptionsButton->SetMinWidth(70);
+  m_OptionsButton = new TGTextButton(this, "Options", 500+m_ID); 
+  m_OptionsButton->SetMinWidth(m_FontScaler*70);
   TGLayoutHints* OptionsButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
-	AddFrame(m_OptionsButton, OptionsButtonLayout);
+  AddFrame(m_OptionsButton, OptionsButtonLayout);
   if (m_Module == 0 || (m_Module != 0 && m_Module->HasOptionsGUI() == false)) {
     m_OptionsButton->SetState(kButtonDisabled);
   }

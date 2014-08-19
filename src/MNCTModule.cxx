@@ -54,6 +54,8 @@ MNCTModule::MNCTModule()
   
   m_IsOK = true;
   m_IsReady = true;
+  
+  m_Interrupt = false;
 }
 
 
@@ -65,12 +67,16 @@ MNCTModule::~MNCTModule()
   // Delete this instance of MNCTModule
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
+
 MString MNCTModule::Report()
 {
-
   return "";
 }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 

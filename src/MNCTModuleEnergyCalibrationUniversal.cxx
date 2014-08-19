@@ -127,7 +127,6 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     return false;
   }
   
-  cout<<"#1"<<endl;
   
   map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine;
   map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine;
@@ -154,11 +153,9 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     }
   }
   
-  cout<<"#2"<<endl;
   
   for (auto CM: CM_ROEToLine) {
     // If we have at least three data points, we store the calibration
-    cout<<"Looking at "<<CM.first<<endl;
     
     if (CP_ROEToLine.find(CM.first) != CP_ROEToLine.end()) {
       unsigned int i = CP_ROEToLine[CM.first];

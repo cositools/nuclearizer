@@ -53,8 +53,8 @@ MNCTModuleTransmitterRealta::MNCTModuleTransmitterRealta() : MNCTModule()
 
   // Set all modules, which *have to be* done before this module
   AddPreceedingModuleType(c_EventLoader);
-  AddPreceedingModuleType(c_EventOrdering);
-  AddPreceedingModuleType(c_Aspect);
+  //AddPreceedingModuleType(c_EventOrdering);
+  //AddPreceedingModuleType(c_Aspect);
   AddPreceedingModuleType(c_EnergyCalibration);
   AddPreceedingModuleType(c_StripPairing);
   AddPreceedingModuleType(c_DepthCorrection);

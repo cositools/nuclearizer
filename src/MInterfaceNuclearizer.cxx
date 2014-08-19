@@ -80,6 +80,8 @@ MInterfaceNuclearizer::MInterfaceNuclearizer()
   
   m_Data = new MNCTData();
   m_Data->Load(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
+  
+  m_Interrupt = false;
 }
 
 
@@ -173,9 +175,24 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceNuclearizer::SetInterrupt(bool Flag) 
+{ 
+  // Set the interrupt which will break the analysis
+  m_Interrupt = Flag; 
+  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    m_Data->GetModule(m)->SetInterrupt(m_Interrupt);
+  }
+}
+ 
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MInterfaceNuclearizer::Analyze()
 {
-  // New GRIPS mode
+  // Start with saving the data:
+  m_Data->Save(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
+
+  m_Interrupt = false;
   
   // Start a timer:
   MTimer Timer;
@@ -185,7 +202,11 @@ bool MInterfaceNuclearizer::Analyze()
 
   // Initialize the modules:
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    m_Data->GetModule(m)->SetInterrupt(false);
     if (m_Data->GetModule(m)->Initialize() == false) {
+      if (m_Interrupt == true) {
+        break;
+      }
       mout<<"Initialization of module "<<m_Data->GetModule(m)->GetName()<<" failed"<<endl;
       return false;
     }
@@ -193,7 +214,7 @@ bool MInterfaceNuclearizer::Analyze()
       
   // Do the pipeline
   MNCTEvent* Event = new MNCTEvent(); // will be loaded on start
-  while (true) {
+  while (m_Interrupt == false) {
     // Reset the event to zero
     Event->Clear();
 
@@ -205,6 +226,7 @@ bool MInterfaceNuclearizer::Analyze()
       AllOK = true;
       for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
         if (m_Data->GetModule(m)->IsReady() == false) {
+          if (m_Interrupt == true) break;
           mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not yet ready..."<<endl;
           AllReady = false;
         }
@@ -216,12 +238,15 @@ bool MInterfaceNuclearizer::Analyze()
       if (AllReady == false && AllOK == true) {
         cout<<"Not all modules ready (probably waiting for more data)... sleeping 100 ms"<<endl;
         gSystem->Sleep(100);
+        gSystem->ProcessEvents();
       }
-    } while (AllReady == false && AllOK == true);
+    } while (AllReady == false && AllOK == true && m_Interrupt == false);
     if (AllOK == false) {
       cout<<"One module had problems, exiting analysis loop"<<endl;
       break;
     }
+    
+    if (m_Interrupt == true) break;
       
     // Loop over all modules and do the analysis
     for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
@@ -240,6 +265,8 @@ bool MInterfaceNuclearizer::Analyze()
       }
     }
     // if (Event->IsDataRead() == false) break;
+    
+    gSystem->ProcessEvents();    
   }
   
   // Finalize the modules:
@@ -247,7 +274,11 @@ bool MInterfaceNuclearizer::Analyze()
     m_Data->GetModule(m)->Finalize();
   }
   
-  mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+  if (m_Interrupt == true) {
+    mout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
+  } else {
+    mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+  }
   
   return true;
 }

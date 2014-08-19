@@ -192,12 +192,10 @@ void MGUINuclearizerMain::Create()
   TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40, 40, 0, 0);
   ButtonFrame->AddFrame(StartButton, StartButtonLayout);
   
-  /*
-  TGTextButton* ExitButton = new TGTextButton(ButtonFrame, "     Exit     ", c_Exit); 
-  ExitButton->Associate(this);
-  TGLayoutHints* ExitButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
-  ButtonFrame->AddFrame(ExitButton, ExitButtonLayout);
-  */
+  TGTextButton* StopButton = new TGTextButton(ButtonFrame, "     Stop     ", c_Stop); 
+  StopButton->Associate(this);
+  TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
+  ButtonFrame->AddFrame(StopButton, StopButtonLayout);
   
   // Give this element the default size of its content:
   Resize(GetDefaultWidth(), GetDefaultHeight()); 
@@ -318,6 +316,10 @@ bool MGUINuclearizerMain::ProcessMessage(long Message, long Parameter1,
         Status = OnStart();
         break;
 
+      case c_Stop:
+        Status = OnStop();
+        break;
+
       default:
         break;
       }
@@ -428,6 +430,19 @@ bool MGUINuclearizerMain::OnStart()
   if (OnApply() == false) return false;
 
   m_Interface->Analyze();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUINuclearizerMain::OnStop()
+{
+  if (OnApply() == false) return false;
+
+  m_Interface->SetInterrupt();
 
   return true;
 }

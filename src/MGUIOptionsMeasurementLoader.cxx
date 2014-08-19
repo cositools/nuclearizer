@@ -67,11 +67,11 @@ void MGUIOptionsMeasurementLoader::Create()
 {
   PreCreate();
 
-  m_FileSelector = new MGUIEFileSelector(this, "Please select a data file:",
+  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
     dynamic_cast<MNCTModuleMeasurementLoader*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Data file", "*.dat");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  AddFrame(m_FileSelector, LabelLayout);
+  m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
   
   PostCreate();
