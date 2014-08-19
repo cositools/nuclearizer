@@ -63,16 +63,11 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MNCTModule()
   AddPreceedingModuleType(c_EnergyCalibration);
 
 	// Set all types this modules handles
-	AddModuleType(c_StripPairing);
+  AddModuleType(c_StripPairing);
 
 	// Set all modules, which can follow this module
-	AddSucceedingModuleType(c_ChargeSharingCorrection);
-	AddSucceedingModuleType(c_DepthCorrection);
-	AddSucceedingModuleType(c_Aspect);
-	AddSucceedingModuleType(c_Else);
-	AddSucceedingModuleType(c_EventReconstruction);
-	AddSucceedingModuleType(c_EventSaver);
-
+  AddSucceedingModuleType(c_NoRestriction);
+  
 	// Set if this module has an options GUI
 	// If true, overwrite ShowOptionsGUI() with the call to the GUI!
 	m_HasOptionsGUI = false;

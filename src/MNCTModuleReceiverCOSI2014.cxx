@@ -2,7 +2,7 @@
  * MNCTModuleReceiverCOSI2014.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Alex Lowell & Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -67,14 +67,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   AddModuleType(c_Aspect);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_CrosstalkCorrection);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_EventSaver);
+  AddSucceedingModuleType(c_NoRestriction);
   
   // Set the module name --- has to be unique
   m_Name = "Data packet receiver, sorter, and aspect reconstructor for COSI 2014";
@@ -135,13 +128,11 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
   // Perform a handshake with the distributor
   
   // TODO: Add a timeout!
-  
-  bool Interrupt = false;
-  
+
   bool HandshakeSuccessful = false;
   MTransceiverTcpIpBinary* Handshaker = 0;
   
-  while (HandshakeSuccessful == false && Interrupt == false) {
+  while (HandshakeSuccessful == false && m_Interrupt == false) {
     if (Handshaker != 0) {
       cout<<"HANDSHAKER NOT DELETED!"<<endl;
       delete Handshaker;
@@ -153,8 +144,9 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
     Handshaker->RequestClient(true);
     Handshaker->Connect(false);
     int Wait = 2000;
-    while (Handshaker->IsConnected() == false && --Wait > 0 && Interrupt == false) {
+    while (Handshaker->IsConnected() == false && --Wait > 0 && m_Interrupt == false) {
       gSystem->Sleep(10);
+      gSystem->ProcessEvents();
       continue;
     }
     if (Handshaker->IsConnected() == false && Wait == 0) {
@@ -162,7 +154,9 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       Handshaker->Disconnect(true);
       delete Handshaker;
       Handshaker = 0;
+      gSystem->ProcessEvents();
       gSystem->Sleep(1000*gRandom->Rndm());
+      gSystem->ProcessEvents();
       cout<<"Done sleeping"<<endl;
       continue;
     }
@@ -183,9 +177,10 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
     MTimer Waiting;
     Wait = 0;
     bool Restart = false;
-    while (Handshaker->IsConnected() == true && Restart == false && Interrupt == false) {
+    while (Handshaker->IsConnected() == true && Restart == false && m_Interrupt == false) {
       cout<<"Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
       ++Wait;
+      gSystem->ProcessEvents();
       if (Wait < 10) {
         gSystem->Sleep(100);
       } else {
@@ -197,7 +192,9 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
         Handshaker->Disconnect();
         delete Handshaker;
         Handshaker = 0;
+        gSystem->ProcessEvents();
         gSystem->Sleep(1000*gRandom->Rndm());
+        gSystem->ProcessEvents();
         Restart = true;
         break;
       }
@@ -219,7 +216,9 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
           Handshaker->Disconnect();
           delete Handshaker;
           Handshaker = 0;
+          gSystem->ProcessEvents();
           gSystem->Sleep(1000*gRandom->Rndm());
+          gSystem->ProcessEvents();
           Restart = true;
           break;
         }
@@ -231,16 +230,20 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       Handshaker->Disconnect();
       delete Handshaker;
       Handshaker = 0;
+      gSystem->ProcessEvents();
       gSystem->Sleep(1000*gRandom->Rndm());
+      gSystem->ProcessEvents();
     }
   }
+  
+  if (m_Interrupt == true) return false;
   
   // Set up the transceiver and connect:
   delete m_Receiver;
   m_Receiver = new MTransceiverTcpIpBinary("Final receiver", m_LocalReceivingHostName, m_LocalReceivingPort);
   m_Receiver->SetVerbosity(3);
-  m_Receiver->Connect(true, 10);
   m_Receiver->SetMaximumBufferSize(100000000);
+  m_Receiver->Connect(true, 10);
   
   return true;
 }
@@ -253,9 +256,6 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
 {
   // Initialize the module 
 
-  m_LocalReceivingHostName = "192.168.37.18";
-  m_LocalReceivingPort = 12345;
-
   for (auto E: m_Events) {
     delete E;
   }
@@ -267,6 +267,7 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
   
   // Do handshake and open transceiver
   if (DoHandshake() == false) {
+    if (m_Interrupt == true) return false;
     merr<<"Failed to connect to distributor"<<endl;
     return false;
   }
@@ -324,7 +325,7 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 	}
 
 	// Retrieve the latest data from the transceiver
-	vector<uint8_t> Received;
+	vector<uint8_t> Received ;
 	m_Receiver->Receive(Received);
 
 	//apend the received data to m_SBuf
@@ -333,7 +334,8 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 
 	vector<uint8_t> NextPacket;
 	//dx = 0;
-	while( FindNextPacket( NextPacket ) ){ //loop until there are no more complete packets
+  int Rounds = 100;
+	while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
 
 		Type = NextPacket[2];
 
@@ -677,7 +679,9 @@ void MNCTModuleReceiverCOSI2014::Finalize()
   // Close the tranceiver 
   
   // TODO: Clear all lists
-
+  delete m_Receiver;
+  m_Receiver = 0;
+  
   return;
 }
 
@@ -1054,9 +1058,9 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 			StripHit = new MNCTStripHit();
 			StripHit->SetDetectorID(m_CCMap[DataIn->CCId]);
 			//go from board channel, to side strip
-			if( T.Board >= 4 && T.Board < 8 ) PosSide = false; else if( T.Board >= 0 && T.Board < 4 ) PosSide = true; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
+			if( T.Board >= 4 && T.Board < 8 ) PosSide = true; else if( T.Board >= 0 && T.Board < 4 ) PosSide = false; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
 			StripHit->IsPositiveStrip(PosSide);
-			if( T.Channel >= 0 && T.Channel < 10 ) StripHit->SetStripID(m_StripMap[T.Board][T.Channel]); else {cout<<"bad trigger channel = "<<T.Channel<<endl; delete StripHit; continue;}
+			if( T.Channel >= 0 && T.Channel < 10 ) StripHit->SetStripID(m_StripMap[T.Board][T.Channel]+1); else {cout<<"bad trigger channel = "<<T.Channel<<endl; delete StripHit; continue;}
 			if( T.HasADC ) StripHit->SetADCUnits((double)T.ADCBytes);
 			if( T.HasTiming ) StripHit->SetTiming((double) (T.TimingByte & 0x3f));
 			NewEvent->AddStripHit( StripHit );
@@ -1096,8 +1100,19 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 void MNCTModuleReceiverCOSI2014::LoadCCMap(void){
 
 	//takes you from CC Id to det ID
-
-
+m_CCMap[0] = 0;
+  m_CCMap[1] = 1;
+  m_CCMap[2] = 2;
+  m_CCMap[3] = 3;
+  m_CCMap[4] = 4;
+  m_CCMap[5] = 5;
+  m_CCMap[6] = 6;
+  m_CCMap[7] = 7;
+  m_CCMap[8] = 8;
+  m_CCMap[9] = 9;
+  m_CCMap[10] = 10;
+  m_CCMap[11] = 11;
+/*
 	m_CCMap[0] = 3;
 	m_CCMap[1] = 0;
 	m_CCMap[2] = 1;
@@ -1109,7 +1124,8 @@ void MNCTModuleReceiverCOSI2014::LoadCCMap(void){
 	m_CCMap[8] = 10;
 	m_CCMap[9] = 11;
 	m_CCMap[10] = 8;
-	m_CCMap[11] = 7;
+	m_CCMap[11] = 9;
+  */
 }
 
 void MNCTModuleReceiverCOSI2014::LoadStripMap(void){

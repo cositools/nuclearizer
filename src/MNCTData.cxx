@@ -205,6 +205,8 @@ vector<MNCTModule*> MNCTData::ReturnPossibleVolumes(unsigned int Position)
     }
   }
 
+  cout<<"Assembling possbile modules for position: "<<Position<<" --> "<<Previous.size()<<endl;
+
   return ReturnPossibleVolumes(Previous);
 }
 
@@ -217,15 +219,19 @@ vector<MNCTModule*> MNCTData::ReturnPossibleVolumes(vector<MNCTModule*>& Previou
   vector<MNCTModule*> List;
   
   for (unsigned int i = 0; i < m_AvailableModules.size(); ++i) {
-    //cout<<"Module: "<<m_AvailableModules[i]->GetName()<<endl;
+    //cout<<"Checking module: "<<m_AvailableModules[i]->GetName()<<endl;
 
     bool Passed = true;
 
     // (1) Check if the requirement on previous modules can be passed 
     for (unsigned int m = 0; m < m_AvailableModules[i]->GetNPreceedingModuleTypes(); ++m) {
+      //cout<<"Requires: "<<m_AvailableModules[i]->GetPreceedingModuleType(m)<<endl;
       bool Found = false;
+      //cout<<"Checking "<<Previous.size()<<" previous elements"<<endl;
       for (unsigned int p = 0; p < Previous.size(); ++p) {
+        //cout<<"Checking: "<<Previous[p]->GetName()<<endl;
         for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
+          //cout<<"Provides: "<<Previous[p]->GetModuleType(t)<<endl;
           if (Previous[p]->GetModuleType(t) == m_AvailableModules[i]->GetPreceedingModuleType(m)) {
             Found = true;
             break;
@@ -387,10 +393,12 @@ bool MNCTData::Validate()
   }
 
   // (3) Make sure all succecessor requirements are fulfilled
+  /*
   for (unsigned int m = 0; m < m_Modules.size(); ++m) {
     for (unsigned int s = m+1; s < m_Modules.size(); ++s) {
       for (unsigned int st = 0; st < m_Modules[s]->GetNModuleTypes(); ++st) {
         bool Found = false;
+        if (
         for (unsigned int mt = 0; mt < m_Modules[m]->GetNSucceedingModuleTypes(); ++mt) {
           if (m_Modules[m]->GetSucceedingModuleType(mt) == m_Modules[s]->GetModuleType(st)) {
             Found = true;
@@ -409,6 +417,7 @@ bool MNCTData::Validate()
       if (ValidUntil == s) break;
     }
   }
+  */
 
   // Many possible validations are missing
 

@@ -403,9 +403,13 @@ bool MGUINuclearizerMain::OnRemove(unsigned int ModuleID)
 
 bool MGUINuclearizerMain::OnOptions(unsigned int ModuleID)
 {
-  m_Data->GetModule(ModuleID)->ShowOptionsGUI();
-
-  return true;
+  if (m_Data->GetModule(ModuleID) != 0) {
+    m_Data->GetModule(ModuleID)->ShowOptionsGUI();
+    return true;
+  }
+  cout<<"Warning: No module with ID: "<<ModuleID<<endl;
+  
+  return false;
 }
 
 

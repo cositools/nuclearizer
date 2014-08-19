@@ -55,6 +55,7 @@ class MNCTModule
   static const int c_EventLoaderSimulation    = 11;
   static const int c_EventLoaderMeasurement   = 12;
   static const int c_EventOrdering            = 15;
+  static const int c_Coincidence              = 16;
   static const int c_DetectorEffectsEngine    = 1;
   static const int c_EventFilter              = 2;
   static const int c_EnergyCalibration        = 3;
@@ -65,7 +66,10 @@ class MNCTModule
   static const int c_CrosstalkCorrection      = 8;
   static const int c_EventReconstruction      = 9;
   static const int c_Else                     = 10;
+  static const int c_NoRestriction            = 10;
   static const int c_EventSaver               = 13;
+  static const int c_EventTransmitter         = 16;
+  static const int c_PositionDetermiation     = 17;
   
   // IMPORTANT:
   // If you add one analysis level, make sure you also handle it in:

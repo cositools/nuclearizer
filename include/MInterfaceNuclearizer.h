@@ -51,7 +51,7 @@ class MInterfaceNuclearizer
   //! Exit the application
   void Exit();
   
-  //! Set the interrupt which will break the analysis
+  //! Set the interrupt which will end the analysis
   void SetInterrupt(bool Flag = true);
 
   // protected methods:

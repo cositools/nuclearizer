@@ -85,15 +85,7 @@ MNCTModuleDepthCalibrationLinearPixel::MNCTModuleDepthCalibrationLinearPixel() :
   //AddModuleType(c_EventReconstruction);
 
   // Set all modules, which can follow this module
-  //AddSucceedingModuleType(c_DetectorEffectsEngine);
-  //AddSucceedingModuleType(c_EnergyCalibration);
-  //AddSucceedingModuleType(c_ChargeSharingCorrection);
-  //AddSucceedingModuleType(c_DepthCorrection);
-  //AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventSaver);
+  AddSucceedingModuleType(c_NoRestriction);
 
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!

@@ -62,10 +62,10 @@ MNCTModuleTransmitterRealta::MNCTModuleTransmitterRealta() : MNCTModule()
   
   // Set all types this modules handles
   //AddModuleType(c_EventLoader);
-  AddModuleType(c_EventSaver);
+  AddModuleType(c_EventTransmitter);
 
   // Set all modules, which *can* follow this module
-  // N/A
+  AddSucceedingModuleType(c_NoRestriction);
   
   // Set the module name --- has to be unique
   m_Name = "Transmitter for fully calibrated events to Realta";
@@ -101,7 +101,7 @@ bool MNCTModuleTransmitterRealta::Initialize()
   delete m_Transmitter;
   m_Transmitter = new MTransceiverTcpIp("Realta-Transmitter", m_HostName, m_HostPort, MTransceiverTcpIp::c_ModeRawEventList);
   //m_Transmitter->SetVerbosity(3);
-  m_Transmitter->Connect(true, 10);
+  m_Transmitter->Connect();
   
   return true;
 }

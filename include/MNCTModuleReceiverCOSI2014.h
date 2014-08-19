@@ -1,7 +1,7 @@
 /*
  * MNCTModuleReceiverCOSI2014.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Alex Lowell & Andreas Zoglauer.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.

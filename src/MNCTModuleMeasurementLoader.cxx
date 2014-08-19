@@ -59,15 +59,7 @@ MNCTModuleMeasurementLoader::MNCTModuleMeasurementLoader() : MNCTModule()
   AddModuleType(c_EventLoaderMeasurement);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_CrosstalkCorrection);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_EventSaver);
+  AddSucceedingModuleType(c_NoRestriction);
   
   m_HasOptionsGUI = true;
 }

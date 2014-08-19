@@ -52,9 +52,9 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize();
 
-	TApplication* AppNuclearizer = new TApplication("Nuclearizer", 0, 0);
+  TApplication* AppNuclearizer = new TApplication("Nuclearizer", 0, 0);
 
-	MInterfaceNuclearizer Nuclearizer;
+  MInterfaceNuclearizer Nuclearizer;
   if (Nuclearizer.ParseCommandLine(argc, argv) == false) {
     return 0;
   } else {

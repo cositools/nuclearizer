@@ -65,15 +65,8 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MNCTModule()
   AddModuleType(c_EventSaver);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_DetectorEffectsEngine);
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_EventSaver);
-
+  AddSucceedingModuleType(c_NoRestriction);
+  
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
   
@@ -145,8 +138,13 @@ bool MNCTModuleEventSaver::AnalyzeEvent(MNCTEvent* Event)
 {
   // Main data analysis routine, which updates the event to a new level
  
-    Event->StreamEvta(m_Out);
-    return true;
+  if (Event->IsDepthCalibrationIncomplete() == true) return true;
+  if (Event->IsStripPairingIncomplete() == true) return true;
+  if (Event->IsEnergyCalibrationIncomplete() == true) return true;
+  
+  Event->StreamEvta(m_Out);
+  
+  return true;
 
   double Energy = 0;
   for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
