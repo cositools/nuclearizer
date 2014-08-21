@@ -17,6 +17,8 @@
 
 
 // Standard libs:
+#include <vector>
+using namespace std;
 
 // ROOT libs:
 
@@ -24,6 +26,7 @@
 #include "MGlobal.h"
 #include "MDGeometryQuest.h"
 #include "MNCTEvent.h"
+#include "MGUIExpo.h"
 #include "MXmlNode.h"
 
 // Forward declarations:
@@ -55,7 +58,7 @@ class MNCTModule
   static const int c_EventLoaderSimulation    = 11;
   static const int c_EventLoaderMeasurement   = 12;
   static const int c_EventOrdering            = 15;
-  static const int c_Coincidence              = 16;
+  static const int c_Coincidence              = 15;
   static const int c_DetectorEffectsEngine    = 1;
   static const int c_EventFilter              = 2;
   static const int c_EnergyCalibration        = 3;
@@ -69,7 +72,8 @@ class MNCTModule
   static const int c_NoRestriction            = 10;
   static const int c_EventSaver               = 13;
   static const int c_EventTransmitter         = 16;
-  static const int c_PositionDetermiation     = 17;
+  static const int c_PositionDetermiation     = 18;
+  static const int c_Statistics               = 19;
   
   // IMPORTANT:
   // If you add one analysis level, make sure you also handle it in:
@@ -105,7 +109,7 @@ class MNCTModule
   void SetVerbosity(int Verbosity) { m_Verbosity = Verbosity; }
   
   //! Initialize the module --- has to be overwritten
-  virtual bool Initialize() = 0;
+  virtual bool Initialize();
 
   //! Finalize the module --- can be overwritten
   virtual void Finalize() { return; }
@@ -121,6 +125,11 @@ class MNCTModule
   bool HasOptionsGUI() { return m_HasOptionsGUI; }
   //! Show the options GUI --- has to be overwritten!
   virtual void ShowOptionsGUI() {};
+
+  //! True if this module has associated expo GUI(s)
+  bool HasExpos() { return m_Expos.size() > 0 ? true : false; }
+  //! Return the associated expo GUI(s). If there are none return an empty vector
+  vector<MGUIExpo*> GetExpos() { return m_Expos; }
 
   //! Read the configuration data from an XML node
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
@@ -172,6 +181,9 @@ class MNCTModule
   //! True, if this module has an options GUI
   bool m_HasOptionsGUI;
 
+  //! A vector of associated expo GUIs
+  vector<MGUIExpo*> m_Expos;
+  
   //! True, if the module is ready to analyze events
   bool m_IsReady;
   

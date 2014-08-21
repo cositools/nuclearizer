@@ -62,6 +62,8 @@ NUCLEARIZERLIB = \
 $(LB)/MInterfaceNuclearizer.o \
 $(LB)/MGUIMainNuclearizer.o \
 $(LB)/MGUIEModule.o \
+$(LB)/MGUIExpo.o \
+$(LB)/MGUIExpoCombinedViewer.o \
 $(LB)/MGUIOptions.o \
 $(LB)/MGUIModuleSelector.o \
 $(LB)/MNCTArray.o \
@@ -95,6 +97,7 @@ $(LB)/MNCTModuleMeasurementLoaderNCT2009.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
 $(LB)/MNCTModuleReceiverCOSI2014.o \
 $(LB)/MGUIOptionsReceiverCOSI2014.o \
+$(LB)/MGUIExpoEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibrationUniversal.o \
 $(LB)/MGUIOptionsEnergyCalibrationUniversal.o \
@@ -103,6 +106,7 @@ $(LB)/MNCTModuleEnergyCalibrationNonlinear.o \
 $(LB)/MNCTInverseCrosstalkCorrection.o \
 $(LB)/MNCTModuleCrosstalkCorrection.o \
 $(LB)/MNCTModuleChargeSharingCorrection.o \
+$(LB)/MGUIExpoDepthCalibration.o \
 $(LB)/MNCTModuleDepthAndStripCalibration.o \
 $(LB)/MNCTModuleDepthCalibration.o \
 $(LB)/MNCTModuleDepthCalibrationLinearStrip.o \

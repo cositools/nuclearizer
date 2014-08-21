@@ -47,14 +47,16 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MTimer.h"
+
+// Nuclearizer libs:
 #include "MGUIMainNuclearizer.h"
 #include "MNCTFile.h"
 #include "MNCTEvent.h"
 #include "MNCTData.h"
 #include "MNCTModule.h"
 #include "MNCTPreprocessor.h"
-
 #include "MNCTFileEventsDat.h"
+#include "MGUIExpoCombinedViewer.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,11 +73,9 @@ ClassImp(MInterfaceNuclearizer)
 MInterfaceNuclearizer::MInterfaceNuclearizer()
 {
   // standard constructor
-  //  m_Geometry = new MDGeometryQuest();
-  //   m_Data = new MGUIDataNuclearizer();
-  //   m_BasicGuiData = dynamic_cast<MGUIData*>(m_Data);
   
   m_Gui = 0;
+  m_ExpoCombinedViewer = 0;
   m_UseGui = true;
   
   m_Data = new MNCTData();
@@ -201,25 +201,41 @@ bool MInterfaceNuclearizer::Analyze()
 
   m_Interrupt = false;
   
-  // Start a timer:
+  // Start a global timer:
   MTimer Timer;
 
   // Load the geometry:
   if (m_Data->LoadGeometry() == false) return false;
 
+  // Create a bunch of individual timers
+  vector<MTimer> ModuleTimers(m_Data->GetNModules(), MTimer(false));
+  
   // Initialize the modules:
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    ModuleTimers[m].Continue();
     m_Data->GetModule(m)->SetInterrupt(false);
     m_Data->GetModule(m)->SetVerbosity(m_Verbosity);
     if (m_Data->GetModule(m)->Initialize() == false) {
+      ModuleTimers[m].Pause();
       if (m_Interrupt == true) {
         break;
       }
       mout<<"Initialization of module "<<m_Data->GetModule(m)->GetName()<<" failed"<<endl;
       return false;
     }
+    ModuleTimers[m].Pause();
   }
-      
+  
+  // Create the expo viewer:
+  delete m_ExpoCombinedViewer;
+  m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
+  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    if (m_Data->GetModule(m)->HasExpos() == true) {
+      m_ExpoCombinedViewer->AddExpos(m_Data->GetModule(m)->GetExpos());
+    }
+  }
+  m_ExpoCombinedViewer->Create();
+  
   // Do the pipeline
   MNCTEvent* Event = new MNCTEvent(); // will be loaded on start
   while (m_Interrupt == false) {
@@ -233,6 +249,7 @@ bool MInterfaceNuclearizer::Analyze()
       AllReady = true;
       AllOK = true;
       for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+        ModuleTimers[m].Continue();
         if (m_Data->GetModule(m)->IsReady() == false) {
           if (m_Interrupt == true) break;
           mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not yet ready..."<<endl;
@@ -242,6 +259,7 @@ bool MInterfaceNuclearizer::Analyze()
           mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not longer OK... exiting analysis loop..."<<endl;
           AllOK = false;
         }
+        ModuleTimers[m].Pause();
       }
       if (AllReady == false && AllOK == true) {
         cout<<"Not all modules ready (probably waiting for more data)... sleeping 100 ms"<<endl;
@@ -258,14 +276,17 @@ bool MInterfaceNuclearizer::Analyze()
       
     // Loop over all modules and do the analysis
     for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+      ModuleTimers[m].Continue();
       // Do the analysis
       if (m_Data->GetModule(m)->AnalyzeEvent(Event) == false) {
         if (Event->GetID() != g_UnsignedIntNotDefined) {
           mout<<"Analysis failed for event "<<Event->GetID()
               <<" in module \""<<m_Data->GetModule(m)->GetName()<<"\""<<endl;
         } 
+        ModuleTimers[m].Pause();
         break;
       }
+      ModuleTimers[m].Pause();
       if (Event->IsDataRead() == false) break;
       // Only analyze non-vetoed, triggered events
       if (Event->GetVeto() == true || Event->GetTrigger() == false) {
@@ -279,13 +300,24 @@ bool MInterfaceNuclearizer::Analyze()
   
   // Finalize the modules:
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    ModuleTimers[m].Continue();
     m_Data->GetModule(m)->Finalize();
+    ModuleTimers[m].Pause();
   }
   
+  mout<<endl;
   if (m_Interrupt == true) {
     mout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
   } else {
     mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+  }
+  mout<<endl;
+  
+  if (m_Verbosity >= 2) {
+    cout<<"Timings: "<<endl;
+    for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+      cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<m_Data->GetModule(m)->GetName()<<endl;
+    }
   }
   
   return true;

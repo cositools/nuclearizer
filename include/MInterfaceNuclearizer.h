@@ -28,6 +28,7 @@ using namespace std;
 #include "MNCTData.h"
 
 class MGUINuclearizerMain;
+class MGUIExpoCombinedViewer;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -70,9 +71,11 @@ class MInterfaceNuclearizer
  private:
   //! True if the GUI is used
   bool m_UseGui;
-  //! The graphical usr interface
+  //! The main graphical user interface
   MGUINuclearizerMain* m_Gui;
-
+  //! The expos - main combined viewer
+  MGUIExpoCombinedViewer* m_ExpoCombinedViewer;
+  
   //! The store for all user data of the GUI:
   MNCTData* m_Data;
 

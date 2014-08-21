@@ -127,7 +127,8 @@ void MNCTModuleMeasurementLoaderROA::Finalize()
   cout<<"MNCTModuleMeasurementLoaderROA: "<<endl;
   cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
   cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
-  
+
+  m_ROAFile.Close();  
 }
 
 

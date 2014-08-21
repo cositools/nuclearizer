@@ -2,7 +2,7 @@
  * MNCTModuleDepthCalibration3rdPolyPixel.cxx
  *
  *
- * Copyright (C) 2008-2008 by Mark Bandstra.
+ * Copyright (C) by Carolyn Kierans, Mark Bandstra.
  * All rights reserved.
  *
  *
@@ -83,8 +83,12 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
   m_HasOptionsGUI = false;
-  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
-  // and implement all your GUI options
+  
+  // Set the histogram display
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration();
+  m_ExpoDepthCalibration->SetDepthHistogramArrangement(3, 4);
+  m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.000001, 1.500001); //-0.7499, 0.7501);
+  m_Expos.push_back(m_ExpoDepthCalibration);  
 }
 
 
@@ -103,6 +107,8 @@ MNCTModuleDepthCalibration3rdPolyPixel::~MNCTModuleDepthCalibration3rdPolyPixel(
 bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
 {
   // Initialize the module 
+  
+  MNCTModule::Initialize();
   
   // Definition:
   // Depth is the distance between interaction and cathode (negative side).
@@ -256,43 +262,69 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
     MNCTStripHit *SHX, *SHY;
     //int DetectorNumber = SHX->GetDetectorID();
     MString DetectorName;
+    int DisplayID = 0;
+    MString DisplayName;
     
     //All of the "DetectorNumbers" within this file and elsewhere in Nuclearizer refer to CC #. When we call upon the geometry file later on here to determine the globale position of all the detector, we want to be calling the DetectorName not the CC #. Here is the conversion:
     if (DetectorNumber == 0) {
       DetectorName = "Detector4_CC00";
+      DisplayID = 3;
+      DisplayName = DetectorName + ": +x, -y, bottom";
     }
-    if (DetectorNumber == 1) {
+    else if (DetectorNumber == 1) {
       DetectorName = "Detector1_CC01";
+      DisplayID = 2;
+      DisplayName = DetectorName + ": -x, -y, top";
     }
-    if (DetectorNumber == 2) {
+    else if (DetectorNumber == 2) {
       DetectorName = "Detector2_CC02";
+      DisplayID = 1;
+      DisplayName = DetectorName + ": -x, -y, middle";
     }
-    if (DetectorNumber == 3) {
+    else if (DetectorNumber == 3) {
       DetectorName = "Detector3_CC03";
+      DisplayID = 0;
+      DisplayName = DetectorName + ": -x, -y, bottom";
     }
-    if (DetectorNumber == 4) {
+    else if (DetectorNumber == 4) {
       DetectorName = "Detector6_CC04";
-    }	
-    if (DetectorNumber == 5) {
+      DisplayID = 5;
+      DisplayName = DetectorName + ": +x, -y, top";
+    }
+    else if (DetectorNumber == 5) {
       DetectorName = "Detector7_CC05";
+      DisplayID = 8;
+      DisplayName = DetectorName + ": +x, +y, top";
     }
-    if (DetectorNumber == 6) {
+    else if (DetectorNumber == 6) {
       DetectorName = "Detector5_CC06";
+      DisplayID = 4;
+      DisplayName = DetectorName + ": +x, -y, middle";
     }
-    if (DetectorNumber == 7) {
+    else if (DetectorNumber == 7) {
       DetectorName = "Detector8_CC07";
+      DisplayID = 7;
+      DisplayName = DetectorName + ": +x, +y, middle";
     }
-    if (DetectorNumber == 8) {
+    else if (DetectorNumber == 8) {
       DetectorName = "Detector11_CC08";
+      DisplayID = 10;
+      DisplayName = DetectorName + ": -x, +y, middle";
     }
-    if (DetectorNumber == 9) {
+    else if (DetectorNumber == 9) {
       DetectorName = "Detector12_CC09";
+      DisplayID = 11;
+      DisplayName = DetectorName + ": -x, +y, top";
     }
-    if (DetectorNumber == 10) {
+    else if (DetectorNumber == 10) {
       DetectorName = "Detector9_CC10";
+      DisplayID = 6;
+      DisplayName = DetectorName + ": +x, +y, bottom";
     }
-    if (DetectorNumber == 11) {
+    else if (DetectorNumber == 11) {
       DetectorName = "Detector10_CC11";
+      DisplayID = 9;
+      DisplayName = DetectorName + ": -x, +y, bottom";
     }
     
     if ( (NStripHits == 2) && (NXStripHits == 1) && (NYStripHits == 1) ) {
@@ -406,6 +438,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         }
         
         //mout << "Depth?! = "<< depth<<endl;
+        //m_ExpoDepthCalibration->AddDepth(DisplayID, depth);
+        //m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
         
         //The depth is the distance from the negative side, not always from front.
         //The negative side on D9 and D7 are at back, near dewar.
@@ -416,11 +450,21 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         //Det 10-12 (CC 11, 08, 09) have DC on bottom 
         //- DC on top means Z_Front = depth;
         
-        if ( (DetectorNumber == 0) || (DetectorNumber == 6) || (DetectorNumber == 4) || (DetectorNumber = 11) || (DetectorNumber == 8) || (DetectorNumber == 9) ) {
-          Z_Front = 1.5 - depth;
-        } else {
+        /*
+        if ( (DetectorNumber == 0) || (DetectorNumber == 6) || (DetectorNumber == 4) || (DetectorNumber == 11) || (DetectorNumber == 8) || (DetectorNumber == 9) ) {
+          //Z_Front = 1.5 - depth;
           Z_Front = depth;
+        } else {
+          //Z_Front = depth;
+          Z_Front = 1.5 - depth;
+          cout<<"!!!!!!!!!!!!!!!!!!! SWITCH !!!!!!!!!!!!!!!!!!!!"<<endl;
         }
+        */
+        Z_Front = depth;
+        //m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
+        //m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
+        
+        //Z_Front = depth;
         
         // Depth should be between 0 (front) and 1.5 (back)
         if (Z_Front < 0.) { Z_Front=0.; }
@@ -431,7 +475,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         //   <<", Depth:"<<depth<<", Z_Front:"<<Z_Front<<endl;
         //output done
         
-        //Calculate Z resoluation:
+        //Calculate Z resolution:
         for (int i_ct=0;i_ct<2;i_ct++){
           depth=0.0;
           CTD_tmp=CTD + pow(-1.,i_ct)*0.25*(FWHM_negative+FWHM_positive);
@@ -468,11 +512,16 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
         DepthCalibrated=true;
-        if (m_Verbosity >= c_Info) mout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
-          << " Y:" << YStripNumber << " (" << Y_Middle << " cm)  "
-          << " X Timing: " << XTiming << " Y Timing: " << YTiming 
-          //<< " Z_X: " << Z_X << " Z_Y: " << Z_Y 
-          << " Z: " << Z_Front << " cm  Z res.: " << Z_FWHM << " cm" << endl;
+        if (m_Verbosity >= c_Info) {
+          mout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
+               << " Y:" << YStripNumber << " (" << Y_Middle << " cm)  "
+               << " X Timing: " << XTiming << " Y Timing: " << YTiming 
+               //<< " Z_X: " << Z_X << " Z_Y: " << Z_Y 
+               << " Z: " << Z_Front << " cm  Z res.: " << Z_FWHM << " cm" << endl;
+        }
+        cout<<"DISP: "<<DisplayID<<endl;
+        m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
+        m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
       } else {  
         //closes "if (Flag_CanBeCalibrated == 1 || Flag_CanBeCalibrated == 2) {"
         MVector PositionInGlobal(-9999.0,-9999.0,-9999.0);

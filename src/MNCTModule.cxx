@@ -73,6 +73,21 @@ MNCTModule::~MNCTModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MNCTModule::Initialize()
+{
+  //! Initialize the module --- has to be overwritten
+
+  for (auto E: m_Expos) {
+    E->Reset(); 
+  }
+  
+  return true;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MNCTModule::Report()
 {
   return "";

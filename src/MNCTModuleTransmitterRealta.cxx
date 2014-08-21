@@ -134,6 +134,10 @@ bool MNCTModuleTransmitterRealta::AnalyzeEvent(MNCTEvent* Event)
   if (Event->IsStripPairingIncomplete() == true) return true;
   if (Event->IsEnergyCalibrationIncomplete() == true) return true;
 
+  static int ID = 0;
+  static double Time = 0.0;
+  Event->SetTime(Time += 0.01);
+  Event->SetID(++ID);
   
   ostringstream estream;
   Event->StreamEvta(estream);

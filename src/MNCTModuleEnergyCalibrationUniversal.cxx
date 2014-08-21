@@ -46,6 +46,7 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MCalibratorEnergyPointwiseLinear.h"
 #include "MGUIOptionsEnergyCalibrationUniversal.h"
+#include "MGUIExpoEnergyCalibration.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,9 +81,13 @@ MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : M
   // Set all modules, which can follow this module
   AddSucceedingModuleType(c_NoRestriction);
   
-  
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
+  
+  // Set the histogram display
+  m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration();
+  m_ExpoEnergyCalibration->SetEnergyHistogramParamaters(200, 0, 2000);
+  m_Expos.push_back(m_ExpoEnergyCalibration);
 }
 
 
@@ -102,12 +107,15 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
 {
   // Initialize the module 
   
+  mout<<m_XmlTag<<": TODO: Set correct energy resolution - currently hard coded to 2.0 keV (one sigma)"<<endl;
+  
+  MNCTModule::Initialize();
+  
   MParser Parser;
   if (Parser.Open(m_FileName, MFile::c_Read) == false) {
     if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Unable to open calibration file "<<m_FileName<<endl;
     return false;
   }
-  
   
   map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine;
   map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine;
@@ -131,7 +139,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
         if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Line parser: Unknown read-out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
         return false;
       }
-      }
+    }
   }
   
   
@@ -196,11 +204,11 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event)
   
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     MNCTStripHit* SH = Event->GetStripHit(i);
-    MReadOutElement* R = SH->GetReadOutElement();
+    MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
     
-    TF1* Fit = m_Calibration[*dynamic_cast<MReadOutElementDoubleStrip*>(R)];
+    TF1* Fit = m_Calibration[R];
     if (Fit == 0) {
-      if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<*R<<endl;
+      if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
       Event->SetEnergyCalibrationIncomplete(true);
     } else {
       double Energy = Fit->Eval(SH->GetADCUnits());
@@ -212,6 +220,10 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event)
       }
       SH->SetEnergy(Energy);
       SH->SetEnergyResolution(2.0);
+      if (R.IsPositiveStrip() == true) {
+        m_ExpoEnergyCalibration->AddEnergy(Energy);
+      }
+      
       if (m_Verbosity >= c_Info) mout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     }
   } 

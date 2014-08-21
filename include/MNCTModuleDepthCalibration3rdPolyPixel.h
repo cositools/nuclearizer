@@ -22,10 +22,10 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
 
 // Forward declarations:
-
+#include "MNCTModule.h"
+#include "MGUIExpoDepthCalibration.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -63,6 +63,9 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MNCTModule
 
   // private members:
  private:
+  //! The depth calibration UI 
+  MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
+
   bool m_IsCalibrationLoaded[12];
   bool m_IsCalibrationLoadedPixel[12][37][37];
   double m_Pixel_CTD2Depth[12][37][37][4];

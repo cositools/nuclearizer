@@ -23,11 +23,12 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MReadOutElementDoubleStrip.h"
 
 // Neclearizer libe:
 #include "MNCTModule.h"
-#include "MReadOutElementDoubleStrip.h"
 #include "MCalibratorEnergy.h"
+#include "MGUIExpoEnergyCalibration.h"
 
 // Forward declarations:
 
@@ -79,12 +80,16 @@ class MNCTModuleEnergyCalibrationUniversal : public MNCTModule
 
   // private members:
  private:
+  //! A GUI to display the final energy histogram
+  MGUIExpoEnergyCalibration* m_ExpoEnergyCalibration;
+   
   //! Calibrators arranged by detectors
   vector<vector<MCalibratorEnergy*> > m_Calibrators;
   //! Associated detector IDs
   vector<unsigned int> m_DetectorIDs;
-  // Calibration map between read out element and fitted function
+  //! Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
+  
    
 #ifdef ___CINT___
  public:
