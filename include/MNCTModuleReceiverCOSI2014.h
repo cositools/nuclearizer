@@ -173,6 +173,7 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   uint64_t m_ComptonWindow;
   vector<uint8_t> m_SBuf;//search buffer for the incoming TCP data stream
   int dx; //index into search buffer
+  unsigned int m_EventIDCounter;
 
   int m_StripMap[8][10];
   int m_CCMap[12];

@@ -105,7 +105,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   LoadStripMap();
   LoadCCMap();
 
-  //upper unix byte
+  m_EventIDCounter = 0;
 
 
 }
@@ -467,6 +467,8 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 		} else {
 			return false;
 		}
+	} else {
+		return false;
 	}
 
 }
@@ -607,6 +609,8 @@ bool MNCTModuleReceiverCOSI2014::FlushEventsBuf(void){
 		//at this point, EventList contains all of the events to be merged, merge them
 		MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
 		//now push this merged event onto the internal events deque
+		//set the ID of the event and increment the ID counter
+		NewMergedEvent->SetID( ++m_EventIDCounter );
 		m_Events.push_back( NewMergedEvent );
 		++MergedEventCounter;
 	}
@@ -635,8 +639,6 @@ bool MNCTModuleReceiverCOSI2014::CheckEventsBuf(void){
 			MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
 			NewMergedEvent->SetDataRead(true);
-			m_Events.push_back( NewMergedEvent );
-			++MergedEventCounter;
 			if( m_EventsBuf.size() == 0 ) break;
 		}
 
@@ -1144,7 +1146,7 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 		NewEvent->SetCL( Clk );
 		uint64_t ClkModulo = Clk % 10000000;
 		uint64_t int_ClkSeconds = Clk - ClkModulo;
-		double ClkSeconds = (double) int_ClkSeconds;
+		double ClkSeconds = (double) int_ClkSeconds/10000000.;
 		double ClkNanoseconds = (double) ClkModulo*100.0;
 		MTime NewTime = MTime();
 		NewTime.Set( ClkSeconds, ClkNanoseconds );
