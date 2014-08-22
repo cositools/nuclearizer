@@ -227,14 +227,18 @@ bool MInterfaceNuclearizer::Analyze()
   }
   
   // Create the expo viewer:
-  delete m_ExpoCombinedViewer;
-  m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
+  if (m_ExpoCombinedViewer == 0) {
+    m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
+    m_ExpoCombinedViewer->Create();
+  }
+  m_ExpoCombinedViewer->RemoveExpos();
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
     if (m_Data->GetModule(m)->HasExpos() == true) {
       m_ExpoCombinedViewer->AddExpos(m_Data->GetModule(m)->GetExpos());
     }
   }
-  m_ExpoCombinedViewer->Create();
+  m_ExpoCombinedViewer->OnReset();
+  m_ExpoCombinedViewer->ShowExpos();
   
   // Do the pipeline
   MNCTEvent* Event = new MNCTEvent(); // will be loaded on start
@@ -321,6 +325,19 @@ bool MInterfaceNuclearizer::Analyze()
   }
   
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceNuclearizer::View()
+{
+  // Show the view
+  
+  if (m_ExpoCombinedViewer != 0) {
+     m_ExpoCombinedViewer->MapWindow();
+  }
 }
 
 

@@ -40,6 +40,11 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Call sequence
+//! MGUIExpoCombinedViewer* E = new MGUIExpoCombinedViewer();
+//! E->Create();
+//! E->AddExpos...
+//! E->ShowExpos();
 class MGUIExpoCombinedViewer : public MGUIDialog
 {
   // Public members:
@@ -48,31 +53,37 @@ class MGUIExpoCombinedViewer : public MGUIDialog
   MGUIExpoCombinedViewer();
   //! Default destructor
   virtual ~MGUIExpoCombinedViewer();
+  
+  //! Create the GUI
+  virtual void Create();
+  //! Process all button, etc. messages
+  virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
 
   //! Set a new expo tab
   void AddExpo(MGUIExpo* Expo) { m_Expos.push_back(Expo); }
   //! Set a new expo tab
   void AddExpos(vector<MGUIExpo*> Expos) { m_Expos.insert(m_Expos.end(), Expos.begin(), Expos.end()); }
 
-  //! Create the GUI
-  virtual void Create();
-  //! Process all button, etc. messages
-  virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
+  //! Remove all expos
+  void RemoveExpos();
+
+  //! Show all expos
+  void ShowExpos();
  
   //! Return true if we need an update
   bool NeedsUpdate();
- 
-  //! Update all tabs
-  virtual void Update();
 
   //! Handle the close window event
   virtual void CloseWindow();
 
-  //! Handle the apply button event
-  virtual bool OnApply();
-  //! Handle the cancel button event
-  virtual bool OnCancel();
+  //! Handle the update button event
+  virtual bool OnUpdate();
+  //! Handle the reset button event
+  virtual bool OnReset();
+  //! Handle the print button event
+  virtual bool OnPrint();
 
+  
   // protected members:
  protected:
 
@@ -92,6 +103,10 @@ class MGUIExpoCombinedViewer : public MGUIDialog
   //! The update timer
   MTimer m_Timer;
 
+  // IDs:
+  static const int c_Update      =   201;
+  static const int c_Reset       =   202;
+  static const int c_Print       =   203;
   
 
 #ifdef ___CINT___

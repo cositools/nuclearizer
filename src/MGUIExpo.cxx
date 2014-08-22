@@ -33,6 +33,9 @@ using namespace std;
 // MEGAlib libs:
 #include "MStreams.h"
 
+// Nuclearizer:
+#include "MNCTModule.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -45,16 +48,18 @@ ClassImp(MGUIExpo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpo::MGUIExpo() 
-  : TGCompositeFrame(gClient->GetRoot(), 320, 240)
+MGUIExpo::MGUIExpo(MNCTModule* Module) : TGCompositeFrame(gClient->GetRoot(), 320, 240)
 {
   // standard constructor
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 
+  m_Module = Module;
   m_TabTitle = "No title";
   m_NeedsUpdate = false;
+  
+  m_IsCreated = false;
 }
 
 
@@ -85,8 +90,8 @@ bool MGUIExpo::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Process the messages for this window
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -101,6 +106,28 @@ bool MGUIExpo::ProcessMessage(long Message, long Parameter1, long Parameter2)
   }
   
   return Status;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUIExpo::ReadXmlConfiguration(MXmlNode* Node)
+{
+  //! Read the configuration data from an XML node
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUIExpo::WriteXmlConfiguration(MXmlNode* ModuleNode) 
+{
+  //! Add XML nodes to the tree of the module 
+
+  return true;
 }
 
 

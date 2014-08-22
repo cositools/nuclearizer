@@ -44,7 +44,7 @@ ClassImp(MGUIExpoDepthCalibration)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoDepthCalibration::MGUIExpoDepthCalibration() : MGUIExpo()
+MGUIExpoDepthCalibration::MGUIExpoDepthCalibration(MNCTModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 
@@ -150,7 +150,6 @@ void MGUIExpoDepthCalibration::AddDepth(unsigned int DetectorID, double Depth)
 {
   // Add data to the energy histogram
 
-  cout<<DetectorID<<":"<<m_DepthHistograms.size()<<endl;
   if (DetectorID < m_DepthHistograms.size()) {
     m_DepthHistograms[DetectorID]->Fill(Depth);
   }
@@ -163,6 +162,9 @@ void MGUIExpoDepthCalibration::AddDepth(unsigned int DetectorID, double Depth)
 void MGUIExpoDepthCalibration::Create()
 {
   // Add the GUI options here
+  
+  // Do not create it twice!
+  if (m_IsCreated == true) return;
   
   TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY,                                                   2, 2, 2, 2);
 
@@ -182,6 +184,8 @@ void MGUIExpoDepthCalibration::Create()
       ++Counter;
     }
   }
+  
+  m_IsCreated = true;
 }
 
 
@@ -212,6 +216,26 @@ void MGUIExpoDepthCalibration::Update()
       gSystem->ProcessEvents();
     }
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoDepthCalibration::Print(const MString& FileName)
+{
+  // Add data to the energy histogram
+
+  TCanvas* P = new TCanvas();
+  P->Divide(m_NDetectorsX, m_NDetectorsY);
+  for (unsigned int y = 0; y < m_NDetectorsY; ++y) {
+    for (unsigned int x = 0; x < m_NDetectorsX; ++x) {
+      P->cd((x+1) + m_NDetectorsX*y);
+      m_DepthHistograms[x + m_NDetectorsX*y]->DrawCopy("colz");
+    }
+  }
+  P->SaveAs(FileName);
+  delete P;
 }
 
 

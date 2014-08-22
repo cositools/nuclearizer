@@ -100,9 +100,9 @@ class MNCTStripHit
 
 
   //! Parse some content from a line
-  bool Parse(MString& Line, int Version);
+  bool Parse(MString& Line, int Version = 1);
   //! Dump the content into a file stream
-  bool Stream(ostream& S, int Version);
+  bool StreamDat(ostream& S, int Version = 1);
   //! Stream the content in MEGAlib's roa format 
   void StreamRoa(ostream& S);
   

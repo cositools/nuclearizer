@@ -129,7 +129,7 @@ class MNCTAspect
 
   
   //! Dump the content into a file stream
-  bool Stream(ofstream& S, int Version);
+  bool StreamDat(ostream& S, int Version = 1);
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
 

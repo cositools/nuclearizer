@@ -189,12 +189,17 @@ void MGUINuclearizerMain::Create()
   // The buttons itself
   TGTextButton*	StartButton = new TGTextButton(ButtonFrame, "Start", c_Start); 
   StartButton->Associate(this);
-  TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40, 40, 0, 0);
+  TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40, 0, 0, 0);
   ButtonFrame->AddFrame(StartButton, StartButtonLayout);
+  
+  TGTextButton* ViewButton = new TGTextButton(ButtonFrame, "     View     ", c_View); 
+  ViewButton->Associate(this);
+  TGLayoutHints* ViewButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
+  ButtonFrame->AddFrame(ViewButton, ViewButtonLayout);
   
   TGTextButton* StopButton = new TGTextButton(ButtonFrame, "     Stop     ", c_Stop); 
   StopButton->Associate(this);
-  TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
+  TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20, 0, 0, 0);
   ButtonFrame->AddFrame(StopButton, StopButtonLayout);
   
   // Give this element the default size of its content:
@@ -318,6 +323,10 @@ bool MGUINuclearizerMain::ProcessMessage(long Message, long Parameter1,
 
       case c_Stop:
         Status = OnStop();
+        break;
+
+      case c_View:
+        Status = OnView();
         break;
 
       default:
@@ -455,6 +464,17 @@ bool MGUINuclearizerMain::OnStop()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MGUINuclearizerMain::OnView()
+{
+  m_Interface->View();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MGUINuclearizerMain::OnApply()
 {
   /*
@@ -576,7 +596,7 @@ bool MGUINuclearizerMain::OnAbout()
   MGUIAbout* About = new MGUIAbout(gClient->GetRoot(), this);
   About->SetProgramName("Nuclearizer");
   About->SetIconPath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
-  //About->SetLeadProgrammer("Andreas Zoglauer");
+  About->SetLeadProgrammer("Andreas Zoglauer");
   About->SetUpdates("");
   About->SetProgrammers("Alan Chiu, Alex Lowell, Andreas Zoglauer,\nAres Hernandez, Carolyn Kierans, Clio Sleator,\nDaniel Perez-Becker, Eric Bellm, Jau-Shian Liang,\nMark Bandstra", true);
   About->SetCopyright("All rights reserved");

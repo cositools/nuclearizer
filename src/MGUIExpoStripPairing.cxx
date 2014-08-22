@@ -1,5 +1,5 @@
 /*
- * MGUIExpoEnergyCalibration.cxx
+ * MGUIExpoStripPairing.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIExpoEnergyCalibration.h"
+#include "MGUIExpoStripPairing.h"
 
 // Standard libs:
 
@@ -37,27 +37,28 @@
 
 
 #ifdef ___CINT___
-ClassImp(MGUIExpoEnergyCalibration)
+ClassImp(MGUIExpoStripPairing)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoEnergyCalibration::MGUIExpoEnergyCalibration(MNCTModule* Module) : MGUIExpo(Module)
+MGUIExpoStripPairing::MGUIExpoStripPairing(MNCTModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 
   // Set the new title of the tab here:
-  m_TabTitle = "Energy Calibration";
+  m_TabTitle = "Strip Pairing";
 
   // Add all histograms and canvases below
-  m_Energy = new TH1D("", "Spectrum combined hits", 200, 0, 1000);
-  m_Energy->SetXTitle("Energy [keV]");
-  m_Energy->SetYTitle("counts");
-  m_Energy->SetFillColor(kAzure+7);
+  m_Energies = new TH2D("", "Strip pairing: energy distribution p vs. n side", 1000, 0, 1000, 1000, 0, 1000);
+  m_Energies->SetXTitle("Energy p-Side [keV]");
+  m_Energies->SetYTitle("Energy n-Side [keV]");
+  m_Energies->SetZTitle("counts");
+  m_Energies->SetFillColor(kAzure+7);
 
-  m_EnergyCanvas = 0;
+  m_EnergiesCanvas = 0;
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -67,7 +68,7 @@ MGUIExpoEnergyCalibration::MGUIExpoEnergyCalibration(MNCTModule* Module) : MGUIE
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoEnergyCalibration::~MGUIExpoEnergyCalibration()
+MGUIExpoStripPairing::~MGUIExpoStripPairing()
 {
   // kDeepCleanup is activated 
 }
@@ -76,57 +77,46 @@ MGUIExpoEnergyCalibration::~MGUIExpoEnergyCalibration()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoEnergyCalibration::Reset()
+void MGUIExpoStripPairing::Reset()
 {
   //! Reset the data in the UI
 
-  m_Energy->Reset();
+  m_Energies->Reset();
 }
   
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoEnergyCalibration::SetEnergyHistogramParameters(int NBins, double Min, double Max)
+void MGUIExpoStripPairing::SetEnergiesHistogramParameters(int NBins, double Min, double Max)
 {
   // Set the energy histogram parameters 
 
-  m_Energy->SetBins(NBins, Min, Max);
+  m_Energies->SetBins(NBins, Min, Max, NBins, Min, Max);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoEnergyCalibration::AddEnergy(double Energy)
+void MGUIExpoStripPairing::AddEnergies(double pEnergy, double nEnergy)
 {
   // Add data to the energy histogram
 
-  m_Energy->Fill(Energy);
+  m_Energies->Fill(pEnergy, nEnergy);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoEnergyCalibration::Print(const MString& FileName)
-{
-  // Add data to the energy histogram
-
-  m_EnergyCanvas->GetCanvas()->SaveAs(FileName);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MGUIExpoEnergyCalibration::Create()
+void MGUIExpoStripPairing::Create()
 {
   // Add the GUI options here
-
+  
   // Do not create it twice!
   if (m_IsCreated == true) return;
-  
+
   TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY,
                                                   2, 2, 2, 2);
 
@@ -134,14 +124,14 @@ void MGUIExpoEnergyCalibration::Create()
   AddFrame(HFrame, CanvasLayout);
 
   
-  m_EnergyCanvas = new TRootEmbeddedCanvas("Energy", HFrame, 100, 100);
-  HFrame->AddFrame(m_EnergyCanvas, CanvasLayout);
+  m_EnergiesCanvas = new TRootEmbeddedCanvas("Energies", HFrame, 100, 100);
+  HFrame->AddFrame(m_EnergiesCanvas, CanvasLayout);
 
-  m_EnergyCanvas->GetCanvas()->cd();
-  m_EnergyCanvas->GetCanvas()->SetGridy();
-  m_EnergyCanvas->GetCanvas()->SetGridx();
-  m_Energy->Draw();
-  m_EnergyCanvas->GetCanvas()->Update();
+  m_EnergiesCanvas->GetCanvas()->cd();
+  m_EnergiesCanvas->GetCanvas()->SetGridy();
+  m_EnergiesCanvas->GetCanvas()->SetGridx();
+  m_Energies->Draw("colz");
+  m_EnergiesCanvas->GetCanvas()->Update();
   
   m_IsCreated = true;
 }
@@ -150,17 +140,28 @@ void MGUIExpoEnergyCalibration::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoEnergyCalibration::Update()
+void MGUIExpoStripPairing::Update()
 {
   //! Update the frame
 
-  if (m_EnergyCanvas != 0) {
-    m_EnergyCanvas->GetCanvas()->Modified();
-    m_EnergyCanvas->GetCanvas()->Update();
+  if (m_EnergiesCanvas != 0) {
+    m_EnergiesCanvas->GetCanvas()->Modified();
+    m_EnergiesCanvas->GetCanvas()->Update();
     gSystem->ProcessEvents();
   }
 }
 
 
-// MGUIExpoEnergyCalibration: the end...
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoStripPairing::Print(const MString& FileName)
+{
+  // Add data to the energy histogram
+
+  m_EnergiesCanvas->GetCanvas()->SaveAs(FileName);
+}
+
+
+// MGUIExpoStripPairing: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -85,7 +85,7 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   m_HasOptionsGUI = false;
   
   // Set the histogram display
-  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration();
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
   m_ExpoDepthCalibration->SetDepthHistogramArrangement(3, 4);
   m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.000001, 1.500001); //-0.7499, 0.7501);
   m_Expos.push_back(m_ExpoDepthCalibration);  
@@ -347,7 +347,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
       ((NXStripHits == 2)&&(NYStripHits == 1))) ) ||
       ((NStripHits == 4) && (NXStripHits == 2) && (NYStripHits == 2))) { 
       
-      int i_sxhit=0;
+    int i_sxhit=0;
     int i_syhit=0;
     int Tmp_XStrip[NXStripHits];
     int Tmp_YStrip[NYStripHits];
@@ -519,7 +519,6 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
                //<< " Z_X: " << Z_X << " Z_Y: " << Z_Y 
                << " Z: " << Z_Front << " cm  Z res.: " << Z_FWHM << " cm" << endl;
         }
-        cout<<"DISP: "<<DisplayID<<endl;
         m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
         m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
       } else {  

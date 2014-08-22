@@ -47,7 +47,7 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   // public Session:
  public:
   //! Default constructor
-  MGUIExpoDepthCalibration();
+  MGUIExpoDepthCalibration(MNCTModule* Module);
   //! Default destructor
   virtual ~MGUIExpoDepthCalibration();
 
@@ -59,6 +59,9 @@ class MGUIExpoDepthCalibration : public MGUIExpo
 
   //! Reset the data in the UI
   virtual void Reset();
+
+  //! Print the data in the UI
+  virtual void Print(const MString& FileName);
 
   //! Set the arrangment of the depth histogram
   //!  0    1    2    3 

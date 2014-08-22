@@ -77,6 +77,8 @@ protected:
   virtual bool OnExit();
   //! Actions when the stop button has been pressed
   virtual bool OnStop();
+  //! Actions when the view button has been pressed
+  virtual bool OnView();
   //! Actions when the save key has been pressed
   virtual bool OnSaveConfiguration();
   //! Actions when the load key has been pressed
@@ -99,7 +101,7 @@ private:
   TGGroupFrame* m_ModuleFrame;
   //! The layout of an module
   TGLayoutHints* m_ModuleLayout;
-
+  
   //! List of the modules
   vector<MGUIEModule*> m_Modules;
 
@@ -119,6 +121,7 @@ private:
   static const int c_Geometry   =   5;
   static const int c_About      =   6;
   static const int c_Stop       =   7;
+  static const int c_View       =   8;
   static const int c_Remove     = 400;
   static const int c_Options    = 500;
   static const int c_Change     = 600;

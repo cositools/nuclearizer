@@ -54,6 +54,11 @@ class MNCTModuleEventSaver : public MNCTModule
   //! Set the file name
   void SetFileName(const MString& Name) { m_FileName = Name; }
   
+  //! Get the file name
+  bool GetSaveBadEvents() const { return m_SaveBadEvents; }
+  //! Set the file name
+  void SetSaveBadEvents(bool SaveBadEvents) { m_SaveBadEvents = SaveBadEvents; }
+  
   //! Initialize the module
   virtual bool Initialize();
 
@@ -105,7 +110,9 @@ class MNCTModuleEventSaver : public MNCTModule
   unsigned int m_Mode;
   //! The file name
   MString m_FileName;
-   
+  //! Save bad events
+  bool m_SaveBadEvents;
+  
   //! Output stream for dat file
   ofstream m_Out;
 

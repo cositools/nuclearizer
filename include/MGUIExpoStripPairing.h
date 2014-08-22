@@ -1,5 +1,5 @@
 /*
- * MGUIExpoEnergyCalibration.h
+ * MGUIExpoStripPairing.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIExpoEnergyCalibration__
-#define __MGUIExpoEnergyCalibration__
+#ifndef __MGUIExpoStripPairing__
+#define __MGUIExpoStripPairing__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -42,14 +42,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIExpoEnergyCalibration : public MGUIExpo
+class MGUIExpoStripPairing : public MGUIExpo
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIExpoEnergyCalibration(MNCTModule* Module);
+  MGUIExpoStripPairing(MNCTModule* Module);
   //! Default destructor
-  virtual ~MGUIExpoEnergyCalibration();
+  virtual ~MGUIExpoStripPairing();
 
   //! The creation part which gets overwritten
   virtual void Create();
@@ -64,10 +64,10 @@ class MGUIExpoEnergyCalibration : public MGUIExpo
   virtual void Print(const MString& FileName);
 
   //! Set the energy histogram parameters 
-  void SetEnergyHistogramParameters(int NBins, double Min, double Max);
+  void SetEnergiesHistogramParameters(int NBins, double Min, double Max);
 
   //! Add data to the energy histogram
-  void AddEnergy(double Energy);
+  void AddEnergies(double pEnergy, double nEnergy);
 
   // protected methods:
  protected:
@@ -79,15 +79,15 @@ class MGUIExpoEnergyCalibration : public MGUIExpo
   // private members:
  private:
   //! Energy canvas
-  TRootEmbeddedCanvas* m_EnergyCanvas;
+  TRootEmbeddedCanvas* m_EnergiesCanvas;
   //! Energy histogram
-  TH1D* m_Energy;
+  TH2D* m_Energies;
 
 
 
 #ifdef ___CINT___
  public:
-  ClassDef(MGUIExpoEnergyCalibration, 1) // basic class for dialog windows
+  ClassDef(MGUIExpoStripPairing, 1) // basic class for dialog windows
 #endif
 
 };

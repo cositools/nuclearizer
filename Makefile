@@ -112,6 +112,7 @@ $(LB)/MNCTModuleDepthCalibration.o \
 $(LB)/MNCTModuleDepthCalibrationLinearStrip.o \
 $(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
 $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
+$(LB)/MGUIExpoStripPairing.o \
 $(LB)/MNCTModuleStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
@@ -154,7 +155,7 @@ ALLLIBS += -lMathCore
 all: $(ALLPROGRAMS)
 
 # Compile all libraries and programs
-run: $(ALLPROGRAMS)
+n: $(ALLPROGRAMS)
 	$(NUCLEARIZERPRG)
 
 nuclearizer: $(ALLPROGRAMS)

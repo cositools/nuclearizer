@@ -80,6 +80,10 @@ MNCTModuleStripPairingGreedy_a::MNCTModuleStripPairingGreedy_a() : MNCTModule()
   m_NMatches =0;
   m_TotalMatches=0;
   
+  // Set the histogram display
+  m_ExpoStripPairing = new MGUIExpoStripPairing(this);
+  m_ExpoStripPairing->SetEnergiesHistogramParameters(1000, 0, 1000);
+  m_Expos.push_back(m_ExpoStripPairing);
 }
 
 
@@ -99,8 +103,7 @@ bool MNCTModuleStripPairingGreedy_a::Initialize()
 {
   // Initialize the module 
   
-  // Add all initializations which are global to all events
-  // and have member variables here
+  MNCTModule::Initialize();
   
   return true;
 }
@@ -858,36 +861,59 @@ bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MNCTEvent* Event)
     
     // printf("__________________________________________\n");
 
-
-
-    //Carolyn's edit to get rid of poorly matched strips...
+  // Flag events with poorly matched strips...
+  for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+    double pEnergy = 0.0;
+    double pUncertainty = 0.0;
+    double nEnergy = 0.0;
+    double nUncertainty = 0.0;
+    
+    for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+      if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+        pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+        pUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
+      } else {
+        nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+        nUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
+      }
+    }
+    m_ExpoStripPairing->AddEnergies(pEnergy, nEnergy);
+    
+    pUncertainty = sqrt(pUncertainty);
+    nUncertainty = sqrt(nUncertainty);
+    
+    double Difference = fabs(pEnergy - nEnergy);
+    // Difference must be more than 10 keV for cross talk + 2 sigma energy resolution on *both* sides
+    if (Difference > 2*pUncertainty + 2*nUncertainty + 10) {
+      Event->SetStripPairingIncomplete(true);
+      if (m_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+    } else {
+      if (m_Verbosity >= c_Info) cout<<"Good strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+    }
+  }  
+  
+  if (m_Verbosity >= c_Info) {
+    cout<<"After strip pairing..."<<endl;
     for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
-      //mout<<"Daniel's Hit "<<h<<endl;
-      //for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
-      //  mout<<"Energy: "<<Event->GetHit(h)->GetStripHit(s)->GetEnergy()<<endl;
-      //}
-      if (Event->GetHit(h)->GetNStripHits() == 2) {
-      double deviation = 2.0*((Event->GetHit(h)->GetStripHit(0)->GetEnergy()) - (Event->GetHit(h)->GetStripHit(1)->GetEnergy()))/((Event->GetHit(h)->GetStripHit(0)->GetEnergy()) + (Event->GetHit(h)->GetStripHit(1)->GetEnergy()));
-      //mout<<"deviation: "<<deviation<<endl;
-      if (abs(deviation) > 0.5) {
-        Event->SetStripPairingIncomplete(true);
+      cout<<"Hit "<<h<<endl;
+      Event->GetHit(h)->StreamDat(cout); 
+      for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+        Event->GetHit(h)->GetStripHit(s)->StreamDat(cout); 
       }
     }
   }
 
-
-    
-    return true;
-  }
+  return true;
+}
   
   
-  ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
   
   
-  void MNCTModuleStripPairingGreedy_a::ShowOptionsGUI()
-  {
-    // Show the options GUI - or do nothing
-  }
+void MNCTModuleStripPairingGreedy_a::ShowOptionsGUI()
+{
+  // Show the options GUI - or do nothing
+}
   
   
   // MNCTModuleStripPairingGreedy_a.cxx: the end...

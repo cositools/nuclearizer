@@ -23,11 +23,11 @@
 #include <TObjArray.h>
 #include <TGFrame.h>
 #include <TGButton.h>
-#include <MString.h>
 #include <TGClient.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 #include "MGUIEFileSelector.h"
 #include "MGUIERBList.h"
 #include "MGUIOptions.h"
@@ -73,7 +73,8 @@ class MGUIOptionsEventSaver : public MGUIOptions
   MGUIERBList* m_Mode;
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
-  
+  //! Checkbutton the save or reject bad events
+  TGCheckButton* m_SaveBadEvents;
 
 #ifdef ___CINT___
  public:

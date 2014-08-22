@@ -85,8 +85,8 @@ MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : M
   m_HasOptionsGUI = true;
   
   // Set the histogram display
-  m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration();
-  m_ExpoEnergyCalibration->SetEnergyHistogramParamaters(200, 0, 2000);
+  m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
+  m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoEnergyCalibration);
 }
 

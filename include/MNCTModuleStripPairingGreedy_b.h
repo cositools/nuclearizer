@@ -113,7 +113,10 @@ Clio Sleator, 2014
 
 // MEGAlib libs:
 #include "MGlobal.h"
+
+// Nuclearizer libs
 #include "MNCTModule.h"
+#include "MGUIExpoStripPairing.h"
 
 // Forward declarations:
 
@@ -140,46 +143,46 @@ class MNCTModuleStripPairingGreedy_b : public MNCTModule
   virtual bool AnalyzeEvent(MNCTEvent* Event);
 
 //other functions
-	bool GetEventInfo(MNCTEvent*, int);
-	void WriteHits(MNCTEvent*, int);
-	void ClearMembers();	//clears member vectors in between detectors
-	void DefineEventInfo(); //for testing without Nuclearizer; randomly generates hit strip numbers, energies, and significances
-	bool CheckInitialEnergyDifference();
-	bool CheckForAdjacentStrips(); //checks if any adjacent strips were hit and if so, adds the possibility of charge sharing
-	bool CheckMultipleHits(); //checks to see if more x or more y strips were hit, if so, calls AddMuoltipleHits(int)
-	void AddMultipleHits(int); //adds possibility of multiple hits on one x (or y) strip by adding all possible combinations of y (or x) strips to vector of y (or x) hits
-	void InitializeBadCombinations();	//fill badCombinations vector with 0's
-	void CheckForBadCombinations(); //fills out badCombinations vector using information from kill matrix
-	void PrintXYStripsHit(); //prints out current list x and y strips that were hit, including combinations
-	float CalculateWeight(int, int); //calculate weight of one possible combination
-	void CalculateWeightMatrix(); //calculate the weight matrix
-	vector<int> FindMinWeight(); //find the minimum weight in the weight matrix
-	void ConflictingStrips(int, int); //once a pair is chosen, prevents the program from choosing the same strip again
-	void FindFinalPairs(); //finds the most likely pairs (or combinations) by creating and analyzing the weight matrix
-	void InitializeWeightMatrix(); //fill weight matrix with 0's
-	void PrintWeightMatrix(); //print out all elements in the weight matrix
-	void InitializeKillMatrices(); //fill kill matrices with 0's
-	void ExpandKillMatrix(int); //add column and row to the kill matrices
-	int CountNegativeElements(); //count number of elements in the weight matrix that are negative (which means they are no longer valid to be chosen as the minimum weight)
-	vector<vector<vector<int> > > DecodeFinalPairs(); //put lists of final strip pairings in terms of numbers between 1 and 37
-	bool CheckAllStripsWerePaired(); //check that all strips are in the list of final pairs
-	float CalculateSigma();
-	void DetermineOption(bool);
+  bool GetEventInfo(MNCTEvent*, int);
+  void WriteHits(MNCTEvent*, int);
+  void ClearMembers();  //clears member vectors in between detectors
+  void DefineEventInfo(); //for testing without Nuclearizer; randomly generates hit strip numbers, energies, and significances
+  bool CheckInitialEnergyDifference();
+  bool CheckForAdjacentStrips(); //checks if any adjacent strips were hit and if so, adds the possibility of charge sharing
+  bool CheckMultipleHits(); //checks to see if more x or more y strips were hit, if so, calls AddMuoltipleHits(int)
+  void AddMultipleHits(int); //adds possibility of multiple hits on one x (or y) strip by adding all possible combinations of y (or x) strips to vector of y (or x) hits
+  void InitializeBadCombinations(); //fill badCombinations vector with 0's
+  void CheckForBadCombinations(); //fills out badCombinations vector using information from kill matrix
+  void PrintXYStripsHit(); //prints out current list x and y strips that were hit, including combinations
+  float CalculateWeight(int, int); //calculate weight of one possible combination
+  void CalculateWeightMatrix(); //calculate the weight matrix
+  vector<int> FindMinWeight(); //find the minimum weight in the weight matrix
+  void ConflictingStrips(int, int); //once a pair is chosen, prevents the program from choosing the same strip again
+  void FindFinalPairs(); //finds the most likely pairs (or combinations) by creating and analyzing the weight matrix
+  void InitializeWeightMatrix(); //fill weight matrix with 0's
+  void PrintWeightMatrix(); //print out all elements in the weight matrix
+  void InitializeKillMatrices(); //fill kill matrices with 0's
+  void ExpandKillMatrix(int); //add column and row to the kill matrices
+  int CountNegativeElements(); //count number of elements in the weight matrix that are negative (which means they are no longer valid to be chosen as the minimum weight)
+  vector<vector<vector<int> > > DecodeFinalPairs(); //put lists of final strip pairings in terms of numbers between 1 and 37
+  bool CheckAllStripsWerePaired(); //check that all strips are in the list of final pairs
+  float CalculateSigma();
+  void DetermineOption(bool);
 
-	float GetEth();	//returns threshold energy
-	void SetStripsHit(vector<vector<int> >);
-	vector<vector<int> > GetStripsHit();
-	void SetFinalPairs(vector<vector<int> >);
-	void SetEnergy(vector<vector<float> >);
-	vector<vector<float> > GetEnergy();
-	void SetSigma(vector<vector<float> >);
-	vector<vector<float> > GetSigma();
-	vector<vector<float> > GetWeightMatrix();
-	vector<vector<int> > GetBadCombinations();
-	void SetBadCombinations(vector<vector<int> >);
+  float GetEth(); //returns threshold energy
+  void SetStripsHit(vector<vector<int> >);
+  vector<vector<int> > GetStripsHit();
+  void SetFinalPairs(vector<vector<int> >);
+  void SetEnergy(vector<vector<float> >);
+  vector<vector<float> > GetEnergy();
+  void SetSigma(vector<vector<float> >);
+  vector<vector<float> > GetSigma();
+  vector<vector<float> > GetWeightMatrix();
+  vector<vector<int> > GetBadCombinations();
+  void SetBadCombinations(vector<vector<int> >);
 
-	void CalculateDetectorQuality();
-	void CalculateEventQuality(MNCTEvent*, int);
+  void CalculateDetectorQuality();
+  void CalculateEventQuality(MNCTEvent*, int);
 
   // protected methods:
  protected:
@@ -191,35 +194,37 @@ class MNCTModuleStripPairingGreedy_b : public MNCTModule
 
   // protected members:
  protected:
+  //! The display of debugging data
+  MGUIExpoStripPairing* m_ExpoStripPairing;
  
-	int m_TotalMatches; //Event Counters 
-	int m_NMatches; //Variable Match counter, used to events with a specific numbers of strips involved 
-	int m_NBadMatches; //Counts the number of badly matched events
+  int m_TotalMatches; //Event Counters 
+  int m_NMatches; //Variable Match counter, used to events with a specific numbers of strips involved 
+  int m_NBadMatches; //Counts the number of badly matched events
 
-	//for all of these vectors, vector.at(0) = vector of x information
-	//and vector.at(1) = vector of y information
-	//for example, stripsHit.at(0) = vector containing all of the x strips hit
-	//and energy.at(1) = vector containing all of the energies of the y strips hit
-	vector<vector<int> > stripsHit; //strip numbers that got a signal
-	vector<vector<float> > energy; //energy of the signal, corresponds to stripsHit
-	vector<vector<float> > sig; //error of energy measurement, corresponds to stripsHit
+  //for all of these vectors, vector.at(0) = vector of x information
+  //and vector.at(1) = vector of y information
+  //for example, stripsHit.at(0) = vector containing all of the x strips hit
+  //and energy.at(1) = vector containing all of the energies of the y strips hit
+  vector<vector<int> > stripsHit; //strip numbers that got a signal
+  vector<vector<float> > energy; //energy of the signal, corresponds to stripsHit
+  vector<vector<float> > sig; //error of energy measurement, corresponds to stripsHit
 
-	vector<int> nHits; //number of hits on x and y sides, changes to incorporate adjacent strips and multiple hits per strip
-	vector<int> nHitsOrig; //number of hits on x and y sides, stays at original number throughout the entire program
+  vector<int> nHits; //number of hits on x and y sides, changes to incorporate adjacent strips and multiple hits per strip
+  vector<int> nHitsOrig; //number of hits on x and y sides, stays at original number throughout the entire program
 
-	vector<vector<int> > badCombinations; //badCombinations.at(axis).at(i) = 0 when i is a good combination, = 1 when i is a bad combination
-										//a bad combination is one like 151, which is strip 1 combined with strip sharing between strips 1 and 2
-	vector<vector<vector<int> > > killMatrix; //is used to indicate which strip numbers cannot be chosen once a particular strip is selected
-	vector<vector<float> > weightMatrix; //matrix of all weights of all x and y combinations
-	vector<vector<int> > finalPairs; //list of final pairs that are chosen
-	vector<float> hitQualityFactor;	//list of hit quality factors, which are the weights of each hit
-	vector<float> energyResolution;	//energy resolution of the pairs
-	vector<float> hitEnergy;	//energy of hit
+  vector<vector<int> > badCombinations; //badCombinations.at(axis).at(i) = 0 when i is a good combination, = 1 when i is a bad combination
+                    //a bad combination is one like 151, which is strip 1 combined with strip sharing between strips 1 and 2
+  vector<vector<vector<int> > > killMatrix; //is used to indicate which strip numbers cannot be chosen once a particular strip is selected
+  vector<vector<float> > weightMatrix; //matrix of all weights of all x and y combinations
+  vector<vector<int> > finalPairs; //list of final pairs that are chosen
+  vector<float> hitQualityFactor; //list of hit quality factors, which are the weights of each hit
+  vector<float> energyResolution; //energy resolution of the pairs
+  vector<float> hitEnergy;  //energy of hit
 
-	vector<float> detectorQualityFactors;
-	vector<bool> noHits;
+  vector<float> detectorQualityFactors;
+  vector<bool> noHits;
 
-	float Eth; //threshold energy = 30 keV for now
+  float Eth; //threshold energy = 30 keV for now
 
   // private members:
  private:

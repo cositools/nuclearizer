@@ -69,20 +69,24 @@ void MGUIOptionsEventSaver::Create()
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);  
   
-  m_Mode = new MGUIERBList(m_OptionsFrame, "Please select a mode:");
-  m_Mode->Add("Dat file containing all information");
-  m_Mode->Add("Evta file containing only the reconstructed hits");
+  m_Mode = new MGUIERBList(m_OptionsFrame, "Please select an output mode:");
+  m_Mode->Add("*.dat file containing all information");
+  m_Mode->Add("*.evta file to use with revan");
   m_Mode->SetSelected(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetMode());
   m_Mode->Create();
   m_OptionsFrame->AddFrame(m_Mode, LabelLayout);
 
   
-  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
+  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an output file:",
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetFileName());
-  m_FileSelector->SetFileType("Data file", "*.dat");
+  m_FileSelector->SetFileType("Dat file (all info)", "*.dat");
+  m_FileSelector->SetFileType("evta file (evta file)", "*.evta");
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
-  
+  m_SaveBadEvents = new TGCheckButton(m_OptionsFrame, "Save events which are flagged bad (BD)", 1);
+  m_SaveBadEvents->SetOn(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetSaveBadEvents());
+  m_OptionsFrame->AddFrame(m_SaveBadEvents, LabelLayout);
+ 
   PostCreate();
 }
 
@@ -127,6 +131,7 @@ bool MGUIOptionsEventSaver::OnApply()
 
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetMode(m_Mode->GetSelected());
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetSaveBadEvents(m_SaveBadEvents->IsOn());
   
   return true;
 }

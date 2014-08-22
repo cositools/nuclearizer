@@ -27,10 +27,14 @@
 #include <TGClient.h>
 
 // MEGAlib libs:
-#include "MGUIERBList.h"
 #include "MTimer.h"
+#include "MXmlNode.h"
+#include "MGUIERBList.h"
+
+// Nuclearizer libs
 
 // Forward declarations:
+class MNCTModule;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -40,11 +44,14 @@ class MGUIExpo : public TGCompositeFrame
 {
   // public Session:
  public:
-  //! Default constructor
-  MGUIExpo();
+  //! Default constructor - if the module is not set, this is the first thing to set
+  MGUIExpo(MNCTModule* Module = 0);
   //! Default destructor
   virtual ~MGUIExpo();
 
+  //! Set the module
+  void SetModule(MNCTModule* Module) { m_Module = Module; }
+  
   //! Close the window
   void CloseWindow();
   //! Process all button, etc. messages
@@ -53,17 +60,25 @@ class MGUIExpo : public TGCompositeFrame
   //! The creation part which gets overwritten
   virtual void Create() {};
 
-  //! Update the frame - should be overwritten to refresh the histograms, etc.
-  virtual void Update() { };
+  //! Update the frame - must be overwritten to refresh the histograms, etc.
+  virtual void Update() {};
 
-  //! Reset the data in the UI - should be overwritten to clear the histograms, etc.
-  virtual void Reset() { };
+  //! Reset the data in the UI - must be overwritten to clear the histograms, etc.
+  virtual void Reset() {};
+
+  //! Print the data in the UI - must be overwritten
+  virtual void Print(const MString& FileName) {};
 
   //! Get the title
-  TString GetTabTitle() { return m_TabTitle; }
+  MString GetTabTitle() { return m_TabTitle; }
 
   //! Return true if we need an update
   bool NeedsUpdate() { return m_NeedsUpdate; }
+
+  //! Read the configuration data from an XML node
+  virtual bool ReadXmlConfiguration(MXmlNode* Node);
+  //! Add XML nodes to the tree of the module 
+  virtual bool WriteXmlConfiguration(MXmlNode* ModuleNode);
   
   // protected methods:
  protected:
@@ -71,11 +86,17 @@ class MGUIExpo : public TGCompositeFrame
 
   // protected members:
  protected:
+  //! The module
+  MNCTModule* m_Module;
+   
   //! Tab Title of the GUI element
-  TString m_TabTitle;
+  MString m_TabTitle;
   
   //! Flag to indicate we need an update
   bool m_NeedsUpdate;
+  
+  //! True if it has been created
+  bool m_IsCreated;
   
   // private members:
  private:

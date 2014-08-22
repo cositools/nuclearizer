@@ -21,6 +21,8 @@
 
 // Standard libs:
 #include <iomanip>
+#include <string>
+#include <locale>
 using namespace std;
 
 // ROOT libs:
@@ -79,26 +81,33 @@ void MGUIExpoCombinedViewer::Create()
   // We start with a name and an icon...
   SetWindowName("Expo - combined viewer");  
 
-   
-  // The subtitle
-  //AddSubTitle(TString("Diagnostics"));
-
   m_MainTab = new TGTab(this, m_FontScaler*900, m_FontScaler*550);
   m_MainTabLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 10, 10, 20, 0);
   AddFrame(m_MainTab, m_MainTabLayout);
-
-  for (unsigned int d = 0; d < m_Expos.size(); ++d) {
-    m_Expos[d]->ReparentWindow(m_MainTab);
-    m_Expos[d]->Create();
-    m_MainTab->AddTab(m_Expos[d]->GetTabTitle(), m_Expos[d]);
-  }
-
-  // The buttons
-  AddButtons(c_Ok | c_Apply, true);
   
 
-  m_ApplyButton->SetText("Update");
-  m_OKButton->SetText("Close");
+  // Start & Exit buttons
+  // Frame around the buttons:
+  TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
+  TGLayoutHints* ButtonFrameLayout =  new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 10);
+  AddFrame(ButtonFrame, ButtonFrameLayout);
+  
+  // The buttons itself
+  TGTextButton* UpdateButton = new TGTextButton(ButtonFrame, "Update", c_Update); 
+  UpdateButton->Associate(this);
+  TGLayoutHints* UpdateButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40, 0, 0, 0);
+  ButtonFrame->AddFrame(UpdateButton, UpdateButtonLayout);
+  
+  TGTextButton* ResetButton = new TGTextButton(ButtonFrame, "     Reset     ", c_Reset); 
+  ResetButton->Associate(this);
+  TGLayoutHints* ResetButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
+  ButtonFrame->AddFrame(ResetButton, ResetButtonLayout);
+  
+  TGTextButton* StopButton = new TGTextButton(ButtonFrame, "     Print     ", c_Print); 
+  StopButton->Associate(this);
+  TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20, 0, 0, 0);
+  ButtonFrame->AddFrame(StopButton, StopButtonLayout);  
+  
 
   // Give this element the default size of its content:
   Resize(m_FontScaler*900, m_FontScaler*580); 
@@ -119,16 +128,20 @@ bool MGUIExpoCombinedViewer::ProcessMessage(long Message, long Parameter1, long 
   // Process the messages for this application
 
   bool Status = true;
-
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       switch (Parameter1) {
-      case e_Ok:
-        Status = OnCancel();
-      case e_Apply:
-        Status = OnApply();
+      case c_Update:
+        Status = OnUpdate();
+        break;
+      case c_Reset:
+        Status = OnReset();
+        break;
+      case c_Print:
+        Status = OnPrint();
         break;
       default:
         break;
@@ -142,6 +155,43 @@ bool MGUIExpoCombinedViewer::ProcessMessage(long Message, long Parameter1, long 
   }
   
   return Status;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoCombinedViewer::RemoveExpos()
+{
+  //! Remove all expos
+  
+  for (unsigned int d = 0; d < m_Expos.size(); ++d) {
+    m_MainTab->RemoveTab(0, false);
+  }
+  m_Expos.clear();
+
+  MapSubwindows();
+  MapWindow();  
+  Layout();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoCombinedViewer::ShowExpos()
+{
+  //! Show all expos
+  
+  for (unsigned int d = 0; d < m_Expos.size(); ++d) {
+    m_Expos[d]->ReparentWindow(m_MainTab);
+    m_Expos[d]->Create();
+    m_MainTab->AddTab(m_Expos[d]->GetTabTitle(), m_Expos[d]);
+  }
+
+  MapSubwindows();
+  MapWindow();  
+  Layout();
 }
 
 
@@ -165,13 +215,15 @@ bool MGUIExpoCombinedViewer::NeedsUpdate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoCombinedViewer::Update()
+bool MGUIExpoCombinedViewer::OnUpdate()
 {
   //! Update all tabs
 
   for (unsigned int d = 0; d < m_Expos.size(); ++d) {
     m_Expos[d]->Update();
   }
+  
+  return true;
 }
 
 
@@ -191,11 +243,14 @@ void MGUIExpoCombinedViewer::CloseWindow()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIExpoCombinedViewer::OnApply()
+bool MGUIExpoCombinedViewer::OnReset()
 {
   // The Apply button has been pressed
 
-  Update();
+  for (unsigned int d = 0; d < m_Expos.size(); ++d) {
+    m_Expos[d]->Reset();
+  }
+  OnUpdate();
 
   return true;
 }
@@ -204,11 +259,18 @@ bool MGUIExpoCombinedViewer::OnApply()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIExpoCombinedViewer::OnCancel()
+bool MGUIExpoCombinedViewer::OnPrint()
 {
   // The Apply button has been pressed
 
-  CloseWindow();
+  MString TabTitle = m_Expos[m_MainTab->GetCurrent()]->GetTabTitle();
+  MString FileName;
+  for (char c : TabTitle.GetString()) if (isalnum(c)) FileName += c;
+  FileName += ".";
+  FileName += MTime().GetShortString();
+  FileName += ".pdf";
+  
+  m_Expos[m_MainTab->GetCurrent()]->Print(FileName);
 
   return true;
 }

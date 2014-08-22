@@ -51,6 +51,9 @@ class MInterfaceNuclearizer
 
   //! Exit the application
   void Exit();
+
+  //! Show the expo view
+  void View();
   
   //! Set the interrupt which will end the analysis
   void SetInterrupt(bool Flag = true);

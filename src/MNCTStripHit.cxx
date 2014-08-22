@@ -76,11 +76,11 @@ void MNCTStripHit::Clear()
 
   m_ReadOutElement->Clear();
   m_HasTriggered = false;
-  m_UncorrectedADCUnits = g_DoubleNotDefined;
-  m_ADCUnits = g_DoubleNotDefined;
-  m_Energy = g_DoubleNotDefined;
-  m_EnergyResolution = g_DoubleNotDefined;
-  m_Timing = g_DoubleNotDefined;
+  m_UncorrectedADCUnits = 0;
+  m_ADCUnits = 0;
+  m_Energy = 0;
+  m_EnergyResolution = 0;
+  m_Timing = 0;
 }
 
 
@@ -98,7 +98,7 @@ bool MNCTStripHit::Parse(MString& Line, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTStripHit::Stream(ostream& S, int Version)
+bool MNCTStripHit::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
   

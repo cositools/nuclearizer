@@ -111,7 +111,7 @@ void MNCTAspect::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTAspect::Stream(ofstream& S, int Version)
+bool MNCTAspect::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
        

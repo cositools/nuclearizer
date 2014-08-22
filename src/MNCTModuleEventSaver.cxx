@@ -53,7 +53,7 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MNCTModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Save events (GRIPS/Universal format)";
+  m_Name = "Save events (dat or evta format)";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagEventSaver";
@@ -70,8 +70,9 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MNCTModule()
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
   
-  m_Mode = c_DatFile;
-  m_FileName = "$(NUCLEARIZER)/Dummy.dat";
+  m_Mode = c_EvtaFile;
+  m_FileName = "MyEvtaFileForRevan.evta";
+  m_SaveBadEvents = true;
 }
 
 
@@ -94,7 +95,7 @@ bool MNCTModuleEventSaver::Initialize()
   
   m_Out.open(m_FileName);
   if (m_Out.is_open() == false) {
-    merr<<"Unable to open file: "<<m_FileName<<endl;
+    if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Unable to open file: "<<m_FileName<<endl;
     return false;
   }
   
@@ -109,7 +110,7 @@ bool MNCTModuleEventSaver::Initialize()
     m_Out<<"Type EVTA"<<endl;
     m_Out<<endl;
   } else {
-    merr<<"Unsupported mode: "<<m_Mode<<endl;
+    mout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
 
@@ -136,34 +137,17 @@ void MNCTModuleEventSaver::Finalize()
 
 bool MNCTModuleEventSaver::AnalyzeEvent(MNCTEvent* Event) 
 {
-  // Main data analysis routine, which updates the event to a new level
+  // Write the event to disk
  
-  if (Event->IsDepthCalibrationIncomplete() == true) return true;
-  if (Event->IsStripPairingIncomplete() == true) return true;
-  if (Event->IsEnergyCalibrationIncomplete() == true) return true;
-  
-  Event->StreamEvta(m_Out);
-  
-  return true;
-
-  double Energy = 0;
-  for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
-    Energy += Event->GetHit(h)->GetEnergy();
+  if (m_SaveBadEvents == false) {
+    if (Event->IsBad() == true) return true;
   }
 
-  if (Energy > 650 && Energy < 680) {
+  if (m_Mode == c_EvtaFile) {
     Event->StreamEvta(m_Out);
-    if (Event->GetNHits() > 0) {  
-      m_Out<<Event->GetHit(0)->GetStripHit(0)->GetDetectorID()<<": "<<Energy<<" Quality: "<<Event->GetHit(0)->GetHitQuality()<<endl;
-    }
-    for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
-      m_Out<<"Hit "<<h<<endl;
-      for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
-        Event->GetHit(h)->GetStripHit(s)->Stream(m_Out, 1);
-      }
-    }
+  } else if (m_Mode == c_DatFile) {
+    Event->StreamDat(m_Out);    
   }
-
 
   return true;
 }
@@ -197,6 +181,10 @@ bool MNCTModuleEventSaver::ReadXmlConfiguration(MXmlNode* Node)
   if (ModeNode != 0) {
     m_Mode = ModeNode->GetValueAsUnsignedInt();
   }
+  MXmlNode* SaveBadEventsNode = Node->GetNode("SaveBadEvents");
+  if (SaveBadEventsNode != 0) {
+    m_SaveBadEvents = SaveBadEventsNode->GetValueAsBoolean();
+  }
 
   return true;
 }
@@ -212,6 +200,7 @@ MXmlNode* MNCTModuleEventSaver::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
   new MXmlNode(Node, "FileName", m_FileName);
   new MXmlNode(Node, "Mode", m_Mode);
+  new MXmlNode(Node, "SaveBadEvents", m_SaveBadEvents);
 
   return Node;
 }

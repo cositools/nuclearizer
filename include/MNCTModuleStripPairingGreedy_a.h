@@ -76,6 +76,7 @@ Daniel Perez-Becker, 2008
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MNCTModule.h"
+#include "MGUIExpoStripPairing.h"
 
 // Forward declarations:
 
@@ -112,11 +113,14 @@ class MNCTModuleStripPairingGreedy_a : public MNCTModule
 
   // protected members:
  protected:
-  // Event Coutners
+  //! The display of debugging data
+  MGUIExpoStripPairing* m_ExpoStripPairing;
+
+  //! Event Counters
   int m_TotalMatches;
   
-  // Variable Match counter, used to events with a specific numbers of
-  // strips involved 
+  //! Variable Match counter, used to events with a specific numbers of
+  //! strips involved 
   int m_NMatches;
   
   //! Counts the number of badly matched events

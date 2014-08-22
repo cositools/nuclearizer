@@ -176,7 +176,9 @@ class MNCTEvent
   bool IsDepthCalibrationIncomplete() const { return m_DepthCalibrationIncomplete; }
 
   //! Returns true if none of the "bad" or "incomplete" falgs has been set
-  bool IsGoodEvent() const;
+  bool IsGood() const;
+  //! Returns true if any of the "bad" or "incomplete" falgs has been set
+  bool IsBad() const { return !IsGood(); }
 
   //! Set the data read flag
   void SetDataRead(bool Flag = true) { m_DataRead = Flag; }
@@ -224,9 +226,9 @@ class MNCTEvent
   double GetEventQuality() const { return m_EventQuality; }
 
   //! Parse some content from a line
-  bool Parse(MString& Line, int Version);
-  //! Dump the content into a file stream
-  bool Stream(ofstream& S, int Version, int Mode = 0);
+  bool Parse(MString& Line, int Version = 1);
+  //! Steam the content in a way Nuclearizer can read it in again
+  bool StreamDat(ostream& S, int Version = 1);
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
   //! Stream the content in MEGAlib's roa format 

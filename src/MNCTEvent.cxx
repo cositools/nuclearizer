@@ -323,7 +323,7 @@ bool MNCTEvent::Parse(MString& Line, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTEvent::Stream(ofstream& S, int Version, int Mode)
+bool MNCTEvent::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
 
@@ -332,17 +332,15 @@ bool MNCTEvent::Stream(ofstream& S, int Version, int Mode)
   S<<"TI "<<m_Time<<endl;
 
   if (m_Aspect != 0) {
-    m_Aspect->Stream(S, Version);
+    m_Aspect->StreamDat(S, Version);
   }
   
-  if (Mode == 0) { // Dat mode
-    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-      m_StripHits[h]->Stream(S, Version);  
-    }
-  } else { // evta mode
-    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-      m_Hits[h]->Stream(S, Version);  
-    }
+  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+    m_StripHits[h]->StreamDat(S, Version);  
+  }
+
+  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+    m_Hits[h]->StreamDat(S, Version);  
   }
 
   if (m_EnergyCalibrationIncomplete == true) {
@@ -414,7 +412,7 @@ void MNCTEvent::StreamRoa(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTEvent::IsGoodEvent() const
+bool MNCTEvent::IsGood() const
 {
   //! Returns true if none of the "bad" or "incomplete" falgs has been set
 

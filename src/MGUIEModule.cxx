@@ -79,7 +79,7 @@ void MGUIEModule::Create()
   if (m_Module != 0) {
     Title = new TGLabel(this, m_Module->GetName());
   } else {
-    Title = new TGLabel(this, "Click on change to add a new module");
+    Title = new TGLabel(this, "Add a new module");
   }
   TGLayoutHints* TitleLayout = new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 0, 0, 0, 0);
   AddFrame(Title, TitleLayout);
@@ -94,12 +94,14 @@ void MGUIEModule::Create()
   }
 
   m_ChangeButton = new TGTextButton(this, ChangeText, 600+m_ID); 
-  m_ChangeButton->SetMinWidth(m_FontScaler*70);
+  m_ChangeButton->SetLeftMargin(m_FontScaler*5);
+  m_ChangeButton->SetRightMargin(m_FontScaler*5);
   TGLayoutHints* ChangeButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
   AddFrame(m_ChangeButton, ChangeButtonLayout);
  
   m_RemoveButton = new TGTextButton(this, "Remove", 400+m_ID); 
-  m_RemoveButton->SetMinWidth(m_FontScaler*70);
+  m_RemoveButton->SetLeftMargin(m_FontScaler*5);
+  m_RemoveButton->SetRightMargin(m_FontScaler*5);
   TGLayoutHints* RemoveButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
   AddFrame(m_RemoveButton, RemoveButtonLayout);
   if (m_Module == 0) {
@@ -107,8 +109,9 @@ void MGUIEModule::Create()
   }
  
   m_OptionsButton = new TGTextButton(this, "Options", 500+m_ID); 
-  m_OptionsButton->SetMinWidth(m_FontScaler*70);
-  TGLayoutHints* OptionsButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
+  m_OptionsButton->SetLeftMargin(m_FontScaler*5);
+  m_OptionsButton->SetRightMargin(m_FontScaler*5);
+  TGLayoutHints* OptionsButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 30, 0, 0, 0);
   AddFrame(m_OptionsButton, OptionsButtonLayout);
   if (m_Module == 0 || (m_Module != 0 && m_Module->HasOptionsGUI() == false)) {
     m_OptionsButton->SetState(kButtonDisabled);
