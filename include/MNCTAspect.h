@@ -36,12 +36,16 @@ class MNCTAspect
  public:
   //! Standard constructor
   MNCTAspect();
+  //! Copy constructor
+  MNCTAspect(const MNCTAspect& Aspect);
   //! Default destructor
   virtual ~MNCTAspect();
 
   //! Reset all data
   void Clear();
 
+  //! Assignment operator 
+  const MNCTAspect& operator= (const MNCTAspect& A);
 
 ////////////////////////////////////////////////////////////////////////////////
   

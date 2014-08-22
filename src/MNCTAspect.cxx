@@ -53,7 +53,17 @@ MNCTAspect::MNCTAspect()
   Clear();
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+MNCTAspect::MNCTAspect(const MNCTAspect& Aspect)
+{
+  //! Copy constructor
+
+  (*this) = Aspect;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -64,6 +74,39 @@ MNCTAspect::~MNCTAspect()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+const MNCTAspect& MNCTAspect::operator= (const MNCTAspect& A) 
+{ 
+  m_Time = A.m_Time;
+  m_Flag = A.m_Flag;
+  m_GPS_Or_Magnetometer = A.m_GPS_Or_Magnetometer;
+  
+  m_Heading = A.m_Heading;
+  m_Pitch = A.m_Pitch;
+  m_Roll = A.m_Roll;
+  
+  m_Latitude = A.m_Latitude;
+  m_Longitude = A.m_Longitude;
+  m_Altitude = A.m_Altitude;
+
+  m_GalacticPointingXAxisLongitude = A.m_GalacticPointingXAxisLongitude;
+  m_GalacticPointingXAxisLatitude = A.m_GalacticPointingXAxisLatitude;
+  m_GalacticPointingZAxisLongitude = A.m_GalacticPointingZAxisLongitude;
+  m_GalacticPointingZAxisLatitude = A.m_GalacticPointingZAxisLatitude;
+  
+  m_HorizonPointingXAxisAzimuthNorth = A.m_HorizonPointingXAxisAzimuthNorth;
+  m_HorizonPointingXAxisElevation = A.m_HorizonPointingXAxisElevation;
+  m_HorizonPointingZAxisAzimuthNorth = A.m_HorizonPointingZAxisAzimuthNorth;
+  m_HorizonPointingZAxisElevation = A.m_HorizonPointingZAxisElevation;
+
+  return *this; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 void MNCTAspect::Clear()
@@ -115,6 +158,9 @@ bool MNCTAspect::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
        
+  S<<"HD "<<setprecision(8)<<m_Heading<<endl;
+  S<<"PI "<<setprecision(8)<<m_Pitch<<endl;
+  S<<"RL "<<setprecision(8)<<m_Roll<<endl;
   S<<"LT "<<setprecision(8)<<m_Latitude<<endl;
   S<<"LN "<<setprecision(8)<<m_Longitude<<endl;
   S<<"AL "<<setprecision(8)<<m_Altitude<<endl;

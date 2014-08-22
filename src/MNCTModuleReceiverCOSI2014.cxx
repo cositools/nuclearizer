@@ -471,6 +471,7 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 		return false;
 	}
 
+	return false;
 }
 
 bool MNCTModuleReceiverCOSI2014::FindNextPacket(vector<uint8_t>& NextPacket , int * idx){
@@ -697,6 +698,8 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event)
   Event->SetCL( NewEvent->GetCL() );
   Event->SetTime( NewEvent->GetTime() );
   Event->SetMJD( NewEvent->GetMJD() );
+  NewEvent->GetAspect()->StreamDat(cout);
+  Event->SetAspect( new MNCTAspect(*(NewEvent->GetAspect())) );
   Event->SetDataRead();
 
   if (m_RoaFileName != "") {
