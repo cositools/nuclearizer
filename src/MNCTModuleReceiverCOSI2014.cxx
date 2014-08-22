@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <cstdio>
 using namespace std;
+#include <time.h>
 
 // ROOT libs:
 #include "TGClient.h"
@@ -103,6 +104,9 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
 
   LoadStripMap();
   LoadCCMap();
+
+  //upper unix byte
+
 
 }
 
@@ -313,7 +317,10 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 	int CCId;
 
 	if( m_Events.size() > 0 ){
-		return true;
+		MNCTAspect* A = m_Events[0]->GetAspect();
+		if( A != 0 ){
+			return true;
+		}
 	}
 
 	SyncWord.push_back(0xEB);
@@ -386,6 +393,7 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 			case 0x05:
 				//aspect packet
 				cout<<"got aspect packet!"<<endl;
+				ProcessAspect( NextPacket );
 				m_NumAspectPackets++;
 				break;
 			default:
@@ -436,17 +444,29 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 			}
 			}
 			 */
-		}
 
+		}
+		//loop through m_Events and add aspect if possible
+		for( auto E: m_Events ){
+			if( E->GetAspect() == 0 ){
+				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
+				if( A != 0 ){
+					E->SetAspect(A);
+				}
+			}
+		}
 	} 
 
 	// Be sure to switch back to normal printing:
 	cout<<dec;
 
 	if( m_Events.size() > 0 ){
-		return true;
-	} else {
-		return false;
+		MNCTAspect* A = m_Events[0]->GetAspect();
+		if( A != 0 ){
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }
@@ -1122,10 +1142,22 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 			Clk = E.EventTime | (DataIn->SysTime & 0x0000ffff00000000);
 		}
 		NewEvent->SetCL( Clk );
+		uint64_t ClkModulo = Clk % 10000000;
+		uint64_t int_ClkSeconds = Clk - ClkModulo;
+		double ClkSeconds = (double) int_ClkSeconds;
+		double ClkNanoseconds = (double) ClkModulo*100.0;
+		MTime NewTime = MTime();
+		NewTime.Set( ClkSeconds, ClkNanoseconds );
+		NewEvent->SetTime( NewTime );
+
+
+		if( E.TrigAndVetoInfo & 0x70 ){
+			NewEvent->SetVeto();
+		}
+		CEvents->push_back(NewEvent);
 
 		//set the MJD only when there is aspect info
 
-		CEvents->push_back(NewEvent);
 	}
 
 	return true;
@@ -1220,25 +1252,310 @@ bool MNCTModuleReceiverCOSI2014::SortEventsBuf(void){
 
 bool MNCTEventTimeCompare(MNCTEvent * E1, MNCTEvent * E2){
 
-	//new events are added to the queue using push_back(), so older events are closer to [0]
-	//older stuff comes before newer stuff, 
-
-	/*
-	if( E1->GetTI() == E2->GetTI() ){
-		if( E1->GetCL() < E2->GetCL() ) return true; else return false;
-	} else {
-		if( E1->GetTI() < E2->GetTI() ) return true; else return false;
-	}*/
-
 	//sort based on 48 bit clock value
 	if( E1->GetCL() < E2->GetCL() ) return true; else return false;
-
 
 }
 
 
+bool MNCTModuleReceiverCOSI2014::ProcessAspect( vector<uint8_t> & NextPacket ){
+
+	//look for '$'
+
+	int Len = NextPacket.size();
+	int wx = 0; // skip to first byte
+	bool NotEnoughBytes = false;
+	int i;
+	time_t UnixTime;
+	struct tm * timeinfo;
+	char DateString[32];
+	string cpp_DateString;
+	uint32_t LastClkSample;
+	uint64_t UpperClkBytes;
+	uint64_t LastPPSClk = 0xffffffffffffffff;
 
 
+	int DSOLen = 84; //length of the DSO message including the last 5 bytes for the clock
+	int MagLen = 24; //length of the magnetometer message including my "$M" header
+
+
+	///////////////////////////////////////
+	/// GCU only sends the lower three ///
+	/// unix time bytes because the    ///
+	/// upper one won't change during a///
+	/// 100 day flight.  take the upper///
+	/// unix byte from the local comp  ///
+	/// and shift it in.               ///
+	//////////////////////////////////////
+
+	//make Unix timestamp
+	time_t NowTime; NowTime = time(NULL); 
+	int UnixBytes = ((int)NowTime & 0xff000000);
+	UnixBytes |= ((int) NextPacket[3] << 16);
+	UnixBytes |= ((int) NextPacket[4] << 8);
+	UnixBytes |= ((int) NextPacket[5]);
+	UnixTime = (time_t) UnixBytes;
+	timeinfo = gmtime(&UnixTime);
+	//date format has to be year/month/day for Ares' thing to work
+	strftime( DateString, sizeof(DateString), "%Y/%m/%d", timeinfo);
+	//should figure out what day it is, but then use the GPS millisecond to figure out exactly what time it is
+	//then use the GPS ms time to figure out exactly what time it is
+
+	//now use strftime to get a date string using this time
+	//according to Ares the GPS week starts at 23:59:44 on saturday night DOUBLE CHECK THIS
+	cpp_DateString = string( DateString ); 
+
+	//get the upper two 10 MHz clock byte from the beginning of the packet
+	UpperClkBytes = 0; UpperClkBytes = ((uint64_t) NextPacket[10] << 40) | ((uint64_t) NextPacket[11] << 32);
+
+
+	while( wx < Len ){
+
+		if( NextPacket[wx] == '$' ){
+			//check that we have enough bytes to determine the message type
+			if( (wx + 10) < Len ){
+				//determine the type:
+				string Header ;
+				for( i = 0; i < 10; ++i ) Header += (char) NextPacket[wx + i];
+
+				////////////////////// DSO Msg //////////////////////////////////
+				if( Header.find("$PASHR,DSO") == 0 ){
+					//check that we have enough bytes in the buffer for this
+					if( (wx + DSOLen) < Len ){
+						vector<uint8_t> DSOMsg;
+						DSOMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + DSOLen );
+						MNCTAspectPacket DSOPacket;
+						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
+						string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
+						DSOPacket.date_and_time = TempString;
+						LastPPSClk = DSOPacket.PPSClk;//keep track of last PPS for magnetometer samples
+						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
+						DSOPacket.CorrectedClk |= UpperClkBytes; //shift in the upper two clock bytes
+
+						//DSOPacket.CorrectedClk is converted to MTime in AddAspectFrame.
+
+						m_AspectReconstructor->AddAspectFrame( DSOPacket );
+						wx += DSOLen;
+					} else {
+						NotEnoughBytes = true;
+					}
+
+				////////////////////// Mag Msg //////////////////////////////////
+				} else if( Header.find("$M") == 0){
+					if( (wx + MagLen) < Len ){
+						/*
+						vector<uint8_t> MagMsg;
+						MNCTAspectPacket MagPacket;
+						MagMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + MagLen );
+						//DecodeMag( MagMsg, MagPacket );
+						string TempString = cpp_DateString + MagPacket.date_and_time; //prepend the date
+						MagPacket.date_and_time = TempString;
+						m_AspectReconstructor->AddAspectFrame( MagPacket );
+
+						//NEED TO KEEP TRACK OF LAST PPS AND GPS ms TO ASSOCIATE THE MAG SAMPLE WITH
+
+						*/
+						wx += MagLen;
+					} else {
+						NotEnoughBytes = true;
+					}
+				} else {
+					wx += 1;
+				}
+			} else {
+				NotEnoughBytes = true;
+			}
+		} else {
+			wx += 1;
+		}
+
+		if( NotEnoughBytes ){
+			break;
+		}
+	}
+
+	return true;
+
+}
+bool MNCTModuleReceiverCOSI2014::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspectPacket& GPS_Packet){
+
+	uint32_t MySeconds;
+	MySeconds = 0;
+	MySeconds = (((uint32_t)DSOString[11] & 0xFF) << 24) | (((uint32_t)DSOString[12] & 0xFF) << 16) | (((uint32_t)DSOString[13] & 0xFF)  << 8) | ((uint32_t)DSOString[14] & 0xFF);  
+	//printf("%02x %02x %02x %02x - ", (DSOString[11] & 0xFF),(DSOString[12] & 0xFF),(DSOString[13] & 0xFF),(DSOString[14] & 0xFF));
+	printf("DSO Packet: Milliseconds = %u, ",MySeconds);  //Again these are Carolyn's packets, not MNCTAspectPacket objects
+	long intermediate_seconds = MySeconds;
+	GPS_Packet.GPSMilliseconds;
+
+
+	uint64_t MyHeading_int = 0;
+	double MyHeading = 0.0;
+	MyHeading_int = (((uint64_t)DSOString[15] & 0xFF) << 56) | (((uint64_t)DSOString[16] & 0xFF) << 48) | (((uint64_t)DSOString[17] & 0xFF) << 40) |  (((uint64_t)DSOString[18] & 0xFF) << 32) |  (((uint64_t)DSOString[19] & 0xFF) << 24) | (((uint64_t)DSOString[20] & 0xFF) << 20) |  (((uint64_t)DSOString[21] & 0xFF) << 8) | ((uint64_t)DSOString[22] & 0xFF);
+	MyHeading = *(double *) &MyHeading_int;
+	printf("Heading = %4.2f, ", MyHeading); 
+	GPS_Packet.heading =  MyHeading;
+
+
+	uint64_t MyPitch_int = 0;
+	double MyPitch = 0.0;
+	MyPitch_int = (((uint64_t)DSOString[23] & 0xFF) << 56) | (((uint64_t)DSOString[24] & 0xFF) << 48) | (((uint64_t)DSOString[25] & 0xFF) << 40) |  (((uint64_t)DSOString[26] & 0xFF) << 32) |  (((uint64_t)DSOString[27] & 0xFF) << 24) | (((uint64_t)DSOString[28] & 0xFF) << 16) |  (((uint64_t)DSOString[29] & 0xFF) << 8) | ((uint64_t)DSOString[30] & 0xFF);
+	MyPitch = *(double *) &MyPitch_int;
+	printf("Pitch = %4.2f, ", MyPitch);  
+	GPS_Packet.pitch =  MyPitch;
+
+
+	uint64_t MyRoll_int = 0;
+	double MyRoll = 0.0;
+	MyRoll_int = (((uint64_t)DSOString[31] & 0xFF) << 56) | (((uint64_t)DSOString[32] & 0xFF) << 48) | (((uint64_t)DSOString[33] & 0xFF) << 40) |  (((uint64_t)DSOString[34] & 0xFF) << 32) |  (((uint64_t)DSOString[35] & 0xFF) << 24) | (((uint64_t)DSOString[36] & 0xFF) << 16) |  (((uint64_t)DSOString[37] & 0xFF) << 8) | ((uint64_t)DSOString[38] & 0xFF);
+	MyRoll = *(double *) &MyRoll_int;
+	printf("Roll = %4.2f, ", MyRoll);  
+	GPS_Packet.roll =  MyRoll;
+
+
+	uint64_t MyBRMS_int = 0;
+	double MyBRMS = 0.0;
+	MyBRMS_int = (((uint64_t)DSOString[39] & 0xFF) << 56) | (((uint64_t)DSOString[40] & 0xFF) << 48) | (((uint64_t)DSOString[41] & 0xFF) << 40) |  (((uint64_t)DSOString[42] & 0xFF) << 32) |  (((uint64_t)DSOString[43] & 0xFF) << 24) | (((uint64_t)DSOString[44] & 0xFF) << 16) |  (((uint64_t)DSOString[45] & 0xFF) << 8) | ((uint64_t)DSOString[46] & 0xFF);
+	MyBRMS = *(double *) &MyBRMS_int;
+	printf("BRMS = %f, ", MyBRMS);  
+
+
+	uint8_t MyAtt_flag_1;
+	MyAtt_flag_1 = (uint8_t)DSOString[47] & 0xFF;
+	printf("Attitude Flag #1 = %u, ", MyAtt_flag_1);
+
+
+	uint8_t MyAtt_flag_2;
+	MyAtt_flag_2 = (uint8_t)DSOString[47] & 0xFF;
+	printf("Attitude Flag #2 = %u, ", MyAtt_flag_2);
+
+
+	uint64_t MyLat_int = 0;
+	double MyLat;
+	MyLat_int = (((uint64_t)DSOString[49] & 0xFF) << 56) | (((uint64_t)DSOString[50] & 0xFF) << 48) | (((uint64_t)DSOString[51] & 0xFF) << 40) |  (((uint64_t)DSOString[52] & 0xFF) << 32) |  (((uint64_t)DSOString[53] & 0xFF) << 24) | (((uint64_t)DSOString[54] & 0xFF) << 16) |  (((uint64_t)DSOString[55] & 0xFF) << 8) | ((uint64_t)DSOString[56] & 0xFF);
+	MyLat = *(double *) &MyLat_int;
+	printf("Latitude = %4.2f, ", MyLat);  
+	GPS_Packet.geographic_latitude =  MyLat;
+
+
+	uint64_t MyLong_int = 0;
+	double MyLong = 0.0;
+	MyLong_int = (((uint64_t)DSOString[57] & 0xFF) << 56) | (((uint64_t)DSOString[58] & 0xFF) << 48) | (((uint64_t)DSOString[59] & 0xFF) << 40) | (((uint64_t)DSOString[60] & 0xFF) << 32) | (((uint64_t)DSOString[61] & 0xFF) << 24) | (((uint64_t)DSOString[62] & 0xFF) << 16) | (((uint64_t)DSOString[63] & 0xFF) << 8) | ((uint64_t)DSOString[64] & 0xFF);
+	MyLong = *(double *) &MyLong_int;
+	printf("Longitude = %4.2f, ", MyLong); 
+	GPS_Packet.geographic_longitude =  MyLong;
+
+
+	uint64_t MyAlt_int = 0;
+	double MyAlt = 0.0;
+	MyAlt_int = (((uint64_t)DSOString[65] & 0xFF) << 56) | (((uint64_t)DSOString[66] & 0xFF) << 48) | (((uint64_t)DSOString[67] & 0xFF) << 40) |  (((uint64_t)DSOString[68] & 0xFF) << 32) |  (((uint64_t)DSOString[69] & 0xFF) << 24) | (((uint64_t)DSOString[70] & 0xFF) << 16) |  (((uint64_t)DSOString[71] & 0xFF) << 8) | ((uint64_t)DSOString[72] & 0xFF);
+	MyAlt = *(double *) &MyAlt_int;
+	printf("Altitude = %4.2f, ", MyAlt); 
+	GPS_Packet.elevation =  MyAlt; 
+
+
+	//NEEDS WORK!
+	uint16_t MyChecksum;
+	MyChecksum = (((uint16_t)DSOString[73] & 0xFF) << 8) | ((uint16_t)DSOString[74] & 0xFF);
+	//printf("Hex Checksum = %c %c %c %c %c- ", (char)(DSOString [72] & 0xFF), (char)(DSOString[73] & 0xFF), (char)(DSOString[74] & 0xFF), (char)(DSOString[75] & 0xFF), (char)(DSOString[76] & 0xFF));
+	printf("MyChecksum? = %u, ", MyChecksum);
+
+	uint32_t MyClock = 0;  //counting 10 MHz clock signal.
+	MyClock = (((uint32_t)DSOString[80] & 0xFF) << 24) | (((uint32_t)DSOString[81] & 0xFF) << 16) | (((uint32_t)DSOString[82] & 0xFF)  << 8) | ((uint32_t)DSOString[83] & 0xFF);  
+	printf("Clock =  %u. \n",MyClock);  
+	GPS_Packet.PPSClk = MyClock;
+
+	printf("\n");  
+	GPS_Packet.GPS_or_magnetometer = 0;
+	printf("Now, here is what's from GPS_Packet: \n");
+	printf("Heading: \n"); 
+	printf("%f\n",GPS_Packet.heading); 
+	printf("Pitch: \n"); 
+	printf("%f\n",GPS_Packet.pitch); 
+	printf("Roll: \n"); 
+	printf("%f\n",GPS_Packet.roll); 
+	printf("Geographic Latitude: \n"); 
+	printf("%f\n",GPS_Packet.geographic_latitude); 
+	printf("Geographic Longitude: \n"); 
+	printf("%f\n",GPS_Packet.geographic_longitude);  
+	printf("Elevation: \n"); 
+	printf("%f\n",GPS_Packet.elevation); 
+
+
+	string slash = "/";
+	string colon = ":";
+	string twenty = "20";
+	string space = " ";
+	string zero = "0";
+
+
+	long milliseconds = intermediate_seconds - 16000;  //this will only work for one day (date collected must be same date file with data was made because this program will trust that that date is correct)
+
+
+	int hours = 0;
+	int minutes = 0;
+	int seconds = 0;
+	unsigned int nanoseconds = 0;
+
+
+
+	while(milliseconds > 86400000){
+		milliseconds = milliseconds - 86400000;
+	}
+	while(milliseconds > 3600000){
+		hours = hours +1;
+		milliseconds = milliseconds - 3600000;
+	}
+	while(milliseconds > 60000){
+		minutes = minutes +1;
+		milliseconds = milliseconds - 60000;
+	}
+	while(milliseconds > 1000){
+		seconds = seconds +1;
+		milliseconds = milliseconds - 1000;
+	} 
+
+
+
+	string Hours = to_string(hours);
+	string Minutes = to_string(minutes);
+	string Seconds = to_string(seconds);
+
+
+
+	if(hours < 10){
+		Hours = zero + Hours;
+	}
+	if(minutes < 10){
+		Minutes = zero + Minutes;
+	}
+	if(seconds < 10){
+		Seconds = zero + Seconds;
+	} 
+
+
+
+	//string date_and_time = date + space + Hours + colon + Minutes + colon + Seconds; 
+	string date_and_time = space + Hours + colon + Minutes + colon + Seconds; 
+	GPS_Packet.date_and_time = date_and_time;  
+
+
+	nanoseconds = milliseconds * 1000000;
+	GPS_Packet.nanoseconds = nanoseconds;
+
+
+
+	printf("Date_and_Time: \n"); 
+
+	cout << GPS_Packet.date_and_time << endl; 
+
+	printf("Nanoseconds: \n"); 
+	printf("%u\n",GPS_Packet.nanoseconds); 
+
+	printf("\n"); 
+
+	return true;
+
+}
 
 
 // MNCTModuleReceiverCOSI2014.cxx: the end...

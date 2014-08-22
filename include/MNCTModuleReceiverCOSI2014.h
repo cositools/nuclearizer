@@ -240,6 +240,9 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   MNCTEvent * MergeEvents( deque<MNCTEvent*> * EventList );
   bool FindNextPacket( vector<uint8_t> & NextPacket, int * idx = NULL );
   bool ResyncSBuf(void);
+  bool ProcessAspect( vector<uint8_t> & NextPacket );
+  bool DecodeDSO( vector<uint8_t> & DSOString, MNCTAspectPacket & DSO_Packet);
+
 
   
   

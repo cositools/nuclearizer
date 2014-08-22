@@ -39,6 +39,11 @@ class MNCTAspectPacket{
 		double heading;
 		double pitch;
 		double roll;
+		uint64_t PPSClk;
+		uint64_t CorrectedClk;// approx the clock board value using the GPS milliseconds + PPS latch info
+		bool Error;
+		uint32_t GPSMilliseconds;
+
 
 	
 	
