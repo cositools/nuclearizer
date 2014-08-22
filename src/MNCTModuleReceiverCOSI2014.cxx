@@ -408,7 +408,7 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 				if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
 					//sync problem detected...
 					//cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
-					FlushEventsBuf();
+					//FlushEventsBuf();
 					LastTimestamps[CCId] = E->GetCL();
 				}
 
@@ -420,30 +420,12 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 			for( auto E: LastTimestamps ){
 				cout<<std::hex<<E<<" ";
 			}
-			cout<<endl;
+			cout<<std::dec<<endl;
 
 			//now sort m_EventsBuf
 			SortEventsBuf();
 			//look thru m_EventsBuf for multi-detector events
 			CheckEventsBuf();
-			/*
-				for (auto E: m_Events) {
-				if (E->GetAspect() == 0) {
-				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
-				if (A != 0) {
-				E->SetAspect(A);
-				}
-				}
-				}
-
-			// TODO: If the oldest event has a reconstructed event, we are ready for the analyze function,
-			// thus we return true otehrwise false
-			if (m_Events.begin() != m_Events.end()) {
-			if (m_Events.front()->GetAspect() != 0) {
-			return true;
-			}
-			}
-			 */
 
 		}
 		//loop through m_Events and add aspect if possible
@@ -471,7 +453,6 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 		return false;
 	}
 
-	return false;
 }
 
 bool MNCTModuleReceiverCOSI2014::FindNextPacket(vector<uint8_t>& NextPacket , int * idx){
@@ -640,6 +621,7 @@ bool MNCTModuleReceiverCOSI2014::CheckEventsBuf(void){
 			MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
 			NewMergedEvent->SetDataRead(true);
+			m_Events.push_back(NewMergedEvent);
 			if( m_EventsBuf.size() == 0 ) break;
 		}
 
@@ -698,8 +680,6 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event)
   Event->SetCL( NewEvent->GetCL() );
   Event->SetTime( NewEvent->GetTime() );
   Event->SetMJD( NewEvent->GetMJD() );
-  NewEvent->GetAspect()->StreamDat(cout);
-  Event->SetAspect( new MNCTAspect(*(NewEvent->GetAspect())) );
   Event->SetDataRead();
 
   if (m_RoaFileName != "") {
@@ -1153,6 +1133,7 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 		double ClkNanoseconds = (double) ClkModulo*100.0;
 		MTime NewTime = MTime();
 		NewTime.Set( ClkSeconds, ClkNanoseconds );
+		cout<<NewTime<<endl;
 		NewEvent->SetTime( NewTime );
 
 
@@ -1390,7 +1371,7 @@ bool MNCTModuleReceiverCOSI2014::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	//printf("%02x %02x %02x %02x - ", (DSOString[11] & 0xFF),(DSOString[12] & 0xFF),(DSOString[13] & 0xFF),(DSOString[14] & 0xFF));
 	printf("DSO Packet: Milliseconds = %u, ",MySeconds);  //Again these are Carolyn's packets, not MNCTAspectPacket objects
 	long intermediate_seconds = MySeconds;
-	GPS_Packet.GPSMilliseconds;
+	GPS_Packet.GPSMilliseconds = MySeconds;
 
 
 	uint64_t MyHeading_int = 0;
