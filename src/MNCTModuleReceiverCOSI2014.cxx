@@ -680,6 +680,7 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event)
   Event->SetCL( NewEvent->GetCL() );
   Event->SetTime( NewEvent->GetTime() );
   Event->SetMJD( NewEvent->GetMJD() );
+  Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
   Event->SetDataRead();
 
   if (m_RoaFileName != "") {
@@ -1133,9 +1134,7 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 		double ClkNanoseconds = (double) ClkModulo*100.0;
 		MTime NewTime = MTime();
 		NewTime.Set( ClkSeconds, ClkNanoseconds );
-		cout<<NewTime<<endl;
 		NewEvent->SetTime( NewTime );
-
 
 		if( E.TrigAndVetoInfo & 0x70 ){
 			NewEvent->SetVeto();
