@@ -106,6 +106,11 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   LoadCCMap();
 
   m_EventIDCounter = 0;
+  m_LastCorrectedClk = 0xffffffffffffffff;
+
+  m_UseGPSDSO = false;
+  m_UseMagnetometer = true;
+  m_NumDSOReceived = 0;
 
 
 }
@@ -308,12 +313,10 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 {
 
 	uint8_t Type;
-	uint16_t Len;
 	vector <MNCTEvent*> NewEvents;
 	vector<unsigned char> SyncWord;
 	dataframe * Dataframe;
 	int ParseErr;
-	bool SyncError;
 	int CCId;
 
 	if( m_Events.size() > 0 ){
@@ -433,7 +436,7 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 			if( E->GetAspect() == 0 ){
 				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
 				if( A != 0 ){
-					E->SetAspect(A);
+					E->SetAspect(new MNCTAspect(*A));
 				}
 			}
 		}
@@ -594,7 +597,6 @@ bool MNCTModuleReceiverCOSI2014::FlushEventsBuf(void){
 		//set the ID of the event and increment the ID counter
 		NewMergedEvent->SetID( ++m_EventIDCounter );
 		m_Events.push_back( NewMergedEvent );
-		++MergedEventCounter;
 	}
 
 	if( m_EventsBuf.size() == 0 ) return true; else return false;
@@ -621,6 +623,7 @@ bool MNCTModuleReceiverCOSI2014::CheckEventsBuf(void){
 			MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
 			NewMergedEvent->SetDataRead(true);
+			NewMergedEvent->SetID( ++m_EventIDCounter );
 			m_Events.push_back(NewMergedEvent);
 			if( m_EventsBuf.size() == 0 ) break;
 		}
@@ -1257,7 +1260,133 @@ bool MNCTModuleReceiverCOSI2014::ProcessAspect( vector<uint8_t> & NextPacket ){
 	string cpp_DateString;
 	uint32_t LastClkSample;
 	uint64_t UpperClkBytes;
-	uint64_t LastPPSClk = 0xffffffffffffffff;
+
+
+	int DSOLen = 84; //length of the DSO message including the last 5 bytes for the clock
+	int MagLen = 24; //length of the magnetometer message including my "$M" header
+
+
+	///////////////////////////////////////
+	/// GCU only sends the lower three ///
+	/// unix time bytes because the    ///
+	/// upper one won't change during a///
+	/// 100 day flight.  take the upper///
+	/// unix byte from the local comp  ///
+	/// and shift it in.               ///
+	//////////////////////////////////////
+
+	//make Unix timestamp
+	time_t NowTime; NowTime = time(NULL); 
+	int UnixBytes = ((int)NowTime & 0xff000000);
+	UnixBytes |= ((int) NextPacket[3] << 16);
+	UnixBytes |= ((int) NextPacket[4] << 8);
+	UnixBytes |= ((int) NextPacket[5]);
+	UnixTime = (time_t) UnixBytes;
+	timeinfo = gmtime(&UnixTime);
+	//date format has to be year/month/day for Ares' thing to work
+	strftime( DateString, sizeof(DateString), "%Y/%m/%d", timeinfo);
+	//should figure out what day it is, but then use the GPS millisecond to figure out exactly what time it is
+	//then use the GPS ms time to figure out exactly what time it is
+
+	//now use strftime to get a date string using this time
+	//according to Ares the GPS week starts at 23:59:44 on saturday night DOUBLE CHECK THIS
+	cpp_DateString = string( DateString ); 
+
+	//get the upper two 10 MHz clock byte from the beginning of the packet
+	UpperClkBytes = 0; UpperClkBytes = ((uint64_t) NextPacket[10] << 40) | ((uint64_t) NextPacket[11] << 32);
+	wx = 12;
+
+
+	while( wx < Len ){
+
+		if( NextPacket[wx] == '$' ){
+			//check that we have enough bytes to determine the message type
+			if( (wx + 10) <= Len ){
+				//determine the type:
+				string Header ;
+				for( i = 0; i < 10; ++i ) Header += (char) NextPacket[wx + i];
+
+				////////////////////// DSO Msg //////////////////////////////////
+				if( Header.find("$PASHR,DSO") == 0 ){
+					//check that we have enough bytes in the buffer for this
+					if( (wx + DSOLen) <= Len ){
+						m_NumDSOReceived++;
+						vector<uint8_t> DSOMsg;
+						DSOMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + DSOLen );
+						MNCTAspectPacket DSOPacket;
+						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
+						string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
+						DSOPacket.date_and_time = TempString;
+						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
+						DSOPacket.CorrectedClk |= UpperClkBytes; //shift in the upper two clock bytes
+						m_LastDSOPacket = DSOPacket;
+						//corrected clock is converted to MTime in AddAspectFrame
+						if( m_UseGPSDSO ){
+							m_AspectReconstructor->AddAspectFrame( DSOPacket );
+						}
+						wx += DSOLen;
+					} else {
+						NotEnoughBytes = true;
+					}
+
+				////////////////////// Mag Msg //////////////////////////////////
+				} else if( Header.find("$M") == 0){
+					if( (wx + MagLen) <= Len ){
+						if( m_NumDSOReceived > 0 ){ //only use magnetometer if we have at least one dso msg
+							vector<uint8_t> MagMsg;
+							MNCTAspectPacket MagPacket;
+							MagMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + MagLen );
+							DecodeMag( MagMsg, MagPacket );
+
+							//copy over all necessary parameters to MagPacket from m_LastDSOPacket
+							MagPacket.geographic_longitude = m_LastDSOPacket.geographic_longitude;
+							MagPacket.geographic_latitude = m_LastDSOPacket.geographic_latitude;
+							MagPacket.elevation = m_LastDSOPacket.elevation;
+							MagPacket.date_and_time = m_LastDSOPacket.date_and_time;
+							MagPacket.CorrectedClk = m_LastDSOPacket.CorrectedClk;
+
+							if( m_UseMagnetometer ){
+								m_AspectReconstructor->AddAspectFrame( MagPacket );
+							}
+						}
+
+						wx += MagLen;
+					} else {
+						NotEnoughBytes = true;
+					}
+				} else {
+					wx += 1;
+				}
+			} else {
+				NotEnoughBytes = true;
+			}
+		} else {
+			wx += 1;
+		}
+
+		if( NotEnoughBytes ){
+			break;
+		}
+	}
+
+	return true;
+
+}
+
+bool MNCTModuleReceiverCOSI2014::ProcessAspect_works( vector<uint8_t> & NextPacket ){
+
+	//look for '$'
+
+	int Len = NextPacket.size();
+	int wx = 0; // skip to first byte
+	bool NotEnoughBytes = false;
+	int i;
+	time_t UnixTime;
+	struct tm * timeinfo;
+	char DateString[32];
+	string cpp_DateString;
+	uint32_t LastClkSample;
+	uint64_t UpperClkBytes;
 
 
 	int DSOLen = 84; //length of the DSO message including the last 5 bytes for the clock
@@ -1307,19 +1436,24 @@ bool MNCTModuleReceiverCOSI2014::ProcessAspect( vector<uint8_t> & NextPacket ){
 				if( Header.find("$PASHR,DSO") == 0 ){
 					//check that we have enough bytes in the buffer for this
 					if( (wx + DSOLen) < Len ){
+						m_NumDSOReceived++;
 						vector<uint8_t> DSOMsg;
 						DSOMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + DSOLen );
 						MNCTAspectPacket DSOPacket;
 						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
 						string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
 						DSOPacket.date_and_time = TempString;
-						LastPPSClk = DSOPacket.PPSClk;//keep track of last PPS for magnetometer samples
 						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
 						DSOPacket.CorrectedClk |= UpperClkBytes; //shift in the upper two clock bytes
-
+						m_LastCorrectedClk = DSOPacket.CorrectedClk; // keep this around for the magnetometer
+						m_LastDateTimeString = DSOPacket.date_and_time; //keep this around for the magnetometer
+						m_LastLatitude = DSOPacket.geographic_latitude;
+						m_LastLongitude = DSOPacket.geographic_longitude;
+						m_LastAltitude = DSOPacket.elevation;
 						//DSOPacket.CorrectedClk is converted to MTime in AddAspectFrame.
-
-						m_AspectReconstructor->AddAspectFrame( DSOPacket );
+						if( m_UseGPSDSO ){
+							m_AspectReconstructor->AddAspectFrame( DSOPacket );
+						}
 						wx += DSOLen;
 					} else {
 						NotEnoughBytes = true;
@@ -1328,18 +1462,38 @@ bool MNCTModuleReceiverCOSI2014::ProcessAspect( vector<uint8_t> & NextPacket ){
 				////////////////////// Mag Msg //////////////////////////////////
 				} else if( Header.find("$M") == 0){
 					if( (wx + MagLen) < Len ){
-						/*
-						vector<uint8_t> MagMsg;
-						MNCTAspectPacket MagPacket;
-						MagMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + MagLen );
-						//DecodeMag( MagMsg, MagPacket );
-						string TempString = cpp_DateString + MagPacket.date_and_time; //prepend the date
-						MagPacket.date_and_time = TempString;
-						m_AspectReconstructor->AddAspectFrame( MagPacket );
+						if( m_NumDSOReceived > 0 ){ //only use magnetometer if we have at least one dso msg
+							vector<uint8_t> MagMsg;
+							MNCTAspectPacket MagPacket;
+							MagMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + MagLen );
+							DecodeMag( MagMsg, MagPacket );
+							//check if the LastDateTimeString is valid! if not 
+							if( m_LastDateTimeString.size() > 0 ){
+								MagPacket.date_and_time = m_LastDateTimeString;
+							} else {
+								//we don't have have a GPS time string for this event, and we need one for Ares to compute the
+								//aspect stuff in pyephem
+								//make a date/time string using the unix second
+								//need to use Ares' format.
+								//for now, skip
+								wx += MagLen; continue;
+							}
 
-						//NEED TO KEEP TRACK OF LAST PPS AND GPS ms TO ASSOCIATE THE MAG SAMPLE WITH
+							if( m_LastCorrectedClk == 0xffffffffffffffff ){
+								//we havent received a clock sample yet, so there is no way for us to look up
+								//a timestamp and we can't use this for the aspect reconstruction.  this could happen if:
+								//you just started nuclearizer, and the first aspect packet you received started with a 
+								//magnetometer sample.  
 
-						*/
+							} else {
+								MagPacket.CorrectedClk = m_LastCorrectedClk;
+							}
+							//MagPacket.CorrectedClk is converted to MTime in AddAspectFrame
+							if( m_UseMagnetometer ){
+								m_AspectReconstructor->AddAspectFrame( MagPacket );
+							}
+						}
+
 						wx += MagLen;
 					} else {
 						NotEnoughBytes = true;
@@ -1362,6 +1516,8 @@ bool MNCTModuleReceiverCOSI2014::ProcessAspect( vector<uint8_t> & NextPacket ){
 	return true;
 
 }
+
+
 bool MNCTModuleReceiverCOSI2014::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspectPacket& GPS_Packet){
 
 	uint32_t MySeconds;
@@ -1402,16 +1558,18 @@ bool MNCTModuleReceiverCOSI2014::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	MyBRMS_int = (((uint64_t)DSOString[39] & 0xFF) << 56) | (((uint64_t)DSOString[40] & 0xFF) << 48) | (((uint64_t)DSOString[41] & 0xFF) << 40) |  (((uint64_t)DSOString[42] & 0xFF) << 32) |  (((uint64_t)DSOString[43] & 0xFF) << 24) | (((uint64_t)DSOString[44] & 0xFF) << 16) |  (((uint64_t)DSOString[45] & 0xFF) << 8) | ((uint64_t)DSOString[46] & 0xFF);
 	MyBRMS = *(double *) &MyBRMS_int;
 	printf("BRMS = %f, ", MyBRMS);  
+	GPS_Packet.BRMS = MyBRMS;
 
 
 	uint8_t MyAtt_flag_1;
 	MyAtt_flag_1 = (uint8_t)DSOString[47] & 0xFF;
 	printf("Attitude Flag #1 = %u, ", MyAtt_flag_1);
-
-
+	
 	uint8_t MyAtt_flag_2;
-	MyAtt_flag_2 = (uint8_t)DSOString[47] & 0xFF;
+	MyAtt_flag_2 = (uint8_t)DSOString[48] & 0xFF;
 	printf("Attitude Flag #2 = %u, ", MyAtt_flag_2);
+
+	GPS_Packet.AttFlag = ((uint16_t) MyAtt_flag_1 << 8) | ((uint16_t) MyAtt_flag_2);
 
 
 	uint64_t MyLat_int = 0;
@@ -1542,6 +1700,120 @@ bool MNCTModuleReceiverCOSI2014::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 
 }
 
+bool MNCTModuleReceiverCOSI2014::DecodeMag(vector<uint8_t>& MagString, MNCTAspectPacket& M_Packet){
+
+  //  printf(" %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x \n", MagString[0] & 0xFF, MagString[1] & 0xFF, MagString[2] & 0xFF, MagString[3] & 0xFF, MagString[4] & 0xFF, MagString[5] & 0xFF, MagString[6] & 0xFF, MagString[7] & 0xFF, MagString[8] & 0xFF, MagString[9] & 0xFF, MagString[10] & 0xFF, MagString[11] & 0xFF, MagString[12] & 0xFF, MagString[13] & 0xFF, MagString[14] & 0xFF, MagString[15] & 0xFF, MagString[16] & 0xFF, MagString[17] & 0xFF, MagString[18] & 0xFF, MagString[19] & 0xFF, MagString[20] & 0xFF, MagString[21] & 0xFF, MagString[22] & 0xFF, MagString[23] & 0xFF);
+
+  int16_t MyRoll_int;
+  float MyRoll = 0.0;
+  MyRoll_int = (((int16_t)MagString[4] & 0xFF) << 8) | ((int16_t)MagString[5] & 0xFF);  
+  MyRoll = MyRoll_int/10.0;
+  printf("Magnetometer Packet: Roll = %4.2f, ",MyRoll); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  M_Packet.roll =  MyRoll; 
+
+
+  int16_t MyMagRoll_int;
+  float MyMagRoll = 0.0;
+  MyMagRoll_int = (((int16_t)MagString[6] & 0xFF) << 8) | ((int16_t)MagString[7] & 0xFF);  
+  MyMagRoll = MyMagRoll_int/10.0;
+  printf("Mag Roll = %4.2f, ",MyMagRoll);  
+
+
+  int16_t MyInclination_int;
+  float MyInclination = 0.0;
+  MyInclination_int = (((int16_t)MagString[8] & 0xFF) << 8) | ((int16_t)MagString[9] & 0xFF);  
+  MyInclination = MyInclination_int/10.0;
+  printf("Inclination = %4.2f, ",MyInclination); 
+  M_Packet.pitch =  MyInclination; 
+
+
+  int16_t MyMagTot_int;
+  float MyMagTot = 0.0;
+  MyMagTot_int = (((int16_t)MagString[10] & 0xFF) << 8) | ((int16_t)MagString[11] & 0xFF);  
+  MyMagTot = MyMagTot_int/10000.0;
+  printf("Mag Total = %4.2f, ",MyMagTot);  
+
+
+  int16_t MyAzi_int;
+  float MyAzi = 0.0;
+  MyAzi_int = (((int16_t)MagString[12] & 0xFF) << 8) | ((int16_t)MagString[13] & 0xFF);  
+  MyAzi = MyAzi_int/10.0;
+  printf("Azimuth = %4.2f, ",MyAzi);  
+  M_Packet.heading =  MyAzi; 
+
+
+  int16_t MyAccel_int;
+  float MyAccel = 0.0;
+  MyAccel_int = (((int16_t)MagString[14] & 0xFF) << 8) | ((int16_t)MagString[15] & 0xFF);  
+  MyAccel = MyAccel_int/10000.0;
+  printf("Acceleration = %4.2f, ",MyAccel);  
+
+
+  int16_t MyTemp_int;
+  float MyTemp = 0.0;
+  MyTemp_int = (((int16_t)MagString[16] & 0xFF) << 8) | ((int16_t)MagString[17] & 0xFF);  
+  MyTemp = MyTemp_int/100.0;
+  printf("Temperature = %4.2f, ",MyTemp);  
+
+
+  int16_t MyVolt_int;
+  float MyVolt = 0.0;
+  MyVolt_int = (((int16_t)MagString[18] & 0xFF) << 8) | ((int16_t)MagString[19] & 0xFF);  
+  MyVolt = MyVolt_int/100.0;
+  printf("Voltage = %4.2f, ",MyVolt);  
+
+
+  //CHECKSUM!
+
+
+  //the following commented block assumes that the timestamp is always right before the mag data
+  //don't assume this! just use the last read PPSClk in the calling thread
+  /*
+
+  uint32_t MyClock = 0;  //counting 10 MHz clock signal.
+  MyClock = (((uint32_t)MagString[-4] & 0xFF) << 24) | (((uint32_t)MagString[-3] & 0xFF) << 16) | (((uint32_t)MagString[-2] & 0xFF)  << 8) | ((uint32_t)MagString[-1] & 0xFF);  
+  printf("Clock =  %u. \n",MyClock);  
+  MyClock = MyMag->Clock;
+  */
+  
+  
+  
+  printf("\n");  
+  M_Packet.GPS_or_magnetometer = 1;
+  printf("Now, here is what's from M_Packet: \n");
+  printf("Heading: \n"); 
+  printf("%f\n",M_Packet.heading); 
+  printf("Pitch: \n"); 
+  printf("%f\n",M_Packet.pitch); 
+  printf("Roll: \n"); 
+  printf("%f\n",M_Packet.roll); 
+  
+ // M_Packet.geographic_latitude = GPS_Packet.geographic_latitude;
+ // M_Packet.geographic_longitude = GPS_Packet.geographic_longitude;
+ // M_Packet.elevation = GPS_Packet.elevation;
+  
+  printf("This is GPS stuff we put in the M_Packet: \n");
+  printf("Geographic Latitude: \n"); 
+  printf("%f\n",M_Packet.geographic_latitude); 
+  printf("Geographic Longitude: \n"); 
+  printf("%f\n",M_Packet.geographic_longitude);  
+  printf("Elevation: \n"); 
+  printf("%f\n",M_Packet.elevation); 
+  
+ // M_Packet.date_and_time = GPS_Packet.date_and_time;
+ // M_Packet.nanoseconds = GPS_Packet.nanoseconds;  
+  
+  printf("Date_and_Time: \n");
+  cout << M_Packet.date_and_time << endl;  
+  printf("Nanoseconds: \n"); 
+  printf("%u\n",M_Packet.nanoseconds);  
+  printf("\n"); 
+  
+  
+  //AR->AddAspectFrame(M_Packet);
+  
+  return true;
+}
 
 // MNCTModuleReceiverCOSI2014.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

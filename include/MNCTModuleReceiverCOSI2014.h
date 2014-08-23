@@ -174,6 +174,17 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   vector<uint8_t> m_SBuf;//search buffer for the incoming TCP data stream
   int dx; //index into search buffer
   unsigned int m_EventIDCounter;
+  string m_LastDateTimeString;
+  uint64_t m_LastCorrectedClk;
+  bool m_UseGPSDSO;
+  bool m_UseMagnetometer;
+  double m_LastLatitude;
+  double m_LastLongitude;
+  double m_LastAltitude;
+  MNCTAspectPacket m_LastDSOPacket;
+  unsigned int m_NumDSOReceived;
+	
+
 
   int m_StripMap[8][10];
   int m_CCMap[12];
@@ -242,7 +253,10 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   bool FindNextPacket( vector<uint8_t> & NextPacket, int * idx = NULL );
   bool ResyncSBuf(void);
   bool ProcessAspect( vector<uint8_t> & NextPacket );
+  bool ProcessAspect_works( vector<uint8_t> & NextPacket );
   bool DecodeDSO( vector<uint8_t> & DSOString, MNCTAspectPacket & DSO_Packet);
+  bool DecodeMag( vector<uint8_t> & MagString, MNCTAspectPacket & Mag_Packet);
+
 
 
   

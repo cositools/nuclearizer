@@ -50,6 +50,7 @@ class MNCTAspectReconstruction
   bool AddAspectFrame(MNCTAspectPacket PacketA); 
 
   //! Get the aspect for the given time, return 0 if we do not have enough data for the given time
+  MNCTAspect* GetAspect_ares(MTime Time);
   MNCTAspect* GetAspect(MTime Time);
   
   

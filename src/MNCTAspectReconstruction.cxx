@@ -1006,10 +1006,14 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	//Using this instead so that we can sort badsed on clock board time
 	//MTimeA.Set(m_Year,m_Month,m_Day,m_Hour,m_Minute,m_Second,m_NanoSecond);
-	uint64_t int_ClkSeconds = (PacketA.CorrectedClk/10000000) * 10000000;
-	double ClkSeconds = (double) int_ClkSeconds;
-	uint64_t int_ClkNanoseconds = PacketA.CorrectedClk % 10000000;
-	double ClkNanoseconds = ((double) int_ClkNanoseconds) *100.0; //clock board ticks are in units of 100 ns
+	uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
+	double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
+	double ClkNanoseconds = (double) ClkModulo * 100.0;
+
+
+	
+
+
 	MTimeA.Set( ClkSeconds, ClkNanoseconds);
 
 	Aspect->SetTime(MTimeA);
@@ -1040,6 +1044,11 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	struct less_than_m_Time{
 		inline bool operator() (MNCTAspect* MNCTAspect1 = new MNCTAspect, MNCTAspect* MNCTAspect2 = new MNCTAspect){
 			return (MNCTAspect1->GetTime() < MNCTAspect2->GetTime());
+	uint64_t int_ClkSeconds = (PacketA.CorrectedClk/10000000) * 10000000;
+	double ClkSeconds = (double) int_ClkSeconds;
+	uint64_t int_ClkNanoseconds = PacketA.CorrectedClk % 10000000;
+	double ClkNanoseconds = ((double) int_ClkNanoseconds) *100.0; //clock board ticks are in units of 100 ns
+
 		}
 	};
 	*/
@@ -1212,9 +1221,51 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
   function (more on that function later) except that if it is unable to find good GPS data for a given
   time it will try to find good magnetometer data instead.*/
 
-MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime Time){
+MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime){
+
+	MNCTAspect* ReqAspect = 0;
+
+	//check that there are aspect packets 
+	if( m_Aspects.size() == 0 ){
+		return 0;
+	}
+
+	//check if ReqTime is in range
+	if( !( (ReqTime >= m_Aspects.front()->GetTime()) && (ReqTime <= m_Aspects.back()->GetTime()) ) ){
+		return 0;
+	}
+
+	//this loop will only go if there are at least 2 aspects 
+	for( int i = m_Aspects.size()-2; i > -1; --i ){
+		if( ReqTime > m_Aspects[i]->GetTime() ){ //found the lower bracketing value
+			if( (ReqTime - m_Aspects[i]->GetTime()) <= (m_Aspects[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
+				ReqAspect = m_Aspects[i];
+				break;
+			} else {
+				ReqAspect = m_Aspects[i+1];
+				break;
+			}
+		}
+	}
+
+
+	//if there is a flag for bad aspect, then still return the aspect.  the calling thread should check 
+	//for this flag and set BD for the event
+
+	return ReqAspect;
+
+}
+
+/*
+
+MNCTAspect* MNCTAspectReconstruction::GetAspect_ares(MTime Time){
 	MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
 	MNCTAspect* Desired_Candidate_MNCTAspect = new MNCTAspect();
+	uint64_t int_ClkSeconds = (PacketA.CorrectedClk/10000000) * 10000000;
+	double ClkSeconds = (double) int_ClkSeconds;
+	uint64_t int_ClkNanoseconds = PacketA.CorrectedClk % 10000000;
+	double ClkNanoseconds = ((double) int_ClkNanoseconds) *100.0; //clock board ticks are in units of 100 ns
+
 	MNCTAspect* Lower_MNCTAspect = new MNCTAspect();
 	MNCTAspect* Upper_MNCTAspect = new MNCTAspect();
 	Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
@@ -1279,6 +1330,7 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime Time){
 	return Desired_MNCTAspect;
 }
 
+*/
 //Okay, here's that GetAspectGPS() function we were talking about.
 
 MNCTAspect* MNCTAspectReconstruction::GetAspectGPS(MTime Time){
