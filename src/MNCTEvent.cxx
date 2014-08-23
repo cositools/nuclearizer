@@ -403,6 +403,10 @@ void MNCTEvent::StreamRoa(ostream& S)
   S<<"ID "<<m_ID<<endl;
   S<<"TI "<<m_Time<<endl;
 
+  if (m_Aspect != 0) {
+    m_Aspect->StreamEvta(S);
+  }
+
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
     m_StripHits[h]->StreamRoa(S);  
   }

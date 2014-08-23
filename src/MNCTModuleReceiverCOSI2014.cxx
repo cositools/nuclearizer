@@ -108,11 +108,11 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   m_EventIDCounter = 0;
   m_LastCorrectedClk = 0xffffffffffffffff;
 
-  m_UseGPSDSO = false;
+  m_UseGPSDSO = true;
   m_UseMagnetometer = true;
   m_NumDSOReceived = 0;
 
-
+  m_IgnoreAspect = false;
 }
 
 
@@ -319,11 +319,15 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 	int ParseErr;
 	int CCId;
 
-	if( m_Events.size() > 0 ){
-		MNCTAspect* A = m_Events[0]->GetAspect();
-		if( A != 0 ){
-			return true;
-		}
+	if (m_Events.size() > 0) {
+    if (m_IgnoreAspect == true) {
+      return true;
+    } else {
+      MNCTAspect* A = m_Events[0]->GetAspect();
+      if( A != 0 ){
+        return true;
+      }
+    }
 	}
 
 	SyncWord.push_back(0xEB);
@@ -445,16 +449,19 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 	// Be sure to switch back to normal printing:
 	cout<<dec;
 
-	if( m_Events.size() > 0 ){
-		MNCTAspect* A = m_Events[0]->GetAspect();
-		if( A != 0 ){
-			return true;
-		} else {
-			return false;
-		}
-	} else {
-		return false;
-	}
+  if (m_Events.size() > 0) {
+    if (m_IgnoreAspect == true) {
+      return true;
+    } else {
+      if (m_Events[0]->GetAspect() != 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  } else {
+    return false;
+  }
 
 }
 
@@ -683,7 +690,9 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event)
   Event->SetCL( NewEvent->GetCL() );
   Event->SetTime( NewEvent->GetTime() );
   Event->SetMJD( NewEvent->GetMJD() );
-  Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
+  if (NewEvent->GetAspect() != 0) {
+    Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
+  }
   Event->SetDataRead();
 
   if (m_RoaFileName != "") {

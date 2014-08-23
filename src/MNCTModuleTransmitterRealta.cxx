@@ -130,9 +130,7 @@ bool MNCTModuleTransmitterRealta::AnalyzeEvent(MNCTEvent* Event)
   Event->SetDataRead(true);
   */
   
-  if (Event->IsDepthCalibrationIncomplete() == true) return true;
-  if (Event->IsStripPairingIncomplete() == true) return true;
-  if (Event->IsEnergyCalibrationIncomplete() == true) return true;
+  if (Event->IsBad() == true) return true;
 
   static int ID = 0;
   static double Time = 0.0;

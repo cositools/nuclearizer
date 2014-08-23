@@ -82,7 +82,7 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MNCTModule()
   
   // Set the histogram display
   m_ExpoStripPairing = new MGUIExpoStripPairing(this);
-  m_ExpoStripPairing->SetEnergiesHistogramParameters(1000, 0, 1000);
+  m_ExpoStripPairing->SetEnergiesHistogramParameters(1300, 0, 1300);
   m_Expos.push_back(m_ExpoStripPairing);
 }
 

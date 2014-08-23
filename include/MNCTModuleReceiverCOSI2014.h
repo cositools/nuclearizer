@@ -160,6 +160,9 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   deque<MNCTEvent*> m_Events;//final, merged events
   deque<MNCTEvent*> m_EventsBuf;//sorted, unmerged events
 
+  //! If true ignore aspect information if not ready
+  bool m_IgnoreAspect;
+  
   //added by AWL
   bool m_UseComptonDataframes;
   bool m_UseRawDataframes;
