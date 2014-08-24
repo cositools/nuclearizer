@@ -260,7 +260,7 @@ bool MInterfaceNuclearizer::Analyze()
           AllReady = false;
         }
         if (m_Data->GetModule(m)->IsOK() == false) {
-          mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is not longer OK... exiting analysis loop..."<<endl;
+          mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is no longer OK... exiting analysis loop..."<<endl;
           AllOK = false;
         }
         ModuleTimers[m].Pause();
