@@ -82,7 +82,7 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MNCTModule()
   
   // Set the histogram display
   m_ExpoStripPairing = new MGUIExpoStripPairing(this);
-  m_ExpoStripPairing->SetEnergiesHistogramParameters(1300, 0, 1300);
+  m_ExpoStripPairing->SetEnergiesHistogramParameters(1500, 0, 1500);
   m_Expos.push_back(m_ExpoStripPairing);
 }
 
@@ -146,21 +146,27 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MNCTEvent* Event){
   
   // Flag events with poorly matched strips...
   for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+    int pNStrips = 0;
     double pEnergy = 0.0;
     double pUncertainty = 0.0;
+    int nNStrips = 0;
     double nEnergy = 0.0;
     double nUncertainty = 0.0;
     
     for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
       if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+        ++pNStrips;
         pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
         pUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
       } else {
+        ++nNStrips;
         nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
         nUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
       }
     }
-    m_ExpoStripPairing->AddEnergies(pEnergy, nEnergy);
+    if (pNStrips > 0 && nNStrips > 0) { // Just a place holder atthe moment...
+      m_ExpoStripPairing->AddEnergies(pEnergy, nEnergy);
+    }
     
     pUncertainty = sqrt(pUncertainty);
     nUncertainty = sqrt(nUncertainty);
