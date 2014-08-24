@@ -95,6 +95,8 @@ bool MNCTModuleMeasurementLoaderROA::Initialize()
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
   
+  m_IsOK = true;
+  
   return true;
 }
 
@@ -139,7 +141,9 @@ bool MNCTModuleMeasurementLoaderROA::Open(MString FileName, unsigned int Way)
 {
   // Open the file
   
-  return m_ROAFile.Open(FileName);
+  m_ROAFile.Open(FileName);
+  
+  return m_ROAFile.IsOpen();
 }
 
 
