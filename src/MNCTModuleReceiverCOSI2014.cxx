@@ -90,7 +90,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   
   m_Receiver = 0;
 
-  m_UseComptonDataframes = true;
+  m_UseComptonDataframes = false;
   m_UseRawDataframes = true;
   m_NumRawDataframes = 0;
   m_NumComptonDataframes = 0;
@@ -111,6 +111,9 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule()
   m_UseGPSDSO = true;
   m_UseMagnetometer = true;
   m_NumDSOReceived = 0;
+  m_NumComptonBytes = 0;
+  m_NumBytesReceived = 0;
+  m_LostBytes = 0;
 
   m_IgnoreAspect = false;
 }
@@ -358,34 +361,39 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 	// Retrieve the latest data from the transceiver
 	vector<uint8_t> Received ;
 	m_Receiver->Receive(Received);
+	m_NumBytesReceived += Received.size();
+	cout<<"NumBytesReceived "<<m_NumBytesReceived<<endl;
 
 	//apend the received data to m_SBuf
+	//might want to reserve space here
 	m_SBuf.insert( m_SBuf.end(), Received.begin(), Received.end() );
 	//FindNextPacket handles all the resyncing etc...
 
 	vector<uint8_t> NextPacket;
 	//dx = 0;
   int Rounds = 100;
-	while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
-
+	//while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
+  while( FindNextPacket( NextPacket ) && m_Interrupt == false ){
 		Type = NextPacket[2];
+		printf("FNP: %u - %u, dx = %d, bufsize = %u\n",Type, NextPacket.size(), dx, m_SBuf.size());
+
 
 		switch( Type ){
 			case 0x00:
 				//raw dataframe
 				if( m_UseRawDataframes ){
-					//convert dataframe to class
-					//clear out first ten bytes 
-					//LEAK
 					Dataframe = new dataframe();
 					ParseErr = RawDataframe2Struct( NextPacket, Dataframe );
 					if( ParseErr >= 0 ){
 						ConvertToMNCTEvents( Dataframe, &NewEvents );
 						CCId = Dataframe->CCId;
+					} else {
+						cout<<"ParseERR"<<endl;
 					}
 					//cout<<"made "<<NewEvents.size()<<" MNCTEvents"<<endl;
 					delete Dataframe;
-					//LEAK
+					m_NumRawDataBytes += NextPacket.size();
+					//cout<<"NumRawDataBytes "<<m_NumRawDataBytes<<endl;
 					m_NumRawDataframes++;
 				}
 				break;
@@ -394,7 +402,18 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 				if( m_UseComptonDataframes ){
 					//convert to dataframe class
 					//cout<<"got compton dataframe!"<<endl;
+					Dataframe = new dataframe();
+					if( ComptonDataframe2Struct( NextPacket, Dataframe ) ){
+						ConvertToMNCTEvents( Dataframe, &NewEvents );
+						//some provision to keep track of last timestamps
+					} else {
+						cout<<"Parsing error"<<endl;
+					}
+					delete Dataframe;
 					m_NumComptonDataframes++;
+					m_NumComptonBytes += NextPacket.size();
+					cout<<"NumComptonBytes "<<m_NumComptonBytes<<endl;
+
 				}
 				break;
 			case 0x05:
@@ -412,22 +431,30 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 			for( auto E: NewEvents ){
 				//push the events onto the deque
 				//before we push the event into m_EventsBuf, check if we have a sync problem
-				if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
-					//sync problem detected...
-					//cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
-					//FlushEventsBuf();
-					LastTimestamps[CCId] = E->GetCL();
+				if( m_UseRawDataframes ){
+					if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
+						//sync problem detected...
+						//cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
+						//FlushEventsBuf();
+						LastTimestamps[CCId] = E->GetCL();
+					}
+				} else if( m_UseComptonDataframes ){
+					LastComptonTimestamp = E->GetCL();
 				}
 
 				m_EventsBuf.push_back(E);
 			}
 			NewEvents.clear();
 
-			cout<<"T ::: ";;
-			for( auto E: LastTimestamps ){
-				cout<<std::hex<<E<<" ";
+			if( m_UseRawDataframes ){
+				cout<<"T ::: ";;
+				for( auto E: LastTimestamps ){
+					cout<<std::hex<<E<<" ";
+				}
+				cout<<std::dec<<endl;
+			} else if( m_UseComptonDataframes ){
+				cout<<"T_compton ::: "<<LastComptonTimestamp<<endl;
 			}
-			cout<<std::dec<<endl;
 
 			//now sort m_EventsBuf
 			SortEventsBuf();
@@ -440,11 +467,12 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 			if( E->GetAspect() == 0 ){
 				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
 				if( A != 0 ){
+					//if the event is out of range, A->GetTime() will give -1
 					E->SetAspect(new MNCTAspect(*A));
 				}
 			}
 		}
-	} 
+  }
 
 	// Be sure to switch back to normal printing:
 	cout<<dec;
@@ -526,11 +554,17 @@ bool MNCTModuleReceiverCOSI2014::FindNextPacket(vector<uint8_t>& NextPacket , in
 	//increment the index...we should be pointing at the next 0xeb 
 	dx += Len;
 
-	//check if our buffer is too big, move it up if it is
-	if( m_SBuf.size() > 1000000 ){
-		//a mega byte
-		m_SBuf.assign( m_SBuf.begin() + dx, m_SBuf.end() );
+	if( dx == m_SBuf.size() ){
+		//no leftover bytes, just clear the buffer
 		dx = 0;
+		m_SBuf.clear();
+	}
+
+	if( m_SBuf.size() > 10000000 ){
+		//clear out buffer
+		m_LostBytes += m_SBuf.size() - dx;
+		dx = 0;
+		m_SBuf.clear();
 	}
 
 	return true;
@@ -678,6 +712,12 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event)
 
   NewEvent = m_Events[0];
   m_Events.pop_front();
+
+  //this checks if the event's aspect data was within the range of the retrieved aspect info
+  if( NewEvent->GetAspect()->GetOutOfRange() ){
+	  delete NewEvent;
+	  return false;
+  }
 
   while( NewEvent->GetNStripHits() > 0 ){
 	  Event->AddStripHit( NewEvent->GetStripHit(0) );
@@ -1007,7 +1047,7 @@ loop_exit:
 
 				if( TrigBuf[i].HasADC ){
 					TrigBuf[i].ADCBytes = (Buf[Ax+1] << 8) | Buf[Ax];
-					TrigBuf[i].ADCBytes &= 0x1fff;
+					//TrigBuf[i].ADCBytes &= 0x1fff;
 					Ax += 2;
 				}
 			}
@@ -1040,6 +1080,7 @@ loop_exit:
 				for( int i = 0; i < tx; ++i ){ //loop over all triggers...
 					if( TrigBuf[i].HasADC == true ){ //... but only copy over triggers that have ADC
 						NewTrig = TrigBuf[i];
+						NewTrig.CCId = DataOut->CCId;
 						Event.Triggers.push_back(NewTrig);
 						++N;
 					}
@@ -1109,12 +1150,12 @@ bool MNCTModuleReceiverCOSI2014::ConvertToMNCTEvents( dataframe * DataIn, vector
 		NewEvent = new MNCTEvent();
 		for( auto T: E.Triggers ){
 			StripHit = new MNCTStripHit();
-			StripHit->SetDetectorID(m_CCMap[DataIn->CCId]);
+			StripHit->SetDetectorID(m_CCMap[T.CCId]);
 			//go from board channel, to side strip
 			if( T.Board >= 4 && T.Board < 8 ) PosSide = false; else if( T.Board >= 0 && T.Board < 4 ) PosSide = true; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
 			StripHit->IsPositiveStrip(PosSide);
 			if( T.Channel >= 0 && T.Channel < 10 ) StripHit->SetStripID(m_StripMap[T.Board][T.Channel]+1); else {cout<<"bad trigger channel = "<<T.Channel<<endl; delete StripHit; continue;}
-			if( T.HasADC ) StripHit->SetADCUnits((double)T.ADCBytes);
+			if( T.HasADC ) StripHit->SetADCUnits((double)((uint16_t)T.ADCBytes & 0x1fff));
 			if( T.HasTiming ) StripHit->SetTiming((double) (T.TimingByte & 0x3f));
 			NewEvent->AddStripHit( StripHit );
 		}
@@ -1822,6 +1863,84 @@ bool MNCTModuleReceiverCOSI2014::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
   //AR->AddAspectFrame(M_Packet);
   
   return true;
+}
+
+bool MNCTModuleReceiverCOSI2014::ComptonDataframe2Struct( vector<uint8_t>& Buf, dataframe * DataOut ){
+
+	int wx = 0;
+	size_t BufSize = Buf.size();
+
+	if( DataOut == NULL ){
+		return false;
+	}
+
+	if( BufSize < 16 ){
+		return false;
+	}
+
+	int CalculatedLen = ((int) Buf[8] << 8) | ((int) Buf[9]);
+
+	int UnixInt = ((int) Buf[3] << 16) | ((int) Buf[4] << 8) | ((int) Buf[5]);
+	DataOut->UnixTime = (time_t) UnixInt;
+	DataOut->PacketCounter = ((int) Buf[6] << 8) | ((int) Buf[7]);
+	DataOut->Length = CalculatedLen;
+	DataOut->SysTime = 0;
+	DataOut->SysTime = ((uint64_t) Buf[10] << 40) | ((uint64_t) Buf[11] << 32) | ((uint64_t) Buf[12] << 24) | ((uint64_t) Buf[13] << 16) | ((uint64_t) Buf[14] << 8) | ((uint64_t) Buf[15]);
+	wx = 16;
+
+	while( wx < BufSize ){
+		if( Buf[wx] == 0xae ){
+			//we are at the beginning of an event, read it in
+
+			wx += 7; if( wx > BufSize ) { DataOut->ParseError = true; return false; }
+			event NewEvent;
+			NewEvent.EventID = Buf[wx - 6];
+			NewEvent.NumCCsInvolved = Buf[wx - 5] & 0x0f;
+			int N = NewEvent.NumCCsInvolved; if( N > 12 ){ DataOut->ParseError = true; return false; }
+			NewEvent.EventTime = 0;
+			NewEvent.EventTime = ((uint64_t) Buf[wx-4] << 24) | ((uint64_t) Buf[wx-3] << 16) | ((uint64_t) Buf[wx-2] << 8) | ((uint64_t) Buf[wx-1]); 
+
+			//loop over triggered card cages
+				//loop over triggers
+
+			for( int i = 0; i < N; ++i ){
+				wx += 2; if( wx > BufSize ) { DataOut->ParseError = true; return false; }
+				int CurrentCC = (int) Buf[wx - 2];
+				int NumTriggers = (int) Buf[wx - 1];
+				for( int j = 0; j < NumTriggers; ++j ){
+
+					//at this point, wx points at the trigger byte
+
+					wx += 3; if( wx > BufSize ) { DataOut->ParseError = true; return false; }
+					trigger NewTrig;
+					NewTrig.HasADC = true;
+					NewTrig.Channel = Buf[wx-3] & 0x0f;
+					NewTrig.Board = (Buf[wx-3] & 0x70) >> 4;
+					if( Buf[wx-3] & 0x80 ){
+						NewTrig.HasTiming = true;
+					} else {
+						NewTrig.HasTiming = false;
+					}
+
+					NewTrig.ADCBytes = ((uint16_t) Buf[wx - 2] << 8) | ((uint16_t) Buf[wx - 1]);
+					if( NewTrig.HasTiming ){
+						wx += 1; if( wx > BufSize ) { DataOut->ParseError = true; return false; }
+						NewTrig.TimingByte = Buf[wx - 1];
+					}
+
+					NewTrig.CCId = CurrentCC;
+					NewEvent.Triggers.push_back(NewTrig);
+
+				}
+			}
+
+			DataOut->Events.push_back(NewEvent);
+
+		} else { DataOut->ParseError = true; return false; }
+	}
+
+	if( wx != BufSize ) return false; else return true;
+
 }
 
 // MNCTModuleReceiverCOSI2014.cxx: the end...

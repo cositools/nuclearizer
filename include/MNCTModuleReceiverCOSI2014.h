@@ -185,7 +185,12 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   double m_LastLongitude;
   double m_LastAltitude;
   MNCTAspectPacket m_LastDSOPacket;
-  unsigned int m_NumDSOReceived;
+  uint32_t m_NumDSOReceived;
+  uint64_t LastComptonTimestamp;
+  uint32_t m_NumComptonBytes;
+  uint32_t m_NumRawDataBytes;
+  uint32_t m_NumBytesReceived;
+  uint32_t m_LostBytes;
 	
 
 
@@ -201,6 +206,7 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 		  bool HasADC;
 		  uint16_t ADCBytes;
 		  uint8_t TimingByte;
+		  int CCId;
 
   };
 
@@ -222,6 +228,11 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 		  uint32_t NumTriggers;
 		  vector<trigger> Triggers;
 
+
+		  //below is stuff that only applies to compton events
+		  uint8_t NumCCsInvolved;
+		  uint8_t TDiff;
+
   };
 
   class dataframe {
@@ -229,6 +240,7 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 	  public:
 		  uint16_t PacketCounter;
 		  uint32_t UnixTime;
+		  int Length;
 		  uint8_t PacketType;
 		  uint8_t CCId;
 		  string RawOrCompton; //0 if this struct came from a raw data frame, or 1 if from compton
@@ -244,10 +256,14 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 		  uint32_t NumEvents; //the number of events which is <= 41
 		  vector<event> Events;
 
+		  bool ParseError;
+
   };
+
   
  public:
-  int RawDataframe2Struct( vector<unsigned char> Buf, dataframe * DataOut);
+  int RawDataframe2Struct( vector<uint8_t> Buf, dataframe * DataOut);
+  bool ComptonDataframe2Struct( vector<uint8_t>& Buf, dataframe * DataOut); 
   bool ConvertToMNCTEvents( dataframe * DataIn, vector<MNCTEvent*> * CEvents);
   bool SortEventsBuf(void);
   bool FlushEventsBuf(void);

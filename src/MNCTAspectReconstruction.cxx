@@ -1056,6 +1056,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//i redefined the sort function at the bottom of the file
 
 	sort(m_Aspects.begin(), m_Aspects.end(), MTimeSort);
+	return true;
 
 
 	/*Now we're really done, right? Nope. Next, we must check with the previous batch of old aspect data 
@@ -1066,15 +1067,17 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	  MNCTAspect object, by MNCTAspect object slowly add in flags everywhere they are needed.*/
 
 
+	/* Commenting out Ares checks on the data -> causing a spin lock in nucleraizer
+
 	for (unsigned int i = 0; i < m_Aspects.size(); i++){
 		cout << "currently checking MNCTAspect object # ";
 		cout << i << endl;
 		cout << "GPS_or_magnetometer of this is: ";
 		cout << m_Aspects[i]->GetGPS_Or_Magnetometer() << endl;
 
-		/*First things first. We retrieve our old GPS aspect data (if we are checking if a batch of data from
+		First things first. We retrieve our old GPS aspect data (if we are checking if a batch of data from
 		  the magnetometer needs a flag, this old data will just go unused) using the GetPreviousGPS() function.
-		  The way this function works will be described later.*/
+		  The way this function works will be described later.
 
 		double old_GPS_Xgalon = GetPreviousGPS(m_Aspects[i]->GetTime())->GetGalacticPointingXAxisLongitude();
 		cout << "finished looking for previous GPS Xgalon and found: ";
@@ -1093,8 +1096,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		cout << old_GPS_GPS_or_magnetometer << endl;
 
 
-		/*Since we had to create a new for loop, we must retrieve the aspect information for each and every 
-		  MNCTAspect object we inspect to see if it needs a flag. We do so below: */
+		Since we had to create a new for loop, we must retrieve the aspect information for each and every 
+		  MNCTAspect object we inspect to see if it needs a flag. We do so below: 
 
 		double Xgalon = m_Aspects[i]->GetGalacticPointingXAxisLongitude();
 		double Zgalon = m_Aspects[i]->GetGalacticPointingZAxisLongitude();
@@ -1105,9 +1108,9 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		double pitch = m_Aspects[i]->GetPitch();
 		double roll = m_Aspects[i]->GetRoll();
 
-		/*Okay, now we retrieve our old magnetometer aspect data (if we are checking if a batch of data from
+		Okay, now we retrieve our old magnetometer aspect data (if we are checking if a batch of data from
 		  the GPS needs a flag, this old data will just go unused) using the GetPreviousMagnetometer() function.
-		  The way this function works will be described later.*/
+		  The way this function works will be described later.
 
 
 
@@ -1204,7 +1207,10 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	//Alright, we're done here... Just kidding! We still need to review all of the other functions in this file!
 
-	return true;
+
+	*/
+
+	//return true;
 }
 
 
@@ -1230,8 +1236,18 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime){
 		return 0;
 	}
 
-	//check if ReqTime is in range
-	if( !( (ReqTime >= m_Aspects.front()->GetTime()) && (ReqTime <= m_Aspects.back()->GetTime()) ) ){
+	//first need to check that event time is not older than the oldest Aspect we have
+	//otherwise events won't get popped off of m_Events, since the first event will never get aspect info
+	if( ReqTime < m_Aspects.front()->GetTime() ){
+		//return an aspect that has a time of -1
+		MNCTAspect* BadAspect = new MNCTAspect();
+		BadAspect->SetTime( (double) -1.0 );
+		return BadAspect;
+	}
+
+	//now check if event time is newer than the newest aspect ... if it is, then return null, we
+	//need to wait for the newest aspect info to comein
+	if( ReqTime > m_Aspects.back()->GetTime() ){
 		return 0;
 	}
 

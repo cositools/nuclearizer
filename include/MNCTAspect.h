@@ -137,6 +137,9 @@ class MNCTAspect
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
 
+  bool GetOutOfRange() const { return m_OutOfRange; }
+  bool SetOutOfRange(const bool X) { m_OutOfRange = X; } 
+
   // protected methods:
  protected:
 
@@ -203,6 +206,9 @@ class MNCTAspect
   double m_HorizonPointingZAxisAzimuthNorth;
   //! Pointing of the detector in the horizon coordinate system - Z axis elevation
   double m_HorizonPointingZAxisElevation;
+
+  //AWL
+  bool m_OutOfRange;
   
 
 #ifdef ___CINT___
