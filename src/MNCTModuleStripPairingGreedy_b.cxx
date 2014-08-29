@@ -173,13 +173,13 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MNCTEvent* Event){
     // Difference must be more than 10 keV for cross talk + 2 sigma energy resolution on *both* sides
     if (Difference > 2*pUncertainty + 2*nUncertainty + 10) {
       Event->SetStripPairingIncomplete(true);
-      if (m_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+      if (g_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
     } else {
-      if (m_Verbosity >= c_Info) cout<<"Good strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+      if (g_Verbosity >= c_Info) cout<<"Good strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
     }
   }  
   
-  if (m_Verbosity >= c_Info) {
+  if (g_Verbosity >= c_Info) {
     cout<<"After strip pairing..."<<endl;
     for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
       cout<<"Hit "<<h<<endl;
@@ -200,7 +200,7 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector
   
   // Check if the event has all the appropriate flags
   if (Event->IsEnergyCalibrated() == false) {
-    if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy not calibrated!"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy not calibrated!"<<endl;
     return false;
   }
   
@@ -502,7 +502,7 @@ void MNCTModuleStripPairingGreedy_b::DefineEventInfo() {
   //sort strip numbers. they will get different energies and significances than originally but that doesn't matter
   sort(xStripsHit.begin(), xStripsHit.end());
   sort(yStripsHit.begin(), yStripsHit.end());
-  if (m_Verbosity >= 3) {
+  if (g_Verbosity >= 3) {
     for (int i = 0; i < n_x; ++i) { cout << xStripsHit.at(i) << endl; } cout << endl;
     for (int i = 0; i < n_x; ++i) { cout << xEnergy.at(i) << endl; } cout << endl;
     for (int i = 0; i < n_x; ++i) { cout << xSig.at(i) << endl; } cout<<endl;
@@ -1056,8 +1056,8 @@ void MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
   int n_y = nHits.at(1);
   
   CalculateWeightMatrix();
-  if (m_Verbosity >= c_Info) PrintXYStripsHit();
-  if (m_Verbosity >= c_Info) PrintWeightMatrix();
+  if (g_Verbosity >= c_Info) PrintXYStripsHit();
+  if (g_Verbosity >= c_Info) PrintWeightMatrix();
   int nElements = n_x*n_y;
   int nNegElem = 0;
   int xIndex, yIndex;
@@ -1116,7 +1116,7 @@ void MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
   while (nNegElem != nElements);
   
   //print final pairs
-  if (m_Verbosity >= c_Info) {
+  if (g_Verbosity >= c_Info) {
     cout << "final pairs: " << endl;
     for (unsigned int i=0; i<finalPairs.size(); i++){
       cout << finalPairs.at(i).at(0) << '\t' << finalPairs.at(i).at(1) << endl;
@@ -1234,15 +1234,15 @@ bool MNCTModuleStripPairingGreedy_b::CheckAllStripsWerePaired(){
   
   //compare counter to total number of strips hit
   if (counter > nHitsOrig.at(0)+nHitsOrig.at(1)){
-    if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": There's something wrong with the code!" << endl;
+    if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": There's something wrong with the code!" << endl;
     return false;
   }
   else if (counter == nHitsOrig.at(0)+nHitsOrig.at(1)){
-    if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": All strips were paired successfully!" << endl;
+    if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": All strips were paired successfully!" << endl;
     return true;
   }
   else {
-    if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": Alert! Not all strips were paired!" << endl;
+    if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Alert! Not all strips were paired!" << endl;
     return false;
   }
   

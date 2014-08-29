@@ -104,7 +104,7 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
   m_In.clear();
   m_In.open(m_FileName, ios::binary);
   if (m_In.is_open() == false) {
-    if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to load file \""<<m_FileName<<"\""<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to load file \""<<m_FileName<<"\""<<endl;
     return false;
   }
   

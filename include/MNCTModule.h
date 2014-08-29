@@ -88,12 +88,6 @@ class MNCTModule
   // If you add one analysis level, make sure you also handle it in:
   // -> ALL module constructors!
   // -> MNCTData::GetHighestAnalysislevel()
-
-  // Verbosity:
-  static const int c_Quiet    = 0;
-  static const int c_Error    = 1;
-  static const int c_Warning  = 2;
-  static const int c_Info     = 3;
   
   
   //! Return the number of the preceeding modules
@@ -113,9 +107,6 @@ class MNCTModule
 
   //! Raise an interrupt
   void SetInterrupt(bool Flag = true) { m_Interrupt = Flag; }
-
-  //! Set the verbosity (0: Quiet, 1: Errors, 2: Warnings, 3: Info)
-  void SetVerbosity(int Verbosity) { m_Verbosity = Verbosity; }
 
   //! Use multi threading -- but it is only really used if the module allows it
   void UseMultiThreading(bool UseMultiThreading = true) { m_UseMultiThreading = UseMultiThreading; }
@@ -260,9 +251,6 @@ class MNCTModule
   //! True if the analysis thread is in its execution loop
   bool m_IsThreadRunning;
 
-
-  //! Chatty-ness of the module
-  int m_Verbosity;
   
   // private members:
  private:

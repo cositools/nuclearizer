@@ -95,9 +95,6 @@ class MInterfaceNuclearizer
   //! program
   bool m_Terminate;
   
-  //! Chatty-ness of nuclearizer
-  int m_Verbosity;
-  
   //! True if multi-threading is enabled
   bool m_UseMultiThreading;
   

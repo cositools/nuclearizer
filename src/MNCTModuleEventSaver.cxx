@@ -97,7 +97,7 @@ bool MNCTModuleEventSaver::Initialize()
   
   m_Out.open(m_FileName);
   if (m_Out.is_open() == false) {
-    if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_FileName<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_FileName<<endl;
     return false;
   }
   

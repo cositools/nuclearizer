@@ -71,8 +71,6 @@ MNCTModule::MNCTModule()
   
   m_Interrupt = false;
   
-  m_Verbosity = 1;
-  
   m_UseMultiThreading = false;
   m_NAllowedWorkerThreads = 0;
   m_Thread = 0;
@@ -96,29 +94,9 @@ bool MNCTModule::AddEvent(MNCTEvent* Event)
 {
   //! Add an event to the incoming event list
 
-  /*
-  if (m_UseMultiThreading == false || (m_UseMultiThreading == true && m_NActiveWorkerThreads == 0) {
-    int i = 0;
-    while (IsReady() == false && m_Interrupt == false) {
-      gSystem->Sleep(100); 
-      if (++i % 10 == 0) {
-        if (g_Verbosity >= c_Warning) {
-          mout<<m_XmlTag<<": Waiting for module to become ready!"<<endl; 
-        }
-      }
-    }
-    if (AnalyzeEvent(Event) == false) {
-      if (g_Verbosity >= c_Error) {
-        mout<<m_XmlTag<<": Something went wrong with the analysis of this event!"<<endl; 
-      }
-    }
-    m_OutgoingEvents.push_back(Event);
-  } else {
-  */
-    m_IncomingEventsMutex.Lock();
-    m_IncomingEvents.push_back(Event);
-    m_IncomingEventsMutex.UnLock();
-  //}
+  m_IncomingEventsMutex.Lock();
+  m_IncomingEvents.push_back(Event);
+  m_IncomingEventsMutex.UnLock();
   
   return true;
 }

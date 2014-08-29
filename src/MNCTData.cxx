@@ -207,7 +207,7 @@ vector<MNCTModule*> MNCTData::ReturnPossibleVolumes(unsigned int Position)
     }
   }
 
-  cout<<"Assembling possbile modules for position: "<<Position<<" --> "<<Previous.size()<<endl;
+  //cout<<"Assembling possbile modules for position: "<<Position<<" --> "<<Previous.size()<<endl;
 
   return ReturnPossibleVolumes(Previous);
 }

@@ -135,7 +135,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
   }
   
   for (int DetectorNumber=0; DetectorNumber<12; DetectorNumber++) {   
-    if (m_Verbosity >= c_Info) cout<<m_XmlTag<<": Attempting to load depth calibration (by pixel) for D" << DetectorNumber << endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Attempting to load depth calibration (by pixel) for D" << DetectorNumber << endl;
     
     // Construct the filename of the detector-specific calibration file
     string DetectorNumberString;
@@ -163,7 +163,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     fstream File;
     File.open(FileName, ios_base::in);
     if (File.is_open() == false) {
-      if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to open file: "<<FileName<<endl
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to open file: "<<FileName<<endl
       <<"   Is your NUCLEARIZER_CAL environment variable set?"<<endl;
       return false;
     } else {
@@ -214,10 +214,10 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     } // XStripNumber
     
     if (m_IsCalibrationLoaded[DetectorNumber] == true) {
-      if (m_Verbosity >= c_Info) cout<<m_XmlTag<<": 3rd order polynomial depth calibration (by pixel) for D" << DetectorNumber 
+      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": 3rd order polynomial depth calibration (by pixel) for D" << DetectorNumber 
       << " successfully loaded!" << endl;
     } else {
-      if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": Warning: Unable to fully load 3rd polynomial depth calibration (by pixel) for D" 
+      if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Warning: Unable to fully load 3rd polynomial depth calibration (by pixel) for D" 
       << DetectorNumber << ".  Defaults were used for some or all strips." << endl;
       // return false;
     }
@@ -357,7 +357,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
     for (unsigned int i_s_hit=0; i_s_hit < NStripHits; i_s_hit++){
       if (H->GetStripHit(i_s_hit)->IsXStrip() == true){
         Tmp_XStrip[i_sxhit] = H->GetStripHit(i_s_hit)->GetStripID();
-        if (m_Verbosity >= c_Info) cout<<"XStrip:"<<Tmp_XStrip[i_sxhit]<<", ENERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()<<", Tmp_E:"<<Tmp_XEnergy<<endl;
+        if (g_Verbosity >= c_Info) cout<<"XStrip:"<<Tmp_XStrip[i_sxhit]<<", ENERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()<<", Tmp_E:"<<Tmp_XEnergy<<endl;
         if ( Tmp_XEnergy < H->GetStripHit(i_s_hit)->GetEnergy() ){
           Tmp_XEnergy = H->GetStripHit(i_s_hit)->GetEnergy();
           XTiming = H->GetStripHit(i_s_hit)->GetTiming();
@@ -508,11 +508,11 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         MVector PositionResolution(2.0/2.35, Z_FWHM/2.35, 2.0/2.35);
         MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetectorName);
         //cout << "Pos in det:    " << PositionInDetector << endl;
-        if (m_Verbosity >= c_Info) cout << "Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
+        if (g_Verbosity >= c_Info) cout << "Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
         DepthCalibrated=true;
-        if (m_Verbosity >= c_Info) {
+        if (g_Verbosity >= c_Info) {
           cout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
                << " Y:" << YStripNumber << " (" << Y_Middle << " cm)  "
                << " X Timing: " << XTiming << " Y Timing: " << YTiming 
@@ -527,7 +527,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         MVector PositionResolution(0.0,0.0,0.0);
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
-        if (m_Verbosity >= c_Error) cout << "Depth calibration cannot calculate depth for hit.  "
+        if (g_Verbosity >= c_Error) cout << "Depth calibration cannot calculate depth for hit.  "
           << "Doesn't contain exactly one X and one Y strip hit." << endl;
         //DepthCalibrated=false;
         //cout<<"Doesn't contain exactly one X and one Y strip hit. ID: "<<Event->GetID()

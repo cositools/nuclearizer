@@ -84,7 +84,6 @@ MInterfaceNuclearizer::MInterfaceNuclearizer()
   m_Interrupt = false;
   m_Terminate = false;
   
-  m_Verbosity = 2;
   m_UseMultiThreading = false;
   m_IsAnalysisRunning = false;
 }
@@ -158,9 +157,8 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
       m_Data->Load(argv[++i]);
       cout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
     } else if (Option == "--verbosity" || Option == "-v") {
-      m_Verbosity = atoi(argv[++i]);
-      g_Verbosity = m_Verbosity;
-      cout<<"Command-line parser: Verbosity "<<m_Verbosity<<endl;
+      g_Verbosity = atoi(argv[++i]);
+      cout<<"Command-line parser: Verbosity "<<g_Verbosity<<endl;
     } else if (Option == "--multithreading" || Option == "-m") {
       if (atoi(argv[++i]) != 0) m_UseMultiThreading = true;
       cout<<"Command-line parser: Using multithreading: "<<(m_UseMultiThreading ? "yes" : "no")<<endl;
@@ -239,7 +237,6 @@ bool MInterfaceNuclearizer::AnalyzeSingleThreaded()
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
     ModuleTimers[m].Continue();
     m_Data->GetModule(m)->SetInterrupt(false);
-    m_Data->GetModule(m)->SetVerbosity(m_Verbosity);
     if (m_Data->GetModule(m)->Initialize() == false) {
       ModuleTimers[m].Pause();
       if (m_Interrupt == true) {
@@ -343,7 +340,7 @@ bool MInterfaceNuclearizer::AnalyzeSingleThreaded()
   }
   mout<<endl;
   
-  if (m_Verbosity >= 2) {
+  if (g_Verbosity >= 2) {
     cout<<"Timings: "<<endl;
     for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
       cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<m_Data->GetModule(m)->GetName()<<endl;
@@ -394,7 +391,6 @@ bool MInterfaceNuclearizer::AnalyzeMultiThreaded()
   for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
     ModuleTimers[m].Continue();
     m_Data->GetModule(m)->SetInterrupt(false);
-    m_Data->GetModule(m)->SetVerbosity(m_Verbosity);
     m_Data->GetModule(m)->UseMultiThreading(true);
     if (m_Data->GetModule(m)->Initialize() == false) {
       ModuleTimers[m].Pause();
@@ -469,7 +465,7 @@ bool MInterfaceNuclearizer::AnalyzeMultiThreaded()
   }
   mout<<endl;
   
-  if (m_Verbosity >= 2) {
+  if (g_Verbosity >= 2) {
     cout<<"Timings: "<<endl;
     for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
       cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<m_Data->GetModule(m)->GetName()<<endl;

@@ -886,13 +886,13 @@ bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MNCTEvent* Event)
     // Difference must be more than 10 keV for cross talk + 2 sigma energy resolution on *both* sides
     if (Difference > 2*pUncertainty + 2*nUncertainty + 10) {
       Event->SetStripPairingIncomplete(true);
-      if (m_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+      if (g_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
     } else {
-      if (m_Verbosity >= c_Info) cout<<"Good strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+      if (g_Verbosity >= c_Info) cout<<"Good strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
     }
   }  
   
-  if (m_Verbosity >= c_Info) {
+  if (g_Verbosity >= c_Info) {
     cout<<"After strip pairing..."<<endl;
     for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
       cout<<"Hit "<<h<<endl;
