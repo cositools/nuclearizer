@@ -89,6 +89,8 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   m_ExpoDepthCalibration->SetDepthHistogramArrangement(3, 4);
   m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.000001, 1.500001); //-0.7499, 0.7501);
   m_Expos.push_back(m_ExpoDepthCalibration);  
+  
+  m_NAllowedWorkerThreads = 1;
 }
 
 
@@ -107,8 +109,6 @@ MNCTModuleDepthCalibration3rdPolyPixel::~MNCTModuleDepthCalibration3rdPolyPixel(
 bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
 {
   // Initialize the module 
-  
-  MNCTModule::Initialize();
   
   // Definition:
   // Depth is the distance between interaction and cathode (negative side).
@@ -135,7 +135,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
   }
   
   for (int DetectorNumber=0; DetectorNumber<12; DetectorNumber++) {   
-    mout << "Attempting to load depth calibration (by pixel) for D" << DetectorNumber << endl;
+    if (m_Verbosity >= c_Info) cout<<m_XmlTag<<": Attempting to load depth calibration (by pixel) for D" << DetectorNumber << endl;
     
     // Construct the filename of the detector-specific calibration file
     string DetectorNumberString;
@@ -163,7 +163,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     fstream File;
     File.open(FileName, ios_base::in);
     if (File.is_open() == false) {
-      mout<<"***Warning: Unable to open file: "<<FileName<<endl
+      if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to open file: "<<FileName<<endl
       <<"   Is your NUCLEARIZER_CAL environment variable set?"<<endl;
       return false;
     } else {
@@ -171,13 +171,13 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
       while(!File.eof()) {
         Line.ReadLine(File);
         if (Line.BeginsWith("#") == false) {
-          //mout << Line << endl;
+          //cout << Line << endl;
           int PositiveStripNumber, NegativeStripNumber;
           double ctd2z0, ctd2z1, ctd2z2, ctd2z3, FWHM_positive, FWHM_negative;
           if (sscanf(Line.Data(), "%d,%d,%lf,%lf,%lf,%lf,%lf,%lf\n",
             &PositiveStripNumber,&NegativeStripNumber,&ctd2z0,&ctd2z1,
             &ctd2z2,&ctd2z3,&FWHM_positive,&FWHM_negative) == 8) {
-            //mout << "load parameter:[(s+),p0,p3,fwhm(+)]" << " " << PositiveStripNumber << " " 
+            //cout << "load parameter:[(s+),p0,p3,fwhm(+)]" << " " << PositiveStripNumber << " " 
             //<< ctd2z0 << " " << ctd2z3 << " " << FWHM_positive << endl;
             
             m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][0] = ctd2z0;
@@ -194,7 +194,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     
     // check to see if all strips have been calibrated; load defaults if not
     m_IsCalibrationLoaded[DetectorNumber] = true;
-    //mout<<" Det #"<<DetectorNumber<<" is Calibrated?: "<<m_IsCalibrationLoaded[DetectorNumber]<<endl;
+    //cout<<" Det #"<<DetectorNumber<<" is Calibrated?: "<<m_IsCalibrationLoaded[DetectorNumber]<<endl;
     for (int XStripNumber=1; XStripNumber<=37; XStripNumber++) {
       for (int YStripNumber=1; YStripNumber<=37; YStripNumber++) {
         if (m_IsCalibrationLoadedPixel[DetectorNumber][XStripNumber-1][YStripNumber-1] == false) {
@@ -214,10 +214,10 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     } // XStripNumber
     
     if (m_IsCalibrationLoaded[DetectorNumber] == true) {
-      mout << "3rd order polynomial depth calibration (by pixel) for D" << DetectorNumber 
+      if (m_Verbosity >= c_Info) cout<<m_XmlTag<<": 3rd order polynomial depth calibration (by pixel) for D" << DetectorNumber 
       << " successfully loaded!" << endl;
     } else {
-      mout << "***Warning: Unable to fully load 3rd polynomial depth calibration (by pixel) for D" 
+      if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": Warning: Unable to fully load 3rd polynomial depth calibration (by pixel) for D" 
       << DetectorNumber << ".  Defaults were used for some or all strips." << endl;
       // return false;
     }
@@ -225,7 +225,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
   } // 'DetectorNumber' loop
   
   
-  return true;
+  return MNCTModule::Initialize();
 }
 
 
@@ -242,9 +242,9 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
   
   unsigned int NHits = Event->GetNHits();
   bool DepthCalibrated = false;
-  //mout << "MNCTDepthCalibration3rdPolyPixel::AnalyzeEvent: Event ID = " << Event->GetID() << endl;
+  //cout << "MNCTDepthCalibration3rdPolyPixel::AnalyzeEvent: Event ID = " << Event->GetID() << endl;
   
-  //mout << endl << "Event ID: " << Event->GetID() << endl;
+  //cout << endl << "Event ID: " << Event->GetID() << endl;
   for (unsigned int i_hit=0; i_hit<NHits; i_hit++) {
     MNCTHit *H = Event->GetHit(i_hit);
     unsigned int NStripHits = H->GetNStripHits();
@@ -341,7 +341,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
       XTiming = SHX->GetTiming();
       YTiming = SHY->GetTiming();
       SingleHitNumber++;
-      //mout<<"EventID, "<<Event->GetID()<<"Single Hit, "<<SingleHitNumber<<endl;
+      //cout<<"EventID, "<<Event->GetID()<<"Single Hit, "<<SingleHitNumber<<endl;
       EventTypeFlag0=1;
     } else if (( (NStripHits == 3) && (((NXStripHits == 1)&&(NYStripHits == 2)) ||
       ((NXStripHits == 2)&&(NYStripHits == 1))) ) ||
@@ -357,7 +357,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
     for (unsigned int i_s_hit=0; i_s_hit < NStripHits; i_s_hit++){
       if (H->GetStripHit(i_s_hit)->IsXStrip() == true){
         Tmp_XStrip[i_sxhit] = H->GetStripHit(i_s_hit)->GetStripID();
-        if (m_Verbosity >= c_Info) mout<<"XStrip:"<<Tmp_XStrip[i_sxhit]<<", ENERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()<<", Tmp_E:"<<Tmp_XEnergy<<endl;
+        if (m_Verbosity >= c_Info) cout<<"XStrip:"<<Tmp_XStrip[i_sxhit]<<", ENERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()<<", Tmp_E:"<<Tmp_XEnergy<<endl;
         if ( Tmp_XEnergy < H->GetStripHit(i_s_hit)->GetEnergy() ){
           Tmp_XEnergy = H->GetStripHit(i_s_hit)->GetEnergy();
           XTiming = H->GetStripHit(i_s_hit)->GetTiming();
@@ -366,7 +366,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         i_sxhit++;
       } else{
         Tmp_YStrip[i_syhit] = H->GetStripHit(i_s_hit)->GetStripID();
-        //mout<<"YStrip:"<<Tmp_YStrip[i_syhit]<<",eNERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()
+        //cout<<"YStrip:"<<Tmp_YStrip[i_syhit]<<",eNERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()
         //    <<",Tmp_E:"<<Tmp_YEnergy<<endl;
         if ( Tmp_YEnergy < H->GetStripHit(i_s_hit)->GetEnergy() ){
           Tmp_YEnergy = H->GetStripHit(i_s_hit)->GetEnergy();
@@ -380,21 +380,21 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
       if (((Tmp_XStrip[0]-Tmp_XStrip[1])==1) || ((Tmp_XStrip[0]-Tmp_XStrip[1])==-1)){
         Flag_CanBeCalibrated = 2;
         ShareHitNumber0++;
-        //mout<<"EventID,"<<Event->GetID()<<"Share Hit, OK,"<<ShareHitNumber0<<endl;
+        //cout<<"EventID,"<<Event->GetID()<<"Share Hit, OK,"<<ShareHitNumber0<<endl;
         EventTypeFlag1=1;
       }
     } else if (NYStripHits == 2 && NXStripHits == 1){
       if (((Tmp_YStrip[0]-Tmp_YStrip[1])==1) || ((Tmp_YStrip[0]-Tmp_YStrip[1])==-1)){
         Flag_CanBeCalibrated = 2;
         ShareHitNumber0++;
-        //mout<<"EventID,"<<Event->GetID()<<"Share Hit, OK,"<<ShareHitNumber0<<endl;
+        //cout<<"EventID,"<<Event->GetID()<<"Share Hit, OK,"<<ShareHitNumber0<<endl;
         EventTypeFlag1=1;
       }
     } else if (NYStripHits == 2 && NXStripHits == 2){
       if ( (((Tmp_YStrip[0]-Tmp_YStrip[1])==1) || ((Tmp_YStrip[0]-Tmp_YStrip[1])==-1)) &&
         (((Tmp_XStrip[0]-Tmp_XStrip[1])==1) || ((Tmp_XStrip[0]-Tmp_XStrip[1])==-1))){
         ShareHitNumber0++;
-      //mout<<"EventID,"<<Event->GetID()<<"Share Hit, OK,"<<ShareHitNumber0<<endl;
+      //cout<<"EventID,"<<Event->GetID()<<"Share Hit, OK,"<<ShareHitNumber0<<endl;
       EventTypeFlag1=1;
       Flag_CanBeCalibrated = 2;
         }
@@ -402,19 +402,19 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
       Flag_CanBeCalibrated = 0;
       EventTypeFlag2=1;
       ShareHitNumber0++;
-      //mout<<"EventID,"<<Event->GetID()<<"Share Hit, Bad,"<<ShareHitNumber1<<endl;
+      //cout<<"EventID,"<<Event->GetID()<<"Share Hit, Bad,"<<ShareHitNumber1<<endl;
     }
       } else {
         Flag_CanBeCalibrated = 0;
         EventTypeFlag3=1;
         OtherHitNumber++;
-        //mout<<"EventID,"<<Event->GetID()<<"Other Hit,"<<OtherHitNumber<<endl;
+        //cout<<"EventID,"<<Event->GetID()<<"Other Hit,"<<OtherHitNumber<<endl;
       }
       
       // Require 2 strip hits: 1 X strip and 1 Y strip
       //if ( (NStripHits == 2) && (NXStripHits == 1) && (NYStripHits == 1) ) 
       if (Flag_CanBeCalibrated == 1 || Flag_CanBeCalibrated == 2) {
-        //mout<<"Flag: "<<Flag_CanBeCalibrated<<", ID: "<<Event->GetID()<<", XStrip/Timing: "<<
+        //cout<<"Flag: "<<Flag_CanBeCalibrated<<", ID: "<<Event->GetID()<<", XStrip/Timing: "<<
         //        XStripNumber<<"/"<<XTiming<<", YStrip/Timing: "<<YStripNumber<<"/"<<YTiming<<endl;
         
         
@@ -422,7 +422,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         int n_parameters;
         
         double ctd2z[4];
-        //mout<<"DetID "<<DetectorNumber<<", X: "<<XStripNumber<<", Y: "<<YStripNumber<<endl;
+        //cout<<"DetID "<<DetectorNumber<<", X: "<<XStripNumber<<", Y: "<<YStripNumber<<endl;
         double FWHM_positive = m_Pixel_CTD_FWHM_Positive[DetectorNumber][XStripNumber-1][YStripNumber-1];
         double FWHM_negative = m_Pixel_CTD_FWHM_Negative[DetectorNumber][XStripNumber-1][YStripNumber-1];
         for (n_parameters=0;n_parameters<4;n_parameters++) {
@@ -437,7 +437,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
           depth=depth+ctd2z[n_parameters]*pow(CTD,n_parameters);
         }
         
-        //mout << "Depth?! = "<< depth<<endl;
+        //cout << "Depth?! = "<< depth<<endl;
         //m_ExpoDepthCalibration->AddDepth(DisplayID, depth);
         //m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
         
@@ -471,7 +471,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         if (Z_Front > 1.5) { Z_Front=1.5; }
         Z_Middle = 0.75-Z_Front;
         //output for debug:
-        //mout<<"Det,Xstrip,Ystrip:"<<DetectorNumber<<", "<<XStripNumber<<", "<<YStripNumber<<", CTD:"<<CTD
+        //cout<<"Det,Xstrip,Ystrip:"<<DetectorNumber<<", "<<XStripNumber<<", "<<YStripNumber<<", CTD:"<<CTD
         //   <<", Depth:"<<depth<<", Z_Front:"<<Z_Front<<endl;
         //output done
         
@@ -486,7 +486,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
           if (depth > 1.5) {depth=1.5;}
           Z_tmp[i_ct]=depth;
           //output for debug:
-          //mout<<"CTD,CTD+-noise,depth+-noise:"<<CTD<<", "<<CTD_tmp<<" ,"<<Z_tmp[i_ct]<<endl;
+          //cout<<"CTD,CTD+-noise,depth+-noise:"<<CTD<<", "<<CTD_tmp<<" ,"<<Z_tmp[i_ct]<<endl;
           //output done
         }
         
@@ -496,7 +496,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
           Z_FWHM=Z_tmp[1]-Z_tmp[0];
         }
         //output for debug
-        //mout<<"calculated FWHM:"<<Z_FWHM<<endl;
+        //cout<<"calculated FWHM:"<<Z_FWHM<<endl;
         //output done
         // Calculate X and Y positions based on strip number.  These are referenced from the middle.
         double X_Middle = ((double)XStripNumber - 19.0)*0.2;
@@ -507,13 +507,13 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         //MVector PositionResolution(2.0/2.35, 2.0/2.35, Z_FWHM/2.35);
         MVector PositionResolution(2.0/2.35, Z_FWHM/2.35, 2.0/2.35);
         MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetectorName);
-        //mout << "Pos in det:    " << PositionInDetector << endl;
-        if (m_Verbosity >= c_Info) mout << "Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
+        //cout << "Pos in det:    " << PositionInDetector << endl;
+        if (m_Verbosity >= c_Info) cout << "Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
         DepthCalibrated=true;
         if (m_Verbosity >= c_Info) {
-          mout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
+          cout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
                << " Y:" << YStripNumber << " (" << Y_Middle << " cm)  "
                << " X Timing: " << XTiming << " Y Timing: " << YTiming 
                //<< " Z_X: " << Z_X << " Z_Y: " << Z_Y 
@@ -527,29 +527,29 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event)
         MVector PositionResolution(0.0,0.0,0.0);
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
-        if (m_Verbosity >= c_Error) mout << "Depth calibration cannot calculate depth for hit.  "
+        if (m_Verbosity >= c_Error) cout << "Depth calibration cannot calculate depth for hit.  "
           << "Doesn't contain exactly one X and one Y strip hit." << endl;
         //DepthCalibrated=false;
-        //mout<<"Doesn't contain exactly one X and one Y strip hit. ID: "<<Event->GetID()
+        //cout<<"Doesn't contain exactly one X and one Y strip hit. ID: "<<Event->GetID()
         //    <<" , NXStripHits:"<<NXStripHits<<", NYStripHits:"<<NYStripHits<<endl;
         Event->SetDepthCalibrationIncomplete(true);
       }
   }
-  //mout<<"DepthCal for this event is done..."<<endl;
+  //cout<<"DepthCal for this event is done..."<<endl;
   if (EventTypeFlag0==1 && EventTypeFlag1==0) {
     SingleEventNumber++;
-    //mout<<"All pixel (?),"<<SingleEventNumber<<endl;
+    //cout<<"All pixel (?),"<<SingleEventNumber<<endl;
   } else if(EventTypeFlag0==1 && EventTypeFlag1==1){
     ShareEventNumber0++;
-    //mout<<"pixel+share,"<<ShareEventNumber0<<endl;
+    //cout<<"pixel+share,"<<ShareEventNumber0<<endl;
   } 
   if (EventTypeFlag1==1){
     ShareEventNumber1++;
-    //mout<<"with share(with pixel & without pixel),"<<ShareEventNumber1<<endl;
+    //cout<<"with share(with pixel & without pixel),"<<ShareEventNumber1<<endl;
   }
   if (EventTypeFlag2==1){
     OtherEventNumber++;
-    //mout<<"with strange,"<<OtherEventNumber<<endl;
+    //cout<<"with strange,"<<OtherEventNumber<<endl;
   }
   
   Event->SetDepthCalibrated(DepthCalibrated);

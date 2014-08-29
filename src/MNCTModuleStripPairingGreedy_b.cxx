@@ -74,16 +74,16 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MNCTModule()
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
   
-  // Add member variables here
-  
-  m_NBadMatches =0;
-  m_NMatches =0;
-  m_TotalMatches=0;
+  m_NBadMatches = 0;
+  m_NMatches = 0;
+  m_TotalMatches = 0;
   
   // Set the histogram display
   m_ExpoStripPairing = new MGUIExpoStripPairing(this);
   m_ExpoStripPairing->SetEnergiesHistogramParameters(1500, 0, 1500);
   m_Expos.push_back(m_ExpoStripPairing);
+  
+  m_NAllowedWorkerThreads = 1;
 }
 
 
@@ -103,14 +103,12 @@ bool MNCTModuleStripPairingGreedy_b::Initialize()
 {
   // Initialize the module 
   
-  MNCTModule::Initialize();
-  
   Eth = 30;
   
   // Add all initializations which are global to all events
   // and have member variables here
   
-  return true;
+  return MNCTModule::Initialize();
 }
 
 
@@ -202,7 +200,7 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector
   
   // Check if the event has all the appropriate flags
   if (Event->IsEnergyCalibrated() == false) {
-    if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Error: Energy not calibrated!"<<endl;
+    if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy not calibrated!"<<endl;
     return false;
   }
   
@@ -1236,15 +1234,15 @@ bool MNCTModuleStripPairingGreedy_b::CheckAllStripsWerePaired(){
   
   //compare counter to total number of strips hit
   if (counter > nHitsOrig.at(0)+nHitsOrig.at(1)){
-    if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": There's something wrong with the code!" << endl;
+    if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": There's something wrong with the code!" << endl;
     return false;
   }
   else if (counter == nHitsOrig.at(0)+nHitsOrig.at(1)){
-    if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": All strips were paired successfully!" << endl;
+    if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": All strips were paired successfully!" << endl;
     return true;
   }
   else {
-    if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": Alert! Not all strips were paired!" << endl;
+    if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": Alert! Not all strips were paired!" << endl;
     return false;
   }
   

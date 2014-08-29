@@ -73,6 +73,8 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MNCTModule()
   m_Mode = c_EvtaFile;
   m_FileName = "MyEvtaFileForRevan.evta";
   m_SaveBadEvents = true;
+  
+  m_NAllowedWorkerThreads = 1;
 }
 
 
@@ -95,7 +97,7 @@ bool MNCTModuleEventSaver::Initialize()
   
   m_Out.open(m_FileName);
   if (m_Out.is_open() == false) {
-    if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Unable to open file: "<<m_FileName<<endl;
+    if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_FileName<<endl;
     return false;
   }
   
@@ -110,11 +112,11 @@ bool MNCTModuleEventSaver::Initialize()
     m_Out<<"Type EVTA"<<endl;
     m_Out<<endl;
   } else {
-    mout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
+    cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
 
-  return true;
+  return MNCTModule::Initialize();
 }
 
 

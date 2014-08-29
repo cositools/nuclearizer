@@ -43,6 +43,18 @@ ClassImp(MNCTModule)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Global function to start the thread
+void* MNCTModuleKickstartThread(void* ClassDerivedFromMNCTModule)
+{
+  // dynamic_cast<MNCTModule*>(ClassDerivedFromMNCTModule)->AnalysisLoop();
+  ((MNCTModule*) ClassDerivedFromMNCTModule)->AnalysisLoop();
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MNCTModule::MNCTModule()
 {
   // Construct an instance of MNCTModule
@@ -52,12 +64,19 @@ MNCTModule::MNCTModule()
 
   m_HasOptionsGUI = false;
   
+  m_IsStartModule = false;
+  
   m_IsOK = true;
   m_IsReady = true;
   
   m_Interrupt = false;
   
   m_Verbosity = 1;
+  
+  m_UseMultiThreading = false;
+  m_NAllowedWorkerThreads = 0;
+  m_Thread = 0;
+  m_IsThreadRunning = false;
 }
 
 
@@ -73,12 +92,114 @@ MNCTModule::~MNCTModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MNCTModule::AddEvent(MNCTEvent* Event)
+{
+  //! Add an event to the incoming event list
+
+  /*
+  if (m_UseMultiThreading == false || (m_UseMultiThreading == true && m_NActiveWorkerThreads == 0) {
+    int i = 0;
+    while (IsReady() == false && m_Interrupt == false) {
+      gSystem->Sleep(100); 
+      if (++i % 10 == 0) {
+        if (g_Verbosity >= c_Warning) {
+          mout<<m_XmlTag<<": Waiting for module to become ready!"<<endl; 
+        }
+      }
+    }
+    if (AnalyzeEvent(Event) == false) {
+      if (g_Verbosity >= c_Error) {
+        mout<<m_XmlTag<<": Something went wrong with the analysis of this event!"<<endl; 
+      }
+    }
+    m_OutgoingEvents.push_back(Event);
+  } else {
+  */
+    m_IncomingEventsMutex.Lock();
+    m_IncomingEvents.push_back(Event);
+    m_IncomingEventsMutex.UnLock();
+  //}
+  
+  return true;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTModule::HasAddedEvents()
+{
+  //! Check if there are events in the incoming event list
+
+  bool HasEvents = false;
+
+  m_IncomingEventsMutex.Lock();
+  HasEvents = m_IncomingEvents.begin() != m_IncomingEvents.end(); // faster for deque than size if filled!
+  m_IncomingEventsMutex.UnLock();
+
+  return HasEvents;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTModule::HasAnalyzedEvents()
+{
+  //! Check if there are events in the outgoing event list
+
+  bool HasEvents = false;
+
+  m_OutgoingEventsMutex.Lock();
+  HasEvents = m_OutgoingEvents.begin() != m_OutgoingEvents.end(); // faster for deque than size if filled!
+  m_OutgoingEventsMutex.UnLock();
+
+  return HasEvents;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MNCTEvent* MNCTModule::GetAnalyzedEvent()
+{
+  //! Check if there are events in the outgoing event list
+
+  MNCTEvent* E = 0;
+  
+  m_OutgoingEventsMutex.Lock();
+  if (m_OutgoingEvents.begin() != m_OutgoingEvents.end()) {
+    E = m_OutgoingEvents.front();
+    m_OutgoingEvents.pop_front();
+  }
+  m_OutgoingEventsMutex.UnLock();
+  
+  return E;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MNCTModule::Initialize()
 {
-  //! Initialize the module --- has to be overwritten
-
   for (auto E: m_Expos) {
     E->Reset(); 
+  }
+  
+  if (m_UseMultiThreading == true && m_NAllowedWorkerThreads > 0) {
+    m_IsThreadRunning = false;
+  
+    delete m_Thread;
+    m_Thread = new TThread(m_XmlTag + "-Thread ", 
+                           (void(*) (void *)) &MNCTModuleKickstartThread, 
+                           (void*) this);
+    m_Thread->SetPriority(TThread::kHighPriority);
+    m_Thread->Run();
+    
+    while (m_IsThreadRunning == false) {
+      gSystem->Sleep(10);
+    }
   }
   
   return true;
@@ -88,9 +209,79 @@ bool MNCTModule::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MNCTModule::Report()
+void MNCTModule::AnalysisLoop()
 {
-  return "";
+  m_IsThreadRunning = true;
+  
+  while (m_Interrupt == false) {
+    
+    if (DoSingleAnalysis() == false) {
+      gSystem->Sleep(20);
+    }
+  }
+
+  m_IsThreadRunning = false;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTModule::DoSingleAnalysis()
+{
+  MNCTEvent* E = 0;
+  // If this is a module which does not generate the events, grab one from the incoming list
+  if (m_IsStartModule == false) { 
+    m_IncomingEventsMutex.Lock();
+    if (m_IncomingEvents.begin() != m_IncomingEvents.end()) {
+      E = m_IncomingEvents.front();
+      m_IncomingEvents.pop_front();
+    }
+    m_IncomingEventsMutex.UnLock();
+  }
+  // If we got one from the incoming list, or if this is a start module which generates them:
+  if (E == 0 && m_IsStartModule == true) {
+    E = new MNCTEvent();
+  }
+  
+  if (E != 0) {
+    AnalyzeEvent(E);
+    m_OutgoingEventsMutex.Lock();
+    m_OutgoingEvents.push_back(E);
+    m_OutgoingEventsMutex.UnLock();
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModule::Finalize()
+{
+  if (m_Thread != 0) {
+    m_Interrupt = true;
+    while (m_IsThreadRunning == true) {
+      gSystem->Sleep(20);
+    }
+    if (m_Thread != 0) m_Thread->Kill();
+    m_Thread = 0;
+  }
+  
+  if (HasAddedEvents() > 0) {
+    for (auto E: m_IncomingEvents) {
+      delete E; 
+    }
+    m_IncomingEvents.clear();
+  }
+  if (HasAnalyzedEvents() > 0) {
+    for (auto E: m_OutgoingEvents) {
+      delete E; 
+    }
+    m_OutgoingEvents.clear();
+  }
 }
 
 

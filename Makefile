@@ -37,6 +37,7 @@ include $(MEGALIB)/config/Makefile.config
 # Definitions based on architecture and user options
 #
 
+CMD=""
 CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
 # Python
 
@@ -135,7 +136,7 @@ NUCLEARIZERSHAREDLIB = $(LB)/libNuclearizer.$(DLL)
 
 # External libraries
 # MEGAlib
-ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectralyzeGui -lSpectralyze -lFretalonBase -L$(MEGALIB)/lib -L$(LB)
+ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectralyzeGui -lSpectralyze -lFretalonBase -L$(MEGALIB)/lib -L$(LB) 
 # ROOT
 ALLLIBS += -lMathCore
 
@@ -156,10 +157,10 @@ all: $(ALLPROGRAMS)
 
 # Compile all libraries and programs
 n: $(ALLPROGRAMS)
-	$(NUCLEARIZERPRG)
+	@$(NUCLEARIZERPRG) $(CMD)
 
 nuclearizer: $(ALLPROGRAMS)
-	$(NUCLEARIZERPRG)
+	@$(NUCLEARIZERPRG) $(CMD)
 
 # Clean-up
 clean:

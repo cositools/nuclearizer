@@ -255,7 +255,7 @@ bool MGUINuclearizerMain::HandleKey(Event_t* Event)
 {
   // Here we handle all keys...
 
-  char   tmp[10];
+  char tmp[10];
   unsigned int keysym;
 
   // Test if we have a key release:
@@ -442,6 +442,7 @@ bool MGUINuclearizerMain::OnStart()
 {
   if (OnApply() == false) return false;
 
+  //m_Interface->AnalyzeMultiThreaded();
   m_Interface->Analyze();
 
   return true;

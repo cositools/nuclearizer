@@ -46,10 +46,10 @@ class MInterfaceNuclearizer
   //! this function is called by main()
   bool ParseCommandLine(int argc, char** argv);
 
-  //! Analyze the data
+  //! Analyze the data - single-threaded or multi-threaded mode
   bool Analyze();
-
-  //! Exit the application
+  
+  //! Exit the application - if multi-threaded prepare to exit after all threads have exited
   void Exit();
 
   //! Show the expo view
@@ -60,8 +60,14 @@ class MInterfaceNuclearizer
 
   // protected methods:
  protected:
+  //! Analyze the data - single-threaded mode
+  bool AnalyzeSingleThreaded();
+  //! Analyze the data - multi-threaded mode
+  bool AnalyzeMultiThreaded();
  
-
+  //! End the program (and saves the GUI data)
+  void Terminate();
+  
   // private methods:
  private:
 
@@ -82,11 +88,22 @@ class MInterfaceNuclearizer
   //! The store for all user data of the GUI:
   MNCTData* m_Data;
 
-  //! The interrupt flag
+  //! The interrupt flag - the analysis will stop when this flag is set
   bool m_Interrupt;
+  //! The terminate flag - should always be set together with the interrupt flag
+  //! After the analysis is stopped by the interupt flag, this flag will terminate the 
+  //! program
+  bool m_Terminate;
   
   //! Chatty-ness of nuclearizer
   int m_Verbosity;
+  
+  //! True if multi-threading is enabled
+  bool m_UseMultiThreading;
+  
+  //! True if the analysis is currently underway
+  bool m_IsAnalysisRunning;
+  
   
 #ifdef ___CINT___
  public:

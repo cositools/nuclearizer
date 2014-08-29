@@ -82,8 +82,11 @@ MInterfaceNuclearizer::MInterfaceNuclearizer()
   m_Data->Load(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
   
   m_Interrupt = false;
+  m_Terminate = false;
   
   m_Verbosity = 2;
+  m_UseMultiThreading = false;
+  m_IsAnalysisRunning = false;
 }
 
 
@@ -113,6 +116,8 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
   Usage<<"             If no configuration file is give ~/.nuclearizer.xml.cfg is used"<<endl;
   Usage<<"      -a --auto:"<<endl;
   Usage<<"             Automatically start analysis without GUI"<<endl;
+  Usage<<"      -m --multithreading:"<<endl;
+  Usage<<"             0: false (default), else: true"<<endl;
   Usage<<"      -v --verbosity:"<<endl;
   Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info"<<endl;
   Usage<<"      -h --help:"<<endl;
@@ -136,7 +141,8 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
     Option = argv[i];
     
     // Single argument
-    if (Option == "-c" || Option == "--configuration") {
+    if (Option == "-c" || Option == "--configuration" ||
+        Option == "-m" || Option == "--multithreading") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
@@ -154,6 +160,9 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--verbosity" || Option == "-v") {
       m_Verbosity = atoi(argv[++i]);
       cout<<"Command-line parser: Verbosity "<<m_Verbosity<<endl;
+    } else if (Option == "--multithreading" || Option == "-m") {
+      if (atoi(argv[++i]) != 0) m_UseMultiThreading = true;
+      cout<<"Command-line parser: Using multithreading: "<<(m_UseMultiThreading ? "yes" : "no")<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
     }
@@ -196,6 +205,21 @@ void MInterfaceNuclearizer::SetInterrupt(bool Flag)
 
 bool MInterfaceNuclearizer::Analyze()
 {
+  if (m_UseMultiThreading == true) {
+    return AnalyzeMultiThreaded();
+  } else {
+    return AnalyzeSingleThreaded();
+  }
+}
+ 
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MInterfaceNuclearizer::AnalyzeSingleThreaded()
+{
+  if (m_IsAnalysisRunning == true) return false;
+  m_IsAnalysisRunning = true;
+
   // Start with saving the data:
   m_Data->Save(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
 
@@ -221,6 +245,7 @@ bool MInterfaceNuclearizer::Analyze()
         break;
       }
       mout<<"Initialization of module "<<m_Data->GetModule(m)->GetName()<<" failed"<<endl;
+      m_IsAnalysisRunning = false;
       return false;
     }
     ModuleTimers[m].Pause();
@@ -324,6 +349,136 @@ bool MInterfaceNuclearizer::Analyze()
     }
   }
   
+  m_IsAnalysisRunning = false;
+  
+  if (m_Terminate == true) Terminate();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MInterfaceNuclearizer::AnalyzeMultiThreaded()
+{
+  if (m_IsAnalysisRunning == true) return false;
+  m_IsAnalysisRunning = true;
+  
+  // Start with saving the data:
+  m_Data->Save(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
+
+  m_Interrupt = false;
+  
+  // Start a global timer:
+  MTimer Timer;
+
+  // Load the geometry:
+  if (m_Data->LoadGeometry() == false) return false;
+
+  // Create a bunch of individual timers
+  vector<MTimer> ModuleTimers(m_Data->GetNModules(), MTimer(false));
+  
+  
+  // Initialize the modules:
+  if (m_Data->GetNModules() == 0) {
+    if (g_Verbosity >= c_Error) mout<<"Error: No modules"<<endl;
+    return false;
+  }
+  if (m_Data->GetNModules() == 1 && m_Data->GetModule(0)->IsStartModule() == false) {
+    if (g_Verbosity >= c_Error) mout<<"Error: The first module must either load or generate the events"<<endl;
+    return false;
+  }
+  
+  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    ModuleTimers[m].Continue();
+    m_Data->GetModule(m)->SetInterrupt(false);
+    m_Data->GetModule(m)->SetVerbosity(m_Verbosity);
+    m_Data->GetModule(m)->UseMultiThreading(true);
+    if (m_Data->GetModule(m)->Initialize() == false) {
+      ModuleTimers[m].Pause();
+      if (m_Interrupt == true) {
+        break;
+      }
+      mout<<"Initialization of module "<<m_Data->GetModule(m)->GetName()<<" failed"<<endl;
+      m_IsAnalysisRunning = false;
+      return false;
+    }
+    ModuleTimers[m].Pause();
+  }
+  
+  
+  // Create the expo viewer:
+  if (m_ExpoCombinedViewer == 0) {
+    m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
+    m_ExpoCombinedViewer->Create();
+  }
+  m_ExpoCombinedViewer->RemoveExpos();
+  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    if (m_Data->GetModule(m)->HasExpos() == true) {
+      m_ExpoCombinedViewer->AddExpos(m_Data->GetModule(m)->GetExpos());
+    }
+  }
+  m_ExpoCombinedViewer->OnReset();
+  m_ExpoCombinedViewer->ShowExpos();
+  
+  
+  // Do the analysis pipeline
+  bool AllOK = true;
+  while (m_Interrupt == false && AllOK == true) {
+
+    for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+      ModuleTimers[m].Continue();
+      MNCTModule* M = m_Data->GetModule(m);
+      if (M->IsMultiThreaded() == false) { // We have to do the heavy lifing
+        M->DoSingleAnalysis(); 
+      }
+      if (M->HasAnalyzedEvents() == true) {
+        MNCTEvent* E = M->GetAnalyzedEvent();
+        if (m < m_Data->GetNModules()-1) {
+          m_Data->GetModule(m+1)->AddEvent(E);
+        } else {
+          delete E;
+        }
+      }
+
+      if (M->IsOK() == false) {
+        mout<<"Module \""<<m_Data->GetModule(m)->GetName()<<"\" is no longer OK... exiting analysis loop..."<<endl;
+        AllOK = false;
+      }
+      ModuleTimers[m].Pause();
+    }
+    
+    gSystem->ProcessEvents();    
+  }
+  
+  
+  // Finalize the modules:
+  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+    ModuleTimers[m].Continue();
+    m_Data->GetModule(m)->Finalize();
+    ModuleTimers[m].Pause();
+  }
+  
+  mout<<endl;
+  if (m_Interrupt == true) {
+    mout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
+  } else {
+    mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+  }
+  mout<<endl;
+  
+  if (m_Verbosity >= 2) {
+    cout<<"Timings: "<<endl;
+    for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
+      cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<m_Data->GetModule(m)->GetName()<<endl;
+    }
+  }
+  
+  m_IsAnalysisRunning = false;
+
+  if (m_Terminate == true) Terminate();
+  
   return true;
 }
 
@@ -345,6 +500,22 @@ void MInterfaceNuclearizer::View()
 
 
 void MInterfaceNuclearizer::Exit()
+{
+  // Prepare to exit the application
+  
+  if (m_IsAnalysisRunning == true) {
+    m_Interrupt = true;
+    m_Terminate = true;
+  } else {
+    Terminate();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceNuclearizer::Terminate()
 {
   // Exit the application
   

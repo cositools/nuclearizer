@@ -88,6 +88,8 @@ MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : M
   m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
   m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoEnergyCalibration);
+  
+  m_NAllowedWorkerThreads = 1;
 }
 
 
@@ -107,13 +109,11 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
 {
   // Initialize the module 
   
-  mout<<m_XmlTag<<": TODO: Set correct energy resolution - currently hard coded to 2.0 keV (one sigma)"<<endl;
-  
-  MNCTModule::Initialize();
+  cout<<m_XmlTag<<": TODO: Set correct energy resolution - currently hard coded to 2.0 keV (one sigma)"<<endl;
   
   MParser Parser;
   if (Parser.Open(m_FileName, MFile::c_Read) == false) {
-    if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Unable to open calibration file "<<m_FileName<<endl;
+    if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open calibration file "<<m_FileName<<endl;
     return false;
   }
   
@@ -136,7 +136,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
           CM_ROEToLine[R] = i;
         }
       } else {
-        if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Line parser: Unknown read-out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
+        if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown read-out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
         return false;
       }
     }
@@ -150,15 +150,15 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       unsigned int i = CP_ROEToLine[CM.first];
       if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == true) {
         if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
-          if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": Not enough calibration points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CM.first<<endl;
+          if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": Not enough calibration points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CM.first<<endl;
           continue;
         }
       } else {
-        if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
+        if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
         continue;
       }
     } else {
-      if (m_Verbosity >= c_Warning) mout<<m_XmlTag<<": No good calibration for the following strip found: "<<CM.first<<endl;
+      if (m_Verbosity >= c_Warning) cout<<m_XmlTag<<": No good calibration for the following strip found: "<<CM.first<<endl;
       continue;
     }
     
@@ -186,12 +186,12 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       m_Calibration[CM.first] = melinatorfit;
       
     } else {
-      if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Line parser: Unknown calibrator type ("<<CalibratorType<<") for strip"<<CM.first<<endl;
+      if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown calibrator type ("<<CalibratorType<<") for strip"<<CM.first<<endl;
       continue;
     }
   }
   
-  return true;
+  return MNCTModule::Initialize();
 }
 
 
@@ -208,7 +208,7 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event)
     
     TF1* Fit = m_Calibration[R];
     if (Fit == 0) {
-      if (m_Verbosity >= c_Error) mout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
+      if (m_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
       Event->SetEnergyCalibrationIncomplete(true);
     } else {
       double Energy = Fit->Eval(SH->GetADCUnits());
@@ -224,7 +224,7 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event)
         m_ExpoEnergyCalibration->AddEnergy(Energy);
       }
       
-      if (m_Verbosity >= c_Info) mout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
+      if (m_Verbosity >= c_Info) cout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     }
   } 
   
@@ -275,8 +275,6 @@ MXmlNode* MNCTModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   
   return Node;
 }
-
-
 
 
 // MNCTModuleEnergyCalibrationUniversal.cxx: the end...

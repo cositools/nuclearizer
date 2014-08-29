@@ -62,6 +62,11 @@ MNCTModuleMeasurementLoaderROA::MNCTModuleMeasurementLoaderROA() : MNCTModuleMea
   
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagMeasurementLoaderROA";
+  
+  // This is a special start module which can generate its own events
+  m_IsStartModule = true;
+  
+  m_NAllowedWorkerThreads = 1;
 }
 
 
@@ -97,7 +102,7 @@ bool MNCTModuleMeasurementLoaderROA::Initialize()
   
   m_IsOK = true;
   
-  return true;
+  return MNCTModule::Initialize();
 }
 
 
@@ -108,7 +113,7 @@ bool MNCTModuleMeasurementLoaderROA::AnalyzeEvent(MNCTEvent* Event)
 {
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
-  
+    
   if (ReadNextEvent(Event) == false) {
     cout<<"MNCTModuleMeasurementLoaderROA: No more events!"<<endl;
     m_IsOK = false;
@@ -125,6 +130,8 @@ bool MNCTModuleMeasurementLoaderROA::AnalyzeEvent(MNCTEvent* Event)
 void MNCTModuleMeasurementLoaderROA::Finalize()
 {
   // Initialize the module 
+  
+  MNCTModule::Finalize();
   
   cout<<"MNCTModuleMeasurementLoaderROA: "<<endl;
   cout<<"  * all events on file: "<<m_NEventsInFile<<endl;

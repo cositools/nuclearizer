@@ -18,9 +18,11 @@
 
 // Standard libs:
 #include <vector>
+#include <deque>
 using namespace std;
 
 // ROOT libs:
+#include "TMutex.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -30,6 +32,13 @@ using namespace std;
 #include "MXmlNode.h"
 
 // Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Global function to start the thread
+void* MNCTModuleKickstartThread(void* ClassDerivedFromMNCTModule);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,19 +116,49 @@ class MNCTModule
 
   //! Set the verbosity (0: Quiet, 1: Errors, 2: Warnings, 3: Info)
   void SetVerbosity(int Verbosity) { m_Verbosity = Verbosity; }
+
+  //! Use multi threading -- but it is only really used if the module allows it
+  void UseMultiThreading(bool UseMultiThreading = true) { m_UseMultiThreading = UseMultiThreading; }
+
+  //! Return true if this module is using multiple-treads
+  bool IsMultiThreaded() { return m_IsThreadRunning; }
+
+  //! Is this a start module which generates its own events
+  bool IsStartModule() const { return m_IsStartModule; }
   
-  //! Initialize the module --- has to be overwritten
+  //! Initialize the module
+  //! When overwritten, the base-class'es Initialize() has to be called *at the very end* of the 
+  //! Initilize() function of the derived class, since in multi-threaded mode it 
+  //! starts the thraeds
   virtual bool Initialize();
 
-  //! Finalize the module --- can be overwritten
-  virtual void Finalize() { return; }
-
-  //! Report anything what we want after analsis
-  virtual MString Report();
+  //! Finalize the module
+  //! When overwritten, the base-class'es Finalize() has to be called *at the very beginning* of the 
+  //! Finalize() function of the derived class, since in multi-threaded mode it 
+  //! ends the threads
+  virtual void Finalize();
 
   //! Main data analysis routine, which updates the event to a new level 
   //! Has to be overwritten in derived class
   virtual bool AnalyzeEvent(MNCTEvent* Event) = 0;
+
+  //! Add an event to the incoming event list - only used by the supervisor
+  virtual bool AddEvent(MNCTEvent* Event);
+  
+  //! Check if there are events in the incoming event list - only used by the supervisor
+  virtual bool HasAddedEvents();
+  
+  //! Check if there are events in the outgoing event list - only used by the supervisor
+  virtual bool HasAnalyzedEvents();
+
+  //! Check if there are events in the outgoing event list - only used by the supervisor
+  virtual MNCTEvent* GetAnalyzedEvent();
+
+  //! The analysis loop in multi-threaded mode
+  virtual void AnalysisLoop();
+  //! Analyze a single event in multi-threaded mode
+  //! Returns true if an event passed through all stages
+  bool DoSingleAnalysis();
 
   //! True if this module has an associated options GUI
   bool HasOptionsGUI() { return m_HasOptionsGUI; }
@@ -155,6 +194,7 @@ class MNCTModule
   //! Set which modules are expected to follow this one
   void AddSucceedingModuleType(int Type) { m_SucceedingModules.push_back(Type); };
 
+  
 
   // private methods:
  private:
@@ -174,7 +214,16 @@ class MNCTModule
   vector<int> m_SucceedingModules;
   //! List of types of this modules
   vector<int> m_Modules;
-
+  
+  //! The incoming event list
+  deque<MNCTEvent*> m_IncomingEvents;
+  //! A mutex protecting the incoming event list
+  TMutex m_IncomingEventsMutex;
+  //! The outgoing event list
+  deque<MNCTEvent*> m_OutgoingEvents; 
+  //! A mutex protecting the outgoing event list
+  TMutex m_OutgoingEventsMutex;
+  
   //! The Geometry description
   MDGeometryQuest* m_Geometry;
 
@@ -184,6 +233,10 @@ class MNCTModule
   //! A vector of associated expo GUIs
   vector<MGUIExpo*> m_Expos;
   
+  //! True if this is a start module which generates the events by itself, i.e. reads them from file
+  //! Usually the first module and only the first module is a start module
+  bool m_IsStartModule;
+  
   //! True, if the module is ready to analyze events
   bool m_IsReady;
   
@@ -192,7 +245,22 @@ class MNCTModule
   
   //! Interrupt whatever it is doing and break
   bool m_Interrupt;
+
+  //! Flag indicating if we should use mutlithreading if available
+  bool m_UseMultiThreading;
   
+  //! The number of allowed worker threads (0: main thread, 1: one worker thread)
+  //! The current maximum is one
+  unsigned int m_NAllowedWorkerThreads;
+  //! The number of active worker threads (currently the maximum is one)
+  unsigned int m_NActiveWorkerThreads;
+  
+  //! The thread where the analysis happens
+  TThread* m_Thread;     
+  //! True if the analysis thread is in its execution loop
+  bool m_IsThreadRunning;
+
+
   //! Chatty-ness of the module
   int m_Verbosity;
   

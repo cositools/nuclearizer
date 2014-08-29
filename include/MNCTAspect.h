@@ -30,6 +30,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! This class represents the measured and reconstructed aspect information
+//! at one snapshot in time
 class MNCTAspect
 {
   // public interface:
@@ -138,7 +140,7 @@ class MNCTAspect
   void StreamEvta(ostream& S);
 
   bool GetOutOfRange() const { return m_OutOfRange; }
-  bool SetOutOfRange(const bool X) { m_OutOfRange = X; } 
+  void SetOutOfRange(const bool X) { m_OutOfRange = X; } 
 
   // protected methods:
  protected:
