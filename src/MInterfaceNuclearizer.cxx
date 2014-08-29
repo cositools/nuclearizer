@@ -159,6 +159,7 @@ bool MInterfaceNuclearizer::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
     } else if (Option == "--verbosity" || Option == "-v") {
       m_Verbosity = atoi(argv[++i]);
+      g_Verbosity = m_Verbosity;
       cout<<"Command-line parser: Verbosity "<<m_Verbosity<<endl;
     } else if (Option == "--multithreading" || Option == "-m") {
       if (atoi(argv[++i]) != 0) m_UseMultiThreading = true;

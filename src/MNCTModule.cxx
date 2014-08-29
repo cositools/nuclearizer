@@ -183,6 +183,8 @@ MNCTEvent* MNCTModule::GetAnalyzedEvent()
 
 bool MNCTModule::Initialize()
 {
+  m_IsOK = true;
+  
   for (auto E: m_Expos) {
     E->Reset(); 
   }
@@ -229,6 +231,9 @@ void MNCTModule::AnalysisLoop()
 
 bool MNCTModule::DoSingleAnalysis()
 {
+  // First check if we are ready:
+  if (IsReady() == false) return false;
+  
   MNCTEvent* E = 0;
   // If this is a module which does not generate the events, grab one from the incoming list
   if (m_IsStartModule == false) { 

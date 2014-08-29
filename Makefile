@@ -96,8 +96,11 @@ $(LB)/MNCTModuleMeasurementLoaderROA.o \
 $(LB)/MNCTModuleMeasurementLoaderGRIPS2013.o \
 $(LB)/MNCTModuleMeasurementLoaderNCT2009.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
+$(LB)/MNCTBinaryFlightDataParser.o \
 $(LB)/MNCTModuleReceiverCOSI2014.o \
 $(LB)/MGUIOptionsReceiverCOSI2014.o \
+$(LB)/MNCTModuleMeasurementLoaderBinary.o \
+$(LB)/MGUIOptionsMeasurementLoaderBinary.o \
 $(LB)/MGUIExpoEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibrationUniversal.o \

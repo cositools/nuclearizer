@@ -29,22 +29,15 @@ using namespace std;
 
 // Nuclearizer libs
 #include "MNCTModule.h"
-#include "MNCTAspectReconstruction.h"
+#include "MNCTBinaryFlightDataParser.h"
 
 // Forward declarations:
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! The data modes: analyze raw events, Compton events, or all events
-enum class MNCTModuleReceiverCOSI2014DataModes : unsigned int { c_Raw = 0, c_Compton = 1, c_All = 2 };    
 
   
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleReceiverCOSI2014 : public MNCTModule
+class MNCTModuleReceiverCOSI2014 : public MNCTModule, public MNCTBinaryFlightDataParser
 {
   // public interface:
  public:
@@ -78,11 +71,6 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   int GetLocalReceivingPort() const { return m_LocalReceivingPort; }
   //! Set the port of the local receiving host computer
   void SetLocalReceivingPort(int LocalReceivingPort) { m_LocalReceivingPort = LocalReceivingPort; }
- 
-  //! Get the data selection mode
-  MNCTModuleReceiverCOSI2014DataModes GetDataSelectionMode() const { return m_DataSelectionMode; }
-  //! Set the data selection mode
-  void SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes Mode) { m_DataSelectionMode = Mode; } 
  
   //! Get the file name
   MString GetRoaFileName() const { return m_RoaFileName; }
@@ -118,9 +106,6 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
 
   // private methods:
  private:
-  void LoadStripMap(void);
-  void LoadCCMap(void);
-
 
 
   // protected members:
@@ -141,144 +126,15 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule
   //! Port to send the data to
   int m_LocalReceivingPort;
 
-  //! The data selection mode (raw, Compton, all)
-  MNCTModuleReceiverCOSI2014DataModes m_DataSelectionMode;
-
   //! ROA save file name
   MString m_RoaFileName;
   
   //! The transceiver
   MTransceiverTcpIpBinary* m_Receiver;
-  
-  //! The aspect reconstructor
-  MNCTAspectReconstruction* m_AspectReconstructor;
    
-  //! Output stream for dat file
+  //! Output stream for roa file
   ofstream m_Out;
 
-  //! The internal event list
-  deque<MNCTEvent*> m_Events;//final, merged events
-  deque<MNCTEvent*> m_EventsBuf;//sorted, unmerged events
-
-  //! If true ignore aspect information if not ready
-  bool m_IgnoreAspect;
-  
-  //added by AWL
-  bool m_UseComptonDataframes;
-  bool m_UseRawDataframes;
-  uint32_t m_NumRawDataframes;
-  uint32_t m_NumComptonDataframes;
-  uint32_t m_NumAspectPackets;
-  uint32_t m_NumOtherPackets;
-  int MAX_TRIGS;
-  unsigned long long m_EventTimeWindow;
-  vector<uint64_t> LastTimestamps;
-  uint64_t m_ComptonWindow;
-  vector<uint8_t> m_SBuf;//search buffer for the incoming TCP data stream
-  int dx; //index into search buffer
-  unsigned int m_EventIDCounter;
-  string m_LastDateTimeString;
-  uint64_t m_LastCorrectedClk;
-  bool m_UseGPSDSO;
-  bool m_UseMagnetometer;
-  double m_LastLatitude;
-  double m_LastLongitude;
-  double m_LastAltitude;
-  MNCTAspectPacket m_LastDSOPacket;
-  uint32_t m_NumDSOReceived;
-  uint64_t LastComptonTimestamp;
-  uint32_t m_NumComptonBytes;
-  uint32_t m_NumRawDataBytes;
-  uint32_t m_NumBytesReceived;
-  uint32_t m_LostBytes;
-	
-
-
-  int m_StripMap[8][10];
-  int m_CCMap[12];
-
-  class trigger{
-
-	  public:
-		  uint8_t Board;
-		  int8_t Channel;
-		  bool HasTiming;
-		  bool HasADC;
-		  uint16_t ADCBytes;
-		  uint8_t TimingByte;
-		  int CCId;
-
-  };
-
-  class event{
-
-	  public:
-		  uint64_t EventTime; 
-		  uint8_t ErrorBoardList;
-		  uint8_t ErrorInfo;
-		  uint8_t EventID;
-		  uint8_t TrigAndVetoInfo;
-		  uint8_t FTPattern;
-		  uint8_t LTPattern;
-		  bool ParseError;
-		  uint8_t CCId; 
-		  uint8_t InternalCompton; 
-		  uint8_t Touchable; 
-
-		  uint32_t NumTriggers;
-		  vector<trigger> Triggers;
-
-
-		  //below is stuff that only applies to compton events
-		  uint8_t NumCCsInvolved;
-		  uint8_t TDiff;
-
-  };
-
-  class dataframe {
-
-	  public:
-		  uint16_t PacketCounter;
-		  uint32_t UnixTime;
-		  int Length;
-		  uint8_t PacketType;
-		  uint8_t CCId;
-		  string RawOrCompton; //0 if this struct came from a raw data frame, or 1 if from compton
-		  uint32_t ReportedNumEvents;
-		  uint64_t SysTime;
-		  uint32_t LifetimeBits;
-		  uint8_t NumNormal;
-		  uint8_t NumLLD;
-		  uint8_t NumTOnly;
-		  uint8_t NumNoData;
-		  bool HasSysErr;
-
-		  uint32_t NumEvents; //the number of events which is <= 41
-		  vector<event> Events;
-
-		  bool ParseError;
-
-  };
-
-  
- public:
-  int RawDataframe2Struct( vector<uint8_t> Buf, dataframe * DataOut);
-  bool ComptonDataframe2Struct( vector<uint8_t>& Buf, dataframe * DataOut); 
-  bool ConvertToMNCTEvents( dataframe * DataIn, vector<MNCTEvent*> * CEvents);
-  bool SortEventsBuf(void);
-  bool FlushEventsBuf(void);
-  bool CheckEventsBuf(void);
-  MNCTEvent * MergeEvents( deque<MNCTEvent*> * EventList );
-  bool FindNextPacket( vector<uint8_t> & NextPacket, int * idx = NULL );
-  bool ResyncSBuf(void);
-  bool ProcessAspect( vector<uint8_t> & NextPacket );
-  bool ProcessAspect_works( vector<uint8_t> & NextPacket );
-  bool DecodeDSO( vector<uint8_t> & DSOString, MNCTAspectPacket & DSO_Packet);
-  bool DecodeMag( vector<uint8_t> & MagString, MNCTAspectPacket & Mag_Packet);
-
-
-
-  
   
 #ifdef ___CINT___
  public:

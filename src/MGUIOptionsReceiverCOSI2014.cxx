@@ -163,11 +163,11 @@ bool MGUIOptionsReceiverCOSI2014::OnApply()
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingPort(m_SendToPort->GetAsInt());
 
   if (m_DataMode->GetSelected() == 0) {
-    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes::c_Raw);     
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);     
   } else if (m_DataMode->GetSelected() == 1) {
-    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes::c_Compton);     
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Compton);     
   } else if (m_DataMode->GetSelected() == 2) {
-    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTModuleReceiverCOSI2014DataModes::c_All);     
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_All);     
   }
   
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetRoaFileName(m_FileSelector->GetFileName());  
