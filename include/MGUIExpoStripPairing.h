@@ -60,8 +60,8 @@ class MGUIExpoStripPairing : public MGUIExpo
   //! Reset the data in the UI
   virtual void Reset();
 
-  //! Print the data in the UI
-  virtual void Print(const MString& FileName);
+  //! Export the data in the UI
+  virtual void Export(const MString& FileName);
 
   //! Set the energy histogram parameters 
   void SetEnergiesHistogramParameters(int NBins, double Min, double Max);

@@ -155,7 +155,7 @@ void MGUIExpoStripPairing::Update()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoStripPairing::Print(const MString& FileName)
+void MGUIExpoStripPairing::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 

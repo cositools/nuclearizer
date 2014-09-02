@@ -109,7 +109,7 @@ void MGUIExpoEnergyCalibration::AddEnergy(double Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoEnergyCalibration::Print(const MString& FileName)
+void MGUIExpoEnergyCalibration::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 

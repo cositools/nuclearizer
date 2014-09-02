@@ -75,15 +75,11 @@ $(LB)/MNCTStripEnergyDepth.o \
 $(LB)/MNCTStripHit.o \
 $(LB)/MNCTDetectorResponse.o \
 $(LB)/MNCTGuardringHit.o \
-$(LB)/MNCTFile.o \
-$(LB)/MNCTFileEventsDat.o \
-$(LB)/MNCTEventBuffer.o \
 $(LB)/MNCTModuleSimulationLoader.o \
 $(LB)/MGUIOptionsSimulationLoader.o \
 $(LB)/MNCTModuleMeasurementLoader.o \
 $(LB)/MNCTModuleMeasurementLoaderROA.o \
 $(LB)/MNCTModuleMeasurementLoaderGRIPS2013.o \
-$(LB)/MNCTModuleMeasurementLoaderNCT2009.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
 $(LB)/MNCTBinaryFlightDataParser.o \
 $(LB)/MNCTModuleReceiverCOSI2014.o \
@@ -117,7 +113,6 @@ $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MNCTModuleEventSaver.o \
 $(LB)/MGUIOptionsAspect.o \
 $(LB)/MGUIOptionsEventFilter.o \
-$(LB)/MNCTPreprocessor.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
 
@@ -140,11 +135,12 @@ ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectr
 ALLLIBS += -lMathCore
 
 #----------------------------------------------------------------
-# Built-in targets$(PYTHONLIBS)
+# Built-in targets
 #
 
 .EXPORT_ALL_VARIABLES: all header sources doc clean
 .Phony:                all header sources doc clean
+.NOTPARALLEL:          megalib
 
 
 #----------------------------------------------------------------
@@ -152,25 +148,26 @@ ALLLIBS += -lMathCore
 #
 
 # Compile all libraries and programs
-all: $(ALLPROGRAMS)
+all: megalib $(ALLPROGRAMS)
 
 # Compile all libraries and programs
-n: $(ALLPROGRAMS)
+n: megalib $(ALLPROGRAMS)
 	@$(NUCLEARIZERPRG) $(CMD)
 	@$(NUCLEARIZERPRG) $(CMD)
 
-nuclearizer: $(ALLPROGRAMS)
+nuclearizer: megalib $(ALLPROGRAMS)
 	@$(NUCLEARIZERPRG) $(CMD)
+
+megalib:
+	@$(MAKE) fretalon -C $(MEGALIB)
 
 # Clean-up
 clean:
+	@$(MAKE) clean_fre -C $(MEGALIB)/src
 	@-rm -f $(NUCLEARIZERO) $(DEEO) $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIB)
 	@-rm -f $(NUCLEARIZERPRG) $(DEEPRG)
 	@-rm -f *~ include/*~ src/*~
 
-clean_framework:
-	@$(MAKE) clean_fre -C $(MEGALIB)/src
-	
 #----------------------------------------------------------------
 # Explicit rules & dependencies:
 #
@@ -199,6 +196,3 @@ $(DEEPRG): $(NUCLEARIZERSHAREDLIB) $(DEECXX)
 
 #
 #----------------------------------------------------------------
-
-
-

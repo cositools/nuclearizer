@@ -222,7 +222,7 @@ void MGUIExpoDepthCalibration::Update()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration::Print(const MString& FileName)
+void MGUIExpoDepthCalibration::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 

@@ -51,16 +51,13 @@ using namespace std;
 
 // Nuclearizer libs:
 #include "MGUIMainNuclearizer.h"
-#include "MNCTFile.h"
 #include "MReadOutAssembly.h"
 #include "MModule.h"
-#include "MNCTPreprocessor.h"
-#include "MNCTFileEventsDat.h"
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
 
 #include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTModuleMeasurementLoaderNCT2009.h"
+//#include "MNCTModuleMeasurementLoaderNCT2009.h"
 #include "MNCTModuleMeasurementLoaderGRIPS2013.h"
 #include "MNCTModuleReceiverCOSI2014.h"
 #include "MNCTModuleMeasurementLoaderBinary.h"
@@ -111,7 +108,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
   m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderROA());
   m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderGRIPS2013());
-  m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderNCT2009());
+  //m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderNCT2009());
   m_Supervisor->AddAvailableModule(new MNCTModuleReceiverCOSI2014());
   m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderBinary());
   
