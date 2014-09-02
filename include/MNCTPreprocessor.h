@@ -25,7 +25,8 @@
 #include "MGlobal.h"
 
 #include "MNCTFile.h"
-#include "MNCTEvent.h"
+#include "MReadOutAssembly.h"
+#include "MNCTEventBuffer.h"
 
 // Forward declarations:
 
@@ -46,10 +47,10 @@ class MNCTPreprocessor
   bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  MNCTEvent* GetNextEvent();
+  MReadOutAssembly* GetNextEvent();
 
   // Updates event statistics with given event
-  void UpdateEventStatistics(MNCTEvent* Event);
+  void UpdateEventStatistics(MReadOutAssembly* Event);
 
   // Prints a summary of all event statistics
   string EventStatisticsString();
@@ -69,7 +70,7 @@ class MNCTPreprocessor
   // private methods:
  private:
   // break apart event into events by detector
-  vector<MNCTEvent*> EventByDetectors(MNCTEvent* Event);
+  vector<MReadOutAssembly*> EventByDetectors(MReadOutAssembly* Event);
 
   // protected members:
  protected:

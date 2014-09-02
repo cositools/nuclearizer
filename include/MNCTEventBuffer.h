@@ -19,7 +19,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MNCTEvent.h"
+#include "MReadOutAssembly.h"
 
 // Standard libs
 #include <deque>
@@ -41,10 +41,10 @@ class MNCTEventBuffer
   void clear() { m_EventBuffer.clear(); }
   unsigned long size() { return (unsigned long) m_EventBuffer.size(); }
   bool empty() { return m_EventBuffer.empty(); }
-  void push_back(MNCTEvent *Event) { m_EventBuffer.push_back(Event); }
+  void push_back(MReadOutAssembly *Event) { m_EventBuffer.push_back(Event); }
   void pop_front() { m_EventBuffer.pop_front(); }
-  MNCTEvent* front() { return m_EventBuffer.front(); }
-  MNCTEvent* back() { return m_EventBuffer.back(); }
+  MReadOutAssembly* front() { return m_EventBuffer.front(); }
+  MReadOutAssembly* back() { return m_EventBuffer.back(); }
 
   // Get/set coincidence tolerance in clock ticks (1 tick = 100 ns)
   void SetCoincidenceTolerance(double ct) { m_CoincidenceTolerance=ct; }
@@ -54,7 +54,7 @@ class MNCTEventBuffer
   //  (also includes options to skip the first event, and to set a limit to the
   //   number of coincidences found)
   //  Returns number of coincidences found.
-  int AddCoincidentEvents(MNCTEvent* Event, bool SkipFirst=false, int NLimit=-1);
+  int AddCoincidentEvents(MReadOutAssembly* Event, bool SkipFirst=false, int NLimit=-1);
 
   // protected methods:
  protected:
@@ -68,11 +68,11 @@ class MNCTEventBuffer
   // private members:
  private:
   // Event buffer
-  deque<MNCTEvent*> m_EventBuffer;
+  deque<MReadOutAssembly*> m_EventBuffer;
   // Tolerance (in clock ticks, one tick is 100 ns) of coincidence matching
   double m_CoincidenceTolerance;
   // internal iterator
-  deque<MNCTEvent*>::iterator Event_i;
+  deque<MReadOutAssembly*>::iterator Event_i;
  
 #ifdef ___CINT___
  public:

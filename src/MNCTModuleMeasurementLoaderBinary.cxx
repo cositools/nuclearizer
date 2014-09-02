@@ -38,7 +38,6 @@ using namespace std;
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MGUIOptionsMeasurementLoaderBinary.h"
 
 
@@ -53,7 +52,7 @@ ClassImp(MNCTModuleMeasurementLoaderBinary)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MNCTModule(), MNCTBinaryFlightDataParser()
+MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule(), MNCTBinaryFlightDataParser()
 {
   // Construct an instance of MNCTModuleMeasurementLoaderBinary
 
@@ -61,13 +60,13 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MNCTMod
   // None
   
   // Set all types this modules handles
-  AddModuleType(c_EventLoader);
-  AddModuleType(c_EventLoaderMeasurement);
-  AddModuleType(c_EventOrdering);
-  AddModuleType(c_Aspect);
+  AddModuleType(MAssembly::c_EventLoader);
+  AddModuleType(MAssembly::c_EventLoaderMeasurement);
+  AddModuleType(MAssembly::c_EventOrdering);
+  AddModuleType(MAssembly::c_Aspect);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set the module name --- has to be unique
   m_Name = "Data packet loader, sorter, and aspect reconstructor for COSI 2014";
@@ -110,7 +109,7 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
   
   if (MNCTBinaryFlightDataParser::Initialize() == false) return false;
   
-  return MNCTModule::Initialize();
+  return MModule::Initialize();
 }
 
 
@@ -150,10 +149,10 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
-  MNCTEvent * NewEvent;
+  MReadOutAssembly * NewEvent;
   
   if (m_Events.size() == 0) {
     cout<<"ERROR in MNCTModuleMeasurementLoaderBinary::AnalyzeEvent: No events"<<endl;
@@ -199,7 +198,7 @@ void MNCTModuleMeasurementLoaderBinary::Finalize()
 {
   // Close the tranceiver 
 
-  MNCTModule::Finalize();
+  MModule::Finalize();
   MNCTBinaryFlightDataParser::Finalize();
   
   m_In.close();

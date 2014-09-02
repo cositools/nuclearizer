@@ -26,7 +26,7 @@ using namespace std;
 #include "MDGeometryQuest.h"
 #include "MFileEventsSim.h"
 #include "MNCTFileEventsDat.h"
-#include "MNCTEvent.h"
+#include "MReadOutAssembly.h"
 
 // Forward declarations:
 
@@ -52,10 +52,10 @@ class MNCTFile : public MFileEvents
   bool IsReadSim(){return m_ReadSimFile;}
 
   //! Return the next event or zero is ther isn't any  
-  MNCTEvent* GetNextEvent();
+  MReadOutAssembly* GetNextEvent();
 
   //! Write an event
-  bool Write(MNCTEvent* Event, int AnalysisLevel);
+  bool Write(MReadOutAssembly* Event, int AnalysisLevel);
 
   //! Returns true if the progress dialog is shown
   bool IsShowProgress();

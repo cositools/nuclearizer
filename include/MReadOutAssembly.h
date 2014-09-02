@@ -1,5 +1,5 @@
 /*
- * MNCTEvent.h
+ * MReadOutAssembly.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MNCTEvent__
-#define __MNCTEvent__
+#ifndef __MReadOutAssembly__
+#define __MReadOutAssembly__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -34,14 +34,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTEvent
+class MReadOutAssembly
 {
   // public interface:
  public:
   //! Default constructor
-  MNCTEvent();
+  MReadOutAssembly();
   //! Default destructor
-  virtual ~MNCTEvent();
+  virtual ~MReadOutAssembly();
 
   //! Reset all data
   void Clear();
@@ -237,8 +237,8 @@ class MNCTEvent
 
   // protected methods:
  protected:
-  //MNCTEvent() {};
-  //MNCTEvent(const MNCTEvent& NCTEvent) {};
+  //MReadOutAssembly() {};
+  //MReadOutAssembly(const MReadOutAssembly& ReadOutAssembly) {};
 
   // private methods:
  private:
@@ -318,7 +318,7 @@ class MNCTEvent
   
 #ifdef ___CINT___
  public:
-  ClassDef(MNCTEvent, 0) // no description
+  ClassDef(MReadOutAssembly, 0) // no description
 #endif
 
 };

@@ -37,7 +37,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MGUIOptionsEventFilter.h"
 
 
@@ -52,7 +51,7 @@ ClassImp(MNCTModuleEventFilter)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleEventFilter::MNCTModuleEventFilter() : MNCTModule()
+MNCTModuleEventFilter::MNCTModuleEventFilter() : MModule()
 {
   // Construct an instance of MNCTModuleTemplate
 
@@ -65,34 +64,12 @@ MNCTModuleEventFilter::MNCTModuleEventFilter() : MNCTModule()
   m_XmlTag = "XmlTagEventFilter";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
-  //  AddPreceedingModuleType(c_DetectorEffectsEngine);
-//  AddPreceedingModuleType(c_EnergyCalibration);
-//  AddPreceedingModuleType(c_ChargeSharingCorrection);
-//  AddPreceedingModuleType(c_DepthCorrection);
-//  AddPreceedingModuleType(c_StripPairing);
-//  AddPreceedingModuleType(c_EventReconstruction);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
 
   // Set all types this modules handles
-//  AddModuleType(c_DetectorEffectsEngine);
-//  AddModuleType(c_EnergyCalibration);
-//  AddModuleType(c_ChargeSharingCorrection);
-//  AddModuleType(c_DepthCorrection);
-//  AddModuleType(c_StripPairing);
-  AddModuleType(c_EventFilter);
-//  AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_EventFilter);
 
   // Set all modules, which can follow this module
-//  AddSucceedingModuleType(c_DetectorEffectsEngine);
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_CrosstalkCorrection);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventSaver);
-  AddSucceedingModuleType(c_EventReconstruction);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
@@ -166,7 +143,7 @@ MString MNCTModuleEventFilter::Report()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleEventFilter::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level
 

@@ -29,7 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MNCTModuleReceiverCOSI2014.h"
 
 
@@ -44,7 +44,7 @@ ClassImp(MGUIOptionsReceiverCOSI2014)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsReceiverCOSI2014::MGUIOptionsReceiverCOSI2014(MNCTModule* Module) 
+MGUIOptionsReceiverCOSI2014::MGUIOptionsReceiverCOSI2014(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor

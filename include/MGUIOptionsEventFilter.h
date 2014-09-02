@@ -32,7 +32,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIERBList.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MGUIOptions.h"
 
 // Forward declarations:
@@ -46,7 +46,7 @@ class MGUIOptionsEventFilter : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsEventFilter(MNCTModule* Module);
+  MGUIOptionsEventFilter(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsEventFilter();
 

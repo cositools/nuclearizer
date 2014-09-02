@@ -29,7 +29,6 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModule.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 
 
@@ -44,7 +43,7 @@ ClassImp(MGUIOptionsEnergyCalibrationUniversal)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsEnergyCalibrationUniversal::MGUIOptionsEnergyCalibrationUniversal(MNCTModule* Module) 
+MGUIOptionsEnergyCalibrationUniversal::MGUIOptionsEnergyCalibrationUniversal(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor

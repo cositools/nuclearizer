@@ -23,7 +23,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MNCTTimeAndCoordinate.h"
 
 // Forward declarations:
@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleAspect : public MNCTModule
+class MNCTModuleAspect : public MModule
 {
   // public interface:
  public:
@@ -45,7 +45,7 @@ class MNCTModuleAspect : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //!
   virtual MString Report();
@@ -98,22 +98,22 @@ class MNCTModuleAspect : public MNCTModule
 			       vector<int>* GCUIndexList,
 			       vector< vector<double> >* GCUTimeTable);
   // Calculate indices into the aspect files surrounding the event's position
-  vector<int> AspectTableIndices(MNCTEvent* E,
+  vector<int> AspectTableIndices(MReadOutAssembly* E,
 				 vector< vector<double> >* AspectTable,
 				 vector<int>* GCUIndexList,
 				 vector< vector<double> >* GCUTimeTable);
   // calculate aspect information interpolated from aspect files
-  vector<double> InterpolatedAspectData(MNCTEvent* E);
+  vector<double> InterpolatedAspectData(MReadOutAssembly* E);
 
   //!
   //int FindRow(double time);
   //double TimeCorrection(double TI, double CL);
   
   // !
-  bool FindSegment(MNCTEvent* E);
-  double CorrectedUnixTime(MNCTEvent* E);
+  bool FindSegment(MReadOutAssembly* E);
+  double CorrectedUnixTime(MReadOutAssembly* E);
   // use both time corrections to calculate GPS (Universal) Time (in Unix Epoch)
-  double GPSTime(MNCTEvent* E);
+  double GPSTime(MReadOutAssembly* E);
   
   // private methods:
  private:

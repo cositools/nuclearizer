@@ -47,7 +47,7 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   // public Session:
  public:
   //! Default constructor
-  MGUIExpoDepthCalibration(MNCTModule* Module);
+  MGUIExpoDepthCalibration(MModule* Module);
   //! Default destructor
   virtual ~MGUIExpoDepthCalibration();
 

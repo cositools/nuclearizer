@@ -22,7 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 
 // Forward declarations:
 
@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleDepthCalibrationLinearStrip : public MNCTModule
+class MNCTModuleDepthCalibrationLinearStrip : public MModule
 {
   // public interface:
  public:
@@ -43,7 +43,7 @@ class MNCTModuleDepthCalibrationLinearStrip : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

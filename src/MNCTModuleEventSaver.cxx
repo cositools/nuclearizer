@@ -31,7 +31,6 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MGUIOptionsEventSaver.h"
 
 
@@ -46,7 +45,7 @@ ClassImp(MNCTModuleEventSaver)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleEventSaver::MNCTModuleEventSaver() : MNCTModule()
+MNCTModuleEventSaver::MNCTModuleEventSaver() : MModule()
 {
   // Construct an instance of MNCTModuleTemplate
 
@@ -59,13 +58,13 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MNCTModule()
   m_XmlTag = "XmlTagEventSaver";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
   
   // Set all types this modules handles
-  AddModuleType(c_EventSaver);
+  AddModuleType(MAssembly::c_EventSaver);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
@@ -116,7 +115,7 @@ bool MNCTModuleEventSaver::Initialize()
     return false;
   }
 
-  return MNCTModule::Initialize();
+  return MModule::Initialize();
 }
 
 
@@ -127,6 +126,8 @@ void MNCTModuleEventSaver::Finalize()
 {
   // Initialize the module 
 
+  MModule::Finalize();
+  
   m_Out<<"EN"<<endl;
   m_Out.close();
   
@@ -137,7 +138,7 @@ void MNCTModuleEventSaver::Finalize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleEventSaver::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Write the event to disk
  

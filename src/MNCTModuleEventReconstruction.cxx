@@ -145,7 +145,7 @@ bool MNCTModuleEventReconstruction::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleEventReconstruction::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEventReconstruction::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 

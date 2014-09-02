@@ -26,7 +26,7 @@
 #include "MReadOutElementDoubleStrip.h"
 
 // Neclearizer libe:
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MCalibratorEnergy.h"
 #include "MGUIExpoEnergyCalibration.h"
 
@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 //! A universal energy calibrator
-class MNCTModuleEnergyCalibrationUniversal : public MNCTModule
+class MNCTModuleEnergyCalibrationUniversal : public MModule
 {
   // public interface:
  public:
@@ -54,7 +54,7 @@ class MNCTModuleEnergyCalibrationUniversal : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

@@ -51,7 +51,7 @@ class MNCTModuleMeasurementLoaderGRIPS2013 : public MNCTModuleMeasurementLoader
   virtual void Finalize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Read the configuration data from an XML node
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
@@ -62,7 +62,7 @@ class MNCTModuleMeasurementLoaderGRIPS2013 : public MNCTModuleMeasurementLoader
   // protected methods:
  protected:
   //! Reads one event from file - return zero in case of no more events present or an Error occured
-  bool ReadNextEvent(MNCTEvent* Event);
+  bool ReadNextEvent(MReadOutAssembly* Event);
 
   // private methods:
  private:

@@ -28,7 +28,7 @@ using namespace std;
 #include "MTransceiverTcpIpBinary.h"
 
 // Nuclearizer libs
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MNCTBinaryFlightDataParser.h"
 
 // Forward declarations:
@@ -37,7 +37,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleReceiverCOSI2014 : public MNCTModule, public MNCTBinaryFlightDataParser
+class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataParser
 {
   // public interface:
  public:
@@ -87,7 +87,7 @@ class MNCTModuleReceiverCOSI2014 : public MNCTModule, public MNCTBinaryFlightDat
   virtual void Finalize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

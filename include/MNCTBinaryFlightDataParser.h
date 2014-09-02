@@ -29,7 +29,7 @@ using namespace std;
 
 // Nuclearizer libs
 #include "MNCTAspectReconstruction.h"
-#include "MNCTEvent.h"
+#include "MReadOutAssembly.h"
 
 // Forward declarations:
 
@@ -84,7 +84,7 @@ class MNCTBinaryFlightDataParser
   MNCTBinaryFlightDataParserDataModes m_DataSelectionMode;
 
   //! The internal event list - final merged events
-  deque<MNCTEvent*> m_Events;
+  deque<MReadOutAssembly*> m_Events;
 
   //! If true ignore aspect information if not ready
   bool m_IgnoreAspect;
@@ -97,7 +97,7 @@ class MNCTBinaryFlightDataParser
   //! The aspect reconstructor
   MNCTAspectReconstruction* m_AspectReconstructor;
 
-  deque<MNCTEvent*> m_EventsBuf;//sorted, unmerged events
+  deque<MReadOutAssembly*> m_EventsBuf;//sorted, unmerged events
   
   //added by AWL
   bool m_UseComptonDataframes;
@@ -200,11 +200,11 @@ class MNCTBinaryFlightDataParser
  public:
   int RawDataframe2Struct( vector<uint8_t> Buf, dataframe * DataOut);
   bool ComptonDataframe2Struct( vector<uint8_t>& Buf, dataframe * DataOut); 
-  bool ConvertToMNCTEvents( dataframe * DataIn, vector<MNCTEvent*> * CEvents);
+  bool ConvertToMReadOutAssemblys( dataframe * DataIn, vector<MReadOutAssembly*> * CEvents);
   bool SortEventsBuf(void);
   bool FlushEventsBuf(void);
   bool CheckEventsBuf(void);
-  MNCTEvent * MergeEvents( deque<MNCTEvent*> * EventList );
+  MReadOutAssembly * MergeEvents( deque<MReadOutAssembly*> * EventList );
   bool FindNextPacket( vector<uint8_t> & NextPacket, int * idx = NULL );
   bool ResyncSBuf(void);
   bool ProcessAspect( vector<uint8_t> & NextPacket );

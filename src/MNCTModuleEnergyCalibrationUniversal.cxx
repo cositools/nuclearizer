@@ -41,7 +41,6 @@ using namespace std;
 #include "MStreams.h"
 
 // Nuclearizer libs:
-#include "MNCTModule.h"
 #include "MReadOutElement.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MCalibratorEnergyPointwiseLinear.h"
@@ -60,7 +59,7 @@ ClassImp(MNCTModuleEnergyCalibrationUniversal)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : MNCTModule()
+MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : MModule()
 {
   // Construct an instance of MNCTModuleEnergyCalibrationUniversal
   
@@ -73,13 +72,13 @@ MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : M
   m_XmlTag = "EnergyCalibrationUniversal";
   
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
   
   // Set all types this modules handles
-  AddModuleType(c_EnergyCalibration);
+  AddModuleType(MAssembly::c_EnergyCalibration);
   
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
@@ -191,14 +190,14 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     }
   }
   
-  return MNCTModule::Initialize();
+  return MModule::Initialize();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level, i.e. takes the raw ADC value from the .roa file loaded through nuclearizer and converts it into energy units.
   

@@ -1,5 +1,5 @@
 /*
- * MNCTEvent.cxx
+ * MReadOutAssembly.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MNCTEvent
+// MReadOutAssembly
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MNCTEvent.h"
+#include "MReadOutAssembly.h"
 
 // Standard libs:
 #include <iomanip>
@@ -39,29 +39,29 @@ using namespace std;
 
 
 #ifdef ___CINT___
-ClassImp(MNCTEvent)
+ClassImp(MReadOutAssembly)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent::MNCTEvent()
+MReadOutAssembly::MReadOutAssembly()
 {
-  // Construct an instance of MNCTEvent
+  // Construct an instance of MReadOutAssembly
 
   m_PhysicalEvent = 0; // Set pointer to zero before delete
   m_Aspect = 0;
   
   Clear();
-//  mout<<"create MNCTEvent!!\n" ;//debug
+//  mout<<"create MReadOutAssembly!!\n" ;//debug
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent::~MNCTEvent()
+MReadOutAssembly::~MReadOutAssembly()
 {
   // Delete all strip hits
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
@@ -88,18 +88,18 @@ MNCTEvent::~MNCTEvent()
   }
   m_GuardringHits.clear();
 
-  // Delete this instance of MNCTEvent
+  // Delete this instance of MReadOutAssembly
   delete m_PhysicalEvent;
   
   delete m_Aspect;
-//  mout<<"delete MNCTEvent!!\n" ;//debug
+//  mout<<"delete MReadOutAssembly!!\n" ;//debug
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNCTEvent::Clear()
+void MReadOutAssembly::Clear()
 {
   //! Reset all data
 
@@ -161,7 +161,7 @@ void MNCTEvent::Clear()
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void MNCTEvent::DeleteHits()
+void MReadOutAssembly::DeleteHits()
 {
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     delete m_Hits[h];
@@ -172,7 +172,7 @@ void MNCTEvent::DeleteHits()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MNCTEvent::InDetector(int DetectorID)
+bool MReadOutAssembly::InDetector(int DetectorID)
 {
   //! Find out if the event contains strip hits in a given detector
   if ( (DetectorID>=0) && (DetectorID<=11) )
@@ -189,7 +189,7 @@ bool MNCTEvent::InDetector(int DetectorID)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNCTEvent::SetPhysicalEvent(MPhysicalEvent* Event)
+void MReadOutAssembly::SetPhysicalEvent(MPhysicalEvent* Event)
 {
   //! Set the physical event from event reconstruction
   // We make our own local copy here
@@ -201,7 +201,7 @@ void MNCTEvent::SetPhysicalEvent(MPhysicalEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTStripHit* MNCTEvent::GetStripHit(unsigned int i) 
+MNCTStripHit* MReadOutAssembly::GetStripHit(unsigned int i) 
 { 
   //! Return strip hit i
 
@@ -216,7 +216,7 @@ MNCTStripHit* MNCTEvent::GetStripHit(unsigned int i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MNCTEvent::AddStripHit(MNCTStripHit* StripHit)
+void MReadOutAssembly::AddStripHit(MNCTStripHit* StripHit)
 {
   //! Add a strip hit
   int DetectorID = StripHit->GetDetectorID();
@@ -231,7 +231,7 @@ void MNCTEvent::AddStripHit(MNCTStripHit* StripHit)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNCTEvent::RemoveStripHit(unsigned int i)
+void MReadOutAssembly::RemoveStripHit(unsigned int i)
 {
   //! Remove a strip hit
   if (i < m_StripHits.size()) {
@@ -245,7 +245,7 @@ void MNCTEvent::RemoveStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTHit* MNCTEvent::GetHit(unsigned int i) 
+MNCTHit* MReadOutAssembly::GetHit(unsigned int i) 
 { 
   //! Return hit i
   
@@ -262,7 +262,7 @@ MNCTHit* MNCTEvent::GetHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTHit* MNCTEvent::GetHitSim(unsigned int i) 
+MNCTHit* MReadOutAssembly::GetHitSim(unsigned int i) 
 { 
   //! Return hit i
   
@@ -279,7 +279,7 @@ MNCTHit* MNCTEvent::GetHitSim(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTEvent::Parse(MString& Line, int Version)
+bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
   //! Stream the content from a line of an ASCII file  
 
@@ -323,7 +323,7 @@ bool MNCTEvent::Parse(MString& Line, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTEvent::StreamDat(ostream& S, int Version)
+bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
 
@@ -362,7 +362,7 @@ bool MNCTEvent::StreamDat(ostream& S, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNCTEvent::StreamEvta(ostream& S)
+void MReadOutAssembly::StreamEvta(ostream& S)
 {
   //! Stream the content in MEGAlib's evta format 
 
@@ -395,7 +395,7 @@ void MNCTEvent::StreamEvta(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNCTEvent::StreamRoa(ostream& S)
+void MReadOutAssembly::StreamRoa(ostream& S)
 {
   //! Stream the content in MEGAlib's evta format 
 
@@ -416,7 +416,7 @@ void MNCTEvent::StreamRoa(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTEvent::IsGood() const
+bool MReadOutAssembly::IsGood() const
 {
   //! Returns true if none of the "bad" or "incomplete" falgs has been set
 
@@ -428,5 +428,5 @@ bool MNCTEvent::IsGood() const
 }
   
 
-// MNCTEvent.cxx: the end...
+// MReadOutAssembly.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

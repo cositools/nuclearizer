@@ -38,7 +38,6 @@ using namespace std;
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MGUIOptionsReceiverCOSI2014.h"
 
 
@@ -53,7 +52,7 @@ ClassImp(MNCTModuleReceiverCOSI2014)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule(), MNCTBinaryFlightDataParser()
+MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinaryFlightDataParser()
 {
   // Construct an instance of MNCTModuleReceiverCOSI2014
 
@@ -61,13 +60,13 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MNCTModule(), MNCTBin
   // None
   
   // Set all types this modules handles
-  AddModuleType(c_EventLoader);
-  AddModuleType(c_EventLoaderMeasurement);
-  AddModuleType(c_EventOrdering);
-  AddModuleType(c_Aspect);
+  AddModuleType(MAssembly::c_EventLoader);
+  AddModuleType(MAssembly::c_EventLoaderMeasurement);
+  AddModuleType(MAssembly::c_EventOrdering);
+  AddModuleType(MAssembly::c_Aspect);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set the module name --- has to be unique
   m_Name = "Data packet receiver, sorter, and aspect reconstructor for COSI 2014";
@@ -261,7 +260,7 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
   
   if (MNCTBinaryFlightDataParser::Initialize() == false) return false;
   
-  return MNCTModule::Initialize();
+  return MModule::Initialize();
 }
 
 
@@ -291,10 +290,10 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
-  MNCTEvent * NewEvent;
+  MReadOutAssembly * NewEvent;
   
   if (m_Events.size() == 0) {
     cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: No events"<<endl;
@@ -351,7 +350,7 @@ void MNCTModuleReceiverCOSI2014::Finalize()
 {
   // Close the tranceiver 
 
-  MNCTModule::Finalize();
+  MModule::Finalize();
   MNCTBinaryFlightDataParser::Finalize();
   
   if (m_RoaFileName != "") {

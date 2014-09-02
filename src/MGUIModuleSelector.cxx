@@ -46,7 +46,7 @@ ClassImp(MGUIModuleSelector)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIModuleSelector::MGUIModuleSelector(MNCTData* Data, unsigned int Position) 
+MGUIModuleSelector::MGUIModuleSelector(MSupervisor* Data, unsigned int Position) 
   : TGTransientFrame(gClient->GetRoot(), gClient->GetRoot(), 320, 240), m_Data(Data), m_Position(Position)
 {
   // standard constructor

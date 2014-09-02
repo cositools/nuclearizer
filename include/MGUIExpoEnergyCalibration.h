@@ -47,7 +47,7 @@ class MGUIExpoEnergyCalibration : public MGUIExpo
   // public Session:
  public:
   //! Default constructor
-  MGUIExpoEnergyCalibration(MNCTModule* Module);
+  MGUIExpoEnergyCalibration(MModule* Module);
   //! Default destructor
   virtual ~MGUIExpoEnergyCalibration();
 

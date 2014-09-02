@@ -90,7 +90,7 @@ MNCTModule::~MNCTModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModule::AddEvent(MNCTEvent* Event)
+bool MNCTModule::AddEvent(MReadOutAssembly* Event)
 {
   //! Add an event to the incoming event list
 
@@ -139,11 +139,11 @@ bool MNCTModule::HasAnalyzedEvents()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent* MNCTModule::GetAnalyzedEvent()
+MReadOutAssembly* MNCTModule::GetAnalyzedEvent()
 {
   //! Check if there are events in the outgoing event list
 
-  MNCTEvent* E = 0;
+  MReadOutAssembly* E = 0;
   
   m_OutgoingEventsMutex.Lock();
   if (m_OutgoingEvents.begin() != m_OutgoingEvents.end()) {
@@ -212,7 +212,7 @@ bool MNCTModule::DoSingleAnalysis()
   // First check if we are ready:
   if (IsReady() == false) return false;
   
-  MNCTEvent* E = 0;
+  MReadOutAssembly* E = 0;
   // If this is a module which does not generate the events, grab one from the incoming list
   if (m_IsStartModule == false) { 
     m_IncomingEventsMutex.Lock();
@@ -224,7 +224,7 @@ bool MNCTModule::DoSingleAnalysis()
   }
   // If we got one from the incoming list, or if this is a start module which generates them:
   if (E == 0 && m_IsStartModule == true) {
-    E = new MNCTEvent();
+    E = new MReadOutAssembly();
   }
   
   if (E != 0) {

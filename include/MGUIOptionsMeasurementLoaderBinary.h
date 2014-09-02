@@ -32,7 +32,7 @@
 #include "MGUIOptions.h"
 
 // Nuclearizer libs:
-#include "MNCTModule.h"
+#include "MModule.h"
 
 
 // Forward declarations:
@@ -46,7 +46,7 @@ class MGUIOptionsMeasurementLoaderBinary : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsMeasurementLoaderBinary(MNCTModule* Module);
+  MGUIOptionsMeasurementLoaderBinary(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsMeasurementLoaderBinary();
 

@@ -30,7 +30,6 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModule.h"
 #include "MNCTModuleSimulationLoader.h"
 
 
@@ -45,7 +44,7 @@ ClassImp(MGUIOptionsSimulationLoader)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsSimulationLoader::MGUIOptionsSimulationLoader(MNCTModule* Module) 
+MGUIOptionsSimulationLoader::MGUIOptionsSimulationLoader(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor

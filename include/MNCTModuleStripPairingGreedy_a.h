@@ -75,7 +75,7 @@ Daniel Perez-Becker, 2008
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MGUIExpoStripPairing.h"
 
 // Forward declarations:
@@ -84,7 +84,7 @@ Daniel Perez-Becker, 2008
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleStripPairingGreedy_a : public MNCTModule
+class MNCTModuleStripPairingGreedy_a : public MModule
 {
   // public interface:
  public:
@@ -97,7 +97,7 @@ class MNCTModuleStripPairingGreedy_a : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

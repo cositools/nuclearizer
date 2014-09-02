@@ -53,7 +53,7 @@ ClassImp(MNCTBinaryFlightDataParser)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTEventTimeCompare(MNCTEvent* E1, MNCTEvent* E2);
+bool MReadOutAssemblyTimeCompare(MReadOutAssembly* E1, MReadOutAssembly* E2);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 {
 
 	uint8_t Type;
-	vector <MNCTEvent*> NewEvents;
+	vector <MReadOutAssembly*> NewEvents;
 	vector<unsigned char> SyncWord;
 	dataframe * Dataframe;
 	int ParseErr;
@@ -173,12 +173,12 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					Dataframe = new dataframe();
 					ParseErr = RawDataframe2Struct( NextPacket, Dataframe );
 					if( ParseErr >= 0 ){
-						ConvertToMNCTEvents( Dataframe, &NewEvents );
+						ConvertToMReadOutAssemblys( Dataframe, &NewEvents );
 						CCId = Dataframe->CCId;
 					} else {
 						if (g_Verbosity >= c_Error) cout<<"BinaryFlightDataParser: ParseERR"<<endl;
 					}
-					//cout<<"made "<<NewEvents.size()<<" MNCTEvents"<<endl;
+					//cout<<"made "<<NewEvents.size()<<" MReadOutAssemblys"<<endl;
 					delete Dataframe;
 					m_NumRawDataBytes += NextPacket.size();
 					//cout<<"NumRawDataBytes "<<m_NumRawDataBytes<<endl;
@@ -192,7 +192,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					//cout<<"got compton dataframe!"<<endl;
 					Dataframe = new dataframe();
 					if( ComptonDataframe2Struct( NextPacket, Dataframe ) ){
-						ConvertToMNCTEvents( Dataframe, &NewEvents );
+						ConvertToMReadOutAssemblys( Dataframe, &NewEvents );
 						//some provision to keep track of last timestamps
 					} else {
 						if (g_Verbosity >= c_Error) cout<<"BinaryFlightDataParser: Parsing error"<<endl;
@@ -418,8 +418,8 @@ bool MNCTBinaryFlightDataParser::FlushEventsBuf(void){
 
 	//don't check m_EventTimeWindow, we are flushing the buffer
 	while( m_EventsBuf.size() > 0){
-		MNCTEvent * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
-		deque<MNCTEvent*> EventList;
+		MReadOutAssembly * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
+		deque<MReadOutAssembly*> EventList;
 		EventList.push_back(FirstEvent);
 		//now check if the next events are within the compton window
 		while( m_EventsBuf.size() > 0 ){
@@ -430,7 +430,7 @@ bool MNCTBinaryFlightDataParser::FlushEventsBuf(void){
 			}
 		}
 		//at this point, EventList contains all of the events to be merged, merge them
-		MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
+		MReadOutAssembly * NewMergedEvent = MergeEvents( &EventList );
 		//now push this merged event onto the internal events deque
 		//set the ID of the event and increment the ID counter
 		NewMergedEvent->SetID( ++m_EventIDCounter );
@@ -450,8 +450,8 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 
 	if( m_EventsBuf.size() > 0 ){
 		while(m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() >= m_EventTimeWindow ){
-			MNCTEvent * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
-			deque<MNCTEvent*> EventList;
+			MReadOutAssembly * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
+			deque<MReadOutAssembly*> EventList;
 			EventList.push_back(FirstEvent);
 			//now check if the next events are within the compton window
 			while( m_EventsBuf.size() > 0 ){
@@ -462,7 +462,7 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 				}
 			}
 			//at this point, EventList contains all of the events to be merged, merge them
-			MNCTEvent * NewMergedEvent = MergeEvents( &EventList );
+			MReadOutAssembly * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
 			NewMergedEvent->SetDataRead(true);
 			NewMergedEvent->SetID( ++m_EventIDCounter );
@@ -479,10 +479,10 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent * MNCTBinaryFlightDataParser::MergeEvents( deque<MNCTEvent*> * EventList ){
+MReadOutAssembly * MNCTBinaryFlightDataParser::MergeEvents( deque<MReadOutAssembly*> * EventList ){
 
 	//assert: there is at least one event in event list
-	MNCTEvent * BaseEvent;
+	MReadOutAssembly * BaseEvent;
 
 	//take the first event, and then merge hits from all other coincident
 	//events into this base event
@@ -492,7 +492,7 @@ MNCTEvent * MNCTBinaryFlightDataParser::MergeEvents( deque<MNCTEvent*> * EventLi
 			BaseEvent->AddStripHit( E->GetStripHit(0) );
 			E->RemoveStripHit(0);
 		}
-		//now we should free the memory for the MNCTEvent that we just copied the 
+		//now we should free the memory for the MReadOutAssembly that we just copied the 
 		//strip hit from
 		delete E;
 	}
@@ -524,7 +524,7 @@ void MNCTBinaryFlightDataParser::Finalize()
 int MNCTBinaryFlightDataParser::RawDataframe2Struct( vector<uint8_t> Buf, dataframe * DataOut)
 {
 		//return a dataframe struct
-		//a subsequent funtion should dtake the returned dataframe and return a vector of MNCTEvents
+		//a subsequent funtion should dtake the returned dataframe and return a vector of MReadOutAssemblys
 
 	size_t x; //index for looping through Buf
 	trigger TrigBuf[MAX_TRIGS];
@@ -781,10 +781,10 @@ loop_exit:
 
 }
 
-bool MNCTBinaryFlightDataParser::ConvertToMNCTEvents( dataframe * DataIn, vector<MNCTEvent*> * CEvents)
+bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn, vector<MReadOutAssembly*> * CEvents)
 {
 	bool PosSide;
-	MNCTEvent * NewEvent;
+	MReadOutAssembly * NewEvent;
 	MNCTStripHit * StripHit;
 	bool RolloverOccurred, EndRollover, MiddleRollover;
 	uint64_t Clk;
@@ -796,8 +796,8 @@ bool MNCTBinaryFlightDataParser::ConvertToMNCTEvents( dataframe * DataIn, vector
 		return false;
 	}
 
-	//since the MNCTEvents are going to be pushed into a deque for the coincedence search, we want to call 
-	//new and delete so that the pointers to these MNCTEvents will be valid until the MNCTEvent is popped
+	//since the MReadOutAssemblys are going to be pushed into a deque for the coincedence search, we want to call 
+	//new and delete so that the pointers to these MReadOutAssemblys will be valid until the MReadOutAssembly is popped
 	//out of the deque.
 
 	//check for rollovers in this dataframe.  need this info in order to properly shift bits 48..33 of the 
@@ -817,7 +817,7 @@ bool MNCTBinaryFlightDataParser::ConvertToMNCTEvents( dataframe * DataIn, vector
 	//positive side -> AC -> boards 0-3 -> Y
 
 	for( auto E: DataIn->Events ){
-		NewEvent = new MNCTEvent();
+		NewEvent = new MReadOutAssembly();
 		for( auto T: E.Triggers ){
 			StripHit = new MNCTStripHit();
 			StripHit->SetDetectorID(m_CCMap[T.CCId]);
@@ -829,7 +829,7 @@ bool MNCTBinaryFlightDataParser::ConvertToMNCTEvents( dataframe * DataIn, vector
 			if( T.HasTiming ) StripHit->SetTiming((double) (T.TimingByte & 0x3f));
 			NewEvent->AddStripHit( StripHit );
 		}
-		//now need to set parameters for the MNCTEvent
+		//now need to set parameters for the MReadOutAssembly
 		NewEvent->SetID(E.EventID);
 		NewEvent->SetFC(DataIn->PacketCounter);
 		NewEvent->SetTI(DataIn->UnixTime);
@@ -953,12 +953,12 @@ void MNCTBinaryFlightDataParser::LoadStripMap(void){
 
 bool MNCTBinaryFlightDataParser::SortEventsBuf(void){
 
-	std::sort(m_EventsBuf.begin(), m_EventsBuf.end(), MNCTEventTimeCompare);
+	std::sort(m_EventsBuf.begin(), m_EventsBuf.end(), MReadOutAssemblyTimeCompare);
 	return true;
 
 }
 
-bool MNCTEventTimeCompare(MNCTEvent * E1, MNCTEvent * E2){
+bool MReadOutAssemblyTimeCompare(MReadOutAssembly * E1, MReadOutAssembly * E2){
 
 	//sort based on 48 bit clock value
 	if( E1->GetCL() < E2->GetCL() ) return true; else return false;

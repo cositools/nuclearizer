@@ -30,7 +30,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIERBList.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MGUIOptions.h"
 #include "MGUIEFileSelector.h"
 
@@ -45,7 +45,7 @@ class MGUIOptionsSimulationLoader : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsSimulationLoader(MNCTModule* Module);
+  MGUIOptionsSimulationLoader(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsSimulationLoader();
 

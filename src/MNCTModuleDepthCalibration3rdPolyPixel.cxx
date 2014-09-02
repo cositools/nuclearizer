@@ -39,7 +39,6 @@
 #include "TFile.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MNCTMath.h"
 #include "MStreams.h"
 #include "MVector.h"
@@ -56,7 +55,7 @@ ClassImp(MNCTModuleDepthCalibration3rdPolyPixel)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel() : MNCTModule()
+MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel() : MModule()
 {
   // Construct an instance of MNCTModuleDepthCalibration3rdPolyPixel
   
@@ -69,16 +68,16 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   m_XmlTag = "DepthCalibration3rdPolyPixel";
   
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
-  AddPreceedingModuleType(c_EnergyCalibration);
-  AddPreceedingModuleType(c_StripPairing);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
+  AddPreceedingModuleType(MAssembly::c_StripPairing);
   
   // Set all types this modules handles
-  AddModuleType(c_DepthCorrection);
-  AddModuleType(c_PositionDetermiation);
+  AddModuleType(MAssembly::c_DepthCorrection);
+  AddModuleType(MAssembly::c_PositionDetermiation);
   
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -225,14 +224,14 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
   } // 'DetectorNumber' loop
   
   
-  return MNCTModule::Initialize();
+  return MModule::Initialize();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
   unsigned int EventTypeFlag0=0;

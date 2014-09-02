@@ -29,7 +29,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIERBList.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MGUIOptions.h"
 
 // Forward declarations:
@@ -44,7 +44,7 @@ class MGUIOptionsEventReconstruction : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsEventReconstruction(MNCTModule* Module);
+  MGUIOptionsEventReconstruction(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsEventReconstruction();
 

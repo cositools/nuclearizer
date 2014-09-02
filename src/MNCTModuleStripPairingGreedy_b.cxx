@@ -32,7 +32,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MNCTMath.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +45,7 @@ ClassImp(MNCTModuleStripPairingGreedy_b)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MNCTModule()
+MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
 {
   // Construct an instance of MNCTModuleStripPairingGreedy_a
   
@@ -59,14 +58,14 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MNCTModule()
   m_XmlTag = "StripPairingGreedy_b";
   
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
-  AddPreceedingModuleType(c_EnergyCalibration);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
   
   // Set all types this modules handles
-  AddModuleType(c_StripPairing);
+  AddModuleType(MAssembly::c_StripPairing);
   
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -108,14 +107,14 @@ bool MNCTModuleStripPairingGreedy_b::Initialize()
   // Add all initializations which are global to all events
   // and have member variables here
   
-  return MNCTModule::Initialize();
+  return MModule::Initialize();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 //main data analysis routine, which updates the event to a new level
-bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MNCTEvent* Event){
+bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
   
   const int nDetectors = 12;
   
@@ -193,8 +192,8 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MNCTEvent* Event){
   return true;
 };
 
-//this function takes the MNCTEvent and get all the info from it.
-bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MNCTEvent* Event, int detector) {
+//this function takes the MReadOutAssembly and get all the info from it.
+bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int detector) {
   
   ClearMembers();
   
@@ -329,7 +328,7 @@ void MNCTModuleStripPairingGreedy_b::CalculateDetectorQuality(){
   
 };
 
-void MNCTModuleStripPairingGreedy_b::CalculateEventQuality(MNCTEvent* Event, int nDetectors){
+void MNCTModuleStripPairingGreedy_b::CalculateEventQuality(MReadOutAssembly* Event, int nDetectors){
   
   float eventQuality = 0;
   int counter = 0;
@@ -345,18 +344,18 @@ void MNCTModuleStripPairingGreedy_b::CalculateEventQuality(MNCTEvent* Event, int
 };
 
 //output stuff
-void MNCTModuleStripPairingGreedy_b::WriteHits(MNCTEvent* Event, int detector){
+void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int detector){
   
   
   vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
   
   //pair indexes over the pairs (hits) -- for each pair, there is a new MNCTHit
   //strip indexes over the strips in each pair on the x or y side
-  //n indexes over the list of strip hits in the MNCTEvent
+  //n indexes over the list of strip hits in the MReadOutAssembly
   
   //this loop iterates over the pairs, and for each pair creates a new MNCTHit
   //then, it iterates over each strip on the x side of that pair
-  //it then iterates over each stripHit in the MNCTEvent, checks that the detector is right,
+  //it then iterates over each stripHit in the MReadOutAssembly, checks that the detector is right,
   //	that it's an x hit, and if it matches the strip, it is added to the MNCTHit
   //the same is done in the second sub-loop for the y side
   

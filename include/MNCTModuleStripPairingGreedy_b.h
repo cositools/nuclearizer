@@ -30,7 +30,7 @@ c) The algorithm then selects the next lowest weight of the remaining matrix ele
 *******
 
 INPUT:
-The program takes an MNCTEvent* as input. The first function, GetStripHits, fills the following member variables:
+The program takes an MReadOutAssembly* as input. The first function, GetStripHits, fills the following member variables:
 
 vector<vector<int> > stripHits: a list of all the strip numbers that were hit
 vector<vector<float> > energy: a list of the energy corresponding to the strip hits
@@ -79,7 +79,7 @@ The final pairs are then decoded: for example, if strip 55 is chosen, then the p
 *****
 Other things:
 Event Quality:
-The detector quality factor is the average of all the hit quality factors. The event quality factor is the average of all the detector quality factors. The event quality factor is added to the input MNCTEvent (done in CalculateDetectorQuality(), CalculateEventQuality()).
+The detector quality factor is the average of all the hit quality factors. The event quality factor is the average of all the detector quality factors. The event quality factor is added to the input MReadOutAssembly (done in CalculateDetectorQuality(), CalculateEventQuality()).
 
 
 CheckInitialEnergyDifference: STILL BEING WORKED OUT!!
@@ -115,7 +115,7 @@ Clio Sleator, 2014
 #include "MGlobal.h"
 
 // Nuclearizer libs
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MGUIExpoStripPairing.h"
 
 // Forward declarations:
@@ -124,7 +124,7 @@ Clio Sleator, 2014
 
 using namespace std;
 
-class MNCTModuleStripPairingGreedy_b : public MNCTModule
+class MNCTModuleStripPairingGreedy_b : public MModule
 {
   // public interface:
  public:
@@ -140,11 +140,11 @@ class MNCTModuleStripPairingGreedy_b : public MNCTModule
   virtual void ShowOptionsGUI();
 
   //!Main data analysis routine, which updates the event to a new level
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
 //other functions
-  bool GetEventInfo(MNCTEvent*, int);
-  void WriteHits(MNCTEvent*, int);
+  bool GetEventInfo(MReadOutAssembly*, int);
+  void WriteHits(MReadOutAssembly*, int);
   void ClearMembers();  //clears member vectors in between detectors
   void DefineEventInfo(); //for testing without Nuclearizer; randomly generates hit strip numbers, energies, and significances
   bool CheckInitialEnergyDifference();
@@ -182,7 +182,7 @@ class MNCTModuleStripPairingGreedy_b : public MNCTModule
   void SetBadCombinations(vector<vector<int> >);
 
   void CalculateDetectorQuality();
-  void CalculateEventQuality(MNCTEvent*, int);
+  void CalculateEventQuality(MReadOutAssembly*, int);
 
   // protected methods:
  protected:

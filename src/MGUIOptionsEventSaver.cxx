@@ -29,7 +29,6 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModule.h"
 #include "MNCTModuleEventSaver.h"
 
 
@@ -44,7 +43,7 @@ ClassImp(MGUIOptionsEventSaver)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsEventSaver::MGUIOptionsEventSaver(MNCTModule* Module) 
+MGUIOptionsEventSaver::MGUIOptionsEventSaver(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor

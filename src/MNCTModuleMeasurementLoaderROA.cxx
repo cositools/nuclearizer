@@ -32,7 +32,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MGUIOptionsTemplate.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
@@ -100,14 +99,14 @@ bool MNCTModuleMeasurementLoaderROA::Initialize()
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
     
-  return MNCTModule::Initialize();
+  return MModule::Initialize();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleMeasurementLoaderROA::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleMeasurementLoaderROA::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
@@ -129,7 +128,7 @@ void MNCTModuleMeasurementLoaderROA::Finalize()
 {
   // Initialize the module 
   
-  MNCTModule::Finalize();
+  MModule::Finalize();
   
   cout<<"MNCTModuleMeasurementLoaderROA: "<<endl;
   cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
@@ -155,7 +154,7 @@ bool MNCTModuleMeasurementLoaderROA::Open(MString FileName, unsigned int Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MNCTEvent* Event)
+bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
 {
   // Return next single event from file... or 0 if there are no more.
   

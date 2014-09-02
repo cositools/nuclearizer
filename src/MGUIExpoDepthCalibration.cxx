@@ -44,7 +44,7 @@ ClassImp(MGUIExpoDepthCalibration)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoDepthCalibration::MGUIExpoDepthCalibration(MNCTModule* Module) : MGUIExpo(Module)
+MGUIExpoDepthCalibration::MGUIExpoDepthCalibration(MModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 

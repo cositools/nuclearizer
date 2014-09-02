@@ -29,12 +29,12 @@
 // MEGAlib libs
 #include "MGlobal.h"
 #include "MGUIDialog.h"
-#include "MInterfaceNuclearizer.h"
-#include "MNCTData.h"
+#include "MSupervisor.h"
 #include "MGUIEModule.h"
 
 // Forward declarations:
 class MGUIEFileSelector;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -44,10 +44,21 @@ class MGUINuclearizerMain : public TGMainFrame
   // Public members:
 public:
   //! Default constructor
-  MGUINuclearizerMain(MInterfaceNuclearizer* Interface, MNCTData* Data);
+  MGUINuclearizerMain(MSupervisor* Supervisor);
   //! Default destructor
   virtual ~MGUINuclearizerMain();
 
+  //! Set the program name
+  void SetProgramName(const MString& ProgramName) { m_ProgramName = ProgramName; }
+  //! Set the UI Picture file name, and an alternative text if the picture could not be loaded
+  void SetPicturePath(const MString& Path) { m_PicturePath = Path; }
+  //! Set the sub title below the picture
+  void SetSubTitle(const MString& SubTitle) { m_SubTitle = SubTitle; }
+  //! Set the lead author
+  void SetLeadAuthor(const MString& LeadAuthor) { m_LeadAuthor = LeadAuthor; }
+  //! Set the co-author list
+  void SetCoAuthors(const MString& CoAuthors) { m_CoAuthors = CoAuthors; }
+  
   //! Create the GUI
   virtual void Create();
   //! Process all button, etc. messages
@@ -90,13 +101,22 @@ protected:
 
   // private members:
 private:
-  //! Reference to all interface functions
-  MInterfaceNuclearizer* m_Interface;
-  //! Reference to all GUI data
-  MNCTData* m_Data;
+  //! Reference to the supervisor with all the relevant data
+  MSupervisor* m_Supervisor;
 
   // Some common used GUI elements
-
+  
+  //! The program name
+  MString m_ProgramName;
+  //! The path to the picture
+  MString m_PicturePath;
+  //! The sub title below the picture
+  MString m_SubTitle;
+  //! The lead author
+  MString m_LeadAuthor;
+  //! The co-authors
+  MString m_CoAuthors;
+  
   //! The frame for the modules
   TGGroupFrame* m_ModuleFrame;
   //! The layout of an module

@@ -31,7 +31,6 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModule.h"
 #include "MNCTModuleEventFilter.h"
 #include "MGUIEFileSelector.h"
 
@@ -46,7 +45,7 @@ ClassImp(MGUIOptionsEventFilter)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsEventFilter::MGUIOptionsEventFilter(MNCTModule* Module) 
+MGUIOptionsEventFilter::MGUIOptionsEventFilter(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor

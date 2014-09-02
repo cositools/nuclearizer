@@ -33,7 +33,7 @@
 #include "MGUIOptions.h"
 
 // Nuclearizer libs:
-#include "MNCTModule.h"
+#include "MModule.h"
 
 
 // Forward declarations:
@@ -47,7 +47,7 @@ class MGUIOptionsEventSaver : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsEventSaver(MNCTModule* Module);
+  MGUIOptionsEventSaver(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsEventSaver();
 

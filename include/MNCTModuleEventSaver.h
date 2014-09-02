@@ -27,7 +27,7 @@ using namespace std;
 #include "MString.h"
 
 // Nuclearizer libs:
-#include "MNCTModule.h"
+#include "MModule.h"
 
 // Forward declarations:
 
@@ -35,7 +35,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleEventSaver : public MNCTModule
+class MNCTModuleEventSaver : public MModule
 {
   // public interface:
  public:
@@ -66,7 +66,7 @@ class MNCTModuleEventSaver : public MNCTModule
   virtual void Finalize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();
@@ -86,7 +86,7 @@ class MNCTModuleEventSaver : public MNCTModule
   void WriteHeader();
 
   //!
-  void DumpBasic(MNCTEvent* Event);
+  void DumpBasic(MReadOutAssembly* Event);
 
   //!
   void DumpHitsSim(MNCTHit* HitSim);

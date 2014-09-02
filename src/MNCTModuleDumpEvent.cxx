@@ -36,7 +36,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 //#include "MGUIOptionsDumpEvent.h"
 //#include "MNCTTimeAndCoordinate.h"
 
@@ -52,7 +51,7 @@ ClassImp(MNCTModuleDumpEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleDumpEvent::MNCTModuleDumpEvent() : MNCTModule()
+MNCTModuleDumpEvent::MNCTModuleDumpEvent() : MModule()
 {
   // Construct an instance of MNCTModuleTemplate
 
@@ -65,25 +64,12 @@ MNCTModuleDumpEvent::MNCTModuleDumpEvent() : MNCTModule()
   m_XmlTag = "XmlTagDumpEvent";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
 
   // Set all types this modules handles
-//  AddModuleType(c_DetectorEffectsEngine);
-//  AddModuleType(c_EnergyCalibration);
-//  AddModuleType(c_ChargeSharingCorrection);
-//  AddModuleType(c_DepthCorrection);
-//  AddModuleType(c_StripPairing);
-  AddModuleType(c_EventSaver);
-//  AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_EventSaver);
 
   // Set all modules, which can follow this module
-//  AddSucceedingModuleType(c_DetectorEffectsEngine);
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_EventReconstruction);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
@@ -121,7 +107,7 @@ bool MNCTModuleDumpEvent::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleDumpEvent::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleDumpEvent::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level
   m_OutFile << "SE" << endl;
@@ -204,7 +190,7 @@ void MNCTModuleDumpEvent::WriteHeader()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MNCTModuleDumpEvent::DumpBasic(MNCTEvent* Event)
+void MNCTModuleDumpEvent::DumpBasic(MReadOutAssembly* Event)
 {
   m_OutFile << "ID " << Event->GetID() << endl
 	  << "TI " << Event->GetTime() << endl

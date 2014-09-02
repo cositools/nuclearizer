@@ -32,7 +32,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MGUIOptionsTemplate.h"
 
 
@@ -98,7 +97,7 @@ bool MNCTModuleMeasurementLoaderGRIPS2013::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleMeasurementLoaderGRIPS2013::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleMeasurementLoaderGRIPS2013::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
@@ -310,7 +309,7 @@ bool MNCTModuleMeasurementLoaderGRIPS2013::Open(MString FileName, unsigned int W
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleMeasurementLoaderGRIPS2013::ReadNextEvent(MNCTEvent* Event)
+bool MNCTModuleMeasurementLoaderGRIPS2013::ReadNextEvent(MReadOutAssembly* Event)
 {
   // Return next single event from file... or 0 if there are no more.
 

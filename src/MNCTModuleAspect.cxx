@@ -43,7 +43,6 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MGUIOptionsAspect.h"
-#include "MNCTModule.h"
 #include "MNCTMath.h"
 #include "MNCTTimeAndCoordinate.h"
 
@@ -59,7 +58,7 @@ ClassImp(MNCTModuleAspect)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleAspect::MNCTModuleAspect() : MNCTModule()
+MNCTModuleAspect::MNCTModuleAspect() : MModule()
 {
   // Construct an instance of MNCTModuleTemplate
 
@@ -72,31 +71,12 @@ MNCTModuleAspect::MNCTModuleAspect() : MNCTModule()
   m_XmlTag = "XmlTagAspect";
 
   // Set all modules, which have to be done before this module
-//  AddPreceedingModuleType(c_DetectorEffectsEngine);
-//  AddPreceedingModuleType(c_EnergyCalibration);
-//  AddPreceedingModuleType(c_ChargeSharingCorrection);
-  AddPreceedingModuleType(c_DepthCorrection);
-//  AddPreceedingModuleType(c_StripPairing);
-//  AddPreceedingModuleType(c_EventReconstruction);
+  AddPreceedingModuleType(MAssembly::c_DepthCorrection);
 
   // Set all types this modules handles
-//  AddModuleType(c_DetectorEffectsEngine);
-//  AddModuleType(c_EnergyCalibration);
-//  AddModuleType(c_ChargeSharingCorrection);
-//  AddModuleType(c_DepthCorrection);
-//  AddModuleType(c_StripPairing);
-  AddModuleType(c_Aspect);
-//  AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_Aspect);
 
   // Set all modules, which can follow this module
-//  AddSucceedingModuleType(c_DetectorEffectsEngine);
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventSaver);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
@@ -142,7 +122,7 @@ bool MNCTModuleAspect::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleAspect::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleAspect::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level
 
@@ -725,7 +705,7 @@ int MNCTModuleAspect::FindRow(double time)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MNCTModuleAspect::FindSegment(MNCTEvent* E)
+bool MNCTModuleAspect::FindSegment(MReadOutAssembly* E)
 {
   m_Segment = -1;
   // Search through entire segment file and find a section matching the
@@ -772,7 +752,7 @@ bool MNCTModuleAspect::FindSegment(MNCTEvent* E)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double MNCTModuleAspect::CorrectedUnixTime(MNCTEvent* E)
+double MNCTModuleAspect::CorrectedUnixTime(MReadOutAssembly* E)
 {
   unsigned long CL_period=4294967295UL;
   double TI_period=429.4967; //assume frequency is 1e+7
@@ -867,7 +847,7 @@ double MNCTModuleAspect::CorrectedUnixTime(MNCTEvent* E)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double MNCTModuleAspect::GPSTime(MNCTEvent* E)
+double MNCTModuleAspect::GPSTime(MReadOutAssembly* E)
 {
   // Ensure a segment has been searched for
   if (m_Segment==-1)
@@ -904,7 +884,7 @@ double MNCTModuleAspect::GPSTime(MNCTEvent* E)
 ////////////////////////////////////////////////////////////////////////////////
 
 // Calculate indices into the aspect files surrounding the event's position
-vector<int> MNCTModuleAspect::AspectTableIndices(MNCTEvent* E,
+vector<int> MNCTModuleAspect::AspectTableIndices(MReadOutAssembly* E,
 						 vector< vector<double> > *AspectTable,
 						 vector<int> *GCUIndexList,
 						 vector< vector<double> > *GCUTimeTable)
@@ -1022,7 +1002,7 @@ vector<int> MNCTModuleAspect::AspectTableIndices(MNCTEvent* E,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<double> MNCTModuleAspect::InterpolatedAspectData(MNCTEvent* E)
+vector<double> MNCTModuleAspect::InterpolatedAspectData(MReadOutAssembly* E)
 {
   vector<double> tmp_aspect;
   tmp_aspect.clear();

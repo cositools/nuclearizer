@@ -32,7 +32,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +45,7 @@ ClassImp(MNCTModuleEnergyCalibration)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleEnergyCalibration::MNCTModuleEnergyCalibration() : MNCTModule()
+MNCTModuleEnergyCalibration::MNCTModuleEnergyCalibration() : MModule()
 {
   // Construct an instance of MNCTModuleEnergyCalibration
 
@@ -59,30 +58,13 @@ MNCTModuleEnergyCalibration::MNCTModuleEnergyCalibration() : MNCTModule()
   m_XmlTag = "CombinedEnergyCalibrationAndChargeSharingCorrection";
 
   // Set all modules, which have to be done before this module
-  //AddPreceedingModuleType(c_DetectorEffectsEngine);
-  //AddPreceedingModuleType(c_EnergyCalibration);
-  //AddPreceedingModuleType(c_ChargeSharingCorrection);
-  //AddPreceedingModuleType(c_DepthCorrection);
-  //AddPreceedingModuleType(c_StripPairing);
-  //AddPreceedingModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_EventLoader);
 
   // Set all types this modules handles
-  //AddModuleType(c_DetectorEffectsEngine);
-  AddModuleType(c_EnergyCalibration);
-  AddModuleType(c_ChargeSharingCorrection);
-  //AddModuleType(c_DepthCorrection);
-  //AddModuleType(c_StripPairing);
-  //AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_EnergyCalibration);
+  AddModuleType(MAssembly::c_ChargeSharingCorrection);
 
   // Set all modules, which can follow this module
-  //AddSucceedingModuleType(c_DetectorEffectsEngine);
-  //AddSucceedingModuleType(c_EnergyCalibration);
-  //AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventReconstruction);
 
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -115,7 +97,7 @@ bool MNCTModuleEnergyCalibration::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleEnergyCalibration::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 

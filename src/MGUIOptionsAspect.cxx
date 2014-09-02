@@ -30,7 +30,6 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModule.h"
 #include "MNCTModuleAspect.h"
 #include "MGUIEFileSelector.h"
 
@@ -45,7 +44,7 @@ ClassImp(MGUIOptionsAspect)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsAspect::MGUIOptionsAspect(MNCTModule* Module) 
+MGUIOptionsAspect::MGUIOptionsAspect(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor

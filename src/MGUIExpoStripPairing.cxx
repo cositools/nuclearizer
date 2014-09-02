@@ -44,7 +44,7 @@ ClassImp(MGUIExpoStripPairing)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoStripPairing::MGUIExpoStripPairing(MNCTModule* Module) : MGUIExpo(Module)
+MGUIExpoStripPairing::MGUIExpoStripPairing(MModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 

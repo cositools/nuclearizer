@@ -64,7 +64,7 @@ MNCTEventBuffer::~MNCTEventBuffer()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MNCTEventBuffer::AddCoincidentEvents(MNCTEvent* Event, bool SkipFirst, int NLimit)
+int MNCTEventBuffer::AddCoincidentEvents(MReadOutAssembly* Event, bool SkipFirst, int NLimit)
 {
   int NCoinc=0;
   double Time = Event->GetCL();

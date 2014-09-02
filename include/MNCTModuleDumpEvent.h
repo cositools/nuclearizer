@@ -24,7 +24,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 
 // Forward declarations:
 
@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleDumpEvent : public MNCTModule
+class MNCTModuleDumpEvent : public MModule
 {
   // public interface:
  public:
@@ -45,7 +45,7 @@ class MNCTModuleDumpEvent : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();
@@ -61,7 +61,7 @@ class MNCTModuleDumpEvent : public MNCTModule
   void WriteHeader();
 
   //!
-  void DumpBasic(MNCTEvent* Event);
+  void DumpBasic(MReadOutAssembly* Event);
 
   //!
   void DumpHitsSim(MNCTHit* HitSim);

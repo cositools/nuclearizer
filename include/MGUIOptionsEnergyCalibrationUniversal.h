@@ -32,7 +32,7 @@
 #include "MGUIOptions.h"
 
 // Nuclearizer libs:
-#include "MNCTModule.h"
+#include "MModule.h"
 
 
 // Forward declarations:
@@ -46,7 +46,7 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsEnergyCalibrationUniversal(MNCTModule* Module);
+  MGUIOptionsEnergyCalibrationUniversal(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsEnergyCalibrationUniversal();
 

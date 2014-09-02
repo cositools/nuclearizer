@@ -24,7 +24,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MDGeometryQuest.h"
 #include "MFileEventsSim.h"
 #include "MVector.h"
@@ -40,7 +40,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleSimulationLoader : public MNCTModule, public MFileEventsSim
+class MNCTModuleSimulationLoader : public MModule, public MFileEventsSim
 {
   // public interface:
  public:
@@ -53,10 +53,10 @@ class MNCTModuleSimulationLoader : public MNCTModule, public MFileEventsSim
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Apply the detector effects
-  virtual bool ApplyDetectorEffects(MNCTEvent* Event);
+  virtual bool ApplyDetectorEffects(MReadOutAssembly* Event);
 
   //! 
   virtual MString Report();

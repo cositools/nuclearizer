@@ -31,7 +31,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIERBList.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MGUIOptions.h"
 
 // Forward declarations:
@@ -45,7 +45,7 @@ class MGUIOptionsAspect : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsAspect(MNCTModule* Module);
+  MGUIOptionsAspect(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsAspect();
 

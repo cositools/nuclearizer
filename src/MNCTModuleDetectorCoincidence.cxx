@@ -34,7 +34,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 //#include "MGUIOptionsTemplate.h"
 
 
@@ -49,7 +48,7 @@ ClassImp(MNCTModuleDetectorCoincidence)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleDetectorCoincidence::MNCTModuleDetectorCoincidence() : MNCTModule()
+MNCTModuleDetectorCoincidence::MNCTModuleDetectorCoincidence() : MModule()
 {
   // Construct an instance of MNCTModuleDetectorCoincidence
 
@@ -62,32 +61,11 @@ MNCTModuleDetectorCoincidence::MNCTModuleDetectorCoincidence() : MNCTModule()
   m_XmlTag = "DetectorCoincidence";
 
   // Set all modules, which have to be done before this module
-  //AddPreceedingModuleType(c_DetectorEffectsEngine);
-  //AddPreceedingModuleType(c_CoincidentEventCombiner);
-  //AddPreceedingModuleType(c_EnergyCalibration);
-  //AddPreceedingModuleType(c_ChargeSharingCorrection);
-  //AddPreceedingModuleType(c_DepthCorrection);
-  //AddPreceedingModuleType(c_StripPairing);
-  //AddPreceedingModuleType(c_EventReconstruction);
 
   // Set all types this modules handles
-  //AddModuleType(c_DetectorEffectsEngine);
-  AddModuleType(c_CoincidentEventCombiner);
-  //AddModuleType(c_EnergyCalibration);
-  //AddModuleType(c_ChargeSharingCorrection);
-  //AddModuleType(c_DepthCorrection);
-  //AddModuleType(c_StripPairing);
-  //AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_CoincidentEventCombiner);
 
   // Set all modules, which can follow this module
-  //AddSucceedingModuleType(c_DetectorEffectsEngine);
-  //AddSucceedingModuleType(c_CoincidentEventCombiner);
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_EventSaver);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
@@ -128,7 +106,7 @@ bool MNCTModuleDetectorCoincidence::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleDetectorCoincidence::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleDetectorCoincidence::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 
@@ -146,7 +124,7 @@ bool MNCTModuleDetectorCoincidence::AnalyzeEvent(MNCTEvent* Event)
 
 
 // Updates event statistics with given event
-void MNCTModuleDetectorCoincidence::UpdateEventStatistics(MNCTEvent* Event)
+void MNCTModuleDetectorCoincidence::UpdateEventStatistics(MReadOutAssembly* Event)
 {
   // determine if single-detector event or coincidence
   int ndets=0;

@@ -108,13 +108,13 @@ bool MNCTPreprocessor::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent* MNCTPreprocessor::GetNextEvent() 
+MReadOutAssembly* MNCTPreprocessor::GetNextEvent() 
 {
   // Return the next event... or 0 if there are no more.
   // So remember to test for more events!
   
-  MNCTEvent* Event;
-  vector<MNCTEvent*> Events;
+  MReadOutAssembly* Event;
+  vector<MReadOutAssembly*> Events;
   bool Canceled = false;
   
   // if progress window has been canceled, exit.
@@ -142,7 +142,7 @@ MNCTEvent* MNCTPreprocessor::GetNextEvent()
         // add the events to buffers
         while(Events.size() > 0)
         {
-          MNCTEvent* E = Events.back();
+          MReadOutAssembly* E = Events.back();
           Events.pop_back();
           int DetNum = E->GetStripHit(0)->GetDetectorID();
           if ( (0<=DetNum) && (DetNum<10) )
@@ -228,7 +228,7 @@ MNCTEvent* MNCTPreprocessor::GetNextEvent()
       // add the events to buffers
       while(Events.size() > 0)
       {
-        MNCTEvent* E = Events.back();
+        MReadOutAssembly* E = Events.back();
         Events.pop_back();
         int DetNum = E->GetStripHit(0)->GetDetectorID();
         if ( (0<=DetNum) && (DetNum<10) )
@@ -355,7 +355,7 @@ MNCTEvent* MNCTPreprocessor::GetNextEvent()
 
 
 // Updates event statistics with given event
-void MNCTPreprocessor::UpdateEventStatistics(MNCTEvent* Event)
+void MNCTPreprocessor::UpdateEventStatistics(MReadOutAssembly* Event)
 {
   // determine if single-detector event or coincidence
   int ndets=0;
@@ -454,15 +454,15 @@ string MNCTPreprocessor::EventStatisticsString()
 
 
 // break apart event into events by detector
-vector<MNCTEvent*> MNCTPreprocessor::EventByDetectors(MNCTEvent* Event)
+vector<MReadOutAssembly*> MNCTPreprocessor::EventByDetectors(MReadOutAssembly* Event)
 {
-  vector<MNCTEvent*> Events;
+  vector<MReadOutAssembly*> Events;
   
   for (int det=0; det<10; det++)
   {
     if (Event->InDetector(det))
     {
-      MNCTEvent* E=new MNCTEvent();
+      MReadOutAssembly* E=new MReadOutAssembly();
       E->SetID(Event->GetID());
       E->SetTI(Event->GetTI());
       E->SetCL(Event->GetCL());

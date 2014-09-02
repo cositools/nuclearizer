@@ -24,7 +24,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 
 // Forward declarations:
 
@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleEventFilter : public MNCTModule
+class MNCTModuleEventFilter : public MModule
 {
   // public interface:
  public:
@@ -48,7 +48,7 @@ class MNCTModuleEventFilter : public MNCTModule
   virtual MString Report();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

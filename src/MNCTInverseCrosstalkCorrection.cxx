@@ -40,7 +40,6 @@
 #include "TMatrixD.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MNCTMath.h"
 #include "MStreams.h"
 #include "MVector.h"
@@ -207,7 +206,7 @@ bool compare_striphits2(MNCTStripHit* SH1, MNCTStripHit* SH2)
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
-bool MNCTInverseCrosstalkCorrection::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTInverseCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
   

@@ -47,7 +47,7 @@ class MGUIExpoStripPairing : public MGUIExpo
   // public Session:
  public:
   //! Default constructor
-  MGUIExpoStripPairing(MNCTModule* Module);
+  MGUIExpoStripPairing(MModule* Module);
   //! Default destructor
   virtual ~MGUIExpoStripPairing();
 

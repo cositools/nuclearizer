@@ -24,13 +24,13 @@
 #include "MGlobal.h"
 
 // Forward declarations:
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MGUIExpoDepthCalibration.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleDepthCalibration3rdPolyPixel : public MNCTModule
+class MNCTModuleDepthCalibration3rdPolyPixel : public MModule
 {
   // public interface:
  public:
@@ -43,7 +43,7 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

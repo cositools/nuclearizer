@@ -40,7 +40,6 @@
 #include "TMatrixD.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MNCTMath.h"
 #include "MStreams.h"
 #include "MVector.h"
@@ -57,7 +56,7 @@ ClassImp(MNCTModuleCrosstalkCorrection)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MNCTModule()
+MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MModule()
 {
   // Construct an instance of MNCTModuleCrosstalkCorrection
 
@@ -70,33 +69,13 @@ MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MNCTModule()
   m_XmlTag = "CrosstalkCorrection";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
-  //AddPreceedingModuleType(c_DetectorEffectsEngine);
-  AddPreceedingModuleType(c_EnergyCalibration);
-  //AddPreceedingModuleType(c_ChargeSharingCorrection);
-  //AddPreceedingModuleType(c_DepthCorrection);
-  //AddPreceedingModuleType(c_StripPairing);
-  //AddPreceedingModuleType(c_EventReconstruction);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all types this modules handles
-  //AddModuleType(c_DetectorEffectsEngine);
-  //AddModuleType(c_EnergyCalibration);
-  AddModuleType(c_CrosstalkCorrection);
-  //AddModuleType(c_ChargeSharingCorrection);
-  //AddModuleType(c_DepthCorrection);
-  //AddModuleType(c_StripPairing);
-  //AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_CrosstalkCorrection);
 
   // Set all modules, which can follow this module
-  //AddSucceedingModuleType(c_DetectorEffectsEngine);
-  //AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_EventSaver);
-  AddSucceedingModuleType(c_Else);
 
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -250,7 +229,7 @@ bool compare_striphits(MNCTStripHit* SH1, MNCTStripHit* SH2)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
   

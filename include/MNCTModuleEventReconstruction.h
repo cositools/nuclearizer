@@ -22,7 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
+#include "MModule.h"
 #include "MRawEventAnalyzer.h"
 #include "MGeometryRevan.h"
 
@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleEventReconstruction : public MNCTModule
+class MNCTModuleEventReconstruction : public MModule
 {
   // public interface:
  public:
@@ -45,7 +45,7 @@ class MNCTModuleEventReconstruction : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

@@ -60,30 +60,21 @@ MNCTModuleTemplate::MNCTModuleTemplate() : MNCTModule()
   m_XmlTag = "XmlTagTemplate";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_DetectorEffectsEngine);
-  AddPreceedingModuleType(c_EnergyCalibration);
-  AddPreceedingModuleType(c_ChargeSharingCorrection);
-  AddPreceedingModuleType(c_DepthCorrection);
-  AddPreceedingModuleType(c_StripPairing);
-  AddPreceedingModuleType(c_EventReconstruction);
+  AddPreceedingModuleType(MAssembly::c_DetectorEffectsEngine);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
+  AddPreceedingModuleType(MAssembly::c_ChargeSharingCorrection);
+  AddPreceedingModuleType(MAssembly::c_DepthCorrection);
+  AddPreceedingModuleType(MAssembly::c_StripPairing);
 
   // Set all types this modules handles
-  AddModuleType(c_DetectorEffectsEngine);
-  AddModuleType(c_EnergyCalibration);
-  AddModuleType(c_ChargeSharingCorrection);
-  AddModuleType(c_DepthCorrection);
-  AddModuleType(c_StripPairing);
-  AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_DetectorEffectsEngine);
+  AddModuleType(MAssembly::c_EnergyCalibration);
+  AddModuleType(MAssembly::c_ChargeSharingCorrection);
+  AddModuleType(MAssembly::c_DepthCorrection);
+  AddModuleType(MAssembly::c_StripPairing);
+  AddModuleType(MAssembly::c_EventReconstruction);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_DetectorEffectsEngine);
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventReconstruction);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
@@ -116,7 +107,7 @@ bool MNCTModuleTemplate::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleTemplate::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleTemplate::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 

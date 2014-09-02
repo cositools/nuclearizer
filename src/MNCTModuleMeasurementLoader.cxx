@@ -32,7 +32,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MGUIOptionsMeasurementLoader.h"
 
 
@@ -47,7 +46,7 @@ ClassImp(MNCTModuleMeasurementLoader)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleMeasurementLoader::MNCTModuleMeasurementLoader() : MNCTModule()
+MNCTModuleMeasurementLoader::MNCTModuleMeasurementLoader() : MModule()
 {
   // Construct an instance of MNCTModuleMeasurementLoader
 
@@ -55,11 +54,11 @@ MNCTModuleMeasurementLoader::MNCTModuleMeasurementLoader() : MNCTModule()
   // None
   
   // Set all types this modules handles
-  AddModuleType(c_EventLoader);
-  AddModuleType(c_EventLoaderMeasurement);
+  AddModuleType(MAssembly::c_EventLoader);
+  AddModuleType(MAssembly::c_EventLoaderMeasurement);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   m_HasOptionsGUI = true;
 }
@@ -88,7 +87,7 @@ bool MNCTModuleMeasurementLoader::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleMeasurementLoader::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleMeasurementLoader::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 

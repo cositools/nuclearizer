@@ -37,7 +37,6 @@ using namespace std;
 #include "MGlobal.h"
 #include "MAssert.h"
 #include "MVector.h"
-#include "MNCTModule.h"
 #include "MDStrip3D.h"
 #include "MNCTStripHit.h"
 #include "MNCTArray.h"
@@ -60,7 +59,7 @@ ClassImp(MNCTModuleSimulationLoader)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleSimulationLoader::MNCTModuleSimulationLoader() : MNCTModule(), MFileEventsSim()
+MNCTModuleSimulationLoader::MNCTModuleSimulationLoader() : MModule(), MFileEventsSim()
 {
   // Construct an instance of MNCTModuleSimulationLoaderi
   
@@ -74,20 +73,11 @@ MNCTModuleSimulationLoader::MNCTModuleSimulationLoader() : MNCTModule(), MFileEv
   
   
   // Set all types this modules handles
-  AddModuleType(c_EventLoader);
-  AddModuleType(c_EventLoaderMeasurement);
-  AddModuleType(c_DetectorEffectsEngine);
+  AddModuleType(MAssembly::c_EventLoader);
+  AddModuleType(MAssembly::c_EventLoaderMeasurement);
+  AddModuleType(MAssembly::c_DetectorEffectsEngine);
   
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_EnergyCalibration);
-  AddSucceedingModuleType(c_CrosstalkCorrection);
-  AddSucceedingModuleType(c_ChargeSharingCorrection);
-  AddSucceedingModuleType(c_DepthCorrection);
-  AddSucceedingModuleType(c_StripPairing);
-  AddSucceedingModuleType(c_Aspect);
-  AddSucceedingModuleType(c_Else);
-  AddSucceedingModuleType(c_EventReconstruction);
-  AddSucceedingModuleType(c_EventSaver);
   
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -167,7 +157,7 @@ bool MNCTModuleSimulationLoader::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleSimulationLoader::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleSimulationLoader::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
@@ -224,7 +214,7 @@ bool MNCTModuleSimulationLoader::AnalyzeEvent(MNCTEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleSimulationLoader::ApplyDetectorEffects(MNCTEvent* Event) 
+bool MNCTModuleSimulationLoader::ApplyDetectorEffects(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
   

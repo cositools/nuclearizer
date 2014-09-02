@@ -23,7 +23,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTEvent.h"
+#include "MReadOutAssembly.h"
 #include "MNCTStripHit.h"
 
 // Forward declarations:
@@ -45,7 +45,7 @@ class MNCTInverseCrosstalkCorrection
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  //virtual bool AnalyzeEvent(MNCTEvent* Event);
+  //virtual bool AnalyzeEvent(MReadOutAssembly* Event);
   
   // Method to make the cross-talk correction on a vector of strip hits
   virtual void ApplyCrosstalk(vector<MNCTStripHit*> StripHits, int det, unsigned int side);

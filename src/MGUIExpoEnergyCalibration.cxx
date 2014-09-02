@@ -44,7 +44,7 @@ ClassImp(MGUIExpoEnergyCalibration)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoEnergyCalibration::MGUIExpoEnergyCalibration(MNCTModule* Module) : MGUIExpo(Module)
+MGUIExpoEnergyCalibration::MGUIExpoEnergyCalibration(MModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 

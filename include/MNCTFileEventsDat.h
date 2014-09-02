@@ -22,7 +22,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MFileEvents.h"
-#include "MNCTEvent.h"
+#include "MReadOutAssembly.h"
 #include "MNCTEventBuffer.h"
 #include "MDGeometryQuest.h"
 
@@ -46,10 +46,10 @@ class MNCTFileEventsDat : public MFileEvents
   virtual bool Open(MString FileName, unsigned int Way);
 
   // The main code: return the next event in buffer
-  MNCTEvent* GetNextEvent();
-  MNCTEvent* GetNextEvent_buffers();
-  MNCTEvent* GetNextEvent_singlebuffer();
-  MNCTEvent* GetNextEvent_deque();
+  MReadOutAssembly* GetNextEvent();
+  MReadOutAssembly* GetNextEvent_buffers();
+  MReadOutAssembly* GetNextEvent_singlebuffer();
+  MReadOutAssembly* GetNextEvent_deque();
 
   // protected methods:
  protected:
@@ -61,10 +61,10 @@ class MNCTFileEventsDat : public MFileEvents
   MString m_GeometryFileName;
 
   // reads a single-detector event from file
-  MNCTEvent* ReadNextEvent();
+  MReadOutAssembly* ReadNextEvent();
 
   // Updates event statistics with given event
-  void UpdateEventStatistics(MNCTEvent* Event);
+  void UpdateEventStatistics(MReadOutAssembly* Event);
 
   // Prints a summary of all event statistics
   string EventStatisticsString();
@@ -73,7 +73,7 @@ class MNCTFileEventsDat : public MFileEvents
   bool LoadSegmentCorrectionFile();
 
   // find segment for an event
-  bool FindSegment(MNCTEvent* E);
+  bool FindSegment(MReadOutAssembly* E);
 
   // protected members:
  protected:
@@ -91,7 +91,7 @@ class MNCTFileEventsDat : public MFileEvents
 
   // Event buffers
   // The following two are temporary until the multiple buffers are done being tested --MSB
-  deque<MNCTEvent*> m_EventBuffer_deque;
+  deque<MReadOutAssembly*> m_EventBuffer_deque;
   MNCTEventBuffer m_EventBuffer_single;
   // Event buffer for multiple detectors
   MNCTEventBuffer m_EventBuffer[10];

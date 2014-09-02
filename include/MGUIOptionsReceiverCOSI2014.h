@@ -34,7 +34,7 @@
 #include "MGUIERBList.h"
 
 // Nuclearizer libs:
-#include "MNCTModule.h"
+#include "MModule.h"
 
 
 // Forward declarations:
@@ -48,7 +48,7 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsReceiverCOSI2014(MNCTModule* Module);
+  MGUIOptionsReceiverCOSI2014(MModule* Module);
   //! Default destructor
   virtual ~MGUIOptionsReceiverCOSI2014();
 

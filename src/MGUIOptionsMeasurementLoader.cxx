@@ -29,7 +29,6 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModule.h"
 #include "MNCTModuleMeasurementLoader.h"
 
 
@@ -44,7 +43,7 @@ ClassImp(MGUIOptionsMeasurementLoader)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsMeasurementLoader::MGUIOptionsMeasurementLoader(MNCTModule* Module) 
+MGUIOptionsMeasurementLoader::MGUIOptionsMeasurementLoader(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor

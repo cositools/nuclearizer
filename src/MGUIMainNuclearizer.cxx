@@ -55,10 +55,9 @@ ClassImp(MGUINuclearizerMain)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUINuclearizerMain::MGUINuclearizerMain(MInterfaceNuclearizer* Interface,
-                                        MNCTData* Data)
+MGUINuclearizerMain::MGUINuclearizerMain(MSupervisor* Supervisor)
   : TGMainFrame(gClient->GetRoot(), 350, 300, kVerticalFrame),
-    m_Interface(Interface), m_Data(Data)
+    m_Supervisor(Supervisor)
 {
   gStyle->SetPalette(1, 0);
 
@@ -72,7 +71,10 @@ MGUINuclearizerMain::MGUINuclearizerMain(MInterfaceNuclearizer* Interface,
   BindKey(this, gVirtualX->KeysymToKeycode(kKey_Enter), kAnyModifier);
   BindKey(this, gVirtualX->KeysymToKeycode(kKey_Escape), kAnyModifier);
 
-  Create();
+  m_ProgramName = "Unnamed program";
+  m_PicturePath = "";
+  m_SubTitle = "No sub title set!";
+  m_LeadAuthor = "No lead author";
 }
 
 
@@ -113,9 +115,9 @@ void MGUINuclearizerMain::Create()
   MenuOptions->AddEntry("Save As", c_SaveConfig);
   MenuOptions->AddSeparator();
   MString Geo = MString("Geometry file");
-  if (m_Data->GetGeometry() != 0) {
+  if (m_Supervisor->GetGeometry() != 0) {
     Geo += " (current: ";
-    Geo += m_Data->GetGeometry()->GetName(); 
+    Geo += m_Supervisor->GetGeometry()->GetName(); 
     Geo += ")";
   }
   MenuOptions->AddLabel(Geo);
@@ -132,25 +134,29 @@ void MGUINuclearizerMain::Create()
 
 
   // Main label
-  MString TitleIconName("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
-  MFile::ExpandFileName(TitleIconName);
+  //MString TitleIconName("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
+  MFile::ExpandFileName(m_PicturePath);
   
   TGLayoutHints* TitleIconLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2, 2, 10, 0);
-  if (MFile::Exists(TitleIconName) == true) {
-    const TGPicture* TitlePicture = fClient->GetPicture(TitleIconName, FontScaler*300, FontScaler*300/5);
+  bool PictureFound = false;
+  if (MFile::Exists(m_PicturePath) == true) {
+    const TGPicture* TitlePicture = fClient->GetPicture(m_PicturePath, FontScaler*300, FontScaler*300/5);
     if (TitlePicture == 0) {
-      mgui<<"Can't find picture "<<TitleIconName<<"! Aborting!"<<error;
-      return;
+      mout<<"Can't find picture \""<<m_PicturePath<<"\"! Aborting!"<<endl;
+    } else {
+      TGIcon* TitleIcon = new TGIcon(this, TitlePicture, TitlePicture->GetWidth()+2, TitlePicture->GetHeight()+2);
+      AddFrame(TitleIcon, TitleIconLayout);
+      PictureFound = true;
     }
-    TGIcon* TitleIcon = new TGIcon(this, TitlePicture, TitlePicture->GetWidth()+2, TitlePicture->GetHeight()+2);
-    AddFrame(TitleIcon, TitleIconLayout);
-  } else {
-    mgui<<"Can't find picture "<<TitleIconName<<"! Using text!"<<error;
+  }
+  
+  if (PictureFound == false) {
+    mout<<"Can't find picture "<<m_PicturePath<<"! Using text!"<<endl;
     const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1");
     if (!lFont) lFont = gClient->GetResourcePool()->GetDefaultFont();
     FontStruct_t LargeFont = lFont->GetFontStruct();
 
-    TGLabel* MainLabel = new TGLabel(this, "The Nuclearizer");
+    TGLabel* MainLabel = new TGLabel(this, m_ProgramName);
     MainLabel->SetTextFont(LargeFont);
     TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 30, 0);
     AddFrame(MainLabel, MainLabelLayout);
@@ -160,7 +166,7 @@ void MGUINuclearizerMain::Create()
   // Sub-title
   FontStruct_t ItalicFont = MGUIDefaults::GetInstance()->GetItalicMediumFont()->GetFontStruct();
 
-  TGLabel* SubTitle = new TGLabel(this, "A measurement and simulation calibrator for COSI and GRIPS");
+  TGLabel* SubTitle = new TGLabel(this, m_SubTitle);
   SubTitle->SetTextFont(ItalicFont);
   TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, FontScaler*12);
   AddFrame(SubTitle, SubTitleLayout);
@@ -226,15 +232,15 @@ void MGUINuclearizerMain::UpdateModules()
   }
   m_Modules.clear();
 
-  for (unsigned int m = 0; m < m_Data->GetNModules(); ++m) {
-    MGUIEModule* GuiModule = new MGUIEModule(m_ModuleFrame, m, m_Data->GetModule(m));
+  for (unsigned int m = 0; m < m_Supervisor->GetNModules(); ++m) {
+    MGUIEModule* GuiModule = new MGUIEModule(m_ModuleFrame, m, m_Supervisor->GetModule(m));
     GuiModule->Associate(this);
     m_ModuleFrame->AddFrame(GuiModule, m_ModuleLayout);
     m_Modules.push_back(GuiModule);
   }  
 
-  if (m_Data->GetNModules() == 0 || m_Data->GetModule(m_Data->GetNModules()-1)->GetNSucceedingModuleTypes() > 0) {
-    MGUIEModule* GuiModule = new MGUIEModule(m_ModuleFrame, m_Data->GetNModules());
+  if (m_Supervisor->GetNModules() == 0 || m_Supervisor->GetModule(m_Supervisor->GetNModules()-1)->GetNSucceedingModuleTypes() > 0) {
+    MGUIEModule* GuiModule = new MGUIEModule(m_ModuleFrame, m_Supervisor->GetNModules());
     GuiModule->Associate(this);
     m_ModuleFrame->AddFrame(GuiModule, m_ModuleLayout);
     m_Modules.push_back(GuiModule);
@@ -385,7 +391,7 @@ void MGUINuclearizerMain::CloseWindow()
 
 bool MGUINuclearizerMain::OnChange(unsigned int ModuleID)
 {
-  MGUIModuleSelector* S = new MGUIModuleSelector(m_Data, ModuleID);
+  MGUIModuleSelector* S = new MGUIModuleSelector(m_Supervisor, ModuleID);
   gClient->WaitForUnmap(S);
   
   UpdateModules();
@@ -399,7 +405,7 @@ bool MGUINuclearizerMain::OnChange(unsigned int ModuleID)
 
 bool MGUINuclearizerMain::OnRemove(unsigned int ModuleID)
 {
-  m_Data->RemoveModule(ModuleID);
+  m_Supervisor->RemoveModule(ModuleID);
   
   UpdateModules();
 
@@ -412,8 +418,8 @@ bool MGUINuclearizerMain::OnRemove(unsigned int ModuleID)
 
 bool MGUINuclearizerMain::OnOptions(unsigned int ModuleID)
 {
-  if (m_Data->GetModule(ModuleID) != 0) {
-    m_Data->GetModule(ModuleID)->ShowOptionsGUI();
+  if (m_Supervisor->GetModule(ModuleID) != 0) {
+    m_Supervisor->GetModule(ModuleID)->ShowOptionsGUI();
     return true;
   }
   cout<<"Warning: No module with ID: "<<ModuleID<<endl;
@@ -429,7 +435,7 @@ bool MGUINuclearizerMain::OnExit()
 {
   OnApply();
 
-  m_Interface->Exit();
+  m_Supervisor->Exit();
 
   return true;
 }
@@ -442,8 +448,7 @@ bool MGUINuclearizerMain::OnStart()
 {
   if (OnApply() == false) return false;
 
-  //m_Interface->AnalyzeMultiThreaded();
-  m_Interface->Analyze();
+  m_Supervisor->Analyze();
 
   return true;
 }
@@ -456,7 +461,7 @@ bool MGUINuclearizerMain::OnStop()
 {
   if (OnApply() == false) return false;
 
-  m_Interface->SetInterrupt();
+  m_Supervisor->SetInterrupt();
 
   return true;
 }
@@ -467,7 +472,7 @@ bool MGUINuclearizerMain::OnStop()
 
 bool MGUINuclearizerMain::OnView()
 {
-  m_Interface->View();
+  m_Supervisor->View();
 
   return true;
 }
@@ -492,9 +497,9 @@ bool MGUINuclearizerMain::OnApply()
   */
   
   /*
-  m_Data->SetLoadFileName(m_FileSelectorLoad->GetFileName());
-  m_Data->SetSaveFileName(m_FileSelectorSave->GetFileName());
-  m_Data->SetGeometryFileName(m_FileSelectorGeometry->GetFileName());
+  m_Supervisor->SetLoadFileName(m_FileSelectorLoad->GetFileName());
+  m_Supervisor->SetSaveFileName(m_FileSelectorSave->GetFileName());
+  m_Supervisor->SetGeometryFileName(m_FileSelectorGeometry->GetFileName());
   */
   
   return true;
@@ -519,11 +524,8 @@ bool MGUINuclearizerMain::OnLoadConfiguration()
   
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
-    m_Data->Load(MString(Info.fFilename));
-
-    m_FileSelectorLoad->SetFileName(m_Data->GetLoadFileName());
-    m_FileSelectorSave->SetFileName(m_Data->GetSaveFileName());
-    m_FileSelectorGeometry->SetFileName(m_Data->GetGeometryFileName());
+    m_Supervisor->Load(MString(Info.fFilename));
+    m_FileSelectorGeometry->SetFileName(m_Supervisor->GetGeometryFileName());
 
     UpdateModules();
   } 
@@ -550,12 +552,12 @@ bool MGUINuclearizerMain::OnSaveConfiguration()
 
   TGFileInfo Info;
   Info.fFileTypes = (const char **) Types;
-  //Info.fIniDir = StrDup(gSystem->DirName(m_Data->GetCurrentFile()));
+  //Info.fIniDir = StrDup(gSystem->DirName(m_Supervisor->GetCurrentFile()));
   new TGFileDialog(gClient->GetRoot(), this, kFDSave, &Info);
   
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
-    m_Data->Save(MString(Info.fFilename));
+    m_Supervisor->Save(MString(Info.fFilename));
   } 
 
   return true;
@@ -570,7 +572,7 @@ bool MGUINuclearizerMain::OnGeometry()
   // Show the geometry dialog
   // Returns the geometry file name
 
-  MString Name = m_Data->GetGeometryFileName();
+  MString Name = m_Supervisor->GetGeometryFileName();
   MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), gClient->GetRoot(), Name);
   gClient->WaitForUnmap(Geo);
   if (Geo->OkPressed() == true) {
@@ -580,7 +582,7 @@ bool MGUINuclearizerMain::OnGeometry()
       gSystem->ProcessEvents();
     }
 
-    m_Data->SetGeometryFileName(Name);
+    m_Supervisor->SetGeometryFileName(Name);
   }
 
   return true;
@@ -595,11 +597,13 @@ bool MGUINuclearizerMain::OnAbout()
   // Launch the about dialog
 
   MGUIAbout* About = new MGUIAbout(gClient->GetRoot(), this);
-  About->SetProgramName("Nuclearizer");
-  About->SetIconPath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
-  About->SetLeadProgrammer("Andreas Zoglauer");
+  About->SetProgramName(m_ProgramName);
+  About->SetIconPath(m_PicturePath);
+  About->SetLeadProgrammer(m_LeadAuthor);
   About->SetUpdates("");
-  About->SetProgrammers("Alan Chiu, Alex Lowell, Andreas Zoglauer,\nAres Hernandez, Carolyn Kierans, Clio Sleator,\nDaniel Perez-Becker, Eric Bellm, Jau-Shian Liang,\nMark Bandstra", true);
+  if (m_CoAuthors != "") {
+    About->SetProgrammers(m_CoAuthors);
+  }
   About->SetCopyright("All rights reserved");
   About->ShowReferencesTab(false);
   About->ShowPeopleTab(false);

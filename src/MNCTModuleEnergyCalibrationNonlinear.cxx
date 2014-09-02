@@ -40,7 +40,6 @@
 #include "TMath.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MStreams.h"
 
 
@@ -55,7 +54,7 @@ ClassImp(MNCTModuleEnergyCalibrationNonlinear)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleEnergyCalibrationNonlinear::MNCTModuleEnergyCalibrationNonlinear() : MNCTModule()
+MNCTModuleEnergyCalibrationNonlinear::MNCTModuleEnergyCalibrationNonlinear() : MModule()
 {
   // Construct an instance of MNCTModuleEnergyCalibrationNonlinear
 
@@ -68,24 +67,13 @@ MNCTModuleEnergyCalibrationNonlinear::MNCTModuleEnergyCalibrationNonlinear() : M
   m_XmlTag = "EnergyCalibrationNonlinear";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
-  //AddPreceedingModuleType(c_DetectorEffectsEngine);
-  //AddPreceedingModuleType(c_EnergyCalibration);
-  //AddPreceedingModuleType(c_ChargeSharingCorrection);
-  //AddPreceedingModuleType(c_DepthCorrection);
-  //AddPreceedingModuleType(c_StripPairing);
-  //AddPreceedingModuleType(c_EventReconstruction);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
 
   // Set all types this modules handles
-  //AddModuleType(c_DetectorEffectsEngine);
-  AddModuleType(c_EnergyCalibration);
-  //AddModuleType(c_ChargeSharingCorrection);
-  //AddModuleType(c_DepthCorrection);
-  //AddModuleType(c_StripPairing);
-  //AddModuleType(c_EventReconstruction);
+  AddModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
 
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -208,7 +196,7 @@ bool MNCTModuleEnergyCalibrationNonlinear::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleEnergyCalibrationNonlinear::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEnergyCalibrationNonlinear::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 

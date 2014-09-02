@@ -32,7 +32,6 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MNCTMath.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +45,7 @@ ClassImp(MNCTModuleStripPairingGreedy_a)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleStripPairingGreedy_a::MNCTModuleStripPairingGreedy_a() : MNCTModule()
+MNCTModuleStripPairingGreedy_a::MNCTModuleStripPairingGreedy_a() : MModule()
 {
   // Construct an instance of MNCTModuleStripPairingGreedy_a
   
@@ -59,14 +58,14 @@ MNCTModuleStripPairingGreedy_a::MNCTModuleStripPairingGreedy_a() : MNCTModule()
   m_XmlTag = "StripPairingGreedy_a";
   
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
-  AddPreceedingModuleType(c_EnergyCalibration);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
   
   // Set all types this modules handles
-  AddModuleType(c_StripPairing);
+  AddModuleType(MAssembly::c_StripPairing);
   
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -103,7 +102,7 @@ bool MNCTModuleStripPairingGreedy_a::Initialize()
 {
   // Initialize the module 
   
-  MNCTModule::Initialize();
+  MModule::Initialize();
   
   return true;
 }
@@ -112,7 +111,7 @@ bool MNCTModuleStripPairingGreedy_a::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
   

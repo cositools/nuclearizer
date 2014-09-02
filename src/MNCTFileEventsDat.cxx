@@ -200,11 +200,11 @@ bool MNCTFileEventsDat::Open(MString FileName, unsigned int Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent* MNCTFileEventsDat::ReadNextEvent()
+MReadOutAssembly* MNCTFileEventsDat::ReadNextEvent()
 {
   // Return next single event from file... or 0 if there are no more.
   
-  MNCTEvent* Event = new MNCTEvent();
+  MReadOutAssembly* Event = new MReadOutAssembly();
   
   MString Line;
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
@@ -225,7 +225,7 @@ MNCTEvent* MNCTFileEventsDat::ReadNextEvent()
         m_NStartEventsInFile++;
         if (Event->GetNStripHits() == 0) {
           delete Event;
-          Event = new MNCTEvent();
+          Event = new MReadOutAssembly();
           m_IsFirstEvent = false;
         } else {
           // Done reading a non-empty event.  Return it:
@@ -334,12 +334,12 @@ MNCTEvent* MNCTFileEventsDat::ReadNextEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent* MNCTFileEventsDat::GetNextEvent()
+MReadOutAssembly* MNCTFileEventsDat::GetNextEvent()
 {
   // Return the next event... or 0 if there are no more.
   // So remember to test for more events!
   
-  MNCTEvent* Event;
+  MReadOutAssembly* Event;
   unsigned long CL_period = 4294967295UL;
   
   // if progress window has been canceled, exit.
@@ -402,12 +402,12 @@ MNCTEvent* MNCTFileEventsDat::GetNextEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent* MNCTFileEventsDat::GetNextEvent_buffers()
+MReadOutAssembly* MNCTFileEventsDat::GetNextEvent_buffers()
 {
   // Return the next event... or 0 if there are no more.
   // So remember to test for more events!
   
-  MNCTEvent* Event;
+  MReadOutAssembly* Event;
   bool EndOfFile = false;
   bool Canceled = false;
   
@@ -642,12 +642,12 @@ MNCTEvent* MNCTFileEventsDat::GetNextEvent_buffers()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent* MNCTFileEventsDat::GetNextEvent_singlebuffer()
+MReadOutAssembly* MNCTFileEventsDat::GetNextEvent_singlebuffer()
 {
   // Return the next event... or 0 if there are no more.
   // So remember to test for more events!
   
-  MNCTEvent* Event;
+  MReadOutAssembly* Event;
   bool EndOfFile = false;
   bool Canceled = false;
   
@@ -703,12 +703,12 @@ MNCTEvent* MNCTFileEventsDat::GetNextEvent_singlebuffer()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTEvent* MNCTFileEventsDat::GetNextEvent_deque()
+MReadOutAssembly* MNCTFileEventsDat::GetNextEvent_deque()
 {
   // Return the next event... or 0 if there are no more.
   // So remember to test for more events!
   
-  MNCTEvent* Event;
+  MReadOutAssembly* Event;
   bool EndOfFile = false;
   bool Canceled = false;
   
@@ -739,7 +739,7 @@ MNCTEvent* MNCTFileEventsDat::GetNextEvent_deque()
     
     if (m_FindCoincidences == true)
     {
-      deque<MNCTEvent*>::iterator Event_i;
+      deque<MReadOutAssembly*>::iterator Event_i;
       Event_i=m_EventBuffer_deque.begin()+1;
       while( Event_i != m_EventBuffer_deque.end() )
       {
@@ -832,7 +832,7 @@ MNCTEvent* MNCTFileEventsDat::GetNextEvent_deque()
 
 
 // Updates event statistics with given event
-void MNCTFileEventsDat::UpdateEventStatistics(MNCTEvent* Event)
+void MNCTFileEventsDat::UpdateEventStatistics(MReadOutAssembly* Event)
 {
   // determine if single-detector event or coincidence
   int ndets=0;
@@ -989,7 +989,7 @@ bool MNCTFileEventsDat::LoadSegmentCorrectionFile()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MNCTFileEventsDat::FindSegment(MNCTEvent* E)
+bool MNCTFileEventsDat::FindSegment(MReadOutAssembly* E)
 {
   m_Segment = -1;
   // Search through entire segment file and find a section matching the

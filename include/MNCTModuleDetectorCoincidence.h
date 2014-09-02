@@ -22,9 +22,9 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MNCTModule.h"
-#include "MNCTEvent.h"
-#include "MNCTEventBuffer.h"
+#include "MModule.h"
+#include "MReadOutAssembly.h"
+#include "MReadOutAssemblyBuffer.h"
 
 // Forward declarations:
 
@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleDetectorCoincidence : public MNCTModule
+class MNCTModuleDetectorCoincidence : public MModule
 {
   // public interface:
  public:
@@ -45,7 +45,7 @@ class MNCTModuleDetectorCoincidence : public MNCTModule
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   //virtual void ShowOptionsGUI();
@@ -68,7 +68,7 @@ class MNCTModuleDetectorCoincidence : public MNCTModule
  protected:
 
   // Updates event statistics with given event
-  void UpdateEventStatistics(MNCTEvent* Event);
+  void UpdateEventStatistics(MReadOutAssembly* Event);
 
   // Prints a summary of all event statistics
   string EventStatisticsString();

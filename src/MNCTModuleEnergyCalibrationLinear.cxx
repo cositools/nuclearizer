@@ -39,7 +39,6 @@
 #include "TFile.h"
 
 // MEGAlib libs:
-#include "MNCTModule.h"
 #include "MStreams.h"
 
 
@@ -54,7 +53,7 @@ ClassImp(MNCTModuleEnergyCalibrationLinear)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleEnergyCalibrationLinear::MNCTModuleEnergyCalibrationLinear() : MNCTModule()
+MNCTModuleEnergyCalibrationLinear::MNCTModuleEnergyCalibrationLinear() : MModule()
 {
   // Construct an instance of MNCTModuleEnergyCalibrationLinear
 
@@ -67,13 +66,13 @@ MNCTModuleEnergyCalibrationLinear::MNCTModuleEnergyCalibrationLinear() : MNCTMod
   m_XmlTag = "EnergyCalibrationLinear";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
 
   // Set all types this modules handles
-  AddModuleType(c_EnergyCalibration);
+  AddModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
 
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -190,7 +189,7 @@ bool MNCTModuleEnergyCalibrationLinear::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleEnergyCalibrationLinear::AnalyzeEvent(MNCTEvent* Event) 
+bool MNCTModuleEnergyCalibrationLinear::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 

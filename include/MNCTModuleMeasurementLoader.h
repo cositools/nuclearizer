@@ -25,7 +25,7 @@
 #include "MFileEvents.h"
 
 // Nuclearizer libs
-#include "MNCTModule.h"
+#include "MModule.h"
 
 // Forward declarations:
 
@@ -33,7 +33,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MNCTModuleMeasurementLoader : public MNCTModule, public MFileEvents
+class MNCTModuleMeasurementLoader : public MModule, public MFileEvents
 {
   // public interface:
  public:
@@ -46,7 +46,7 @@ class MNCTModuleMeasurementLoader : public MNCTModule, public MFileEvents
   virtual bool Initialize();
 
   //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MNCTEvent* Event);
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

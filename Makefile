@@ -51,7 +51,7 @@ endif
 
 # Names of the programs
 NUCLEARIZERPRG = $(BN)/nuclearizer
-NUCLEARIZERCXX = src/MNuclearizerMain.cxx
+NUCLEARIZERCXX = src/MAssembly.cxx
 
 DEEPRG = $(BN)/deecosi
 DEECXX = src/MNCTDetectorEffectsEngineCOSI.cxx
@@ -60,19 +60,12 @@ ALLPROGRAMS = $(NUCLEARIZERPRG) $(DEEPRG)
 
 # The nuclearizer library
 NUCLEARIZERLIB = \
-$(LB)/MInterfaceNuclearizer.o \
-$(LB)/MGUIMainNuclearizer.o \
-$(LB)/MGUIEModule.o \
-$(LB)/MGUIExpo.o \
-$(LB)/MGUIExpoCombinedViewer.o \
-$(LB)/MGUIOptions.o \
-$(LB)/MGUIModuleSelector.o \
+$(LB)/MReadOutAssembly.o \
 $(LB)/MNCTArray.o \
 $(LB)/MNCTCoincidenceVolume.o \
 $(LB)/MNCTDetectorArray.o \
 $(LB)/MNCTAspect.o \
 $(LB)/MNCTAspectReconstruction.o \
-$(LB)/MNCTEvent.o \
 $(LB)/MNCTHit.o \
 $(LB)/MNCTHitInVoxel.o \
 $(LB)/MNCTMath.o \
@@ -85,10 +78,6 @@ $(LB)/MNCTGuardringHit.o \
 $(LB)/MNCTFile.o \
 $(LB)/MNCTFileEventsDat.o \
 $(LB)/MNCTEventBuffer.o \
-$(LB)/MNCTData.o \
-$(LB)/MNCTModule.o \
-$(LB)/MNCTModuleTemplate.o \
-$(LB)/MGUIOptionsTemplate.o \
 $(LB)/MNCTModuleSimulationLoader.o \
 $(LB)/MGUIOptionsSimulationLoader.o \
 $(LB)/MNCTModuleMeasurementLoader.o \
@@ -126,13 +115,20 @@ $(LB)/MNCTModuleEventFilter.o \
 $(LB)/MNCTModuleDumpEvent.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MNCTModuleEventSaver.o \
-$(LB)/MNCTModuleTransmitterRealta.o \
-$(LB)/MGUIOptionsTransmitterRealta.o \
 $(LB)/MGUIOptionsAspect.o \
 $(LB)/MGUIOptionsEventFilter.o \
 $(LB)/MNCTPreprocessor.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
+
+FRETALONDIR         := $(MEGALIB)/src/fretalon/framework
+FRETALON_CXX_MAIN   := $(FRETALONDIR)/src/MAssembly.cxx $(FRETALONDIR)/src/MReadOutAssembly.cxx
+FRETALON_CXX_FILES  := $(wildcard $(FRETALONDIR)/src/*.cxx)
+FRETALON_CXX_FILES  := $(filter-out $(FRETALON_CXX_MAIN),$(FRETALON_CXX_FILES))
+FRETALON_H_FILES    := $(wildcard $(FRETALONDIR)/inc/*.h)
+FRETALON_H_FILES    := $(filter-out $(FRETALONDIR)/inc/MAssembly.h $(FRETALONDIR)/inc/MReadOutAssembly.h,$(FRETALON_H_FILES))
+FRETALONLIBS        := $(addprefix $(LB)/,$(notdir $(FRETALON_CXX_FILES:.cxx=.o)))
+
 
 # The shared library
 NUCLEARIZERSHAREDLIB = $(LB)/libNuclearizer.$(DLL)
@@ -161,6 +157,7 @@ all: $(ALLPROGRAMS)
 # Compile all libraries and programs
 n: $(ALLPROGRAMS)
 	@$(NUCLEARIZERPRG) $(CMD)
+	@$(NUCLEARIZERPRG) $(CMD)
 
 nuclearizer: $(ALLPROGRAMS)
 	@$(NUCLEARIZERPRG) $(CMD)
@@ -171,20 +168,27 @@ clean:
 	@-rm -f $(NUCLEARIZERPRG) $(DEEPRG)
 	@-rm -f *~ include/*~ src/*~
 
-
+clean_framework:
+	@$(MAKE) clean_fre -C $(MEGALIB)/src
+	
 #----------------------------------------------------------------
 # Explicit rules & dependencies:
 #
+
+$(FRETALONLIBS): $(LB)/%.o: $(FRETALONDIR)/src/%.cxx $(FRETALONDIR)/inc/%.h
+	@echo "Compiling $(subst src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(NUCLEARIZERLIB): $(LB)/%.o: src/%.cxx include/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(NUCLEARIZERSHAREDLIB): $(NUCLEARIZERLIB)
+$(NUCLEARIZERSHAREDLIB): $(FRETALONLIBS) $(NUCLEARIZERLIB) 
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(FRETALONLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
 
 $(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
+	@echo $(FRETALONLIB)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZERPRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZERCXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERPRG)
 
