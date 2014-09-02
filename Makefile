@@ -139,9 +139,9 @@ ALLLIBS += -lMathCore
 #
 
 .EXPORT_ALL_VARIABLES: all header sources doc clean
-.Phony:                all header sources doc clean
+.Phony:                all megalib
 .NOTPARALLEL:          megalib
-
+.SILENT:
 
 #----------------------------------------------------------------
 # Command rules
@@ -167,7 +167,7 @@ clean:
 	@-rm -f $(NUCLEARIZERO) $(DEEO) $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIB)
 	@-rm -f $(NUCLEARIZERPRG) $(DEEPRG)
 	@-rm -f *~ include/*~ src/*~
-
+	
 #----------------------------------------------------------------
 # Explicit rules & dependencies:
 #
