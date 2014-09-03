@@ -1,7 +1,7 @@
 /*
  * MNCTModuleEventFilter.h
  *
- * Copyright (C) 2008-2010 by Jau-Shian Liang.
+ * Copyright (C) by Andreas Zoglauer
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -44,8 +44,8 @@ class MNCTModuleEventFilter : public MModule
   //! Initialize the module
   virtual bool Initialize();
 
-  //!
-  virtual MString Report();
+  //! Finalize the module
+  virtual void Finalize();
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
@@ -58,9 +58,21 @@ class MNCTModuleEventFilter : public MModule
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
 
-  //!
-  void SetVetoSetting(MString VSetting){m_VetoSetting=VSetting;}
-  MString GetVetoSetting(){return m_VetoSetting;}
+  //! Set the accepted detector list - if empty all are accepted!
+  void SetDetectorList(vector<int> DetectorIDs) { m_DetectorIDs = DetectorIDs; }
+  //! Get the accepted detector list - if empty all are accepted!
+  vector<int> GetDetectorList() const { return m_DetectorIDs; }
+
+  //! Set the minimum total energy!
+  void SetMinimumTotalEnergy(double MinimumTotalEnergy) { m_MinimumTotalEnergy = MinimumTotalEnergy; }
+  //! Get the minimum total energy!
+  double GetMinimumTotalEnergy() const { return m_MinimumTotalEnergy; }
+
+  //! Set the maximum total energy!
+  void SetMaximumTotalEnergy(double MaximumTotalEnergy) { m_MaximumTotalEnergy = MaximumTotalEnergy; }
+  //! Get the maximum total energy!
+  double GetMaximumTotalEnergy() const { return m_MaximumTotalEnergy; }
+  
 
   // protected methods:
  protected:
@@ -74,21 +86,15 @@ class MNCTModuleEventFilter : public MModule
 
   // private members:
  private:
-  //!
-  string m_VetoSetting;
-  
-  //!
-  int m_NEvent;
-  
-  //!
-  int m_NVeto;
-  
-  //!
-  vector<int> m_VetoList;
+  //! The list of detector to use
+  vector<int> m_DetectorIDs;
 
-  //!
-  //vector<int> m_IgnoreList;
+  //! The minimum total energy
+  double m_MinimumTotalEnergy;
+  //! The minimum total energy
+  double m_MaximumTotalEnergy;
 
+  
 #ifdef ___CINT___
  public:
   ClassDef(MNCTModuleEventFilter, 0) // no description

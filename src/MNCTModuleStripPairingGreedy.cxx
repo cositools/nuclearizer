@@ -104,12 +104,6 @@ bool MNCTModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level 
 
-  // Check if the event has all the appropriate flogs
-  if (Event->IsEnergyCalibrated() == false) {
-    mout<<"Error: Energy not calibrated!"<<endl;
-    return false;
-  }
-
   // Attention: Make sure too loop over all detectors
   
   // Check number of detectors & store detector ID in vector

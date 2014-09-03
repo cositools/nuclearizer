@@ -74,7 +74,7 @@ MNCTModuleSimulationLoader::MNCTModuleSimulationLoader() : MModule(), MFileEvent
   
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventLoader);
-  AddModuleType(MAssembly::c_EventLoaderMeasurement);
+  AddModuleType(MAssembly::c_EventLoaderSimulation);
   AddModuleType(MAssembly::c_DetectorEffectsEngine);
   
   // Set all modules, which can follow this module
@@ -196,7 +196,10 @@ bool MNCTModuleSimulationLoader::AnalyzeEvent(MReadOutAssembly* Event)
     
     Event->AddGuardringHit(GuardringHit);
   } 
-  Event->SetDataRead();  
+  
+  Event->SetAnalysisProgress(MAssembly::c_EventLoader | 
+                             MAssembly::c_EventLoaderSimulation | 
+                             MAssembly::c_DetectorEffectsEngine);
   
   
   // Don't forget to clean up

@@ -108,7 +108,6 @@ $(LB)/MNCTModuleStripPairingGreedy_a.o \
 $(LB)/MNCTModuleStripPairingGreedy_b.o \
 $(LB)/MNCTModuleAspect.o \
 $(LB)/MNCTModuleEventFilter.o \
-$(LB)/MNCTModuleDumpEvent.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MNCTModuleEventSaver.o \
 $(LB)/MGUIOptionsAspect.o \
@@ -153,7 +152,6 @@ all: megalib $(ALLPROGRAMS)
 # Compile all libraries and programs
 n: megalib $(ALLPROGRAMS)
 	@$(NUCLEARIZERPRG) $(CMD)
-	@$(NUCLEARIZERPRG) $(CMD)
 
 nuclearizer: megalib $(ALLPROGRAMS)
 	@$(NUCLEARIZERPRG) $(CMD)
@@ -185,7 +183,6 @@ $(NUCLEARIZERSHAREDLIB): $(FRETALONLIBS) $(NUCLEARIZERLIB)
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(FRETALONLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
 
 $(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
-	@echo $(FRETALONLIB)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZERPRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZERCXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERPRG)
 

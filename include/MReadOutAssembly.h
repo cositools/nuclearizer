@@ -74,32 +74,6 @@ class MReadOutAssembly
   //! Set and get the Modified Julian Date of this event
   void SetMJD(double MJD) { m_MJD = MJD; }
   double GetMJD() const { return m_MJD; }
-
-  /*
-  //! Set and get the latitude, longitude, and altitude of this event
-  void SetLatitude(double lat) { m_Aspect->SetLatutide(lat); }
-  double GetLatitude() const { return m_Aspect->GetLatitude(); }
-  void SetLongitude(double lon) { m_Aspect->SetLongitude(lon); }
-  double GetLongitude() const { return m_Aspect->GetLongitude(); }
-  void SetAltitude(double alt) { m_Aspect->SetAltitude(alt); }
-  double GetAltitude() const { return m_Aspect->GetAltitude(); }
-
-  //! Set Aspect of this event (galactic coordinates)
-  void SetGX(MVector GX) { m_Aspect->SetGalacticPointingXAxis(GX); }
-  void SetGZ(MVector GZ) { m_Aspect->SetGalacticPointingZAxis(GZ); }
-
-  //! Get Aspect of this event (galactic coordinates)
-  MVector GetGX() const { return m_Aspect->GetGalacticPointingXAxis(); }
-  MVector GetGZ() const { return m_Aspect->SetGalacticPointingZAxis(); }
-
-  //! Set Aspect of this event (local horizon coordinates)
-  void SetHX(MVector HX) { m_Aspect->SetHorizonPointingXAxis(HX); }
-  void SetHZ(MVector HZ) { m_Aspect->SetHorizonPointingZAxis(HZ); }
-
-  //! Get Aspect of this event (local horizon coordinates)
-  MVector GetHX() const { return m_Aspect->GetHorizonPointingXAxis(); }
-  MVector GetHZ() const { return m_Aspect->GetHorizonPointingZAxis(); }
-  */
   
   //! Set the aspect
   void SetAspect(MNCTAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
@@ -162,63 +136,36 @@ class MReadOutAssembly
 
   //! Set the energy-calibration-incomplete flag
   void SetEnergyCalibrationIncomplete(bool Flag = true) { m_EnergyCalibrationIncomplete = Flag; }
-  //! Get the energy-calibration-incomplete  flag
+  //! Get the energy-calibration-incomplete flag
   bool IsEnergyCalibrationIncomplete() const { return m_EnergyCalibrationIncomplete; }
 
   //! Set the strip-pairing-incomplete flag
   void SetStripPairingIncomplete(bool Flag = true) { m_StripPairingIncomplete = Flag; }
-  //! Get the strip-pairing-incomplete  flag
+  //! Get the strip-pairing-incomplete flag
   bool IsStripPairingIncomplete() const { return m_StripPairingIncomplete; }
 
   //! Set the depth-calibration-incomplete flag
   void SetDepthCalibrationIncomplete(bool Flag = true) { m_DepthCalibrationIncomplete = Flag; }
-  //! Get the depth-calibration-incomplete  flag
+  //! Get the depth-calibration-incomplete flag
   bool IsDepthCalibrationIncomplete() const { return m_DepthCalibrationIncomplete; }
 
-  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+  //! Set the filtered-out flag
+  void SetFilteredOut(bool Flag = true) { m_FilteredOut = Flag; }
+  //! Get the filgtered-out flag
+  bool IsFilteredOut() const { return m_FilteredOut; }
+
+  //! Returns true if none of the "bad" or "incomplete" flags has been set and the event has not been filtered out or rejected
   bool IsGood() const;
-  //! Returns true if any of the "bad" or "incomplete" falgs has been set
-  bool IsBad() const { return !IsGood(); }
+  //! Returns true if any of the "bad" or "incomplete" flags has been set
+  bool IsBad() const;
 
-  //! Set the data read flag
-  void SetDataRead(bool Flag = true) { m_DataRead = Flag; }
-  //! Return the data read flag
-  bool IsDataRead() const { return m_DataRead; }
-
-  //! Set the data read flag
-  void SetEnergyCalibrated(bool Flag = true) { m_EnergyCalibrated = Flag; }
-  //! Return the data read flag
-  bool IsEnergyCalibrated() const { return m_EnergyCalibrated; }
-
-  //! Set the cross-talk corrected flag
-  void SetCrosstalkCorrected(bool Flag = true) { m_CrosstalkCorrected = Flag; }
-  //! Return the cross-talk corrected flag
-  bool IsCrosstalkCorrected() const { return m_CrosstalkCorrected; }
-
-  //! Set the charge sharing corrected flag
-  void SetChargeSharingCorrected(bool Flag = true) { m_ChargeSharingCorrected = Flag; }
-  //! Return the charge sharing corrected flag
-  bool IsChargeSharingCorrected() const { return m_ChargeSharingCorrected; }
-
-  //! Set the depth calibrated flag
-  void SetDepthCalibrated(bool Flag = true) { m_DepthCalibrated = Flag; }
-  //! Return the depth calibrated flag
-  bool IsDepthCalibrated() const { return m_DepthCalibrated; }
-
-  //! Set the strips paired flag
-  void SetStripsPaired(bool Flag = true) { m_StripsPaired = Flag; }
-  //! Return the strips paired flag
-  bool IsStripsPaired() const { return m_StripsPaired; }
-
-  //! Set the aspect added flag
-  void SetAspectAdded(bool Flag = true) { m_AspectAdded = Flag; }
-  //! Get the aspect added flag
-  bool IsAspectAdded() {return m_AspectAdded; }
-
-  //! Set the reconstructed flag
-  void SetReconstructed(bool Flag = true) { m_Reconstructed = Flag; }
-  //! Return the reconstructed flag
-  bool IsReconstructed() const { return m_Reconstructed; }
+  //! Set a specific analysis progress
+  void SetAnalysisProgress(uint64_t Progress) { m_AnalysisProgress |= Progress; }
+  //! Check if we have a certain progress
+  bool HasAnalysisProgress(uint64_t Progress) const { return (m_AnalysisProgress & Progress) == Progress ? true : false; }
+  //! Return the analysis progress flag
+  uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
+  
 
   //! Set the Quality of this Event
   void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
@@ -302,18 +249,12 @@ class MReadOutAssembly
   bool m_EnergyCalibrationIncomplete;
   bool m_StripPairingIncomplete;
   bool m_DepthCalibrationIncomplete;
+  
+  //! True if event has been filtered out
+  bool m_FilteredOut;
 
-
-  // Flags indicating the analysis level of the event
-  bool m_DataRead;
-  bool m_EnergyCalibrated;
-  bool m_CrosstalkCorrected;
-  bool m_ChargeSharingCorrected;
-  bool m_DepthCalibrated;
-  bool m_StripsPaired;
-  bool m_AspectAdded;
-  bool m_Reconstructed;
-
+  //! The analysis progress 
+  uint64_t m_AnalysisProgress;
   
   
 #ifdef ___CINT___

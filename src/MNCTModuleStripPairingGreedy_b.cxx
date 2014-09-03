@@ -189,20 +189,15 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
     }
   }
   
+  Event->SetAnalysisProgress(MAssembly::c_StripPairing);
+  
   return true;
 };
 
 //this function takes the MReadOutAssembly and get all the info from it.
 bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int detector) {
   
-  ClearMembers();
-  
-  // Check if the event has all the appropriate flags
-  if (Event->IsEnergyCalibrated() == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy not calibrated!"<<endl;
-    return false;
-  }
-  
+  ClearMembers();  
   
   //clear nHits (from the previous detector)
   int n_x = 0;

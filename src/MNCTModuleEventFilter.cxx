@@ -2,7 +2,7 @@
  * MNCTModuleEventFilter.cxx
  *
  *
- * Copyright (C) 2008-2010 by Jau-Shian Liang.
+ * Copyright (C) by Andreas Zoglauer
  * All rights reserved.
  *
  *
@@ -32,6 +32,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+using namespace std;
 
 // ROOT libs:
 #include "TGClient.h"
@@ -70,12 +71,16 @@ MNCTModuleEventFilter::MNCTModuleEventFilter() : MModule()
   AddModuleType(MAssembly::c_EventFilter);
 
   // Set all modules, which can follow this module
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
   m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
+  
+  m_MinimumTotalEnergy = 0;
+  m_MaximumTotalEnergy = 10000;
 }
 
 
@@ -94,52 +99,19 @@ MNCTModuleEventFilter::~MNCTModuleEventFilter()
 
 bool MNCTModuleEventFilter::Initialize()
 {
-  // Initialize the module 
-  cout << endl << "Initializing MNCTModuleEventFilter..." << endl;
-
-  m_NEvent=0;
-  m_NVeto=0;
-  m_VetoList.clear();
-//  m_VetoList.push_back(1);
-
-  // parse veto setting string
-  int int_tmp=-1;
-  istringstream vetolist(m_VetoSetting);
-  while(!vetolist.eof()){
-    vetolist >> int_tmp;
-    m_VetoList.push_back(int_tmp);
-  }
-  
-  cout << "Veto list: ";
-  for(unsigned int i=0;i<m_VetoList.size(); i++)
-  {
-    cout << m_VetoList[i] << ' ';
-  }
-  cout << endl << endl;
-  
-  return true;
+  return MModule::Initialize();
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
-MString MNCTModuleEventFilter::Report()
+
+
+void MNCTModuleEventFilter::Finalize()
 {
-  MString string_tmp;
-
-  string_tmp += "  Total input events: ";
-  string_tmp += m_NEvent;
-  string_tmp += "\n";
-  
-  string_tmp += "  Vetoed events: "; 
-  string_tmp += m_NVeto;
-  string_tmp += '\n';
-  
-  string_tmp += "  Veto rate: ";
-  string_tmp += m_NVeto/(double)m_NEvent*100.0 ;
-  string_tmp += "%\n";
-
-  return string_tmp;
-
+  MModule::Finalize();
 }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -147,22 +119,38 @@ bool MNCTModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
 
-  if(Event->GetNStripHits()<1)return true;
-
-  m_NEvent++;
-  vector<int>::iterator it;
+  bool FilteredOut = false;
   
-  for(unsigned int i=0; i<Event->GetNStripHits(); i++){
-    it=find(m_VetoList.begin(),m_VetoList.end(),Event->GetStripHit(i)->GetDetectorID());
-
-    if(it!=m_VetoList.end()){
-      Event->SetVeto();
-      //cout << "Event:" << Event->GetID() << " D" << Event->GetStripHit(i)->GetDetectorID() <<"-->Veto!!\n";
-      m_NVeto++;
-      break;
+  // Apply the energy filter:
+  if (Event->GetPhysicalEvent() != 0) {
+    MPhysicalEvent* E = Event->GetPhysicalEvent();
+    if (E->Ei() < m_MinimumTotalEnergy || E->Ei() > m_MaximumTotalEnergy) {
+      FilteredOut = true; 
     }
-
+  } else if (Event->GetNHits() > 0) {
+    double Total = 0;
+    for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+      Total += Event->GetHit(h)->GetEnergy(); 
+    }
+    if (Total < m_MinimumTotalEnergy || Total > m_MaximumTotalEnergy) {
+      FilteredOut = true; 
+    }   
+  } else if (Event->GetNStripHits() > 0) {
+    double Total = 0;
+    for (unsigned int h = 0; h < Event->GetNStripHits(); ++h) {
+      Total += Event->GetStripHit(h)->GetEnergy(); 
+    }
+    if (Total < m_MinimumTotalEnergy || Total > m_MaximumTotalEnergy) {
+      FilteredOut = true; 
+    }   
   }
+  
+  if (FilteredOut == true) {
+    Event->SetFilteredOut(true);
+  }
+  
+  Event->SetAnalysisProgress(MAssembly::c_EventFilter);
+  
   return true;
 }
 
@@ -187,10 +175,15 @@ void MNCTModuleEventFilter::ShowOptionsGUI()
 bool MNCTModuleEventFilter::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
-  MXmlNode* VetoSettingNode = Node->GetNode("VetoSetting");
-
-  if (VetoSettingNode !=0)SetVetoSetting(VetoSettingNode->GetValueAsString());
-  else SetVetoSetting("");
+  
+  MXmlNode* MinimumTotalEnergyNode = Node->GetNode("MinimumTotalEnergy");
+  if (MinimumTotalEnergyNode != 0) {
+    m_MinimumTotalEnergy = MinimumTotalEnergyNode->GetValueAsDouble();
+  }
+  MXmlNode* MaximumTotalEnergyNode = Node->GetNode("MaximumTotalEnergy");
+  if (MaximumTotalEnergyNode != 0) {
+    m_MaximumTotalEnergy = MaximumTotalEnergyNode->GetValueAsDouble();
+  }
 
   return true;
 }
@@ -205,12 +198,12 @@ MXmlNode* MNCTModuleEventFilter::CreateXmlConfiguration()
 
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
 
-  new MXmlNode(Node, "VetoSetting", GetVetoSetting());
+  new MXmlNode(Node, "MinimumTotalEnergy", m_MinimumTotalEnergy);
+  new MXmlNode(Node, "MaximumTotalEnergy", m_MaximumTotalEnergy);
 
   return Node;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 
 // MNCTModuleEventFilter.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

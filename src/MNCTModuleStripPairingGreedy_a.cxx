@@ -114,15 +114,7 @@ bool MNCTModuleStripPairingGreedy_a::Initialize()
 bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
-  
-  // Check if the event has all the appropriate flogs
-  if (Event->IsEnergyCalibrated() == false) {
-    mout<<"Error: Energy not calibrated!"<<endl;
-    return false;
-  }
-  
-  
-  
+    
   
   float EventQualityFactor=0.; //Gives average quality of all hits in an event
   float EventQualityCounter=0.;
@@ -901,6 +893,8 @@ bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MReadOutAssembly* Event)
       }
     }
   }
+  
+  Event->SetAnalysisProgress(MAssembly::c_StripPairing);
 
   return true;
 }

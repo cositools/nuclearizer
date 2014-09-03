@@ -341,7 +341,7 @@ bool MNCTModuleMeasurementLoaderGRIPS2013::ReadNextEvent(MReadOutAssembly* Event
             mout<<"(If the error is really bad, then there might event not be an ID)"<<endl;
             mout<<"I pass the event on anyway."<<endl;
           }
-          Event->SetDataRead();
+          Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
           return !Error;
         }
       } // SE
@@ -409,7 +409,7 @@ bool MNCTModuleMeasurementLoaderGRIPS2013::ReadNextEvent(MReadOutAssembly* Event
       mout<<"(If the error is really bad, then there might event not be an ID)"<<endl;
       mout<<"I pass the event on anyway."<<endl;
     }
-    Event->SetDataRead();
+    Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
     return !Error;
   }
   

@@ -113,10 +113,12 @@ bool MNCTModuleMeasurementLoaderROA::AnalyzeEvent(MReadOutAssembly* Event)
     
   if (ReadNextEvent(Event) == false) {
     cout<<"MNCTModuleMeasurementLoaderROA: No more events!"<<endl;
-    m_IsOK = false;
+    m_IsFinished = true;
     return false;
   }
   
+  Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
+
   return true;
 }
 
@@ -193,8 +195,6 @@ bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
     SH->SetADCUnits(ADC->GetADCValue());
     Event->AddStripHit(SH);
   }
-  
-  Event->SetDataRead();
   
   return true;
 }

@@ -59,24 +59,24 @@ ClassImp(MNCTModuleCrosstalkCorrection)
 MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MModule()
 {
   // Construct an instance of MNCTModuleCrosstalkCorrection
-
+  
   // Set all module relevant information
-
+  
   // Set the module name --- has to be unique
   m_Name = "Cross-talk energy correction";
-
+  
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "CrosstalkCorrection";
-
+  
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
-
+  
   // Set all types this modules handles
   AddModuleType(MAssembly::c_CrosstalkCorrection);
-
+  
   // Set all modules, which can follow this module
-
+  
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
   m_HasOptionsGUI = false;
@@ -100,105 +100,105 @@ MNCTModuleCrosstalkCorrection::~MNCTModuleCrosstalkCorrection()
 bool MNCTModuleCrosstalkCorrection::Initialize()
 {
   // Initialize the module
-
+  
   for (int DetectorNumber=0; DetectorNumber<10; DetectorNumber++)
+  {
+    mout << "Attempting to load energy crosstalk data for D" << DetectorNumber << endl;
+    
+    // Construct the filename of the detector-specific calibration file
+    string DetectorNumberString;
+    stringstream temp;
+    temp << setfill('0') << setw(1) << DetectorNumber;
+    DetectorNumberString = temp.str();
+    MString FileName = (MString)std::getenv ("NUCLEARIZER_CAL")
+    +"/crosstalk_D"+ DetectorNumberString + ".csv";
+    
+    // Set calibration to default
+    for (int i=0; i<=1; i++)
     {
-      mout << "Attempting to load energy crosstalk data for D" << DetectorNumber << endl;
-
-      // Construct the filename of the detector-specific calibration file
-      string DetectorNumberString;
-      stringstream temp;
-      temp << setfill('0') << setw(1) << DetectorNumber;
-      DetectorNumberString = temp.str();
-      MString FileName = (MString)std::getenv ("NUCLEARIZER_CAL")
-	+"/crosstalk_D"+ DetectorNumberString + ".csv";
-
+      for (unsigned int j=0; j<=MAXNSKIP; j++)
+      {
+        m_CrosstalkCoeffs[DetectorNumber][i][j][0] = 0.;
+        m_CrosstalkCoeffs[DetectorNumber][i][j][1] = 0.;
+      }
+    }
+    
+    // Reset flags telling if calibration has been loaded
+    for (unsigned int i=0; i<=MAXNSKIP; i++)
+    {
+      m_IsCalibrationLoaded[DetectorNumber][0][i] = false;
+      m_IsCalibrationLoaded[DetectorNumber][1][i] = false;
+    }
+    
+    // Read the calibration coefficients line-by-line
+    fstream File;
+    File.open(FileName, ios_base::in);
+    if (File.is_open() == false)
+    {
+      mout<<"***Warning: Unable to open file: "<<FileName<<endl
+      <<"   Is your NUCLEARIZER_CAL environment variable set?"<<endl;
+    } 
+    else
+    {
+      MString Line;
+      while(!File.eof())
+      {
+        Line.ReadLine(File);
+        if (Line.BeginsWith("#") == false)
+        {
+          //mout << Line << endl;
+          char PosNeg;
+          int SideNumber, NSkip;
+          double a, b;
+          if (sscanf(Line.Data(), "%c,%d,%lf,%lf\n",
+            &PosNeg,&NSkip,&a,&b) == 4)
+          {
+            //mout << PosNeg << " " << NSkip << " " << a << " " << b << endl;
+            if (PosNeg == '+') { SideNumber = 0; } else { SideNumber = 1; }
+            if ((0<=NSkip) and (NSkip<=MAXNSKIP))
+            {
+              m_CrosstalkCoeffs[DetectorNumber][SideNumber][NSkip][0] = a;
+              m_CrosstalkCoeffs[DetectorNumber][SideNumber][NSkip][1] = b/1333.;
+              m_IsCalibrationLoaded[DetectorNumber][SideNumber][NSkip] = true;
+            }
+          }
+        }
+      }
+    }  // done reading from file
+    
+    // Check if data has been properly loaded
+    m_IsCalibrationLoadedDet[DetectorNumber] = true;
+    for (int side=0; side<2; side++)
+    {
+      for (unsigned int nskip=0; nskip<=MAXNSKIP; nskip++)
+      {
+        if (m_IsCalibrationLoaded[DetectorNumber][side][nskip]==false)
+        {
+          m_IsCalibrationLoadedDet[DetectorNumber] = false;
+        }
+      }
+    }
+    if (m_IsCalibrationLoadedDet[DetectorNumber] == true)
+    {
+      mout << "Cross-talk data for D" << DetectorNumber << " successfully loaded!" << endl;
+    }
+    else
+    {
+      mout << "***Warning: Unable to fully load cross-talk data for D" 
+      << DetectorNumber << ".  Defaults were used." << endl;
       // Set calibration to default
       for (int i=0; i<=1; i++)
-	{
-	  for (unsigned int j=0; j<=MAXNSKIP; j++)
-	    {
-	      m_CrosstalkCoeffs[DetectorNumber][i][j][0] = 0.;
-	      m_CrosstalkCoeffs[DetectorNumber][i][j][1] = 0.;
-	    }
-	}
-
-      // Reset flags telling if calibration has been loaded
-      for (unsigned int i=0; i<=MAXNSKIP; i++)
-	{
-	  m_IsCalibrationLoaded[DetectorNumber][0][i] = false;
-	  m_IsCalibrationLoaded[DetectorNumber][1][i] = false;
-	}
-      
-      // Read the calibration coefficients line-by-line
-      fstream File;
-      File.open(FileName, ios_base::in);
-      if (File.is_open() == false)
-	{
-	  mout<<"***Warning: Unable to open file: "<<FileName<<endl
-	      <<"   Is your NUCLEARIZER_CAL environment variable set?"<<endl;
-	} 
-      else
-	{
-	  MString Line;
-	  while(!File.eof())
-	    {
-	      Line.ReadLine(File);
-	      if (Line.BeginsWith("#") == false)
-		{
-		  //mout << Line << endl;
-		  char PosNeg;
-		  int SideNumber, NSkip;
-		  double a, b;
-		  if (sscanf(Line.Data(), "%c,%d,%lf,%lf\n",
-			     &PosNeg,&NSkip,&a,&b) == 4)
-		    {
-		      //mout << PosNeg << " " << NSkip << " " << a << " " << b << endl;
-		      if (PosNeg == '+') { SideNumber = 0; } else { SideNumber = 1; }
-		      if ((0<=NSkip) and (NSkip<=MAXNSKIP))
-			{
-			  m_CrosstalkCoeffs[DetectorNumber][SideNumber][NSkip][0] = a;
-			  m_CrosstalkCoeffs[DetectorNumber][SideNumber][NSkip][1] = b/1333.;
-			  m_IsCalibrationLoaded[DetectorNumber][SideNumber][NSkip] = true;
-			}
-		    }
-		}
-	    }
-	}  // done reading from file
-
-      // Check if data has been properly loaded
-      m_IsCalibrationLoadedDet[DetectorNumber] = true;
-      for (int side=0; side<2; side++)
-	{
-	  for (unsigned int nskip=0; nskip<=MAXNSKIP; nskip++)
-	    {
-	      if (m_IsCalibrationLoaded[DetectorNumber][side][nskip]==false)
-		{
-		  m_IsCalibrationLoadedDet[DetectorNumber] = false;
-		}
-	    }
-	}
-      if (m_IsCalibrationLoadedDet[DetectorNumber] == true)
-	{
-	  mout << "Cross-talk data for D" << DetectorNumber << " successfully loaded!" << endl;
-	}
-      else
-	{
-	  mout << "***Warning: Unable to fully load cross-talk data for D" 
-	       << DetectorNumber << ".  Defaults were used." << endl;
-	  // Set calibration to default
-	  for (int i=0; i<=1; i++)
-	    {
-	      for (int j=0; i<MAXNSKIP; i++)
-		{
-		  m_CrosstalkCoeffs[DetectorNumber][i][j][0] = 0.;
-		  m_CrosstalkCoeffs[DetectorNumber][i][j][1] = 0.;
-		}
-	    }
-	}
-
-    } // 'DetectorNumber' loop
-
+      {
+        for (int j=0; i<MAXNSKIP; i++)
+        {
+          m_CrosstalkCoeffs[DetectorNumber][i][j][0] = 0.;
+          m_CrosstalkCoeffs[DetectorNumber][i][j][1] = 0.;
+        }
+      }
+    }
+    
+  } // 'DetectorNumber' loop
+  
   return true;
 }
 
@@ -219,10 +219,10 @@ bool compare_striphits(MNCTStripHit* SH1, MNCTStripHit* SH2)
   else if ((det1==det2) && (side1!=side2)) return (side1<side2);
   else if ((det1==det2) && (side1==side2)) return (strip1<strip2);
   else
-    {
-      mout << "############# Problem in compare_striphits!" << endl;
-      return false;
-    }
+  {
+    mout << "############# Problem in compare_striphits!" << endl;
+    return false;
+  }
 }
 
 
@@ -236,53 +236,55 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   unsigned int NStripHits = Event->GetNStripHits();
   vector<MNCTStripHit*> StripHits;
   bool debug=false;
-
+  
   if (debug)
-    {
-      mout << endl;
-      mout << "#######################################" << endl;
-      mout << "Event " << Event->GetID() << endl;
-    }
+  {
+    mout << endl;
+    mout << "#######################################" << endl;
+    mout << "Event " << Event->GetID() << endl;
+  }
   // Loop over all detectors
   for (int i_det=0; i_det<10; i_det++)
+  {
+    // Loop over detector sides
+    for (unsigned int i_side=0; i_side<=1; i_side++)
     {
-      // Loop over detector sides
-      for (unsigned int i_side=0; i_side<=1; i_side++)
-	{
-	  StripHits.clear();
-	  // Extract strip hits from the given side of the given detector
-	  for (unsigned int i_sh=0; i_sh<NStripHits; i_sh++)
-	    {
-	      // Count number of X and Y strips
-	      MNCTStripHit *SH = Event->GetStripHit(i_sh);
-	      if ((SH->GetDetectorID()==i_det) 
-		  && (((SH->IsXStrip()==true) && (i_side==0)) 
-		      || ((SH->IsXStrip()==false) && (i_side==1))))
-		{
-		  StripHits.push_back(SH);
-		}
-	    }
-	  if (StripHits.size()>=2)
-	    {
-	      // Perform the cross-talk correction!
-	      CorrectCrosstalk(StripHits, i_det, i_side);
-	    }
-	}
+      StripHits.clear();
+      // Extract strip hits from the given side of the given detector
+      for (unsigned int i_sh=0; i_sh<NStripHits; i_sh++)
+      {
+        // Count number of X and Y strips
+        MNCTStripHit *SH = Event->GetStripHit(i_sh);
+        if ((SH->GetDetectorID()==i_det) 
+          && (((SH->IsXStrip()==true) && (i_side==0)) 
+          || ((SH->IsXStrip()==false) && (i_side==1))))
+        {
+          StripHits.push_back(SH);
+        }
+      }
+      if (StripHits.size()>=2)
+      {
+        // Perform the cross-talk correction!
+        CorrectCrosstalk(StripHits, i_det, i_side);
+      }
     }
-
+  }
+  
   // Remove any strips that have negative energy after the correction
   unsigned int i=0;
   while (i<Event->GetNStripHits())
+  {
+    if (Event->GetStripHit(i)->GetEnergy()<=5.)
     {
-      if (Event->GetStripHit(i)->GetEnergy()<=5.)
-	{
-	  //mout << "Removing strip hit " << i << " for having low or negative energy: " 
-	  //   << Event->GetStripHit(i)->GetEnergy() << " keV" << endl;
-	  Event->RemoveStripHit(i);
-	}
-      i++;
+      //mout << "Removing strip hit " << i << " for having low or negative energy: " 
+      //   << Event->GetStripHit(i)->GetEnergy() << " keV" << endl;
+      Event->RemoveStripHit(i);
     }
-  Event->SetCrosstalkCorrected(true);
+    i++;
+  }
+  
+  Event->SetAnalysisProgress(MAssembly::c_CrosstalkCorrection);
+  
   return true;
 }
 
@@ -290,10 +292,10 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-  // Method to make the cross-talk correction on a vector of strip hits
-  // StripHits is a vector of StripHits from one side of one detector
+// Method to make the cross-talk correction on a vector of strip hits
+// StripHits is a vector of StripHits from one side of one detector
 void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> StripHits, 
-						     int det, unsigned int side)
+                                                     int det, unsigned int side)
 {
   bool debug=false;
   bool debug_matrices=false;
@@ -307,68 +309,68 @@ void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> Strip
   double b1 = m_CrosstalkCoeffs[det][side][1][1];
   double a2 = m_CrosstalkCoeffs[det][side][2][0];
   double b2 = m_CrosstalkCoeffs[det][side][2][1];
-
+  
   // Print out the strips, check their order
   if (debug && StripHits.size()>0)
+  {
+    mout << "++++++++++++++++++++++" << endl;
+    for (unsigned int j=0; j<StripHits.size(); j++)
     {
-      mout << "++++++++++++++++++++++" << endl;
-      for (unsigned int j=0; j<StripHits.size(); j++)
-	{
-	  mout << StripHits[j]->GetDetectorID() << " "
-	       << !StripHits[j]->IsXStrip() << " "
-	       << StripHits[j]->GetStripID() << " "
-	       << StripHits[j]->GetEnergy() << endl;
-	}
+      mout << StripHits[j]->GetDetectorID() << " "
+      << !StripHits[j]->IsXStrip() << " "
+      << StripHits[j]->GetStripID() << " "
+      << StripHits[j]->GetEnergy() << endl;
     }
-
+  }
+  
   // Make a matrix vector of energies from each strip
   TMatrixD Energies(N,1);
   double Energy_Total = 0.;
   for (unsigned int j=0; j<StripHits.size(); j++)
-    {
-      Energies[j][0] = StripHits[j]->GetEnergy();
-      Energy_Total += StripHits[j]->GetEnergy();
-    }
+  {
+    Energies[j][0] = StripHits[j]->GetEnergy();
+    Energy_Total += StripHits[j]->GetEnergy();
+  }
   if (debug_matrices && N>=2) Energies.Print();
-
+  
   // Make a big matrix for the cross-talk corrections
   TMatrixD Matrix(N,N);
   TMatrixD Constant(N,1);
   for (unsigned int i=0; i<StripHits.size(); i++)
+  {
+    for (unsigned int j=i; j<StripHits.size(); j++)
     {
-      for (unsigned int j=i; j<StripHits.size(); j++)
-	{
-	  // Self-contribution
-	  if (i==j)
-	    {
-	      Matrix[i][j] += 1.0;
-	    }
-	  // Nearest-neighbor contributions
-	  if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+1))
-	    {
-	      Matrix[i][j] += b0;
-	      Matrix[j][i] += b0;
-	      Constant[i] += a0/2.;
-	      Constant[j] += a0/2.;
-	    }
-	  // Skip-1 neighbor contributions
-	  if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+2))
-	    {
-	      Matrix[i][j] += b1;
-	      Matrix[j][i] += b1;
-	      Constant[i] += a1/2.;
-	      Constant[j] += a1/2.;
-	    }
-	  // Skip-2 neighbor contributions
-	  if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+3))
-	    {
-	      Matrix[i][j] += b2;
-	      Matrix[j][i] += b2;
-	      Constant[i] += a2/2.;
-	      Constant[j] += a2/2.;
-	    }
-	}
+      // Self-contribution
+      if (i==j)
+      {
+        Matrix[i][j] += 1.0;
+      }
+      // Nearest-neighbor contributions
+      if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+1))
+      {
+        Matrix[i][j] += b0;
+        Matrix[j][i] += b0;
+        Constant[i] += a0/2.;
+        Constant[j] += a0/2.;
+      }
+      // Skip-1 neighbor contributions
+      if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+2))
+      {
+        Matrix[i][j] += b1;
+        Matrix[j][i] += b1;
+        Constant[i] += a1/2.;
+        Constant[j] += a1/2.;
+      }
+      // Skip-2 neighbor contributions
+      if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+3))
+      {
+        Matrix[i][j] += b2;
+        Matrix[j][i] += b2;
+        Constant[i] += a2/2.;
+        Constant[j] += a2/2.;
+      }
     }
+  }
   if (debug_matrices && N>=2) Constant.Print();
   if (debug_matrices && N>=2) Matrix.Print();
   TMatrixD Inv = Matrix.Invert();
@@ -377,24 +379,24 @@ void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> Strip
   TMatrixD FinalEnergies = TMatrixD(Inv,TMatrixD::kMult,Energies-Constant);
   if (debug_matrices && N>=2) FinalEnergies.Print();
   for (unsigned int j=0; j<StripHits.size(); j++)
-    {
-      StripHits[j]->SetEnergy(FinalEnergies[j][0]);
-    }
-
-
+  {
+    StripHits[j]->SetEnergy(FinalEnergies[j][0]);
+  }
+  
+  
   // Print out the strips again, check their order and energies
   if (debug && StripHits.size()>0)
+  {
+    mout << "----------------------" << endl;
+    for (unsigned int j=0; j<StripHits.size(); j++)
     {
-      mout << "----------------------" << endl;
-      for (unsigned int j=0; j<StripHits.size(); j++)
-	{
-	  mout << StripHits[j]->GetDetectorID() << " "
-	       << !StripHits[j]->IsXStrip() << " "
-	       << StripHits[j]->GetStripID() << " "
-	       << StripHits[j]->GetEnergy() << endl;
-	}
-      mout << "++++++++++++++++++++++" << endl;
+      mout << StripHits[j]->GetDetectorID() << " "
+      << !StripHits[j]->IsXStrip() << " "
+      << StripHits[j]->GetStripID() << " "
+      << StripHits[j]->GetEnergy() << endl;
     }
+    mout << "++++++++++++++++++++++" << endl;
+  }
 }
 
 

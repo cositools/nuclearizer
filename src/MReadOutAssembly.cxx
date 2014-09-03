@@ -145,12 +145,7 @@ void MReadOutAssembly::Clear()
   m_StripPairingIncomplete = false;
   m_DepthCalibrationIncomplete = false;
 
-  m_DataRead = false;
-  m_EnergyCalibrated = false;
-  m_ChargeSharingCorrected = false;
-  m_DepthCalibrated = false;
-  m_StripsPaired = false;
-  m_AspectAdded = false;
+  m_FilteredOut = false;
 
   delete m_PhysicalEvent;
   m_PhysicalEvent = 0;
@@ -161,6 +156,8 @@ void MReadOutAssembly::Clear()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
 void MReadOutAssembly::DeleteHits()
 {
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
@@ -171,6 +168,7 @@ void MReadOutAssembly::DeleteHits()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
 
 bool MReadOutAssembly::InDetector(int DetectorID)
 {
@@ -423,6 +421,23 @@ bool MReadOutAssembly::IsGood() const
   if (m_EnergyCalibrationIncomplete == true) return false;
   if (m_StripPairingIncomplete == true) return false;
   if (m_DepthCalibrationIncomplete == true) return false;
+
+  if (m_FilteredOut == true) return false;
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::IsBad() const
+{
+  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+
+  if (m_EnergyCalibrationIncomplete == true) return true;
+  if (m_StripPairingIncomplete == true) return true;
+  if (m_DepthCalibrationIncomplete == true) return true;
 
   return true;
 }

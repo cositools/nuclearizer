@@ -163,8 +163,8 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   NewEvent = m_Events[0];
   m_Events.pop_front();
 
-  //this checks if the event's aspect data was within the range of the retrieved aspect info
-  if( NewEvent->GetAspect()->GetOutOfRange() ){
+  // This checks if the event's aspect data was within the range of the retrieved aspect info
+  if (NewEvent->GetAspect()->GetOutOfRange()) {
     delete NewEvent;
     return false;
   }
@@ -182,8 +182,11 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   Event->SetMJD( NewEvent->GetMJD() );
   if (NewEvent->GetAspect() != 0) {
     Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
+    Event->SetAnalysisProgress(MAssembly::c_Aspect);
   }
-  Event->SetDataRead();
+  Event->SetAnalysisProgress(MAssembly::c_EventLoader | 
+                             MAssembly::c_EventLoaderMeasurement | 
+                             MAssembly::c_EventOrdering);
   
   delete NewEvent;
   

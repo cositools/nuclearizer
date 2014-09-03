@@ -464,7 +464,6 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 			//at this point, EventList contains all of the events to be merged, merge them
 			MReadOutAssembly * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
-			NewMergedEvent->SetDataRead(true);
 			NewMergedEvent->SetID( ++m_EventIDCounter );
 			m_Events.push_back(NewMergedEvent);
 			if( m_EventsBuf.size() == 0 ) break;

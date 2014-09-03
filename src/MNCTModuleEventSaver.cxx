@@ -151,6 +151,8 @@ bool MNCTModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
   } else if (m_Mode == c_DatFile) {
     Event->StreamDat(m_Out);    
   }
+  
+  Event->SetAnalysisProgress(MAssembly::c_EventSaver);
 
   return true;
 }

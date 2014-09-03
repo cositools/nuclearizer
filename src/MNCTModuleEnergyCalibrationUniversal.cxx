@@ -227,7 +227,8 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     }
   } 
   
-  Event->SetEnergyCalibrated(true);
+  Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
+
   return true;
 }
 

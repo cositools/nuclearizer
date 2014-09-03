@@ -323,8 +323,11 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
   Event->SetMJD( NewEvent->GetMJD() );
   if (NewEvent->GetAspect() != 0) {
     Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
+    Event->SetAnalysisProgress(MAssembly::c_Aspect);
   }
-  Event->SetDataRead();
+  Event->SetAnalysisProgress(MAssembly::c_EventLoader | 
+                             MAssembly::c_EventLoaderMeasurement | 
+                             MAssembly::c_EventOrdering);
 
   if (m_RoaFileName != "") {
     Event->StreamRoa(m_Out);

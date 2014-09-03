@@ -226,8 +226,8 @@ bool MNCTModuleEnergyCalibrationNonlinear::AnalyzeEvent(MReadOutAssembly* Event)
     //mout << "StripHit: D" << DetectorNumber << " " << SideNumber << " " << StripNumber
     // << "  ADC: " << ADC << "  Energy: " << Energy << "  FWHM: " << EnergyFwhm << endl;
   }
-
-  Event->SetEnergyCalibrated(true);
+  
+  Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
 
   return true;
 }

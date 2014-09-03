@@ -2,7 +2,7 @@
  * MGUIOptionsEventFilter.cxx
  *
  *
- * Copyright (C) 2008-2010 by Jau-Shian Liang.
+ * Copyright (C) by Andreas Zoglauer
  * All rights reserved.
  *
  *
@@ -23,7 +23,6 @@
 
 // ROOT libs:
 #include <TSystem.h>
-#include <MString.h>
 #include <TGLabel.h>
 #include <TGResourcePool.h>
 #include <TGNumberEntry.h>
@@ -31,8 +30,13 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModuleEventFilter.h"
+#include "MString.h"
 #include "MGUIEFileSelector.h"
+#include "MGUIEMinMaxEntry.h"
+
+// Nuclearizer libs:
+#include "MNCTModuleEventFilter.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -70,20 +74,22 @@ void MGUIOptionsEventFilter::Create()
 
   // Modify here
 
-  TGHorizontalFrame* VetoSettingFrame = new TGHorizontalFrame(this, 200, 25);
-  m_VetoSetting =  new TGTextEntry(VetoSettingFrame, "");
-  m_VetoSetting->SetText(dynamic_cast<MNCTModuleEventFilter*>(m_Module)->GetVetoSetting());
+  TGLayoutHints* TotalEnergyLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_TotalEnergy = new MGUIEMinMaxEntry(m_OptionsFrame, 
+                                       "Choose the minimum and maximum energy [keV]:", 
+                                       false,
+                                       dynamic_cast<MNCTModuleEventFilter*>(m_Module)->GetMinimumTotalEnergy(),
+                                       dynamic_cast<MNCTModuleEventFilter*>(m_Module)->GetMaximumTotalEnergy(),
+                                       true, 0.0);
+  m_OptionsFrame->AddFrame(m_TotalEnergy, TotalEnergyLayout);
 
-  TGLabel* VetoSettingLabel = new TGLabel(VetoSettingFrame, "Veto detector list (seperated by white-space): ");
-
-  TGLayoutHints* VetoSettingFrameLayout = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 10, 10, 5, 5);
-  TGLayoutHints* VetoSettingLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 1, 1, 2, 2);
-  TGLayoutHints* VetoSettingLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 1, 2, 2);
-
-  AddFrame(VetoSettingFrame,VetoSettingFrameLayout);
-  VetoSettingFrame->AddFrame(VetoSettingLabel,VetoSettingLabelLayout);
-  VetoSettingFrame->AddFrame(m_VetoSetting, VetoSettingLayout);
-
+  TGLabel* TotalEnergyLabel = new TGLabel(m_OptionsFrame, 
+    "The energy window requires that an energy calibration has been applied.\n"
+    "In addition, it is always applied to the highest analysis level:\n"
+    "Reconstructed event -> hits -> strip hits");
+  m_OptionsFrame->AddFrame(TotalEnergyLabel, TotalEnergyLayout);
+  
+  
   PostCreate();
 }
 
@@ -95,8 +101,8 @@ bool MGUIOptionsEventFilter::ProcessMessage(long Message, long Parameter1, long 
 {
   // Modify here if you have more buttons
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -124,8 +130,10 @@ bool MGUIOptionsEventFilter::ProcessMessage(long Message, long Parameter1, long 
 
 bool MGUIOptionsEventFilter::OnApply()
 {
-	// Modify this to store the data in the module!
-  dynamic_cast<MNCTModuleEventFilter*>(m_Module)->SetVetoSetting(m_VetoSetting->GetText());
+  // Store the data in the module
+
+  dynamic_cast<MNCTModuleEventFilter*>(m_Module)->SetMinimumTotalEnergy(m_TotalEnergy->GetMinValue());
+  dynamic_cast<MNCTModuleEventFilter*>(m_Module)->SetMaximumTotalEnergy(m_TotalEnergy->GetMaxValue());
 
   return true;
 }

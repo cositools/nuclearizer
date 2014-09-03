@@ -551,7 +551,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
     //cout<<"with strange,"<<OtherEventNumber<<endl;
   }
   
-  Event->SetDepthCalibrated(DepthCalibrated);
+  Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
   
   return true;
 }

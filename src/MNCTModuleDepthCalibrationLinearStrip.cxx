@@ -311,7 +311,8 @@ bool MNCTModuleDepthCalibrationLinearStrip::AnalyzeEvent(MReadOutAssembly* Event
     }
   }
 
-  Event->SetDepthCalibrated(DepthCalibrated);
+  Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
+
   return true;
 }
 

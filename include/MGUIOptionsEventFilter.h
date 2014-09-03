@@ -37,6 +37,7 @@
 
 // Forward declarations:
 class MGUIEFileSelector;
+class MGUIEMinMaxEntry;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -65,8 +66,10 @@ class MGUIOptionsEventFilter : public MGUIOptions
 
   // protected members:
  protected:
-  //
-  TGTextEntry* m_VetoSetting;
+  //! The detector IDs as a string
+  TGTextEntry* m_Detectors;
+  //! The total energy selection
+  MGUIEMinMaxEntry* m_TotalEnergy;
 	
   // private members:
  private:
