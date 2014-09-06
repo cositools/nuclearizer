@@ -1,0 +1,18 @@
+# NCT09 Depth Calculation (3rd poly fit) for D0
+# Data used in analysis for front: 
+# Data used in analysis for back : 
+# Nuclear line used in analysis  : Am-241 60 keV
+# 
+# Definition: CTD  :Timing(+)-Timing(-)
+#             Depth:Distance between cathode(-) and interaction
+# Format:strip(+),strip(-),parameter[0]~[3],CTD FWHM front,CTD FWHM back 
+#        Depth(cm) = parameter[i]*CTD(ns)^i, i=0~3
+# 
+# Linear curve from average CTD and average FWHM would replace the bad fits value.
+# (ex. Pixel is out of boundary, or few counts (<15), or dead strip.) 
+# 
+# The 3rd-order polynomial fit for D0 is not done yet.
+# Use linear curve from linear calibration data: depth_linear_pixel_D00.csv. 
+#
+# ZK Liu, 2009.01.08
+#
