@@ -156,7 +156,7 @@ megalib:
 
 clean:
 	@$(MAKE) clean_fretalonframework -C $(MEGALIB)/src
-	@-rm -f $(NUCLEARIZERO) $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIB)
+	@-rm -f $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIBS)
 	@-rm -f $(NUCLEARIZERPRG)
 	@-rm -f *~ include/*~ src/*~
 	@$(MAKE) clean -C apps
