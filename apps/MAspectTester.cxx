@@ -1,3 +1,14 @@
+
+// ROOT
+#include <TROOT.h>
+#include <TEnv.h>
+#include <TSystem.h>
+#include <TApplication.h>
+#include <TStyle.h>
+#include <TCanvas.h>
+#include <TH1.h>
+#include <TH2.h>
+
 #include "Python.h"
 #include "stdio.h"
 #include "cstdio"
@@ -668,14 +679,14 @@ int main() {
   FILE *fp;
   uint8_t buffer[8192];
   size_t Len;  
-  int buffer_index;
+  unsigned int buffer_index;
   int num_aspect_packets = 0; //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
   int num_DSO = 0;
   int num_PSA = 0;
   int num_TST = 0;
   int num_BIT = 0;
   uint16_t size;     
-  int packet_index;    //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  unsigned int packet_index;    //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
   int Len_DSO = 84;    //Carolyn is still alittle unsure about these.
   int Len_PSA = 114;
   int Len_BIT = 32;
@@ -723,7 +734,7 @@ int main() {
 
     for(buffer_index = 0; buffer_index < sizeof(buffer); ++buffer_index) { 
  
-    if (buffer[buffer_index] == 0xeb & buffer[buffer_index+1] == 0x90 & buffer[buffer_index+2] == 0x05) {
+    if (buffer[buffer_index] == 0xeb && buffer[buffer_index+1] == 0x90 && buffer[buffer_index+2] == 0x05) {
 	size = ( (uint16_t)buffer[buffer_index+8] << 8) | ( (uint16_t)buffer[buffer_index+9]);
 
 	for(packet_index = buffer_index; packet_index < (size + buffer_index); ++packet_index) //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects

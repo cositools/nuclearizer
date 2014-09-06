@@ -12,13 +12,10 @@
 SHELL = /bin/sh
 
 
-
-
 #----------------------------------------------------------------
 # Directories:
 #
 
-# Basic directories 
 TOPLEVEL = $(shell pwd)
 IN = $(TOPLEVEL)/include
 LB = $(MEGALIB)/lib
@@ -26,12 +23,20 @@ BN = $(MEGALIB)/bin
 
 
 #----------------------------------------------------------------
-# Include path/location macros (result of "sh configure")
+# Setting up make itself
 #
 
 include $(MEGALIB)/config/Makefile.options
 include $(MEGALIB)/config/Makefile.config
 
+MAKEFLAGS += --no-builtin-rules
+
+.SUFFIXES:
+#.SUFFIXES: .cxx .h .o .so
+.PHONY: all n nuclearizer megalib apps clean
+.EXPORT_ALL_VARIABLES:
+#.NOTPARALLEL: megalib
+.SILENT:
 
 #----------------------------------------------------------------
 # Definitions based on architecture and user options
@@ -49,14 +54,9 @@ CXXFLAGS += `python-config --includes`
 PYTHONLIBS += `python-config --libs`
 endif
 
-# Names of the programs
+# Names of the program
 NUCLEARIZERPRG = $(BN)/nuclearizer
 NUCLEARIZERCXX = src/MAssembly.cxx
-
-DEEPRG = $(BN)/deecosi
-DEECXX = src/MNCTDetectorEffectsEngineCOSI.cxx
-
-ALLPROGRAMS = $(NUCLEARIZERPRG) $(DEEPRG)
 
 # The nuclearizer library
 NUCLEARIZERLIB = \
@@ -133,62 +133,52 @@ ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectr
 # ROOT
 ALLLIBS += -lMathCore
 
-#----------------------------------------------------------------
-# Built-in targets
-#
-
-.EXPORT_ALL_VARIABLES: all header sources doc clean
-.Phony:                all megalib
-.NOTPARALLEL:          megalib
-.SILENT:
 
 #----------------------------------------------------------------
 # Command rules
 #
 
-# Compile all libraries and programs
-all: megalib $(ALLPROGRAMS)
+all: 
+	@$(MAKE) megalib
+	@$(MAKE) $(NUCLEARIZERPRG)
+	@$(MAKE) apps
 
-# Compile all libraries and programs
-n: megalib $(ALLPROGRAMS)
+n: nuclearizer
+nuclearizer:
+	@$(MAKE) megalib
+	@$(MAKE) $(NUCLEARIZERPRG)
 	@$(NUCLEARIZERPRG) $(CMD)
 
-nuclearizer: megalib $(ALLPROGRAMS)
-	@$(NUCLEARIZERPRG) $(CMD)
+apps: 
+	@$(MAKE) megalib
+	@$(MAKE) $(NUCLEARIZERSHAREDLIB)
+	@$(MAKE) -C apps
 
 megalib:
-	@$(MAKE) fretalon -C $(MEGALIB)
+	@$(MAKE) fretalonframework -C $(MEGALIB)
 
-# Clean-up
 clean:
-	@$(MAKE) clean_fre -C $(MEGALIB)/src
-	@-rm -f $(NUCLEARIZERO) $(DEEO) $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIB)
-	@-rm -f $(NUCLEARIZERPRG) $(DEEPRG)
+	@$(MAKE) clean_fretalonframework -C $(MEGALIB)/src
+	@-rm -f $(NUCLEARIZERO) $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIB)
+	@-rm -f $(NUCLEARIZERPRG)
 	@-rm -f *~ include/*~ src/*~
+	@$(MAKE) clean -C apps
 	
 #----------------------------------------------------------------
 # Explicit rules & dependencies:
 #
 
-$(FRETALONLIBS): $(LB)/%.o: $(FRETALONDIR)/src/%.cxx $(FRETALONDIR)/inc/%.h
-	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
-
 $(NUCLEARIZERLIB): $(LB)/%.o: src/%.cxx include/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
-
-$(NUCLEARIZERSHAREDLIB): $(FRETALONLIBS) $(NUCLEARIZERLIB) 
+ 
+$(NUCLEARIZERSHAREDLIB): $(NUCLEARIZERLIB)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(FRETALONLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
 
 $(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZERPRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZERCXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERPRG)
-
-$(DEEPRG): $(NUCLEARIZERSHAREDLIB) $(DEECXX)
-	@echo "Linking and compiling $(subst $(BN)/,,$(DEEPRG)) ... Please stand by ... "
-	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DEECXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(DEEPRG)
 
 
 #
