@@ -59,7 +59,7 @@ NUCLEARIZERPRG = $(BN)/nuclearizer
 NUCLEARIZERCXX = src/MAssembly.cxx
 
 # The nuclearizer library
-NUCLEARIZERLIB = \
+NUCLEARIZERLIBS = \
 $(LB)/MReadOutAssembly.o \
 $(LB)/MNCTArray.o \
 $(LB)/MNCTCoincidenceVolume.o \
@@ -139,23 +139,20 @@ ALLLIBS += -lMathCore
 #
 
 all: 
-	@$(MAKE) megalib
 	@$(MAKE) $(NUCLEARIZERPRG)
 	@$(MAKE) apps
 
 n: nuclearizer
 nuclearizer:
-	@$(MAKE) megalib
 	@$(MAKE) $(NUCLEARIZERPRG)
 	@$(NUCLEARIZERPRG) $(CMD)
 
 apps: 
-	@$(MAKE) megalib
 	@$(MAKE) $(NUCLEARIZERSHAREDLIB)
 	@$(MAKE) -C apps
 
 megalib:
-	@$(MAKE) fretalonframework -C $(MEGALIB)
+	@$(MAKE) fretalonframeworklib -C $(MEGALIB)
 
 clean:
 	@$(MAKE) clean_fretalonframework -C $(MEGALIB)/src
@@ -168,13 +165,17 @@ clean:
 # Explicit rules & dependencies:
 #
 
-$(NUCLEARIZERLIB): $(LB)/%.o: src/%.cxx include/%.h
+$(FRETALONLIBS): $(LB)/%.o: $(FRETALONDIR)/src/%.cxx $(FRETALONDIR)/inc/%.h
+	@echo "Compiling $(subst $(FRETALONDIR)/src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(NUCLEARIZERLIBS): $(LB)/%.o: src/%.cxx include/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
  
-$(NUCLEARIZERSHAREDLIB): $(NUCLEARIZERLIB)
+$(NUCLEARIZERSHAREDLIB): $(FRETALONLIBS) $(NUCLEARIZERLIBS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIB) $(FRETALONLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIBS) $(FRETALONLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
 
 $(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZERPRG)) ... Please stand by ... "

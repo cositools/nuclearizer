@@ -39,6 +39,7 @@
 #include "TFile.h"
 
 // MEGAlib libs:
+#include "MFile.h"
 #include "MNCTMath.h"
 #include "MStreams.h"
 #include "MVector.h"
@@ -146,8 +147,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
       temp << setw(2) << DetectorNumber;
       DetectorNumberString = temp.str();
     }
-    MString FileName = (MString)std::getenv ("NUCLEARIZER_CAL")
-    +"/depth_3rdPoly_pixel_CC"+ DetectorNumberString + ".csv";
+    MString FileName = "$(NUCLEARIZER)/resource/calibration/COSI14/depth_3rdPoly_pixel_CC"+ DetectorNumberString + ".csv";
+    MFile::ExpandFileName(FileName);
     
     // Reset flags telling if calibration has been loaded
     m_IsCalibrationLoaded[DetectorNumber] = false;
@@ -518,7 +519,11 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
                //<< " Z_X: " << Z_X << " Z_Y: " << Z_Y 
                << " Z: " << Z_Front << " cm  Z res.: " << Z_FWHM << " cm" << endl;
         }
-        m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
+        if ((DetectorNumber == 0) || (DetectorNumber == 6) || (DetectorNumber == 4) ||   (DetectorNumber == 11) || (DetectorNumber == 8) || (DetectorNumber == 9) ) {
+          m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
+        } else {
+          m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5-Z_Front);
+        }
         m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
       } else {  
         //closes "if (Flag_CanBeCalibrated == 1 || Flag_CanBeCalibrated == 2) {"
