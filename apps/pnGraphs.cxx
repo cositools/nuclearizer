@@ -33,6 +33,7 @@ using namespace std;
 #include <TCanvas.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TStopwatch.h>
 
 // MEGAlib
 #include "MGlobal.h"
@@ -75,6 +76,15 @@ private:
   bool m_Interrupt;
   //! The input file name
   MString m_FileName;
+	//! side: 1 for p, 0 for n
+	bool m_Side;
+	//! 1 for detectors, 0 for strips
+	bool m_DetOp;
+	//! detector ID
+	int m_DetID;
+	//! output file names
+	MString m_OutFile;
+
 };
 
 
@@ -109,6 +119,11 @@ bool pnGraphs::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: pnGraphs <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   file name"<<endl;
+	Usage<<"         -d:   look detector by detector" << endl;
+	Usage<<"         -s:   look strip by strip for one detector" << endl;
+	Usage<<"                example: -s detID side"<< endl;
+	Usage<<"                side can be n or p"<< endl;
+	Usage<<"         -o:   outfile" << endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -154,12 +169,43 @@ bool pnGraphs::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
-    } else {
-      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-      cout<<Usage.str()<<endl;
-      return false;
     } 
-  }
+
+		if (Option == "-s"){
+			m_DetOp = 0;
+			//get detector ID
+			if (atoi(argv[i+1]) < 12 && atoi(argv[i+1]) >= 0){
+				m_DetID = atoi(argv[i+1]);
+			}
+			else {
+				cout << "Error: detector must be between 0 and 12" << endl;
+				cout << Usage.str() << endl;
+				return false;
+			}
+			//get side
+			if (string(argv[i+2]) == "n"){
+				m_Side = 0;
+			}
+			else if (string(argv[i+2]) == "p"){
+				m_Side = 1;
+			}
+			else {
+				cout << "Error: side must be n or p" << endl;
+				cout << Usage.str() << endl;
+				return false;
+			}
+		}
+
+		if (Option == "-d"){
+			m_DetOp = 1;
+		}
+
+		if (Option == "-o"){
+			m_OutFile = string(argv[i+1]);
+		}
+
+
+	}
 
   return true;
 }
@@ -171,7 +217,11 @@ bool pnGraphs::ParseCommandLine(int argc, char** argv)
 //! Do whatever analysis is necessary
 bool pnGraphs::Analyze()
 {
-  if (m_Interrupt == true) return false;
+	//time code just to see
+	TStopwatch watch;
+	watch.Start();
+
+	if (m_Interrupt == true) return false;
 
   MSupervisor S;
   
@@ -180,7 +230,7 @@ bool pnGraphs::Analyze()
   S.SetModule(Loader, 0);
   
   MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
-  Calibrator->SetFileName("$(NUCLEARIZER)/cal/EnergyCalibration.ecal");
+  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/EnergyCalibration.ecal");
   S.SetModule(Calibrator, 1);
   
   MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
@@ -200,49 +250,147 @@ bool pnGraphs::Analyze()
     Loader->AnalyzeEvent(Event);
     Calibrator->AnalyzeEvent(Event);
     Pairing->AnalyzeEvent(Event);
-    
-    if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
-      for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
-        int pNStrips = 0;
-        double pEnergy = 0.0;
-        int nNStrips = 0;
-        double nEnergy = 0.0;
-    
-        int DetectorID = 0;
-        for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
-          DetectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
-          if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
-            ++pNStrips;
-            pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
-          } else {
-            ++nNStrips;
-            nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
-          }
-        }
-        if (pNStrips > 0 && nNStrips > 0) {
-          if (Histograms[DetectorID] == 0) {
-            TH2D* Hist = new TH2D("", MString("Detector ") + DetectorID, 1400, 0, 1400, 1400, 0, 1400);
-            Hist->SetXTitle("p-Side Energy [keV]");
-            Hist->SetYTitle("n-Side Energy [keV]");
-            Histograms[DetectorID] = Hist;
-          }
-          Histograms[DetectorID]->Fill(pEnergy, nEnergy);
-        }
-      }
-    }
-    
+
+	  if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
+			if (m_DetOp) {
+	      for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+	        int pNStrips = 0;
+	        double pEnergy = 0.0;
+	        int nNStrips = 0;
+	        double nEnergy = 0.0;    
+
+	        int DetectorID = 0;
+	        for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+	          DetectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
+	          if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+	            ++pNStrips;
+	            pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+	          } else {
+	            ++nNStrips;
+	            nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+	          }
+	        }
+	        if (pNStrips > 0 && nNStrips > 0) {
+	          if (Histograms[DetectorID] == 0) {
+	            TH2D* Hist = new TH2D("", MString("Detector ") + DetectorID, 1400, 0, 1400, 1400, 0, 1400);
+	            Hist->SetXTitle("p-Side Energy [keV]");
+	            Hist->SetYTitle("n-Side Energy [keV]");
+	            Histograms[DetectorID] = Hist;
+	          }
+	          Histograms[DetectorID]->Fill(pEnergy, nEnergy);
+	        }
+	      }
+	    }
+
+
+			else {
+				int nStrips = 37;
+				int detectorID = 0;
+				int stripID = 0;
+				//currently just making plots for 1 detector, x strips
+				for (unsigned int strip=1; strip<=nStrips; strip++){
+					int pNStrips = 0;
+					double pEnergy = 0.0;
+					int nNStrips = 0;
+					double nEnergy = 0.0;
+
+					bool addHitToHist = false;
+
+					for (unsigned int h=0; h<Event->GetNHits(); h++){
+						for (unsigned int s=0; s<Event->GetHit(h)->GetNStripHits(); s++){
+							detectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
+							if (Event->GetHit(h)->GetStripHit(s)->IsXStrip()){
+								if (m_Side == 1){
+									stripID = Event->GetHit(h)->GetStripHit(s)->GetStripID();
+									if (stripID == strip && m_DetID == detectorID){
+										addHitToHist = true;
+									}
+								}
+								++pNStrips;
+								pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy();
+							}
+							else {
+								if (m_Side == 0){
+									stripID = Event->GetHit(h)->GetStripHit(s)->GetStripID();
+									if (stripID == strip && m_DetID == detectorID){
+										addHitToHist = true;
+									}
+								}
+								++nNStrips;
+								nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy();
+							}
+						}
+						if (pNStrips>0 && nNStrips>0 && addHitToHist == true){
+							//histogram stuff
+		          if (Histograms[strip] == 0) {
+								MString histTitle;
+								if (m_Side == 1){
+									histTitle = MString("Detector ")+detectorID+MString(", p Strip ")+strip;
+								}
+								else {
+									histTitle = MString("Detector ")+detectorID+MString(", n Strip ")+strip;
+								}
+	  	          TH2D* Hist = new TH2D("", histTitle, 1400, 0, 1400, 1400, 0, 1400);
+	  	          Hist->SetXTitle("p-Side Energy [keV]");
+	  	          Hist->SetYTitle("n-Side Energy [keV]");
+	  	          Histograms[strip] = Hist;
+	  	        }
+	  	        Histograms[strip]->Fill(pEnergy, nEnergy);
+	  	      }
+						addHitToHist = false;
+					}
+				}
+			}
+		}
+ 
     IsFinished = Loader->IsFinished();
+	}
+
+	cout << "drawing histograms" << endl; 
+
+	if (m_DetOp){
+		int i=0;
+		for (auto H: Histograms){
+			TCanvas* C = new TCanvas();
+			C->SetWindowSize(1000,1000);
+			C->SetLogz();
+			C->cd();
+			H.second->Draw("colz");
+			C->Update();
+			C->Print(m_OutFile+MString("_")+i);
+		}
+	}
+	else {
+		int numStrips = 37;
+		for (int H=1; H<=numStrips; H+=4){
+		  TCanvas* C = new TCanvas();
+			C->Divide(2,2);
+		  C->SetWindowSize(1000, 1000);
+//		  C->SetLogz();
+			int endStrip = H;
+			for (int i=0; i<4; i++){
+				if (H+i <= numStrips){
+				  C->cd(i+1);
+					gPad->SetLogz();
+					if (Histograms.find(H+i) != Histograms.end()){
+						Histograms[H+i]->Draw("colz");
+						endStrip = H+i;
+					}
+				  C->Update();
+				}
+			}
+			if (m_Side == true){
+				C->Print(m_OutFile+MString("_Det")+m_DetID+MString("_pStrips_")+H+MString("-")+endStrip+MString(".pdf"));
+			}
+			else {
+				C->Print(m_OutFile+MString("_Det")+m_DetID+MString("_nStrips_")+H+MString("-")+endStrip+MString(".pdf"));
+			}
+		}
   }
-  
-  for (auto H: Histograms) {
-    TCanvas* C = new TCanvas();
-    C->SetWindowSize(1000, 1000);
-    C->SetLogz();
-    C->cd();
-    H.second->Draw("colz");
-    C->Update();
-  }
-  
+ 
+	watch.Stop();
+	cout << "total time (s): " << watch.CpuTime() << endl;
+ 
   return true;
 }
 
