@@ -305,7 +305,7 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
   m_Events.pop_front();
 
   //this checks if the event's aspect data was within the range of the retrieved aspect info
-  if( NewEvent->GetAspect()->GetOutOfRange() ){
+  if (NewEvent->GetAspect() != 0 && NewEvent->GetAspect()->GetOutOfRange()) {
     delete NewEvent;
     return false;
   }

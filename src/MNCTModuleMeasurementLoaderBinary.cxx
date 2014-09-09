@@ -164,12 +164,12 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   m_Events.pop_front();
 
   // This checks if the event's aspect data was within the range of the retrieved aspect info
-  if (NewEvent->GetAspect()->GetOutOfRange()) {
+  if (NewEvent->GetAspect() != 0 && NewEvent->GetAspect()->GetOutOfRange()) {
     delete NewEvent;
     return false;
   }
 
-  while( NewEvent->GetNStripHits() > 0 ){
+  while (NewEvent->GetNStripHits() > 0) {
     Event->AddStripHit( NewEvent->GetStripHit(0) );
     NewEvent->RemoveStripHit(0);
   }
