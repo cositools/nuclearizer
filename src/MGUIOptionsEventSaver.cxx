@@ -69,6 +69,7 @@ void MGUIOptionsEventSaver::Create()
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);  
   
   m_Mode = new MGUIERBList(m_OptionsFrame, "Please select an output mode:");
+  m_Mode->Add("*.roa file to use with melinator");
   m_Mode->Add("*.dat file containing all information");
   m_Mode->Add("*.evta file to use with revan");
   m_Mode->SetSelected(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetMode());
@@ -78,7 +79,8 @@ void MGUIOptionsEventSaver::Create()
   
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an output file:",
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetFileName());
-  m_FileSelector->SetFileType("Dat file (all info)", "*.dat");
+  m_FileSelector->SetFileType("roa file (read-out assemlies)", "*.roa");
+  m_FileSelector->SetFileType("dat file (all info)", "*.dat");
   m_FileSelector->SetFileType("evta file (evta file)", "*.evta");
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 

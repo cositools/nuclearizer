@@ -52,7 +52,7 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Save events (dat or evta format)";
+  m_Name = "Save events (roa, dat, or evta format)";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagEventSaver";
@@ -110,6 +110,11 @@ bool MNCTModuleEventSaver::Initialize()
     m_Out<<"Version 21"<<endl;
     m_Out<<"Type EVTA"<<endl;
     m_Out<<endl;
+  } else if (m_Mode == c_RoaFile) {
+    m_Out<<endl;
+    m_Out<<"TYPE ROA"<<endl;
+    m_Out<<"UF doublesidedstrip adcwithtiming"<<endl;
+    m_Out<<endl;
   } else {
     cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
@@ -150,6 +155,8 @@ bool MNCTModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
     Event->StreamEvta(m_Out);
   } else if (m_Mode == c_DatFile) {
     Event->StreamDat(m_Out);    
+  } else if (m_Mode == c_RoaFile) {
+    Event->StreamRoa(m_Out);
   }
   
   Event->SetAnalysisProgress(MAssembly::c_EventSaver);

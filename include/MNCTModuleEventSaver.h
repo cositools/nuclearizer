@@ -76,9 +76,10 @@ class MNCTModuleEventSaver : public MModule
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
 
-  static const unsigned int c_DatFile  = 0;
-  static const unsigned int c_EvtaFile = 1;
-  static const unsigned int c_SimFile  = 2;
+  static const unsigned int c_RoaFile  = 0;
+  static const unsigned int c_DatFile  = 1;
+  static const unsigned int c_EvtaFile = 2;
+  static const unsigned int c_SimFile  = 3;
   
   // protected methods:
  protected:
