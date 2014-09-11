@@ -90,7 +90,7 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
   m_NumBytesReceived = 0;
   m_LostBytes = 0;
 
-  m_IgnoreAspect = false;
+  m_IgnoreAspect = true;
 }
 
 
@@ -133,6 +133,13 @@ bool MNCTBinaryFlightDataParser::Initialize()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+bool MReadOutAssemblyReverseSort(MReadOutAssembly* E1, MReadOutAssembly* E2) {
+
+  //sort based on 48 bit clock value
+  if( E1->GetCL() < E2->GetCL() ) return true; else return false;
+
+}
 
 
 bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received) 
@@ -207,7 +214,9 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			case 0x05:
 				//aspect packet
 				cout<<"got aspect packet!"<<endl;
-				ProcessAspect( NextPacket );
+        if (m_IgnoreAspect == false) {
+          ProcessAspect( NextPacket );
+        }
 				m_NumAspectPackets++;
 				break;
 			default:
@@ -230,7 +239,17 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					LastComptonTimestamp = E->GetCL();
 				}
 
-				m_EventsBuf.push_back(E);
+				//m_EventsBuf.push_back(E);
+        // insert sorted
+        deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+        
+        m_EventsBuf.insert(I, E);
+        /*
+        cout<<"Sorrted?"<<endl;
+        for (auto Ev: m_EventsBuf) {
+          cout<<Ev->GetCL()<<endl; 
+        }
+        */
 			}
 			NewEvents.clear();
 
@@ -245,18 +264,20 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			}
 
 			//now sort m_EventsBuf
-			SortEventsBuf();
+			//SortEventsBuf();
 			//look thru m_EventsBuf for multi-detector events
 			CheckEventsBuf();
 
 		}
 		//loop through m_Events and add aspect if possible
-		for( auto E: m_Events ){
-			if( E->GetAspect() == 0 ){
-				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
-				if( A != 0 ){
-					//if the event is out of range, A->GetTime() will give -1
-					E->SetAspect(new MNCTAspect(*A));
+    if (m_IgnoreAspect == false) {
+      for( auto E: m_Events ){
+        if( E->GetAspect() == 0 ){
+          MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
+          if( A != 0 ){
+            //if the event is out of range, A->GetTime() will give -1
+            E->SetAspect(new MNCTAspect(*A));
+          }
 				}
 			}
 		}
@@ -277,7 +298,6 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
     return false;
   }
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -322,6 +342,13 @@ bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , in
 		ResyncSBuf();
 		return false;
 	}
+	// AZ: Found a case with Len == 0 which screwed up everything...
+	// Skip ahead beyond syncword and resync
+	if (Len == 0) {
+    dx += 2; 
+    ResyncSBuf();
+    return false;
+  }
 
 	if( (dx + Len) > m_SBuf.size() ){
 		//we don't have the complete packet
