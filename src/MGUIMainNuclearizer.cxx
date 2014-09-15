@@ -225,9 +225,11 @@ void MGUINuclearizerMain::Create()
 void MGUINuclearizerMain::UpdateModules()
 {
   // Remove all existing modules:
+  m_ModuleFrame->RemoveAll();
+  m_ModuleFrame->Resize();
   for (unsigned int m = m_Modules.size()-1; m < m_Modules.size(); --m) {
-    m_ModuleFrame->RemoveFrame(m_Modules[m]);
-    m_Modules[m]->UnmapWindow();
+    //m_ModuleFrame->RemoveFrame(m_Modules[m]);
+    //m_Modules[m]->UnmapWindow();
     delete m_Modules[m];
   }
   m_Modules.clear();
@@ -246,7 +248,7 @@ void MGUINuclearizerMain::UpdateModules()
     m_Modules.push_back(GuiModule);
   }
 
-  Resize(GetDefaultWidth(), GetDefaultHeight()); 
+  //Resize(GetDefaultWidth(), GetDefaultHeight()); 
 
   MapSubwindows();
   MapWindow();  

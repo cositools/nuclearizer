@@ -213,7 +213,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				break;
 			case 0x05:
 				//aspect packet
-				cout<<"got aspect packet!"<<endl;
+				if (g_Verbosity >= c_Info) cout<<"got aspect packet!"<<endl;
         if (m_IgnoreAspect == false) {
           ProcessAspect( NextPacket );
         }
@@ -256,9 +256,9 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			if( m_UseRawDataframes ){
 				if (g_Verbosity >= c_Info) cout<<"BinaryFlightDataParser: T ::: ";;
 				for( auto E: LastTimestamps ){
-					cout<<std::hex<<E<<" ";
+					if (g_Verbosity >= c_Info) cout<<std::hex<<E<<" ";
 				}
-				cout<<std::dec<<endl;
+				if (g_Verbosity >= c_Info) cout<<std::dec<<endl;
 			} else if( m_UseComptonDataframes ){
 				if (g_Verbosity >= c_Info) cout<<"BinaryFlightDataParser: T_compton ::: "<<LastComptonTimestamp<<endl;
 			}

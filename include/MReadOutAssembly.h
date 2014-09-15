@@ -22,6 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MReadOut.h"
 #include "MNCTAspect.h"
 #include "MNCTStripHit.h"
 #include "MNCTGuardringHit.h"
@@ -133,6 +134,15 @@ class MReadOutAssembly
   //! Return the physical event 
   MPhysicalEvent* GetPhysicalEvent() { return m_PhysicalEvent; }
 
+  //! Return the number of read outs
+  //unsigned int GetNReadOuts() const { return m_ReadOuts.size(); }
+  //! Return read out i - throws an exception of the index is not found
+  //MReadOut& GetReadOut(unsigned int i);
+  //! Add a read out
+  void AddReadOut(MReadOut& ReadOut) {}
+  //! Remove a read out - does do nothing if the index is not found
+  //void RemoveReadOut(unsigned int i);
+
 
   //! Set the energy-calibration-incomplete flag
   void SetEnergyCalibrationIncomplete(bool Flag = true) { m_EnergyCalibrationIncomplete = Flag; }
@@ -179,7 +189,7 @@ class MReadOutAssembly
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
   //! Stream the content in MEGAlib's roa format 
-  void StreamRoa(ostream& S);
+  void StreamRoa(ostream& S, bool WithDescriptor = true);
 
 
   // protected methods:

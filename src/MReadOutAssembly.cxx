@@ -393,7 +393,7 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MReadOutAssembly::StreamRoa(ostream& S)
+void MReadOutAssembly::StreamRoa(ostream& S, bool)
 {
   //! Stream the content in MEGAlib's evta format 
 
@@ -439,7 +439,7 @@ bool MReadOutAssembly::IsBad() const
   if (m_StripPairingIncomplete == true) return true;
   if (m_DepthCalibrationIncomplete == true) return true;
 
-  return true;
+  return false;
 }
   
 

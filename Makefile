@@ -151,9 +151,6 @@ apps:
 	@$(MAKE) $(NUCLEARIZERSHAREDLIB)
 	@$(MAKE) -C apps
 
-megalib:
-	@$(MAKE) fretalonframeworklib -C $(MEGALIB)
-
 clean:
 	@$(MAKE) clean_fretalonframework -C $(MEGALIB)/src
 	@-rm -f $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIBS)
