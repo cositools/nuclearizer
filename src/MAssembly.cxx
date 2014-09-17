@@ -77,6 +77,7 @@ using namespace std;
 #include "MNCTModuleStripPairingGreedy.h"
 #include "MNCTModuleStripPairingGreedy_a.h"
 #include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleFlagHits.h"
 #include "MNCTModuleAspect.h"
 #include "MNCTModuleEventFilter.h"
 #include "MNCTModuleDumpEvent.h"
@@ -128,6 +129,7 @@ MAssembly::MAssembly()
   //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());
   m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_a());
   m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_b());
+	m_Supervisor->AddAvailableModule(new MNCTModuleFlagHits());
   m_Supervisor->AddAvailableModule(new MNCTModuleAspect());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDumpEvent());
   m_Supervisor->AddAvailableModule(new MNCTModuleEventSaver());
