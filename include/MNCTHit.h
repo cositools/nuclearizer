@@ -74,7 +74,17 @@ class MNCTHit
   MNCTStripHit* GetStripHit(unsigned int i);
   //! Add a strip hit
   void AddStripHit(MNCTStripHit* StripHit) { return m_StripHits.push_back(StripHit); }
-  
+ 
+	//! set cross talk flag
+	void SetCrossTalkFlag(bool PossibleCrossTalk) {m_PossibleCrossTalk = PossibleCrossTalk;}
+	//! get cross talk flag value
+	bool GetCrossTalkFlag() const { return m_PossibleCrossTalk; }
+
+	//! set charge loss flag
+	void SetChargeLossFlag(bool PossibleChargeLoss) {m_PossibleChargeLoss = PossibleChargeLoss;}
+	//! get charge loss flag value
+	bool GetChargeLossFlag() const { return m_PossibleChargeLoss; }
+ 
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
   //! Stream the content in MEGAlib's evta format 
@@ -112,6 +122,10 @@ class MNCTHit
   //! List of strip hits
   vector<MNCTStripHit*> m_StripHits;
 
+	//! Flag: possible cross talk
+	bool m_PossibleCrossTalk;
+	//! Flag: possible charge loss
+	bool m_PossibleChargeLoss;
 
 #ifdef ___CINT___
  public:
