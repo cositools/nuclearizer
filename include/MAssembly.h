@@ -68,6 +68,7 @@ class MAssembly
   static const uint64_t c_EventTransmitter         = (1 << 17);
   static const uint64_t c_PositionDetermiation     = (1 << 18);
   static const uint64_t c_Statistics               = (1 << 19);
+	static const uint64_t c_FlagHits								 = (1 << 20);
   
   // IMPORTANT:
   // If you add one analysis level, make sure you also handle it in:
