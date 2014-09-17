@@ -346,7 +346,15 @@ bool pnGraphs::Analyze()
     IsFinished = Loader->IsFinished();
 	}
 
-	cout << "drawing histograms" << endl; 
+
+	//line where graph should be
+	double x_arr[700], y_arr[700];
+	for (int i=0; i<700; i++){
+		x_arr[i] = i*2;
+		y_arr[i] = i*2;
+	}
+		
+	TGraph *graph = new TGraph(700,x_arr,y_arr);
 
 	if (m_DetOp){
 		int i=0;
@@ -356,8 +364,10 @@ bool pnGraphs::Analyze()
 			C->SetLogz();
 			C->cd();
 			H.second->Draw("colz");
+			graph->Draw("same");
 			C->Update();
-			C->Print(m_OutFile+MString("_")+i);
+			C->Print(m_OutFile+MString("_")+i+MString(".pdf"));
+			i++;
 		}
 	}
 	else {
