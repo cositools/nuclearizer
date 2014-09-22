@@ -43,7 +43,6 @@ using namespace std;
 #include "MReadOutAssembly.h"
 #include "MNCTStripHit.h"
 #include "MReadOutSequence.h"
-#include "MReadOutDataADCValueWithTiming.h"
 #include "MSupervisor.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"

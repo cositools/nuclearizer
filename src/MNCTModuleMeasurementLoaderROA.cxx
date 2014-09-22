@@ -36,7 +36,8 @@
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
 #include "MReadOutElementDoubleStrip.h"
-#include "MReadOutDataADCValueWithTiming.h"
+#include "MReadOutDataADCValue.h"
+#include "MReadOutDataTiming.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -182,8 +183,11 @@ bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
     MReadOut RO = ROS.GetReadOut(r);
     const MReadOutElementDoubleStrip* Strip = 
       dynamic_cast<const MReadOutElementDoubleStrip*>(&(RO.GetReadOutElement()));
-    const MReadOutDataADCValueWithTiming* ADC = 
-      dynamic_cast<const MReadOutDataADCValueWithTiming*>(&(RO.GetReadOutData()));
+      
+    const MReadOutDataADCValue* ADC = 
+      dynamic_cast<const MReadOutDataADCValue*>(RO.GetReadOutData().Get(MReadOutDataADCValue::m_TypeID));
+    const MReadOutDataTiming* Timing = 
+      dynamic_cast<const MReadOutDataTiming*>(RO.GetReadOutData().Get(MReadOutDataTiming::m_TypeID));
     
     
     MNCTStripHit* SH = new MNCTStripHit();
@@ -191,7 +195,7 @@ bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
     SH->IsXStrip(Strip->IsPositiveStrip());
     SH->SetStripID(Strip->GetStripID());
     
-    SH->SetTiming(ADC->GetTiming());
+    SH->SetTiming(Timing->GetTiming());
     SH->SetADCUnits(ADC->GetADCValue());
     Event->AddStripHit(SH);
   }
