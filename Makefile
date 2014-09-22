@@ -106,6 +106,7 @@ $(LB)/MNCTModuleStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
 $(LB)/MNCTModuleStripPairingGreedy_b.o \
+$(LB)/MNCTModuleFlagHits.o \
 $(LB)/MNCTModuleAspect.o \
 $(LB)/MNCTModuleEventFilter.o \
 $(LB)/MGUIOptionsEventSaver.o \

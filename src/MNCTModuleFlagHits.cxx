@@ -27,6 +27,8 @@
 #include "MNCTModuleFlagHits.h"
 
 // Standard libs:
+#include <algorithm>
+using namespace std;
 
 // ROOT libs:
 #include "TGClient.h"
