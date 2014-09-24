@@ -139,6 +139,11 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
+	//! Read the configuration data from an XML node
+	virtual bool ReadXmlConfiguration(MXmlNode* Node);
+	//! Create an XML node tree from the configuration
+	virtual MXmlNode* CreateXmlConfiguration();
+
   //!Main data analysis routine, which updates the event to a new level
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
@@ -163,11 +168,22 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   void PrintWeightMatrix(); //print out all elements in the weight matrix
   void InitializeKillMatrices(); //fill kill matrices with 0's
   void ExpandKillMatrix(int); //add column and row to the kill matrices
+	void PrintKillMatrix(); //print out all elements in the kill matrix
   int CountNegativeElements(); //count number of elements in the weight matrix that are negative (which means they are no longer valid to be chosen as the minimum weight)
   vector<vector<vector<int> > > DecodeFinalPairs(); //put lists of final strip pairings in terms of numbers between 1 and 37
   bool CheckAllStripsWerePaired(); //check that all strips are in the list of final pairs
   float CalculateSigma();
   void DetermineOption(bool);
+
+	void FindFinalPairsCorrected();
+	void GetAllCombinations(int, vector<int>, int, int, int, int);
+	void PermuteCombinations();
+	void RemoveBadCombinations(int,int);
+	vector<int> GetNumbers();
+	void FindMinChiSquared(vector<vector<vector<vector<int> > > >);
+	float CalculateChiSquared(vector<int>, vector<int>);
+	bool EnoughStripsPaired(vector<int>, vector<int>);
+	void RemoveBadStrips();
 
   float GetEth(); //returns threshold energy
   void SetStripsHit(vector<vector<int> >);
@@ -180,6 +196,12 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   vector<vector<float> > GetWeightMatrix();
   vector<vector<int> > GetBadCombinations();
   void SetBadCombinations(vector<vector<int> >);
+	int GetNBadCombinations(int);
+
+	//get the mode
+	unsigned int GetMode() const { return m_Mode; }
+	//set the mode
+	void SetMode(unsigned int Mode) { m_Mode = Mode; }
 
   void CalculateDetectorQuality();
   void CalculateEventQuality(MReadOutAssembly*, int);
@@ -224,11 +246,15 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   vector<float> detectorQualityFactors;
   vector<bool> noHits;
 
+	vector<vector<int> > xCombos;
+	vector<vector<int> > yCombos;
+
   float Eth; //threshold energy = 30 keV for now
 
   // private members:
  private:
-
+	//operation mode
+	unsigned int m_Mode;
 
 
 
