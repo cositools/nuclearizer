@@ -105,6 +105,7 @@ $(LB)/MGUIExpoStripPairing.o \
 $(LB)/MNCTModuleStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
+$(LB)/MGUIOptionsStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy_b.o \
 $(LB)/MNCTModuleFlagHits.o \
 $(LB)/MNCTModuleAspect.o \
