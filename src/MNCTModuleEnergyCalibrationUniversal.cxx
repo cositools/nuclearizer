@@ -173,6 +173,9 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+			if (a0 > 10){
+				continue;
+			}
       
       //From the fit parameters I just extracted from the .ecal file, I can define a function
       TF1* melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8000.);
