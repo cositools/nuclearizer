@@ -274,6 +274,47 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
     float stripEnergy, stripSigma;
     double inf = numeric_limits<double>::infinity();
     
+		//skip events where initial n and p energies are not close together 
+/*
+		float xTotalEnergy = 0;
+		float yTotalEnergy = 0;
+    for (unsigned int i=0; i<Event->GetNStripHits(); i++){
+      if (detector == Event->GetStripHit(i)->GetDetectorID()){
+        if (Event->GetStripHit(i)->IsXStrip() == true){
+          xTotalEnergy += Event->GetStripHit(i)->GetEnergy();
+        }    
+        else {
+			    yTotalEnergy += Event->GetStripHit(i)->GetEnergy();
+        }
+			}
+		}
+    if (fabs(xTotalEnergy-yTotalEnergy) > 20){ 
+	     nHits.push_back(0);
+  	   nHits.push_back(0);
+       return false;
+   	 }    
+*/
+
+		//skip events that aren't single-site events
+		int xCounter = 0;
+		int yCounter = 0;
+		for (unsigned int i=0; i<Event->GetNStripHits(); i++){
+			if (detector == Event->GetStripHit(i)->GetDetectorID()){
+				if (Event->GetStripHit(i)->IsXStrip() == true){
+					xCounter += 1;
+				}
+				else {
+					yCounter += 1;
+				}
+			}
+		}
+		if (xCounter != 1 || yCounter != 1){
+			nHits.push_back(0);
+			nHits.push_back(0);
+			return false;
+		}
+
+
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
         if (Event->GetStripHit(i)->IsXStrip() == true){
@@ -295,11 +336,11 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
             yStripsHit.push_back(stripID);
             yEnergy.push_back(stripEnergy);
             ySigma.push_back(stripSigma);
-          }
+        }
         }
       }
     }	
-    
+
     stripsHit.push_back(xStripsHit);
     stripsHit.push_back(yStripsHit);
     energy.push_back(xEnergy);
