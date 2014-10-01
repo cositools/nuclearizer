@@ -150,7 +150,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	vector<unsigned char> SyncWord;
 	dataframe * Dataframe;
 	int ParseErr;
-	unsigned int CCId = 0;
+	//unsigned int CCId = 0;
 
 
 	SyncWord.push_back(0xEB);
@@ -181,7 +181,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					ParseErr = RawDataframe2Struct( NextPacket, Dataframe );
 					if( ParseErr >= 0 ){
 						ConvertToMReadOutAssemblys( Dataframe, &NewEvents );
-						CCId = Dataframe->CCId;
+						//CCId = Dataframe->CCId;
 					} else {
 						if (g_Verbosity >= c_Error) cout<<"BinaryFlightDataParser: ParseERR"<<endl;
 					}
@@ -228,6 +228,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			for( auto E: NewEvents ){
 				//push the events onto the deque
 				//before we push the event into m_EventsBuf, check if we have a sync problem
+        /*
 				if( m_UseRawDataframes ){
           if (LastTimestamps.size() >= CCId) {
             cout<<"CRITICAL ALGORITHM ERROR:  The number of last time stamps in the array is smaller than the Compton ID"<<endl;
@@ -242,7 +243,8 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				} else if( m_UseComptonDataframes ){
 					LastComptonTimestamp = E->GetCL();
 				}
-
+        */
+        
 				//m_EventsBuf.push_back(E);
         // insert sorted
         deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
