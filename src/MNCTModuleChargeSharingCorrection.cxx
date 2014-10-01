@@ -119,11 +119,11 @@ bool MNCTModuleChargeSharingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     MNCTHit *H = Event->GetHit(i_hit);
     unsigned int NStripHits = H->GetNStripHits();
     unsigned int NXStripHits = 0, NYStripHits = 0;
-    int DetectorNumber;
+    //int DetectorNumber;
     for (unsigned int i_sh=0; i_sh<NStripHits; i_sh++)
     {
       MNCTStripHit *SH = H->GetStripHit(i_sh);
-      DetectorNumber = SH->GetDetectorID();
+      //DetectorNumber = SH->GetDetectorID();
       if (SH->IsXStrip() == true) { NXStripHits++; } else { NYStripHits++; }
     }
     

@@ -123,7 +123,7 @@ MAssembly::MAssembly()
   //m_Supervisor->AddAvailableModule(new MNCTModuleDepthAndStripCalibration());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearStrip());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearPixel());
+  //m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearPixel());
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration3rdPolyPixel());
   //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairing());
   //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());

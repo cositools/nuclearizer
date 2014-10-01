@@ -292,7 +292,7 @@ bool MNCTModuleFlagHits::CheckChargeLoss(bool pSide, double pEnergy, double nEne
 		}
 	}
 
-	return true;
+	return flagCL;
 
 };
 

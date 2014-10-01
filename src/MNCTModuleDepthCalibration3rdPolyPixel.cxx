@@ -238,10 +238,10 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
   unsigned int EventTypeFlag0=0;
   unsigned int EventTypeFlag1=0;
   unsigned int EventTypeFlag2=0;
-  unsigned int EventTypeFlag3=0;
+  //unsigned int EventTypeFlag3=0;
   
   unsigned int NHits = Event->GetNHits();
-  bool DepthCalibrated = false;
+  //bool DepthCalibrated = false;
   //cout << "MNCTDepthCalibration3rdPolyPixel::AnalyzeEvent: Event ID = " << Event->GetID() << endl;
   
   //cout << endl << "Event ID: " << Event->GetID() << endl;
@@ -406,7 +406,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
     }
       } else {
         Flag_CanBeCalibrated = 0;
-        EventTypeFlag3=1;
+        //EventTypeFlag3=1;
         OtherHitNumber++;
         //cout<<"EventID,"<<Event->GetID()<<"Other Hit,"<<OtherHitNumber<<endl;
       }
@@ -511,7 +511,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         if (g_Verbosity >= c_Info) cout << "Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
         H->SetPosition(PositionInGlobal);
         H->SetPositionResolution(PositionResolution);
-        DepthCalibrated=true;
+        //DepthCalibrated=true;
         if (g_Verbosity >= c_Info) {
           cout << "Hit: D" << DetectorNumber << " X:" << XStripNumber << " (" << X_Middle << " cm)  "
                << " Y:" << YStripNumber << " (" << Y_Middle << " cm)  "

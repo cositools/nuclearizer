@@ -304,7 +304,7 @@ bool MNCTModuleSimulationLoader::ApplyDetectorEffects(MReadOutAssembly* Event)
   
   //#3: Check coincidence and anti-coincidence
   bool CoTrigger=false;
-  bool AntiTrigger=false;
+  //bool AntiTrigger=false;
   
   for(unsigned int c = 0; c < CoinHits.size(); ++c){
     double CoinE=0;
@@ -318,7 +318,7 @@ bool MNCTModuleSimulationLoader::ApplyDetectorEffects(MReadOutAssembly* Event)
     }else{
       MNCTCoincidenceVolume *AntiVol = m_NCTDetectors.GetAntiCoincidenceVolume(DetVol);
       if(AntiVol->IsTriggered(CoinE)){
-        AntiTrigger=true;
+        //AntiTrigger=true;
         if(m_Verbose)cout << "Anti-coincidence triggered!!!"<<endl;
         if(m_Verbose)cout << "DetectorEffectsEngine: End of Analysis..."<<endl;
         return true;

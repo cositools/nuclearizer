@@ -122,9 +122,9 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
   
   const int nDetectors = 12;
 
-	bool newAlg;
-	if (m_Mode == 0) { newAlg = true; }
-	else { newAlg = false; }
+	//bool newAlg;
+	//if (m_Mode == 0) { newAlg = true; }
+	//else { newAlg = false; }
 
   for (int detector = 0; detector < nDetectors; detector++){
     bool runRest = GetEventInfo(Event, detector);
@@ -1221,7 +1221,9 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
   vector<int> pairVec;
 	vector<float> energyPair;
 	vector<float> resPair;
-  float weight, hitE, eRes;
+  float weight;
+  //float hitE;
+  float eRes;
 	float greedyChiSq = 0;
 
   //	cout << "nElements: " << nElements << endl;
@@ -1270,12 +1272,12 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
     //sometimes the energy resolution is infinite (not sure why)
     //if it is, then take the average of the energies
     //otherwise use correct formula
-    if (eResX != inf && eResY != inf){
-      hitE = (eX/(eResX*eResX)+eY/(eResY*eResY))/(1/(eResX*eResX)+1/(eResY*eResY));
-    }
-    else {
-      hitE = (eX+eY)/2;
-    }
+    //if (eResX != inf && eResY != inf){
+    //  hitE = (eX/(eResX*eResX)+eY/(eResY*eResY))/(1/(eResX*eResX)+1/(eResY*eResY));
+    //}
+    //else {
+    //  hitE = (eX+eY)/2;
+    //}
     // At this stage we can only use ONE side, the above formula we can only use AFTER charge charging/cross talk correction!
     hitEnergy.push_back(eY); //hitEnergy.push_back(hitE);
     

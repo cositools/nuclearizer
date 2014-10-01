@@ -317,9 +317,8 @@ bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , un
 	//assert: search buf is either synced or empty
 
 	uint16_t Len;
-	bool FoundPacket;
-
-	FoundPacket = false;
+	//bool FoundPacket;
+	//FoundPacket = false;
 	NextPacket.clear();
   
 	if( (dx + 2) > m_SBuf.size() ){
@@ -363,7 +362,7 @@ bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , un
 		return false;
 	}
 
-	FoundPacket = true;
+	//FoundPacket = true;
 
 	//we have a complete packet, extract it
 	NextPacket.assign( m_SBuf.begin() + dx, m_SBuf.begin() + dx + Len);
@@ -815,7 +814,9 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 	bool PosSide;
 	MReadOutAssembly * NewEvent;
 	MNCTStripHit * StripHit;
-	bool RolloverOccurred, EndRollover, MiddleRollover;
+	bool RolloverOccurred;
+  //bool EndRollover  // az: not used, thus commented out
+  bool MiddleRollover;
 	uint64_t Clk;
 
 	CEvents->clear(); //
@@ -834,11 +835,13 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 	RolloverOccurred = false;
 	if( (DataIn->SysTime & 0xffffffff) < DataIn->Events[0].EventTime ){
 		//there was a rollover
-		RolloverOccurred = true; EndRollover = false; MiddleRollover = false;
+		RolloverOccurred = true; 
+    //EndRollover = false; 
+    MiddleRollover = false;
 		if( DataIn->Events.back().EventTime < DataIn->Events.front().EventTime ){
 			MiddleRollover = true;
 		} else {
-			EndRollover = true;
+			// EndRollover = true; // az: not used, thus commented out
 		}
 	}
 
