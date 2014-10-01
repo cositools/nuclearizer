@@ -106,12 +106,12 @@ class MNCTBinaryFlightDataParser
   uint32_t m_NumComptonDataframes;
   uint32_t m_NumAspectPackets;
   uint32_t m_NumOtherPackets;
-  int MAX_TRIGS;
+  unsigned int MAX_TRIGS;
   unsigned long long m_EventTimeWindow;
   vector<uint64_t> LastTimestamps;
   uint64_t m_ComptonWindow;
   vector<uint8_t> m_SBuf;//search buffer for the incoming TCP data stream
-  int dx; //index into search buffer
+  unsigned int dx; //index into search buffer
   unsigned int m_EventIDCounter;
   string m_LastDateTimeString;
   uint64_t m_LastCorrectedClk;
@@ -205,7 +205,7 @@ class MNCTBinaryFlightDataParser
   bool FlushEventsBuf(void);
   bool CheckEventsBuf(void);
   MReadOutAssembly * MergeEvents( deque<MReadOutAssembly*> * EventList );
-  bool FindNextPacket( vector<uint8_t> & NextPacket, int * idx = NULL );
+  bool FindNextPacket( vector<uint8_t> & NextPacket, unsigned int * idx = NULL );
   bool ResyncSBuf(void);
   bool ProcessAspect( vector<uint8_t> & NextPacket );
   bool ProcessAspect_works( vector<uint8_t> & NextPacket );

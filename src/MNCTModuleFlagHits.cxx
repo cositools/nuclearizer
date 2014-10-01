@@ -122,7 +122,7 @@ void MNCTModuleFlagHits::ReadHit(MNCTHit* Hit){
 	double nEnRes = 0;
 	double pEnRes = 0;;
 	double stripID, energy, enRes;
-	int detector;
+	int detector = -1;
 
 	//get energy and resolution of each strip hit
 	int nStripHits = Hit->GetNStripHits();

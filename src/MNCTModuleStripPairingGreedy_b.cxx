@@ -1310,7 +1310,7 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 //if 256 is selected, it gets separated into strip 2 and charge sharing between 6 and 7
 vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs(){
 
-	for (int pair=0; pair<finalPairs.size(); pair++){
+	for (unsigned int pair=0; pair<finalPairs.size(); pair++){
 		if (finalPairs.at(pair).at(0) > 100 && finalPairs.at(pair).at(1) > 100){
 			dummy_func();
 		}

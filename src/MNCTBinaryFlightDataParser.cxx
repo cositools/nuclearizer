@@ -150,7 +150,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	vector<unsigned char> SyncWord;
 	dataframe * Dataframe;
 	int ParseErr;
-	int CCId;
+	unsigned int CCId = 0;
 
 
 	SyncWord.push_back(0xEB);
@@ -170,7 +170,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	//while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
   while (FindNextPacket( NextPacket )) {
 		Type = NextPacket[2];
-		if (g_Verbosity >= c_Info) printf("FNP: %u - %u, dx = %d, bufsize = %u\n",Type, NextPacket.size(), dx, m_SBuf.size());
+		if (g_Verbosity >= c_Info) printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
 
 
 		switch( Type ){
@@ -229,12 +229,16 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				//push the events onto the deque
 				//before we push the event into m_EventsBuf, check if we have a sync problem
 				if( m_UseRawDataframes ){
-					if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
-						//sync problem detected...
-						//cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
-						//FlushEventsBuf();
-						LastTimestamps[CCId] = E->GetCL();
-					}
+          if (LastTimestamps.size() >= CCId) {
+            cout<<"CRITICAL ALGORITHM ERROR:  The number of last time stamps in the array is smaller than the Compton ID"<<endl;
+          } else {
+            if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
+              //sync problem detected...
+              //cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
+              //FlushEventsBuf();
+              LastTimestamps[CCId] = E->GetCL();
+            }
+          }
 				} else if( m_UseComptonDataframes ){
 					LastComptonTimestamp = E->GetCL();
 				}
@@ -302,7 +306,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , int * idx){
+bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , unsigned int * idx){
 
 	//return true if a complete packet was found, return packet in NextPacket
 	//return false if a complete packet was not found.  also copy the leftover bytes
@@ -402,7 +406,6 @@ bool MNCTBinaryFlightDataParser::ResyncSBuf(void){
 
 	if (g_Verbosity >= c_Info) cout<<"BinaryFlightDataParser: Resyncing input stream! Buffer size: "<<m_SBuf.size()<<", position in buffer: "<<dx<<endl;
 
-	int i;
 	bool FoundSync;
 
 	if( m_SBuf.size() == 0 ){
@@ -416,7 +419,7 @@ bool MNCTBinaryFlightDataParser::ResyncSBuf(void){
 	if (m_SBuf[dx] == 0xeb) ++dx;
 
 	FoundSync = false;
-	for( i = dx; i < m_SBuf.size()-1; ++i ){
+	for(unsigned i = dx; i < m_SBuf.size()-1; ++i) { // m_SBuf is not allowed to be 0 so we are OK
 		if( m_SBuf[i] == 0xeb ){
 			if( m_SBuf[i+1] == 0x90 ){
 				FoundSync = true;
@@ -554,18 +557,18 @@ int MNCTBinaryFlightDataParser::RawDataframe2Struct( vector<uint8_t> Buf, datafr
 
 	size_t x; //index for looping through Buf
 	trigger TrigBuf[MAX_TRIGS];
-	int tx;
+	unsigned int tx;
 	int EventCounter;
 	int NumPayLoadBytes;
-	int Tx, Ax;
+	unsigned int Tx, Ax;
 	int NumADCTrigs, NumTimingTrigs;
 	int NumTimingBytes[8];
-	int j;
+	unsigned int j;
 	event Event;
 	uint8_t mask_or[10];
 	uint8_t Masks[8] = {1,2,4,8,16,32,64,128};
 	int NumEvents;	
-	int Length;
+	unsigned int Length;
 	trigger NewTrig;
 
 
@@ -611,7 +614,7 @@ int MNCTBinaryFlightDataParser::RawDataframe2Struct( vector<uint8_t> Buf, datafr
 
 		if( !((Buf[x] == 0xAE) && (Buf[x+1] == 0xE0)) ){ //check that we have 0xAE in the right place, if not, find it
 
-			int k;
+			unsigned int k;
 			k = x;
 			while( k < (Length-1)){
 				if( Buf[k] == 0xAE ){
@@ -722,7 +725,7 @@ loop_exit:
 			}
 
 
-			for( int i = 0; i < tx; ++i ){ //loop over triggers
+			for(unsigned int i = 0; i < tx; ++i ){ //loop over triggers
 
 				if( TrigBuf[i].Board != j ){
 					j = TrigBuf[i].Board;
@@ -773,7 +776,7 @@ loop_exit:
 				int N;
 				N = 0;
 				//copy over triggers
-				for( int i = 0; i < tx; ++i ){ //loop over all triggers...
+				for(unsigned int i = 0; i < tx; ++i ){ //loop over all triggers...
 					if( TrigBuf[i].HasADC == true ){ //... but only copy over triggers that have ADC
 						NewTrig = TrigBuf[i];
 						NewTrig.CCId = DataOut->CCId;
@@ -1563,7 +1566,7 @@ bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
 
 bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, dataframe * DataOut ){
 
-	int wx = 0;
+	size_t wx = 0;
 	size_t BufSize = Buf.size();
 
 	if( DataOut == NULL ){

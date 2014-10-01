@@ -249,7 +249,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
     MNCTHit *H = Event->GetHit(i_hit);
     unsigned int NStripHits = H->GetNStripHits();
     unsigned int NXStripHits = 0, NYStripHits = 0;
-    int DetectorNumber;
+    int DetectorNumber = -1;
     for (unsigned int i_sh=0; i_sh<NStripHits; i_sh++) {
       MNCTStripHit *SH = H->GetStripHit(i_sh);
       DetectorNumber = SH->GetDetectorID();	
@@ -257,9 +257,9 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
     }
     //Check for 1 pixel event and sharing event..
     int Flag_CanBeCalibrated = 0;
-    double XTiming,YTiming;
-    int XStripNumber,YStripNumber;
-    MNCTStripHit *SHX, *SHY;
+    double XTiming = 0.0, YTiming = 0.0;
+    int XStripNumber = 0, YStripNumber = 0;
+    MNCTStripHit *SHX = nullptr, *SHY = nullptr;
     //int DetectorNumber = SHX->GetDetectorID();
     MString DetectorName;
     int DisplayID = 0;

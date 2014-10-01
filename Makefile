@@ -44,8 +44,9 @@ MAKEFLAGS += --no-builtin-rules
 
 CMD=""
 CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
-# Python
+CXXFLAGS += -Werror -Wno-unused-variable -Wno-unused-but-set-variable
 
+# Python
 ifeq ($(ARCH),macosx)
 CXXFLAGS += -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7
 PYTHONLIBS  += -L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/ -lpython2.7
@@ -102,8 +103,6 @@ $(LB)/MNCTModuleDepthCalibrationLinearStrip.o \
 $(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
 $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIExpoStripPairing.o \
-$(LB)/MNCTModuleStripPairing.o \
-$(LB)/MNCTModuleStripPairingGreedy.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
 $(LB)/MGUIOptionsStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy_b.o \

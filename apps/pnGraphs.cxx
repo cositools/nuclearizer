@@ -80,7 +80,7 @@ private:
 	//! 1 for detectors, 0 for strips
 	bool m_DetOp;
 	//! detector ID
-	int m_DetID;
+	unsigned int m_DetID;
 	//! output file names
 	MString m_OutFile;
 
@@ -283,9 +283,9 @@ bool pnGraphs::Analyze()
 
 
 			else {
-				int nStrips = 37;
-				int detectorID = 0;
-				int stripID = 0;
+				unsigned int nStrips = 37;
+				unsigned int detectorID = 0;
+				unsigned int stripID = 0;
 				//currently just making plots for 1 detector, x strips
 				for (unsigned int strip=1; strip<=nStrips; strip++){
 					int pNStrips = 0;
