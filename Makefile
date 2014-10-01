@@ -100,8 +100,6 @@ $(LB)/MNCTModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
 $(LB)/MNCTModuleDepthAndStripCalibration.o \
 $(LB)/MNCTModuleDepthCalibration.o \
-$(LB)/MNCTModuleDepthCalibrationLinearStrip.o \
-$(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
 $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIExpoStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
