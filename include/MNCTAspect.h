@@ -21,7 +21,6 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MGlobal.h"
 #include "MTime.h"
 
 // Forward declarations:

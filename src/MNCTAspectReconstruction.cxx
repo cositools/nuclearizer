@@ -33,7 +33,6 @@
 //Ares' 1st set of adjustments begin here (there are more later).
 
 
-#include "Python.h"
 #include "stdio.h"
 #include "cstdio"
 #include "cstdlib"
@@ -47,6 +46,9 @@
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
+#include <cctype>
+
+#include "Python.h"
 
 using namespace std;
 

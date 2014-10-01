@@ -23,8 +23,6 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MGlobal.h"
-#include "MVector.h"
 #include "MNCTAspect.h"
 #include "MNCTAspectPacket.h"
 

@@ -169,7 +169,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 							AddThreeHits(0);
 							AddThreeHits(1);
 							CheckForBadCombinations();
-							float fourthChiSq = FindFinalPairs();
+							/*float fourthChiSq =*/FindFinalPairs();
 						}
 					}
 				}
@@ -214,7 +214,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 							AddThreeHits(0);
 							AddThreeHits(1);
 							CheckForBadCombinations();
-							float fourthChiSq = FindFinalPairs();
+							/*float fourthChiSq = */FindFinalPairs();
 						}
 					}
 				}

@@ -13,6 +13,7 @@
 # Definitions
 
 CXX_FILES := $(wildcard *.cxx)
+CXX_FILES := $(filter-out MAspectTester.cxx,$(CXX_FILES))
 PRGS := $(CXX_FILES:%.cxx=%)
 PRGS := $(addprefix $(BN)/,$(PRGS))
 

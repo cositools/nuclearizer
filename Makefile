@@ -44,7 +44,8 @@ MAKEFLAGS += --no-builtin-rules
 
 CMD=""
 CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
-CXXFLAGS += -Werror -Wno-unused-variable -Wno-unused-but-set-variable
+# Comment this line out if you want to accept warnings
+CXXFLAGS += -Werror -Wno-unused-variable
 
 # Python
 ifeq ($(ARCH),macosx)
@@ -158,7 +159,7 @@ clean:
 	@-rm -f $(NUCLEARIZERPRG)
 	@-rm -f *~ include/*~ src/*~
 	@$(MAKE) clean -C apps
-	
+
 #----------------------------------------------------------------
 # Explicit rules & dependencies:
 #

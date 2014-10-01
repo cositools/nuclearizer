@@ -166,7 +166,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 
 	vector<uint8_t> NextPacket;
 	//dx = 0;
-  int Rounds = 100;
+	//int Rounds = 100;
 	//while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
   while (FindNextPacket( NextPacket )) {
 		Type = NextPacket[2];
@@ -444,7 +444,7 @@ bool MNCTBinaryFlightDataParser::ResyncSBuf(void){
 
 bool MNCTBinaryFlightDataParser::FlushEventsBuf(void){
 
-	int MergedEventCounter = 0;
+  //int MergedEventCounter = 0;
 
 	//don't check m_EventTimeWindow, we are flushing the buffer
 	while( m_EventsBuf.size() > 0){
@@ -1007,7 +1007,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	struct tm * timeinfo;
 	char DateString[32];
 	string cpp_DateString;
-	uint32_t LastClkSample;
+	//uint32_t LastClkSample;
 	uint64_t UpperClkBytes;
 
 
@@ -1134,7 +1134,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 	struct tm * timeinfo;
 	char DateString[32];
 	string cpp_DateString;
-	uint32_t LastClkSample;
+	//uint32_t LastClkSample;
 	uint64_t UpperClkBytes;
 
 
