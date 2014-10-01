@@ -84,6 +84,11 @@ class MNCTHit
 	void SetChargeLossFlag(bool PossibleChargeLoss) {m_PossibleChargeLoss = PossibleChargeLoss;}
 	//! get charge loss flag value
 	bool GetChargeLossFlag() const { return m_PossibleChargeLoss; }
+
+	//! set strip hit multiple times flag
+	void SetStripHitMultipleTimes(bool stripHitMultipleTimes) {m_StripHitMultipleTimes = stripHitMultipleTimes;}
+	//! get m_StripHitMultipleTimes
+	bool GetStripHitMultipleTimes() const { return m_StripHitMultipleTimes; }
  
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
@@ -126,6 +131,9 @@ class MNCTHit
 	bool m_PossibleCrossTalk;
 	//! Flag: possible charge loss
 	bool m_PossibleChargeLoss;
+
+	//! true if hit contains strip that was hit multiple times
+	bool m_StripHitMultipleTimes;
 
 #ifdef ___CINT___
  public:
