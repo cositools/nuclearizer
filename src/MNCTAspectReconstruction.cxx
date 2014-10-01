@@ -205,13 +205,13 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	string string_m_Minute = supplements[1];
 	string string_m_Second = supplements[2];
 
-	unsigned int m_Year = ::atof(string_m_Year.c_str());
-	unsigned int m_Month = ::atof(string_m_Month.c_str());
-	unsigned int m_Day = ::atof(string_m_Day.c_str());
-	unsigned int m_Hour = ::atof(string_m_Hour.c_str());
-	unsigned int m_Minute = ::atof(string_m_Minute.c_str());
-	unsigned int m_Second = ::atof(string_m_Second.c_str());
-	unsigned int m_NanoSecond = nanoseconds;
+	//unsigned int m_Year = ::atof(string_m_Year.c_str());
+	//unsigned int m_Month = ::atof(string_m_Month.c_str());
+	//unsigned int m_Day = ::atof(string_m_Day.c_str());
+	//unsigned int m_Hour = ::atof(string_m_Hour.c_str());
+	//unsigned int m_Minute = ::atof(string_m_Minute.c_str());
+	//unsigned int m_Second = ::atof(string_m_Second.c_str());
+	//unsigned int m_NanoSecond = nanoseconds;
 
 	//Here we record heading, pitch, and roll. It's a bit more complicated than you might think.
 
