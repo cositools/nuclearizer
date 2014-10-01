@@ -151,11 +151,11 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   bool GetEventInfo(MReadOutAssembly*, int);
   void WriteHits(MReadOutAssembly*, int);
   void ClearMembers();  //clears member vectors in between detectors
-  void DefineEventInfo(); //for testing without Nuclearizer; randomly generates hit strip numbers, energies, and significances
   bool CheckInitialEnergyDifference();
   bool CheckForAdjacentStrips(); //checks if any adjacent strips were hit and if so, adds the possibility of charge sharing
   bool CheckMultipleHits(); //checks to see if more x or more y strips were hit, if so, calls AddMuoltipleHits(int)
   void AddMultipleHits(int); //adds possibility of multiple hits on one x (or y) strip by adding all possible combinations of y (or x) strips to vector of y (or x) hits
+	void AddThreeHits(int);
   void InitializeBadCombinations(); //fill badCombinations vector with 0's
   void CheckForBadCombinations(); //fills out badCombinations vector using information from kill matrix
   void PrintXYStripsHit(); //prints out current list x and y strips that were hit, including combinations
@@ -163,7 +163,7 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   void CalculateWeightMatrix(); //calculate the weight matrix
   vector<int> FindMinWeight(); //find the minimum weight in the weight matrix
   void ConflictingStrips(int, int); //once a pair is chosen, prevents the program from choosing the same strip again
-  void FindFinalPairs(); //finds the most likely pairs (or combinations) by creating and analyzing the weight matrix
+  float FindFinalPairs(); //finds the most likely pairs (or combinations) by creating and analyzing the weight matrix
   void InitializeWeightMatrix(); //fill weight matrix with 0's
   void PrintWeightMatrix(); //print out all elements in the weight matrix
   void InitializeKillMatrices(); //fill kill matrices with 0's
@@ -174,16 +174,6 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   bool CheckAllStripsWerePaired(); //check that all strips are in the list of final pairs
   float CalculateSigma();
   void DetermineOption(bool);
-
-	void FindFinalPairsCorrected();
-	void GetAllCombinations(int, vector<int>, int, int, int, int);
-	void PermuteCombinations();
-	void RemoveBadCombinations(int,int);
-	vector<int> GetNumbers();
-	void FindMinChiSquared(vector<vector<vector<vector<int> > > >);
-	float CalculateChiSquared(vector<int>, vector<int>);
-	bool EnoughStripsPaired(vector<int>, vector<int>);
-	void RemoveBadStrips();
 
   float GetEth(); //returns threshold energy
   void SetStripsHit(vector<vector<int> >);
@@ -205,6 +195,8 @@ class MNCTModuleStripPairingGreedy_b : public MModule
 
   void CalculateDetectorQuality();
   void CalculateEventQuality(MReadOutAssembly*, int);
+
+	void dummy_func();
 
   // protected methods:
  protected:
@@ -233,15 +225,21 @@ class MNCTModuleStripPairingGreedy_b : public MModule
 
   vector<int> nHits; //number of hits on x and y sides, changes to incorporate adjacent strips and multiple hits per strip
   vector<int> nHitsOrig; //number of hits on x and y sides, stays at original number throughout the entire program
+	vector<int> nHitsAdj;
 
   vector<vector<int> > badCombinations; //badCombinations.at(axis).at(i) = 0 when i is a good combination, = 1 when i is a bad combination
                     //a bad combination is one like 151, which is strip 1 combined with strip sharing between strips 1 and 2
   vector<vector<vector<int> > > killMatrix; //is used to indicate which strip numbers cannot be chosen once a particular strip is selected
   vector<vector<float> > weightMatrix; //matrix of all weights of all x and y combinations
   vector<vector<int> > finalPairs; //list of final pairs that are chosen
+	vector<vector<float> > finalPairEnergy;
+	vector<vector<float> > finalPairRes;
+
   vector<float> hitQualityFactor; //list of hit quality factors, which are the weights of each hit
   vector<float> energyResolution; //energy resolution of the pairs
   vector<float> hitEnergy;  //energy of hit
+
+	vector<int> stripHitMultipleTimes;
 
   vector<float> detectorQualityFactors;
   vector<bool> noHits;
