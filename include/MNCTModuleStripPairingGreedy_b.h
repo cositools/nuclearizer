@@ -175,6 +175,8 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   float CalculateSigma();
   void DetermineOption(bool);
 
+
+	int GetStripIndex(int, int);	//for a given strip ID, returns index in stripsHit vector
   float GetEth(); //returns threshold energy
   void SetStripsHit(vector<vector<int> >);
   vector<vector<int> > GetStripsHit();
