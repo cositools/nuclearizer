@@ -1362,15 +1362,16 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 		else if (finalPairs.at(i).at(0) > 10000){
 			xThreeHits = true;
 			xVec.push_back(finalPairs.at(i).at(0)/10000);
-	    if (finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/100)*100 > 50){
+			int lowerFourDigits = finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/10000)*10000;
+	    if (lowerFourDigits-(int)(lowerFourDigits/100)*100 > 50){
 				xChargeSharing = true;
-        xVec.push_back(finalPairs.at(i).at(0)/100);
-        xVec.push_back(finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/100)*100-50);
-        xVec.push_back(finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/100)*100+1-50);
+        xVec.push_back(lowerFourDigits/100);
+        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100-50);
+        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100+1-50);
       }
       else {
-        xVec.push_back(finalPairs.at(i).at(0)/100);
-        xVec.push_back(finalPairs.at(i).at(0) - (int)(finalPairs.at(i).at(0)/100)*100);
+        xVec.push_back(lowerFourDigits/100);
+        xVec.push_back(lowerFourDigits - (int)(lowerFourDigits/100)*100);
       }
  		}
 
@@ -1412,6 +1413,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 
 		if (xTwoHits){
 			twoHitsCounter += 1;
+			int indexOne, indexTwo;
 
 			vector<int> xVecNew;
 			//first hit
@@ -1421,9 +1423,8 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			decodedFinalPairs.push_back(pair);
 			pair.clear();
 			xVecNew.clear();
-			//change energy and resolution for first hit
-			//hitEnergy.at(i+twoHitsCounter-1) = 
 			stripHitMultipleTimes.push_back(1);
+			indexOne = GetStripIndex(0,xVec.at(0));
 
 			//second hit
 			if (xChargeSharing){
@@ -1433,6 +1434,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 				pair.push_back(yVec);
 				decodedFinalPairs.push_back(pair);
 				stripHitMultipleTimes.push_back(1);
+				indexTwo = GetStripIndex(0, (50+xVec.at(1)));
 			}
 			else {
 				xVecNew.push_back(xVec.at(1));
@@ -1440,20 +1442,30 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 				pair.push_back(yVec);
   	  	decodedFinalPairs.push_back(pair);
 				stripHitMultipleTimes.push_back(1);
+				indexTwo = GetStripIndex(0, xVec.at(1));
 			}
 			xVecNew.clear();
 			//change energy and resolution for second hit
 			//also add hit quality, but keep it the same for now
+			//because there are multiple hits on a y strip, hit energy should be the energy of the x strip
+			float energyOne = energy.at(0).at(indexOne);
+			float energyTwo = energy.at(0).at(indexTwo);
+			float eResOne = sig.at(0).at(indexOne);
+			float eResTwo = sig.at(0).at(indexTwo);
+
 			vector<float>::iterator itOne = hitEnergy.begin();
 			vector<float>::iterator itTwo = energyResolution.begin();
 			vector<float>::iterator itThree = hitQualityFactor.begin();
 
-			hitEnergy.insert(itOne+i+twoHitsCounter, hitEnergy.at(i+twoHitsCounter-1));
-			energyResolution.insert(itTwo+i+twoHitsCounter, energyResolution.at(i+twoHitsCounter-1)); 
+			hitEnergy.at(i+twoHitsCounter-1) = energyOne;
+			hitEnergy.insert(itOne+i+twoHitsCounter, energyTwo);
+			energyResolution.at(i+twoHitsCounter-1) = eResOne;
+			energyResolution.insert(itTwo+i+twoHitsCounter, eResTwo); 
 			hitQualityFactor.insert(itThree+i+twoHitsCounter, hitQualityFactor.at(i+twoHitsCounter-1));
 		}
 		else if (yTwoHits){
 			twoHitsCounter += 1;
+			int indexOne, indexTwo;
 
 			vector<int> yVecNew;
 			//first hit
@@ -1464,6 +1476,8 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			pair.clear();
 			yVecNew.clear();
 			stripHitMultipleTimes.push_back(1);
+			indexOne = GetStripIndex(1,yVec.at(0));
+
 			//second hit
 			if (yChargeSharing){
 				yVecNew.push_back(yVec.at(1));
@@ -1471,27 +1485,37 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 				pair.push_back(xVec);
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
+				indexTwo = GetStripIndex(1, (50+yVec.at(1)));
 			}
 			else {
 				pair.push_back(xVec);
 				yVecNew.push_back(yVec.at(1));
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
+				indexTwo = GetStripIndex(1,yVec.at(1));
 			}
 			stripHitMultipleTimes.push_back(1);
 			yVecNew.clear();
 			//change energy and resolution for second hit
 			//also add element to hit quality, need to do properly later
+			float energyOne = energy.at(1).at(indexOne);
+			float energyTwo = energy.at(1).at(indexTwo);
+			float eResOne = sig.at(1).at(indexOne);
+			float eResTwo = sig.at(1).at(indexTwo);
+
 			vector<float>::iterator itOne = hitEnergy.begin();
 			vector<float>::iterator itTwo = energyResolution.begin();
 			vector<float>::iterator itThree = hitQualityFactor.begin();
 
-			hitEnergy.insert(itOne+i+twoHitsCounter, hitEnergy.at(i+twoHitsCounter-1));
-			energyResolution.insert(itTwo+i+twoHitsCounter, energyResolution.at(i+twoHitsCounter-1));
+			hitEnergy.at(i+twoHitsCounter-1) = energyOne;
+			hitEnergy.insert(itOne+i+twoHitsCounter, energyTwo);
+			energyResolution.at(i+twoHitsCounter-1) = eResOne;
+			energyResolution.insert(itTwo+i+twoHitsCounter, eResTwo); 
 			hitQualityFactor.insert(itThree+i+twoHitsCounter, hitQualityFactor.at(i+twoHitsCounter-1));
 		}
 		else if (xThreeHits){
 			threeHitsCounter += 1;
+			int indexOne, indexTwo, indexThree;
 
 			vector<int> xVecNew;
 			//first hit
@@ -1500,6 +1524,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			pair.push_back(yVec);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
+			indexOne = GetStripIndex(0,xVec.at(0));
 			pair.clear();
 			xVecNew.clear();
 			//change energy and resolution for first hit
@@ -1511,6 +1536,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			pair.push_back(yVec);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
+			indexTwo = GetStripIndex(0,xVec.at(1));
 			pair.clear();
 			xVecNew.clear();
 
@@ -1521,31 +1547,44 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 				pair.push_back(xVecNew);
 				pair.push_back(yVec);
 				decodedFinalPairs.push_back(pair);
+				indexThree = GetStripIndex(0,(50+xVec.at(2)));
 			}
 			else {
 				xVecNew.push_back(xVec.at(2));
 				pair.push_back(xVecNew);
 				pair.push_back(yVec);
   	  	decodedFinalPairs.push_back(pair);
+				indexThree = GetStripIndex(0,xVec.at(2));
 			}
 			stripHitMultipleTimes.push_back(1);
 			xVecNew.clear();
 			//change energy and resolution for second hit
 			//also add hit quality, but keep it the same for now
+			float energyOne = energy.at(0).at(indexOne);
+			float energyTwo = energy.at(0).at(indexTwo);
+			float energyThree = energy.at(0).at(indexThree);
+			float eResOne = sig.at(0).at(indexOne);
+			float eResTwo = sig.at(0).at(indexTwo);
+			float eResThree = sig.at(0).at(indexThree);
+
 			vector<float>::iterator itOne = hitEnergy.begin();
 			vector<float>::iterator itTwo = energyResolution.begin();
 			vector<float>::iterator itThree = hitQualityFactor.begin();
 
-			hitEnergy.insert(itOne+i+threeHitsCounter, hitEnergy.at(i+threeHitsCounter-1));
-			energyResolution.insert(itTwo+i+threeHitsCounter, energyResolution.at(i+threeHitsCounter-1)); 
-			hitQualityFactor.insert(itThree+i+threeHitsCounter, hitQualityFactor.at(i+threeHitsCounter-1));
+			hitEnergy.at(i+threeHitsCounter-1) = energyOne;
+			hitEnergy.insert(itOne+i+threeHitsCounter, energyTwo);
+			hitEnergy.insert(itOne+i+threeHitsCounter+1, energyThree);
 
-			hitEnergy.insert(itOne+i+threeHitsCounter+1, hitEnergy.at(i+threeHitsCounter-1));
-			energyResolution.insert(itTwo+i+threeHitsCounter+1, energyResolution.at(i+threeHitsCounter-1)); 
+			energyResolution.at(i+threeHitsCounter-1) = eResOne;
+			energyResolution.insert(itTwo+i+threeHitsCounter, eResTwo);
+			energyResolution.insert(itTwo+i+threeHitsCounter+1, eResThree);
+
+			hitQualityFactor.insert(itThree+i+threeHitsCounter, hitQualityFactor.at(i+threeHitsCounter-1));
 			hitQualityFactor.insert(itThree+i+threeHitsCounter+1, hitQualityFactor.at(i+threeHitsCounter-1));	
 		}
 		else if (yThreeHits){
 			threeHitsCounter += 1;
+			int indexOne, indexTwo, indexThree;
 
 			vector<int> yVecNew;
 			//first hit
@@ -1554,6 +1593,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			pair.push_back(yVecNew);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
+			indexOne = GetStripIndex(1,yVec.at(0));
 			pair.clear();
 			yVecNew.clear();
 			//second hit
@@ -1562,6 +1602,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			pair.push_back(yVecNew);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
+			indexTwo = GetStripIndex(1,yVec.at(1));
 			pair.clear();
 			yVecNew.clear();
 			//third hit
@@ -1571,28 +1612,40 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 				pair.push_back(xVec);
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
+				indexThree = GetStripIndex(1,(50+yVec.at(2)));
 			}
 			else {
 				pair.push_back(xVec);
 				yVecNew.push_back(yVec.at(2));
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
+				indexThree = GetStripIndex(1,yVec.at(2));
 			}
 			stripHitMultipleTimes.push_back(1);
 			yVecNew.clear();
 			//change energy and resolution for second hit
 			//also add element to hit quality, need to do properly later
+			float energyOne = energy.at(1).at(indexOne);
+			float energyTwo = energy.at(1).at(indexTwo);
+			float energyThree = energy.at(1).at(indexThree);
+			float eResOne = sig.at(1).at(indexOne);
+			float eResTwo = sig.at(1).at(indexTwo);
+			float eResThree = sig.at(1).at(indexThree);
+
 			vector<float>::iterator itOne = hitEnergy.begin();
 			vector<float>::iterator itTwo = energyResolution.begin();
 			vector<float>::iterator itThree = hitQualityFactor.begin();
 
-			hitEnergy.insert(itOne+i+threeHitsCounter, hitEnergy.at(i+threeHitsCounter-1));
-			energyResolution.insert(itTwo+i+threeHitsCounter, energyResolution.at(i+threeHitsCounter-1));
-			hitQualityFactor.insert(itThree+i+threeHitsCounter, hitQualityFactor.at(i+threeHitsCounter-1));
+			hitEnergy.at(i+threeHitsCounter-1) = energyOne;
+			hitEnergy.insert(itOne+i+threeHitsCounter, energyTwo);
+			hitEnergy.insert(itOne+i+threeHitsCounter+1, energyThree);
 
-			hitEnergy.insert(itOne+i+threeHitsCounter+1, hitEnergy.at(i+threeHitsCounter-1));
-			energyResolution.insert(itTwo+i+threeHitsCounter+1, energyResolution.at(i+threeHitsCounter-1));
-			hitQualityFactor.insert(itThree+i+threeHitsCounter+1, hitQualityFactor.at(i+threeHitsCounter-1));
+			energyResolution.at(i+threeHitsCounter-1) = eResOne;
+			energyResolution.insert(itTwo+i+threeHitsCounter, eResTwo);
+			energyResolution.insert(itTwo+i+threeHitsCounter+1, eResThree);
+
+			hitQualityFactor.insert(itThree+i+threeHitsCounter, hitQualityFactor.at(i+threeHitsCounter-1));
+			hitQualityFactor.insert(itThree+i+threeHitsCounter+1, hitQualityFactor.at(i+threeHitsCounter-1));	
 		}
 		else if (!xTwoHits && !yTwoHits && !xThreeHits && !yThreeHits){
 			pair.push_back(xVec);
@@ -1616,7 +1669,8 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
     //	pair.at(1).clear();
     
   }
-  
+ 
+ 
   //print decodedFinalPairs
   
 //  cout << decodedFinalPairs.size() << endl;
@@ -1889,6 +1943,19 @@ int MNCTModuleStripPairingGreedy_b::GetNBadCombinations(int axis){
 	}
 
 	return counter;
+};
+
+int MNCTModuleStripPairingGreedy_b::GetStripIndex(int axis, int stripID){
+
+	int index = -1;
+
+	for (int i=0; i<nHits.at(axis); i++){
+		if (stripsHit.at(axis).at(i) == stripID){
+			index = i;
+		}
+	}
+
+	return index;
 };
 
 void MNCTModuleStripPairingGreedy_b::dummy_func(void){
