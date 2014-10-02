@@ -1266,9 +1266,9 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
     energyResolution.push_back(eRes);
     
     //fill hit energy vector
-    float eX = energy.at(0).at(xIndex);
+//    float eX = energy.at(0).at(xIndex);
     float eY = energy.at(1).at(yIndex);
-    double inf = numeric_limits<double>::infinity();
+//    double inf = numeric_limits<double>::infinity();
     //sometimes the energy resolution is infinite (not sure why)
     //if it is, then take the average of the energies
     //otherwise use correct formula
