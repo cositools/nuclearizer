@@ -188,43 +188,37 @@ bool ThresholdDeterminator::Analyze()
       } else {
         TH1D* Hist = new TH1D("", MString("Spectrum for ") + R.ToString(), 1000, 0, 1000); //Cory added h then took away
         Histograms[R] = Hist;
-// Cory's code
-				for (unsigned int k = 1; k < 1000; ++k) {
-					if (Hist->GetBinContent(k)  > 10) { //retrieve the frequency value from channel k, identify threshold as first channel with >10 counts 
-						ofstream histfile; //output file type (make it writeable), class histfile
-						histfile.open ("thresh_hist.txt", std::ios_base::app | std::ios_base::out); //open thresh_hist.txt and prepare to write to it
-							if (histfile.is_open())	{
-								histfile << to_string(Hist->GetBinContent(k)) +	to_string(k) + "/n"; //write cnt to file with its index, start newline
-								histfile.close();
-							}
-							else {
-								cout << "Unable to open file";
-							}		
-					break; // quit the for loop
-					}
-				}
-//end Cory's code
       }
     }    
   }
   delete Event;
   
-//  for (auto H: Histograms) {
-//    TH1D* Hist = H.second;
-//    
-//    TCanvas* C = new TCanvas();
-//    C->cd();
-//    Hist->Draw();
-//    C->Update();
-//    
-//    /// do some thing with it
-//    gSystem->ProcessEvents();
-//    gSystem->Sleep(2000);
-//    gSystem->ProcessEvents();
-//    
-//    // Delete it afterwards
-//    delete C;
-//  }
+  ofstream histfile; //output file type (make it writeable), class histfile
+  histfile.open("Thresholds.dat"); 
+  if (histfile.is_open() == false) {
+    cerr<<"Unable to open thresholds file for writing!"<<endl;
+    return false;
+  }
+  
+  for (auto H: Histograms) {
+    TH1D* Hist = H.second;
+    
+    /*
+    TCanvas* C = new TCanvas();
+    C->cd();
+    Hist->Draw();
+    C->Update();
+    */
+    
+    for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
+      if (Hist->GetBinContent(b)  > 10) { 
+        histfile<<"TH "<<H.first.ToParsableString(true)<<" "<<Hist->GetBinCenter(b)<<endl;
+        break;
+      }
+    }
+  }
+
+  histfile.close();
   
   return true;
 }
