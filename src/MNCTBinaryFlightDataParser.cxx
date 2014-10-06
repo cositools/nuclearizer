@@ -170,7 +170,10 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	//while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
   while (FindNextPacket( NextPacket )) {
 		Type = NextPacket[2];
-		if (g_Verbosity >= c_Info) printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
+		if (g_Verbosity >= c_Info) {
+      //printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
+      cout<<"FNP: "<<Type<<" - "<<NextPacket.size()<<", dx = "<<dx<<", bufsize = "<<m_SBuf.size()<<endl;
+    }
 
 
 		switch( Type ){
