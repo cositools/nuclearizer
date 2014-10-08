@@ -84,12 +84,13 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   MGUIExpoEnergyCalibration* m_ExpoEnergyCalibration;
    
   //! Calibrators arranged by detectors
-  vector<vector<MCalibratorEnergy*> > m_Calibrators;
+  //vector<vector<MCalibratorEnergy*> > m_Calibrators;
   //! Associated detector IDs
   vector<unsigned int> m_DetectorIDs;
   //! Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
-  
+  //! Resolution Calibration map between read-out element and fitted function
+	map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
    
 #ifdef ___CINT___
  public:

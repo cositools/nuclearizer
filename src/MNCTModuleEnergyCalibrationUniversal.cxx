@@ -108,7 +108,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
 {
   // Initialize the module 
   
-  cout<<m_XmlTag<<": TODO: Set correct energy resolution - currently hard coded to 2.0 keV (one sigma)"<<endl;
+  //cout<<m_XmlTag<<": TODO: Set correct energy resolution - currently hard coded to 2.0 keV (one sigma)"<<endl;
   
   MParser Parser;
   if (Parser.Open(m_FileName, MFile::c_Read) == false) {
@@ -116,13 +116,14 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     return false;
   }
   
-  map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine;
-  map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine;
+  map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine; //Peak fits
+  map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
+	map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
     if (NTokens < 2) continue;
     if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true ||
-      Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
+      Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true || Parser.GetTokenizerAt(i)->IsTokenAt(0,"CR") == true) {
       if (Parser.GetTokenizerAt(i)->IsTokenAt(1, "dss") == true) {
         
         MReadOutElementDoubleStrip R;
@@ -131,9 +132,11 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
         R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
         if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true) {
           CP_ROEToLine[R] = i;
-        } else {
+        } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
           CM_ROEToLine[R] = i;
-        }
+        } else {
+					CR_ROEToLine[R] = i;
+				}
       } else {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown read-out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
         return false;
@@ -174,7 +177,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       
-      //From the fit parameters I just extracted from the .ecal file, I can define a function
+			//From the fit parameters I just extracted from the .ecal file, I can define a function
       TF1* melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8000.);
       melinatorfit->FixParameter(0, a0);
       melinatorfit->FixParameter(1, a1);
@@ -190,6 +193,25 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     }
   }
   
+	for (auto CR: CR_ROEToLine) {
+
+		unsigned int Pos = 5;
+		MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
+		CalibratorType.ToLower();
+		if (CalibratorType == "p1") {
+			double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+			double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+			TF1* resolutionfit = new TF1("P1","([0]+[1]*x)^(1/2)",0.,2000.);
+			resolutionfit->FixParameter(0,f0);
+			resolutionfit->FixParameter(1,f1);
+
+			m_ResolutionCalibration[CR.first] = resolutionfit;
+		} else {
+			if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown resolution calibrator type ("<<CalibratorType<<") for strip"<<CR.first<<endl;
+			continue;
+		}
+	}
+			
   return MModule::Initialize();
 }
 
@@ -206,6 +228,7 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
     
     TF1* Fit = m_Calibration[R];
+		TF1* FitRes = m_ResolutionCalibration[R];
     if (Fit == 0) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
       Event->SetEnergyCalibrationIncomplete(true);
@@ -218,8 +241,14 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         Energy = 0;
       }
       SH->SetEnergy(Energy);
-      SH->SetEnergyResolution(2.0);
-      if (R.IsPositiveStrip() == true) {
+			if (FitRes == 0) {
+				if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy Resolution fit not found for read-out element "<<R<<endl;
+				Event->SetEnergyCalibrationIncomplete(true);
+			} else {
+				double EnergyResolution = FitRes->Eval(Energy);
+				SH->SetEnergyResolution(EnergyResolution);
+			}
+    if (R.IsPositiveStrip() == true) {
         m_ExpoEnergyCalibration->AddEnergy(Energy);
       }
       
