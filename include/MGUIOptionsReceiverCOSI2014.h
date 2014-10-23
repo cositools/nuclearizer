@@ -74,8 +74,8 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
   MGUIEEntry* m_DistributorPort;
   MGUIEEntry* m_DistributorStreamID;
 
-  MGUIEEntry* m_SendToName;
-  MGUIEEntry* m_SendToPort;
+  //MGUIEEntry* m_SendToName;
+  //MGUIEEntry* m_SendToPort;
 
   MGUIERBList* m_DataMode;
 

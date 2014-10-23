@@ -73,19 +73,19 @@ void MGUIOptionsReceiverCOSI2014::Create()
   TGLabel* HandshakerLabel = new TGLabel(m_OptionsFrame, "Connection to the distributor:");
   m_OptionsFrame->AddFrame(HandshakerLabel, LabelLayout);
   
-  m_DistributorName = new MGUIEEntry(m_OptionsFrame, "Distributor name/IP: ", false,
+  m_DistributorName = new MGUIEEntry(m_OptionsFrame, "Distributor IP (e.g. 128.32.13.133): ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorName());
   m_OptionsFrame->AddFrame(m_DistributorName, ContentLayout);
 
-  m_DistributorPort = new MGUIEEntry(m_OptionsFrame, "Distributor listening port: ", false,
+  m_DistributorPort = new MGUIEEntry(m_OptionsFrame, "Distributor listening port (e.g. 21526): ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorPort());
   m_OptionsFrame->AddFrame(m_DistributorPort, ContentLayout);
 
-  m_DistributorStreamID = new MGUIEEntry(m_OptionsFrame, "Stream ID: ", false,
+  m_DistributorStreamID = new MGUIEEntry(m_OptionsFrame, "Stream ID (e.g. ALL): ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDistributorStreamID());
   m_OptionsFrame->AddFrame(m_DistributorStreamID, ContentLayout);
 
-  
+  /*
   TGLabel* SendToLabel = new TGLabel(m_OptionsFrame, "Connection where the data should be sent to:");
   m_OptionsFrame->AddFrame(SendToLabel, LabelLayout);
 
@@ -96,7 +96,7 @@ void MGUIOptionsReceiverCOSI2014::Create()
   m_SendToPort = new MGUIEEntry(m_OptionsFrame, "Port on the machine where we send the data to: ", false,
                               dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetLocalReceivingPort());
   m_OptionsFrame->AddFrame(m_SendToPort, ContentLayout);
-
+  */
   
   m_DataMode = new MGUIERBList(m_OptionsFrame, "Choose the data to look at: ");
   m_DataMode->Add("Raw mode");
@@ -159,8 +159,8 @@ bool MGUIOptionsReceiverCOSI2014::OnApply()
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorPort(m_DistributorPort->GetAsInt());
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDistributorStreamID(m_DistributorStreamID->GetAsString());
 
-  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingHostName(m_SendToName->GetAsString());
-  dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingPort(m_SendToPort->GetAsInt());
+  //dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingHostName(m_SendToName->GetAsString());
+  //dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingPort(m_SendToPort->GetAsInt());
 
   if (m_DataMode->GetSelected() == 0) {
     dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);     

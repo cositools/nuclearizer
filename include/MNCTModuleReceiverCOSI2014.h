@@ -121,6 +121,8 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
   //! The stream ID which we want to receive
   MString m_DistributorStreamID;
 
+  //! Request an host and port from the distributor
+  bool m_RequestConnection;
   //! Where to send the data to
   MString m_LocalReceivingHostName;
   //! Port to send the data to

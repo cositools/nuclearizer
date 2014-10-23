@@ -80,6 +80,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   m_DistributorPort = 9091;
   m_DistributorStreamID = "OP";
   
+  m_RequestConnection = true; 
   m_LocalReceivingHostName = "localhost";
   m_LocalReceivingPort = 12345;  
   
@@ -112,13 +113,13 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
   
   while (HandshakeSuccessful == false && m_Interrupt == false) {
     if (Handshaker != 0) {
-      cout<<"HANDSHAKER NOT DELETED!"<<endl;
+      cout<<"Handshake: HANDSHAKER NOT DELETED!"<<endl;
       delete Handshaker;
       Handshaker = 0;
     }
-    cout<<"Trying to connect to: "<<m_DistributorName<<":"<<m_DistributorPort<<endl;
+    cout<<"Handshake: Trying to connect to: "<<m_DistributorName<<":"<<m_DistributorPort<<endl;
     Handshaker = new MTransceiverTcpIpBinary("HandShaker", m_DistributorName, m_DistributorPort);
-    Handshaker->SetVerbosity(3);
+    Handshaker->SetVerbosity(0);
     Handshaker->RequestClient(true);
     Handshaker->Connect(false);
     int Wait = 2000;
@@ -128,7 +129,7 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       continue;
     }
     if (Handshaker->IsConnected() == false && Wait == 0) {
-      cout<<"Never connected - disconnecting"<<endl;
+      cout<<"Handshake: Never connected - disconnecting"<<endl;
       Handshaker->Disconnect(true);
       delete Handshaker;
       Handshaker = 0;
@@ -138,10 +139,12 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       cout<<"Done sleeping"<<endl;
       continue;
     }
+
+    if (m_DistributorStreamID == "") m_DistributorStreamID = "ALL";
     
     ostringstream msg;
-    if (m_DistributorStreamID == "ALL" || m_DistributorStreamID == "") { 
-      msg<<"START:"<<m_LocalReceivingHostName<<":"<<m_LocalReceivingPort;
+    if (m_RequestConnection == true) {
+      msg<<"START:REQUEST:"<<m_DistributorStreamID;     
     } else {
       msg<<"START:"<<m_LocalReceivingHostName<<":"<<m_LocalReceivingPort<<":"<<m_DistributorStreamID;        
     }
@@ -150,13 +153,13 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       ToSend.push_back(static_cast<uint8_t>(c));
     }
     Handshaker->Send(ToSend);
-    cout<<"Sent connection request: "<<msg.str()<<endl;
+    cout<<"Handshake: Sent connection request: "<<msg.str()<<endl;
     
     MTimer Waiting;
     Wait = 0;
     bool Restart = false;
     while (Handshaker->IsConnected() == true && Restart == false && m_Interrupt == false) {
-      cout<<"Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
+      cout<<"Handshake: Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
       ++Wait;
       gSystem->ProcessEvents();
       if (Wait < 10) {
@@ -166,7 +169,7 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       }
       // Need a timeout here
       if (Waiting.GetElapsed() > 60) {
-        cout<<"Connected but didn't receive anything -- timeout & restarting"<<endl;
+        cout<<"Handshake: Connected but didn't receive anything -- timeout & restarting"<<endl;
         Handshaker->Disconnect();
         delete Handshaker;
         Handshaker = 0;
@@ -180,17 +183,24 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       Handshaker->Receive(ToReceive);
       if (ToReceive.size() > 0) {
         string ReceivedString(ToReceive.begin(), ToReceive.end());
-        
-        string Expected(msg.str());
-        Expected += ":ACK";
-        if (ReceivedString == Expected) {
-          cout<<"Handshake successfull"<<endl;
-          HandshakeSuccessful = true;
+        MString Received = ReceivedString;
+        if (Received.EndsWith("ACK") == true) {
+          vector<MString> Tokens = Received.Tokenize(":");
+          if (Tokens.size() == 5) {
+            m_LocalReceivingHostName = Tokens[1];
+            m_LocalReceivingPort = atoi(Tokens[2]);
+            HandshakeSuccessful = true;
+            cout<<"Handshake: SUCCESS with connection to "<<m_LocalReceivingHostName<<":"<<m_LocalReceivingPort<<endl;
+          } else {
+            cout<<"Handshake: Cannot parse returned string: "<<Received<<endl;
+            Restart = true;
+          }
           Handshaker->Disconnect();
           delete Handshaker;
+          Handshaker = 0;
           break;
         } else {
-          cout<<"Error performing handshake: "<<ReceivedString<<endl;
+          cout<<"Handshake: FAILED: "<<Received<<endl;
           Handshaker->Disconnect();
           delete Handshaker;
           Handshaker = 0;
@@ -360,6 +370,73 @@ void MNCTModuleReceiverCOSI2014::Finalize()
     m_Out.close();
   }
   
+  m_Receiver->Disconnect();
+  delete m_Receiver;
+  m_Receiver = 0;
+  
+  // Disconnect from handshaker -- but only if easily possible...
+  MTransceiverTcpIpBinary* Handshaker = new MTransceiverTcpIpBinary("HandShaker", m_DistributorName, m_DistributorPort);
+  Handshaker->SetVerbosity(0);
+  Handshaker->RequestClient(true);
+  Handshaker->Connect(false);
+  
+  int Wait = 2000;
+  while (Handshaker->IsConnected() == false && --Wait > 0) {
+    gSystem->Sleep(10);
+    gSystem->ProcessEvents();
+    continue;
+  }
+  
+  if (Handshaker->IsConnected() == true) {
+    ostringstream msg;
+    msg<<"STOP:"<<m_LocalReceivingHostName<<":"<<m_LocalReceivingPort;        
+    vector<uint8_t> ToSend;
+    for (char c: msg.str()) {
+      ToSend.push_back(static_cast<uint8_t>(c));
+    }
+    Handshaker->Send(ToSend);
+    cout<<"Handshake: Sent connection END request: "<<msg.str()<<endl;
+    
+    MTimer Waiting;
+    Wait = 0;
+    bool Restart = false;
+    while (Handshaker->IsConnected() == true && Restart == false) {
+      cout<<"Handshake: Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
+      ++Wait;
+      gSystem->ProcessEvents();
+      if (Wait < 10) {
+        gSystem->Sleep(100);
+      } else {
+        gSystem->Sleep(1000);
+      }
+      // Need a timeout here
+      if (Waiting.GetElapsed() > 60) {
+        cout<<"Handshake: Connected but didn't receive any answer -- timeout & good buy"<<endl;
+        break;
+      }
+      vector<uint8_t> ToReceive;
+      Handshaker->Receive(ToReceive);
+      if (ToReceive.size() > 0) {
+        string ReceivedString(ToReceive.begin(), ToReceive.end());
+        MString Received = ReceivedString;
+        if (Received.EndsWith("ACK") == true) {
+          cout<<"Handshake: sucessfully ended the connection"<<endl;
+          break;
+        } else {
+          cout<<"Handshake: FAILED: "<<Received<<endl;
+          break;
+        }
+      } else {
+        //cout<<"Nothing received..."<<endl; 
+      }
+    }
+  } else {
+    cout<<"Handshake: Failed to connect to handshaker... Cannot send STOP message..."<<endl;     
+  }
+  
+  Handshaker->Disconnect();
+  delete Handshaker;
+
   return;
 }
 
