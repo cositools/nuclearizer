@@ -136,7 +136,6 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
       gSystem->ProcessEvents();
       gSystem->Sleep(1000*gRandom->Rndm());
       gSystem->ProcessEvents();
-      cout<<"Done sleeping"<<endl;
       continue;
     }
 
@@ -159,13 +158,12 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
     Wait = 0;
     bool Restart = false;
     while (Handshaker->IsConnected() == true && Restart == false && m_Interrupt == false) {
-      cout<<"Handshake: Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
       ++Wait;
       gSystem->ProcessEvents();
       if (Wait < 10) {
-        gSystem->Sleep(100);
+        gSystem->Sleep(500);
       } else {
-        gSystem->Sleep(1000);
+        gSystem->Sleep(2000);
       }
       // Need a timeout here
       if (Waiting.GetElapsed() > 60) {
@@ -211,7 +209,7 @@ bool MNCTModuleReceiverCOSI2014::DoHandshake()
           break;
         }
       } else {
-        //cout<<"Nothing received..."<<endl; 
+        cout<<"Handshake: Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
       }
     }
     if (HandshakeSuccessful == false && Handshaker != 0) {
@@ -288,6 +286,16 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
         return true;
       }
     }
+  }
+  
+  
+  double Timeout = 60; // seconds
+  if (m_Receiver->GetNPacketsToReceive() == 0 && 
+      m_Receiver->GetTimeSinceLastIO().GetElapsed() > Timeout) {
+    mout<<"No more packets in receiver, last IO was "<<m_Receiver->GetTimeSinceLastIO().GetElapsed()<<" seconds ago. Assuming broken connection. Redoing handshake..."<<endl;
+    delete m_Receiver;
+    m_Receiver = 0;
+    DoHandshake();
   }
   
   vector<uint8_t> Received ;
