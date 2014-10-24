@@ -460,7 +460,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
           cout<<"!!!!!!!!!!!!!!!!!!! SWITCH !!!!!!!!!!!!!!!!!!!!"<<endl;
         }
         */
-        Z_Front = depth;
+        Z_Front = 1.5 - depth;
         //m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
         //m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
         
