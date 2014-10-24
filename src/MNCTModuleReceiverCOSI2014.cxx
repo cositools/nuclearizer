@@ -77,12 +77,12 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   m_HasOptionsGUI = true;
   
   m_DistributorName = "128.32.13.133";
-  m_DistributorPort = 21526;
+  m_DistributorPort = 215261;
   m_DistributorStreamID = "OP";
   
   m_RequestConnection = true; 
-  m_LocalReceivingHostName = "WER128.32.13.133";
-  m_LocalReceivingPort = 21538;  
+  m_LocalReceivingHostName = "128.32.13.133";
+  m_LocalReceivingPort = 215381;  
   
   m_Receiver = 0;
   
@@ -106,6 +106,8 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
 {
   // Perform a handshake with the distributor
   
+  cout<<"Handshake: Trying to start connction"<<endl;
+
   bool HandshakeSuccessful = false;
   MTransceiverTcpIpBinary* Handshaker = 0;
   
@@ -117,7 +119,7 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
     }
     cout<<"Handshake: Trying to connect to: "<<m_DistributorName<<":"<<m_DistributorPort<<endl;
     Handshaker = new MTransceiverTcpIpBinary("HandShaker", m_DistributorName, m_DistributorPort);
-    Handshaker->SetVerbosity(0);
+    Handshaker->SetVerbosity(3);
     Handshaker->RequestClient(true);
     Handshaker->Connect(false);
     int Wait = 2000;
@@ -136,6 +138,7 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
       gSystem->ProcessEvents();
       continue;
     }
+    cout<<"Handshake: Connected!"<<endl;
 
     if (m_DistributorStreamID == "") m_DistributorStreamID = "ALL";
     
@@ -149,23 +152,26 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
     for (char c: msg.str()) {
       ToSend.push_back(static_cast<uint8_t>(c));
     }
+    unsigned long NResets = Handshaker->GetNResets();
     Handshaker->Send(ToSend);
     cout<<"Handshake: Sent connection request: "<<msg.str()<<endl;
     
     MTimer Waiting;
     Wait = 0;
     bool Restart = false;
+    double Timeout = 1.0; //sec
     while (Handshaker->IsConnected() == true && Restart == false && m_Interrupt == false) {
       ++Wait;
       gSystem->ProcessEvents();
       if (Wait < 10) {
-        gSystem->Sleep(500);
+        gSystem->Sleep(100);
       } else {
-        gSystem->Sleep(2000);
+        gSystem->Sleep(1000);
       }
       // Need a timeout here
-      if (Waiting.GetElapsed() > 60) {
-        cout<<"Handshake: Connected but didn't receive anything -- timeout & restarting"<<endl;
+      if (Timeout < 16) Timeout *= 1.5;
+      if (Handshaker->GetNResets() > NResets || Waiting.GetElapsed() > Timeout) {
+        cout<<"Handshake: Reset or didn't receive anything -- timeout & restarting"<<endl;
         Handshaker->Disconnect();
         delete Handshaker;
         Handshaker = 0;
@@ -229,6 +235,7 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
   m_Receiver = new MTransceiverTcpIpBinary("Final receiver", m_LocalReceivingHostName, m_LocalReceivingPort);
   m_Receiver->SetVerbosity(3);
   m_Receiver->SetMaximumBufferSize(100000000);
+  m_Receiver->RequestClient();
   m_Receiver->Connect(true, 10);
   
   return true;
@@ -240,15 +247,18 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
 
 bool MNCTModuleReceiverCOSI2014::EndConnection()
 {
-  // Firts kill the receiver
-  m_Receiver->Disconnect();
-  delete m_Receiver;
-  m_Receiver = 0;
+  // First kill the receiver
+  if (m_Receiver != 0) {
+    m_Receiver->Disconnect();
+    delete m_Receiver;
+    m_Receiver = 0;
+  }
   
   
   // Disconnect from handshaker -- but only if easily possible...
+  cout<<"Handshake: Trying to end connction"<<endl;
   MTransceiverTcpIpBinary* Handshaker = new MTransceiverTcpIpBinary("HandShaker", m_DistributorName, m_DistributorPort);
-  Handshaker->SetVerbosity(0);
+  Handshaker->SetVerbosity(3);
   Handshaker->RequestClient(true);
   Handshaker->Connect(false);
   
@@ -266,14 +276,16 @@ bool MNCTModuleReceiverCOSI2014::EndConnection()
     for (char c: msg.str()) {
       ToSend.push_back(static_cast<uint8_t>(c));
     }
+    unsigned long NResets = Handshaker->GetNResets();
     Handshaker->Send(ToSend);
     cout<<"Handshake: Sent connection END request: "<<msg.str()<<endl;
     
     MTimer Waiting;
     Wait = 0;
     bool Restart = false;
-    while (Handshaker->IsConnected() == true && Restart == false) {
-      cout<<"Handshake: Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to 60 sec).."<<endl;
+    double Timeout = 2.0;
+    while (Handshaker->IsConnected() == true && Restart == false && Handshaker->GetNResets() == NResets) {
+      cout<<"Handshake: Waiting for a reply since "<<Waiting.GetElapsed()<<" sec (up to "<<Timeout<<" sec).."<<endl;
       ++Wait;
       gSystem->ProcessEvents();
       if (Wait < 10) {
@@ -282,7 +294,7 @@ bool MNCTModuleReceiverCOSI2014::EndConnection()
         gSystem->Sleep(1000);
       }
       // Need a timeout here
-      if (Waiting.GetElapsed() > 60) {
+      if (Waiting.GetElapsed() > Timeout) {
         cout<<"Handshake: Connected but didn't receive any answer -- timeout & good buy"<<endl;
         break;
       }
@@ -303,7 +315,7 @@ bool MNCTModuleReceiverCOSI2014::EndConnection()
       }
     }
   } else {
-    cout<<"Handshake: Failed to connect to handshaker... Cannot send STOP message..."<<endl;     
+    cout<<"Handshake: Failed to connect to handshaker... Cannot send STOP message... giving up..."<<endl;     
   }
   
   Handshaker->Disconnect();
@@ -367,6 +379,9 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
     }
   }
   
+  if (m_Receiver == 0) {
+    if (RequestConnection() == false) return false;
+  }
   
   double Timeout = 60; // seconds
   if (m_Receiver->GetNPacketsToReceive() == 0 && 
