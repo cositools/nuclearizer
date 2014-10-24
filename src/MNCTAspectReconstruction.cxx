@@ -63,6 +63,7 @@ using namespace std;
 #include "MNCTAspectReconstruction.h"
 #include "MNCTAspectPacket.h"
 
+
 // Standard libs:
 
 // ROOT libs:
@@ -152,6 +153,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//whether our data is from the GPS or magnetometer. 
 
 	int GPS_or_magnetometer = PacketA.GPS_or_magnetometer;
+	int Python_or_Cplusplus = PacketA.Python_or_Cplusplus;
+	int test_or_not = PacketA.test_or_not;
 	double geographic_longitude = PacketA.geographic_longitude;
 	double geographic_latitude = PacketA.geographic_latitude;
 	double elevation = PacketA.elevation; //Note "elevation" here is height above sea
@@ -167,51 +170,18 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	string date_and_time = PacketA.date_and_time;
 	unsigned int nanoseconds = PacketA.nanoseconds;
 
-	std::string myPoetry(date_and_time);
-	std::istringstream icc(myPoetry);
-	std::string tokenA;
-	string vitamins[2];
-	int k  = 0;
-	while(getline(icc,tokenA, ' ')){
-		vitamins[k] = tokenA;
-		k = k + 1;
-	}
-	string m_Date = vitamins[0];
-	string m_Time_Of_Day = vitamins[1];
+	
+	MTime MTimeA;
+	
+	MTimeA.Set(1411668301,2);
+	
+	//Please delete the above line and uncomment the below paragraph later!!!!!!!
+	
+	//uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
+	//double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
+	//double ClkNanoseconds = (double) ClkModulo * 100.0;
+	//MTimeA.Set( ClkSeconds, ClkNanoseconds);
 
-	std::string myNovella(m_Date);
-	std::istringstream idd(myNovella);
-	std::string tokenB;
-	string minerals[3];
-	int l  = 0;
-	while(getline(idd,tokenB, '/')){
-		minerals[l] = tokenB;
-		l = l + 1;
-	}
-	string string_m_Year = minerals[0];
-	string string_m_Month = minerals[1];
-	string string_m_Day = minerals[2];
-
-	std::string myPsalm(m_Time_Of_Day);
-	std::istringstream iee(myPsalm);
-	std::string tokenC;
-	string supplements[3];
-	int m  = 0;
-	while(getline(iee,tokenC, ':')){
-		supplements[m] = tokenC;
-		m = m + 1;
-	}
-	string string_m_Hour = supplements[0];
-	string string_m_Minute = supplements[1];
-	string string_m_Second = supplements[2];
-
-	//unsigned int m_Year = ::atof(string_m_Year.c_str());
-	//unsigned int m_Month = ::atof(string_m_Month.c_str());
-	//unsigned int m_Day = ::atof(string_m_Day.c_str());
-	//unsigned int m_Hour = ::atof(string_m_Hour.c_str());
-	//unsigned int m_Minute = ::atof(string_m_Minute.c_str());
-	//unsigned int m_Second = ::atof(string_m_Second.c_str());
-	//unsigned int m_NanoSecond = nanoseconds;
 
 	//Here we record heading, pitch, and roll. It's a bit more complicated than you might think.
 
@@ -272,7 +242,14 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		string string_magnetic_declination;
 		getline(myCFile,string_magnetic_declination);	
 		magnetic_declination = ::atof(string_magnetic_declination.c_str());
+		
+if(test_or_not == 0){		
+		
 		printf("magnetic_declination is: %9.5f \n",magnetic_declination);
+		
+}
+
+
 	}
 
 	//Now that we've gone through that crazy ordeal and have found the magnetic declination, we
@@ -298,6 +275,9 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//note that even with the offsets above the heading, pitch and roll will not be the same for 
 	//both devices because they are not aligned properly. This is taken into account later in the code.
 
+
+if(test_or_not == 0){
+
 	cout << "" << endl;
 	if (GPS_or_magnetometer == 0){
 		cout << "The following is true according to the GPS: " << endl;
@@ -310,373 +290,438 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	printf("pitch is: %9.5f \n",pitch);
 	printf("roll is: %9.5f \n",roll);
 
-	/*Here is the fun part. Or perhaps, the confusing part. Here, we use rotation matrices to convert
-	  from heading, pitch, and roll to horizontal coordinates. These coordinates are azimuth and 
-	  "altitude," with altitude being degrees above the horizon. This "altitude" will eventually become
-	  the "elevation" in the MNCTAspect object that will be created at the end of this program. Again,
-	  we use these naming conventions to match up with pyephem. Anyway, we again use a couple of text
-	  files and PyRunSimpleString over here.*/
+}
 
-	//Below, we record the heading, pitch, roll and whether we are using the GPS or magnetomter to
-	//the text file "example3.txt."
+////////////////////////////////////////////////////////////////////////////////
 
-	ofstream myDfile;
-	myDfile.open ("example3.txt");
-	myDfile << heading;
-	myDfile << ",";
-	myDfile << pitch;
-	myDfile << ",";
-	myDfile << roll;
-	myDfile << ",";
-	myDfile << GPS_or_magnetometer;
-	myDfile.close();		
-	ofstream myEfile;
-	myEfile.open ("example4.txt");
-	myEfile.close();	
-	//Py_Initialize();
-
-	cout << "Preparing too use python" << endl;
-
-	PyRun_SimpleString(
-
-			//Here python looks at the info on the text file. It also defines its own trig functions to
-			//work with degrees.
-
-			"f = open('example3.txt')\n"
-			"data = f.readline()\n"
-			"split_data = data.split(',')\n"
-			"heading = float(split_data[0]) \n"
-			"pitch = float(split_data[1]) \n"
-			"roll = float(split_data[2]) \n"
-			"GPS_or_magnetometer = float(split_data[3]) \n"
-			"f.close()\n"
-			"import math\n"
-			"def sine(x): return math.sin(math.radians(x))\n"
-			"def arcsine(x): return math.degrees(math.asin(x))\n"
-			"def cosine(x): return math.cos(math.radians(x))\n"
-			"def arccosine(x): return math.degrees(math.acos(x))\n"
-			"def tangent(x): return math.tan(math.radians(x))\n"
-			"def arctangent(x): return math.degrees(math.atan(x))\n"
-
-			//In the first scenario (below), we are using GPS data.		
-
-			"if GPS_or_magnetometer == 0:\n"
-
-			/*Note that the initial pointing vectors (ZYorXpointing0) for Z, Y, and X do not actually 
-			  point in the Z, Y, and X directions. This is because these pointing vectors are based off 
-			  of the coordinate system of the telescope itself, not based off of the coordinate system 
-			  that the GPS uses to define heading, pitch, and roll. Within the GPS's coordinate system, 
-			  thus, the three pointing directions do not appear to point in their proper directions.
-			  Please note that we are using the GPS's coordinate system here, so get used to the idea of
-			  Z, Y, and X, pointing towards something other than Z, Y, and X. Don't worry. At the end we 
-			  will convert our final result from this coordinate system to the telescope's coordinate 
-			  system.*/
-
-			"	Zpointing0 = [[0.0],\n"
-			"	[0.0],\n"
-			"	[-1.0]]\n"
-			"	Ypointing0 = [[0.0],\n"
-			"	[1.0],\n"
-			"	[0.0]]\n"
-			"	Xpointing0 = [[-1.0],\n"
-			"	[0.0],\n"
-			"	[0.0]]\n"
-			"	print ''\n"
-			"	print 'Zpointing0 is: ', Zpointing0 \n"
-			"	print 'Ypointing0 is: ', Ypointing0 \n"
-			"	print 'Xpointing0 is: ', Xpointing0 \n"
-			"	print ''\n"
-
-			/*These are the heading, pitch, and roll rotation matrices, named Z, Y, and X. They are named
-			  as such because of the definition of heading, pitch, and roll. "Heading" is defined as the
-			  counterclockwise rotation about the Z axis. "Pitch" is defined as the counterclockeise rotation
-			  about the Y axis. "Roll" is defined as the counterclockwise rotation about the X axis. Hence, the
-			  matrices are named Z, Y, and X.*/
-
-			"	Z = [[cosine(heading),0.0-sine(heading),0.0],\n"
-			"	[sine(heading),cosine(heading),0.0],\n"
-			"	[0.0,0.0,1.0]]\n"
-			"	Y = [[cosine(pitch),0.0,sine(pitch)],\n"
-			"	[0.0,1.0,0.0],\n"
-			"	[0.0-sine(pitch),0.0,cosine(pitch)]]\n"
-			"	X = [[1.0,0.0,0.0],\n"
-			"	[0.0,cosine(roll),0.0-sine(roll)],\n"
-			"	[0.0,sine(roll),cosine(roll)]]\n"
-
-			/*Please note, universal pointing directions are specified using heading, pitch and roll by performing
-			  3 intrinsic rotations in a specific order (remember: rotation matrices in more than 2 dimensions do
-			  not commute, so the order must be specific). Heading first, then pitch, then roll. The fact that these
-			  are intrinsic rotations means that each rotation after the first one is performed off of the new
-			  coordinate system that originates from the first coordinate system after it has already been rotated
-			  previously. So, first there is the heading rotation around the original Z axis of the GPS. Then,
-			  the pitch rotation is performed after the new Y axis that is formed after the initial heading rotation.
-			  Finally, the roll rotation is performed on the X axis that is formed after both the heading and pitch
-			  rotations are finished. In order to describe intrinsic rotations performed on a specific pointing 
-			  vector one must perform the same rotations with normal rotation matrices in reverse order. Thus, because
-			  we have Z, then Y, then X intrinsic rotations in that order we must apply the standard X, then Y, then Z
-			  rotation matrices in that order to our pointing vector to get the proper result. This is why we construct
-			  the "ZYX" rotation matrix below.*/
-
-			"	YX = [[sum(a*b for a,b in zip(Y_row,X_col)) for X_col in zip(*X)] for Y_row in Y]\n"
-			"	ZYX = [[sum(a*b for a,b in zip(Z_row,YX_col)) for YX_col in zip(*YX)] for Z_row in Z]\n"
-
-			"	print 'Z is: ', Z \n"
-			"	print 'Y is: ', Y \n"
-			"	print 'X is: ', X \n"
-			"	print 'YX is: ', YX \n"
-			"	print 'ZYX is: ', ZYX \n"
-
-			/*Here is where the action happens. Here we apply our ZYX matrix to our pointing vectors. These rotated
-			  vectors are called ZYorXpointing1. Finally, we convert these vectors from their form in the GPS's coordinate
-			  system to their form in the telescope's coordinate system. At this point, they are now called ZYorXpointing2.*/
-
-			"	Zpointing1 = [[sum(a*b for a,b in zip(ZYX_row,Zpointing0_col)) for Zpointing0_col in zip(*Zpointing0)] for ZYX_row in ZYX]\n"
-			"	print 'Zpointing1 is: ', Zpointing1 \n"
-			"	Zpointing2 = [[Zpointing1[1][0]],[Zpointing1[0][0]],[0.0 - Zpointing1[2][0]]]\n"
-			"	print 'Zpointing2 is: ', Zpointing2 \n"
-
-			"	Ypointing1 = [[sum(a*b for a,b in zip(ZYX_row,Ypointing0_col)) for Ypointing0_col in zip(*Ypointing0)] for ZYX_row in ZYX]\n"
-			"	print 'Ypointing1 is: ', Ypointing1 \n"
-			"	Ypointing2 = [[Ypointing1[1][0]],[Ypointing1[0][0]],[0.0 - Ypointing1[2][0]]]\n"
-			"	print 'Ypointing2 is: ', Ypointing2 \n"
-
-			"	Xpointing1 = [[sum(a*b for a,b in zip(ZYX_row,Xpointing0_col)) for Xpointing0_col in zip(*Xpointing0)] for ZYX_row in ZYX]\n"
-			"	print 'Xpointing1 is: ', Xpointing1 \n"
-			"	Xpointing2 = [[Xpointing1[1][0]],[Xpointing1[0][0]],[0.0 - Xpointing1[2][0]]]\n"
-			"	print 'Xpointing2 is: ', Xpointing2 \n"
-
-			//Okay now, here's the same thing over again, except this time we are in the second scenario (below) with
-			//the magnetometer.	
-
-			"if GPS_or_magnetometer == 1:\n"
-
-			/*Note that the initial pointing vectors (ZYorXpointing0) for Z, Y, and X do not actually 
-			  point in the Z, Y, and X directions once again. This is because, just like with the GPS,
-			  these pointing vectors are based off of the coordinate system of the telescope itself, 
-			  not based off of the coordinate system that the magnetometer uses to define heading, pitch,
-			  and roll. Within the magnetometer's coordinate system, thus, the three pointing directions 
-			  do not appear to point in their proper directions. Please note that we are using the 
-			  magnetometer's coordinate system here, which is different than the GPS's coordinate system, 
-			  so don't be shoked that the pointing vectors are different this time.*/		
-
-			"	Zpointing0 = [[0.0],\n"
-			"	[0.0],\n"
-			"	[1.0]]\n"
-			"	Ypointing0 = [[0.0],\n"
-			"	[1.0],\n"
-			"	[0.0]]\n"
-			"	Xpointing0 = [[1.0],\n"
-			"	[0.0],\n"
-			"	[0.0]]\n"
-			"	print ''\n"
-			"	print 'Zpointing0 is: ', Zpointing0 \n"
-			"	print 'Ypointing0 is: ', Ypointing0 \n"
-			"	print 'Xpointing0 is: ', Xpointing0 \n"
-			"	print ''\n"
-
-			/*These are the same heading, pitch, and roll rotation matrices, named Z, Y, and X, once again.
-			  They are exactly the same as before.*/		
+	
+	
+//We'll leave this C++ version of finding the horizontal coordinates commented out for now, so other C++ versions of things written in python can be tested alone beforehand
 
 
-			"	Z = [[cosine(heading),0.0-sine(heading),0.0],\n"
-			"	[sine(heading),cosine(heading),0.0],\n"
-			"	[0.0,0.0,1.0]]\n"
-			"	Y = [[cosine(pitch),0.0,sine(pitch)],\n"
-			"	[0.0,1.0,0.0],\n"
-			"	[0.0-sine(pitch),0.0,cosine(pitch)]]\n"
-			"	X = [[1.0,0.0,0.0],\n"
-			"	[0.0,cosine(roll),0.0-sine(roll)],\n"
-			"	[0.0,sine(roll),cosine(roll)]]\n"
-
-			/*Here we build the exact same ZYX matrix as when we were dealing with the GPS.*/		
-
-			"	YX = [[sum(a*b for a,b in zip(Y_row,X_col)) for X_col in zip(*X)] for Y_row in Y]\n"
-			"	ZYX = [[sum(a*b for a,b in zip(Z_row,YX_col)) for YX_col in zip(*YX)] for Z_row in Z]\n"
+	
+	
+	//Now we're going to be working with matrices. Here we declare all of the pointing vectors we will
+	//use to find the azimuth and "altitude." We will also declare all of the appropriate rotation
+	//matrices.
 
 
-			"	print 'Z is: ', Z \n"
-			"	print 'Y is: ', Y \n"
-			"	print 'X is: ', X \n"
-			"	print 'YX is: ', YX \n"
-			"	print 'ZYX is: ', ZYX \n"
-
-			/*Here is where the action happens, just as before. Here we apply our ZYX matrix to our pointing vectors. 
-			  These rotated vectors are called ZYorXpointing1 again. Finally, we convert these vectors from their form
-			  in the magnetometer's coordinate system to their form in the telescope's coordinate system. Again, at this point,
-			  they are now called ZYorXpointing2.*/	
-
-			"	Zpointing1 = [[sum(a*b for a,b in zip(ZYX_row,Zpointing0_col)) for Zpointing0_col in zip(*Zpointing0)] for ZYX_row in ZYX]\n"
-			"	print 'Zpointing1 is: ', Zpointing1 \n"
-			"	Zpointing2 = [[Zpointing1[1][0]],[Zpointing1[0][0]],[0.0 - Zpointing1[2][0]]]\n"
-			"	print 'Zpointing2 is: ', Zpointing2 \n"
-
-			"	Ypointing1 = [[sum(a*b for a,b in zip(ZYX_row,Ypointing0_col)) for Ypointing0_col in zip(*Ypointing0)] for ZYX_row in ZYX]\n"
-			"	print 'Ypointing1 is: ', Ypointing1 \n"
-			"	Ypointing2 = [[Ypointing1[1][0]],[Ypointing1[0][0]],[0.0 - Ypointing1[2][0]]]\n"
-			"	print 'Ypointing2 is: ', Ypointing2 \n"
-
-			"	Xpointing1 = [[sum(a*b for a,b in zip(ZYX_row,Xpointing0_col)) for Xpointing0_col in zip(*Xpointing0)] for ZYX_row in ZYX]\n"
-			"	print 'Xpointing1 is: ', Xpointing1 \n"
-			"	Xpointing2 = [[Xpointing1[1][0]],[Xpointing1[0][0]],[0.0 - Xpointing1[2][0]]]\n"
-			"	print 'Xpointing2 is: ', Xpointing2 \n"
-
-			//Below we determine the azimuth for the Zpointing2 vector based off of knowing what its x and y components are.
-
-			"if Zpointing2[0][0] == 0.0 and Zpointing2[1][0] > 0.0:\n"
-			"	Zazimuth = 90.0\n"
-			"elif Zpointing2[0][0] < 0.0 and Zpointing2[1][0] == 0.0:\n"
-			"	Zazimuth = 180.0\n"
-			"elif Zpointing2[0][0] == 0.0 and Zpointing2[1][0] < 0.0:\n"
-			"	Zazimuth = 270.0\n"
-			"elif Zpointing2[0][0] > 0.0 and Zpointing2[1][0] == 0.0:\n"
-			"	Zazimuth = 0.0\n"
-			"elif Zpointing2[0][0] == 0.0 and Zpointing2[1][0] == 0.0:\n"
-			"	Zazimuth = 0.0\n"
-
-			"else:\n"
-
-			"	a = arctangent(math.fabs(Zpointing2[1][0]/Zpointing2[0][0]))\n"
-			"	if Zpointing2[0][0] >= 0.0 and Zpointing2[1][0] >= 0.0:\n"
-			"		Zazimuth = 90.0 - a\n"
-			"	if Zpointing2[0][0] >= 0 and Zpointing2[1][0] <= 0.0:\n"
-			"		Zazimuth= 90.0 + a\n"
-			"	if Zpointing2[0][0] <= 0.0 and Zpointing2[1][0] <= 0.0:\n"
-			"		Zazimuth = 270.0 - a\n"
-			"	if Zpointing2[0][0] <= 0.0 and Zpointing2[1][0] >=0.0 :\n"
-			"		Zazimuth = 270.0 + a\n"
-
-
-			//Below we determine the azimuth for the Ypointing2 vector based off of knowing what its x and y components are.		
-
-			"if Ypointing2[0][0] == 0.0 and Ypointing2[1][0] > 0.0:\n"
-			"	Yazimuth = 90.0\n"
-			"elif Ypointing2[0][0] < 0.0 and Ypointing2[1][0] == 0.0:\n"
-			"	Yazimuth = 180.0\n"
-			"elif Ypointing2[0][0] == 0.0 and Ypointing2[1][0] < 0.0:\n"
-			"	Yazimuth = 270.0\n"
-			"elif Ypointing2[0][0] > 0.0 and Ypointing2[1][0] == 0.0:\n"
-			"	Yazimuth = 0.0\n"
-			"elif Ypointing2[0][0] == 0.0 and Ypointing2[1][0] == 0.0:\n"
-			"	Yazimuth = 0.0\n"
-
-			"else:\n"		
-
-			"	c = arctangent(math.fabs(Ypointing2[1][0]/Ypointing2[0][0]))\n"
-			"	if Ypointing2[0][0] >= 0 and Ypointing2[1][0] >= 0:\n"
-			"		Yazimuth = 90 - c\n"
-			"	if Ypointing2[0][0] >= 0 and Ypointing2[1][0] <= 0:\n"
-			"		Yazimuth= 90 + c\n"
-			"	if Ypointing2[0][0] <= 0 and Ypointing2[1][0] <= 0:\n"
-			"		Yazimuth = 270 - c\n"
-			"	if Ypointing2[0][0] <= 0 and Ypointing2[1][0] >=0 :\n"
-			"		Yazimuth = 270 + c\n"
-
-
-			//Below we determine the azimuth for the Xpointing2 vector based off of knowing what its x and y components are.
-
-			"if Xpointing2[0][0] == 0.0 and Xpointing2[1][0] > 0.0:\n"
-			"	Xazimuth = 90.0\n"
-			"elif Xpointing2[0][0] < 0.0 and Xpointing2[1][0] == 0.0:\n"
-			"	Xazimuth = 180.0\n"
-			"elif Xpointing2[0][0] == 0.0 and Xpointing2[1][0] < 0.0:\n"
-			"	Xazimuth = 270.0\n"
-			"elif Xpointing2[0][0] > 0.0 and Xpointing2[1][0] == 0.0:\n"
-			"	Xazimuth = 0.0\n"
-			"elif Xpointing2[0][0] == 0.0 and Xpointing2[1][0] == 0.0:\n"
-			"	Xazimuth = 0.0\n"
-
-			"else:\n"		
-
-			"	b = arctangent(math.fabs(Xpointing2[1][0]/Xpointing2[0][0]))\n"
-			"	if Xpointing2[0][0] >= 0 and Xpointing2[1][0] >= 0:\n"
-			"		Xazimuth = 90 - b\n"
-			"	if Xpointing2[0][0] >= 0 and Xpointing2[1][0] <= 0:\n"
-			"		Xazimuth= 90 + b\n"
-			"	if Xpointing2[0][0] <= 0 and Xpointing2[1][0] <= 0:\n"
-			"		Xazimuth = 270 - b\n"
-			"	if Xpointing2[0][0] <= 0 and Xpointing2[1][0] >=0 :\n"
-			"		Xazimuth = 270 + b\n"
-
-
-			//Below we determine the "altitude" for the pointing vectors based off of knowing what its x, y, and z 
-			//components are. Again, we are using pyephem's definition of altitude for now.	
-
-			"Zhypot = math.hypot(Zpointing2[0][0],Zpointing2[1][0])\n"
-			"if Zhypot == 0.0:\n"
-			"	Zaltitude = 90.0\n"	
-			"else:\n"
-			"	Zaltitude = arctangent(Zpointing2[2][0]/Zhypot)\n"		
-
-
-			"Yhypot = math.hypot(Ypointing2[0][0],Ypointing2[1][0])\n"
-			"if Yhypot == 0.0:\n"
-			"	Yaltitude = 90.0\n"	
-			"else:\n"		
-			"	Yaltitude = arctangent(Ypointing2[2][0]/Yhypot)\n"		
-
-
-			"Xhypot = math.hypot(Xpointing2[0][0],Xpointing2[1][0])\n"
-			"if Xhypot == 0.0:\n"
-			"	Xaltitude = 90.0\n"	
-			"else:\n"		
-			"	Xaltitude = arctangent(Xpointing2[2][0]/Xhypot)\n"		
-
-			//Okay, here we finish up are write down our azimuths and "altitudes" into a text file knwon as
-			//"example4.txt." Again, "altitude" is pyephem's altitude.
-
-			"omega = ','\n"
-			"g = open('example4.txt','w')\n"
-			"g.write(str(Zazimuth))\n"
-			"g.write(str(omega))\n"
-			"g.write(str(Zaltitude))\n"
-			"g.write(str(omega))\n"
-			"g.write(str(Yazimuth))\n"
-			"g.write(str(omega))\n"
-			"g.write(str(Yaltitude))\n"
-			"g.write(str(omega))\n"
-			"g.write(str(Xazimuth))\n"
-			"g.write(str(omega))\n"
-			"g.write(str(Xaltitude))\n"
-			"g.write(str(omega))\n"
-			"g.close()\n");
-
-	/*Alright, now that we've used heading, pitch, and roll from the GPS or magnetometer to find the
-	  equatorial coordinates (azimuth and what pyephem calls "altitude") we need to read them off of the
-	  text file we just made, which we do below.*/
-
-	ifstream myFFile;
-	myFFile.open("example4.txt");
-	string data1;
-	getline(myFFile,data1);	
-
-	std::string myText(data1);
-	std::istringstream iww(myText);
-	std::string token1;
-	string elements[6];
-	int n = 0;
-	while(getline(iww, token1, ','))
-	{
-		elements[n] = token1;
-		n = n+1;
+	
+	double Zpointing0[3][1], Ypointing0[3][1], Xpointing0[3][1], Zpointing1[3][1], Ypointing1[3][1], Xpointing1[3][1], Zpointing2[3][1], Ypointing2[3][1], Xpointing2[3][1], Z[3][3], Y[3][3], X[3][3], YX[3][3], ZYX[3][3];
+	
+	//Here we build the heading, pitch, and roll rotation matrices, named "Z," "Y," and "X,"
+	//respectively.
+	
+	Z[0][0] = cosine(heading);
+	Z[0][1] = 0.0 - sine(heading);
+	Z[0][2] = 0.0;
+	
+	Z[1][0] = sine(heading);
+	Z[1][1] = cosine(heading);
+	Z[1][2] = 0.0;
+	
+	Z[2][0] = 0.0;
+	Z[2][1] = 0.0;
+	Z[2][2] = 1.0;
+	
+	
+	Y[0][0] = cosine(pitch);
+	Y[0][1] = 0.0;
+	Y[0][2] = sine(pitch);
+	
+	Y[1][0] = 0.0;
+	Y[1][1] = 1.0;
+	Y[1][2] = 0.0;
+	
+	Y[2][0] = 0.0 - sine(pitch);
+	Y[2][1] = 0.0;
+	Y[2][2] = cosine(pitch);
+	
+	
+	X[0][0] = 1.0;
+	X[0][1] = 0.0;
+	X[0][2] = 0.0;
+	
+	X[1][0] = 0.0;
+	X[1][1] = cosine(roll);
+	X[1][2] = 0.0 - sine(roll);
+	
+	X[2][0] = 0.0;
+	X[2][1] = sine(roll);
+	X[2][2] = cosine(roll);
+	
+	//Here we multiply together the Z, Y, and X matrices to form the ZYX matrix. This matrix will later
+	//be applied to the Z, Y, and X pointing vectors of the gondola to find the new pointing vector
+	//after the heading, pitch, and roll rotations are performed.
+	
+	for(int i=0;i<3;i++){
+		for(int j=0;j<3;j++){   
+			YX[i][j]=0;
+			for(int k=0;k<3;k++){
+				YX[i][j]=YX[i][j]+Y[i][k]*X[k][j];
+			}
+		}
+	}
+	
+	
+	for(int i=0;i<3;i++){
+		for(int j=0;j<3;j++){   
+			ZYX[i][j]=0;
+			for(int k=0;k<3;k++){
+				ZYX[i][j]=ZYX[i][j]+Z[i][k]*YX[k][j];
+			}
+		}
 	}
 
-	string Zstring_azimuth = elements[0];
-	string Zstring_altitude = elements[1];
+	//This is the specific case when we are dealing with the GPS.
 
-	double Zazimuth = ::atof(Zstring_azimuth.c_str());
-	double Zaltitude = ::atof(Zstring_altitude.c_str());
 
-	string Ystring_azimuth = elements[2];
-	string Ystring_altitude = elements[3];
+	if (GPS_or_magnetometer == 0){
 
-	double Yazimuth = ::atof(Ystring_azimuth.c_str());
-	double Yaltitude = ::atof(Ystring_altitude.c_str());
 
-	string Xstring_azimuth = elements[4];
-	string Xstring_altitude = elements[5];
+	//Here we start by building the initial Z, Y, and X pointing vectors of the gondola (in the GPS's
+	//coordinate system) as they are before rotation.
 
-	double Xazimuth = ::atof(Xstring_azimuth.c_str());
-	double Xaltitude = ::atof(Xstring_altitude.c_str());
+		Zpointing0[0][0] = 0.0;
+		Zpointing0[1][0] = 0.0;
+		Zpointing0[2][0] = -1.0;
+		
+		Ypointing0[0][0] = 0.0;
+		Ypointing0[1][0] = 1.0;
+		Ypointing0[2][0] = 0.0;	
+		
+		Xpointing0[0][0] = -1.0;
+		Xpointing0[1][0] = 0.0;
+		Xpointing0[2][0] = 0.0;
+
+		//Here we rotate the pointing vectors and then convert them from GPS coordinates to a coordinate
+		//system that makes calculating the azimuth and "altitude" the easiest.
+
+		for(int i=0;i<3;i++){
+			for(int j=0;j<1;j++){   
+				Zpointing1[i][j]=0;
+				for(int k=0;k<3;k++){
+					Zpointing1[i][j]=Zpointing1[i][j]+ZYX[i][k]*Zpointing0[k][j];
+				}
+			}
+		}
+		
+		Zpointing2[0][0] = Zpointing1[1][0];
+		Zpointing2[1][0] = Zpointing1[0][0];
+		Zpointing2[2][0] = 0.0 - Zpointing1[2][0];		
+		
+		
+		for(int i=0;i<3;i++){
+			for(int j=0;j<1;j++){   
+				Ypointing1[i][j]=0;
+				for(int k=0;k<3;k++){
+					Ypointing1[i][j]=Ypointing1[i][j]+ZYX[i][k]*Ypointing0[k][j];
+				}
+			}
+		}
+		
+		Ypointing2[0][0] = Ypointing1[1][0];
+		Ypointing2[1][0] = Ypointing1[0][0];
+		Ypointing2[2][0] = 0.0 - Ypointing1[2][0];			
+
+
+		for(int i=0;i<3;i++){
+			for(int j=0;j<1;j++){   
+				Xpointing1[i][j]=0;
+				for(int k=0;k<3;k++){
+					Xpointing1[i][j]=Xpointing1[i][j]+ZYX[i][k]*Xpointing0[k][j];
+				}
+			}
+		}	
+		
+		Xpointing2[0][0] = Xpointing1[1][0];
+		Xpointing2[1][0] = Xpointing1[0][0];
+		Xpointing2[2][0] = 0.0 - Xpointing1[2][0];	
+
+	}
+
+	//This is the same thing as before except with the magnetometer.
+
+
+	if (GPS_or_magnetometer == 1){
+
+		Zpointing0[0][0] = 0.0;
+		Zpointing0[1][0] = 0.0;
+		Zpointing0[2][0] = 1.0;
+		
+		Ypointing0[0][0] = 0.0;
+		Ypointing0[1][0] = 1.0;
+		Ypointing0[2][0] = 0.0;	
+		
+		Xpointing0[0][0] = 1.0;
+		Xpointing0[1][0] = 0.0;
+		Xpointing0[2][0] = 0.0;
+
+
+		for(int i=0;i<3;i++){
+			for(int j=0;j<1;j++){   
+				Zpointing1[i][j]=0;
+				for(int k=0;k<3;k++){
+					Zpointing1[i][j]=Zpointing1[i][j]+ZYX[i][k]*Zpointing0[k][j];
+				}
+			}
+		}
+		
+		Zpointing2[0][0] = Zpointing1[1][0];
+		Zpointing2[1][0] = Zpointing1[0][0];
+		Zpointing2[2][0] = 0.0 - Zpointing1[2][0];		
+		
+		
+		for(int i=0;i<3;i++){
+			for(int j=0;j<1;j++){   
+				Ypointing1[i][j]=0;
+				for(int k=0;k<3;k++){
+					Ypointing1[i][j]=Ypointing1[i][j]+ZYX[i][k]*Ypointing0[k][j];
+				}
+			}
+		}
+		
+		Ypointing2[0][0] = Ypointing1[1][0];
+		Ypointing2[1][0] = Ypointing1[0][0];
+		Ypointing2[2][0] = 0.0 - Ypointing1[2][0];			
+
+
+		for(int i=0;i<3;i++){
+			for(int j=0;j<1;j++){   
+				Xpointing1[i][j]=0;
+				for(int k=0;k<3;k++){
+					Xpointing1[i][j]=Xpointing1[i][j]+ZYX[i][k]*Xpointing0[k][j];
+				}
+			}
+		}	
+		
+		Xpointing2[0][0] = Xpointing1[1][0];
+		Xpointing2[1][0] = Xpointing1[0][0];
+		Xpointing2[2][0] = 0.0 - Xpointing1[2][0];	
+
+	}
+
+	//Here we 
+	
+
+if(test_or_not == 0){
+
+	cout << "" << endl;
+	
+	cout << "Zpointing1 is: ";
+	cout << "[[";
+	cout << Zpointing1[0][0];
+	cout << "], [";
+	cout << Zpointing1[1][0];
+	cout << "], [";
+	cout << Zpointing1[2][0];	
+	cout << "]]" << endl;
+	cout << "Zpointing2 is: ";
+	cout << "[[";
+	cout << Zpointing2[0][0];
+	cout << "], [";
+	cout << Zpointing2[1][0];
+	cout << "], [";
+	cout << Zpointing2[2][0];	
+	cout << "]]" << endl;
+	
+	cout << "Ypointing1 is: ";
+	cout << "[[";
+	cout << Ypointing1[0][0];
+	cout << "], [";
+	cout << Ypointing1[1][0];
+	cout << "], [";
+	cout << Ypointing1[2][0];	
+	cout << "]]" << endl;
+	cout << "Ypointing2 is: ";
+	cout << "[[";
+	cout << Ypointing2[0][0];
+	cout << "], [";
+	cout << Ypointing2[1][0];
+	cout << "], [";
+	cout << Ypointing2[2][0];	
+	cout << "]]" << endl;
+	
+	cout << "Xpointing1 is: ";
+	cout << "[[";
+	cout << Xpointing1[0][0];
+	cout << "], [";
+	cout << Xpointing1[1][0];
+	cout << "], [";
+	cout << Xpointing1[2][0];	
+	cout << "]]" << endl;
+	cout << "Xpointing2 is: ";
+	cout << "[[";
+	cout << Xpointing2[0][0];
+	cout << "], [";
+	cout << Xpointing2[1][0];
+	cout << "], [";
+	cout << Xpointing2[2][0];	
+	cout << "]]" << endl;
+	cout << "" << endl;
+	
+}
+
+	//Below we declare some doubles we are about to use.
+	
+	double a = 0.0;
+	double c = 0.0;
+	double b = 0.0;
+	
+	double Zhypot = 0.0;
+	double Yhypot = 0.0;
+	double Xhypot = 0.0;
+	
+	double Zazimuth = 0.0;
+	double Yazimuth = 0.0;
+	double Xazimuth = 0.0;
+	
+	double Zaltitude = 0.0;
+	double Yaltitude = 0.0;
+	double Xaltitude = 0.0; 
+	
+	//Below we determine the azimuth for the Zpointing2 vector based off of knowing what its x and y 
+	//components are.
+	
+	
+	if(Zpointing2[0][0] == 0.0 && Zpointing2[1][0] > 0.0){
+		Zazimuth = 90.0;
+	}
+	else if(Zpointing2[0][0] < 0.0 && Zpointing2[1][0] == 0.0){
+		Zazimuth = 180.0;
+	}
+	else if(Zpointing2[0][0] == 0.0 && Zpointing2[1][0] < 0.0){
+		Zazimuth = 270.0;
+	}
+	else if(Zpointing2[0][0] > 0.0 && Zpointing2[1][0] == 0.0){
+		Zazimuth = 0.0;
+	}	
+	else if(Zpointing2[0][0] == 0.0 && Zpointing2[1][0] == 0.0){
+		Zazimuth = 0.0;
+	}
+	
+	
+	else{
+		a = arctangent(abs(Zpointing2[1][0]/Zpointing2[0][0]));
+		if(Zpointing2[0][0] >= 0.0 && Zpointing2[1][0] >= 0.0){
+			Zazimuth = 90.0 - a;
+		}
+		if(Zpointing2[0][0] >= 0.0 && Zpointing2[1][0] <= 0.0){
+			Zazimuth = 90.0 + a;
+		}		
+		if(Zpointing2[0][0] <= 0.0 && Zpointing2[1][0] <= 0.0){
+			Zazimuth = 270.0 - a;
+		}		
+		if(Zpointing2[0][0] <= 0.0 && Zpointing2[1][0] >= 0.0){
+			Zazimuth = 270.0 + a;
+		}				
+	}
+	
+	//Below we determine the azimuth for the Ypointing2 vector based off of knowing what its x and y 
+	//components are.	
+	
+		
+	if(Ypointing2[0][0] == 0.0 && Ypointing2[1][0] > 0.0){
+		Yazimuth = 90.0;
+	}
+	else if(Ypointing2[0][0] < 0.0 && Ypointing2[1][0] == 0.0){
+		Yazimuth = 180.0;
+	}
+	else if(Ypointing2[0][0] == 0.0 && Ypointing2[1][0] < 0.0){
+		Yazimuth = 270.0;
+	}
+	else if(Ypointing2[0][0] > 0.0 && Ypointing2[1][0] == 0.0){
+		Yazimuth = 0.0;
+	}	
+	else if(Ypointing2[0][0] == 0.0 && Ypointing2[1][0] == 0.0){
+		Yazimuth = 0.0;
+	}
+	
+	
+	else{
+		c = arctangent(abs(Ypointing2[1][0]/Ypointing2[0][0]));
+		if(Ypointing2[0][0] >= 0.0 && Ypointing2[1][0] >= 0.0){
+			Yazimuth = 90.0 - c;
+		}
+		if(Ypointing2[0][0] >= 0.0 && Ypointing2[1][0] <= 0.0){
+			Yazimuth = 90.0 + c;
+		}		
+		if(Ypointing2[0][0] <= 0.0 && Ypointing2[1][0] <= 0.0){
+			Yazimuth = 270.0 - c;
+		}		
+		if(Ypointing2[0][0] <= 0.0 && Ypointing2[1][0] >= 0.0){
+			Yazimuth = 270.0 + c;
+		}				
+	}	
+		
+	//Below we determine the azimuth for the Xpointing2 vector based off of knowing what its x and y 
+	//components are.	
+	
+
+		
+	if(Xpointing2[0][0] == 0.0 && Xpointing2[1][0] > 0.0){
+		Xazimuth = 90.0;
+	}
+	else if(Xpointing2[0][0] < 0.0 && Xpointing2[1][0] == 0.0){
+		Xazimuth = 180.0;
+	}
+	else if(Xpointing2[0][0] == 0.0 && Xpointing2[1][0] < 0.0){
+		Xazimuth = 270.0;
+	}
+	else if(Xpointing2[0][0] > 0.0 && Xpointing2[1][0] == 0.0){
+		Xazimuth = 0.0;
+	}	
+	else if(Xpointing2[0][0] == 0.0 && Xpointing2[1][0] == 0.0){
+		Xazimuth = 0.0;
+	}
+	
+	
+	else{
+		b = arctangent(abs(Xpointing2[1][0]/Xpointing2[0][0]));
+		if(Xpointing2[0][0] >= 0.0 && Xpointing2[1][0] >= 0.0){
+			Xazimuth = 90.0 - b;
+		}
+		if(Xpointing2[0][0] >= 0.0 && Xpointing2[1][0] <= 0.0){
+			Xazimuth = 90.0 + b;
+		}		
+		if(Xpointing2[0][0] <= 0.0 && Xpointing2[1][0] <= 0.0){
+			Xazimuth = 270.0 - b;
+		}		
+		if(Xpointing2[0][0] <= 0.0 && Xpointing2[1][0] >= 0.0){
+			Xazimuth = 270.0 + b;
+		}				
+	}	
+
+
+
+	Zhypot = hypot(Zpointing2[0][0],Zpointing2[1][0]);
+	if (Zhypot == 0.0){
+		Zaltitude = 90.0;
+	}	
+	else{
+		Zaltitude = arctangent(Zpointing2[2][0]/Zhypot);
+	}	
+		
+		
+	Yhypot = hypot(Ypointing2[0][0],Ypointing2[1][0]);
+	if (Yhypot == 0.0){
+		Yaltitude = 90.0;
+	}	
+	else{
+		Yaltitude = arctangent(Ypointing2[2][0]/Yhypot);
+	}	
+		
+		
+	Xhypot = hypot(Xpointing2[0][0],Xpointing2[1][0]);
+	if (Xhypot == 0.0){
+		Xaltitude = 90.0;
+	}	
+	else{
+		Xaltitude = arctangent(Xpointing2[2][0]/Xhypot);
+	}	
+
+
+if(test_or_not == 0){
 
 	//This here next, is a whole bunch of printing. We print the azimuth, "altitude," longitude, 
 	//latitude, and "elevation." We also print the date and time(as promised!).
@@ -695,7 +740,145 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	printf("elevation is: %12.7f \n",elevation); //Remember that "elevation" is actually 
 	//height above sea level in meters. Again, this is what pyephem calls it.
 	cout << "date and time are: ";
-	cout << date_and_time << endl;
+	cout << date_and_time << endl;	
+
+}
+	
+	////////////////////////////////////////////////////////////////////////////
+	
+	double Zra = 0.0;
+	double Zdec = 0.0;
+	double Zgalat = 0.0;
+	double Zgalon =0.0;
+	double Yra = 0.0;
+	double Ydec = 0.0;
+	double Ygalat = 0.0;
+	double Ygalon =0.0;
+	double Xra = 0.0;
+	double Xdec = 0.0;
+	double Xgalat = 0.0;
+	double Xgalon =0.0;
+	
+	
+	////////////////////////////////////////////////////////////////////////////
+
+if(Python_or_Cplusplus == 1){
+
+	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
+	
+
+if(test_or_not == 0){
+
+	cout << MTimeA.GetAsSeconds() << endl;
+	printf("MTimeA is also: %9.5f \n",MTimeA.GetAsSeconds());
+
+}
+	
+	
+	m_TCCalculator.SetUnixTime(MTimeA.GetAsSeconds());
+	
+	
+	vector<double> ZGalactic; 
+	vector<double> ZEquatorial;
+	ZEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Zazimuth, Zaltitude);
+	ZGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(ZEquatorial);
+	Zra = ZEquatorial[0];
+	Zdec = ZEquatorial[1];
+	Zgalat = ZGalactic[1];
+	Zgalon = ZGalactic[0];
+
+
+if(test_or_not == 0){
+
+	cout << "" << endl;
+	cout << "According to C+++++..." << endl;
+	
+	cout << "" << endl;
+	cout << "Zdeclination is: ";
+	cout << Zdec;
+	cout << " degrees North" << endl;
+	cout << "Zright ascension is: ";
+	cout << Zra;
+	cout << " degrees East" << endl;
+
+	cout << "" << endl;
+	cout << "Zgalactic latitude is: ";
+	cout << Zgalat;
+	cout << " degrees North" << endl;
+	cout << "Zgalactic longitude is: ";
+	cout << Zgalon;
+	cout << " degrees East" << endl;
+
+}
+
+
+	vector<double> YGalactic; 
+	vector<double> YEquatorial;
+	YEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Yazimuth, Yaltitude);
+	YGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(YEquatorial);	
+	Yra = YEquatorial[0];
+	Ydec = YEquatorial[1];
+	Ygalat = YGalactic[1];
+	Ygalon = YGalactic[0];
+	
+if(test_or_not == 0){	
+	
+	
+	cout << "" << endl;
+	cout << "Ydeclination is: ";
+	cout << Ydec;
+	cout << " degrees North" << endl;
+	cout << "Yright ascension is: ";
+	cout << Yra;
+	cout << " degrees East" << endl;
+	
+	cout << "" << endl;
+	cout << "Ygalactic latitude is: ";
+	cout << Ygalat;
+	cout << " degrees North" << endl;
+	cout << "Ygalactic longitude is: ";
+	cout << Ygalon;
+	cout << " degrees East" << endl;
+	
+}	
+	
+	
+	vector<double> XGalactic; 
+	vector<double> XEquatorial;
+	XEquatorial= m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Xazimuth, Xaltitude);
+	XGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(XEquatorial);	
+	Xra = XEquatorial[0];
+	Xdec = XEquatorial[1];
+	Xgalat = XGalactic[1];
+	Xgalon = XGalactic[0];
+	
+if(test_or_not == 0){
+		
+	
+	cout << "" << endl;
+	cout << "Xdeclination is: ";
+	cout << Xdec;
+	cout << " degrees North" << endl;
+	cout << "Xright ascension is: ";
+	cout << Xra;
+	cout << " degrees East" << endl;
+	
+	cout << "" << endl;
+	cout << "Xgalactic latitude is: ";
+	cout << Xgalat;
+	cout << " degrees North" << endl;
+	cout << "Xgalactic longitude is: ";
+	cout << Xgalon;
+	cout << " degrees East" << endl;
+	
+}
+	
+}
+
+	
+////////////////////////////////////////////////////////////////////////////	
+	
+if(Python_or_Cplusplus == 0){	
 
 	/*Here comes the tricky part. Again we will make use of python in the form of PyRunSimpleString.
 	  What we do here we get all of the necessary inputs we need in order to find the galactic
@@ -729,6 +912,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	myGfile << Xazimuth;
 	myGfile << ",";
 	myGfile << Xaltitude;
+	myGfile << ",";
+	myGfile << test_or_not;
 	myGfile.close();
 	ofstream myHfile;
 	myHfile.open ("example6.txt");
@@ -755,6 +940,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 			"input8 = math.radians(float(split_data[7]))\n"
 			"input9 = math.radians(float(split_data[8]))\n"
 			"input10 = math.radians(float(split_data[9]))\n"
+			"input11 = math.radians(float(split_data[10]))\n"
 
 			/*Now, we use pyephem to create an observer object that we will call COSI. We feed COSI the 
 			  geographic longituude and latitude, what it calls the "elevation", the date and time, and the
@@ -766,6 +952,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 			"COSI.lat = input2\n"
 			"COSI.elevation = input3\n"
 			"COSI.date = input4\n"
+			"if input11 == 0:\n"
+			"	print COSI.date\n"
 			"z = COSI.radec_of(input5,input6)\n"
 			"z0 = str(z[0])\n"
 			"z1 = str(z[1])\n"
@@ -793,6 +981,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 			"omega = ','\n"
 			"g = open('example6.txt','w')\n"
+			
 			"g.write(zz0)\n"
 			"g.write(omega)\n"
 			"g.write(zz1)\n"
@@ -804,6 +993,20 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 			"g.write(xx0)\n"
 			"g.write(omega)\n"
 			"g.write(xx1)\n"
+			"g.write(omega)\n"
+			
+			"g.write(z0)\n"
+			"g.write(omega)\n"
+			"g.write(z1)\n"
+			"g.write(omega)\n"
+			"g.write(y0)\n"
+			"g.write(omega)\n"
+			"g.write(y1)\n"
+			"g.write(omega)\n"
+			"g.write(x0)\n"
+			"g.write(omega)\n"
+			"g.write(x1)\n"
+			
 			"g.close()\n"
 			"f.close()\n");
 
@@ -814,15 +1017,21 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	myIFile.open("example6.txt"); //open the file
 	string data2; //define "data2" as a string
 	getline(myIFile,data2);
+	
+if(test_or_not == 0){
+
 
 	cout << "Now finished with python" <<endl;
+	
+}
+
 
 	//Now, its time we format this data by first making strings for it (below).
 
 	std::string myWriting(data2);
 	std::istringstream ixx(myWriting);
 	std::string token2;
-	string rudiments[6];
+	string rudiments[12];
 	int o = 0;
 	while(getline(ixx, token2, ','))
 	{
@@ -838,9 +1047,77 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	string Xgalon_data = rudiments[4];
 	string Xgalat_data = rudiments[5];
+	
+	string Zra_data = rudiments[6];
+	string Zdec_data = rudiments[7];
+
+	string Yra_data = rudiments[8];
+	string Ydec_data = rudiments[9];
+
+	string Xra_data = rudiments[10];
+	string Xdec_data = rudiments[11];
 
 	//Now its time (for the Z pointing direction) we convert the strings to doubles and print them. 
 
+
+		
+	std::string myZProse_e(Zra_data);
+	std::istringstream iff(myZProse_e);
+	std::string Ztoken3_e;
+	string Zcondiments_e[3];
+	int Zp_e = 0;
+	while(getline(iff, Ztoken3_e, ':'))
+	{
+		Zcondiments_e[Zp_e] = Ztoken3_e;
+		Zp_e = Zp_e+1;
+	}
+	string Zstring_ra_hours = Zcondiments_e[0];
+	double Zra_hours = ::atof(Zstring_ra_hours.c_str());
+	string Zstring_ra_minutes = Zcondiments_e[1];
+	double Zra_minutes = ::atof(Zstring_ra_minutes.c_str());
+	string Zstring_ra_seconds = Zcondiments_e[2];
+	double Zra_seconds = ::atof(Zstring_ra_seconds.c_str());
+	Zra = (Zra_hours + (Zra_minutes/60.0) + (Zra_seconds/3600.0))*15;
+	
+	
+	std::string myZEpistle_e(Zdec_data);
+	std::istringstream igg(myZEpistle_e);
+	std::string Ztoken4_e;
+	string Zcompliments_e[3];
+	int Zq_e = 0;
+	while(getline(igg, Ztoken4_e, ':'))
+	{
+		Zcompliments_e[Zq_e] = Ztoken4_e;
+		Zq_e = Zq_e+1;
+	}
+	string Zstring_dec_degrees = Zcompliments_e[0];
+	double Zdec_degrees = ::atof(Zstring_dec_degrees.c_str());
+	string Zstring_dec_arcminutes = Zcompliments_e[1];
+	double Zdec_arcminutes = ::atof(Zstring_dec_arcminutes.c_str());
+	string Zstring_dec_arcseconds = Zcompliments_e[2];
+	double Zdec_arcseconds = ::atof(Zstring_dec_arcseconds.c_str());
+	Zdec = Zdec_degrees + (Zdec_arcminutes/60.0) + (Zdec_arcseconds/3600.0);
+	if (Zdec < 0){
+		Zdec = Zdec_degrees - (Zdec_arcminutes/60.0) - (Zdec_arcseconds/3600.0);
+	}
+	
+	if(test_or_not == 0){
+	
+	
+	cout << "" << endl;
+	cout << "According to Python..." << endl;
+	
+	cout << "" << endl;
+	cout << "Zdeclination is: ";
+	cout << Zdec;
+	cout << " degrees North" << endl;
+	cout << "Zright ascension is: ";
+	cout << Zra;
+	cout << " degrees East" << endl;
+	
+}
+	
+		
 	std::string myZProse(Zgalon_data);
 	std::istringstream iss(myZProse);
 	std::string Ztoken3;
@@ -857,7 +1134,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Zgalon_minutes = ::atof(Zstring_galon_minutes.c_str());
 	string Zstring_galon_seconds = Zcondiments[2];
 	double Zgalon_seconds = ::atof(Zstring_galon_seconds.c_str());
-	double Zgalon = Zgalon_hours + (Zgalon_minutes/60.0) + (Zgalon_seconds/3600.0);
+	Zgalon = Zgalon_hours + (Zgalon_minutes/60.0) + (Zgalon_seconds/3600.0);
 	if (Zgalon < 0){
 		Zgalon = Zgalon_hours - (Zgalon_minutes/60.0) - (Zgalon_seconds/3600.0);
 	}
@@ -877,10 +1154,14 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Zgalat_arcminutes = ::atof(Zstring_galat_arcminutes.c_str());
 	string Zstring_galat_arcseconds = Zcompliments[2];
 	double Zgalat_arcseconds = ::atof(Zstring_galat_arcseconds.c_str());
-	double Zgalat = Zgalat_degrees + (Zgalat_arcminutes/60.0) + (Zgalat_arcseconds/3600.0);
+	Zgalat = Zgalat_degrees + (Zgalat_arcminutes/60.0) + (Zgalat_arcseconds/3600.0);
 	if (Zgalat < 0){
 		Zgalat = Zgalat_degrees - (Zgalat_arcminutes/60.0) - (Zgalat_arcseconds/3600.0);
 	}
+	
+if(test_or_not == 0){
+	
+	
 	cout << "" << endl;
 	cout << "Zgalactic latitude is: ";
 	cout << Zgalat;
@@ -888,9 +1169,64 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	cout << "Zgalactic longitude is: ";
 	cout << Zgalon;
 	cout << " degrees East" << endl;
-
+	
+}
+		
 	//Now its time we do the same for the Y pointing direction.
 
+
+	std::string myYProse_e(Yra_data);
+	std::istringstream ihh(myYProse_e);
+	std::string Ytoken3_e;
+	string Ycondiments_e[3];
+	int Yp_e = 0;
+	while(getline(ihh, Ytoken3_e, ':'))
+	{
+		Ycondiments_e[Yp_e] = Ytoken3_e;
+		Yp_e = Yp_e+1;
+	}
+	string Ystring_ra_hours = Ycondiments_e[0];
+	double Yra_hours = ::atof(Ystring_ra_hours.c_str());
+	string Ystring_ra_minutes = Ycondiments_e[1];
+	double Yra_minutes = ::atof(Ystring_ra_minutes.c_str());
+	string Ystring_ra_seconds = Ycondiments_e[2];
+	double Yra_seconds = ::atof(Ystring_ra_seconds.c_str());
+	Yra = (Yra_hours + (Yra_minutes/60.0) + (Yra_seconds/3600.0))*15;
+
+
+	std::string myYEpistle_e(Ydec_data);
+	std::istringstream ijj(myYEpistle_e);
+	std::string Ytoken4_e;
+	string Ycompliments_e[3];
+	int Yq_e = 0;
+	while(getline(ijj, Ytoken4_e, ':'))
+	{
+		Ycompliments_e[Yq_e] = Ytoken4_e;
+		Yq_e = Yq_e+1;
+	}
+	string Ystring_dec_degrees = Ycompliments_e[0];
+	double Ydec_degrees = ::atof(Ystring_dec_degrees.c_str());
+	string Ystring_dec_arcminutes = Ycompliments_e[1];
+	double Ydec_arcminutes = ::atof(Ystring_dec_arcminutes.c_str());
+	string Ystring_dec_arcseconds = Ycompliments_e[2];
+	double Ydec_arcseconds = ::atof(Ystring_dec_arcseconds.c_str());
+	Ydec = Ydec_degrees + (Ydec_arcminutes/60.0) + (Ydec_arcseconds/3600.0);
+	if (Ydec < 0){
+		Ydec = Ydec_degrees - (Ydec_arcminutes/60.0) - (Ydec_arcseconds/3600.0);
+	}
+	
+if(test_or_not == 0){
+	
+	
+	cout << "" << endl;
+	cout << "Ydeclination is: ";
+	cout << Ydec;
+	cout << " degrees North" << endl;
+	cout << "Yright ascension is: ";
+	cout << Yra;
+	cout << " degrees East" << endl;
+
+}
 
 
 	std::string myYProse(Ygalon_data);
@@ -909,7 +1245,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Ygalon_minutes = ::atof(Ystring_galon_minutes.c_str());
 	string Ystring_galon_seconds = Ycondiments[2];
 	double Ygalon_seconds = ::atof(Ystring_galon_seconds.c_str());
-	double Ygalon = Ygalon_hours + (Ygalon_minutes/60.0) + (Ygalon_seconds/3600.0);
+	Ygalon = Ygalon_hours + (Ygalon_minutes/60.0) + (Ygalon_seconds/3600.0);
 	if (Ygalon < 0){
 		Ygalon = Ygalon_hours - (Ygalon_minutes/60.0) - (Ygalon_seconds/3600.0);
 	}
@@ -929,10 +1265,14 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Ygalat_arcminutes = ::atof(Ystring_galat_arcminutes.c_str());
 	string Ystring_galat_arcseconds = Ycompliments[2];
 	double Ygalat_arcseconds = ::atof(Ystring_galat_arcseconds.c_str());
-	double Ygalat = Ygalat_degrees + (Ygalat_arcminutes/60.0) + (Ygalat_arcseconds/3600.0);
+	Ygalat = Ygalat_degrees + (Ygalat_arcminutes/60.0) + (Ygalat_arcseconds/3600.0);
 	if (Ygalat < 0){
 		Ygalat = Ygalat_degrees - (Ygalat_arcminutes/60.0) - (Ygalat_arcseconds/3600.0);
 	}
+	
+	if(test_or_not == 0){
+	
+	
 	cout << "" << endl;
 	cout << "Ygalactic latitude is: ";
 	cout << Ygalat;
@@ -940,8 +1280,64 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	cout << "Ygalactic longitude is: ";
 	cout << Ygalon;
 	cout << " degrees East" << endl;
+	
+}
 
 	//Okay, again, same deal here except this time for the X pointing direction.
+
+
+	std::string myXProse_e(Xra_data);
+	std::istringstream ikk(myXProse_e);
+	std::string Xtoken3_e;
+	string Xcondiments_e[3];
+	int Xp_e = 0;
+	while(getline(ikk, Xtoken3_e, ':'))
+	{
+		Xcondiments_e[Xp_e] = Xtoken3_e;
+		Xp_e = Xp_e+1;
+	}
+	string Xstring_ra_hours = Xcondiments_e[0];
+	double Xra_hours = ::atof(Xstring_ra_hours.c_str());
+	string Xstring_ra_minutes = Xcondiments_e[1];
+	double Xra_minutes = ::atof(Xstring_ra_minutes.c_str());
+	string Xstring_ra_seconds = Xcondiments_e[2];
+	double Xra_seconds = ::atof(Xstring_ra_seconds.c_str());
+	Xra = (Xra_hours + (Xra_minutes/60.0) + (Xra_seconds/3600.0))*15;
+
+
+	std::string myXEpistle_e(Xdec_data);
+	std::istringstream ill(myXEpistle_e);
+	std::string Xtoken4_e;
+	string Xcompliments_e[3];
+	int Xq_e = 0;
+	while(getline(ill, Xtoken4_e, ':'))
+	{
+		Xcompliments_e[Xq_e] = Xtoken4_e;
+		Xq_e = Xq_e+1;
+	}
+	string Xstring_dec_degrees = Xcompliments_e[0];
+	double Xdec_degrees = ::atof(Xstring_dec_degrees.c_str());
+	string Xstring_dec_arcminutes = Xcompliments_e[1];
+	double Xdec_arcminutes = ::atof(Xstring_dec_arcminutes.c_str());
+	string Xstring_dec_arcseconds = Xcompliments_e[2];
+	double Xdec_arcseconds = ::atof(Xstring_dec_arcseconds.c_str());
+	Xdec = Xdec_degrees + (Xdec_arcminutes/60.0) + (Xdec_arcseconds/3600.0);
+	if (Xdec < 0){
+		Xdec = Xdec_degrees - (Xdec_arcminutes/60.0) - (Xdec_arcseconds/3600.0);
+	}
+	
+	if(test_or_not == 0){
+		
+		
+	cout << "" << endl;
+	cout << "Xdeclination is: ";
+	cout << Xdec;
+	cout << " degrees North" << endl;
+	cout << "Xright ascension is: ";
+	cout << Xra;
+	cout << " degrees East" << endl;
+
+}
 
 
 	std::string myXProse(Xgalon_data);
@@ -960,7 +1356,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Xgalon_minutes = ::atof(Xstring_galon_minutes.c_str());
 	string Xstring_galon_seconds = Xcondiments[2];
 	double Xgalon_seconds = ::atof(Xstring_galon_seconds.c_str());
-	double Xgalon = Xgalon_hours + (Xgalon_minutes/60.0) + (Xgalon_seconds/3600.0);
+	Xgalon = Xgalon_hours + (Xgalon_minutes/60.0) + (Xgalon_seconds/3600.0);
 	if (Xgalon < 0){
 		Xgalon = Xgalon_hours - (Xgalon_minutes/60.0) - (Xgalon_seconds/3600.0);
 	}
@@ -980,10 +1376,14 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Xgalat_arcminutes = ::atof(Xstring_galat_arcminutes.c_str());
 	string Xstring_galat_arcseconds = Xcompliments[2];
 	double Xgalat_arcseconds = ::atof(Xstring_galat_arcseconds.c_str());
-	double Xgalat = Xgalat_degrees + (Xgalat_arcminutes/60.0) + (Xgalat_arcseconds/3600.0);
+	Xgalat = Xgalat_degrees + (Xgalat_arcminutes/60.0) + (Xgalat_arcseconds/3600.0);
 	if (Xgalat < 0){
 		Xgalat = Xgalat_degrees - (Xgalat_arcminutes/60.0) - (Xgalat_arcseconds/3600.0);
 	}
+	
+	if(test_or_not == 0){
+	
+	
 	cout << "" << endl;
 	cout << "Xgalactic latitude is: ";
 	cout << Xgalat;
@@ -991,6 +1391,16 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	cout << "Xgalactic longitude is: ";
 	cout << Xgalon;
 	cout << " degrees East" << endl;
+
+}
+	
+}	
+	
+////////////////////////////////////////////////////////////////////////////
+
+	
+	
+		
 
 	//Alright, here comes the moment of truth. Now we take everything we just recorded about our aspect
 	//information and save it all into an MNCTAspect object.
@@ -1001,23 +1411,22 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	if (GPS_or_magnetometer == 1){
 		Aspect->SetGPS_Or_Magnetometer(1);
 	}
-	MTime MTimeA;
+	
+	
+	
+	
+	//MTimeA should already be filled out from earlier so the following paragraph is commented out;
+	
+	//MTime MTimeA;
 
 	//Ares had this:
 	//MTimeA.Set(m_Year,m_Month,m_Day,m_Hour,m_Minute,m_Second,m_NanoSecond);
 
 	//Using this instead so that we can sort badsed on clock board time
 	//MTimeA.Set(m_Year,m_Month,m_Day,m_Hour,m_Minute,m_Second,m_NanoSecond);
-	uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
-	double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
-	double ClkNanoseconds = (double) ClkModulo * 100.0;
-
-
 	
-
-
-	MTimeA.Set( ClkSeconds, ClkNanoseconds);
-
+	
+	
 	Aspect->SetTime(MTimeA);
 	Aspect->SetHeading(heading);
 	Aspect->SetPitch(pitch);
@@ -1057,8 +1466,19 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	//i redefined the sort function at the bottom of the file
 
+
+
 	sort(m_Aspects.begin(), m_Aspects.end(), MTimeSort);
 	return true;
+
+
+
+
+
+
+
+
+
 
 
 	/*Now we're really done, right? Nope. Next, we must check with the previous batch of old aspect data 
@@ -1113,7 +1533,6 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		Okay, now we retrieve our old magnetometer aspect data (if we are checking if a batch of data from
 		  the GPS needs a flag, this old data will just go unused) using the GetPreviousMagnetometer() function.
 		  The way this function works will be described later.
-
 
 
 		double old_M_Xgalon = GetPreviousMagnetometer(m_Aspects[i]->GetTime())->GetGalacticPointingXAxisLongitude();
@@ -1187,12 +1606,6 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		}
 
 
-
-
-
-
-
-
 	} 
 
 	//Here ends the second for loop. Now, just as a precaution, we open a 3rd for loop to review which MNCTAspect objects
@@ -1213,13 +1626,29 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	*/
 
 	//return true;
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
 
 
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////// 
 
 
 //Below we see various search functions useful for acquiring aspect information if given the time.
@@ -1500,9 +1929,14 @@ MNCTAspect* MNCTAspectReconstruction::GetPreviousMagnetometer(MTime Time){
 
 
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 
 //Here we make trig functions that work with degrees.

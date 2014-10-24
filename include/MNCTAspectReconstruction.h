@@ -25,6 +25,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MNCTAspect.h"
 #include "MNCTAspectPacket.h"
+#include "MNCTTimeAndCoordinate.h"
 
 // Forward declarations:
 
@@ -110,7 +111,7 @@ double Vincenty(double old_glat, double new_glat, double old_glon, double new_gl
   // private methods:
  private:
 
-
+  MNCTTimeAndCoordinate m_TCCalculator;
 
   // protected members:
  protected:
