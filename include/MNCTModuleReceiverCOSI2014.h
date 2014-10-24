@@ -101,8 +101,10 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
 
   // protected methods:
  protected:
-  //! Perform Handshake
-  bool DoHandshake();
+  //! Request connection
+  bool RequestConnection();
+  //! End connection
+  bool EndConnection();
 
   // private methods:
  private:
