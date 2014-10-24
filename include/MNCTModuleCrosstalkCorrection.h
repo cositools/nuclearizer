@@ -65,9 +65,9 @@ class MNCTModuleCrosstalkCorrection : public MModule
 
   // private members:
  private:
-  bool m_IsCalibrationLoadedDet[10];
-  bool m_IsCalibrationLoaded[10][2][MAXNSKIP+1];
-  double m_CrosstalkCoeffs[10][2][MAXNSKIP+1][2];
+  bool m_IsCalibrationLoadedDet[12];
+  bool m_IsCalibrationLoaded[12][2][3];
+  double m_CrosstalkCoeffs[12][2][3][2];
 
 #ifdef ___CINT___
  public:
