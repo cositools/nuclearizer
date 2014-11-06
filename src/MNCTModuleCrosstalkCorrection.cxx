@@ -137,7 +137,7 @@ bool MNCTModuleCrosstalkCorrection::Initialize()
 
 
 	fstream File;
-	File.open("CrossTalkCorrection_Results.txt", ios_base::in);
+	File.open("resource/calibration/COSI14/CrossTalkCorrection_Results.txt", ios_base::in);
 	// Read the calibration coefficients line-by-line
 	if (File.is_open() == false) {
 		mout<<"***Warning: Unable to open file for crosstalk calibration"<<endl;	
