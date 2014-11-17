@@ -80,7 +80,11 @@ void MGUIExpoEnergyCalibration::Reset()
 {
   //! Reset the data in the UI
 
+  m_Mutex.Lock();
+
   m_Energy->Reset();
+  
+  m_Mutex.UnLock();
 }
   
 
@@ -91,7 +95,11 @@ void MGUIExpoEnergyCalibration::SetEnergyHistogramParameters(int NBins, double M
 {
   // Set the energy histogram parameters 
 
+  m_Mutex.Lock();
+
   m_Energy->SetBins(NBins, Min, Max);
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -102,7 +110,11 @@ void MGUIExpoEnergyCalibration::AddEnergy(double Energy)
 {
   // Add data to the energy histogram
 
+  m_Mutex.Lock();
+
   m_Energy->Fill(Energy);
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -113,7 +125,11 @@ void MGUIExpoEnergyCalibration::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 
+  m_Mutex.Lock();
+
   m_EnergyCanvas->GetCanvas()->SaveAs(FileName);
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -126,6 +142,8 @@ void MGUIExpoEnergyCalibration::Create()
 
   // Do not create it twice!
   if (m_IsCreated == true) return;
+
+  m_Mutex.Lock();
   
   TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY,
                                                   2, 2, 2, 2);
@@ -144,6 +162,8 @@ void MGUIExpoEnergyCalibration::Create()
   m_EnergyCanvas->GetCanvas()->Update();
   
   m_IsCreated = true;
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -154,11 +174,14 @@ void MGUIExpoEnergyCalibration::Update()
 {
   //! Update the frame
 
+  m_Mutex.Lock();
+
   if (m_EnergyCanvas != 0) {
     m_EnergyCanvas->GetCanvas()->Modified();
     m_EnergyCanvas->GetCanvas()->Update();
-    gSystem->ProcessEvents();
   }
+  
+  m_Mutex.UnLock();
 }
 
 

@@ -81,7 +81,11 @@ void MGUIExpoStripPairing::Reset()
 {
   //! Reset the data in the UI
 
+  m_Mutex.Lock();
+  
   m_Energies->Reset();
+  
+  m_Mutex.UnLock();
 }
   
 
@@ -92,7 +96,11 @@ void MGUIExpoStripPairing::SetEnergiesHistogramParameters(int NBins, double Min,
 {
   // Set the energy histogram parameters 
 
+  m_Mutex.Lock();
+  
   m_Energies->SetBins(NBins, Min, Max, NBins, Min, Max);
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -103,7 +111,11 @@ void MGUIExpoStripPairing::AddEnergies(double pEnergy, double nEnergy)
 {
   // Add data to the energy histogram
 
+  m_Mutex.Lock();
+  
   m_Energies->Fill(pEnergy, nEnergy);
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -116,6 +128,8 @@ void MGUIExpoStripPairing::Create()
   
   // Do not create it twice!
   if (m_IsCreated == true) return;
+  
+  m_Mutex.Lock();
 
   TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY,
                                                   2, 2, 2, 2);
@@ -134,6 +148,8 @@ void MGUIExpoStripPairing::Create()
   m_EnergiesCanvas->GetCanvas()->Update();
   
   m_IsCreated = true;
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -144,11 +160,14 @@ void MGUIExpoStripPairing::Update()
 {
   //! Update the frame
 
+  m_Mutex.Lock();
+  
   if (m_EnergiesCanvas != 0) {
     m_EnergiesCanvas->GetCanvas()->Modified();
     m_EnergiesCanvas->GetCanvas()->Update();
-    gSystem->ProcessEvents();
   }
+  
+  m_Mutex.UnLock();
 }
 
 
@@ -159,7 +178,11 @@ void MGUIExpoStripPairing::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 
+  m_Mutex.Lock();
+  
   m_EnergiesCanvas->GetCanvas()->SaveAs(FileName);
+  
+  m_Mutex.UnLock();
 }
 
 

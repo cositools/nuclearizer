@@ -79,9 +79,11 @@ void MGUIExpoDepthCalibration::Reset()
 {
   //! Reset the data in the UI
 
+  m_Mutex.Lock();
   for (auto H: m_DepthHistograms) {  
     H->Reset();
   }
+  m_Mutex.UnLock();
 }
   
 
@@ -90,6 +92,8 @@ void MGUIExpoDepthCalibration::Reset()
 
 void MGUIExpoDepthCalibration::SetDepthHistogramArrangement(unsigned int NDetectorsX, unsigned int NDetectorsY)
 {
+  m_Mutex.Lock();
+
   m_NDetectorsX = NDetectorsX; 
   m_NDetectorsY = NDetectorsY; 
   
@@ -111,6 +115,7 @@ void MGUIExpoDepthCalibration::SetDepthHistogramArrangement(unsigned int NDetect
       ++Counter;
     }
   }
+  m_Mutex.UnLock();
 }
 
   
@@ -121,12 +126,16 @@ void MGUIExpoDepthCalibration::SetDepthHistogramParameters(unsigned int NBins, d
 {
   // Set the energy histogram parameters 
 
+  m_Mutex.Lock();
+
   for (auto H: m_DepthHistograms) {
     m_NBins = NBins;
     m_Min = Min;
     m_Max = Max;
     H->SetBins(m_NBins, m_Min, m_Max);
   }
+
+  m_Mutex.UnLock();
 }
 
 
@@ -137,9 +146,13 @@ void MGUIExpoDepthCalibration::SetDepthHistogramName(unsigned int DetectorID, MS
 {
   // Set the title of the histogram
   
+  m_Mutex.Lock();
+
   if (DetectorID < m_DepthHistograms.size()) {
     m_DepthHistograms[DetectorID]->SetTitle(Name);
   }
+
+  m_Mutex.UnLock();
 }
 
 
@@ -150,9 +163,13 @@ void MGUIExpoDepthCalibration::AddDepth(unsigned int DetectorID, double Depth)
 {
   // Add data to the energy histogram
 
+  m_Mutex.Lock();
+
   if (DetectorID < m_DepthHistograms.size()) {
     m_DepthHistograms[DetectorID]->Fill(Depth);
   }
+
+  m_Mutex.UnLock();
 }
 
 
@@ -162,9 +179,11 @@ void MGUIExpoDepthCalibration::AddDepth(unsigned int DetectorID, double Depth)
 void MGUIExpoDepthCalibration::Create()
 {
   // Add the GUI options here
-  
+
   // Do not create it twice!
   if (m_IsCreated == true) return;
+  
+  m_Mutex.Lock();
   
   TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY,                                                   2, 2, 2, 2);
 
@@ -186,6 +205,8 @@ void MGUIExpoDepthCalibration::Create()
   }
   
   m_IsCreated = true;
+
+  m_Mutex.UnLock();
 }
 
 
@@ -195,6 +216,8 @@ void MGUIExpoDepthCalibration::Create()
 void MGUIExpoDepthCalibration::Update()
 {
   //! Update the frame
+
+  m_Mutex.Lock();
 
   double Max = 0;
   for (auto H : m_DepthHistograms) {
@@ -213,9 +236,10 @@ void MGUIExpoDepthCalibration::Update()
     if (C != 0) {
       C->GetCanvas()->Modified();
       C->GetCanvas()->Update();
-      gSystem->ProcessEvents();
     }
   }
+
+  m_Mutex.UnLock();
 }
 
 
@@ -225,6 +249,8 @@ void MGUIExpoDepthCalibration::Update()
 void MGUIExpoDepthCalibration::Export(const MString& FileName)
 {
   // Add data to the energy histogram
+
+  m_Mutex.Lock();
 
   TCanvas* P = new TCanvas();
   P->Divide(m_NDetectorsX, m_NDetectorsY);
@@ -236,6 +262,8 @@ void MGUIExpoDepthCalibration::Export(const MString& FileName)
   }
   P->SaveAs(FileName);
   delete P;
+
+  m_Mutex.UnLock();
 }
 
 

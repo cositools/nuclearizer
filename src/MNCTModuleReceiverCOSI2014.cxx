@@ -186,6 +186,7 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
       if (ToReceive.size() > 0) {
         string ReceivedString(ToReceive.begin(), ToReceive.end());
         MString Received = ReceivedString;
+        cout<<"Handshake: Received something: "<<Received<<endl;
         if (Received.EndsWith("ACK") == true) {
           vector<MString> Tokens = Received.Tokenize(":");
           if (Tokens.size() == 5) {
