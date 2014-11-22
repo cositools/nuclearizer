@@ -29,7 +29,6 @@ class MNCTAspectPacket{
 		GetAspectMagnetometer search functions fail to find an MNCTAspect
 		object at a specified time they return a dummy MNCTAspect object
 		with its m_GPS_Or_Magnetometer attribute equal to 2*/
-		int Python_or_Cplusplus; //0=Python; 1=C++
 		int test_or_not; //0=Print Statements Shown; 1=Print statements deactivated
 		string date_and_time;
 		unsigned int nanoseconds;
@@ -47,6 +46,7 @@ class MNCTAspectPacket{
 		uint32_t GPSMilliseconds;
 		double BRMS;
 		uint16_t AttFlag;
+
 
 
 

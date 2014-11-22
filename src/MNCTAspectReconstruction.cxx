@@ -37,6 +37,7 @@
 #include "cstdio"
 #include "cstdlib"
 
+#include <time.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -62,6 +63,8 @@ using namespace std;
 
 #include "MNCTAspectReconstruction.h"
 #include "MNCTAspectPacket.h"
+#include "magfld.h"
+
 
 
 // Standard libs:
@@ -119,10 +122,18 @@ void MNCTAspectReconstruction::Clear()
 {
 	// Reset all data
 
-	for (auto A: m_Aspects) {
+	for (auto A: m_Aspects_GPS) {
 		delete A;
 	}
-	m_Aspects.clear();
+	m_Aspects_GPS.clear();
+	
+	
+	
+	for (auto A: m_Aspects_Magnetometer) {
+		delete A;
+	}
+	m_Aspects_Magnetometer.clear();	
+	
 }
 
 
@@ -142,10 +153,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 {
 
 
-
 	MNCTAspect* Aspect = new MNCTAspect;
-
-
 
 
 	//Here we record the geographic longitude & latitude, as well as the height above sea
@@ -153,7 +161,6 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//whether our data is from the GPS or magnetometer. 
 
 	int GPS_or_magnetometer = PacketA.GPS_or_magnetometer;
-	int Python_or_Cplusplus = PacketA.Python_or_Cplusplus;
 	int test_or_not = PacketA.test_or_not;
 	double geographic_longitude = PacketA.geographic_longitude;
 	double geographic_latitude = PacketA.geographic_latitude;
@@ -167,21 +174,19 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//these bits of info to build 7 separate unsigned ints of time information to be used
 	//later when we finally build the MNCTAspect object
 
+
 	string date_and_time = PacketA.date_and_time;
 	unsigned int nanoseconds = PacketA.nanoseconds;
 
-	
 	MTime MTimeA;
 	
-	MTimeA.Set(1411668301,2);
+	uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
+	double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
+	double ClkNanoseconds = (double) ClkModulo * 100.0;
+	MTimeA.Set( ClkSeconds, ClkNanoseconds);
+	double frac_Year = MTimeA.GetAsYears();
+	float gcu_fracYear = frac_Year;
 	
-	//Please delete the above line and uncomment the below paragraph later!!!!!!!
-	
-	//uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
-	//double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
-	//double ClkNanoseconds = (double) ClkModulo * 100.0;
-	//MTimeA.Set( ClkSeconds, ClkNanoseconds);
-
 
 	//Here we record heading, pitch, and roll. It's a bit more complicated than you might think.
 
@@ -199,57 +204,23 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	double magnetic_declination = 0.0; //This is the magnetic declination we were just discussing.
 
-	/*This here is the interesting part (only used if our data is from the magnetometer). Here, we 
-	  create a text file named "example1.txt" and write the longitude and latitude onto it. Then,
-	  we activate python using PyRun_SimpleString() and use the python module known as geomag to
-	  give us the magnetic declination, given our longitude and latitude. Then we have python create
-	  another text file, named "example2.txt" and have it write down the magnetic declination onto it.
-	  Then PyRunSimpleString() finishes. Back in C++, our code reads that new text file and finally
-	  learns the magnetic declination.*/
 
 	if (GPS_or_magnetometer == 1){
-		ofstream myAfile;
-		myAfile.open ("example1.txt");
-		myAfile << geographic_latitude;
-		myAfile << ",";
-		myAfile << geographic_longitude;
-		myAfile.close();		
-		ofstream myBfile;
-		myBfile.open ("example2.txt");
-		myBfile.close();
-
-		MString WMMFile("$(NUCLEARIZER)/resource/aspect/WMM.COF");
-		MFile::ExpandFileName(WMMFile);
-
-		ostringstream Cmd;
-		Cmd<<"f = open('example1.txt')\n"
-			"data = f.readline()\n"
-			"split_data = data.split(',')\n"
-			"geographic_latitude = float(split_data[0]) \n"
-			"geographic_longitude = float(split_data[1]) \n"
-			"f.close()\n"
-			"import geomag\n"
-			"gm = geomag.geomag.GeoMag('"<<WMMFile<<"')\n"
-			"mag = gm.GeoMag(geographic_latitude,geographic_longitude)\n"
-			"magnetic_declination = mag.dec\n"
-			"g = open('example2.txt','w')\n"
-			"g.write(str(magnetic_declination))\n"
-			"g.close()\n"<<endl;
-		PyRun_SimpleString(Cmd.str().c_str());
-
-		ifstream myCFile;
-		myCFile.open("example2.txt");
-		string string_magnetic_declination;
-		getline(myCFile,string_magnetic_declination);	
-		magnetic_declination = ::atof(string_magnetic_declination.c_str());
 		
-if(test_or_not == 0){		
-		
-		printf("magnetic_declination is: %9.5f \n",magnetic_declination);
-		
-}
+		float lon = geographic_longitude;
+		float lat = geographic_latitude;
+	    float alt = elevation;
 
+		
+		//magfld* MF = new magfld();
+		void WMMInit();
+		float magdec_Cplusplus1 = MagDec(lat, lon, alt, gcu_fracYear);
+		magnetic_declination = magdec_Cplusplus1;
 
+		
+		if(test_or_not == 0){		
+			printf("According to C++, magnetic_declination is: %9.5f \n",magdec_Cplusplus1);	
+			}
 	}
 
 	//Now that we've gone through that crazy ordeal and have found the magnetic declination, we
@@ -762,17 +733,15 @@ if(test_or_not == 0){
 	
 	////////////////////////////////////////////////////////////////////////////
 
-if(Python_or_Cplusplus == 1){
+
 
 	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
 	
 
-if(test_or_not == 0){
-
-	cout << MTimeA.GetAsSeconds() << endl;
-	printf("MTimeA is also: %9.5f \n",MTimeA.GetAsSeconds());
-
-}
+	if(test_or_not == 0){
+		cout << MTimeA.GetAsSeconds() << endl;
+		printf("MTimeA is also: %9.5f \n",MTimeA.GetAsSeconds());
+	}
 	
 	
 	m_TCCalculator.SetUnixTime(MTimeA.GetAsSeconds());
@@ -788,28 +757,27 @@ if(test_or_not == 0){
 	Zgalon = ZGalactic[0];
 
 
-if(test_or_not == 0){
+	if(test_or_not == 0){
 
-	cout << "" << endl;
-	cout << "According to C+++++..." << endl;
+		cout << "" << endl;
+		cout << "According to C+++++..." << endl;
 	
-	cout << "" << endl;
-	cout << "Zdeclination is: ";
-	cout << Zdec;
-	cout << " degrees North" << endl;
-	cout << "Zright ascension is: ";
-	cout << Zra;
-	cout << " degrees East" << endl;
+		cout << "" << endl;
+		cout << "Zdeclination is: ";
+		cout << Zdec;
+		cout << " degrees North" << endl;
+		cout << "Zright ascension is: ";
+		cout << Zra;
+		cout << " degrees East" << endl;
 
-	cout << "" << endl;
-	cout << "Zgalactic latitude is: ";
-	cout << Zgalat;
-	cout << " degrees North" << endl;
-	cout << "Zgalactic longitude is: ";
-	cout << Zgalon;
-	cout << " degrees East" << endl;
-
-}
+		cout << "" << endl;
+		cout << "Zgalactic latitude is: ";
+		cout << Zgalat;
+		cout << " degrees North" << endl;
+		cout << "Zgalactic longitude is: ";
+		cout << Zgalon;
+		cout << " degrees East" << endl;
+	}
 
 
 	vector<double> YGalactic; 
@@ -873,528 +841,10 @@ if(test_or_not == 0){
 	
 }
 	
-}
+
 
 	
-////////////////////////////////////////////////////////////////////////////	
-	
-if(Python_or_Cplusplus == 0){	
 
-	/*Here comes the tricky part. Again we will make use of python in the form of PyRunSimpleString.
-	  What we do here we get all of the necessary inputs we need in order to find the galactic
-	  longitude and latitude and write them all into a text file (known as "example5.txt"). Then, we open 
-	  python, so we can finally use the fabled pyephem we have been talking about to finally get the
-	  the galactic longitude and latitude. Python then writes these down in another text file 
-	  ("example6.txt") and then shuts down. Afterwards (back in C++) we read that second text file 
-	  and record the data.*/
-
-	//Right here below, we record all the necessary	information that pyephem needs to find the
-	//galactic longitude and latitude for us.
-
-	ofstream myGfile;
-	myGfile.open ("example5.txt");
-	myGfile << geographic_longitude;
-	myGfile << ",";
-	myGfile << geographic_latitude;
-	myGfile << ",";
-	myGfile << elevation;
-	myGfile << ",";
-	myGfile << date_and_time;
-	myGfile << ",";
-	myGfile << Zazimuth;
-	myGfile << ",";
-	myGfile << Zaltitude;
-	myGfile << ",";
-	myGfile << Yazimuth;
-	myGfile << ",";
-	myGfile << Yaltitude;
-	myGfile << ",";
-	myGfile << Xazimuth;
-	myGfile << ",";
-	myGfile << Xaltitude;
-	myGfile << ",";
-	myGfile << test_or_not;
-	myGfile.close();
-	ofstream myHfile;
-	myHfile.open ("example6.txt");
-	myHfile.close();
-
-	//And here's good old PyRunSimpleString once again (below)!
-
-	PyRun_SimpleString(
-
-			//Okay, first things first. We record all the data from the text file.
-
-			"import ephem\n"
-			"import math\n"
-			"f = open('example5.txt')\n"
-			"data = f.readline()\n"
-			"split_data = data.split(',')\n"
-			"input1 = str(float(split_data[0]))\n"
-			"input2 = str(float(split_data[1]))\n"
-			"input3 = float(split_data[2])\n"
-			"input4 = split_data[3]\n"
-			"input5 = math.radians(float(split_data[4]))\n"
-			"input6 = math.radians(float(split_data[5]))\n"
-			"input7 = math.radians(float(split_data[6]))\n"
-			"input8 = math.radians(float(split_data[7]))\n"
-			"input9 = math.radians(float(split_data[8]))\n"
-			"input10 = math.radians(float(split_data[9]))\n"
-			"input11 = math.radians(float(split_data[10]))\n"
-
-			/*Now, we use pyephem to create an observer object that we will call COSI. We feed COSI the 
-			  geographic longituude and latitude, what it calls the "elevation", the date and time, and the
-			  azimuth and what it calls "altitude." This gives us the Equatorial coordinates (right ascension)
-			  and declination. We then convert these coordinates to Galactic coordinates*/
-
-			"COSI = ephem.Observer()\n"
-			"COSI.lon = input1\n"
-			"COSI.lat = input2\n"
-			"COSI.elevation = input3\n"
-			"COSI.date = input4\n"
-			"if input11 == 0:\n"
-			"	print COSI.date\n"
-			"z = COSI.radec_of(input5,input6)\n"
-			"z0 = str(z[0])\n"
-			"z1 = str(z[1])\n"
-			"Zeqco = ephem.Equatorial(z0,z1)\n"
-			"Zgaco = ephem.Galactic(Zeqco)\n"
-			"zz0 = str(Zgaco.lon)\n"
-			"zz1 = str(Zgaco.lat)\n"
-			"y = COSI.radec_of(input7,input8)\n"
-			"y0 = str(y[0])\n"
-			"y1 = str(y[1])\n"
-			"Yeqco = ephem.Equatorial(y0,y1)\n"
-			"Ygaco = ephem.Galactic(Yeqco)\n"
-			"yy0 = str(Ygaco.lon)\n"
-			"yy1 = str(Ygaco.lat)\n"
-			"x = COSI.radec_of(input9,input10)\n"
-			"x0 = str(x[0])\n"
-			"x1 = str(x[1])\n"
-			"Xeqco = ephem.Equatorial(x0,x1)\n"
-			"Xgaco = ephem.Galactic(Xeqco)\n"
-			"xx0 = str(Xgaco.lon)\n"
-			"xx1 = str(Xgaco.lat)\n"
-
-			//Now that we're done with that, we write the galactic coordinates we just find down into yet
-			//another text file ("example6.txt").	
-
-			"omega = ','\n"
-			"g = open('example6.txt','w')\n"
-			
-			"g.write(zz0)\n"
-			"g.write(omega)\n"
-			"g.write(zz1)\n"
-			"g.write(omega)\n"
-			"g.write(yy0)\n"
-			"g.write(omega)\n"
-			"g.write(yy1)\n"
-			"g.write(omega)\n"
-			"g.write(xx0)\n"
-			"g.write(omega)\n"
-			"g.write(xx1)\n"
-			"g.write(omega)\n"
-			
-			"g.write(z0)\n"
-			"g.write(omega)\n"
-			"g.write(z1)\n"
-			"g.write(omega)\n"
-			"g.write(y0)\n"
-			"g.write(omega)\n"
-			"g.write(y1)\n"
-			"g.write(omega)\n"
-			"g.write(x0)\n"
-			"g.write(omega)\n"
-			"g.write(x1)\n"
-			
-			"g.close()\n"
-			"f.close()\n");
-
-	//Phew. Okay, now we're finally done with messing with python for good. Now its time we read the
-	//Galactic coordinates data we just wrote down into a text file.
-
-	ifstream myIFile; //define your file stream
-	myIFile.open("example6.txt"); //open the file
-	string data2; //define "data2" as a string
-	getline(myIFile,data2);
-	
-if(test_or_not == 0){
-
-
-	cout << "Now finished with python" <<endl;
-	
-}
-
-
-	//Now, its time we format this data by first making strings for it (below).
-
-	std::string myWriting(data2);
-	std::istringstream ixx(myWriting);
-	std::string token2;
-	string rudiments[12];
-	int o = 0;
-	while(getline(ixx, token2, ','))
-	{
-		rudiments[o] = token2;
-		o = o+1;
-	}
-
-	string Zgalon_data = rudiments[0];
-	string Zgalat_data = rudiments[1];
-
-	string Ygalon_data = rudiments[2];
-	string Ygalat_data = rudiments[3];
-
-	string Xgalon_data = rudiments[4];
-	string Xgalat_data = rudiments[5];
-	
-	string Zra_data = rudiments[6];
-	string Zdec_data = rudiments[7];
-
-	string Yra_data = rudiments[8];
-	string Ydec_data = rudiments[9];
-
-	string Xra_data = rudiments[10];
-	string Xdec_data = rudiments[11];
-
-	//Now its time (for the Z pointing direction) we convert the strings to doubles and print them. 
-
-
-		
-	std::string myZProse_e(Zra_data);
-	std::istringstream iff(myZProse_e);
-	std::string Ztoken3_e;
-	string Zcondiments_e[3];
-	int Zp_e = 0;
-	while(getline(iff, Ztoken3_e, ':'))
-	{
-		Zcondiments_e[Zp_e] = Ztoken3_e;
-		Zp_e = Zp_e+1;
-	}
-	string Zstring_ra_hours = Zcondiments_e[0];
-	double Zra_hours = ::atof(Zstring_ra_hours.c_str());
-	string Zstring_ra_minutes = Zcondiments_e[1];
-	double Zra_minutes = ::atof(Zstring_ra_minutes.c_str());
-	string Zstring_ra_seconds = Zcondiments_e[2];
-	double Zra_seconds = ::atof(Zstring_ra_seconds.c_str());
-	Zra = (Zra_hours + (Zra_minutes/60.0) + (Zra_seconds/3600.0))*15;
-	
-	
-	std::string myZEpistle_e(Zdec_data);
-	std::istringstream igg(myZEpistle_e);
-	std::string Ztoken4_e;
-	string Zcompliments_e[3];
-	int Zq_e = 0;
-	while(getline(igg, Ztoken4_e, ':'))
-	{
-		Zcompliments_e[Zq_e] = Ztoken4_e;
-		Zq_e = Zq_e+1;
-	}
-	string Zstring_dec_degrees = Zcompliments_e[0];
-	double Zdec_degrees = ::atof(Zstring_dec_degrees.c_str());
-	string Zstring_dec_arcminutes = Zcompliments_e[1];
-	double Zdec_arcminutes = ::atof(Zstring_dec_arcminutes.c_str());
-	string Zstring_dec_arcseconds = Zcompliments_e[2];
-	double Zdec_arcseconds = ::atof(Zstring_dec_arcseconds.c_str());
-	Zdec = Zdec_degrees + (Zdec_arcminutes/60.0) + (Zdec_arcseconds/3600.0);
-	if (Zdec < 0){
-		Zdec = Zdec_degrees - (Zdec_arcminutes/60.0) - (Zdec_arcseconds/3600.0);
-	}
-	
-	if(test_or_not == 0){
-	
-	
-	cout << "" << endl;
-	cout << "According to Python..." << endl;
-	
-	cout << "" << endl;
-	cout << "Zdeclination is: ";
-	cout << Zdec;
-	cout << " degrees North" << endl;
-	cout << "Zright ascension is: ";
-	cout << Zra;
-	cout << " degrees East" << endl;
-	
-}
-	
-		
-	std::string myZProse(Zgalon_data);
-	std::istringstream iss(myZProse);
-	std::string Ztoken3;
-	string Zcondiments[3];
-	int Zp = 0;
-	while(getline(iss, Ztoken3, ':'))
-	{
-		Zcondiments[Zp] = Ztoken3;
-		Zp = Zp+1;
-	}
-	string Zstring_galon_hours = Zcondiments[0];
-	double Zgalon_hours = ::atof(Zstring_galon_hours.c_str());
-	string Zstring_galon_minutes = Zcondiments[1];
-	double Zgalon_minutes = ::atof(Zstring_galon_minutes.c_str());
-	string Zstring_galon_seconds = Zcondiments[2];
-	double Zgalon_seconds = ::atof(Zstring_galon_seconds.c_str());
-	Zgalon = Zgalon_hours + (Zgalon_minutes/60.0) + (Zgalon_seconds/3600.0);
-	if (Zgalon < 0){
-		Zgalon = Zgalon_hours - (Zgalon_minutes/60.0) - (Zgalon_seconds/3600.0);
-	}
-	std::string myZEpistle(Zgalat_data);
-	std::istringstream itt(myZEpistle);
-	std::string Ztoken4;
-	string Zcompliments[3];
-	int Zq = 0;
-	while(getline(itt, Ztoken4, ':'))
-	{
-		Zcompliments[Zq] = Ztoken4;
-		Zq = Zq+1;
-	}
-	string Zstring_galat_degrees = Zcompliments[0];
-	double Zgalat_degrees = ::atof(Zstring_galat_degrees.c_str());
-	string Zstring_galat_arcminutes = Zcompliments[1];
-	double Zgalat_arcminutes = ::atof(Zstring_galat_arcminutes.c_str());
-	string Zstring_galat_arcseconds = Zcompliments[2];
-	double Zgalat_arcseconds = ::atof(Zstring_galat_arcseconds.c_str());
-	Zgalat = Zgalat_degrees + (Zgalat_arcminutes/60.0) + (Zgalat_arcseconds/3600.0);
-	if (Zgalat < 0){
-		Zgalat = Zgalat_degrees - (Zgalat_arcminutes/60.0) - (Zgalat_arcseconds/3600.0);
-	}
-	
-if(test_or_not == 0){
-	
-	
-	cout << "" << endl;
-	cout << "Zgalactic latitude is: ";
-	cout << Zgalat;
-	cout << " degrees North" << endl;
-	cout << "Zgalactic longitude is: ";
-	cout << Zgalon;
-	cout << " degrees East" << endl;
-	
-}
-		
-	//Now its time we do the same for the Y pointing direction.
-
-
-	std::string myYProse_e(Yra_data);
-	std::istringstream ihh(myYProse_e);
-	std::string Ytoken3_e;
-	string Ycondiments_e[3];
-	int Yp_e = 0;
-	while(getline(ihh, Ytoken3_e, ':'))
-	{
-		Ycondiments_e[Yp_e] = Ytoken3_e;
-		Yp_e = Yp_e+1;
-	}
-	string Ystring_ra_hours = Ycondiments_e[0];
-	double Yra_hours = ::atof(Ystring_ra_hours.c_str());
-	string Ystring_ra_minutes = Ycondiments_e[1];
-	double Yra_minutes = ::atof(Ystring_ra_minutes.c_str());
-	string Ystring_ra_seconds = Ycondiments_e[2];
-	double Yra_seconds = ::atof(Ystring_ra_seconds.c_str());
-	Yra = (Yra_hours + (Yra_minutes/60.0) + (Yra_seconds/3600.0))*15;
-
-
-	std::string myYEpistle_e(Ydec_data);
-	std::istringstream ijj(myYEpistle_e);
-	std::string Ytoken4_e;
-	string Ycompliments_e[3];
-	int Yq_e = 0;
-	while(getline(ijj, Ytoken4_e, ':'))
-	{
-		Ycompliments_e[Yq_e] = Ytoken4_e;
-		Yq_e = Yq_e+1;
-	}
-	string Ystring_dec_degrees = Ycompliments_e[0];
-	double Ydec_degrees = ::atof(Ystring_dec_degrees.c_str());
-	string Ystring_dec_arcminutes = Ycompliments_e[1];
-	double Ydec_arcminutes = ::atof(Ystring_dec_arcminutes.c_str());
-	string Ystring_dec_arcseconds = Ycompliments_e[2];
-	double Ydec_arcseconds = ::atof(Ystring_dec_arcseconds.c_str());
-	Ydec = Ydec_degrees + (Ydec_arcminutes/60.0) + (Ydec_arcseconds/3600.0);
-	if (Ydec < 0){
-		Ydec = Ydec_degrees - (Ydec_arcminutes/60.0) - (Ydec_arcseconds/3600.0);
-	}
-	
-if(test_or_not == 0){
-	
-	
-	cout << "" << endl;
-	cout << "Ydeclination is: ";
-	cout << Ydec;
-	cout << " degrees North" << endl;
-	cout << "Yright ascension is: ";
-	cout << Yra;
-	cout << " degrees East" << endl;
-
-}
-
-
-	std::string myYProse(Ygalon_data);
-	std::istringstream iuu(myYProse);
-	std::string Ytoken3;
-	string Ycondiments[3];
-	int Yp = 0;
-	while(getline(iuu, Ytoken3, ':'))
-	{
-		Ycondiments[Yp] = Ytoken3;
-		Yp = Yp+1;
-	}
-	string Ystring_galon_hours = Ycondiments[0];
-	double Ygalon_hours = ::atof(Ystring_galon_hours.c_str());
-	string Ystring_galon_minutes = Ycondiments[1];
-	double Ygalon_minutes = ::atof(Ystring_galon_minutes.c_str());
-	string Ystring_galon_seconds = Ycondiments[2];
-	double Ygalon_seconds = ::atof(Ystring_galon_seconds.c_str());
-	Ygalon = Ygalon_hours + (Ygalon_minutes/60.0) + (Ygalon_seconds/3600.0);
-	if (Ygalon < 0){
-		Ygalon = Ygalon_hours - (Ygalon_minutes/60.0) - (Ygalon_seconds/3600.0);
-	}
-	std::string myYEpistle(Ygalat_data);
-	std::istringstream ivv(myYEpistle);
-	std::string Ytoken4;
-	string Ycompliments[3];
-	int Yq = 0;
-	while(getline(ivv, Ytoken4, ':'))
-	{
-		Ycompliments[Yq] = Ytoken4;
-		Yq = Yq+1;
-	}
-	string Ystring_galat_degrees = Ycompliments[0];
-	double Ygalat_degrees = ::atof(Ystring_galat_degrees.c_str());
-	string Ystring_galat_arcminutes = Ycompliments[1];
-	double Ygalat_arcminutes = ::atof(Ystring_galat_arcminutes.c_str());
-	string Ystring_galat_arcseconds = Ycompliments[2];
-	double Ygalat_arcseconds = ::atof(Ystring_galat_arcseconds.c_str());
-	Ygalat = Ygalat_degrees + (Ygalat_arcminutes/60.0) + (Ygalat_arcseconds/3600.0);
-	if (Ygalat < 0){
-		Ygalat = Ygalat_degrees - (Ygalat_arcminutes/60.0) - (Ygalat_arcseconds/3600.0);
-	}
-	
-	if(test_or_not == 0){
-	
-	
-	cout << "" << endl;
-	cout << "Ygalactic latitude is: ";
-	cout << Ygalat;
-	cout << " degrees North" << endl;
-	cout << "Ygalactic longitude is: ";
-	cout << Ygalon;
-	cout << " degrees East" << endl;
-	
-}
-
-	//Okay, again, same deal here except this time for the X pointing direction.
-
-
-	std::string myXProse_e(Xra_data);
-	std::istringstream ikk(myXProse_e);
-	std::string Xtoken3_e;
-	string Xcondiments_e[3];
-	int Xp_e = 0;
-	while(getline(ikk, Xtoken3_e, ':'))
-	{
-		Xcondiments_e[Xp_e] = Xtoken3_e;
-		Xp_e = Xp_e+1;
-	}
-	string Xstring_ra_hours = Xcondiments_e[0];
-	double Xra_hours = ::atof(Xstring_ra_hours.c_str());
-	string Xstring_ra_minutes = Xcondiments_e[1];
-	double Xra_minutes = ::atof(Xstring_ra_minutes.c_str());
-	string Xstring_ra_seconds = Xcondiments_e[2];
-	double Xra_seconds = ::atof(Xstring_ra_seconds.c_str());
-	Xra = (Xra_hours + (Xra_minutes/60.0) + (Xra_seconds/3600.0))*15;
-
-
-	std::string myXEpistle_e(Xdec_data);
-	std::istringstream ill(myXEpistle_e);
-	std::string Xtoken4_e;
-	string Xcompliments_e[3];
-	int Xq_e = 0;
-	while(getline(ill, Xtoken4_e, ':'))
-	{
-		Xcompliments_e[Xq_e] = Xtoken4_e;
-		Xq_e = Xq_e+1;
-	}
-	string Xstring_dec_degrees = Xcompliments_e[0];
-	double Xdec_degrees = ::atof(Xstring_dec_degrees.c_str());
-	string Xstring_dec_arcminutes = Xcompliments_e[1];
-	double Xdec_arcminutes = ::atof(Xstring_dec_arcminutes.c_str());
-	string Xstring_dec_arcseconds = Xcompliments_e[2];
-	double Xdec_arcseconds = ::atof(Xstring_dec_arcseconds.c_str());
-	Xdec = Xdec_degrees + (Xdec_arcminutes/60.0) + (Xdec_arcseconds/3600.0);
-	if (Xdec < 0){
-		Xdec = Xdec_degrees - (Xdec_arcminutes/60.0) - (Xdec_arcseconds/3600.0);
-	}
-	
-	if(test_or_not == 0){
-		
-		
-	cout << "" << endl;
-	cout << "Xdeclination is: ";
-	cout << Xdec;
-	cout << " degrees North" << endl;
-	cout << "Xright ascension is: ";
-	cout << Xra;
-	cout << " degrees East" << endl;
-
-}
-
-
-	std::string myXProse(Xgalon_data);
-	std::istringstream iyy(myXProse);
-	std::string Xtoken3;
-	string Xcondiments[3];
-	int Xp = 0;
-	while(getline(iyy, Xtoken3, ':'))
-	{
-		Xcondiments[Xp] = Xtoken3;
-		Xp = Xp+1;
-	}
-	string Xstring_galon_hours = Xcondiments[0];
-	double Xgalon_hours = ::atof(Xstring_galon_hours.c_str());
-	string Xstring_galon_minutes = Xcondiments[1];
-	double Xgalon_minutes = ::atof(Xstring_galon_minutes.c_str());
-	string Xstring_galon_seconds = Xcondiments[2];
-	double Xgalon_seconds = ::atof(Xstring_galon_seconds.c_str());
-	Xgalon = Xgalon_hours + (Xgalon_minutes/60.0) + (Xgalon_seconds/3600.0);
-	if (Xgalon < 0){
-		Xgalon = Xgalon_hours - (Xgalon_minutes/60.0) - (Xgalon_seconds/3600.0);
-	}
-	std::string myXEpistle(Xgalat_data);
-	std::istringstream izz(myXEpistle);
-	std::string Xtoken4;
-	string Xcompliments[3];
-	int Xq = 0;
-	while(getline(izz, Xtoken4, ':'))
-	{
-		Xcompliments[Xq] = Xtoken4;
-		Xq = Xq+1;
-	}
-	string Xstring_galat_degrees = Xcompliments[0];
-	double Xgalat_degrees = ::atof(Xstring_galat_degrees.c_str());
-	string Xstring_galat_arcminutes = Xcompliments[1];
-	double Xgalat_arcminutes = ::atof(Xstring_galat_arcminutes.c_str());
-	string Xstring_galat_arcseconds = Xcompliments[2];
-	double Xgalat_arcseconds = ::atof(Xstring_galat_arcseconds.c_str());
-	Xgalat = Xgalat_degrees + (Xgalat_arcminutes/60.0) + (Xgalat_arcseconds/3600.0);
-	if (Xgalat < 0){
-		Xgalat = Xgalat_degrees - (Xgalat_arcminutes/60.0) - (Xgalat_arcseconds/3600.0);
-	}
-	
-	if(test_or_not == 0){
-	
-	
-	cout << "" << endl;
-	cout << "Xgalactic latitude is: ";
-	cout << Xgalat;
-	cout << " degrees North" << endl;
-	cout << "Xgalactic longitude is: ";
-	cout << Xgalon;
-	cout << " degrees East" << endl;
-
-}
-	
-}	
 	
 ////////////////////////////////////////////////////////////////////////////
 
@@ -1402,15 +852,7 @@ if(test_or_not == 0){
 	
 		
 
-	//Alright, here comes the moment of truth. Now we take everything we just recorded about our aspect
-	//information and save it all into an MNCTAspect object.
 
-	if (GPS_or_magnetometer == 0){
-		Aspect->SetGPS_Or_Magnetometer(0);
-	}
-	if (GPS_or_magnetometer == 1){
-		Aspect->SetGPS_Or_Magnetometer(1);
-	}
 	
 	
 	
@@ -1442,12 +884,14 @@ if(test_or_not == 0){
 	//what we talked about. Our "altitudes" are saved as "elevations" in the 	
 	//MNCTAspect object.
 
-	//Okay, we're good. Our MNCTAspect object has basically all we need, so now we add it to our m_Aspects
+	//Okay, we're good. Our MNCTAspect object has basically all we need, so now we add it to our m_Aspects_GPS or m_Aspects_Magnetomter
 	//vector and we're done, right? Yeah, we wish...
 
-	m_Aspects.push_back(Aspect);
 
-	//So, we still need to sort our vector after we add something to it:
+if (GPS_or_magnetometer == 0){
+
+	m_Aspects_GPS.push_back(Aspect);
+		//So, we still need to sort our vector after we add something to it:
 
 
 	//Ares had this, which leaks memory:
@@ -1466,15 +910,38 @@ if(test_or_not == 0){
 
 	//i redefined the sort function at the bottom of the file
 
+	sort(m_Aspects_GPS.begin(), m_Aspects_GPS.end(), MTimeSort);
+}
 
 
-	sort(m_Aspects.begin(), m_Aspects.end(), MTimeSort);
+if (GPS_or_magnetometer == 1){
+
+	m_Aspects_Magnetometer.push_back(Aspect);
+		//So, we still need to sort our vector after we add something to it:
+
+
+	//Ares had this, which leaks memory:
+	/*
+	struct less_than_m_Time{
+		inline bool operator() (MNCTAspect* MNCTAspect1 = new MNCTAspect, MNCTAspect* MNCTAspect2 = new MNCTAspect){
+			return (MNCTAspect1->GetTime() < MNCTAspect2->GetTime());
+	uint64_t int_ClkSeconds = (PacketA.CorrectedClk/10000000) * 10000000;
+	double ClkSeconds = (double) int_ClkSeconds;
+	uint64_t int_ClkNanoseconds = PacketA.CorrectedClk % 10000000;
+	double ClkNanoseconds = ((double) int_ClkNanoseconds) *100.0; //clock board ticks are in units of 100 ns
+
+		}
+	};
+	*/
+
+	//i redefined the sort function at the bottom of the file
+
+	sort(m_Aspects_Magnetometer.begin(), m_Aspects_Magnetometer.end(), MTimeSort);
+
+}
+		
+	
 	return true;
-
-
-
-
-
 
 
 
@@ -1631,18 +1098,7 @@ if(test_or_not == 0){
 	
 	
 	
-	
-	
-	
-	
-	
-	
 }
-
-
-
-
-
 
 
 
@@ -1658,18 +1114,23 @@ if(test_or_not == 0){
   function (more on that function later) except that if it is unable to find good GPS data for a given
   time it will try to find good magnetometer data instead.*/
 
-MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime){
+MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnetometer){
 
 	MNCTAspect* ReqAspect = 0;
 
+if(GPS_Or_Magnetometer == 0){
+
+
+
+
 	//check that there are aspect packets 
-	if( m_Aspects.size() == 0 ){
+	if( m_Aspects_GPS.size() == 0 ){
 		return 0;
 	}
 
 	//first need to check that event time is not older than the oldest Aspect we have
 	//otherwise events won't get popped off of m_Events, since the first event will never get aspect info
-	if( ReqTime < m_Aspects.front()->GetTime() ){
+	if( ReqTime < m_Aspects_GPS.front()->GetTime() ){
 		//return an aspect that has a time of -1
 		MNCTAspect* BadAspect = new MNCTAspect();
 		BadAspect->SetTime( (double) -1.0 );
@@ -1678,22 +1139,65 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime){
 
 	//now check if event time is newer than the newest aspect ... if it is, then return null, we
 	//need to wait for the newest aspect info to comein
-	if( ReqTime > m_Aspects.back()->GetTime() ){
+	if( ReqTime > m_Aspects_GPS.back()->GetTime() ){
 		return 0;
 	}
 
 	//this loop will only go if there are at least 2 aspects 
-	for( int i = m_Aspects.size()-2; i > -1; --i ){
-		if( ReqTime > m_Aspects[i]->GetTime() ){ //found the lower bracketing value
-			if( (ReqTime - m_Aspects[i]->GetTime()) <= (m_Aspects[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
-				ReqAspect = m_Aspects[i];
+	for( int i = m_Aspects_GPS.size()-2; i > -1; --i ){
+		if( ReqTime > m_Aspects_GPS[i]->GetTime() ){ //found the lower bracketing value
+			if( (ReqTime - m_Aspects_GPS[i]->GetTime()) <= (m_Aspects_GPS[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
+				ReqAspect = m_Aspects_GPS[i];
 				break;
 			} else {
-				ReqAspect = m_Aspects[i+1];
+				ReqAspect = m_Aspects_GPS[i+1];
 				break;
 			}
 		}
 	}
+
+}
+
+if(GPS_Or_Magnetometer == 1){
+
+
+
+
+	//check that there are aspect packets 
+	if( m_Aspects_Magnetometer.size() == 0 ){
+		return 0;
+	}
+
+	//first need to check that event time is not older than the oldest Aspect we have
+	//otherwise events won't get popped off of m_Events, since the first event will never get aspect info
+	if( ReqTime < m_Aspects_Magnetometer.front()->GetTime() ){
+		//return an aspect that has a time of -1
+		MNCTAspect* BadAspect = new MNCTAspect();
+		BadAspect->SetTime( (double) -1.0 );
+		return BadAspect;
+	}
+
+	//now check if event time is newer than the newest aspect ... if it is, then return null, we
+	//need to wait for the newest aspect info to comein
+	if( ReqTime > m_Aspects_Magnetometer.back()->GetTime() ){
+		return 0;
+	}
+
+	//this loop will only go if there are at least 2 aspects 
+	for( int i = m_Aspects_Magnetometer.size()-2; i > -1; --i ){
+		if( ReqTime > m_Aspects_Magnetometer[i]->GetTime() ){ //found the lower bracketing value
+			if( (ReqTime - m_Aspects_Magnetometer[i]->GetTime()) <= (m_Aspects_Magnetometer[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
+				ReqAspect = m_Aspects_Magnetometer[i];
+				break;
+			} else {
+				ReqAspect = m_Aspects_Magnetometer[i+1];
+				break;
+			}
+		}
+	}
+
+}
+
 
 
 	//if there is a flag for bad aspect, then still return the aspect.  the calling thread should check 
@@ -1780,6 +1284,9 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect_ares(MTime Time){
 */
 //Okay, here's that GetAspectGPS() function we were talking about.
 
+
+/*
+
 MNCTAspect* MNCTAspectReconstruction::GetAspectGPS(MTime Time){
 	MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
 	MNCTAspect* Desired_Candidate_MNCTAspect = new MNCTAspect();
@@ -1850,12 +1357,15 @@ MNCTAspect* MNCTAspectReconstruction::GetAspectMagnetometer(MTime Time){
 	return Desired_MNCTAspect;
 }
 
+*/
+
 /*This function, GetPreviousGPS(), was not created for the purposes of being used by people as it will 
   give you the previous GPS aspect data even it is bad data. The purpose of this function is to be used
   by the main chunk of this file to check and see if a piece of data should recieve a flag. Specifically,
   this function is used to retrieve old Aspect data to compare it to Aspect data being inspected for 
   flagging.*/
 
+/*
 
 MNCTAspect* MNCTAspectReconstruction::GetPreviousGPS(MTime Time){
 	MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
@@ -1929,7 +1439,7 @@ MNCTAspect* MNCTAspectReconstruction::GetPreviousMagnetometer(MTime Time){
 
 
 
-
+*/
 
 
 

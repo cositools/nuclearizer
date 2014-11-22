@@ -62,6 +62,7 @@ NUCLEARIZERCXX = src/MAssembly.cxx
 
 # The nuclearizer library
 NUCLEARIZERLIBS = \
+$(LB)/magfld.o \
 $(LB)/MReadOutAssembly.o \
 $(LB)/MNCTArray.o \
 $(LB)/MNCTCoincidenceVolume.o \

@@ -50,7 +50,7 @@ class MNCTAspectReconstruction
 
   //! Get the aspect for the given time, return 0 if we do not have enough data for the given time
   MNCTAspect* GetAspect_ares(MTime Time);
-  MNCTAspect* GetAspect(MTime Time);
+  MNCTAspect* GetAspect(MTime Time, int GPS_Or_Magnetometer = 0);
   
   
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,8 +119,9 @@ double Vincenty(double old_glat, double new_glat, double old_glon, double new_gl
 
   // private members:
  private:
-  //! Internal list of reconstructed aspects
-  deque<MNCTAspect*> m_Aspects;
+  //! Internal lists of reconstructed aspects
+  deque<MNCTAspect*> m_Aspects_GPS;
+  deque<MNCTAspect*> m_Aspects_Magnetometer;
 
 
 #ifdef ___CINT___

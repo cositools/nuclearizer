@@ -80,7 +80,7 @@ const MNCTAspect& MNCTAspect::operator= (const MNCTAspect& A)
 { 
   m_Time = A.m_Time;
   m_Flag = A.m_Flag;
-  m_GPS_Or_Magnetometer = A.m_GPS_Or_Magnetometer;
+
   
   m_Heading = A.m_Heading;
   m_Pitch = A.m_Pitch;
@@ -127,8 +127,7 @@ void MNCTAspect::Clear()
   m_Pitch = 0;
   m_Roll = 0;
 
-  m_GPS_Or_Magnetometer = 0;
-    
+
   
   //Ares' adjustments end here.
   

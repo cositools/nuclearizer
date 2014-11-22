@@ -63,10 +63,7 @@ class MNCTAspect
   void SetFlag(int fla) { m_Flag = fla; }
   //! Get the m_GPS_or_magnetometer
   int GetFlag() const { return m_Flag; }
-  //! Set the m_GPS_or_magnetometer
-  void SetGPS_Or_Magnetometer(int GPS) { m_GPS_Or_Magnetometer = GPS; }
-  //! Get the m_GPS_or_magnetometer
-  int GetGPS_Or_Magnetometer() const { return m_GPS_Or_Magnetometer; }
+
  
   //! Set the heading
   void SetHeading(double hea) { m_Heading = hea; }
@@ -167,8 +164,7 @@ class MNCTAspect
   //! 0=No Problem;1=Data is not trustworthy.
   int m_Flag;
 
-  //! 0=GPS;1=magnetometer
-  int m_GPS_Or_Magnetometer;
+
 
   //! This heading is used to determine whether or not data should be flagged as untrustworthy.
   double m_Heading;
