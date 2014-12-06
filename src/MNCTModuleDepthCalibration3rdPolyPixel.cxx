@@ -147,7 +147,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
       temp << setw(2) << DetectorNumber;
       DetectorNumberString = temp.str();
     }
-    MString FileName = "$(NUCLEARIZER)/resource/calibration/COSI14/depth_3rdPoly_pixel_CC"+ DetectorNumberString + ".csv";
+    MString FileName = "$(NUCLEARIZER)/resource/calibration/COSI14/Antarctica/depth_3rdPoly_pixel_CC"+ DetectorNumberString + ".csv";
     MFile::ExpandFileName(FileName);
     
     // Reset flags telling if calibration has been loaded
@@ -163,8 +163,9 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     fstream File;
     File.open(FileName, ios_base::in);
     if (File.is_open() == false) {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to open file: "<<FileName<<endl
-      <<"   Is your NUCLEARIZER_CAL environment variable set?"<<endl;
+      //if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to open file: "<<FileName<<endl
+      cout<< "Error: Unable to open file: "<<FileName<<endl
+		<<"   Is your NUCLEARIZER_CAL environment variable set?"<<endl;
       return false;
     } else {
       MString Line;
@@ -181,20 +182,20 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
             //<< ctd2z0 << " " << ctd2z3 << " " << FWHM_positive << endl;
             
             m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][0] = ctd2z0;
-          m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][1] = ctd2z1;
-          m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][2] = ctd2z2;
-          m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][3] = ctd2z3;
-          m_Pixel_CTD_FWHM_Positive[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1] = FWHM_positive;
-          m_Pixel_CTD_FWHM_Negative[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1] = FWHM_negative;
-          m_IsCalibrationLoadedPixel[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1] = true;
-            }
+            m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][1] = ctd2z1;
+            m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][2] = ctd2z2;
+            m_Pixel_CTD2Depth[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1][3] = ctd2z3;
+            m_Pixel_CTD_FWHM_Positive[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1] = FWHM_positive;
+            m_Pixel_CTD_FWHM_Negative[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1] = FWHM_negative;
+            m_IsCalibrationLoadedPixel[DetectorNumber][PositiveStripNumber-1][NegativeStripNumber-1] = true;
+          }
         }
       }
     }  // done reading from file
     
     // check to see if all strips have been calibrated; load defaults if not
     m_IsCalibrationLoaded[DetectorNumber] = true;
-    //cout<<" Det #"<<DetectorNumber<<" is Calibrated?: "<<m_IsCalibrationLoaded[DetectorNumber]<<endl;
+    cout<<" Det #"<<DetectorNumber<<" is Calibrated?: "<<m_IsCalibrationLoaded[DetectorNumber]<<endl;
     for (int XStripNumber=1; XStripNumber<=37; XStripNumber++) {
       for (int YStripNumber=1; YStripNumber<=37; YStripNumber++) {
         if (m_IsCalibrationLoadedPixel[DetectorNumber][XStripNumber-1][YStripNumber-1] == false) {
@@ -266,86 +267,95 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
     MString DisplayName;
     
     //All of the "DetectorNumbers" within this file and elsewhere in Nuclearizer refer to CC #. When we call upon the geometry file later on here to determine the globale position of all the detector, we want to be calling the DetectorName not the CC #. Here is the conversion:
-    if (DetectorNumber == 0) {
-      DetectorName = "Detector4_CC00";
+    if (DetectorNumber == 3) {
+      DetectorName = "Detector3";
       DisplayID = 3;
       DisplayName = DetectorName + ": +x, -y, bottom";
     }
-    else if (DetectorNumber == 1) {
-      DetectorName = "Detector1_CC01";
+    else if (DetectorNumber == 0) {
+      DetectorName = "Detector0";
       DisplayID = 2;
       DisplayName = DetectorName + ": -x, -y, top";
     }
-    else if (DetectorNumber == 2) {
-      DetectorName = "Detector2_CC02";
+    else if (DetectorNumber == 1) {
+      DetectorName = "Detector1";
       DisplayID = 1;
       DisplayName = DetectorName + ": -x, -y, middle";
     }
-    else if (DetectorNumber == 3) {
-      DetectorName = "Detector3_CC03";
+    else if (DetectorNumber == 2) {
+      DetectorName = "Detector2";
       DisplayID = 0;
       DisplayName = DetectorName + ": -x, -y, bottom";
     }
-    else if (DetectorNumber == 4) {
-      DetectorName = "Detector6_CC04";
+    else if (DetectorNumber == 5) {
+      DetectorName = "Detector5";
       DisplayID = 5;
       DisplayName = DetectorName + ": +x, -y, top";
     }
-    else if (DetectorNumber == 5) {
-      DetectorName = "Detector7_CC05";
+    else if (DetectorNumber == 6) {
+      DetectorName = "Detector6";
       DisplayID = 8;
       DisplayName = DetectorName + ": +x, +y, top";
     }
-    else if (DetectorNumber == 6) {
-      DetectorName = "Detector5_CC06";
+    else if (DetectorNumber == 4) {
+      DetectorName = "Detector4";
       DisplayID = 4;
       DisplayName = DetectorName + ": +x, -y, middle";
     }
     else if (DetectorNumber == 7) {
-      DetectorName = "Detector8_CC07";
+      DetectorName = "Detector7";
       DisplayID = 7;
       DisplayName = DetectorName + ": +x, +y, middle";
     }
-    else if (DetectorNumber == 8) {
-      DetectorName = "Detector11_CC08";
+    else if (DetectorNumber == 10) {
+      DetectorName = "Detector10";
       DisplayID = 10;
       DisplayName = DetectorName + ": -x, +y, middle";
     }
-    else if (DetectorNumber == 9) {
-      DetectorName = "Detector12_CC09";
+    else if (DetectorNumber == 11) {
+      DetectorName = "Detector11";
       DisplayID = 11;
       DisplayName = DetectorName + ": -x, +y, top";
     }
-    else if (DetectorNumber == 10) {
-      DetectorName = "Detector9_CC10";
+    else if (DetectorNumber == 8) {
+      DetectorName = "Detector8";
       DisplayID = 6;
       DisplayName = DetectorName + ": +x, +y, bottom";
     }
-    else if (DetectorNumber == 11) {
-      DetectorName = "Detector10_CC11";
+    else if (DetectorNumber == 9) {
+      DetectorName = "Detector9";
       DisplayID = 9;
       DisplayName = DetectorName + ": -x, +y, bottom";
     }
+
+	//if (DetectorNumber == 1 || DetectorNumber == 2 || DetectorNumber == 3) {
     
     if ( (NStripHits == 2) && (NXStripHits == 1) && (NYStripHits == 1) ) {
-      Flag_CanBeCalibrated = 1;
+      //Flag_CanBeCalibrated = 1;
       SHX = H->GetStripHit(0);
       SHY = H->GetStripHit(1);
       if ( !SHX->IsXStrip() ) {
         SHX = H->GetStripHit(1);
         SHY = H->GetStripHit(0);
       }
-      
-      XStripNumber = SHX->GetStripID();
-      YStripNumber = SHY->GetStripID();
-      XTiming = SHX->GetTiming();
-      YTiming = SHY->GetTiming();
-      SingleHitNumber++;
-      //cout<<"EventID, "<<Event->GetID()<<"Single Hit, "<<SingleHitNumber<<endl;
-      EventTypeFlag0=1;
-    } else if (( (NStripHits == 3) && (((NXStripHits == 1)&&(NYStripHits == 2)) ||
-      ((NXStripHits == 2)&&(NYStripHits == 1))) ) ||
-      ((NStripHits == 4) && (NXStripHits == 2) && (NYStripHits == 2))) { 
+	  
+      //Check to make sure each strip has timing:
+	  if (SHX->GetTiming() != 0 || SHY->GetTiming() != 0) {
+        Flag_CanBeCalibrated = 1;
+        
+        XStripNumber = SHX->GetStripID();
+        YStripNumber = SHY->GetStripID();
+        XTiming = SHX->GetTiming();
+        YTiming = SHY->GetTiming();
+        SingleHitNumber++;
+        //cout<<"EventID, "<<Event->GetID()<<"Single Hit, "<<SingleHitNumber<<endl;
+        EventTypeFlag0=1;
+	  } else {
+		Flag_CanBeCalibrated = 0;
+	  }
+
+
+    } else if (( (NStripHits == 3) && (((NXStripHits == 1)&&(NYStripHits == 2)) || ((NXStripHits == 2)&&(NYStripHits == 1))) ) || ((NStripHits == 4) && (NXStripHits == 2) && (NYStripHits == 2))) { 
       
     int i_sxhit=0;
     int i_syhit=0;
@@ -359,23 +369,31 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         Tmp_XStrip[i_sxhit] = H->GetStripHit(i_s_hit)->GetStripID();
         if (g_Verbosity >= c_Info) cout<<"XStrip:"<<Tmp_XStrip[i_sxhit]<<", ENERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()<<", Tmp_E:"<<Tmp_XEnergy<<endl;
         if ( Tmp_XEnergy < H->GetStripHit(i_s_hit)->GetEnergy() ){
-          Tmp_XEnergy = H->GetStripHit(i_s_hit)->GetEnergy();
-          XTiming = H->GetStripHit(i_s_hit)->GetTiming();
-          XStripNumber=Tmp_XStrip[i_sxhit];
+	      Tmp_XEnergy = H->GetStripHit(i_s_hit)->GetEnergy();
+
+		  if (H->GetStripHit(i_s_hit)->GetTiming() != 0) {
+            XTiming = H->GetStripHit(i_s_hit)->GetTiming();
+            XStripNumber=Tmp_XStrip[i_sxhit];
+	      }
         }
         i_sxhit++;
-      } else{
+      } else {
         Tmp_YStrip[i_syhit] = H->GetStripHit(i_s_hit)->GetStripID();
         //cout<<"YStrip:"<<Tmp_YStrip[i_syhit]<<",eNERGY:"<<H->GetStripHit(i_s_hit)->GetEnergy()
         //    <<",Tmp_E:"<<Tmp_YEnergy<<endl;
         if ( Tmp_YEnergy < H->GetStripHit(i_s_hit)->GetEnergy() ){
           Tmp_YEnergy = H->GetStripHit(i_s_hit)->GetEnergy();
-          YTiming = H->GetStripHit(i_s_hit)->GetTiming();
-          YStripNumber=Tmp_YStrip[i_syhit];
+
+		  if (H->GetStripHit(i_s_hit)->GetTiming() != 0) {
+            YTiming = H->GetStripHit(i_s_hit)->GetTiming();
+            YStripNumber=Tmp_YStrip[i_syhit];
+		  }
         }
         i_syhit++;
       }
     }
+
+
     if (NXStripHits == 2 && NYStripHits== 1){
       if (((Tmp_XStrip[0]-Tmp_XStrip[1])==1) || ((Tmp_XStrip[0]-Tmp_XStrip[1])==-1)){
         Flag_CanBeCalibrated = 2;
@@ -411,6 +429,14 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         //cout<<"EventID,"<<Event->GetID()<<"Other Hit,"<<OtherHitNumber<<endl;
       }
       
+	//} else {
+	//	Flag_CanBeCalibrated = 0;
+	//}
+
+    //Not sure why this happens yet, but sometimes we get strip hits when the Strip number is 0...
+	if (XStripNumber < 1 || XStripNumber > 37 || YStripNumber < 1 || YStripNumber > 37 ) {
+		Flag_CanBeCalibrated = 0;
+	}
       // Require 2 strip hits: 1 X strip and 1 Y strip
       //if ( (NStripHits == 2) && (NXStripHits == 1) && (NYStripHits == 1) ) 
       if (Flag_CanBeCalibrated == 1 || Flag_CanBeCalibrated == 2) {
@@ -439,8 +465,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         
         //cout << "Depth?! = "<< depth<<endl;
         //m_ExpoDepthCalibration->AddDepth(DisplayID, depth);
-        //m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
-        
+        //m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);               
         //The depth is the distance from the negative side, not always from front.
         //The negative side on D9 and D7 are at back, near dewar.
         
@@ -460,7 +485,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
           cout<<"!!!!!!!!!!!!!!!!!!! SWITCH !!!!!!!!!!!!!!!!!!!!"<<endl;
         }
         */
-        Z_Front = 1.5 - depth;
+        Z_Front = depth;
         //m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
         //m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
         
@@ -502,6 +527,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         double X_Middle = ((double)XStripNumber - 19.0)*0.2;
         double Y_Middle = ((double)YStripNumber - 19.0)*0.2;
         
+		//cout<<"X_Middle: "<<X_Middle<<", Y_Middle: "<<Y_Middle<<", Z_Middle: "<<Z_Middle<<endl;
+		
         // Set depth and depth resolution for the hit, relative to the center of the detector volume
         MVector PositionInDetector(X_Middle, Y_Middle, Z_Middle);
         //MVector PositionResolution(2.0/2.35, 2.0/2.35, Z_FWHM/2.35);
