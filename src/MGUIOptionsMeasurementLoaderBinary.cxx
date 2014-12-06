@@ -73,6 +73,12 @@ void MGUIOptionsMeasurementLoaderBinary::Create()
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
+  m_DataMode = new MGUIERBList(m_OptionsFrame, "Choose the data to look at: ");
+  m_DataMode->Add("Raw mode");
+  m_DataMode->Add("Compton mode");
+  m_DataMode->SetSelected((int) dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetDataSelectionMode());
+  m_DataMode->Create();
+  m_OptionsFrame->AddFrame(m_DataMode, LabelLayout);
   
   PostCreate();
 }
@@ -118,6 +124,14 @@ bool MGUIOptionsMeasurementLoaderBinary::OnApply()
 
   dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 	
+  if (m_DataMode->GetSelected() == 0) {
+    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);     
+  } else if (m_DataMode->GetSelected() == 1) {
+    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Compton);     
+  } else if (m_DataMode->GetSelected() == 2) {
+    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_All);     
+  }
+
 	return true;
 }
 

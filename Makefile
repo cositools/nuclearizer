@@ -45,7 +45,7 @@ MAKEFLAGS += --no-builtin-rules
 CMD=""
 CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
 # Comment this line out if you want to accept warnings
-CXXFLAGS += -Werror -Wno-unused-variable
+#CXXFLAGS += -Werror -Wno-unused-variable
 
 # Python
 ifeq ($(ARCH),macosx)

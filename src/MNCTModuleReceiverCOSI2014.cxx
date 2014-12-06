@@ -164,9 +164,9 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
       ++Wait;
       gSystem->ProcessEvents();
       if (Wait < 10) {
-        gSystem->Sleep(100);
-      } else {
         gSystem->Sleep(1000);
+      } else {
+        gSystem->Sleep(10000);
       }
       // Need a timeout here
       if (Timeout < 16) Timeout *= 1.5;
@@ -229,14 +229,13 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
   
   if (m_Interrupt == true) return false;
   
-  
   cout<<"Handshake: Connecting to receiver "<<m_LocalReceivingHostName<<":"<<m_LocalReceivingPort<<endl;
   // Set up the transceiver and connect:
   delete m_Receiver;
   m_Receiver = new MTransceiverTcpIpBinary("Final receiver", m_LocalReceivingHostName, m_LocalReceivingPort);
   m_Receiver->SetVerbosity(3);
   m_Receiver->SetMaximumBufferSize(100000000);
-  m_Receiver->RequestClient();
+  m_Receiver->RequestClient(true);
   m_Receiver->Connect(true, 10);
   
   return true;

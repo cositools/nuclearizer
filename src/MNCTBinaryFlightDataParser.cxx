@@ -179,7 +179,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 		switch( Type ){
 			case 0x00:
 				//raw dataframe
-				if( m_UseRawDataframes ){
+				if( m_DataSelectionMode == MNCTBinaryFlightDataParserDataModes::c_Raw ){
 					Dataframe = new dataframe();
 					ParseErr = RawDataframe2Struct( NextPacket, Dataframe );
 					if( ParseErr >= 0 ){
@@ -191,13 +191,13 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					//cout<<"made "<<NewEvents.size()<<" MReadOutAssemblys"<<endl;
 					delete Dataframe;
 					m_NumRawDataBytes += NextPacket.size();
-					//cout<<"NumRawDataBytes "<<m_NumRawDataBytes<<endl;
+					cout<<"NumRawDataBytes "<<m_NumRawDataBytes<<endl;
 					m_NumRawDataframes++;
 				}
 				break;
 			case 0x01:
 				//compton dataframe
-				if( m_UseComptonDataframes ){
+				if( m_DataSelectionMode == MNCTBinaryFlightDataParserDataModes::c_Compton ){
 					//convert to dataframe class
 					//cout<<"got compton dataframe!"<<endl;
 					Dataframe = new dataframe();

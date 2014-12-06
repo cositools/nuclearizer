@@ -30,6 +30,7 @@
 #include "MGlobal.h"
 #include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
+#include "MGUIERBList.h"
 
 // Nuclearizer libs:
 #include "MModule.h"
@@ -70,6 +71,7 @@ class MGUIOptionsMeasurementLoaderBinary : public MGUIOptions
  private:
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
+  MGUIERBList* m_DataMode;
 
 
 #ifdef ___CINT___
