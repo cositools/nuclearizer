@@ -235,6 +235,11 @@ bool MNCTModuleMeasurementLoaderBinary::ReadXmlConfiguration(MXmlNode* Node)
   if (FileNameNode != 0) {
     m_FileName = FileNameNode->GetValueAsString();
   }
+  
+  MXmlNode* DataSelectionModeNode = Node->GetNode("DataSelectionMode");
+  if (DataSelectionModeNode != 0) {
+    m_DataSelectionMode = (MNCTBinaryFlightDataParserDataModes) DataSelectionModeNode->GetValueAsInt();
+  }
 
   return true;
 }
@@ -249,6 +254,7 @@ MXmlNode* MNCTModuleMeasurementLoaderBinary::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
   new MXmlNode(Node, "FileName", m_FileName);
+  new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
   
   return Node;
 }

@@ -522,7 +522,7 @@ bool MNCTModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* DataSelectionModeNode = Node->GetNode("DataSelectionMode");
   if (DataSelectionModeNode != 0) {
-    m_DataSelectionMode = (MNCTBinaryFlightDataParserDataModes) LocalReceivingHostNameNode->GetValueAsInt();
+    m_DataSelectionMode = (MNCTBinaryFlightDataParserDataModes) DataSelectionModeNode->GetValueAsInt();
   }
   
 
