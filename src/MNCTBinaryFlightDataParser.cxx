@@ -120,6 +120,10 @@ bool MNCTBinaryFlightDataParser::Initialize()
   m_NumAspectPackets = 0;
   m_NumOtherPackets = 0;
 
+  LastTimestamps.clear();
+  LastTimestamps.resize(12);
+  dx = 0;
+
   m_EventIDCounter = 0;
   m_LastCorrectedClk = 0xffffffffffffffff;
   
