@@ -115,6 +115,19 @@ bool MNCTBinaryFlightDataParser::Initialize()
 {
   // Initialize the module 
 
+  m_NumRawDataframes = 0;
+  m_NumComptonDataframes = 0;
+  m_NumAspectPackets = 0;
+  m_NumOtherPackets = 0;
+
+  m_EventIDCounter = 0;
+  m_LastCorrectedClk = 0xffffffffffffffff;
+  
+  m_NumDSOReceived = 0;
+  m_NumComptonBytes = 0;
+  m_NumBytesReceived = 0;
+  m_LostBytes = 0;
+  
   for (auto E: m_Events) {
     delete E;
   }
