@@ -938,6 +938,20 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 		if( E.TrigAndVetoInfo & 0x70 ){
 			NewEvent->SetVeto();
 		}
+
+		if( E.TrigAndVetoInfo & 0x10 ){
+			//had a guard ring 0 veto
+			NewEvent->SetGR0Veto(true);
+		}
+
+		if( E.TrigAndVetoInfo & 0x20 ){
+			NewEvent->SetGR1Veto(true);
+		}
+
+		if( E.TrigAndVetoInfo & 0x40 ){
+			NewEvent->SetShieldVeto(true);
+		}
+
 		CEvents->push_back(NewEvent);
 
 		//set the MJD only when there is aspect info

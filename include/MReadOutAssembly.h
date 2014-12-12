@@ -89,6 +89,21 @@ class MReadOutAssembly
   //! Return the veto flag
   bool GetVeto() const { return m_Veto; }
 
+  //! Set the guard ring 0 veto flag
+  void SetGR0Veto(bool Veto = true) { m_VetoGR0 = Veto; }
+  //! Get the guard ring 0 veto flag
+  bool GetGR0Veto() const { return m_VetoGR0; }
+
+  //! Set the guard ring 1 veto flag
+  void SetGR1Veto(bool Veto = true) { m_VetoGR1 = Veto; }
+  //! Get the guard ring 1 veto flag
+  bool GetGR1Veto() const { return m_VetoGR1; }
+
+  //! Set the shield veto flag
+  void SetShieldVeto(bool Veto = true) { m_VetoShield = Veto; }
+  //! Get the shield veto flag
+  bool GetShieldVeto() const { return m_VetoShield; }
+
   //! Set the triggered flag
   void SetTrigger(bool Trigger = true) { m_Trigger = Trigger; }
   //! Return the trigger flag
@@ -230,6 +245,15 @@ class MReadOutAssembly
 
   //! Veto flag of this event
   bool m_Veto;
+
+  //! Guard ring 0 veto flag
+  bool m_VetoGR0;
+
+  //! Guard ring 1 veto flag
+  bool m_VetoGR1;
+
+  //! Shield veto flag
+  bool m_VetoShield;
 
   //! Trigger flag of this event
   bool m_Trigger;
