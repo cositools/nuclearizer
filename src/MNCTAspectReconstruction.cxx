@@ -227,6 +227,13 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//add it to the magnetic heading to find and record the true heading, as promised:
 
 	double heading = magnetic_heading + magnetic_declination;
+	/*
+	heading += 180.0;
+	if( heading > 360.0 ){
+		heading -= 360.0;
+	}
+	*/
+
 
 	//Now, we record the pitch.	
 
@@ -358,10 +365,12 @@ if(test_or_not == 0){
 		Zpointing0[2][0] = -1.0;
 		
 		Ypointing0[0][0] = 0.0;
-		Ypointing0[1][0] = 1.0;
+		//Ypointing0[1][0] = 1.0;
+		Ypointing0[1][0] = -1.0;
 		Ypointing0[2][0] = 0.0;	
 		
-		Xpointing0[0][0] = -1.0;
+		//Xpointing0[0][0] = -1.0;
+		Xpointing0[0][0] = 1.0;
 		Xpointing0[1][0] = 0.0;
 		Xpointing0[2][0] = 0.0;
 

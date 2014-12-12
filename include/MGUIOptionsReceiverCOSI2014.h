@@ -78,6 +78,7 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
   //MGUIEEntry* m_SendToPort;
 
   MGUIERBList* m_DataMode;
+  MGUIERBList* m_AspectMode;
 
   //! Select if we save the file to roa
   MGUIEFileSelector* m_FileSelector;

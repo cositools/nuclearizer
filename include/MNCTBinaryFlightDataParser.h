@@ -40,6 +40,9 @@ using namespace std;
 //! The data modes: analyze raw events, Compton events, or all events
 enum class MNCTBinaryFlightDataParserDataModes : unsigned int { c_Raw = 0, c_Compton = 1, c_All = 2 };    
 
+//! Aspect modes... use the GPS, the magnetometer, or neither
+enum class MNCTBinaryFlightDataParserAspectModes : unsigned int {c_GPS = 0, c_Magnetometer, c_Neither};
+
   
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -57,6 +60,11 @@ class MNCTBinaryFlightDataParser
   MNCTBinaryFlightDataParserDataModes GetDataSelectionMode() const { return m_DataSelectionMode; }
   //! Set the data selection mode
   void SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes Mode) { m_DataSelectionMode = Mode; } 
+
+  //! Get the aspect mode
+  MNCTBinaryFlightDataParserAspectModes GetAspectMode() const { return m_AspectMode; }
+  //! Set the aspect mode
+  void SetAspectMode(MNCTBinaryFlightDataParserAspectModes Mode) { m_AspectMode = Mode; }
  
   //! Parse some data, return true if the module is ready to analyze events
   virtual bool ParseData(vector<uint8_t> Received) ;
@@ -82,6 +90,9 @@ class MNCTBinaryFlightDataParser
  protected:
   //! The data selection mode (raw, Compton, all)
   MNCTBinaryFlightDataParserDataModes m_DataSelectionMode;
+
+  //! The aspect mode (c_GPS, c_Magnetometer, c_Neither)
+  MNCTBinaryFlightDataParserAspectModes m_AspectMode;
 
   //! The internal event list - final merged events
   deque<MReadOutAssembly*> m_Events;

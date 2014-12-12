@@ -50,47 +50,47 @@ ClassImp(MNCTBinaryFlightDataParser)
 #endif
 
 
-////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////
 
 
-bool MReadOutAssemblyTimeCompare(MReadOutAssembly* E1, MReadOutAssembly* E2);
+	bool MReadOutAssemblyTimeCompare(MReadOutAssembly* E1, MReadOutAssembly* E2);
 
 
-////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////
 
 
 MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 {
-  // Construct an instance of MNCTBinaryFlightDataParser
+	// Construct an instance of MNCTBinaryFlightDataParser
 
-  m_DataSelectionMode = MNCTBinaryFlightDataParserDataModes::c_All;
+	m_DataSelectionMode = MNCTBinaryFlightDataParserDataModes::c_All;
 
-  m_UseComptonDataframes = false;
-  m_UseRawDataframes = true;
-  m_NumRawDataframes = 0;
-  m_NumComptonDataframes = 0;
-  m_NumAspectPackets = 0;
-  m_NumOtherPackets = 0;
-  MAX_TRIGS = 80;
-  LastTimestamps.resize(12);
-  dx = 0;
-  m_EventTimeWindow = 5 * 10000000;
-  m_ComptonWindow = 2;
+	m_UseComptonDataframes = false;
+	m_UseRawDataframes = true;
+	m_NumRawDataframes = 0;
+	m_NumComptonDataframes = 0;
+	m_NumAspectPackets = 0;
+	m_NumOtherPackets = 0;
+	MAX_TRIGS = 80;
+	LastTimestamps.resize(12);
+	dx = 0;
+	m_EventTimeWindow = 5 * 10000000;
+	m_ComptonWindow = 2;
 
-  LoadStripMap();
-  LoadCCMap();
+	LoadStripMap();
+	LoadCCMap();
 
-  m_EventIDCounter = 0;
-  m_LastCorrectedClk = 0xffffffffffffffff;
+	m_EventIDCounter = 0;
+	m_LastCorrectedClk = 0xffffffffffffffff;
 
-  m_UseGPSDSO = true;
-  m_UseMagnetometer = true;
-  m_NumDSOReceived = 0;
-  m_NumComptonBytes = 0;
-  m_NumBytesReceived = 0;
-  m_LostBytes = 0;
+	m_UseGPSDSO = true; //simply sets whether or not we add these frames to the Aspect deque
+	m_UseMagnetometer = true; //^^^^
+	m_NumDSOReceived = 0;
+	m_NumComptonBytes = 0;
+	m_NumBytesReceived = 0;
+	m_LostBytes = 0;
 
-  m_IgnoreAspect = true;
+	m_IgnoreAspect = false;
 }
 
 
@@ -99,12 +99,12 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 
 MNCTBinaryFlightDataParser::~MNCTBinaryFlightDataParser()
 {
-  // Delete this instance of MNCTBinaryFlightDataParser
-  
-  for (auto E: m_Events) {
-    delete E;
-  }
-  m_Events.clear();
+	// Delete this instance of MNCTBinaryFlightDataParser
+
+	for (auto E: m_Events) {
+		delete E;
+	}
+	m_Events.clear();
 }
 
 
@@ -113,7 +113,7 @@ MNCTBinaryFlightDataParser::~MNCTBinaryFlightDataParser()
 
 bool MNCTBinaryFlightDataParser::Initialize()
 {
-  // Initialize the module 
+	// Initialize the module 
 
   m_NumRawDataframes = 0;
   m_NumComptonDataframes = 0;
@@ -153,8 +153,8 @@ bool MNCTBinaryFlightDataParser::Initialize()
 
 bool MReadOutAssemblyReverseSort(MReadOutAssembly* E1, MReadOutAssembly* E2) {
 
-  //sort based on 48 bit clock value
-  if( E1->GetCL() < E2->GetCL() ) return true; else return false;
+	//sort based on 48 bit clock value
+	if( E1->GetCL() < E2->GetCL() ) return true; else return false;
 
 }
 
@@ -185,12 +185,12 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	//dx = 0;
 	//int Rounds = 100;
 	//while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
-  while (FindNextPacket( NextPacket )) {
+	while (FindNextPacket( NextPacket )) {
 		Type = NextPacket[2];
 		if (g_Verbosity >= c_Info) {
-      //printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
-      cout<<"FNP: "<<Type<<" - "<<NextPacket.size()<<", dx = "<<dx<<", bufsize = "<<m_SBuf.size()<<endl;
-    }
+			//printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
+			cout<<"FNP: "<<Type<<" - "<<NextPacket.size()<<", dx = "<<dx<<", bufsize = "<<m_SBuf.size()<<endl;
+		}
 
 
 		switch( Type ){
@@ -208,7 +208,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					//cout<<"made "<<NewEvents.size()<<" MReadOutAssemblys"<<endl;
 					delete Dataframe;
 					m_NumRawDataBytes += NextPacket.size();
-					cout<<"NumRawDataBytes "<<m_NumRawDataBytes<<endl;
+					//cout<<"NumRawDataBytes "<<m_NumRawDataBytes<<endl;
 					m_NumRawDataframes++;
 				}
 				break;
@@ -227,16 +227,16 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					delete Dataframe;
 					m_NumComptonDataframes++;
 					m_NumComptonBytes += NextPacket.size();
-					cout<<"NumComptonBytes "<<m_NumComptonBytes<<endl;
+					//cout<<"NumComptonBytes "<<m_NumComptonBytes<<endl;
 
 				}
 				break;
 			case 0x05:
 				//aspect packet
 				if (g_Verbosity >= c_Info) cout<<"got aspect packet!"<<endl;
-        if (m_IgnoreAspect == false) {
-          ProcessAspect( NextPacket );
-        }
+				if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither) {
+					ProcessAspect( NextPacket );
+				}
 				m_NumAspectPackets++;
 				break;
 			default:
@@ -248,34 +248,34 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			for( auto E: NewEvents ){
 				//push the events onto the deque
 				//before we push the event into m_EventsBuf, check if we have a sync problem
-        /*
-				if( m_UseRawDataframes ){
-          if (LastTimestamps.size() >= CCId) {
-            cout<<"CRITICAL ALGORITHM ERROR:  The number of last time stamps in the array is smaller than the Compton ID"<<endl;
-          } else {
-            if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
-              //sync problem detected...
-              //cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
-              //FlushEventsBuf();
-              LastTimestamps[CCId] = E->GetCL();
-            }
-          }
-				} else if( m_UseComptonDataframes ){
-					LastComptonTimestamp = E->GetCL();
+				/*
+					if( m_UseRawDataframes ){
+					if (LastTimestamps.size() >= CCId) {
+					cout<<"CRITICAL ALGORITHM ERROR:  The number of last time stamps in the array is smaller than the Compton ID"<<endl;
+					} else {
+					if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
+				//sync problem detected...
+				//cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
+				//FlushEventsBuf();
+				LastTimestamps[CCId] = E->GetCL();
 				}
-        */
-        
+				}
+				} else if( m_UseComptonDataframes ){
+				LastComptonTimestamp = E->GetCL();
+				}
+				 */
+
 				//m_EventsBuf.push_back(E);
-        // insert sorted
-        deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
-        
-        m_EventsBuf.insert(I, E);
-        /*
-        cout<<"Sorrted?"<<endl;
-        for (auto Ev: m_EventsBuf) {
-          cout<<Ev->GetCL()<<endl; 
-        }
-        */
+				// insert sorted
+				deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+
+				m_EventsBuf.insert(I, E);
+				/*
+					cout<<"Sorrted?"<<endl;
+					for (auto Ev: m_EventsBuf) {
+					cout<<Ev->GetCL()<<endl; 
+					}
+				 */
 			}
 			NewEvents.clear();
 
@@ -295,34 +295,55 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			CheckEventsBuf();
 
 		}
+		/*
 		//loop through m_Events and add aspect if possible
-    if (m_IgnoreAspect == false) {
-      for( auto E: m_Events ){
-        if( E->GetAspect() == 0 ){
-          MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
-          if( A != 0 ){
-            //if the event is out of range, A->GetTime() will give -1
-            E->SetAspect(new MNCTAspect(*A));
-          }
+		if (m_IgnoreAspect == false) {
+			for( auto E: m_Events ){
+				if( E->GetAspect() == 0 ){
+					MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
+					if( A != 0 ){
+						//if the event is out of range, A->GetTime() will give -1
+						E->SetAspect(new MNCTAspect(*A));
+					}
 				}
 			}
 		}
-  }
+		*/
 
+		if( m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither ){
+			for( auto E: m_Events ){
+				if( E->GetAspect() == 0 ){
+					int gps_or_mag;
+					if( m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS ){
+						gps_or_mag = 0;
+					} else {
+						gps_or_mag = 1;
+					}
+					MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime(), gps_or_mag);
+					if( A != 0 ){
+						//if the event is out of range, A->GetTime() will give -1
+						E->SetAspect(new MNCTAspect(*A));
+					}
+				}
+			}
+		}
+	}
 
-  if (m_Events.size() > 0) {
-    if (m_IgnoreAspect == true) {
-      return true;
-    } else {
-      if (m_Events[0]->GetAspect() != 0) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-  } else {
-    return false;
-  }
+	if (m_Events.size() > 0) {
+		//if (m_IgnoreAspect == true) {
+		if( m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Neither ){
+			return true;
+		} else {
+			if (m_Events[0]->GetAspect() != 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	} else {
+		return false;
+	}
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -342,7 +363,7 @@ bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , un
 	//bool FoundPacket;
 	//FoundPacket = false;
 	NextPacket.clear();
-  
+
 	if( (dx + 2) > m_SBuf.size() ){
 		//not enough bytes to check for sync
 		return false;
@@ -370,10 +391,10 @@ bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , un
 	// AZ: Found a case with Len == 0 which screwed up everything...
 	// Skip ahead beyond syncword and resync
 	if (Len == 0) {
-    dx += 2; 
-    ResyncSBuf();
-    return false;
-  }
+		dx += 2; 
+		ResyncSBuf();
+		return false;
+	}
 
 	if( (dx + Len) > m_SBuf.size() ){
 		//we don't have the complete packet
@@ -403,6 +424,7 @@ bool MNCTBinaryFlightDataParser::FindNextPacket(vector<uint8_t>& NextPacket , un
 
 	if( m_SBuf.size() > 10000000 ){
 		//clear out buffer
+		cout<<"lost !!! dx = "<<dx<<" size = "<<m_SBuf.size()<<endl;
 		m_LostBytes += m_SBuf.size() - dx;
 		dx = 0;
 		m_SBuf.clear();
@@ -465,7 +487,7 @@ bool MNCTBinaryFlightDataParser::ResyncSBuf(void){
 
 bool MNCTBinaryFlightDataParser::FlushEventsBuf(void){
 
-  //int MergedEventCounter = 0;
+	//int MergedEventCounter = 0;
 
 	//don't check m_EventTimeWindow, we are flushing the buffer
 	while( m_EventsBuf.size() > 0){
@@ -557,14 +579,14 @@ MReadOutAssembly * MNCTBinaryFlightDataParser::MergeEvents( deque<MReadOutAssemb
 
 void MNCTBinaryFlightDataParser::Finalize()
 {
-  // Close the tranceiver 
-  
-  while (m_Events.begin() != m_Events.end()) {
-    delete m_Events.front();
-    m_Events.pop_front();
-  }
-  
-  return;
+	// Close the tranceiver 
+
+	while (m_Events.begin() != m_Events.end()) {
+		delete m_Events.front();
+		m_Events.pop_front();
+	}
+
+	return;
 }
 
 
@@ -573,8 +595,8 @@ void MNCTBinaryFlightDataParser::Finalize()
 
 int MNCTBinaryFlightDataParser::RawDataframe2Struct( vector<uint8_t> Buf, dataframe * DataOut)
 {
-		//return a dataframe struct
-		//a subsequent funtion should dtake the returned dataframe and return a vector of MReadOutAssemblys
+	//return a dataframe struct
+	//a subsequent funtion should dtake the returned dataframe and return a vector of MReadOutAssemblys
 
 	size_t x; //index for looping through Buf
 	trigger TrigBuf[MAX_TRIGS];
@@ -837,8 +859,8 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 	MReadOutAssembly * NewEvent;
 	MNCTStripHit * StripHit;
 	bool RolloverOccurred;
-  //bool EndRollover  // az: not used, thus commented out
-  bool MiddleRollover;
+	//bool EndRollover  // az: not used, thus commented out
+	bool MiddleRollover;
 	uint64_t Clk;
 
 	CEvents->clear(); //
@@ -858,8 +880,8 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 	if( (DataIn->SysTime & 0xffffffff) < DataIn->Events[0].EventTime ){
 		//there was a rollover
 		RolloverOccurred = true; 
-    //EndRollover = false; 
-    MiddleRollover = false;
+		//EndRollover = false; 
+		MiddleRollover = false;
 		if( DataIn->Events.back().EventTime < DataIn->Events.front().EventTime ){
 			MiddleRollover = true;
 		} else {
@@ -929,32 +951,32 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 void MNCTBinaryFlightDataParser::LoadCCMap(void){
 
 	//takes you from CC Id to det ID
-m_CCMap[0] = 0;
-  m_CCMap[1] = 1;
-  m_CCMap[2] = 2;
-  m_CCMap[3] = 3;
-  m_CCMap[4] = 4;
-  m_CCMap[5] = 5;
-  m_CCMap[6] = 6;
-  m_CCMap[7] = 7;
-  m_CCMap[8] = 8;
-  m_CCMap[9] = 9;
-  m_CCMap[10] = 10;
-  m_CCMap[11] = 11;
-/*
-	m_CCMap[0] = 3;
-	m_CCMap[1] = 0;
-	m_CCMap[2] = 1;
-	m_CCMap[3] = 2;
-	m_CCMap[4] = 5;
-	m_CCMap[5] = 6;
-	m_CCMap[6] = 4;
+	m_CCMap[0] = 0;
+	m_CCMap[1] = 1;
+	m_CCMap[2] = 2;
+	m_CCMap[3] = 3;
+	m_CCMap[4] = 4;
+	m_CCMap[5] = 5;
+	m_CCMap[6] = 6;
 	m_CCMap[7] = 7;
-	m_CCMap[8] = 10;
-	m_CCMap[9] = 11;
-	m_CCMap[10] = 8;
-	m_CCMap[11] = 9;
-  */
+	m_CCMap[8] = 8;
+	m_CCMap[9] = 9;
+	m_CCMap[10] = 10;
+	m_CCMap[11] = 11;
+	/*
+		m_CCMap[0] = 3;
+		m_CCMap[1] = 0;
+		m_CCMap[2] = 1;
+		m_CCMap[3] = 2;
+		m_CCMap[4] = 5;
+		m_CCMap[5] = 6;
+		m_CCMap[6] = 4;
+		m_CCMap[7] = 7;
+		m_CCMap[8] = 10;
+		m_CCMap[9] = 11;
+		m_CCMap[10] = 8;
+		m_CCMap[11] = 9;
+	 */
 }
 
 void MNCTBinaryFlightDataParser::LoadStripMap(void){
@@ -1103,7 +1125,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 						NotEnoughBytes = true;
 					}
 
-				////////////////////// Mag Msg //////////////////////////////////
+					////////////////////// Mag Msg //////////////////////////////////
 				} else if( Header.find("$M") == 0){
 					if( (wx + MagLen) <= Len ){
 						if( m_NumDSOReceived > 0 ){ //only use magnetometer if we have at least one dso msg
@@ -1233,7 +1255,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 						NotEnoughBytes = true;
 					}
 
-				////////////////////// Mag Msg //////////////////////////////////
+					////////////////////// Mag Msg //////////////////////////////////
 				} else if( Header.find("$M") == 0){
 					if( (wx + MagLen) < Len ){
 						if( m_NumDSOReceived > 0 ){ //only use magnetometer if we have at least one dso msg
@@ -1338,7 +1360,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	uint8_t MyAtt_flag_1;
 	MyAtt_flag_1 = (uint8_t)DSOString[47] & 0xFF;
 	printf("Attitude Flag #1 = %u, ", MyAtt_flag_1);
-	
+
 	uint8_t MyAtt_flag_2;
 	MyAtt_flag_2 = (uint8_t)DSOString[48] & 0xFF;
 	printf("Attitude Flag #2 = %u, ", MyAtt_flag_2);
@@ -1476,123 +1498,124 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 
 bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspectPacket& M_Packet){
 
-  //  printf(" %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x \n", MagString[0] & 0xFF, MagString[1] & 0xFF, MagString[2] & 0xFF, MagString[3] & 0xFF, MagString[4] & 0xFF, MagString[5] & 0xFF, MagString[6] & 0xFF, MagString[7] & 0xFF, MagString[8] & 0xFF, MagString[9] & 0xFF, MagString[10] & 0xFF, MagString[11] & 0xFF, MagString[12] & 0xFF, MagString[13] & 0xFF, MagString[14] & 0xFF, MagString[15] & 0xFF, MagString[16] & 0xFF, MagString[17] & 0xFF, MagString[18] & 0xFF, MagString[19] & 0xFF, MagString[20] & 0xFF, MagString[21] & 0xFF, MagString[22] & 0xFF, MagString[23] & 0xFF);
+	//  printf(" %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x \n", MagString[0] & 0xFF, MagString[1] & 0xFF, MagString[2] & 0xFF, MagString[3] & 0xFF, MagString[4] & 0xFF, MagString[5] & 0xFF, MagString[6] & 0xFF, MagString[7] & 0xFF, MagString[8] & 0xFF, MagString[9] & 0xFF, MagString[10] & 0xFF, MagString[11] & 0xFF, MagString[12] & 0xFF, MagString[13] & 0xFF, MagString[14] & 0xFF, MagString[15] & 0xFF, MagString[16] & 0xFF, MagString[17] & 0xFF, MagString[18] & 0xFF, MagString[19] & 0xFF, MagString[20] & 0xFF, MagString[21] & 0xFF, MagString[22] & 0xFF, MagString[23] & 0xFF);
 
-  int16_t MyRoll_int;
-  float MyRoll = 0.0;
-  MyRoll_int = (((int16_t)MagString[4] & 0xFF) << 8) | ((int16_t)MagString[5] & 0xFF);  
-  MyRoll = MyRoll_int/10.0;
-  printf("Magnetometer Packet: Roll = %4.2f, ",MyRoll); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-  M_Packet.roll =  MyRoll; 
-
-
-  int16_t MyMagRoll_int;
-  float MyMagRoll = 0.0;
-  MyMagRoll_int = (((int16_t)MagString[6] & 0xFF) << 8) | ((int16_t)MagString[7] & 0xFF);  
-  MyMagRoll = MyMagRoll_int/10.0;
-  printf("Mag Roll = %4.2f, ",MyMagRoll);  
+	int16_t MyRoll_int;
+	float MyRoll = 0.0;
+	MyRoll_int = (((int16_t)MagString[4] & 0xFF) << 8) | ((int16_t)MagString[5] & 0xFF);  
+	MyRoll = MyRoll_int/10.0;
+	printf("Magnetometer Packet: Roll = %4.2f, ",MyRoll); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	M_Packet.roll =  MyRoll; 
 
 
-  int16_t MyInclination_int;
-  float MyInclination = 0.0;
-  MyInclination_int = (((int16_t)MagString[8] & 0xFF) << 8) | ((int16_t)MagString[9] & 0xFF);  
-  MyInclination = MyInclination_int/10.0;
-  printf("Inclination = %4.2f, ",MyInclination); 
-  M_Packet.pitch =  MyInclination; 
+	int16_t MyMagRoll_int;
+	float MyMagRoll = 0.0;
+	MyMagRoll_int = (((int16_t)MagString[6] & 0xFF) << 8) | ((int16_t)MagString[7] & 0xFF);  
+	MyMagRoll = MyMagRoll_int/10.0;
+	printf("Mag Roll = %4.2f, ",MyMagRoll);  
 
 
-  int16_t MyMagTot_int;
-  float MyMagTot = 0.0;
-  MyMagTot_int = (((int16_t)MagString[10] & 0xFF) << 8) | ((int16_t)MagString[11] & 0xFF);  
-  MyMagTot = MyMagTot_int/10000.0;
-  printf("Mag Total = %4.2f, ",MyMagTot);  
+	int16_t MyInclination_int;
+	float MyInclination = 0.0;
+	MyInclination_int = (((int16_t)MagString[8] & 0xFF) << 8) | ((int16_t)MagString[9] & 0xFF);  
+	MyInclination = MyInclination_int/10.0;
+	printf("Inclination = %4.2f, ",MyInclination); 
+	M_Packet.pitch =  MyInclination; 
 
 
-  int16_t MyAzi_int;
-  float MyAzi = 0.0;
-  MyAzi_int = (((int16_t)MagString[12] & 0xFF) << 8) | ((int16_t)MagString[13] & 0xFF);  
-  MyAzi = MyAzi_int/10.0;
-  printf("Azimuth = %4.2f, ",MyAzi);  
-  M_Packet.heading =  MyAzi; 
+	int16_t MyMagTot_int;
+	float MyMagTot = 0.0;
+	MyMagTot_int = (((int16_t)MagString[10] & 0xFF) << 8) | ((int16_t)MagString[11] & 0xFF);  
+	MyMagTot = MyMagTot_int/10000.0;
+	printf("Mag Total = %4.2f, ",MyMagTot);  
 
 
-  int16_t MyAccel_int;
-  float MyAccel = 0.0;
-  MyAccel_int = (((int16_t)MagString[14] & 0xFF) << 8) | ((int16_t)MagString[15] & 0xFF);  
-  MyAccel = MyAccel_int/10000.0;
-  printf("Acceleration = %4.2f, ",MyAccel);  
+	int16_t MyAzi_int;
+	float MyAzi = 0.0;
+	MyAzi_int = (((int16_t)MagString[12] & 0xFF) << 8) | ((int16_t)MagString[13] & 0xFF);  
+	MyAzi = MyAzi_int/10.0;
+	printf("Azimuth = %4.2f, ",MyAzi);  
+	M_Packet.heading =  MyAzi; 
 
 
-  int16_t MyTemp_int;
-  float MyTemp = 0.0;
-  MyTemp_int = (((int16_t)MagString[16] & 0xFF) << 8) | ((int16_t)MagString[17] & 0xFF);  
-  MyTemp = MyTemp_int/100.0;
-  printf("Temperature = %4.2f, ",MyTemp);  
+	int16_t MyAccel_int;
+	float MyAccel = 0.0;
+	MyAccel_int = (((int16_t)MagString[14] & 0xFF) << 8) | ((int16_t)MagString[15] & 0xFF);  
+	MyAccel = MyAccel_int/10000.0;
+	printf("Acceleration = %4.2f, ",MyAccel);  
 
 
-  int16_t MyVolt_int;
-  float MyVolt = 0.0;
-  MyVolt_int = (((int16_t)MagString[18] & 0xFF) << 8) | ((int16_t)MagString[19] & 0xFF);  
-  MyVolt = MyVolt_int/100.0;
-  printf("Voltage = %4.2f, ",MyVolt);  
+	int16_t MyTemp_int;
+	float MyTemp = 0.0;
+	MyTemp_int = (((int16_t)MagString[16] & 0xFF) << 8) | ((int16_t)MagString[17] & 0xFF);  
+	MyTemp = MyTemp_int/100.0;
+	printf("Temperature = %4.2f, ",MyTemp);  
 
 
-  //CHECKSUM!
+	int16_t MyVolt_int;
+	float MyVolt = 0.0;
+	MyVolt_int = (((int16_t)MagString[18] & 0xFF) << 8) | ((int16_t)MagString[19] & 0xFF);  
+	MyVolt = MyVolt_int/100.0;
+	printf("Voltage = %4.2f, ",MyVolt);  
 
 
-  //the following commented block assumes that the timestamp is always right before the mag data
-  //don't assume this! just use the last read PPSClk in the calling thread
-  /*
+	//CHECKSUM!
 
-  uint32_t MyClock = 0;  //counting 10 MHz clock signal.
-  MyClock = (((uint32_t)MagString[-4] & 0xFF) << 24) | (((uint32_t)MagString[-3] & 0xFF) << 16) | (((uint32_t)MagString[-2] & 0xFF)  << 8) | ((uint32_t)MagString[-1] & 0xFF);  
-  printf("Clock =  %u. \n",MyClock);  
-  MyClock = MyMag->Clock;
-  */
-  
-  
-  
-  printf("\n");  
-  M_Packet.GPS_or_magnetometer = 1;
-  printf("Now, here is what's from M_Packet: \n");
-  printf("Heading: \n"); 
-  printf("%f\n",M_Packet.heading); 
-  printf("Pitch: \n"); 
-  printf("%f\n",M_Packet.pitch); 
-  printf("Roll: \n"); 
-  printf("%f\n",M_Packet.roll); 
-  
- // M_Packet.geographic_latitude = GPS_Packet.geographic_latitude;
- // M_Packet.geographic_longitude = GPS_Packet.geographic_longitude;
- // M_Packet.elevation = GPS_Packet.elevation;
-  
-  printf("This is GPS stuff we put in the M_Packet: \n");
-  printf("Geographic Latitude: \n"); 
-  printf("%f\n",M_Packet.geographic_latitude); 
-  printf("Geographic Longitude: \n"); 
-  printf("%f\n",M_Packet.geographic_longitude);  
-  printf("Elevation: \n"); 
-  printf("%f\n",M_Packet.elevation); 
-  
- // M_Packet.date_and_time = GPS_Packet.date_and_time;
- // M_Packet.nanoseconds = GPS_Packet.nanoseconds;  
-  
-  printf("Date_and_Time: \n");
-  cout << M_Packet.date_and_time << endl;  
-  printf("Nanoseconds: \n"); 
-  printf("%u\n",M_Packet.nanoseconds);  
-  printf("\n"); 
-  
-  
-  //AR->AddAspectFrame(M_Packet);
-  
-  return true;
+
+	//the following commented block assumes that the timestamp is always right before the mag data
+	//don't assume this! just use the last read PPSClk in the calling thread
+	/*
+
+		uint32_t MyClock = 0;  //counting 10 MHz clock signal.
+		MyClock = (((uint32_t)MagString[-4] & 0xFF) << 24) | (((uint32_t)MagString[-3] & 0xFF) << 16) | (((uint32_t)MagString[-2] & 0xFF)  << 8) | ((uint32_t)MagString[-1] & 0xFF);  
+		printf("Clock =  %u. \n",MyClock);  
+		MyClock = MyMag->Clock;
+	 */
+
+
+
+	printf("\n");  
+	M_Packet.GPS_or_magnetometer = 1;
+	printf("Now, here is what's from M_Packet: \n");
+	printf("Heading: \n"); 
+	printf("%f\n",M_Packet.heading); 
+	printf("Pitch: \n"); 
+	printf("%f\n",M_Packet.pitch); 
+	printf("Roll: \n"); 
+	printf("%f\n",M_Packet.roll); 
+
+	// M_Packet.geographic_latitude = GPS_Packet.geographic_latitude;
+	// M_Packet.geographic_longitude = GPS_Packet.geographic_longitude;
+	// M_Packet.elevation = GPS_Packet.elevation;
+
+	printf("This is GPS stuff we put in the M_Packet: \n");
+	printf("Geographic Latitude: \n"); 
+	printf("%f\n",M_Packet.geographic_latitude); 
+	printf("Geographic Longitude: \n"); 
+	printf("%f\n",M_Packet.geographic_longitude);  
+	printf("Elevation: \n"); 
+	printf("%f\n",M_Packet.elevation); 
+
+	// M_Packet.date_and_time = GPS_Packet.date_and_time;
+	// M_Packet.nanoseconds = GPS_Packet.nanoseconds;  
+
+	printf("Date_and_Time: \n");
+	cout << M_Packet.date_and_time << endl;  
+	printf("Nanoseconds: \n"); 
+	printf("%u\n",M_Packet.nanoseconds);  
+	printf("\n"); 
+
+
+	//AR->AddAspectFrame(M_Packet);
+
+	return true;
 }
 
 bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, dataframe * DataOut ){
 
 	size_t wx = 0;
 	size_t BufSize = Buf.size();
+	int EvCnt = 0;
 
 	if( DataOut == NULL ){
 		return false;
@@ -1618,6 +1641,7 @@ bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, 
 
 			wx += 7; if( wx > BufSize ) { DataOut->ParseError = true; return false; }
 			event NewEvent;
+			EvCnt++;
 			NewEvent.EventID = Buf[wx - 6];
 			NewEvent.NumCCsInvolved = Buf[wx - 5] & 0x0f;
 			int N = NewEvent.NumCCsInvolved; if( N > 12 ){ DataOut->ParseError = true; return false; }
@@ -1625,7 +1649,7 @@ bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, 
 			NewEvent.EventTime = ((uint64_t) Buf[wx-4] << 24) | ((uint64_t) Buf[wx-3] << 16) | ((uint64_t) Buf[wx-2] << 8) | ((uint64_t) Buf[wx-1]); 
 
 			//loop over triggered card cages
-				//loop over triggers
+			//loop over triggers
 
 			for( int i = 0; i < N; ++i ){
 				wx += 2; if( wx > BufSize ) { DataOut->ParseError = true; return false; }
@@ -1662,6 +1686,8 @@ bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, 
 
 		} else { DataOut->ParseError = true; return false; }
 	}
+
+	//	cout<<"compton ::: pktcnt="<<DataOut->PacketCounter<<" evcnt "<<EvCnt<<endl;
 
 	if( wx != BufSize ) return false; else return true;
 

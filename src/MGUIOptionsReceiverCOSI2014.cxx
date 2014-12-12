@@ -105,6 +105,14 @@ void MGUIOptionsReceiverCOSI2014::Create()
   m_DataMode->SetSelected((int) dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetDataSelectionMode());
   m_DataMode->Create();
   m_OptionsFrame->AddFrame(m_DataMode, LabelLayout);
+
+  m_AspectMode = new MGUIERBList(m_OptionsFrame, "Choose the aspect mode");
+  m_AspectMode->Add("GPS");
+  m_AspectMode->Add("Magnetometer");
+  m_AspectMode->Add("None");
+  m_AspectMode->SetSelected((int) dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetAspectMode());
+  m_AspectMode->Create();
+  m_OptionsFrame->AddFrame(m_AspectMode, LabelLayout);
   
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "If a file is selected, then the input stream is saved as roa :",
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->GetRoaFileName());
@@ -168,6 +176,14 @@ bool MGUIOptionsReceiverCOSI2014::OnApply()
     dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Compton);     
   } else if (m_DataMode->GetSelected() == 2) {
     dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_All);     
+  }
+
+  if (m_AspectMode->GetSelected() == 0) {
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_GPS);     
+  } else if (m_AspectMode->GetSelected() == 1) {
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);     
+  } else if (m_AspectMode->GetSelected() == 2) {
+    dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);     
   }
   
   dynamic_cast<MNCTModuleReceiverCOSI2014*>(m_Module)->SetRoaFileName(m_FileSelector->GetFileName());  
