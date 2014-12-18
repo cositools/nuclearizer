@@ -87,7 +87,24 @@ void MGUIOptionsEventSaver::Create()
   m_SaveBadEvents = new TGCheckButton(m_OptionsFrame, "Save events which are flagged bad (BD)", 1);
   m_SaveBadEvents->SetOn(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetSaveBadEvents());
   m_OptionsFrame->AddFrame(m_SaveBadEvents, LabelLayout);
+
+  m_AddTimeTag = new TGCheckButton(m_OptionsFrame, "Add a unique time tag", 3);
+  m_AddTimeTag->SetOn(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetAddTimeTag());
+  m_OptionsFrame->AddFrame(m_AddTimeTag, LabelLayout);
+
+  
+  m_SplitFile = new TGCheckButton(m_OptionsFrame, "Split the file", 2);
+  m_SplitFile->Associate(this);
+  m_SplitFile->SetOn(dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetSplitFile());
+  m_OptionsFrame->AddFrame(m_SplitFile, LabelLayout);
  
+  TGLayoutHints* SplitFileTimeLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);  
+  m_SplitFileTime = new MGUIEEntry(m_OptionsFrame, "Split the file after this time [sec]:", false, 
+    dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetSplitFileTime().GetAsSystemSeconds(), true, 0);
+  if (m_SplitFile->IsOn() == false) m_SplitFileTime->SetEnabled(false);
+  m_OptionsFrame->AddFrame(m_SplitFileTime, SplitFileTimeLayout);
+  
+  
   PostCreate();
 }
 
@@ -105,6 +122,11 @@ bool MGUIOptionsEventSaver::ProcessMessage(long Message, long Parameter1, long P
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
+      break;
+    case kCM_CHECKBUTTON:
+      if (Parameter1 == 2) {
+        m_SplitFileTime->SetEnabled(m_SplitFile->IsOn());
+      }
       break;
     default:
       break;
@@ -133,6 +155,9 @@ bool MGUIOptionsEventSaver::OnApply()
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetMode(m_Mode->GetSelected());
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
   dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetSaveBadEvents(m_SaveBadEvents->IsOn());
+  dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetAddTimeTag(m_AddTimeTag->IsOn());
+  dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetSplitFile(m_SplitFile->IsOn());
+  dynamic_cast<MNCTModuleEventSaver*>(m_Module)->SetSplitFileTime(MTime(m_SplitFileTime->GetAsInt()));
   
   return true;
 }

@@ -28,6 +28,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MString.h"
+#include "MGUIEEntry.h"
 #include "MGUIEFileSelector.h"
 #include "MGUIERBList.h"
 #include "MGUIOptions.h"
@@ -73,8 +74,17 @@ class MGUIOptionsEventSaver : public MGUIOptions
   MGUIERBList* m_Mode;
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
-  //! Checkbutton the save or reject bad events
+
+  //! Checkbutton to save or reject bad events
   TGCheckButton* m_SaveBadEvents;
+
+  //! Checkbutton to add a time tag
+  TGCheckButton* m_AddTimeTag;
+
+  //! Checkbutton to split or not to split the file 
+  TGCheckButton* m_SplitFile;
+  //! Entry field for the time after which to split the file
+  MGUIEEntry* m_SplitFileTime;
 
 #ifdef ___CINT___
  public:
