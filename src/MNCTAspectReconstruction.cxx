@@ -174,12 +174,20 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//these bits of info to build 7 separate unsigned ints of time information to be used
 	//later when we finally build the MNCTAspect object
 
+	//first check if we should reject this GPS packet:
+	if( GPS_or_magnetometer == 0 ){
+		if( (PacketA.BRMS < 1.0E-6) || (PacketA.BRMS > 1.0) || (PacketA.AttFlag != 0) ){
+			//just gonna return true here for now...
+			return true;
+		}
+	}
 
 	string date_and_time = PacketA.date_and_time;
 	unsigned int nanoseconds = PacketA.nanoseconds;
 
+	//don't use this time for aspect determination!!! this is the timestamp of the event with respect to the system clock,
+	//which has nothing to do with the Unix second.
 	MTime MTimeA;
-
 	uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
 	double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
 	double ClkNanoseconds = (double) ClkModulo * 100.0;
@@ -227,14 +235,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//add it to the magnetic heading to find and record the true heading, as promised:
 
 	double heading = magnetic_heading + magnetic_declination;
-	heading = 323.0;
-	/*
-		heading += 180.0;
-		if( heading > 360.0 ){
-		heading -= 360.0;
-		}
-	 */
-
+	heading = 360.0-heading;
 
 	//Now, we record the pitch.	
 
@@ -244,12 +245,16 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		//why we have no choice but to subtract by 90 in the event that the magnetometer is
 		//being used.
 	}
-	pitch = 0;
 
-	//Finally, we record the roll.
 
 	double roll = PacketA.roll;
-	roll = 0;
+	if( GPS_or_magnetometer == 1 ){
+		//magnetometer has a 180 degree offset with current mounting in the gondola.
+		roll = roll + 180.0;
+		if( roll > 360.0 ){
+			roll = roll - 360.0;
+		}
+	}
 
 
 	//Here we print heading, pitch, and roll and announce which device is giving us the info. Please
@@ -257,38 +262,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//both devices because they are not aligned properly. This is taken into account later in the code.
 
 
-	if(test_or_not == 0){
-
-		cout << "" << endl;
-		if (GPS_or_magnetometer == 0){
-			cout << "The following is true according to the GPS: " << endl;
-		}
-		if (GPS_or_magnetometer == 1){
-			cout << "The following is true according to the Magnetometer: " << endl;
-		}
-		cout << "" << endl;
-		printf("heading is: %9.5f \n",heading);
-		printf("pitch is: %9.5f \n",pitch);
-		printf("roll is: %9.5f \n",roll);
-
-	}
-
-	////////////////////////////////////////////////////////////////////////////////
-
-
-
-	//We'll leave this C++ version of finding the horizontal coordinates commented out for now, so other C++ versions of things written in python can be tested alone beforehand
-
-
-
-
-	//Now we're going to be working with matrices. Here we declare all of the pointing vectors we will
-	//use to find the azimuth and "altitude." We will also declare all of the appropriate rotation
-	//matrices.
-
-
-
-	double Zpointing0[3][1], Ypointing0[3][1], Xpointing0[3][1], Zpointing1[3][1], Ypointing1[3][1], Xpointing1[3][1], Zpointing2[3][1], Ypointing2[3][1], Xpointing2[3][1], Z[3][3], Y[3][3], X[3][3], YX[3][3], ZYX[3][3];
+	double Z[3][3], Y[3][3], X[3][3], YX[3][3], ZYX[3][3];
 
 	//Here we build the heading, pitch, and roll rotation matrices, named "Z," "Y," and "X,"
 	//respectively.
@@ -305,45 +279,41 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	Z[2][1] = 0.0;
 	Z[2][2] = 1.0;
 
-
-	Y[0][0] = cosine(pitch);
+	Y[0][0] = cosine(roll);
 	Y[0][1] = 0.0;
-	Y[0][2] = sine(pitch);
+	Y[0][2] = sine(roll);
 
 	Y[1][0] = 0.0;
 	Y[1][1] = 1.0;
 	Y[1][2] = 0.0;
 
-	Y[2][0] = 0.0 - sine(pitch);
+	Y[2][0] = 0.0 - sine(roll);
 	Y[2][1] = 0.0;
-	Y[2][2] = cosine(pitch);
-
+	Y[2][2] = cosine(roll);
 
 	X[0][0] = 1.0;
 	X[0][1] = 0.0;
 	X[0][2] = 0.0;
 
 	X[1][0] = 0.0;
-	X[1][1] = cosine(roll);
-	X[1][2] = 0.0 - sine(roll);
+	X[1][1] = cosine(pitch);
+	X[1][2] = 0.0 - sine(pitch);
 
 	X[2][0] = 0.0;
-	X[2][1] = sine(roll);
-	X[2][2] = cosine(roll);
-
-	//Here we multiply together the Z, Y, and X matrices to form the ZYX matrix. This matrix will later
-	//be applied to the Z, Y, and X pointing vectors of the gondola to find the new pointing vector
-	//after the heading, pitch, and roll rotations are performed.
+	X[2][1] = sine(pitch);
+	X[2][2] = cosine(pitch);
 
 	for(int i=0;i<3;i++){
 		for(int j=0;j<3;j++){   
 			YX[i][j]=0;
 			for(int k=0;k<3;k++){
-				YX[i][j]=YX[i][j]+Y[i][k]*X[k][j];
+				//ares' X and Y are backwards, changing this from YX to XY
+				//so the full rotation is ZXY
+				//YX[i][j]=YX[i][j]+Y[i][k]*X[k][j];
+				YX[i][j]=YX[i][j]+X[i][k]*Y[k][j];
 			}
 		}
 	}
-
 
 	for(int i=0;i<3;i++){
 		for(int j=0;j<3;j++){   
@@ -354,142 +324,151 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		}
 	}
 
-	//This is the specific case when we are dealing with the GPS.
-
 	double Zhat[3];
 	double Xhat[3];
 	double Yhat[3];
+	double temp[3];
 
+	Zhat[0] = 0.0;
+	Zhat[1] = 0.0;
+	Zhat[2] = 1.0;
 
-	if (GPS_or_magnetometer == 0){
+	Xhat[0] = 1.0;
+	Xhat[1] = 0.0;
+	Xhat[2] = 0.0;
 
-		Zhat[0] = 0.0;
-		Zhat[1] = 0.0;
-		Zhat[2] = 1.0;
+	Yhat[0] = 0.0;
+	Yhat[1] = 1.0;
+	Yhat[2] = 0.0;
 
-		Xhat[0] = 1.0;
-		Xhat[1] = 0.0;
-		Xhat[2] = 0.0;
+	//first assume that Xhat Yhat and Zhat are the unit vectors in the unrotated GPS frame.  This unrotated frame has
+	//Yhat pointing at True North and Z pointing towards the zenith (i.e. it has 0 pitch 0 heading and 0 roll) 
 
-		Yhat[0] = 0.0;
-		Yhat[1] = 1.0;
-		Yhat[2] = 0.0;
+	//these unit vectors need to be rotated so that they are aligned with the cryostat's coordinate system.  
+	//to first order, this should be a -90 rotation about the Z axis.  //to second order, there should be a 
+	//~0.5 degree rotation about the GPS X axis. 
 
+	//if this is GPS data, we first need to rotate the Xhat and Yhat vectors to line up with the cryostat's X and Y directions
+	//the magnetometer doesn't require this step because its axes are already aligned with the cryostat
 
-		//transform Zhat
-		for(int i=0;i<3;i++){
-			double Q = 0;
-			int k;
-			for(k=0;k<3;k++){
-				Q += Zhat[k] * ZYX[k][i];
-			}
-			Zhat[i] = Q;
-		}
+	if( GPS_or_magnetometer == 0 ){
+
+		Z[0][0] = cosine(-90.0);
+		Z[0][1] = 0.0 - sine(-90.0);
+		Z[0][2] = 0.0;
+
+		Z[1][0] = sine(-90.0);
+		Z[1][1] = cosine(-90.0);
+		Z[1][2] = 0.0;
+
+		Z[2][0] = 0.0;
+		Z[2][1] = 0.0;
+		Z[2][2] = 1.0;
 
 		//transform Yhat
 		for(int i=0;i<3;i++){
 			double Q = 0;
-			int k;
-			for(k=0;k<3;k++){
-				Q += Yhat[k] * ZYX[k][i];
+			for(int k=0;k<3;k++){
+				Q += Z[i][k] * Yhat[k];
 			}
-			Yhat[i] = Q;
+			temp[i] = Q;
 		}
+		Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
 
 		//transform Xhat
 		for(int i=0;i<3;i++){
 			double Q = 0;
-			int k;
-			for(k=0;k<3;k++){
-				Q += Xhat[k] * ZYX[k][i];
+			for(int k=0;k<3;k++){
+				Q += Z[i][k] * Xhat[k];
 			}
-			Xhat[i] = Q;
+			temp[i] = Q;
 		}
+		Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
 
 	}
 
-	//This is the same thing as before except with the magnetometer.
+	//now Yhat and Xhat point in the Y and X directions in the cryostat's frame.
+	//now apply the full ZYX rotation matrix to Zhat, Xhat, and Yhat
 
-
-	if (GPS_or_magnetometer == 1){
-
-		Zpointing0[0][0] = 0.0;
-		Zpointing0[1][0] = 0.0;
-		Zpointing0[2][0] = 1.0;
-
-		Ypointing0[0][0] = 0.0;
-		Ypointing0[1][0] = 1.0;
-		Ypointing0[2][0] = 0.0;	
-
-		Xpointing0[0][0] = 1.0;
-		Xpointing0[1][0] = 0.0;
-		Xpointing0[2][0] = 0.0;
-
-
-		for(int i=0;i<3;i++){
-			for(int j=0;j<1;j++){   
-				Zpointing1[i][j]=0;
-				for(int k=0;k<3;k++){
-					Zpointing1[i][j]=Zpointing1[i][j]+ZYX[i][k]*Zpointing0[k][j];
-				}
-			}
+	//transform Zhat
+	for(int i=0;i<3;i++){
+		double Q = 0;
+		for(int k=0;k<3;k++){
+			Q += ZYX[i][k] * Zhat[k];
 		}
-
-		Zpointing2[0][0] = Zpointing1[1][0];
-		Zpointing2[1][0] = Zpointing1[0][0];
-		Zpointing2[2][0] = 0.0 - Zpointing1[2][0];		
-
-
-		for(int i=0;i<3;i++){
-			for(int j=0;j<1;j++){   
-				Ypointing1[i][j]=0;
-				for(int k=0;k<3;k++){
-					Ypointing1[i][j]=Ypointing1[i][j]+ZYX[i][k]*Ypointing0[k][j];
-				}
-			}
-		}
-
-		Ypointing2[0][0] = Ypointing1[1][0];
-		Ypointing2[1][0] = Ypointing1[0][0];
-		Ypointing2[2][0] = 0.0 - Ypointing1[2][0];			
-
-
-		for(int i=0;i<3;i++){
-			for(int j=0;j<1;j++){   
-				Xpointing1[i][j]=0;
-				for(int k=0;k<3;k++){
-					Xpointing1[i][j]=Xpointing1[i][j]+ZYX[i][k]*Xpointing0[k][j];
-				}
-			}
-		}	
-
-		Xpointing2[0][0] = Xpointing1[1][0];
-		Xpointing2[1][0] = Xpointing1[0][0];
-		Xpointing2[2][0] = 0.0 - Xpointing1[2][0];	
-
+		temp[i] = Q;
 	}
+	Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
+
+	//transform Yhat
+	for(int i=0;i<3;i++){
+		double Q = 0;
+		for(int k=0;k<3;k++){
+			Q += ZYX[i][k] * Yhat[k];
+		}
+		temp[i] = Q;
+	}
+	Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
+
+	//transform Xhat
+	for(int i=0;i<3;i++){
+		double Q = 0;
+		for(int k=0;k<3;k++){
+			Q += ZYX[i][k] * Xhat[k];
+		}
+		temp[i] = Q;
+	}
+	Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
 
 	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
 
-	m_TCCalculator.SetUnixTime(MTimeA.GetAsSeconds());
-
-	vector<double> ZGalactic; 
-	vector<double> ZEquatorial;
+	time_t TESTTIME = time(NULL);
+	//m_TCCalculator.SetUnixTime(MTimeA.GetAsSeconds());
+	m_TCCalculator.SetUnixTime(TESTTIME);
 
 	//dot Zhat/Xhat into (0,0,1) and take the arcos to get the zenith angle.  then convert this to elevation angle
 	double Z_Elevation = 90.0 - arccosine( Zhat[2] );
 	double X_Elevation = 90.0 - arccosine( Xhat[2] );
+	double Y_Elevation = 90.0 - arccosine( Yhat[2] );
 
 	//get azimuth of Zhat/Xhat by projecting into X-Y plane, re-normalizing, and dotting into (0,1,0)
 	double Z_proj[3]; Z_proj[0] = Zhat[0]; Z_proj[1] = Zhat[1]; Z_proj[2] = 0.0;
 	double X_proj[3]; X_proj[0] = Xhat[0]; X_proj[1] = Xhat[1]; X_proj[2] = 0.0;
+	double Y_proj[3]; Y_proj[0] = Yhat[0]; Y_proj[1] = Yhat[1]; Y_proj[2] = 0.0;
 
 	double Znorm = sqrt( pow(Z_proj[0],2.0) + pow(Z_proj[1],2.0) );
 	double Xnorm = sqrt( pow(X_proj[0],2.0) + pow(X_proj[1],2.0) );
+	double Ynorm = sqrt( pow(Y_proj[0],2.0) + pow(Y_proj[1],2.0) );
 
-	double Z_Azimuth = arccosine( Z_proj[1]/Znorm ); if( Z_proj[0] < 0.0 ) Z_Azimuth = 360.0 - Z_Azimuth;
-	double X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
+	cout<<"heading = "<<heading<<" pitch = "<<pitch<<" roll = "<<roll<<endl;
+	cout<<"GPS_or_magnetometer = "<<GPS_or_magnetometer<<endl;
 
+	double Z_Azimuth;
+	if( Znorm > 1.0E-9 ){
+		Z_Azimuth = arccosine( Z_proj[1]/Znorm ); if( Z_proj[0] < 0.0 ) Z_Azimuth = 360.0 - Z_Azimuth;
+	} else {
+		Z_Azimuth = 0.0;
+	}
+	cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+
+	double X_Azimuth;
+	if( Xnorm > 1.0E-9 ){
+		X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
+	} else {
+		X_Azimuth = 0.0;
+	}
+	cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+
+	double Y_Azimuth;
+	if( Ynorm > 1.0E-9 ){
+		Y_Azimuth = arccosine( Y_proj[1]/Ynorm ); if( Y_proj[0] < 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
+	} else {
+		Y_Azimuth = 0.0;
+	}
+	cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+
+	vector<double> ZGalactic; 
+	vector<double> ZEquatorial;
 	ZEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Z_Azimuth, Z_Elevation);
 	ZGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(ZEquatorial);
 	//Zra = ZEquatorial[0];
@@ -508,16 +487,15 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Xgalon = XGalactic[0];
 	cout<<"X gal-lat = "<<Xgalat<<" X gal-lon = "<<Xgalon<<endl;
 
-	/*
 	vector<double> YGalactic; 
 	vector<double> YEquatorial;
-	YEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Yazimuth, Yaltitude);
+	YEquatorial= m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Y_Azimuth, Y_Elevation);
 	YGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(YEquatorial);	
-	Yra = YEquatorial[0];
-	Ydec = YEquatorial[1];
-	Ygalat = YGalactic[1];
-	Ygalon = YGalactic[0];
-	*/
+	//Yra = YEquatorial[0];
+	//Ydec = YEquatorial[1];
+	double Ygalat = YGalactic[1];
+	double Ygalon = YGalactic[0];
+	cout<<"Y gal-lat = "<<Ygalat<<" Y gal-lon = "<<Ygalon<<endl;
 
 	//MTimeA should already be filled out from earlier so the following paragraph is commented out;
 
@@ -528,8 +506,6 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	//Using this instead so that we can sort badsed on clock board time
 	//MTimeA.Set(m_Year,m_Month,m_Day,m_Hour,m_Minute,m_Second,m_NanoSecond);
-
-
 
 	Aspect->SetTime(MTimeA);
 	Aspect->SetHeading(heading);
