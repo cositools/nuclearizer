@@ -159,6 +159,16 @@ class MReadOutAssembly
   //void RemoveReadOut(unsigned int i);
 
 
+
+  //! Set the aspect-incomplete flag
+  void SetAspectIncomplete(bool Flag = true) { m_AspectIncomplete = Flag; }
+  //! Get the aspect-incomplete flag
+  bool IsAspectIncomplete() const { return m_AspectIncomplete; }
+
+  //! Set the time-incomplete flag
+  void SetTimeIncomplete(bool Flag = true) { m_TimeIncomplete = Flag; }
+  //! Get the time-incomplete flag
+  bool IsTimeIncomplete() const { return m_TimeIncomplete; }
   //! Set the energy-calibration-incomplete flag
   void SetEnergyCalibrationIncomplete(bool Flag = true) { m_EnergyCalibrationIncomplete = Flag; }
   //! Get the energy-calibration-incomplete flag
@@ -280,6 +290,8 @@ class MReadOutAssembly
   MPhysicalEvent* m_PhysicalEvent; 
 
   // Flags indicating the quality of the event
+  bool m_AspectIncomplete;
+  bool m_TimeIncomplete;
   bool m_EnergyCalibrationIncomplete;
   bool m_StripPairingIncomplete;
   bool m_DepthCalibrationIncomplete;

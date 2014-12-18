@@ -82,7 +82,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   
   m_RequestConnection = true; 
   m_LocalReceivingHostName = "128.32.13.133";
-  m_LocalReceivingPort = 215381;  
+  m_LocalReceivingPort = 21530;  
   
   m_Receiver = 0;
   
@@ -394,6 +394,10 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
   vector<uint8_t> Received ;
   m_Receiver->Receive(Received);
   
+  //if (Received.size() != 0) {
+  //  cout<<"Received: "<<Received.size()<<endl;
+  //}
+  
   return ParseData(Received);
 }
 
@@ -417,8 +421,8 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
 
   //this checks if the event's aspect data was within the range of the retrieved aspect info
   if (NewEvent->GetAspect() != 0 && NewEvent->GetAspect()->GetOutOfRange()) {
-    delete NewEvent;
-    return false;
+    cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: Bad aspect (out of range)"<<endl;
+    Event->SetAspectIncomplete(true);
   }
 
   while( NewEvent->GetNStripHits() > 0 ){
@@ -435,11 +439,17 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
   if (NewEvent->GetAspect() != 0) {
     Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
+  } else {
+    Event->SetAspectIncomplete(true);
   }
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | 
                              MAssembly::c_EventLoaderMeasurement | 
                              MAssembly::c_EventOrdering);
 
+  if (Event->GetTime().GetAsSystemSeconds() == 0) {
+    Event->SetTimeIncomplete(true);
+  }
+  
   if (m_RoaFileName != "") {
     Event->StreamRoa(m_Out);
   }

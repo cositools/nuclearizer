@@ -141,6 +141,8 @@ void MReadOutAssembly::Clear()
   }
   m_GuardringHits.clear();
 
+  m_AspectIncomplete = false;
+  m_TimeIncomplete = false;
   m_EnergyCalibrationIncomplete = false;
   m_StripPairingIncomplete = false;
   m_DepthCalibrationIncomplete = false;
@@ -341,14 +343,18 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     m_Hits[h]->StreamDat(S, Version);  
   }
 
+  if (m_AspectIncomplete == true) {
+    S<<"BD AspectIncomplete"<<endl;
+  }
+  if (m_TimeIncomplete == true) {
+    S<<"BD TimeIncomplete"<<endl;
+  }
   if (m_EnergyCalibrationIncomplete == true) {
     S<<"BD EnergyCalibrationIncomplete"<<endl;
   }
-
   if (m_StripPairingIncomplete == true) {
     S<<"BD StripPairingIncomplete"<<endl;
   }
-
   if (m_DepthCalibrationIncomplete == true) {
     S<<"BD DetpthCalibrationIncomplete"<<endl;
   }
@@ -376,14 +382,18 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     m_Hits[h]->StreamEvta(S);  
   }
 
+  if (m_AspectIncomplete == true) {
+    S<<"BD AspectIncomplete"<<endl;
+  }
+  if (m_TimeIncomplete == true) {
+    S<<"BD TimeIncomplete"<<endl;
+  }
   if (m_EnergyCalibrationIncomplete == true) {
     S<<"BD EnergyCalibrationIncomplete"<<endl;
   }
-
   if (m_StripPairingIncomplete == true) {
     S<<"BD StripPairingIncomplete"<<endl;
   }
-
   if (m_DepthCalibrationIncomplete == true) {
     S<<"BD DepthCalibrationIncomplete"<<endl;
   }
@@ -408,6 +418,13 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
     m_StripHits[h]->StreamRoa(S);  
   }
+
+  if (m_AspectIncomplete == true) {
+    S<<"BD AspectIncomplete"<<endl;
+  }
+  if (m_TimeIncomplete == true) {
+    S<<"BD TimeIncomplete"<<endl;
+  }
 }
 
 
@@ -418,6 +435,8 @@ bool MReadOutAssembly::IsGood() const
 {
   //! Returns true if none of the "bad" or "incomplete" falgs has been set
 
+  if (m_AspectIncomplete == true) return false;
+  if (m_TimeIncomplete == true) return false;
   if (m_EnergyCalibrationIncomplete == true) return false;
   if (m_StripPairingIncomplete == true) return false;
   if (m_DepthCalibrationIncomplete == true) return false;
@@ -435,6 +454,8 @@ bool MReadOutAssembly::IsBad() const
 {
   //! Returns true if none of the "bad" or "incomplete" falgs has been set
 
+  if (m_AspectIncomplete == true) return true;
+  if (m_TimeIncomplete == true) return true;
   if (m_EnergyCalibrationIncomplete == true) return true;
   if (m_StripPairingIncomplete == true) return true;
   if (m_DepthCalibrationIncomplete == true) return true;

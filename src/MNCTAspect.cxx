@@ -100,6 +100,8 @@ const MNCTAspect& MNCTAspect::operator= (const MNCTAspect& A)
   m_HorizonPointingZAxisAzimuthNorth = A.m_HorizonPointingZAxisAzimuthNorth;
   m_HorizonPointingZAxisElevation = A.m_HorizonPointingZAxisElevation;
 
+  m_OutOfRange = A.m_OutOfRange;
+  
   return *this; 
 }
 
@@ -147,6 +149,8 @@ void MNCTAspect::Clear()
   m_HorizonPointingXAxisElevation = 0;
   m_HorizonPointingZAxisAzimuthNorth = 0;
   m_HorizonPointingZAxisElevation = 0;
+  
+  m_OutOfRange = false;
 }
 
 
