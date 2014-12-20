@@ -145,8 +145,12 @@ void MReadOutAssembly::Clear()
   m_AspectIncompleteString = "";
   m_TimeIncomplete = false;
   m_TimeIncompleteString = "";
+  m_EnergyCalibrationIncomplete_BadStrip = false;
+  m_EnergyCalibrationIncomplete_BadStripString = "";
   m_EnergyCalibrationIncomplete = false;
   m_EnergyCalibrationIncompleteString = "";
+  m_EnergyResolutionCalibrationIncomplete = false;
+  m_EnergyResolutionCalibrationIncompleteString = "";
   m_StripPairingIncomplete = false;
   m_StripPairingIncompleteString = "";
   m_DepthCalibrationIncomplete = false;
@@ -358,9 +362,19 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
     S<<endl;
   }
+  if (m_EnergyCalibrationIncomplete_BadStrip == true) {
+    S<<"BD EnergyCalibrationIncomplete_BadStrip";
+    if (m_EnergyCalibrationIncomplete_BadStripString != "") S<<" ("<<m_EnergyCalibrationIncomplete_BadStripString<<")";
+    S<<endl;
+  }
   if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete";
-    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+	S<<"BD EnergyCalibrationIncomplete";
+	if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+	S<<endl;
+  }
+  if (m_EnergyResolutionCalibrationIncomplete == true) {
+    S<<"BD EnergyResolutionCalibrationIncomplete";
+    if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
     S<<endl;
   }
   if (m_StripPairingIncomplete == true) {
@@ -407,9 +421,19 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
     S<<endl;
   }
+  if (m_EnergyCalibrationIncomplete_BadStrip == true) {
+    S<<"BD EnergyCalibrationIncomplete_BadStrip";
+    if (m_EnergyCalibrationIncomplete_BadStripString != "") S<<" ("<<m_EnergyCalibrationIncomplete_BadStripString<<")";
+    S<<endl;
+  }
   if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete";
-    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+	S<<"BD EnergyCalibrationIncomplete";
+	if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+	S<<endl;
+  }
+  if (m_EnergyResolutionCalibrationIncomplete == true) {
+    S<<"BD EnergyResolutionCalibrationIncomplete";
+    if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
     S<<endl;
   }
   if (m_StripPairingIncomplete == true) {
@@ -466,7 +490,9 @@ bool MReadOutAssembly::IsGood() const
 
   if (m_AspectIncomplete == true) return false;
   if (m_TimeIncomplete == true) return false;
+  if (m_EnergyCalibrationIncomplete_BadStrip == true) return false;
   if (m_EnergyCalibrationIncomplete == true) return false;
+  if (m_EnergyResolutionCalibrationIncomplete == true) return false;
   if (m_StripPairingIncomplete == true) return false;
   if (m_DepthCalibrationIncomplete == true) return false;
 
@@ -485,7 +511,9 @@ bool MReadOutAssembly::IsBad() const
 
   if (m_AspectIncomplete == true) return true;
   if (m_TimeIncomplete == true) return true;
+  if (m_EnergyCalibrationIncomplete_BadStrip == true) return true;
   if (m_EnergyCalibrationIncomplete == true) return true;
+  if (m_EnergyResolutionCalibrationIncomplete == true) return true;
   if (m_StripPairingIncomplete == true) return true;
   if (m_DepthCalibrationIncomplete == true) return true;
 
