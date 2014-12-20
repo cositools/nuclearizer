@@ -142,11 +142,16 @@ void MReadOutAssembly::Clear()
   m_GuardringHits.clear();
 
   m_AspectIncomplete = false;
+  m_AspectIncompleteString = "";
   m_TimeIncomplete = false;
+  m_TimeIncompleteString = "";
   m_EnergyCalibrationIncomplete = false;
+  m_EnergyCalibrationIncompleteString = "";
   m_StripPairingIncomplete = false;
+  m_StripPairingIncompleteString = "";
   m_DepthCalibrationIncomplete = false;
-
+  m_DepthCalibrationIncompleteString = "";
+  
   m_FilteredOut = false;
 
   delete m_PhysicalEvent;
@@ -344,19 +349,29 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   }
 
   if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete"<<endl;
+    S<<"BD AspectIncomplete";
+    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
+    S<<endl;
   }
   if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete"<<endl;
+    S<<"BD TimeIncomplete";
+    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
+    S<<endl;
   }
   if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete"<<endl;
+    S<<"BD EnergyCalibrationIncomplete";
+    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+    S<<endl;
   }
   if (m_StripPairingIncomplete == true) {
-    S<<"BD StripPairingIncomplete"<<endl;
+    S<<"BD StripPairingIncomplete";
+    if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
+    S<<endl;
   }
   if (m_DepthCalibrationIncomplete == true) {
-    S<<"BD DetpthCalibrationIncomplete"<<endl;
+    S<<"BD DepthCalibrationIncomplete";
+    if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
+    S<<endl;
   }
   
   return true;
@@ -383,19 +398,29 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   }
 
   if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete"<<endl;
+    S<<"BD AspectIncomplete";
+    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
+    S<<endl;
   }
   if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete"<<endl;
+    S<<"BD TimeIncomplete";
+    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
+    S<<endl;
   }
   if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete"<<endl;
+    S<<"BD EnergyCalibrationIncomplete";
+    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+    S<<endl;
   }
   if (m_StripPairingIncomplete == true) {
-    S<<"BD StripPairingIncomplete"<<endl;
+    S<<"BD StripPairingIncomplete";
+    if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
+    S<<endl;
   }
   if (m_DepthCalibrationIncomplete == true) {
-    S<<"BD DepthCalibrationIncomplete"<<endl;
+    S<<"BD DepthCalibrationIncomplete";
+    if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
+    S<<endl;
   }
 }
 
@@ -420,10 +445,14 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
   }
 
   if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete"<<endl;
+    S<<"BD AspectIncomplete";
+    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
+    S<<endl;
   }
   if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete"<<endl;
+    S<<"BD TimeIncomplete";
+    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
+    S<<endl;
   }
 }
 

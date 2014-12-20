@@ -161,26 +161,27 @@ class MReadOutAssembly
 
 
   //! Set the aspect-incomplete flag
-  void SetAspectIncomplete(bool Flag = true) { m_AspectIncomplete = Flag; }
+  void SetAspectIncomplete(bool Flag = true, MString Text = "") { m_AspectIncomplete = Flag; m_AspectIncompleteString = Text; }
   //! Get the aspect-incomplete flag
   bool IsAspectIncomplete() const { return m_AspectIncomplete; }
 
   //! Set the time-incomplete flag
-  void SetTimeIncomplete(bool Flag = true) { m_TimeIncomplete = Flag; }
+  void SetTimeIncomplete(bool Flag = true, MString Text = "") { m_TimeIncomplete = Flag;  m_TimeIncompleteString = Text; }
   //! Get the time-incomplete flag
   bool IsTimeIncomplete() const { return m_TimeIncomplete; }
+  
   //! Set the energy-calibration-incomplete flag
-  void SetEnergyCalibrationIncomplete(bool Flag = true) { m_EnergyCalibrationIncomplete = Flag; }
+  void SetEnergyCalibrationIncomplete(bool Flag = true, MString Text = "") { m_EnergyCalibrationIncomplete = Flag;  m_EnergyCalibrationIncompleteString = Text; }
   //! Get the energy-calibration-incomplete flag
   bool IsEnergyCalibrationIncomplete() const { return m_EnergyCalibrationIncomplete; }
 
   //! Set the strip-pairing-incomplete flag
-  void SetStripPairingIncomplete(bool Flag = true) { m_StripPairingIncomplete = Flag; }
+  void SetStripPairingIncomplete(bool Flag = true, MString Text = "") { m_StripPairingIncomplete = Flag;  m_StripPairingIncompleteString = Text; }
   //! Get the strip-pairing-incomplete flag
   bool IsStripPairingIncomplete() const { return m_StripPairingIncomplete; }
 
   //! Set the depth-calibration-incomplete flag
-  void SetDepthCalibrationIncomplete(bool Flag = true) { m_DepthCalibrationIncomplete = Flag; }
+  void SetDepthCalibrationIncomplete(bool Flag = true, MString Text = "") { m_DepthCalibrationIncomplete = Flag;  m_DepthCalibrationIncompleteString = Text; }
   //! Get the depth-calibration-incomplete flag
   bool IsDepthCalibrationIncomplete() const { return m_DepthCalibrationIncomplete; }
 
@@ -291,10 +292,15 @@ class MReadOutAssembly
 
   // Flags indicating the quality of the event
   bool m_AspectIncomplete;
+  MString m_AspectIncompleteString;
   bool m_TimeIncomplete;
+  MString m_TimeIncompleteString;
   bool m_EnergyCalibrationIncomplete;
+  MString m_EnergyCalibrationIncompleteString;
   bool m_StripPairingIncomplete;
+  MString m_StripPairingIncompleteString;
   bool m_DepthCalibrationIncomplete;
+  MString m_DepthCalibrationIncompleteString;
   
   //! True if event has been filtered out
   bool m_FilteredOut;
