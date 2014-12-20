@@ -226,12 +226,12 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     MNCTStripHit* SH = Event->GetStripHit(i);
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
-    
+
     TF1* Fit = m_Calibration[R];
 		TF1* FitRes = m_ResolutionCalibration[R];
     if (Fit == 0) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
-      Event->SetEnergyCalibrationIncomplete(true);
+      Event->SetEnergyCalibrationIncomplete_BadStrip(true);
     } else {
       double Energy = Fit->Eval(SH->GetADCUnits());
       if (Energy < 0 && SH->GetADCUnits() > 100) {
@@ -243,7 +243,7 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       SH->SetEnergy(Energy);
 			if (FitRes == 0) {
 				if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy Resolution fit not found for read-out element "<<R<<endl;
-				Event->SetEnergyCalibrationIncomplete(true);
+				Event->SetEnergyResolutionCalibrationIncomplete(true);
 			} else {
 				double EnergyResolution = FitRes->Eval(Energy);
 				SH->SetEnergyResolution(EnergyResolution);
@@ -253,9 +253,8 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       }
       
       if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
-    }
+    } 
   } 
-  
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
 
   return true;
