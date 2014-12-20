@@ -170,12 +170,22 @@ class MReadOutAssembly
   //! Get the time-incomplete flag
   bool IsTimeIncomplete() const { return m_TimeIncomplete; }
   
+   //! Set the energy-calibration-incomplete flag for strips without a calibration
+  void SetEnergyCalibrationIncomplete_BadStrip(bool Flag = true, MString Text = "") { m_EnergyCalibrationIncomplete_BadStrip = Flag;  m_EnergyCalibrationIncomplete_BadStripString = Text; }
+  //! Get the energy-calibration-incomplete flag for strips without a calibration
+  bool IsEnergyCalibrationIncomplete_BadStrip() const { return m_EnergyCalibrationIncomplete_BadStrip; }
+
   //! Set the energy-calibration-incomplete flag
   void SetEnergyCalibrationIncomplete(bool Flag = true, MString Text = "") { m_EnergyCalibrationIncomplete = Flag;  m_EnergyCalibrationIncompleteString = Text; }
   //! Get the energy-calibration-incomplete flag
   bool IsEnergyCalibrationIncomplete() const { return m_EnergyCalibrationIncomplete; }
 
-  //! Set the strip-pairing-incomplete flag
+  //! Set the energy resolution calibration incomplete flag
+  void SetEnergyResolutionCalibrationIncomplete(bool Flag = true, MString Text = "") { m_EnergyResolutionCalibrationIncomplete = Flag; m_EnergyResolutionCalibrationIncompleteString = Text;}
+  //! Get the energy resolution calibration incomplete flag
+  bool IsEnergyResolutionCalibrationIncomplete() const { return m_EnergyResolutionCalibrationIncomplete; }
+
+ //! Set the strip-pairing-incomplete flag
   void SetStripPairingIncomplete(bool Flag = true, MString Text = "") { m_StripPairingIncomplete = Flag;  m_StripPairingIncompleteString = Text; }
   //! Get the strip-pairing-incomplete flag
   bool IsStripPairingIncomplete() const { return m_StripPairingIncomplete; }
@@ -295,8 +305,12 @@ class MReadOutAssembly
   MString m_AspectIncompleteString;
   bool m_TimeIncomplete;
   MString m_TimeIncompleteString;
+  bool m_EnergyCalibrationIncomplete_BadStrip;
+  MString m_EnergyCalibrationIncomplete_BadStripString;
   bool m_EnergyCalibrationIncomplete;
   MString m_EnergyCalibrationIncompleteString;
+  bool m_EnergyResolutionCalibrationIncomplete;
+  MString m_EnergyResolutionCalibrationIncompleteString;
   bool m_StripPairingIncomplete;
   MString m_StripPairingIncompleteString;
   bool m_DepthCalibrationIncomplete;
