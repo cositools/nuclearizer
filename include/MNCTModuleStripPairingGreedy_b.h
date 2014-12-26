@@ -155,15 +155,18 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   bool CheckForAdjacentStrips(); //checks if any adjacent strips were hit and if so, adds the possibility of charge sharing
   bool CheckMultipleHits(); //checks to see if more x or more y strips were hit, if so, calls AddMuoltipleHits(int)
   void AddMultipleHits(int); //adds possibility of multiple hits on one x (or y) strip by adding all possible combinations of y (or x) strips to vector of y (or x) hits
+	void ChargeSharingThreeStrips(int);
 	void AddThreeHits(int);
   void InitializeBadCombinations(); //fill badCombinations vector with 0's
   void CheckForBadCombinations(); //fills out badCombinations vector using information from kill matrix
   void PrintXYStripsHit(); //prints out current list x and y strips that were hit, including combinations
+	void PrintXYStripsHitOrig();	//prints out original list of x and y strips that were hit, without combinations
   float CalculateWeight(int, int); //calculate weight of one possible combination
   void CalculateWeightMatrix(); //calculate the weight matrix
   vector<int> FindMinWeight(); //find the minimum weight in the weight matrix
   void ConflictingStrips(int, int); //once a pair is chosen, prevents the program from choosing the same strip again
   float FindFinalPairs(); //finds the most likely pairs (or combinations) by creating and analyzing the weight matrix
+	void PrintFinalPairs();	//print final pairs
   void InitializeWeightMatrix(); //fill weight matrix with 0's
   void PrintWeightMatrix(); //print out all elements in the weight matrix
   void InitializeKillMatrices(); //fill kill matrices with 0's
@@ -227,7 +230,8 @@ class MNCTModuleStripPairingGreedy_b : public MModule
 
   vector<int> nHits; //number of hits on x and y sides, changes to incorporate adjacent strips and multiple hits per strip
   vector<int> nHitsOrig; //number of hits on x and y sides, stays at original number throughout the entire program
-	vector<int> nHitsAdj;
+	vector<int> nHitsAdj;	//number of pairs of adjacent strips hit
+	vector<int> nThreeHitsAdj;	//number of triples of three adj strips hit
 
   vector<vector<int> > badCombinations; //badCombinations.at(axis).at(i) = 0 when i is a good combination, = 1 when i is a bad combination
                     //a bad combination is one like 151, which is strip 1 combined with strip sharing between strips 1 and 2
