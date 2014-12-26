@@ -375,15 +375,15 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
 		xTotalUnc = sqrt(xTotalUnc);
 		yTotalUnc = sqrt(yTotalUnc);
 
-		double diff = fabs(xTotalEnergy-yTotalEnergy);
+//		double diff = fabs(xTotalEnergy-yTotalEnergy);
 
-		if (diff > 2*xTotalUnc + 2*yTotalUnc + 20){
+//		if (diff > 2*xTotalUnc + 2*yTotalUnc + 20){
 //    if (fabs(xTotalEnergy-yTotalEnergy) > 30.){ 
 //	     nHits.push_back(0);
  //	  	 nHits.push_back(0);
 	// 	   return false;
-			Event->SetStripPairingIncomplete(true,"mismatched start energies");
-   	}    
+//			Event->SetStripPairingIncomplete(true,"mismatched start energies");
+ //  	}    
 
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
