@@ -119,12 +119,18 @@ bool MNCTModuleStripPairingGreedy_b::Initialize()
 
 //main data analysis routine, which updates the event to a new level
 bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
-  
+
+//	usleep(100);
+
+	 
   const int nDetectors = 12;
 
 	//bool newAlg;
 	//if (m_Mode == 0) { newAlg = true; }
 	//else { newAlg = false; }
+
+	vector<vector<int> > firstPairing,secondPairing,thirdPairing;
+	float firstChiSq,secondChiSq,thirdChiSq,fourthChiSq = -1;
 
   for (int detector = 0; detector < nDetectors; detector++){
     bool runRest = GetEventInfo(Event, detector);
@@ -132,101 +138,65 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
     if (nHits.at(0)>0 && nHits.at(1)>0 && runRest==true){
 	    InitializeKillMatrices();
 	    CheckForAdjacentStrips();
-			//if there are adjacent strips on both sides, should use different algorithm
-			if (nHitsOrig.at(0) != nHits.at(0) && nHitsOrig.at(1) != nHits.at(1)){
-				CheckForBadCombinations();
-				float firstChiSq = FindFinalPairs();
-				if (firstChiSq > 10){
-					weightMatrix.clear();
-					badCombinations.clear();
-					finalPairs.clear();
-					finalPairEnergy.clear();
-					finalPairRes.clear();
+			CheckForBadCombinations();
+			firstChiSq = FindFinalPairs();
 
-					CheckMultipleHits();
-					CheckForBadCombinations();
-					float secondChiSq = FindFinalPairs();
+			//for debugging
+			firstPairing = finalPairs;
 
-					if (secondChiSq > 10){
-						weightMatrix.clear();
-						badCombinations.clear();
-						finalPairs.clear();
-						finalPairEnergy.clear();
-						finalPairRes.clear();
+			if (firstChiSq > 30){
+				weightMatrix.clear();
+				badCombinations.clear();
+				finalPairs.clear();
+				finalPairEnergy.clear();
+				finalPairRes.clear();
 
-						if (nHitsOrig.at(0)+nHitsAdj.at(0) == nHits.at(0)){ AddMultipleHits(0); }
-						if (nHitsOrig.at(1)+nHitsAdj.at(1) == nHits.at(1)){ AddMultipleHits(1); }
-						CheckForBadCombinations();
-						float thirdChiSq = FindFinalPairs();
-
-						if (thirdChiSq > 20){
-							weightMatrix.clear();
-							badCombinations.clear();
-							finalPairs.clear();
-							finalPairEnergy.clear();
-							finalPairRes.clear();
-
-							AddThreeHits(0);
-							AddThreeHits(1);
-							CheckForBadCombinations();
-							/*float fourthChiSq =*/FindFinalPairs();
-						}
-					}
-				}
-      	CalculateDetectorQuality();
-				WriteHits(Event, detector);
-			}
-			else {
-				CheckForBadCombinations();
-				float firstChiSq = FindFinalPairs();
-
-				if (firstChiSq > 10){
-					weightMatrix.clear();
-					badCombinations.clear();
-					finalPairs.clear();
-					finalPairEnergy.clear();
-					finalPairRes.clear();
-
-					CheckMultipleHits();
-					CheckForBadCombinations();
-					float secondChiSq = FindFinalPairs();
-
-					if (secondChiSq > 10){
-						weightMatrix.clear();
-						badCombinations.clear();
-						finalPairs.clear();
-						finalPairEnergy.clear();
-						finalPairRes.clear();
-			
-						if (nHitsOrig.at(0)+nHitsAdj.at(0) == nHits.at(0)){ AddMultipleHits(0); }
-						if (nHitsOrig.at(1)+nHitsAdj.at(1) == nHits.at(1)){ AddMultipleHits(1); }
+				ChargeSharingThreeStrips(0);
+				ChargeSharingThreeStrips(1);	
 	
+//			CheckMultipleHits();
+				CheckForBadCombinations();
+				secondChiSq = FindFinalPairs();
+
+				//for debugging
+				secondPairing = finalPairs;
+
+				if (secondChiSq > 30){
+					weightMatrix.clear();
+					badCombinations.clear();
+					finalPairs.clear();
+					finalPairEnergy.clear();
+					finalPairRes.clear();
+
+
+					if (nHitsOrig.at(0)+nHitsAdj.at(0) == nHits.at(0)){ AddMultipleHits(0); }
+					if (nHitsOrig.at(1)+nHitsAdj.at(1) == nHits.at(1)){ AddMultipleHits(1); }
+					CheckForBadCombinations();
+					thirdChiSq = FindFinalPairs();
+
+					thirdPairing = finalPairs;
+
+					if (thirdChiSq > 30){
+						weightMatrix.clear();
+						badCombinations.clear();
+						finalPairs.clear();
+						finalPairEnergy.clear();
+						finalPairRes.clear();
+
+						AddThreeHits(0);
+						AddThreeHits(1);
+
 						CheckForBadCombinations();
-						float thirdChiSq = FindFinalPairs();
-
-						if (thirdChiSq > 10){
-							weightMatrix.clear();
-							badCombinations.clear();
-							finalPairs.clear();
-							finalPairEnergy.clear();
-							finalPairRes.clear();
-
-							AddThreeHits(0);
-							AddThreeHits(1);
-							CheckForBadCombinations();
-							/*float fourthChiSq = */FindFinalPairs();
-						}
+						fourthChiSq = FindFinalPairs();
 					}
 				}
-      	CalculateDetectorQuality();
-				WriteHits(Event, detector);
 			}
-
-
+     	CalculateDetectorQuality();
+			WriteHits(Event, detector);
 		}
     else {
 	    detectorQualityFactors.push_back(0);
-	   }
+	  }
 	}
 	CalculateEventQuality(Event, nDetectors);
 	detectorQualityFactors.clear();
@@ -269,13 +239,66 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 		}
 */
     // Difference must be more than 10 keV for cross talk + 2 sigma energy resolution on *both* sides
-    if (Difference > 2*pUncertainty + 2*nUncertainty + 10) {
-      Event->SetStripPairingIncomplete(true);
-      if (g_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
+//		if (Event->GetHit(h)->GetStripHitMultipleTimes() == true){
+//			Event->SetStripPairingIncomplete(true,"strip hit multiple times");
+//		}
+
+    if (Difference > 2*pUncertainty + 2*nUncertainty + 20) {
+			if (Event->GetHit(h)->GetStripHitMultipleTimes() == false){
+		  	Event->SetStripPairingIncomplete(true,"bad pairing");
+			}
+			else{
+				Event->SetStripPairingIncomplete(true,"multiple hits per strip");
+			}
+
+/*			if (nHits.at(0) != 0 && nHits.at(1) != 0){
+				PrintXYStripsHitOrig();
+				PrintFinalPairs();
+				cout << "fourth chisq: " << fourthChiSq << endl;
+
+				cout << "-----"<< endl<<"first pairing"<<endl;
+				for (int i=0; i<firstPairing.size(); i++){
+					for (int j=0; j<firstPairing.at(i).size(); j++){
+						cout << firstPairing.at(i).at(j) << '\t';
+					}
+					cout << endl;
+				}
+				cout << "first chisq: " << firstChiSq << endl;
+				cout << "-----"<< endl<<"second pairing"<<endl;
+				for (int i=0; i<secondPairing.size(); i++){
+					for (int j=0; j<secondPairing.at(i).size(); j++){
+						cout << secondPairing.at(i).at(j) << '\t';
+					}
+					cout << endl;
+				}
+				cout << "second chisq: " << secondChiSq << endl;
+				cout << "-----"<< endl<<"third pairing"<<endl;
+				for (int i=0; i<thirdPairing.size(); i++){
+					for (int j=0; j<thirdPairing.at(i).size(); j++){
+						cout << thirdPairing.at(i).at(j) << '\t';
+					}
+					cout << endl;
+				}
+				cout << "third chisq: " << thirdChiSq << endl;
+
+
+				cout << "----------" << endl;
+				cout << "HIT: " << h << endl;
+				cout << "pEnergy: " << pEnergy << endl;
+				cout << "nEnergy: " << nEnergy << endl;
+				cout << "Difference: " << Difference << endl;
+				cout << "pUncertainty: " << pUncertainty << endl;
+				cout << "nUncertainty: " << nUncertainty << endl;
+				cout << "2*pUnc+2*nUnc+10: " << 2*pUncertainty+2*nUncertainty+10<<endl;
+				dummy_func();
+			}*/
+ 
+     if (g_Verbosity >= c_Warning) cout<<"Bad strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
     } else {
       if (g_Verbosity >= c_Info) cout<<"Good strip pairing: p: E="<<pEnergy<<" dE="<<pUncertainty<<" n: E="<<nEnergy<<" dE="<<nUncertainty<<endl; 
     }
-  }  
+  }
+//	}  
   
   if (g_Verbosity >= c_Info) {
     cout<<"After strip pairing..."<<endl;
@@ -287,7 +310,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
       }
     }
   }
-  
+
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
   
   return true;
@@ -330,26 +353,38 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
     float stripEnergy, stripSigma;
     double inf = numeric_limits<double>::infinity();
     
-   float xTotalEnergy = 0; 
-    float yTotalEnergy = 0; 
- 
+ 	  float xTotalEnergy = 0; 
+ 	  float yTotalEnergy = 0; 
+ 		float xTotalUnc = 0;
+		float yTotalUnc = 0;
+
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
         if (Event->GetStripHit(i)->IsXStrip() == true){
           xTotalEnergy += Event->GetStripHit(i)->GetEnergy();
+					xTotalUnc += pow(Event->GetStripHit(i)->GetEnergyResolution(),2);
         }    
         else {
 			    yTotalEnergy += Event->GetStripHit(i)->GetEnergy();
+					yTotalUnc += pow(Event->GetStripHit(i)->GetEnergyResolution(),2);
         }
 			}
 		}
-/*
-    if (fabs(xTotalEnergy-yTotalEnergy) > 30.){ 
-	     nHits.push_back(0);
-  	   nHits.push_back(0);
-       return false;
-   	 }    
-*/
+
+		//check if initial n and p energy difference is high
+		xTotalUnc = sqrt(xTotalUnc);
+		yTotalUnc = sqrt(yTotalUnc);
+
+		double diff = fabs(xTotalEnergy-yTotalEnergy);
+
+		if (diff > 2*xTotalUnc + 2*yTotalUnc + 20){
+//    if (fabs(xTotalEnergy-yTotalEnergy) > 30.){ 
+//	     nHits.push_back(0);
+ //	  	 nHits.push_back(0);
+	// 	   return false;
+			Event->SetStripPairingIncomplete(true,"mismatched start energies");
+   	}    
+
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
         if (Event->GetStripHit(i)->IsXStrip() == true){
@@ -388,8 +423,9 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
     n_y = stripsHit.at(1).size();
     nHits.push_back(n_x);
     nHits.push_back(n_y);
-    nHitsOrig = nHits;
-    
+//    nHitsOrig = nHits;
+  	nHitsOrig.push_back(n_x);
+		nHitsOrig.push_back(n_y);  
     
     
     
@@ -418,8 +454,13 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
         }
       }
     }
-    return true;
+//		if (Event->IsStripPairingIncomplete()){
+//			PrintXYStripsHit();
+//			dummy_func();
+//		}
+		return true;
   }
+
   else {
     nHits.push_back(0);
     nHits.push_back(0);
@@ -515,7 +556,10 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
     }
 		if (stripHitMultipleTimes.at(pair) == 1){
 			Hit->SetStripHitMultipleTimes(true);
-		}
+/*			PrintXYStripsHitOrig();
+			PrintFinalPairs();
+			dummy_func();
+*/		}
 		else {
 			Hit->SetStripHitMultipleTimes(false);
 		}
@@ -568,7 +612,9 @@ void MNCTModuleStripPairingGreedy_b::ClearMembers(){
   energy.clear();
   sig.clear();
   nHits.clear();
+	nHitsAdj.clear();
   nHitsOrig.clear();
+	nThreeHitsAdj.clear();
   badCombinations.clear();
   killMatrix.clear();
   weightMatrix.clear();
@@ -690,6 +736,10 @@ bool MNCTModuleStripPairingGreedy_b::CheckForAdjacentStrips(){
  
 	nHitsAdj.push_back(0);
 	nHitsAdj.push_back(0);
+
+	//initialize here just because?
+	nThreeHitsAdj.push_back(0);
+	nThreeHitsAdj.push_back(0);
  
   //iterate over x and y axes
   for (int axis=0; axis<2; axis++){
@@ -775,8 +825,8 @@ void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
   vector<float> pairEnergyVec, pairSigVec;
   
   //goal is to make all possible combinations of strips on one axis
-  for (int i=0; i<nHits.at(axis); i++){
-    for (int j=i+1; j<nHits.at(axis); j++){
+  for (int i=0; i<nHits.at(axis)-nThreeHitsAdj.at(axis); i++){
+    for (int j=i+1; j<nHits.at(axis)-nThreeHitsAdj.at(axis); j++){
       x1 = stripsHit.at(axis).at(i);
       x2 = stripsHit.at(axis).at(j);
       
@@ -850,6 +900,61 @@ void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
   
 };
 
+//add possibility of charge sharing on 3 strips to vector of hits
+void MNCTModuleStripPairingGreedy_b::ChargeSharingThreeStrips(int axis){
+
+	int counter = 0;
+
+	//check pairs of adjacent strips
+	for (int i=nHitsOrig.at(axis); i<nHitsOrig.at(axis)+nHitsAdj.at(axis)-1; i++){
+		if ( fabs(stripsHit.at(axis).at(i+1) - stripsHit.at(axis).at(i)) == 1){
+			int sID_one = stripsHit.at(axis).at(i)-50;
+
+			//get strip IDs to check energies
+			int indOne = GetStripIndex(axis,sID_one);
+
+			//check energies
+			float eOne = energy.at(axis).at(indOne);
+			float eTwo = energy.at(axis).at(indOne+1);
+			float eThree = energy.at(axis).at(indOne+2);
+
+			//if energy makes sense, get new "strip ID"
+			if (eTwo > eOne && eTwo > eThree){
+				int newStripID = 5000+sID_one;
+				stripsHit.at(axis).push_back(newStripID);
+				float newEnergy = eOne+eTwo+eThree;
+				energy.at(axis).push_back(newEnergy);
+
+				//get energy resolution
+				float eResOne = sig.at(axis).at(indOne);
+				float eResTwo = sig.at(axis).at(indOne+1);
+				float eResThree = sig.at(axis).at(indOne+2);
+				float newERes = sqrt(eResOne*eResOne + eResTwo*eResTwo + eResThree*eResThree);
+				sig.at(axis).push_back(newERes);
+
+				counter += 1;
+
+				//add things to kill matrix
+				ExpandKillMatrix(axis);
+
+//				cout << "killMatrix.at(0).size(): " << killMatrix.at(0).size() << endl;
+
+	      //each element is the vector sum of its constituent strips
+	      for (int k=0; k<nHits.at(axis)+counter-1; k++){
+	        killMatrix.at(axis).at(nHits.at(axis)+counter-1).at(k) = killMatrix.at(axis).at(indOne).at(k) + killMatrix.at(axis).at(indOne+1).at(k) + killMatrix.at(axis).at(indOne+2).at(k);
+	        killMatrix.at(axis).at(k).at(nHits.at(axis)+counter-1) = killMatrix.at(axis).at(k).at(indOne) + killMatrix.at(axis).at(k).at(indOne+1) + killMatrix.at(axis).at(k).at(indOne+2);
+	      }
+
+			}
+		}
+	}
+
+	nHits.at(axis) = nHits.at(axis) + counter;
+	nThreeHitsAdj.at(axis) = nThreeHitsAdj.at(axis) + counter;
+
+};
+
+
 //add possibilities of three hits to vector of hits
 void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
   
@@ -862,7 +967,7 @@ void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
   
   //goal is to make all possible combinations of strips on one axis
   for (int i=0; i<nHitsOrig.at(axis)+nHitsAdj.at(axis); i++){
-    for (int j=nHitsOrig.at(axis)+nHitsAdj.at(axis); j<nHits.at(axis); j++){
+    for (int j=nHitsOrig.at(axis)+nHitsAdj.at(axis)+nThreeHitsAdj.at(axis); j<nHits.at(axis); j++){
       x1 = stripsHit.at(axis).at(i);
       x2 = stripsHit.at(axis).at(j);
       
@@ -1312,12 +1417,13 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 //if 256 is selected, it gets separated into strip 2 and charge sharing between 6 and 7
 vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs(){
 
+/*
 	for (unsigned int pair=0; pair<finalPairs.size(); pair++){
 		if (finalPairs.at(pair).at(0) > 100 && finalPairs.at(pair).at(1) > 100){
 			dummy_func();
 		}
 	}
-
+*/
  
   vector<int> xVec;
   vector<int> yVec;
@@ -1346,6 +1452,11 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
       xVec.push_back(finalPairs.at(i).at(0)-50);
       xVec.push_back(finalPairs.at(i).at(0)+1-50);
     }
+		else if (finalPairs.at(i).at(0) > 5000 && finalPairs.at(i).at(0) < 5100){
+			xVec.push_back(finalPairs.at(i).at(0)-5000);
+			xVec.push_back(finalPairs.at(i).at(0)+1-5000);
+			xVec.push_back(finalPairs.at(i).at(0)+2-5000);
+		}
     else if (finalPairs.at(i).at(0) > 100 && finalPairs.at(i).at(0) < 10000){
 			xTwoHits = true;
       if (finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/100)*100 > 50){
@@ -1381,6 +1492,11 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
       yVec.push_back(finalPairs.at(i).at(1)-50);
       yVec.push_back(finalPairs.at(i).at(1)+1-50);
     }
+		else if (finalPairs.at(i).at(1) > 5000 && finalPairs.at(i).at(1) < 5100){
+			yVec.push_back(finalPairs.at(i).at(1)-5000);
+			yVec.push_back(finalPairs.at(i).at(1)+1-5000);
+			yVec.push_back(finalPairs.at(i).at(1)+2-5000);
+		}
     else if (finalPairs.at(i).at(1) > 100 && finalPairs.at(i).at(1) < 10000){
 			yTwoHits = true;
       if (finalPairs.at(i).at(1)-(int)(finalPairs.at(i).at(1)/100)*100 > 50){
@@ -1804,6 +1920,54 @@ void MNCTModuleStripPairingGreedy_b::PrintXYStripsHit(){
 		yE += energy.at(1).at(i);
 	}
 	cout << yE << endl;  
+
+};
+
+void MNCTModuleStripPairingGreedy_b::PrintXYStripsHitOrig(){
+  
+//  cout << "stripsHit.size(): " << stripsHit.size() << endl;
+ 
+	if (nHitsOrig.size() < 2){
+		return;
+	}
+ 
+  cout << "--------------------------" << endl << "Printing xStripsHit...." << endl;
+  for(int i=0; i<nHitsOrig.at(0); i++){
+    cout << stripsHit.at(0).at(i) << '\t' << energy.at(0).at(i) << endl;
+  }
+ 
+	cout << "total X energy: " << '\t';
+	float xE = 0;
+	for (int i=0; i<nHitsOrig.at(0); i++){
+		xE += energy.at(0).at(i);
+	}
+ 	cout << xE << endl;
+
+
+  cout << "--------------------------" << endl << "Printing yStripsHit...." << endl;
+  for(int i=0; i<nHitsOrig.at(1); i++){
+    cout << stripsHit.at(1).at(i) << '\t' << energy.at(1).at(i) << endl;
+  }
+
+	cout << "total Y energy: " << '\t';
+	float yE = 0;
+	for (int i=0; i<nHitsOrig.at(1); i++){
+		yE += energy.at(1).at(i);
+	}
+	cout << yE << endl;  
+
+};
+
+void MNCTModuleStripPairingGreedy_b::PrintFinalPairs(){
+
+	cout << "----------------------" << endl << "Printing final pairs" << endl;
+
+	for (int p=0; p<finalPairs.size(); p++){
+		for (int axis=0; axis<2; axis++){
+			cout << finalPairs.at(p).at(axis) << '\t';
+		}
+		cout << endl;
+	}
 
 };
 
