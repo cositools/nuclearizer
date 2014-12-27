@@ -94,11 +94,17 @@ class MNCTBinaryFlightDataParser
   //! The aspect mode (c_GPS, c_Magnetometer, c_Neither)
   MNCTBinaryFlightDataParserAspectModes m_AspectMode;
 
+  //! internal event list - sorted but unmerged events
+  deque<MReadOutAssembly*> m_EventsBuf;//sorted, unmerged events
+
   //! The internal event list - final merged events
   deque<MReadOutAssembly*> m_Events;
 
   //! If true ignore aspect information if not ready
   bool m_IgnoreAspect;
+
+  //! Flag that tells CheckEventsBuf to ignore the buffer search time, used in file mode when the file is over
+  bool m_IgnoreBufTime;
 
   // private members:
  private:
@@ -108,7 +114,6 @@ class MNCTBinaryFlightDataParser
   //! The aspect reconstructor
   MNCTAspectReconstruction* m_AspectReconstructor;
 
-  deque<MReadOutAssembly*> m_EventsBuf;//sorted, unmerged events
   
   //added by AWL
   bool m_UseComptonDataframes;
@@ -131,6 +136,9 @@ class MNCTBinaryFlightDataParser
   double m_LastLatitude;
   double m_LastLongitude;
   double m_LastAltitude;
+  int m_LastGPSWeek;
+  time_t m_LastDSOUnixTime;
+  uint16_t m_LastAspectID;
   MNCTAspectPacket m_LastDSOPacket;
   uint32_t m_NumDSOReceived;
   uint64_t LastComptonTimestamp;

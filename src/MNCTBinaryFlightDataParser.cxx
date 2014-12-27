@@ -74,7 +74,7 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	MAX_TRIGS = 80;
 	LastTimestamps.resize(12);
 	dx = 0;
-	m_EventTimeWindow = 5 * 10000000;
+	m_EventTimeWindow = 30 * 10000000;
 	m_ComptonWindow = 2;
 
 	LoadStripMap();
@@ -91,6 +91,10 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	m_LostBytes = 0;
 
 	m_IgnoreAspect = false;
+	m_LastDSOUnixTime = 0xffffffff;
+	m_LastAspectID = 0xffff;
+	
+	m_IgnoreBufTime = false; //used in the file loader to prevent events from getting stuck in m_Events when we are done reading the file
 }
 
 
@@ -292,23 +296,12 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			//now sort m_EventsBuf
 			//SortEventsBuf();
 			//look thru m_EventsBuf for multi-detector events
-			CheckEventsBuf();
 
 		}
-		/*
-		//loop through m_Events and add aspect if possible
-		if (m_IgnoreAspect == false) {
-			for( auto E: m_Events ){
-				if( E->GetAspect() == 0 ){
-					MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime());
-					if( A != 0 ){
-						//if the event is out of range, A->GetTime() will give -1
-						E->SetAspect(new MNCTAspect(*A));
-					}
-				}
-			}
-		}
-		*/
+
+		//call this even if we don't get a packet, because in file mode we need to call this method when there is no
+		//more data to be read but there are still events in m_EventsBuf
+		CheckEventsBuf();
 
 		if( m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither ){
 			for( auto E: m_Events ){
@@ -520,9 +513,17 @@ bool MNCTBinaryFlightDataParser::FlushEventsBuf(void){
 bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 
 	int MergedEventCounter = 0;
+	unsigned long long Window;
+
+	//in file mode we need a way to clear out the queue, do this by setting the search buffer time to zero
+	if( m_IgnoreBufTime ){
+		Window = 0;
+	} else {
+		Window = m_EventTimeWindow;
+	}
 
 	if( m_EventsBuf.size() > 0 ){
-		while(m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() >= m_EventTimeWindow ){
+		while(m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() >= Window ){
 			MReadOutAssembly * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
 			deque<MReadOutAssembly*> EventList;
 			EventList.push_back(FirstEvent);
@@ -538,6 +539,7 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 			MReadOutAssembly * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
 			NewMergedEvent->SetID( ++m_EventIDCounter );
+
 			m_Events.push_back(NewMergedEvent);
 			if( m_EventsBuf.size() == 0 ) break;
 		}
@@ -862,6 +864,7 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 	//bool EndRollover  // az: not used, thus commented out
 	bool MiddleRollover;
 	uint64_t Clk;
+	static MTime LastTime = 0;
 
 	CEvents->clear(); //
 
@@ -1064,7 +1067,6 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	int wx = 0; // skip to first byte
 	bool NotEnoughBytes = false;
 	int i;
-	time_t UnixTime;
 	struct tm * timeinfo;
 	char DateString[32];
 	string cpp_DateString;
@@ -1075,6 +1077,9 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	int DSOLen = 84; //length of the DSO message including the last 5 bytes for the clock
 	int MagLen = 24; //length of the magnetometer message including my "$M" header
 
+	uint16_t AspectID = 0;
+	AspectID |= ((uint16_t) NextPacket[6]) << 8;
+	AspectID |= ((uint16_t) NextPacket[7]);
 
 	///////////////////////////////////////
 	/// GCU only sends the lower three ///
@@ -1085,13 +1090,22 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	/// and shift it in.               ///
 	//////////////////////////////////////
 
-	//make Unix timestamp
-	time_t NowTime; NowTime = time(NULL); 
-	int UnixBytes = ((int)NowTime & 0xff000000);
+	int UnixBytes = 0;
 	UnixBytes |= ((int) NextPacket[3] << 16);
 	UnixBytes |= ((int) NextPacket[4] << 8);
 	UnixBytes |= ((int) NextPacket[5]);
-	UnixTime = (time_t) UnixBytes;
+
+	//checked the GCU unix time before launch on 12/20/14-00:32:00 UTC
+	//and got 0x5494C5B1, which will rollover the lower three bytes in ~81 days
+	//so if we have a flight longer than ~81 days, use 0x55 for the upper byte
+	//if the lower three bytes is less than 0x0094C5B1
+	if( UnixBytes > 0x0094C5B1 ){
+		UnixBytes |= 0x54000000;
+	} else {
+		UnixBytes |= 0x55000000;
+	}
+
+	time_t UnixTime = (time_t) UnixBytes;
 	timeinfo = gmtime(&UnixTime);
 	//date format has to be year/month/day for Ares' thing to work
 	strftime( DateString, sizeof(DateString), "%Y/%m/%d", timeinfo);
@@ -1125,11 +1139,17 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 						DSOMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + DSOLen );
 						MNCTAspectPacket DSOPacket;
 						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
+
+						//get the GPS week
+						int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 16; //16 seconds is number of leapseconds introduced since 1980 GPS epoch
+						int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
+
 						string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
 						DSOPacket.date_and_time = TempString;
 						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
 						DSOPacket.CorrectedClk |= UpperClkBytes; //shift in the upper two clock bytes
-						m_LastDSOPacket = DSOPacket;
+						DSOPacket.UnixTime = UnixTime;
+						m_LastDSOPacket = DSOPacket; m_LastDSOUnixTime = UnixTime; m_LastAspectID = AspectID;
 						//corrected clock is converted to MTime in AddAspectFrame
 						if( m_UseGPSDSO ){
 							m_AspectReconstructor->AddAspectFrame( DSOPacket );
@@ -1143,20 +1163,26 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 				} else if( Header.find("$M") == 0){
 					if( (wx + MagLen) <= Len ){
 						if( m_NumDSOReceived > 0 ){ //only use magnetometer if we have at least one dso msg
-							vector<uint8_t> MagMsg;
-							MNCTAspectPacket MagPacket;
-							MagMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + MagLen );
-							DecodeMag( MagMsg, MagPacket );
+							if( (UnixTime >= m_LastDSOUnixTime) && (AspectID >= m_LastAspectID) ){ 
+								//the above check on unix time and aspect ID are so that if we get misordered packets,
+								//and the first subpacket is a magnetometer packet, we won't use the DSO info 
+								//from the last DSO message processed, since this will have happened in the future.
+								vector<uint8_t> MagMsg;
+								MNCTAspectPacket MagPacket;
+								MagMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + MagLen );
+								DecodeMag( MagMsg, MagPacket );
 
-							//copy over all necessary parameters to MagPacket from m_LastDSOPacket
-							MagPacket.geographic_longitude = m_LastDSOPacket.geographic_longitude;
-							MagPacket.geographic_latitude = m_LastDSOPacket.geographic_latitude;
-							MagPacket.elevation = m_LastDSOPacket.elevation;
-							MagPacket.date_and_time = m_LastDSOPacket.date_and_time;
-							MagPacket.CorrectedClk = m_LastDSOPacket.CorrectedClk;
+								//copy over all necessary parameters to MagPacket from m_LastDSOPacket
+								MagPacket.geographic_longitude = m_LastDSOPacket.geographic_longitude;
+								MagPacket.geographic_latitude = m_LastDSOPacket.geographic_latitude;
+								MagPacket.elevation = m_LastDSOPacket.elevation;
+								MagPacket.date_and_time = m_LastDSOPacket.date_and_time;
+								MagPacket.CorrectedClk = m_LastDSOPacket.CorrectedClk;
+								MagPacket.UnixTime = UnixTime;
 
-							if( m_UseMagnetometer ){
-								m_AspectReconstructor->AddAspectFrame( MagPacket );
+								if( m_UseMagnetometer ){
+									m_AspectReconstructor->AddAspectFrame( MagPacket );
+								}
 							}
 						}
 
@@ -1203,22 +1229,23 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 	int MagLen = 24; //length of the magnetometer message including my "$M" header
 
 
-	///////////////////////////////////////
-	/// GCU only sends the lower three ///
-	/// unix time bytes because the    ///
-	/// upper one won't change during a///
-	/// 100 day flight.  take the upper///
-	/// unix byte from the local comp  ///
-	/// and shift it in.               ///
-	//////////////////////////////////////
-
-	//make Unix timestamp
-	time_t NowTime; NowTime = time(NULL); 
-	int UnixBytes = ((int)NowTime & 0xff000000);
+	int UnixBytes = 0;
 	UnixBytes |= ((int) NextPacket[3] << 16);
 	UnixBytes |= ((int) NextPacket[4] << 8);
 	UnixBytes |= ((int) NextPacket[5]);
+
+	//checked the GCU unix time before launch on 12/20/14-00:32:00 UTC
+	//and got 0x5494C5B1, which will rollover the lower three bytes in ~81 days
+	//so if we have a flight longer than ~81 days, use 0x55 for the upper byte
+	//if the lower three bytes is less than 0x0094C5B1
+	if( UnixBytes > 0x0094C5B1 ){
+		UnixBytes |= 0x54000000;
+	} else {
+		UnixBytes |= 0x55000000;
+	}
+
 	UnixTime = (time_t) UnixBytes;
+
 	timeinfo = gmtime(&UnixTime);
 	//date format has to be year/month/day for Ares' thing to work
 	strftime( DateString, sizeof(DateString), "%Y/%m/%d", timeinfo);
@@ -1246,6 +1273,10 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 				if( Header.find("$PASHR,DSO") == 0 ){
 					//check that we have enough bytes in the buffer for this
 					if( (wx + DSOLen) < Len ){
+
+						//from unix time, get the GPS week, and include GPSWeek in the MNCTAspectPAcket
+						
+
 						m_NumDSOReceived++;
 						vector<uint8_t> DSOMsg;
 						DSOMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + DSOLen );
@@ -1255,6 +1286,13 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 						DSOPacket.date_and_time = TempString;
 						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
 						DSOPacket.CorrectedClk |= UpperClkBytes; //shift in the upper two clock bytes
+						
+						//get the GPS week
+						int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 16; //16 seconds is number of leapseconds introduced since 1980 GPS epoch
+						int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
+
+						DSOPacket.GPSWeek = GPSWeek;
+						m_LastGPSWeek = GPSWeek; //keep this around for the magnetometer
 						m_LastCorrectedClk = DSOPacket.CorrectedClk; // keep this around for the magnetometer
 						m_LastDateTimeString = DSOPacket.date_and_time; //keep this around for the magnetometer
 						m_LastLatitude = DSOPacket.geographic_latitude;

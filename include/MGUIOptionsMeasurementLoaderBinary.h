@@ -72,6 +72,7 @@ class MGUIOptionsMeasurementLoaderBinary : public MGUIOptions
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
   MGUIERBList* m_DataMode;
+  MGUIERBList* m_AspectMode;
 
 
 #ifdef ___CINT___

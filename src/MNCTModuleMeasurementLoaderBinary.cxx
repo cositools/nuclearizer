@@ -80,6 +80,7 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
   m_IsStartModule = true;
   
   m_IgnoreAspect = true;
+  m_FileIsDone = false;
 }
 
 
@@ -134,9 +135,24 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
   m_In.read(&Stream[0], Size);
   streamsize Read = m_In.gcount();
   // Check if we reached the end of the file, if yes, truncate, and set the OK flag to false
+  // when the end of the file is reached, we want to 
+
+
+  /*
   if (Read < Size) {
     m_IsOK = false;
   }
+  */
+
+  if (Read < Size) {
+    m_FileIsDone = true;
+	 m_IgnoreBufTime = true;
+  }
+
+  if( m_FileIsDone && (m_EventsBuf.size() == 0) ){
+	  m_IsOK = false;
+  }
+
   vector<uint8_t> Received(Read);
   for (unsigned int i = 0; i < Read; ++i) {
     Received[i] = (uint8_t) Stream[i];

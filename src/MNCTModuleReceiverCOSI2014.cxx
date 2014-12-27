@@ -534,7 +534,11 @@ bool MNCTModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
   if (DataSelectionModeNode != 0) {
     m_DataSelectionMode = (MNCTBinaryFlightDataParserDataModes) DataSelectionModeNode->GetValueAsInt();
   }
-  
+
+  MXmlNode* AspectModeNode = Node->GetNode("AspectMode");
+  if( AspectModeNode != 0 ) {
+	  m_AspectMode = (MNCTBinaryFlightDataParserAspectModes) AspectModeNode->GetValueAsInt();
+  }
 
   MXmlNode* RoaFileNameNode = Node->GetNode("RoaFileName");
   if (RoaFileNameNode != 0) {
@@ -561,6 +565,8 @@ MXmlNode* MNCTModuleReceiverCOSI2014::CreateXmlConfiguration()
   new MXmlNode(Node, "LocalReceivingPort", m_LocalReceivingPort);
 
   new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
+
+  new MXmlNode(Node, "AspectMode", (unsigned int) m_AspectMode);
 
   new MXmlNode(Node, "RoaFileName", m_RoaFileName);
   

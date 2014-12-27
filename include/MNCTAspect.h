@@ -129,6 +129,10 @@ class MNCTAspect
   //! Get the z-axis of the horizon coordinate system - Elevation in degrees
   double GetHorizonPointingZAxisElevation() const { return m_HorizonPointingZAxisElevation; }
 
+  //! Set the GPS time for this event
+  void SetGPSTime( const MTime GPSTime ) { m_GPSTime = GPSTime; }
+  //! Get the GPS time for this event
+  MTime GetGPSTime() { return m_GPSTime; }
   
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
@@ -206,6 +210,9 @@ class MNCTAspect
 
   //AWL
   bool m_OutOfRange;
+  //! GPS time, resolution is milliseconds
+  MTime m_GPSTime;
+
   
 
 #ifdef ___CINT___

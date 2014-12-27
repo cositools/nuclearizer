@@ -186,14 +186,23 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	unsigned int nanoseconds = PacketA.nanoseconds;
 
 	//don't use this time for aspect determination!!! this is the timestamp of the event with respect to the system clock,
-	//which has nothing to do with the Unix second.
+	//which has nothing to do with the Unix second, but it is used to associate an MNCTAspect with an event
+	//via the system clock
 	MTime MTimeA;
 	uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
 	double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
 	double ClkNanoseconds = (double) ClkModulo * 100.0;
 	MTimeA.Set( ClkSeconds, ClkNanoseconds);
-	double frac_Year = MTimeA.GetAsYears();
-	float gcu_fracYear = frac_Year;
+
+
+
+	/*
+	MTime GPSTime;
+	int WeekSeconds = PacketA.GPSMilliseconds/1000;
+	int WeekMilliseconds = PacketA.GPSMilliseconds % 1000;
+	
+	double GPSSeconds = (PacketA.GPSWeek * 60.0 * 60.0 *24.0 * 7.0)
+	*/
 
 
 	//Here we record heading, pitch, and roll. It's a bit more complicated than you might think.
@@ -220,6 +229,10 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		float alt = elevation;
 
 
+		MTime MagMTime;
+		MagMTime.Set(PacketA.UnixTime);
+		double frac_Year = MagMTime.GetAsYears();
+		float gcu_fracYear = frac_Year;
 		//magfld* MF = new magfld();
 		void WMMInit();
 		float magdec_Cplusplus1 = MagDec(lat, lon, alt, gcu_fracYear);
@@ -229,6 +242,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		if(test_or_not == 0){		
 			printf("According to C++, magnetic_declination is: %9.5f \n",magdec_Cplusplus1);	
 		}
+		cout<<"magnetic declination = "<<magnetic_declination<<endl;
+		cout<<"lat = "<<lat<<" lon = "<<lon<<" altitude = "<<alt<<endl;
 	}
 
 	//Now that we've gone through that crazy ordeal and have found the magnetic declination, we
@@ -422,9 +437,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
 
-	time_t TESTTIME = time(NULL);
 	//m_TCCalculator.SetUnixTime(MTimeA.GetAsSeconds());
-	m_TCCalculator.SetUnixTime(TESTTIME);
+	m_TCCalculator.SetUnixTime(PacketA.UnixTime);
 
 	//dot Zhat/Xhat into (0,0,1) and take the arcos to get the zenith angle.  then convert this to elevation angle
 	double Z_Elevation = 90.0 - arccosine( Zhat[2] );
@@ -443,29 +457,64 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	cout<<"heading = "<<heading<<" pitch = "<<pitch<<" roll = "<<roll<<endl;
 	cout<<"GPS_or_magnetometer = "<<GPS_or_magnetometer<<endl;
 
-	double Z_Azimuth;
-	if( Znorm > 1.0E-9 ){
-		Z_Azimuth = arccosine( Z_proj[1]/Znorm ); if( Z_proj[0] < 0.0 ) Z_Azimuth = 360.0 - Z_Azimuth;
-	} else {
-		Z_Azimuth = 0.0;
-	}
-	cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+	//IMPORTANT since the magnetometer reference frame has the X axis pointing at true north,
+	//we need to look at the azimuth angle from the X axis rather than the y axis (from GPS)
+	double Z_Azimuth,X_Azimuth,Y_Azimuth;
 
-	double X_Azimuth;
-	if( Xnorm > 1.0E-9 ){
-		X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
-	} else {
-		X_Azimuth = 0.0;
-	}
-	cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+	if( GPS_or_magnetometer == 0 ){
 
-	double Y_Azimuth;
-	if( Ynorm > 1.0E-9 ){
-		Y_Azimuth = arccosine( Y_proj[1]/Ynorm ); if( Y_proj[0] < 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
+		//for GPS, the azimuth angle is the angle between the projected vector and the y axis, so pass the y component 
+		//of the projected vectors to the arccosine
+
+		if( Znorm > 1.0E-9 ){
+			Z_Azimuth = arccosine( Z_proj[1]/Znorm ); if( Z_proj[0] < 0.0 ) Z_Azimuth = 360.0 - Z_Azimuth;
+		} else {
+			Z_Azimuth = 0.0;
+		}
+		cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+
+		if( Xnorm > 1.0E-9 ){
+			X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
+		} else {
+			X_Azimuth = 0.0;
+		}
+		cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+
+		if( Ynorm > 1.0E-9 ){
+			Y_Azimuth = arccosine( Y_proj[1]/Ynorm ); if( Y_proj[0] < 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
+		} else {
+			Y_Azimuth = 0.0;
+		}
+		cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+
 	} else {
-		Y_Azimuth = 0.0;
+
+		//for magnetometer, the azimuth angle is the angle between the projected vector and the x axis, so pass the x component 
+		//of the projected vectors to the arccosine
+
+		if( Znorm > 1.0E-9 ){
+			Z_Azimuth = arccosine( Z_proj[0]/Znorm ); if( Z_proj[1] > 0.0 ) Z_Azimuth = 360.0 - Z_Azimuth;
+		} else {
+			Z_Azimuth = 0.0;
+		}
+		cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+
+		if( Xnorm > 1.0E-9 ){
+			X_Azimuth = arccosine( X_proj[0]/Xnorm ); if( X_proj[1] > 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
+		} else {
+			X_Azimuth = 0.0;
+		}
+		cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+
+		if( Ynorm > 1.0E-9 ){
+			Y_Azimuth = arccosine( Y_proj[0]/Ynorm ); if( Y_proj[1] > 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
+		} else {
+			Y_Azimuth = 0.0;
+		}
+		cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+
 	}
-	cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+
 
 	vector<double> ZGalactic; 
 	vector<double> ZEquatorial;

@@ -92,6 +92,8 @@ class MNCTModuleMeasurementLoaderBinary : public MModule, public MNCTBinaryFligh
   MString m_FileName;
   //! The file stream
   ifstream m_In;
+  //! Flag indicating that file read is over
+  bool m_FileIsDone;
   
   
 #ifdef ___CINT___

@@ -47,9 +47,11 @@ class MNCTAspectPacket{
 		double BRMS;
 		uint16_t AttFlag;
 
+		//GPS week computed from packet header
+		int GPSWeek;
 
-
-
+		//Unix time
+		time_t UnixTime;
 	
 	
   
