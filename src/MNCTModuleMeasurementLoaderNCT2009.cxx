@@ -158,8 +158,8 @@ bool MNCTModuleMeasurementLoaderNCT2009::ReadNextEvent(MReadOutAssembly* Event)
   MString Line;
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
-  while (!m_File.eof()) {
-    Line.ReadLine(m_File);
+  while (IsGood()) {
+    ReadLine(Line);
     //mout<<Line<<endl;
     
     if (Line.BeginsWith("SE") || Line.BeginsWith("ID") || Line.BeginsWith("TI") || Line.BeginsWith("SH") || Line.BeginsWith("CL")) {

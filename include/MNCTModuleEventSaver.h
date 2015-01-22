@@ -25,6 +25,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MString.h"
+#include "MFile.h"
 
 // Nuclearizer libs:
 #include "MModule.h"
@@ -133,6 +134,9 @@ class MNCTModuleEventSaver : public MModule
   //! The internal filename with tags etc.
   MString m_InternalFileName;
   
+  //! True if the file should be gzip'ed
+  bool m_Zip;
+  
   //! Save bad events
   bool m_SaveBadEvents;
 
@@ -148,9 +152,9 @@ class MNCTModuleEventSaver : public MModule
   MTime m_SplitFileTime;
   
   //! Main output stream for file
-  ofstream m_Out;
+  MFile m_Out;
   //! Sub-output stream if we split it into multiple files
-  ofstream m_SubFileOut;
+  MFile m_SubFileOut;
   //! Start time in case we split the file in mutliples
   MTime m_SubFileStart;
 

@@ -73,6 +73,7 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MModule()
   m_Mode = c_EvtaFile;
   m_FileName = "MyEvtaFileForRevan.evta";
   m_InternalFileName = "";
+  m_Zip = false;
   m_SaveBadEvents = true;
   m_AddTimeTag = false;
   
@@ -89,8 +90,9 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MModule()
 
 MNCTModuleEventSaver::~MNCTModuleEventSaver()
 {
-  // Delete this instance of MNCTModuleTemplate
-  m_Out.close();
+  // Destructor
+  
+  m_Out.Close();
 }
 
 
@@ -104,6 +106,12 @@ bool MNCTModuleEventSaver::Initialize()
   m_SubFileStart.Set(0);  
 
   m_InternalFileName = m_FileName;
+  
+  m_Zip = false;
+  if (m_InternalFileName.EndsWith(".gz") == true) {
+    m_Zip = true;
+    m_InternalFileName.RemoveInPlace(m_InternalFileName.Length() - 3);
+  }
   
   MString Suffix = m_InternalFileName;
   if (Suffix.Last('.') != MString::npos) {
@@ -133,8 +141,12 @@ bool MNCTModuleEventSaver::Initialize()
     return false;
   }
   
-  m_Out.open(m_InternalFileName);
-  if (m_Out.is_open() == false) {
+  if (m_Zip == true) {
+    m_InternalFileName += ".gz";
+  }
+  
+  m_Out.Open(m_InternalFileName, MFile::c_Write);
+  if (m_Out.IsOpen() == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_InternalFileName<<endl;
     return false;
   }
@@ -160,8 +172,7 @@ bool MNCTModuleEventSaver::Initialize()
     return false;
   }
 
-  m_Header = Header.str();
-  m_Out<<m_Header<<endl;
+  m_Out.Write(m_Header);
   
   return MModule::Initialize();
 }
@@ -174,9 +185,9 @@ bool MNCTModuleEventSaver::StartSubFile()
 {
   //! Start a new sub-file
 
-  if (m_SubFileOut.is_open() == true) {
-    m_SubFileOut<<"EN"<<endl;
-    m_SubFileOut.close();
+  if (m_SubFileOut.IsOpen() == true) {
+    m_SubFileOut.Write("EN");
+    m_SubFileOut.Close();
   }
   
   MString SubName = m_InternalFileName;  
@@ -200,17 +211,23 @@ bool MNCTModuleEventSaver::StartSubFile()
     return false;
   }
   
-  m_SubFileOut.open(SubName);
-  if (m_SubFileOut.is_open() == false) {
+  if (m_Zip == true) {
+    m_InternalFileName += ".gz";
+  }
+
+  m_SubFileOut.Open(SubName, MFile::c_Write);
+  if (m_SubFileOut.IsOpen() == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<SubName<<endl;
     return false;
   }
-  m_SubFileOut<<m_Header<<endl;
+  m_SubFileOut.Write(m_Header);
   
   if (SubName.Last('/') != MString::npos) {
     SubName.RemoveInPlace(0, SubName.Last('/')+1); 
   }
-  m_Out<<"IN "<<SubName<<endl;
+  m_Out.Write("IN ");
+  m_Out.Write(SubName);
+  m_Out.Write('\n');
   
   return true;
 }
@@ -225,13 +242,13 @@ void MNCTModuleEventSaver::Finalize()
 
   MModule::Finalize();
   
-  if (m_SubFileOut.is_open() == true) {
-    m_SubFileOut<<"EN"<<endl;
-    m_SubFileOut.close();
+  if (m_SubFileOut.IsOpen() == true) {
+    m_SubFileOut.Write("EN\n");
+    m_SubFileOut.Close();
   }
 
-  m_Out<<"EN"<<endl;
-  m_Out.close();
+  m_Out.Write("EN\n");
+  m_Out.Close();
   
   return;
 }
@@ -248,7 +265,7 @@ bool MNCTModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
     if (Event->IsBad() == true) return true;
   }
 
-  ofstream* Choosen = 0; // Wish C++ would allow unassigned references...
+  MFile* Choosen = 0; // Wish C++ would allow unassigned references...
   if (m_SplitFile == true) {
     MTime Current = Event->GetTime();
     if (Current > m_SubFileStart + m_SplitFileTime) {
@@ -262,14 +279,16 @@ bool MNCTModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
   } else {
     Choosen = &m_Out; 
   }
-      
+  
+  ostringstream Out;
   if (m_Mode == c_EvtaFile) {
-    Event->StreamEvta(*Choosen);
+    Event->StreamEvta(Out);
   } else if (m_Mode == c_DatFile) {
-    Event->StreamDat(*Choosen);    
+    Event->StreamDat(Out);    
   } else if (m_Mode == c_RoaFile) {
-    Event->StreamRoa(*Choosen);
+    Event->StreamRoa(Out);
   }
+  Choosen->Write(Out);
   
   Event->SetAnalysisProgress(MAssembly::c_EventSaver);
 

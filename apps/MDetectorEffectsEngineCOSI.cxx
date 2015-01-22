@@ -392,7 +392,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     // Step (7): Determine and noise the global event time
     vector<double> CardCageTiming(CardCagedStripHits.size());
     for (double& T: CardCageTiming) {
-      T = Event->GetTime();
+      T = Event->GetTime().GetAsSeconds();
     }
     
     

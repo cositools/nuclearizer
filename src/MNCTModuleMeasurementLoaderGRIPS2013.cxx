@@ -149,10 +149,10 @@ bool MNCTModuleMeasurementLoaderGRIPS2013::Open(MString FileName, unsigned int W
   int MaxLines = 100;
   
   MString Line;
-  while(!m_File.eof()) {
+  while (IsGood()) {
     
     if (++Lines >= MaxLines) break;
-    Line.ReadLine(m_File);
+    ReadLine(Line);
     
     if (FoundType == false) {
       if (Line.BeginsWith("Type") == true) {
@@ -220,16 +220,16 @@ bool MNCTModuleMeasurementLoaderGRIPS2013::Open(MString FileName, unsigned int W
   
   
   // Now go to the end of the file to find the TE, CE keywords
-  m_File.clear();
-  if (m_FileLength > (streampos) 10000) {
-    m_File.seekg(m_FileLength - streamoff(10000));
+  Clear();
+  if (GetFileLength() > (streampos) 10000) {
+    Seek(GetFileLength() - streamoff(10000));
   } else {
     // start from the beginning...
     MFile::Rewind();
   }
-  Line.ReadLine(m_File); // Ignore the first line
-  while(!m_File.eof()) {
-    Line.ReadLine(m_File);
+  ReadLine(Line); // Ignore the first line
+  while(IsGood()) {
+    ReadLine(Line);
     if (Line.Length() < 2) continue;
     
     if (FoundTE == false) {
@@ -319,8 +319,8 @@ bool MNCTModuleMeasurementLoaderGRIPS2013::ReadNextEvent(MReadOutAssembly* Event
   MString Line;
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
-  while (!m_File.eof()) {
-    Line.ReadLine(m_File);
+  while (IsGood()) {
+    ReadLine(Line);
     //mout<<Line<<endl;
     
     if (Line.BeginsWith("SE") || Line.BeginsWith("ID") || Line.BeginsWith("TI") || Line.BeginsWith("SH") || Line.BeginsWith("CL")) {
