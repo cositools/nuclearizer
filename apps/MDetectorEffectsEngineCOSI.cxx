@@ -403,7 +403,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       out<<"ID "<<++RunningID<<endl;
       out<<"TI "<<CardCageTiming[c]<<endl;
       for (MNCTDEEStripHit Hit: CardCagedStripHits[c]) {
-        out<<"SH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<endl;
+        out<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<endl;
       }
     }
    
