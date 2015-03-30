@@ -171,6 +171,7 @@ bool MNCTModuleEventSaver::Initialize()
     cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
+  m_Header = Header.str();
 
   m_Out.Write(m_Header);
   
