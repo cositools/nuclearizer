@@ -190,10 +190,20 @@ class MReadOutAssembly
   //! Get the strip-pairing-incomplete flag
   bool IsStripPairingIncomplete() const { return m_StripPairingIncomplete; }
 
+  //! Set the LLD Event flag
+  void SetLLDEvent(bool Flag = true, MString Text = "") { m_LLDEvent = Flag; m_LLDEventString = Text; }
+  //! Get the LLD Event flag
+  bool IsLLDEvent() const {return m_LLDEvent;}
+
   //! Set the depth-calibration-incomplete flag
   void SetDepthCalibrationIncomplete(bool Flag = true, MString Text = "") { m_DepthCalibrationIncomplete = Flag;  m_DepthCalibrationIncompleteString = Text; }
   //! Get the depth-calibration-incomplete flag
   bool IsDepthCalibrationIncomplete() const { return m_DepthCalibrationIncomplete; }
+
+  //! Set the depth-calibration out of range flag
+  void SetDepthCalibration_OutofRange(bool Flag = true, MString Text = "") {m_DepthCalibration_OutofRange = Flag; m_DepthCalibration_OutofRangeString = Text; }
+  //! Get the depth calibration out of range flag
+  bool IsDepthCalibration_OutofRange() const { return m_DepthCalibration_OutofRange; }
 
   //! Set the filtered-out flag
   void SetFilteredOut(bool Flag = true) { m_FilteredOut = Flag; }
@@ -313,9 +323,15 @@ class MReadOutAssembly
   MString m_EnergyResolutionCalibrationIncompleteString;
   bool m_StripPairingIncomplete;
   MString m_StripPairingIncompleteString;
+  bool m_LLDEvent;
+  MString m_LLDEventString;
   bool m_DepthCalibrationIncomplete;
   MString m_DepthCalibrationIncompleteString;
-  
+  bool m_DepthCalibration_OutofRange;
+  MString m_DepthCalibration_OutofRangeString;  
+
+
+
   //! True if event has been filtered out
   bool m_FilteredOut;
 

@@ -73,8 +73,8 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MModule
   double m_Pixel_CTD_FWHM_Negative[12][37][37];
   double m_Default_CTD2Depth[4];
   double m_Default_CTD_FWHM;
-  unsigned long ShareHitNumber0,ShareHitNumber1;
-  unsigned long SingleHitNumber,OtherHitNumber;  
+  unsigned long ShareHitNumber0,ShareHitNumber1, NotValidStripNumber, OutofBoundsDepth;
+  unsigned long SingleHitNumber,OtherHitNumber, LLDNumber, InvalidEventNumber;
   unsigned long ShareEventNumber0,ShareEventNumber1, SingleEventNumber,OtherEventNumber;
 
 #ifdef ___CINT___
@@ -87,4 +87,4 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MModule
 #endif
 
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

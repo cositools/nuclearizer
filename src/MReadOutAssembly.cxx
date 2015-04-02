@@ -153,8 +153,13 @@ void MReadOutAssembly::Clear()
   m_EnergyResolutionCalibrationIncompleteString = "";
   m_StripPairingIncomplete = false;
   m_StripPairingIncompleteString = "";
+  m_LLDEvent = false;
+  m_LLDEventString = "";
   m_DepthCalibrationIncomplete = false;
   m_DepthCalibrationIncompleteString = "";
+  m_DepthCalibration_OutofRange = false;
+  m_DepthCalibration_OutofRangeString = ""; 
+
   
   m_FilteredOut = false;
 
@@ -382,11 +387,23 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
     S<<endl;
   }
+  if (m_LLDEvent == true) {
+	S<<"BD LLDEvent";
+	if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
+    S<<endl;
+  }
   if (m_DepthCalibrationIncomplete == true) {
     S<<"BD DepthCalibrationIncomplete";
     if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
     S<<endl;
   }
+  if (m_DepthCalibration_OutofRange == true) {
+	S<<"BD DepthCalibration_OutofRange";
+	if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
+	S<<endl;
+  }
+
+
   
   return true;
 }
@@ -441,10 +458,20 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
     S<<endl;
   }
+  if (m_LLDEvent == true) {
+	S<<"BD LLDEvent";
+	if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
+	S<<endl;
+  }
   if (m_DepthCalibrationIncomplete == true) {
     S<<"BD DepthCalibrationIncomplete";
     if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
     S<<endl;
+  }
+  if (m_DepthCalibration_OutofRange == true) { 
+	S<<"BD DepthCalibration_OutofRange";
+	if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
+	S<<endl;
   }
 }
 
@@ -494,7 +521,10 @@ bool MReadOutAssembly::IsGood() const
   if (m_EnergyCalibrationIncomplete == true) return false;
   if (m_EnergyResolutionCalibrationIncomplete == true) return false;
   if (m_StripPairingIncomplete == true) return false;
+  if (m_LLDEvent == true) return false;
   if (m_DepthCalibrationIncomplete == true) return false;
+  if (m_DepthCalibration_OutofRange == true) return false;
+
 
   if (m_FilteredOut == true) return false;
   
@@ -515,7 +545,9 @@ bool MReadOutAssembly::IsBad() const
   if (m_EnergyCalibrationIncomplete == true) return true;
   if (m_EnergyResolutionCalibrationIncomplete == true) return true;
   if (m_StripPairingIncomplete == true) return true;
+  if (m_LLDEvent == true) return true;
   if (m_DepthCalibrationIncomplete == true) return true;
+  if (m_DepthCalibration_OutofRange == true) return true;
 
   return false;
 }
