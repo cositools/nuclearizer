@@ -63,6 +63,8 @@ public:
   void Interrupt() { m_Interrupt = true; }
 	//! Read in and parse energy calibration file
 	void ParseEcalFile();
+	//! Read in and parse dead strip file
+	void ParseDeadStripFile();
 
 private:
   //! True, if the analysis needs to be interrupted
@@ -79,6 +81,11 @@ private:
 	map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
 	//! Energy calibration file name
 	MString m_ecalFilename;
+
+	//! Dead strip file name
+	MString m_deadStripFilename;
+	//! List of dead strips
+	int m_deadStrips[12][2][37];
 
   //! Tiny helper class for MNCTDetectorEffectsEngineCOSI describing a special strip hit
   class MNCTDEEStripHit
@@ -143,6 +150,7 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
   Usage<<"         -f:   simulation file name"<<endl;
   Usage<<"         -g:   geometry file name"<<endl;
 	Usage<<"         -e:   energy calibration file name"<<endl;
+	Usage<<"         -d:   dead strip file name"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -189,6 +197,9 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-e") {
 			m_ecalFilename = argv[++i];
 			cout << "Accepting energy calibration file name: " << m_ecalFilename << endl;
+		} else if (Option == "-d") {
+			m_deadStripFilename = argv[++i];
+			cout << "Accepting dead strip file name: " << m_deadStripFilename << endl;
 		} else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -236,6 +247,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 	//load energy calibration information
 	ParseEcalFile();
+	//load dead strip information
+	ParseDeadStripFile();
 
   MFileEventsSim* Reader = new MFileEventsSim(Geometry);
   if (Reader->Open(m_FileName) == false) {
@@ -256,6 +269,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 //	TCanvas specCanvas("c","c",600,400); 
 //	TH1D* spectrum = new TH1D("spec","spectrum",40,640,680);
+
+	//count how many events have multiple hits per strip
+	int mult_hits_counter = 0;
  
   MSimEvent* Event = 0;
   int RunningID = 0;
@@ -279,7 +295,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       MDVolumeSequence* VS = HT->GetVolumeSequence();
       MDDetector* Detector = VS->GetDetector();
       MString DetectorName = Detector->GetName();
-      DetectorName.RemoveAllInPlace("Detector_");
+      DetectorName.RemoveAllInPlace("Detector");
       int DetectorID = DetectorName.ToInt();
       
       MNCTDEEStripHit pSide;
@@ -297,8 +313,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
       
       // Not sure about if p or n-side is up, but we can debug this later
-      pSide.m_ROE.SetStripID(GP.GetXGrid());
-      nSide.m_ROE.SetStripID(GP.GetYGrid());
+      pSide.m_ROE.SetStripID(GP.GetXGrid()+1);
+      nSide.m_ROE.SetStripID(GP.GetYGrid()+1);
       
       pSide.m_Energy = HT->GetEnergy();
       nSide.m_Energy = HT->GetEnergy();
@@ -327,8 +343,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       GuardRingHit.m_Energy = GR->GetEnergy();
       GuardRingHit.m_Position = MVector(0, 0, 0); // <-- not important
     }
-    
-    
+   
     // Step (2): Merge strip hits
     list<MNCTDEEStripHit> MergedStripHits;
     while (StripHits.size() > 0) {
@@ -348,7 +363,35 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       }
       MergedStripHits.push_back(Start);
     }
-    
+
+    //check if any strip was hit multiple times
+		//for Clio to double check strip pairing
+		vector<int> pIDs, nIDs;
+		pIDs.clear();
+		nIDs.clear();
+		for (MNCTDEEStripHit& Hit: MergedStripHits){
+			int id = Hit.m_ROE.GetStripID();
+			if (Hit.m_ROE.IsPositiveStrip()){
+				pIDs.push_back(id);
+			}
+			else { nIDs.push_back(id); }
+		}
+		sort(pIDs.begin(),pIDs.end());
+		sort(nIDs.begin(),nIDs.end());
+		bool check_n = true;
+		for (int i=0; i<pIDs.size()-1; i++){
+			if (pIDs.at(i) == pIDs.at(i+1)){
+				mult_hits_counter += 1;
+				check_n = false;
+			}
+		}
+		if (check_n){
+			for (int i=0; i<nIDs.size()-1; i++){
+				if (nIDs.at(i) == nIDs.at(i+1)){
+					mult_hits_counter += 1;
+				}
+			}
+		}
 
     
     // Step (3): Calculate and noise timing
@@ -388,6 +431,27 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     //            (b) take care of guard ring hits with their special thresholds
     //            (c) take care of hits in dead strips
     //            (d) throw out hits which did not trigger
+
+		//take care of dead strips:
+		list<MNCTDEEStripHit>::iterator j = MergedStripHits.begin();
+		while (j != MergedStripHits.end()) {
+			int det = (*j).m_ROE.GetDetectorID();
+			int stripID = (*j).m_ROE.GetStripID();
+			bool side_b = (*j).m_ROE.IsPositiveStrip();
+			int side = 0;
+			if (side_b) {side = 1;}
+
+			//if strip has been flagged as dead, erase strip hit
+			if (m_deadStrips[det][side][stripID-1] == 1){
+				j = MergedStripHits.erase(j);
+			}
+			else {
+				++j;
+			}
+		}
+
+
+
     list<MNCTDEEStripHit>::iterator i = MergedStripHits.begin();
     while (i != MergedStripHits.end()) {
       if ((*i).m_Energy < 0) { // Dummy threshold of 0 keV sharp
@@ -422,10 +486,10 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       T = Event->GetTime().GetAsSeconds();
     }
     
-    
+ 
     // Step (8): Dump event to file in ROA format
     for (unsigned int c = 0; c < CardCagedStripHits.size(); ++c) {
-      out<<"SE"<<endl;
+	    out<<"SE"<<endl;
       out<<"# ID "<<Event->GetID()<<endl;
       out<<"ID "<<++RunningID<<endl;
       out<<"TI "<<CardCageTiming[c]<<endl;
@@ -441,6 +505,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 //	spectrum->Draw();
 //	specCanvas.Print("spectrum_adc.pdf");
+
+	cout << "number of events with multiple hits per strip: " << mult_hits_counter << endl;
 
   // Some cleanup
   out<<"EN"<<endl<<endl;
@@ -581,6 +647,52 @@ void MNCTDetectorEffectsEngineCOSI::ParseEcalFile(){
 			m_ResolutionCalibration[CR.first] = resolutionfit;
 		}
 	}
+
+};
+
+void MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile(){
+
+	//initialize m_deadStrips: set all values to 0
+	for (int i=0; i<12; i++){
+		for (int j=0; j<2; j++){
+			for (int k=0; k<37; k++){
+				m_deadStrips[i][j][k] = 0;
+			}
+		}
+	}
+
+	ifstream deadStripFile;
+	deadStripFile.open(m_deadStripFilename);
+
+	if (!deadStripFile.is_open()){
+		cout << "Error opening dead strip file" << endl;
+		return;
+	}
+
+	string line;
+	vector<int> lineVec;
+	while (deadStripFile.good() && !deadStripFile.eof()){
+		getline(deadStripFile,line);
+		stringstream sLine(line);
+		string sub;
+		int sub_int;
+
+		while (sLine >> sub){
+			sub_int = atoi(sub.c_str());
+			lineVec.push_back(sub_int);
+		}
+
+		if (lineVec.size() != 3){continue;}
+	
+		int det = lineVec.at(0);
+		int side = lineVec.at(1);
+		int strip = lineVec.at(2)-1; //in file, strips go from 1-37; in m_deadStrips they go from 0-36
+		lineVec.clear();
+
+		//any dead strips have their value in m_deadStrips set to 1 
+		m_deadStrips[det][side][strip] = 1;
+	}
+
 
 };
 
