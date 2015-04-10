@@ -21,6 +21,12 @@
 #include <sstream>
 #include <csignal>
 #include <map>
+#include <fstream>
+#include <cstring>
+#include <vector>
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
 using namespace std;
 
 // ROOT
@@ -63,6 +69,8 @@ public:
   void Interrupt() { m_Interrupt = true; }
 	//! Read in and parse energy calibration file
 	void ParseEcalFile();
+	//! Read in and parse thresholds file
+	void ParseTHFile();
 	//! Read in and parse dead strip file
 	void ParseDeadStripFile();
 
@@ -74,6 +82,9 @@ private:
   MString m_FileName;
   //! Geometry file name
   MString m_GeometryFileName;
+	//! Thresholds file name
+	MString m_THFilename;
+
 
 	//! Calibration map between read-out element and fitted function for energy calibration
 	map<MReadOutElementDoubleStrip, TF1*> m_EnergyCalibration;
@@ -150,6 +161,7 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
   Usage<<"         -f:   simulation file name"<<endl;
   Usage<<"         -g:   geometry file name"<<endl;
 	Usage<<"         -e:   energy calibration file name"<<endl;
+  Usage<<"         -t:   thresholds file name"<<endl;
 	Usage<<"         -d:   dead strip file name"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -197,6 +209,10 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-e") {
 			m_ecalFilename = argv[++i];
 			cout << "Accepting energy calibration file name: " << m_ecalFilename << endl;
+    } else if (Option == "-t") {
+      m_THFilename = argv[++i];
+			cout << "Accepting threshold file name: " << m_THFilename << endl;
+      cout << "Accepting energy calibration file name: " << m_ecalFilename << endl;
 		} else if (Option == "-d") {
 			m_deadStripFilename = argv[++i];
 			cout << "Accepting dead strip file name: " << m_deadStripFilename << endl;
@@ -218,6 +234,14 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
     cout<<Usage.str()<<endl;
     return false;
   }
+
+  if (m_THFilename == "") {
+    cout<<"Error: Need a threshold file name!"<<endl;
+    cout<<Usage.str()<<endl;
+    return false;
+  }
+
+
 
   if (m_FileName.EndsWith(".sim") == false) {
     cout<<"Error: Need a simulation file name, not a "<<m_FileName<<" file "<<endl;
@@ -376,17 +400,17 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			}
 			else { nIDs.push_back(id); }
 		}
-		sort(pIDs.begin(),pIDs.end());
-		sort(nIDs.begin(),nIDs.end());
+		std::sort(pIDs.begin(),pIDs.end());
+		std::sort(nIDs.begin(),nIDs.end());
 		bool check_n = true;
-		for (int i=0; i<pIDs.size()-1; i++){
+		for (unsigned int i=0; i<pIDs.size()-1; i++){
 			if (pIDs.at(i) == pIDs.at(i+1)){
 				mult_hits_counter += 1;
 				check_n = false;
 			}
 		}
 		if (check_n){
-			for (int i=0; i<nIDs.size()-1; i++){
+			for (unsigned int i=0; i<nIDs.size()-1; i++){
 				if (nIDs.at(i) == nIDs.at(i+1)){
 					mult_hits_counter += 1;
 				}
@@ -460,8 +484,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
         ++i;
       }
     }
-    
-    
+
     // Step (6): Split into card cage events - i.e. split by detector
     vector<vector<MNCTDEEStripHit>> CardCagedStripHits;
     for (MNCTDEEStripHit Hit: MergedStripHits) {
@@ -556,6 +579,75 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
 
 };
 
+
+    //Cory's Code to read in thresholds
+
+void MNCTDetectorEffectsEngineCOSI::ParseTHFile(){
+const int MAX_CHARS_PER_LINE = 512;
+const int MAX_TOKENS_PER_LINE = 20;
+const char* const DELIMITER = " ";
+
+std::vector<std::string> v;
+std::vector<std::string> th_low;
+std::vector<std::string> th_up;
+  std::ifstream fin;
+  fin.open(m_THFilename); // open threshold file
+	// example "/data/BackupPalestine/EnergyDepthCalibration/Cs137/220814/Thresholds.dat"
+  if (!fin.good())
+    cout << "Unable to open threshold file!"; 
+
+  while (!fin.eof())
+  {
+    char buf[MAX_CHARS_PER_LINE];
+    fin.getline(buf, MAX_CHARS_PER_LINE);
+
+    unsigned int n = 0;
+
+    //tokens stored in array
+    const char* token[MAX_TOKENS_PER_LINE] = {}; // initialize at 0
+
+    // line parsing
+    token[0] = strtok(buf, DELIMITER); // first token
+    if (token[0]) // zero if line is blank
+    {
+      for (n = 1; n < MAX_TOKENS_PER_LINE; n++)
+      {
+        token[n] = strtok(0, DELIMITER); // subsequent tokens
+        if (!token[n]) break; // no more tokens
+      }
+
+    // tokens into vector
+     for (unsigned int i = 6; i < n; i = i + 7 )// n = #of tokens
+      v.push_back( token[i] );
+    }
+  }
+
+  for (unsigned int x = 0; x< v.size(); x = x + 2) // must be <
+  {
+    th_low.push_back(v[x]);
+	}
+// to print lower thresholds
+/*
+  for (unsigned int x = 0; x != th_low.size(); x++)
+  {
+     std::cout << th_low[x] << std::endl;
+  }
+*/
+
+  for (unsigned int x = 1; x<= v.size(); x = x + 2) // must be <=
+  {
+    th_up.push_back(v[x]);
+  }
+
+//to print upper thresholds
+/* 
+  for (unsigned int x = 0; x != th_up.size(); x++)
+  {
+     std::cout << th_up[x] << std::endl;
+  }
+*/
+
+}
 //parse ecal file: should be done once at the beginning to save all the poly3 coefficients
 void MNCTDetectorEffectsEngineCOSI::ParseEcalFile(){
 
