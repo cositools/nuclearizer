@@ -117,7 +117,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
   // The CTD2Depth[i] is the parameters from 3rd polynomial fit.
   
   // These default parameters used linear curve from default CTD vaules:
-  // CTD(near -):-200. , CTD(near +):200.
+  // CTD(near -):-200. , CTD(near +):200. // Actually, I think these should be +/- 320ns. This is what the CC were set to for the '14 flight, according to Alex
   double default_ctd2z[4]={0.75,-0.00375,0.0,0.0};
   int N_parameter;
  
@@ -132,7 +132,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
   OtherEventNumber=0;
   LLDNumber=0;
   NotValidStripNumber=0;
-  InvalidEventNumber=0;
+  InvalidEventNumber=0; //The number of events that are flagged as uncalibratable
+  //currently using InvalidEventNumber as a counter for pixel events that are out of bounds
   OutofBoundsDepth=0;
  
   for (N_parameter=0;N_parameter<4;N_parameter++) {
@@ -547,13 +548,19 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         //Det 7-9 (CC 05, 07, 10) have DC on top, 
         //Det 10-12 (CC 11, 08, 09) have DC on bottom 
         //But the rotation of the GeDs in GeD_12Stack.geo take this into account, so Z_Front is always equal to the depth
-        Z_Front = depth;
-        
+        //Z_Front = depth;
+		Z_Front = 1.5 - depth; //This is true for MassModel_1.1        
+
         // Depth should be between 0 (front) and 1.5 (back) - but maybe we should only do this if the calculated Z_Front is within a reasonable distance from the edge of the wafer. For badly calibrated strips or weird events we might get a depth that's way outside of the physical range of the GeD wafer, this hit should be ignored, not just placed into the 0 or 1.5 cm bin. At least it seems that way to me...
         if (Z_Front < -0.05 && NoTiming_Event != 1) {//{ Z_Front=0.;  - don't knock out the LLD events
-		  //cout << "Event #: "<< Event->GetID()<<endl;
+		  //cout << "Event #: " << Event->GetID() <<," Number of strip hits: "<< NStripHits << endl;
 		  //cout << "Out of bounds hit: "<< Z_Front << " with timing: " << XTiming << " " << YTiming << ", CTD = " << CTD << endl;	
 		  //cout << "Detector: " << DetectorName << ", Strips: " << XStripNumber << " " << YStripNumber << endl;
+		  //cout << "D: " << DetectorName << ", CTD: " << CTD << ", Z_Front: " <<  Z_Front << endl;
+		  if (NStripHits == 2) {
+			InvalidEventNumber++;
+		   }
+//cout << "Number of out of bounds hits: " << OutofBoundsDepth << " Number of out of bounds pixel hits: "<< InvalidEventNumber <<  endl;  
 		  Event->SetDepthCalibration_OutofRange(true);
 		  OutofRange = 1;
 		} 
@@ -561,9 +568,14 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
 		  Z_Front = 0.;
 		}
         if (Z_Front > 1.55 && NoTiming_Event != 1) { //Z_Front=1.5; }
-		  //cout << " Event #: " << Event->GetID()<<endl;
+		  //cout << " Event #: " << Event->GetID() << " Number of strip hits: " <<  NStripHits << endl;
 		  //cout << " Out of bounds hit: " << Z_Front << " with timing: " << XTiming << " " << YTiming << ", CTD = " << CTD << endl;
 		  //cout << " Detector: " << DetectorName << ", Strips: " << XStripNumber << " " << YStripNumber << endl;
+		  //cout << "D: " << DetectorName << ", CTD: " << CTD << ", Z_Front: " <<  Z_Front << endl;
+		  if (NStripHits == 2) {
+			InvalidEventNumber++;
+		  }
+//cout << "Number of out of bounds hits: " << OutofBoundsDepth << " Number of out of bounds pixel hits: "<< InvalidEventNumber <<  endl;  
 		  Event->SetDepthCalibration_OutofRange(true);
 		  OutofRange = 1;
 		}
@@ -603,9 +615,9 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         //output done
 
 
-        // Calculate X and Y positions based on strip number.  These are referenced from the middle.
-        double X_Middle = ((double)XStripNumber - 19.0)*0.2;
-        double Y_Middle = ((double)YStripNumber - 19.0)*0.2;
+        // Calculate X and Y positions based on strip number.  These are referenced from the middle of the GeD reference frame. In the GeD_DetectorBuild.geo, which defines the GeD geometry, The +x direction corresponds to the y-strips (ystrips are always on the LV side) and the +y direction corresponds to the x-strips.
+        double X_Middle = ((double)YStripNumber - 19.0)*(-0.2); //edited for MassModel_1.1
+        double Y_Middle = ((double)XStripNumber - 19.0)*(-0.2); //edited for MassModel_1.1
         
 		//cout<<"X_Middle: "<<X_Middle<<", Y_Middle: "<<Y_Middle<<", Z_Middle: "<<Z_Middle<<endl;
 		
@@ -636,10 +648,12 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
 
 
 	    //Add the hit depth to the histograms in Nuclearizer
-		if ((DetectorNumber == 3) || (DetectorNumber == 4) || (DetectorNumber == 5) ||   (DetectorNumber == 9) || (DetectorNumber == 10) || (DetectorNumber == 11) ) {
-          m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
+		if ((DetectorNumber == 3) || (DetectorNumber == 4) || (DetectorNumber == 5) ||   (DetectorNumber == 9) || (DetectorNumber == 10) || (DetectorNumber == 11)) {
+          //m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front); //Changed for MassModel_1.1
+		  m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5 - Z_Front);
         } else {
-          m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5-Z_Front);
+          //m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5-Z_Front); //Changed for MassModel_1.1
+		  m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
         }
         m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
 
@@ -677,12 +691,12 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
   }
   if (EventTypeFlag2==1){  //the number of events which include hits with non-adjacent strip hits (shouldn't happen unless the strip pairing module screws up) or 4 strip events with three strips on one side and only one on the other
 	OtherEventNumber++;
-	cout<<"EventTypeFlag2: "<<OtherEventNumber<<endl;
+	//cout<<"EventTypeFlag2: "<<OtherEventNumber<<endl;
     //cout<<"All events with 3-4 strip hits that are not adjacent or not 1&2 or 2&2,"<<OtherEventNumber<<endl;
   }
   if (EventTypeFlag3 ==1){  //the number of events which include hits with more that four strip hits
     OtherHitNumber++;
-    cout<<"EventTypeFlag3: "<<OtherHitNumber<<"/"<<Event->GetID()<<endl;
+    //cout<<"EventTypeFlag3: "<<OtherHitNumber<<"/"<<Event->GetID()<<endl;
 	//cout<<"All events with with more that 4 strip hits,"<<OtherHitNumber<<endl;
   }	
   if (NoTiming_Event == 1){ //the number of events which contain an LLD only hit. For now, these are given a BD flag and won't continue through the analysis. But we can take care and sort through these to find which events also have other good hits.
@@ -690,7 +704,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
 	//cout<<"All events which contain an LLD only hit: "<<LLDNumber<<"/"<<Event->GetID()<<endl;
   }
   if (FlagUncali == 1  || NotValidStripNumber == 1 || NoTiming_Event == 1) {
-	InvalidEventNumber++;
+//	InvalidEventNumber++;
   }
   if (OutofRange == 1) {
 	OutofBoundsDepth++;
@@ -701,9 +715,9 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
   /*
   cout << "Event Types: SinglePixel - " << SingleEventNumber << ", MultistripHit - " << ShareEventNumber0 << " & "<< ShareEventNumber1 << ", LLD Events - " << LLDNumber << ", Uncalibratable due to number of hits or non-adjacent hits - " << OtherEventNumber+OtherHitNumber << endl;
   cout << "Number of uncalibrated events: " << InvalidEventNumber << ", Number of calibratable events (doesn't discount LLD hits in a valid event): " << SingleEventNumber + ShareEventNumber1 + ShareEventNumber0 << " Total number of events: " << Event->GetID() << endl;
-  cout << "Number of out of bounds hits: " << OutofBoundsDepth << endl;  
+  cout << "Number of out of bounds hits: " << OutofBoundsDepth << " Number of out of bounds pixel hits: "<< InvalidEventNumber <<  endl;  
   cout << " \n " << endl;
-  */
+  */  
 
   Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
   
