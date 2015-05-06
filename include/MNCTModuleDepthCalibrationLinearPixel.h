@@ -25,6 +25,7 @@
 #include "MModule.h"
 
 // Forward declarations:
+#include "MGUIExpoDepthCalibration.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,15 +64,21 @@ class MNCTModuleDepthCalibrationLinearPixel : public MModule
 
   // private members:
  private:
-  bool m_IsCalibrationLoaded[10];
-  bool m_IsCalibrationLoadedPixel[10][37][37];
-  double m_Pixel_CTD_Front[10][37][37];
-  double m_Pixel_CTD_Back[10][37][37];
-  double m_Pixel_CTD_FWHM_Front[10][37][37];
-  double m_Pixel_CTD_FWHM_Back[10][37][37];
-  double m_Default_CTD_Negative;
-  double m_Default_CTD_Positive;
+  //! The depth calibraiton UI
+  MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
+
+  bool m_IsCalibrationLoaded[12];
+  bool m_IsCalibrationLoadedPixel[12][37][37];
+  double m_Pixel_CTD_Front[12][37][37];
+  double m_Pixel_CTD_Back[12][37][37];
+  double m_Pixel_CTD_FWHM_Front[12][37][37];
+  double m_Pixel_CTD_FWHM_Back[12][37][37];
+  double m_Default_CTD_Front;
+  double m_Default_CTD_Back;
   double m_Default_CTD_FWHM;
+  unsigned long ShareHitNumber0, ShareHitNumber1, NotValidStripNumber, OutofBoundsDepth;
+  unsigned long SingleHitNumber, OtherHitNumber, LLDNumber, InvalidEventNumber;
+  unsigned long ShareEventNumber0, ShareEventNumber1, SingleEventNumber, OtherEventNumber;
 
 
 #ifdef ___CINT___
