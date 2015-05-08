@@ -133,6 +133,9 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   //! Default destructor
   virtual ~MNCTModuleStripPairingGreedy_b();
 
+  //! Create a new object of this class 
+  virtual MNCTModuleStripPairingGreedy_b* Clone() { return new MNCTModuleStripPairingGreedy_b(); }  
+
   //! Initialize the module
   virtual bool Initialize();
 
@@ -203,11 +206,17 @@ class MNCTModuleStripPairingGreedy_b : public MModule
 
 	void dummy_func();
 
+  
   // protected methods:
  protected:
 
+   
   // private methods:
  private:
+  //! No Copy constructor
+  MNCTModuleStripPairingGreedy_b(const MNCTModuleStripPairingGreedy_b&) = delete;
+  //! No copying itself
+  MNCTModuleStripPairingGreedy_b& operator=(const MNCTModuleStripPairingGreedy_b&) = delete;
 
 
 

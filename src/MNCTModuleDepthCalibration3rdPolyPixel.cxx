@@ -91,7 +91,9 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.5, 2.0);
   m_Expos.push_back(m_ExpoDepthCalibration);  
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = true;
 }
 
 

@@ -38,6 +38,9 @@ class MNCTModuleEnergyCalibration : public MModule
   MNCTModuleEnergyCalibration();
   //! Default destructor
   virtual ~MNCTModuleEnergyCalibration();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleEnergyCalibration* Clone() { return new MNCTModuleEnergyCalibration(); }
 
   //! Initialize the module
   virtual bool Initialize();

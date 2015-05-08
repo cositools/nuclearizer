@@ -41,6 +41,9 @@ class MNCTModuleMeasurementLoaderNCT2009 : public MNCTModuleMeasurementLoader
   MNCTModuleMeasurementLoaderNCT2009();
   //! Default destructor
   virtual ~MNCTModuleMeasurementLoaderNCT2009();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleMeasurementLoaderNCT2009* Clone() { return new MNCTModuleMeasurementLoaderNCT2009(); }
 
   //! The Open method has to be derived from MFileEvents to initialize the include file:
   virtual bool Open(MString FileName, unsigned int Way);

@@ -40,6 +40,9 @@ class MNCTModuleEventFilter : public MModule
   MNCTModuleEventFilter();
   //! Default destructor
   virtual ~MNCTModuleEventFilter();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleEventFilter* Clone() { return new MNCTModuleEventFilter(); }
 
   //! Initialize the module
   virtual bool Initialize();

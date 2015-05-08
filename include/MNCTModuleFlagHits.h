@@ -42,6 +42,9 @@ class MNCTModuleFlagHits : public MModule
   MNCTModuleFlagHits();
   //! Default destructor
   virtual ~MNCTModuleFlagHits();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleFlagHits* Clone() { return new MNCTModuleFlagHits(); }
 
   //! Initialize the module
   virtual bool Initialize();

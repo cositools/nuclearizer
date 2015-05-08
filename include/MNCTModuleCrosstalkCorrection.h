@@ -39,6 +39,9 @@ class MNCTModuleCrosstalkCorrection : public MModule
   MNCTModuleCrosstalkCorrection();
   //! Default destructor
   virtual ~MNCTModuleCrosstalkCorrection();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleCrosstalkCorrection* Clone() { return new MNCTModuleCrosstalkCorrection(); }
 
   //! Initialize the module
   virtual bool Initialize();

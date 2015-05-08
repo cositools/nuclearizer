@@ -38,6 +38,9 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MModule
   MNCTModuleDepthCalibration3rdPolyPixel();
   //! Default destructor
   virtual ~MNCTModuleDepthCalibration3rdPolyPixel();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleDepthCalibration3rdPolyPixel* Clone() { return new MNCTModuleDepthCalibration3rdPolyPixel(); }
 
   //! Initialize the module
   virtual bool Initialize();

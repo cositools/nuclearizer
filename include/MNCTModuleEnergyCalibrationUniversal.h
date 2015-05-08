@@ -44,6 +44,9 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   MNCTModuleEnergyCalibrationUniversal();
   //! Default destructor
   virtual ~MNCTModuleEnergyCalibrationUniversal();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleEnergyCalibrationUniversal* Clone() { return new MNCTModuleEnergyCalibrationUniversal(); }
 
   //! Set the calibration file name
   void SetFileName(const MString& FileName) { m_FileName = FileName; }

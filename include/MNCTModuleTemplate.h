@@ -38,6 +38,9 @@ class MNCTModuleTemplate : public MModule
   MNCTModuleTemplate();
   //! Default destructor
   virtual ~MNCTModuleTemplate();
+  
+  //! Create a new object of this class 
+  virtual MModuleTemplate* Clone() { return new MModuleTemplate(); }
 
   //! Initialize the module
   virtual bool Initialize();

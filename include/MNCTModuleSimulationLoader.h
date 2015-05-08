@@ -48,6 +48,9 @@ class MNCTModuleSimulationLoader : public MModule, public MFileEventsSim
   MNCTModuleSimulationLoader();
   //! Default destructor
   virtual ~MNCTModuleSimulationLoader();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleSimulationLoader* Clone() { return new MNCTModuleSimulationLoader(); }
 
   //! Initialize the module
   virtual bool Initialize();

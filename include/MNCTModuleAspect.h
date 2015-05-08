@@ -40,6 +40,9 @@ class MNCTModuleAspect : public MModule
   MNCTModuleAspect();
   //! Default destructor
   virtual ~MNCTModuleAspect();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleAspect* Clone() { return new MNCTModuleAspect(); }
 
   //! Initialize the module
   virtual bool Initialize();

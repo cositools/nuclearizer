@@ -47,6 +47,9 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
   //! Default destructor
   virtual ~MNCTModuleReceiverCOSI2014();
   
+  //! Create a new object of this class 
+  virtual MNCTModuleReceiverCOSI2014* Clone() { return new MNCTModuleReceiverCOSI2014(); }
+  
   //! Return the name of the transmitting computer
   MString GetDistributorName() const { return m_DistributorName; }
   //! Set the name of the transmitting computer

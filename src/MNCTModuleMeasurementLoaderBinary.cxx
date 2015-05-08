@@ -76,7 +76,10 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
   
   m_HasOptionsGUI = true;
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
+  
   m_IsStartModule = true;
   
   m_IgnoreAspect = true;

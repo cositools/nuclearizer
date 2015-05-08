@@ -44,6 +44,9 @@ class MNCTModuleEventSaver : public MModule
   MNCTModuleEventSaver();
   //! Default destructor
   virtual ~MNCTModuleEventSaver();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleEventSaver* Clone() { return new MNCTModuleEventSaver(); }
 
   //! Get the mode
   unsigned int GetMode() const { return m_Mode; }

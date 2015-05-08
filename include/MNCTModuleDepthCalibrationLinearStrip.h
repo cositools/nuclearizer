@@ -38,6 +38,9 @@ class MNCTModuleDepthCalibrationLinearStrip : public MModule
   MNCTModuleDepthCalibrationLinearStrip();
   //! Default destructor
   virtual ~MNCTModuleDepthCalibrationLinearStrip();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleDepthCalibrationLinearStrip* Clone() { return new MNCTModuleDepthCalibrationLinearStrip(); }
 
   //! Initialize the module
   virtual bool Initialize();

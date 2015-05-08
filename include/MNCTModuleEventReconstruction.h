@@ -40,6 +40,9 @@ class MNCTModuleEventReconstruction : public MModule
   MNCTModuleEventReconstruction();
   //! Default destructor
   virtual ~MNCTModuleEventReconstruction();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleEventReconstruction* Clone() { return new MNCTModuleEventReconstruction(); }
 
   //! Initialize the module --- has to be overwritten
   virtual bool Initialize();

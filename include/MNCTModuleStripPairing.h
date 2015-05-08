@@ -38,6 +38,9 @@ class MNCTModuleStripPairing : public MModule
   MNCTModuleStripPairing();
   //! Default destructor
   virtual ~MNCTModuleStripPairing();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleStripPairing* Clone() { return new MNCTModuleStripPairing(); }
 
   //! Initialize the module
   virtual bool Initialize();

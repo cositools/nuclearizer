@@ -66,7 +66,9 @@ MNCTModuleMeasurementLoaderROA::MNCTModuleMeasurementLoaderROA() : MNCTModuleMea
   // This is a special start module which can generate its own events
   m_IsStartModule = true;
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
 }
 
 

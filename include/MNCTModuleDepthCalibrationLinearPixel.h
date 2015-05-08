@@ -39,6 +39,9 @@ class MNCTModuleDepthCalibrationLinearPixel : public MModule
   MNCTModuleDepthCalibrationLinearPixel();
   //! Default destructor
   virtual ~MNCTModuleDepthCalibrationLinearPixel();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleDepthCalibrationLinearPixel* Clone() { return new MNCTModuleDepthCalibrationLinearPixel(); }
 
   //! Initialize the module
   virtual bool Initialize();

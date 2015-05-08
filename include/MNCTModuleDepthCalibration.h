@@ -38,6 +38,9 @@ class MNCTModuleDepthCalibration : public MModule
   MNCTModuleDepthCalibration();
   //! Default destructor
   virtual ~MNCTModuleDepthCalibration();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleDepthCalibration* Clone() { return new MNCTModuleDepthCalibration(); }
 
   //! Initialize the module
   virtual bool Initialize();

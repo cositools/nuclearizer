@@ -40,6 +40,9 @@ class MNCTModuleDumpEvent : public MModule
   MNCTModuleDumpEvent();
   //! Default destructor
   virtual ~MNCTModuleDumpEvent();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleDumpEvent* Clone() { return new MNCTModuleDumpEvent(); }
 
   //! Initialize the module
   virtual bool Initialize();

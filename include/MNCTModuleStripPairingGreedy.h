@@ -91,6 +91,9 @@ class MNCTModuleStripPairingGreedy : public MModule
   MNCTModuleStripPairingGreedy();
   //! Default destructor
   virtual ~MNCTModuleStripPairingGreedy();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleStripPairingGreedy* Clone() { return new MNCTModuleStripPairingGreedy(); }
 
   //! Initialize the module
   virtual bool Initialize();

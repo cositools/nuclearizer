@@ -86,7 +86,9 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
   m_ExpoStripPairing->SetEnergiesHistogramParameters(1500, 0, 1500);
   m_Expos.push_back(m_ExpoStripPairing);
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = true;
 }
 
 

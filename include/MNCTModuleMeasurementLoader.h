@@ -42,6 +42,9 @@ class MNCTModuleMeasurementLoader : public MModule, public MFileEvents
   //! Default destructor
   virtual ~MNCTModuleMeasurementLoader();
   
+  //! Create a new object of this class 
+  virtual MNCTModuleMeasurementLoader* Clone() = 0;
+  
   //! Initialize the module
   virtual bool Initialize();
 

@@ -81,7 +81,9 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MModule()
   m_SplitFileTime.Set(60*10); // seconds
   m_SubFileStart.Set(0);
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
 }
 
 

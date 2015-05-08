@@ -88,7 +88,9 @@ MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : M
   m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoEnergyCalibration);
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = true;
 }
 
 

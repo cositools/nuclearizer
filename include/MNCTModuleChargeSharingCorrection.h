@@ -38,6 +38,9 @@ class MNCTModuleChargeSharingCorrection : public MModule
   MNCTModuleChargeSharingCorrection();
   //! Default destructor
   virtual ~MNCTModuleChargeSharingCorrection();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleChargeSharingCorrection* Clone() { return new MNCTModuleChargeSharingCorrection(); }
 
   //! Initialize the module
   virtual bool Initialize();

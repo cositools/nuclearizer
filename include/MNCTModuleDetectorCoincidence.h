@@ -40,6 +40,9 @@ class MNCTModuleDetectorCoincidence : public MModule
   MNCTModuleDetectorCoincidence();
   //! Default destructor
   virtual ~MNCTModuleDetectorCoincidence();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleDetectorCoincidence* Clone() { return new MNCTModuleDetectorCoincidence(); }
 
   //! Initialize the module
   virtual bool Initialize();

@@ -45,6 +45,9 @@ class MNCTModuleMeasurementLoaderBinary : public MModule, public MNCTBinaryFligh
   MNCTModuleMeasurementLoaderBinary();
   //! Default destructor
   virtual ~MNCTModuleMeasurementLoaderBinary();
+  
+  //! Create a new object of this class 
+  virtual MNCTModuleMeasurementLoaderBinary* Clone() { return new MNCTModuleMeasurementLoaderBinary(); }
    
   //! Get the file name
   MString GetFileName() const { return m_FileName; }

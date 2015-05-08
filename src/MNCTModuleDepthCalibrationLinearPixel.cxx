@@ -91,7 +91,9 @@ MNCTModuleDepthCalibrationLinearPixel::MNCTModuleDepthCalibrationLinearPixel() :
   m_ExpoDepthCalibration->SetDepthHistogramParameters(100, -0.5, 2.);
   m_Expos.push_back(m_ExpoDepthCalibration);  
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
 }
 
 
