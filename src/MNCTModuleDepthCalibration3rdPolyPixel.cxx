@@ -93,7 +93,7 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
-  m_AllowMultipleInstances = true;
+  m_AllowMultipleInstances = false;
 }
 
 

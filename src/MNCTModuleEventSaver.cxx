@@ -118,12 +118,10 @@ bool MNCTModuleEventSaver::Initialize()
   MString Suffix = m_InternalFileName;
   if (Suffix.Last('.') != MString::npos) {
     Suffix.RemoveInPlace(0, Suffix.Last('.'));
-    cout<<"Suf:"<<Suffix<<endl;
     if (Suffix == ".dat" || Suffix == ".roa" || Suffix == ".evta") {
       m_InternalFileName.RemoveInPlace(m_InternalFileName.Last('.'));
     }
   }
-  cout<<"Internal: "<<m_InternalFileName<<endl;
   
   if (m_AddTimeTag == true) {
     MTime Now;
@@ -139,7 +137,7 @@ bool MNCTModuleEventSaver::Initialize()
   } else if (m_Mode == c_RoaFile) {
     m_InternalFileName += ".roa";
   } else {
-    cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
   
@@ -170,7 +168,7 @@ bool MNCTModuleEventSaver::Initialize()
     Header<<"UF doublesidedstrip adcwithtiming"<<endl;
     Header<<endl;
   } else {
-    cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
   m_Header = Header.str();
@@ -210,7 +208,7 @@ bool MNCTModuleEventSaver::StartSubFile()
     SubName += m_SubFileStart.GetAsSystemSeconds();
     SubName += ".roa";
   } else {
-    cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
   

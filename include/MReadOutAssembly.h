@@ -51,9 +51,9 @@ class MReadOutAssembly
   void DeleteHits();
   
   //! Set the ID of this event
-  void SetID(unsigned int ID) { m_ID = ID; }
+  void SetID(unsigned long ID) { m_ID = ID; }
   //! Return the ID of this event
-  unsigned int GetID() const { return m_ID; }
+  unsigned long GetID() const { return m_ID; }
 
   //! Set the Frame Counter of this event
   void SetFC(unsigned int FC) { m_FC = FC; }
@@ -255,7 +255,7 @@ class MReadOutAssembly
   // private members:
  private:
   //! ID of this event
-  unsigned int m_ID;
+  unsigned long m_ID;
 
   //! Frame Counter of this event
   unsigned int m_FC;

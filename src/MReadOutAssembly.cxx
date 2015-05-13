@@ -46,7 +46,7 @@ ClassImp(MReadOutAssembly)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly::MReadOutAssembly()
+MReadOutAssembly::MReadOutAssembly() : m_Time(0)
 {
   // Construct an instance of MReadOutAssembly
 
@@ -54,7 +54,6 @@ MReadOutAssembly::MReadOutAssembly()
   m_Aspect = 0;
   
   Clear();
-//  mout<<"create MReadOutAssembly!!\n" ;//debug
 }
 
 
