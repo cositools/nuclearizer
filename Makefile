@@ -97,12 +97,15 @@ $(LB)/MNCTModuleEnergyCalibrationLinear.o \
 $(LB)/MNCTModuleEnergyCalibrationNonlinear.o \
 $(LB)/MNCTInverseCrosstalkCorrection.o \
 $(LB)/MNCTModuleCrosstalkCorrection.o \
+$(LB)/MGUIOptionsCrosstalkCorrection.o \
 $(LB)/MNCTModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
 $(LB)/MNCTModuleDepthAndStripCalibration.o \
 $(LB)/MNCTModuleDepthCalibration.o \
 $(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
+$(LB)/MGUIOptionsDepthCalibrationLinearPixel.o \
 $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
+$(LB)/MGUIOptionsDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIExpoStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
 $(LB)/MGUIOptionsStripPairing.o \
