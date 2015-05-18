@@ -43,6 +43,13 @@ class MNCTModuleDepthCalibrationLinearPixel : public MModule
   //! Create a new object of this class 
   virtual MNCTModuleDepthCalibrationLinearPixel* Clone() { return new MNCTModuleDepthCalibrationLinearPixel(); }
 
+  //! Set the calibration file name
+  void SetFileName(const MString& FileName) { m_FileName = FileName; }
+  //! Get the calibration file name
+  MString GetFileName() const {return m_FileName;}
+
+
+
   //! Initialize the module
   virtual bool Initialize();
 
@@ -52,11 +59,16 @@ class MNCTModuleDepthCalibrationLinearPixel : public MModule
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
+  virtual bool ReadXmlConfiguration(MXmlNode* Node);
+  virtual MXmlNode* CreateXmlConfiguration();
+
 
   // protected methods:
  protected:
+    //! The calibration file name
+	string m_FileName; 
 
-  // private methods:
+ // private methods:
  private:
 
 
@@ -82,6 +94,18 @@ class MNCTModuleDepthCalibrationLinearPixel : public MModule
   unsigned long ShareHitNumber0, ShareHitNumber1, NotValidStripNumber, OutofBoundsDepth;
   unsigned long SingleHitNumber, OtherHitNumber, LLDNumber, InvalidEventNumber;
   unsigned long ShareEventNumber0, ShareEventNumber1, SingleEventNumber, OtherEventNumber;
+
+
+  //! DetectorMap
+  struct DetectorMapping { 
+	int CCNumber;
+	int DetectorNumber;
+	MString DetectorName;
+	int DisplayID;
+	MString DisplayName;
+  };
+
+  map<int, DetectorMapping> DetMap;
 
 
 #ifdef ___CINT___

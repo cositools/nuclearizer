@@ -25,6 +25,7 @@
 #include "MGlobal.h"
 #include "MModule.h"
 
+
 // Forward declarations:
 
 
@@ -43,6 +44,13 @@ class MNCTModuleCrosstalkCorrection : public MModule
   //! Create a new object of this class 
   virtual MNCTModuleCrosstalkCorrection* Clone() { return new MNCTModuleCrosstalkCorrection(); }
 
+  //! Set the calibration file name
+  void SetFileName(const MString& FileName) { m_FileName = FileName; }
+  //! Get the calibration file name
+  MString GetFileName() const { return m_FileName; }
+
+
+
   //! Initialize the module
   virtual bool Initialize();
 
@@ -52,9 +60,17 @@ class MNCTModuleCrosstalkCorrection : public MModule
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
+  //! Read the configuration data from an XML node
+  virtual bool ReadXmlConfiguration(MXmlNode* Node);
+  //! Create an XML node tree from the configuration
+  virtual MXmlNode* CreateXmlConfiguration();
+
+
 
   // protected methods:
  protected:
+  //! The calibration file name
+  MString m_FileName;
 
   // private methods:
  private:

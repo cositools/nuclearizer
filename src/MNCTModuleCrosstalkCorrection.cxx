@@ -25,6 +25,7 @@
 
 // Include the header:
 #include "MNCTModuleCrosstalkCorrection.h"
+#include "MGUIOptionsCrosstalkCorrection.h"
 
 // Standard libs:
 #include <string>
@@ -80,8 +81,8 @@ MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MModule()
  
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
-  m_HasOptionsGUI = false;
-  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
+  m_HasOptionsGUI = true;
+// If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
   
   // Allow the use of multiple threads and instances
@@ -140,11 +141,9 @@ bool MNCTModuleCrosstalkCorrection::Initialize()
 	}
 
 
-
-	MString FileName = "$(NUCLEARIZER)/resource/calibration/COSI14/Antarctica/CrossTalkCorrection_Results.txt";
-	MFile::ExpandFileName(FileName);
+//	Read in the file from the Nuclearizer GUI
 	fstream File;
-	File.open(FileName, ios_base::in);
+	File.open(m_FileName, ios_base::in);
 	// Read the calibration coefficients line-by-line
 	if (File.is_open() == false) {
 		mout<<"***Warning: Unable to open file for crosstalk calibration"<<endl;	
@@ -415,7 +414,37 @@ void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> Strip
 
 void MNCTModuleCrosstalkCorrection::ShowOptionsGUI()
 {
-  // Show the options GUI - or do nothing
+  // Show the options GUI
+
+  MGUIOptionsCrosstalkCorrection* Options = new MGUIOptionsCrosstalkCorrection(this);
+  Options->Create();
+  gClient->WaitForUnmap(Options);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool MNCTModuleCrosstalkCorrection::ReadXmlConfiguration(MXmlNode* Node)
+{
+  //! Read the configuration data from an XML node
+
+  MXmlNode* FileNameNode = Node->GetNode("FileName");
+  if (FileNameNode != 0) {
+	m_FileName = FileNameNode->GetValue();
+  }
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+MXmlNode* MNCTModuleCrosstalkCorrection::CreateXmlConfiguration()
+{
+  //! Create an XML node tree from the configuration
+
+  MXmlNode* Node = new MXmlNode(0, m_XmlTag);
+  new MXmlNode(Node, "FileName", m_FileName);
+
+  return Node;
+
 }
 
 

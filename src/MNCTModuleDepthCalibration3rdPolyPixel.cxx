@@ -25,6 +25,7 @@
 
 // Include the header:
 #include "MNCTModuleDepthCalibration3rdPolyPixel.h"
+#include "MGUIOptionsDepthCalibration3rdPolyPixel.h"
 
 // // Standard libs:
 #include <string>
@@ -32,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <map>
 
 // ROOT libs:
 #include "TGClient.h"
@@ -82,7 +84,7 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
-  m_HasOptionsGUI = false;
+  m_HasOptionsGUI = true;
   
   // Set the histogram display
   m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
@@ -91,7 +93,6 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.5, 2.0);
   m_Expos.push_back(m_ExpoDepthCalibration);  
   
-  // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
 }
@@ -112,19 +113,44 @@ MNCTModuleDepthCalibration3rdPolyPixel::~MNCTModuleDepthCalibration3rdPolyPixel(
 bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
 {
   // Initialize the module 
-  
+
   // Definition:
   // Depth is the distance between interaction and cathode (negative side).
   // CTD is "Timing(+) - Timing(-)".
   // The relationship between CTD and depth is: Depth = CTD2Depth[i] * CTD^i, i=0~3
   // The CTD2Depth[i] is the parameters from 3rd polynomial fit.
+ 
+  DetectorMapping DMap;
+
+//  Read in the DetectorMap
+  MParser Parser;
+  if (Parser.Open(m_FileName, MFile::c_Read) == false) {
+    cout<<"\n \n \n Didn't get the Map.txt file open \n \n \n"<<endl;
+	return false;
+  }
+
+  for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
+	unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+	if (NTokens != 8) continue; //the tabs in the .txt files count as a Token
+    for (unsigned int detnum = 0; detnum < 12; ++detnum) {  
+		//cout<<Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0)<<endl;
+		DMap.CCNumber = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0);
+  	    DMap.DetectorNumber = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1);
+		DMap.DetectorName = Parser.GetTokenizerAt(i)->GetTokenAtAsString(2);
+		DMap.DisplayID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3);
+		DMap.DisplayName = Parser.GetTokenizerAt(i)->GetTokenAtAsString(4)+' '+Parser.GetTokenizerAt(i)->GetTokenAtAsString(5)+' '+Parser.GetTokenizerAt(i)->GetTokenAtAsString(6)+' '+Parser.GetTokenizerAt(i)->GetTokenAtAsString(7);
+		DetMap[DMap.CCNumber] = DMap;
+	}
+  }
+
   
   // These default parameters used linear curve from default CTD vaules:
   // CTD(near -):-200. , CTD(near +):200. // Actually, I think these should be +/- 320ns. This is what the CC were set to for the '14 flight, according to Alex
   double default_ctd2z[4]={0.75,-0.00375,0.0,0.0};
   int N_parameter;
  
-  //Clean this part up... 
+
+
   ShareHitNumber0=0; //The number of charge sharing hits that have two adjacent strips on one side and only one strip on the other, or 2 adjacent strips on both sides 
   ShareHitNumber1=0; //Number of 3 or 4 strip hits that do not fall into the catagory above 
   SingleHitNumber=0; //Number of single pixel hits
@@ -156,9 +182,10 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
       temp << setw(2) << DetectorNumber;
       DetectorNumberString = temp.str();
     }
-    MString FileName = "$(NUCLEARIZER)/resource/calibration/COSI14/Antarctica/depth_3rdPoly_pixel_CC"+ DetectorNumberString + ".csv";
-    MFile::ExpandFileName(FileName);
-    
+
+	string FileName = m_FileName.substr(0,m_FileName.length()-15)+"depth_3rdPoly_pixel_CC"+DetectorNumberString+".csv";
+
+   
     // Reset flags telling if calibration has been loaded
     m_IsCalibrationLoaded[DetectorNumber] = false;
     for (int strip0=0; strip0<37; strip0++) {
@@ -234,7 +261,10 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     
   } // 'DetectorNumber' loop
   
-  
+ 
+  // Seed the random number generator for dithering the CTD values in ::AnalyzeEvent
+  srand(1);
+ 
   return MModule::Initialize();
 }
 
@@ -277,75 +307,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
     int XStripNumber = 0, YStripNumber = 0;
     MNCTStripHit *SHX = nullptr, *SHY = nullptr;
     //int DetectorNumber = SHX->GetDetectorID();
-    MString DetectorName;
-    int DisplayID = 0;
-    MString DisplayName;
     
-    //All of the "DetectorNumbers" within this file and elsewhere in Nuclearizer refer to CC #. When we call upon the geometry file later on here to determine the globale position of all the detector, we want to be calling the DetectorName not the CC #. Here is the conversion:
-
-    if (DetectorNumber == 0) {
-      DetectorName = "Detector0";
-      DisplayID = 2;
-      DisplayName = DetectorName + ": -x, -y, top";
-    }
-    else if (DetectorNumber == 1) {
-      DetectorName = "Detector1";
-      DisplayID = 1;
-      DisplayName = DetectorName + ": -x, -y, middle";
-    }
-    else if (DetectorNumber == 2) {
-      DetectorName = "Detector2";
-      DisplayID = 0;
-      DisplayName = DetectorName + ": -x, -y, bottom";
-    }
-    else if (DetectorNumber == 3) {
-      DetectorName = "Detector3";
-      DisplayID = 3;
-      DisplayName = DetectorName + ": +x, -y, bottom";
-    }
-    else if (DetectorNumber == 4) {
-      DetectorName = "Detector4";
-      DisplayID = 4;
-      DisplayName = DetectorName + ": +x, -y, middle";
-    }
-    else if (DetectorNumber == 5) {
-      DetectorName = "Detector5";
-      DisplayID = 5;
-      DisplayName = DetectorName + ": +x, -y, top";
-    }
-    else if (DetectorNumber == 6) {
-      DetectorName = "Detector6";
-      DisplayID = 8;
-      DisplayName = DetectorName + ": +x, +y, top";
-    }
-   else if (DetectorNumber == 7) {
-      DetectorName = "Detector7";
-      DisplayID = 7;
-      DisplayName = DetectorName + ": +x, +y, middle";
-    }
-    else if (DetectorNumber == 8) {
-      DetectorName = "Detector8";
-      DisplayID = 6;
-      DisplayName = DetectorName + ": +x, +y, bottom";
-    }
-    else if (DetectorNumber == 9) {
-      DetectorName = "Detector9";
-      DisplayID = 9;
-      DisplayName = DetectorName + ": -x, +y, bottom";
-    }
-    else if (DetectorNumber == 10) {
-      DetectorName = "Detector10";
-      DisplayID = 10;
-      DisplayName = DetectorName + ": -x, +y, middle";
-    }
-    else if (DetectorNumber == 11) {
-      DetectorName = "Detector11";
-      DisplayID = 11;
-      DisplayName = DetectorName + ": -x, +y, top";
-    }
-
-
-	//if (DetectorNumber == 1 || DetectorNumber == 2 || DetectorNumber == 3) { //Used for debugging times...
+  	//if (DetectorNumber == 1 || DetectorNumber == 2 || DetectorNumber == 3) { //Used for debugging times...
     
     //Before moving on and trying to calibrate the hits, first we need to double check that the events are valid. This includes looking for false timing (LLD events get though to this point), checking to make sure that each hit has x and y strips and making sure the strip numbers are valid.
 
@@ -536,6 +499,9 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
         }
         // Calculate Z:	
         double CTD = (XTiming-YTiming)*10;
+		//Add a random number between +/- 5ns to dither the discritized CTD signal
+		CTD = CTD + (rand() % 10 -5);
+
         double Z_Front,Z_Middle,CTD_tmp;
 		double Z_FWHM = 0.0;
 		//Z_Front is defined as the distance from the +z side of the GeD in geomega, where the +z side is determined by the roation of the GeD in the GeD_!2Stack.geo geometry file. We confert the timing into depth measurements (where depth is definied by the distance from the negative/DC side), but then to get the position of the interaction within the detector/ the gobal mass model, we convert the depth to a measurement of Z_Front. Because of the way the GeDs are rotated in geomega, Z_Front is always (1.5 - depth).
@@ -635,7 +601,7 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
 
         //MVector PositionResolution(2.0/2.35, Z_FWHM/2.35, 2.0/2.35); //What? Why are the z and y resolutions wapped? Does the 2.35 come from FWHM -> sigma?
 		MVector PositionResolution(0.2/sqrt(12.0), 0.2/sqrt(12.0), Z_FWHM/2.35);
-        MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetectorName);
+        MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetMap[DetectorNumber].DetectorName); 
         //cout << "Pos in det:    " << PositionInDetector << endl;
         //if (g_Verbosity >= c_Info) 
 		//cout << "Event: " << Event->GetID() << ", Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
@@ -651,14 +617,14 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
 
 
 	    //Add the hit depth to the histograms in Nuclearizer
-		if ((DetectorNumber == 3) || (DetectorNumber == 4) || (DetectorNumber == 5) ||   (DetectorNumber == 9) || (DetectorNumber == 10) || (DetectorNumber == 11)) {
+		if ((DetMap[DetectorNumber].DetectorNumber == 3) || (DetMap[DetectorNumber].DetectorNumber == 4) || (DetMap[DetectorNumber].DetectorNumber == 5) ||   (DetMap[DetectorNumber].DetectorNumber == 9) || (DetMap[DetectorNumber].DetectorNumber == 10) || (DetMap[DetectorNumber].DetectorNumber == 11)) {
           //m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front); //Changed for MassModel_1.1
-		  m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5 - Z_Front);
+		  m_ExpoDepthCalibration->AddDepth(DetMap[DetectorNumber].DisplayID, 1.5 - Z_Front);
         } else {
           //m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5-Z_Front); //Changed for MassModel_1.1
-		  m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
+		  m_ExpoDepthCalibration->AddDepth(DetMap[DetectorNumber].DisplayID, Z_Front);
         }
-        m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
+        m_ExpoDepthCalibration->SetDepthHistogramName(DetMap[DetectorNumber].DisplayID, DetMap[DetectorNumber].DisplayName);       
 
 
 
@@ -733,7 +699,38 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
 
 void MNCTModuleDepthCalibration3rdPolyPixel::ShowOptionsGUI()
 {
-  // Show the options GUI - or do nothing
+  // Show the options GUI
+  MGUIOptionsDepthCalibration3rdPolyPixel* Options = new MGUIOptionsDepthCalibration3rdPolyPixel(this);
+  Options->Create();
+  gClient->WaitForUnmap(Options);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+bool MNCTModuleDepthCalibration3rdPolyPixel::ReadXmlConfiguration(MXmlNode* Node)
+{
+  //! Read the configuration data from an XML node
+
+  MXmlNode* FileNameNode = Node->GetNode("FileName");
+  if (FileNameNode != 0) {
+	m_FileName = FileNameNode->GetValue();
+  }
+
+  return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+MXmlNode* MNCTModuleDepthCalibration3rdPolyPixel::CreateXmlConfiguration()
+{
+  //! Create an XML node tree from the configuration
+
+  MXmlNode* Node = new MXmlNode(0,m_XmlTag);
+  new MXmlNode(Node, "FileName", m_FileName);
+
+  return Node;
 }
 
 

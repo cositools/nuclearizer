@@ -1,5 +1,5 @@
 /*
- * MNCTModuleDepthCalibration3rdPolyPixel.cxx
+ * MNCTModuleDepthCalibrationLinearPixel.cxx
  *
  *
  * Copyright (C) by Carolyn Kierans, Mark Bandstra.
@@ -25,6 +25,7 @@
 
 // Include the header:
 #include "MNCTModuleDepthCalibrationLinearPixel.h"
+#include "MGUIOptionsDepthCalibrationLinearPixel.h"
 
 // // Standard libs:
 #include <string>
@@ -32,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <map>
 
 // ROOT libs:
 #include "TGClient.h"
@@ -82,7 +84,7 @@ MNCTModuleDepthCalibrationLinearPixel::MNCTModuleDepthCalibrationLinearPixel() :
   
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
-  m_HasOptionsGUI = false;
+  m_HasOptionsGUI = true;
   
   // Set the histogram display
   m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
@@ -91,7 +93,6 @@ MNCTModuleDepthCalibrationLinearPixel::MNCTModuleDepthCalibrationLinearPixel() :
   m_ExpoDepthCalibration->SetDepthHistogramParameters(100, -0.5, 2.);
   m_Expos.push_back(m_ExpoDepthCalibration);  
   
-  // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
 }
@@ -111,13 +112,40 @@ MNCTModuleDepthCalibrationLinearPixel::~MNCTModuleDepthCalibrationLinearPixel()
 
 bool MNCTModuleDepthCalibrationLinearPixel::Initialize()
 {
-  // Initialize the module 
-  
-  // Definition:
+// Initialize the Module
+
+
+ // Definition:
   // Depth is the distance between interaction and cathode (negative side).
   // CTD is "Timing(+) - Timing(-)".
   // The relationship between CTD and depth is linear. I used Martin's pixel edges the assumed these were at 0cm and 1.5cm with a linear relationship in between.
-  
+ 
+
+  DetectorMapping DMap;
+
+//Read in the DetectorMap
+  MParser Parser;
+  if (Parser.Open(m_FileName, MFile::c_Read) == false) {
+    cout<<"\n \n \n Didn't get the Map.txt file open \n \n \n"<<endl;
+	return false;
+  }
+
+  for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
+	unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+	if (NTokens != 8) continue; //the tabs in the .txt files count as a Token
+    for (unsigned int detnum = 0; detnum < 12; ++detnum) {  
+		//cout<<Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0)<<endl;
+		DMap.CCNumber = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0);
+  	    DMap.DetectorNumber = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1);
+		DMap.DetectorName = Parser.GetTokenizerAt(i)->GetTokenAtAsString(2);
+		DMap.DisplayID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3);
+		DMap.DisplayName = Parser.GetTokenizerAt(i)->GetTokenAtAsString(4)+' '+Parser.GetTokenizerAt(i)->GetTokenAtAsString(5)+' '+Parser.GetTokenizerAt(i)->GetTokenAtAsString(6)+' '+Parser.GetTokenizerAt(i)->GetTokenAtAsString(7);
+		DetMap[DMap.CCNumber] = DMap;
+	}
+  }
+
+
+ 
   // The default parameters
   m_Default_CTD_Front = -150.;
   m_Default_CTD_Back =  100.;
@@ -151,9 +179,10 @@ bool MNCTModuleDepthCalibrationLinearPixel::Initialize()
       temp << setw(2) << DetectorNumber;
       DetectorNumberString = temp.str();
     }
-    MString FileName = "$(NUCLEARIZER)/resource/calibration/COSI14/Antarctica/depth_linear_Det"+ DetectorNumberString + ".out";
-    MFile::ExpandFileName(FileName);
-    
+
+// Use the DetectorMap chosen through the Nuclearizer GUI to chose which calibraiton files to use...ie, Palestine or Antarctica
+    string FileName = m_FileName.substr(0,m_FileName.length()-15)+"depth_linear_Det"+DetectorNumberString+".out";
+   
     // Reset flags telling if calibration has been loaded
     m_IsCalibrationLoaded[DetectorNumber] = false;
     for (int strip0=0; strip0<37; strip0++) {
@@ -224,14 +253,15 @@ bool MNCTModuleDepthCalibrationLinearPixel::Initialize()
     } // XStripNumber
     
     if (m_IsCalibrationLoaded[DetectorNumber] == true) {
-      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": 3rd order polynomial depth calibration (by pixel) for D" << DetectorNumber 
+      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Linear depth calibration (by pixel) for D" << DetectorNumber 
       << " successfully loaded!" << endl;
     } else {
-      if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Warning: Unable to fully load 3rd polynomial depth calibration (by pixel) for D" 
+      if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Warning: Unable to fully load Linear depth calibration (by pixel) for D" 
       << DetectorNumber << ".  Defaults were used for some or all strips." << endl;
       // return false;
     }
-    
+
+
   } // 'DetectorNumber' loop
   
 
@@ -273,80 +303,16 @@ bool MNCTModuleDepthCalibrationLinearPixel::AnalyzeEvent(MReadOutAssembly* Event
       DetectorNumber = SH->GetDetectorID();	
       if (SH->IsXStrip() == true) { NXStripHits++; } else { NYStripHits++; }
     }
+
+
+
     //Check for 1 pixel event and sharing event..
     int Flag_CanBeCalibrated = -1; //Flag_CanBeCalibrated = 0 for uncalibratable events (LLD, false timing, too many strip hits, etc). Flag_CanBeCalibrated can = 1 or 2 for valid events. The difference between the two?:
 	//int NoTiming_Event = 0; // = LLD Event
     double XTiming = 0.0, YTiming = 0.0;
     int XStripNumber = 0, YStripNumber = 0;
     MNCTStripHit *SHX = nullptr, *SHY = nullptr;
-    //int DetectorNumber = SHX->GetDetectorID();
-    MString DetectorName;
-    int DisplayID = -1;
-    MString DisplayName;
-    
-    //All of the "DetectorNumbers" within this file and elsewhere in Nuclearizer refer to CC #. When we call upon the geometry file later on here to determine the globale position of all the detector, we want to be calling the DetectorName not the CC #. Here is the conversion:
-
-    if (DetectorNumber == 0) {
-      DetectorName = "Detector0";
-      DisplayID = 2;
-      DisplayName = DetectorName + ": -x, -y, top";
-    }
-    else if (DetectorNumber == 1) {
-      DetectorName = "Detector1";
-      DisplayID = 1;
-      DisplayName = DetectorName + ": -x, -y, middle";
-    }
-    else if (DetectorNumber == 2) {
-      DetectorName = "Detector2";
-      DisplayID = 0;
-      DisplayName = DetectorName + ": -x, -y, bottom";
-    }
-    else if (DetectorNumber == 3) {
-      DetectorName = "Detector3";
-      DisplayID = 3;
-      DisplayName = DetectorName + ": +x, -y, bottom";
-    }
-    else if (DetectorNumber == 4) {
-      DetectorName = "Detector4";
-      DisplayID = 4;
-      DisplayName = DetectorName + ": +x, -y, middle";
-    }
-    else if (DetectorNumber == 5) {
-      DetectorName = "Detector5";
-      DisplayID = 5;
-      DisplayName = DetectorName + ": +x, -y, top";
-    }
-    else if (DetectorNumber == 6) {
-      DetectorName = "Detector6";
-      DisplayID = 8;
-      DisplayName = DetectorName + ": +x, +y, top";
-    }
-   else if (DetectorNumber == 7) {
-      DetectorName = "Detector7";
-      DisplayID = 7;
-      DisplayName = DetectorName + ": +x, +y, middle";
-    }
-    else if (DetectorNumber == 8) {
-      DetectorName = "Detector8";
-      DisplayID = 6;
-      DisplayName = DetectorName + ": +x, +y, bottom";
-    }
-    else if (DetectorNumber == 9) {
-      DetectorName = "Detector9";
-      DisplayID = 9;
-      DisplayName = DetectorName + ": -x, +y, bottom";
-    }
-    else if (DetectorNumber == 10) {
-      DetectorName = "Detector10";
-      DisplayID = 10;
-      DisplayName = DetectorName + ": -x, +y, middle";
-    }
-    else if (DetectorNumber == 11) {
-      DetectorName = "Detector11";
-      DisplayID = 11;
-      DisplayName = DetectorName + ": -x, +y, top";
-    }
-
+ 
     
     //Before moving on and trying to calibrate the hits, first we need to double check that the events are valid. This includes looking for false timing (LLD events get though to this point), checking to make sure that each hit has x and y strips and making sure the strip numbers are valid.
 
@@ -566,7 +532,7 @@ bool MNCTModuleDepthCalibrationLinearPixel::AnalyzeEvent(MReadOutAssembly* Event
         // Set depth and depth resolution for the hit, relative to the center of the detector volume
         MVector PositionInDetector(X_Middle, Y_Middle, Z_Middle);
 		MVector PositionResolution(0.2/sqrt(12.0), 0.2/sqrt(12.0), Z_FWHM/2.35);
-        MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetectorName);
+        MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetMap[DetectorNumber].DetectorName);
         //cout << "Pos in det:    " << PositionInDetector << endl;
         //if (g_Verbosity >= c_Info) 
 		//cout << "Event: " << Event->GetID() << ", Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
@@ -583,14 +549,14 @@ bool MNCTModuleDepthCalibrationLinearPixel::AnalyzeEvent(MReadOutAssembly* Event
 
 	    //Add the hit depth to the histograms in Nuclearizer
 	    if (Flag_CanBeCalibrated != 0) {
-		if ((DetectorNumber == 3) || (DetectorNumber == 4) || (DetectorNumber == 5) ||   (DetectorNumber == 9) || (DetectorNumber == 10) || (DetectorNumber == 11)) {
+		if ((DetMap[DetectorNumber].DetectorNumber == 3) || (DetMap[DetectorNumber].DetectorNumber == 4) || (DetMap[DetectorNumber].DetectorNumber == 5) ||   (DetMap[DetectorNumber].DetectorNumber == 9) || (DetMap[DetectorNumber].DetectorNumber == 10) || (DetMap[DetectorNumber].DetectorNumber == 11)) {
           //m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front); //Changed for MassModel_1.1
-		  m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5 - Z_Front);
+		  m_ExpoDepthCalibration->AddDepth(DetMap[DetectorNumber].DisplayID, 1.5 - Z_Front);
         } else {
           //m_ExpoDepthCalibration->AddDepth(DisplayID, 1.5-Z_Front); //Changed for MassModel_1.1
-		  m_ExpoDepthCalibration->AddDepth(DisplayID, Z_Front);
+		  m_ExpoDepthCalibration->AddDepth(DetMap[DetectorNumber].DisplayID, Z_Front);
         }
-        m_ExpoDepthCalibration->SetDepthHistogramName(DisplayID, DisplayName);       
+        m_ExpoDepthCalibration->SetDepthHistogramName(DetMap[DetectorNumber].DisplayID, DetMap[DetectorNumber].DisplayName);       
 		}
 
 
@@ -663,9 +629,52 @@ bool MNCTModuleDepthCalibrationLinearPixel::AnalyzeEvent(MReadOutAssembly* Event
 
 void MNCTModuleDepthCalibrationLinearPixel::ShowOptionsGUI()
 {
-  // Show the options GUI - or do nothing
+  // Show the options GUI
+
+  MGUIOptionsDepthCalibrationLinearPixel* Options = new MGUIOptionsDepthCalibrationLinearPixel(this);
+  Options->Create();
+  gClient->WaitForUnmap(Options);
+
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+bool MNCTModuleDepthCalibrationLinearPixel::ReadXmlConfiguration(MXmlNode* Node)
+{
+  //! Read the configuration data from an XML node
+
+  MXmlNode* FileNameNode = Node->GetNode("FileName");
+  if (FileNameNode != 0) {
+	m_FileName = FileNameNode->GetValue();
+  }
+
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+MXmlNode* MNCTModuleDepthCalibrationLinearPixel::CreateXmlConfiguration()
+{
+  //! Create an XML node tree from the configuration
+
+  MXmlNode* Node = new MXmlNode(0, m_XmlTag);
+  new MXmlNode(Node, "FileName", m_FileName);
+
+  return Node;
+
+}
+
+
+
+
 
 
 // MNCTModuleDepthCalibrationLinearPixel.cxx: the end...
 ///////////////////////////////////////////////////////////////////////////////
+
+
+
+
