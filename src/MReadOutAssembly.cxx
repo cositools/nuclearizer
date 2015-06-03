@@ -294,43 +294,108 @@ MNCTHit* MReadOutAssembly::GetHitSim(unsigned int i)
 
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
-  //! Stream the content from a line of an ASCII file  
 
-  /*
-  
-  bool Error = false;
+	if( Line.BeginsWith("SE") ) return true;
+	if( Line.BeginsWith("TI") ){
+		m_Time.Set(Line);
+		return true;
+	}
+	//skipping aspect for now
+	if( Line.BeginsWith("HT") ){
+		MNCTHit* h = new MNCTHit();
+		if( h->Parse(Line,1) ){
+			AddHit(h);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	if( Line.BeginsWith("SH") ){
+		//assuming that the SHs belong to the last read hit
+		MNCTHit* h = m_Hits.back();
+		if( h != NULL ){
+			MNCTStripHit* SH = new MNCTStripHit();
+			if( SH->Parse(Line,2) ){
+				h->AddStripHit(SH);
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+	if( Line.BeginsWith("BD") ){
+		//set a bad flag
+		//too lazy RN to go thru each flag.  the following should do::
+		m_FilteredOut = true;
+		return true;
+	}
 
-  const char* Data = Line.Data();
-  if (Data[0] == 'T' && Data[1] == 'I') {
-    m_Time.Set(Data);
-  } else if (Data[0] == 'I' && Data[1] == 'D') {
-    if (sscanf(Data, "ID %lu", &m_ID) != 1) {
-      Error = true;
-    } 
-  } else if (Data[0] == 'S' && Data[1] == 'H') {
-    MNCTStripHit* H = new MNCTStripHit();
-    if (SH->Parse(Line, Version) == true) {
-      m_StripHits.push_back(SH);
-    } else {
-      delete H;
-      Error = true;
-    }
-  } else {
-    Error = true;
-  }
-  
-  if (Error == true) {
-    merr<<"Unable to parse line:"<<endl;
-    merr<<Data<<endl;
-    return false;
-  }
+	return false;
 
-  m_Empty = false;
-
-  */
-  
-  return true;
 }
+
+bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
+
+	MString Line;
+	int i;
+	int MaxIter = 1000;
+
+	Clear();
+	for( i = 0; i < MaxIter; i++ ){
+		//try 1000 times to get the complete event
+		F.ReadLine(Line);
+		const char* line = Line.Data();
+		//vector<MString> tokens = Line.Tokenize(" ");
+		if( Line.BeginsWith("SE") ){
+			if( i != 0 ){
+				//we read the full event in, break now
+				break;
+			}
+		}else if( Line.BeginsWith("ID") ){
+			unsigned int ID;
+			sscanf(&line[3],"%u",&ID);
+			SetID( ID );
+		} else if( Line.BeginsWith("TI") ){
+			MTime T = MTime();
+			T.Set(Line);
+			SetTime( T );
+		} else if( Line.BeginsWith("HT") ){
+			MNCTHit* h = new MNCTHit();
+			h->Parse(Line);
+			AddHit(h);
+		} else if( Line.BeginsWith("SH") ){
+			MNCTStripHit* sh = new MNCTStripHit();
+			sh->Parse(Line);
+			AddStripHit(sh);
+			if( m_Hits.size() > 0 ){
+				MNCTHit* h = m_Hits.back();
+				h->AddStripHit(sh);
+			}
+		} else if( Line.BeginsWith("BD") ){
+			SetFilteredOut(true);
+		}
+		//ignoring ASPECT info for right now
+
+	}
+
+	if( i == MaxIter ){
+		cout<<"MReadoutAssembly::GetNextFromFile(): reached MaxIter"<<endl;
+		return false;
+	} else {
+		return true;
+	}
+
+}
+			
+
+
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -348,12 +413,18 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     m_Aspect->StreamDat(S, Version);
   }
   
-  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    m_StripHits[h]->StreamDat(S, Version);  
-  }
+  if( Version == 1 ){
+	  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+		  m_StripHits[h]->StreamDat(S, Version);  
+	  }
 
-  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    m_Hits[h]->StreamDat(S, Version);  
+	  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+		  m_Hits[h]->StreamDat(S, Version);  
+	  }
+  } else if( Version == 2 ){
+	  for( auto H : m_Hits ){
+		  H->StreamDat(S,2);
+	  }
   }
 
   if (m_AspectIncomplete == true) {

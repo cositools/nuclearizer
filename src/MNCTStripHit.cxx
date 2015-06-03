@@ -89,9 +89,53 @@ void MNCTStripHit::Clear()
 
 bool MNCTStripHit::Parse(MString& Line, int Version)
 {
+	const char* line = Line.Data();
+	if( line[0] == 'S' && line[1] == 'H' ){
+		int det_id, strip_id, has_triggered, timing, un_adc, adc;
+		float energy, energy_res;
+		char pos_strip;
+		sscanf(&line[3],"%d %c %d %d %d %d %d %f %f",&det_id,
+			  															   &pos_strip,
+																			&strip_id,
+																			&has_triggered,
+																			&timing,
+																			&un_adc,
+																			&adc,
+																			&energy,
+																			&energy_res);
+		SetDetectorID(det_id);
+		pos_strip == 'p' ? IsPositiveStrip(true) : IsPositiveStrip(false);
+		SetStripID(strip_id);
+		has_triggered == 0 ? HasTriggered(false) : HasTriggered(true);
+		SetTiming((double)timing);
+		SetUncorrectedADCUnits((double)un_adc);
+		SetADCUnits((double)adc);
+		SetEnergy(energy);
+		SetEnergyResolution(energy_res);
+		return true;
+	} else {
+		return false;
+	}
+
   // to be written later 
-  
-  return  true;
+/*
+  vector<MString> tokens = Line.Tokenize(" ");
+  if( tokens.size() >= 10 ){
+	  SetDetectorID(tokens.at(1).ToInt());
+	  tokens.at(2) == "p" ? IsPositiveStrip(true) : IsPositiveStrip(false);
+	  SetStripID(tokens.at(3).ToInt());
+	  tokens.at(4) == "0" ? HasTriggered(false) : HasTriggered(true);
+	  SetTiming( tokens.at(5).ToDouble() );
+	  SetUncorrectedADCUnits( tokens.at(6).ToDouble() );
+	  SetADCUnits( tokens.at(7).ToDouble() );
+	  SetEnergy( tokens.at(8).ToDouble() );
+	  SetEnergyResolution( tokens.at(9).ToDouble() );
+	  int det_id, pos_strip, strip_id
+	  return true;
+  } else {
+	  return false;
+  }
+  */
 }
 
 
@@ -115,6 +159,8 @@ bool MNCTStripHit::StreamDat(ostream& S, int Version)
  
   return true;
 }
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

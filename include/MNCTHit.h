@@ -95,6 +95,9 @@ class MNCTHit
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
   
+  //! Parse some content from a line
+  bool Parse(MString &Line, int Version = 1);
+
   // protected methods:
  protected:
   //MNCTHit() {};

@@ -21,10 +21,13 @@
 
 // ROOT libs:
 #include "MString.h"
+#include "TH3.h"
+#include "TTree.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
+#include "MVector.h"
 
 // Forward declarations:
 
@@ -75,6 +78,12 @@ class MNCTModuleEventFilter : public MModule
   void SetMaximumTotalEnergy(double MaximumTotalEnergy) { m_MaximumTotalEnergy = MaximumTotalEnergy; }
   //! Get the maximum total energy!
   double GetMaximumTotalEnergy() const { return m_MaximumTotalEnergy; }
+
+  //!AWL compute kinemaics
+  double kinematics(MVector SourcePosition, MVector Site1, MVector Site2, double E0);
+
+  //!AWL dump the CTD data
+  void DumpCTDs(void);
   
 
   // protected methods:
@@ -96,6 +105,26 @@ class MNCTModuleEventFilter : public MModule
   double m_MinimumTotalEnergy;
   //! The minimum total energy
   double m_MaximumTotalEnergy;
+  //CTD histogram output file
+  ofstream m_CTDOut;
+  //CTD histograms
+  TH3I* m_CTDHist;
+  //Source position vector
+  MVector* m_SourceVector;
+  //!number of 2 strip events
+  unsigned int m_Good2Strip, m_Bad2Strip;
+  unsigned int m_Good4Strip, m_Bad4Strip;
+  unsigned int m_BadNStrips;
+  double m_EOff;
+  unsigned int m_Bad2StripEnergy, m_Bad2StripSH;
+  unsigned int m_Bad4StripEnergy, m_Bad4StripSH;
+  unsigned int m_2StripGoodEnergyBadSH;
+  TH1D *m_CTD17, *m_CTD18;
+  TTree* EventTree;
+  TFile* RootFile;
+  float m_YEnergy, m_X17Energy, m_X18Energy;
+  float m_YTiming, m_X17Timing, m_X18Timing;
+
 
   
 #ifdef ___CINT___
@@ -104,7 +133,6 @@ class MNCTModuleEventFilter : public MModule
 #endif
 
 };
-
 #endif
 
 

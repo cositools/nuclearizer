@@ -237,6 +237,9 @@ class MReadOutAssembly
   //! Stream the content in MEGAlib's roa format 
   void StreamRoa(ostream& S, bool WithDescriptor = true);
 
+  //! Build the next MReadoutAssemply from a .dat file
+  bool GetNextFromDatFile(MFile &F);
+
 
   // protected methods:
  protected:

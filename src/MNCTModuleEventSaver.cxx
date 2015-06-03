@@ -285,7 +285,7 @@ bool MNCTModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
   if (m_Mode == c_EvtaFile) {
     Event->StreamEvta(Out);
   } else if (m_Mode == c_DatFile) {
-    Event->StreamDat(Out);    
+    Event->StreamDat(Out,2);    
   } else if (m_Mode == c_RoaFile) {
     Event->StreamRoa(Out);
   }
