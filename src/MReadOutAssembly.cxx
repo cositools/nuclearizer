@@ -295,100 +295,104 @@ MNCTHit* MReadOutAssembly::GetHitSim(unsigned int i)
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
 
-	if( Line.BeginsWith("SE") ) return true;
-	if( Line.BeginsWith("TI") ){
-		m_Time.Set(Line);
-		return true;
-	}
-	//skipping aspect for now
-	if( Line.BeginsWith("HT") ){
-		MNCTHit* h = new MNCTHit();
-		if( h->Parse(Line,1) ){
-			AddHit(h);
-			return true;
-		} else {
-			return false;
-		}
-	}
-	if( Line.BeginsWith("SH") ){
-		//assuming that the SHs belong to the last read hit
-		MNCTHit* h = m_Hits.back();
-		if( h != NULL ){
-			MNCTStripHit* SH = new MNCTStripHit();
-			if( SH->Parse(Line,2) ){
-				h->AddStripHit(SH);
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
-	}
-	if( Line.BeginsWith("BD") ){
-		//set a bad flag
-		//too lazy RN to go thru each flag.  the following should do::
-		m_FilteredOut = true;
-		return true;
-	}
+  if( Line.BeginsWith("SE") ) return true;
+  if( Line.BeginsWith("TI") ){
+    m_Time.Set(Line);
+    return true;
+  }
+  //skipping aspect for now
+  if( Line.BeginsWith("HT") ){
+    MNCTHit* h = new MNCTHit();
+    if( h->Parse(Line,1) ){
+      AddHit(h);
+      return true;
+    } else {
+      return false;
+    }
+  }
+  if( Line.BeginsWith("SH") ){
+    //assuming that the SHs belong to the last read hit
+    MNCTHit* h = m_Hits.back();
+    if( h != NULL ){
+      MNCTStripHit* SH = new MNCTStripHit();
+      if( SH->Parse(Line,2) ){
+        h->AddStripHit(SH);
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  if( Line.BeginsWith("BD") ){
+    //set a bad flag
+    //too lazy RN to go thru each flag.  the following should do::
+    m_FilteredOut = true;
+    return true;
+  }
 
-	return false;
+  return false;
 
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 
-	MString Line;
-	int i;
-	int MaxIter = 1000;
+  MString Line;
+  int i;
+  int MaxIter = 1000;
 
-	Clear();
-	for( i = 0; i < MaxIter; i++ ){
-		//try 1000 times to get the complete event
-		F.ReadLine(Line);
-		const char* line = Line.Data();
-		//vector<MString> tokens = Line.Tokenize(" ");
-		if( Line.BeginsWith("SE") ){
-			if( i != 0 ){
-				//we read the full event in, break now
-				break;
-			}
-		}else if( Line.BeginsWith("ID") ){
-			unsigned int ID;
-			sscanf(&line[3],"%u",&ID);
-			SetID( ID );
-		} else if( Line.BeginsWith("TI") ){
-			MTime T = MTime();
-			T.Set(Line);
-			SetTime( T );
-		} else if( Line.BeginsWith("HT") ){
-			MNCTHit* h = new MNCTHit();
-			h->Parse(Line);
-			AddHit(h);
-		} else if( Line.BeginsWith("SH") ){
-			MNCTStripHit* sh = new MNCTStripHit();
-			sh->Parse(Line);
-			AddStripHit(sh);
-			if( m_Hits.size() > 0 ){
-				MNCTHit* h = m_Hits.back();
-				h->AddStripHit(sh);
-			}
-		} else if( Line.BeginsWith("BD") ){
-			SetFilteredOut(true);
-		}
-		//ignoring ASPECT info for right now
+  Clear();
+  for( i = 0; i < MaxIter; i++ ){
+    //try 1000 times to get the complete event
+    F.ReadLine(Line);
+    const char* line = Line.Data();
+    //vector<MString> tokens = Line.Tokenize(" ");
+    if( Line.BeginsWith("SE") ){
+      if( i != 0 ){
+        //we read the full event in, break now
+        break;
+      }
+    }else if( Line.BeginsWith("ID") ){
+      unsigned int ID;
+      sscanf(&line[3],"%u",&ID);
+      SetID( ID );
+    } else if( Line.BeginsWith("TI") ){
+      MTime T = MTime();
+      T.Set(Line);
+      SetTime( T );
+    } else if( Line.BeginsWith("HT") ){
+      MNCTHit* h = new MNCTHit();
+      h->Parse(Line);
+      AddHit(h);
+    } else if( Line.BeginsWith("SH") ){
+      MNCTStripHit* sh = new MNCTStripHit();
+      sh->Parse(Line);
+      AddStripHit(sh);
+      if( m_Hits.size() > 0 ){
+        MNCTHit* h = m_Hits.back();
+        h->AddStripHit(sh);
+      }
+    } else if( Line.BeginsWith("BD") ){
+      SetFilteredOut(true);
+    }
+    //ignoring ASPECT info for right now
 
-	}
+  }
 
-	if( i == MaxIter ){
-		cout<<"MReadoutAssembly::GetNextFromFile(): reached MaxIter"<<endl;
-		return false;
-	} else {
-		return true;
-	}
+  if( i == MaxIter ){
+    cout<<"MReadoutAssembly::GetNextFromFile(): reached MaxIter"<<endl;
+    return false;
+  } else {
+    return true;
+  }
 
 }
-			
+      
 
 
 
@@ -414,17 +418,17 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   }
   
   if( Version == 1 ){
-	  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-		  m_StripHits[h]->StreamDat(S, Version);  
-	  }
+    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+      m_StripHits[h]->StreamDat(S, Version);  
+    }
 
-	  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-		  m_Hits[h]->StreamDat(S, Version);  
-	  }
+    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+      m_Hits[h]->StreamDat(S, Version);  
+    }
   } else if( Version == 2 ){
-	  for( auto H : m_Hits ){
-		  H->StreamDat(S,2);
-	  }
+    for( auto H : m_Hits ){
+      H->StreamDat(S,2);
+    }
   }
 
   if (m_AspectIncomplete == true) {
@@ -443,9 +447,9 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     S<<endl;
   }
   if (m_EnergyCalibrationIncomplete == true) {
-	S<<"BD EnergyCalibrationIncomplete";
-	if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
-	S<<endl;
+  S<<"BD EnergyCalibrationIncomplete";
+  if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+  S<<endl;
   }
   if (m_EnergyResolutionCalibrationIncomplete == true) {
     S<<"BD EnergyResolutionCalibrationIncomplete";
@@ -458,8 +462,8 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     S<<endl;
   }
   if (m_LLDEvent == true) {
-	S<<"BD LLDEvent";
-	if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
+  S<<"BD LLDEvent";
+  if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
     S<<endl;
   }
   if (m_DepthCalibrationIncomplete == true) {
@@ -468,9 +472,9 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     S<<endl;
   }
   if (m_DepthCalibration_OutofRange == true) {
-	S<<"BD DepthCalibration_OutofRange";
-	if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
-	S<<endl;
+  S<<"BD DepthCalibration_OutofRange";
+  if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
+  S<<endl;
   }
 
 
@@ -497,7 +501,7 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     m_Hits[h]->StreamEvta(S);  
   }
-
+  
   if (m_AspectIncomplete == true) {
     S<<"BD AspectIncomplete";
     if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
@@ -514,9 +518,9 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     S<<endl;
   }
   if (m_EnergyCalibrationIncomplete == true) {
-	S<<"BD EnergyCalibrationIncomplete";
-	if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
-	S<<endl;
+    S<<"BD EnergyCalibrationIncomplete";
+    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+    S<<endl;
   }
   if (m_EnergyResolutionCalibrationIncomplete == true) {
     S<<"BD EnergyResolutionCalibrationIncomplete";
@@ -529,9 +533,9 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     S<<endl;
   }
   if (m_LLDEvent == true) {
-	S<<"BD LLDEvent";
-	if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
-	S<<endl;
+    S<<"BD LLDEvent";
+    if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
+    S<<endl;
   }
   if (m_DepthCalibrationIncomplete == true) {
     S<<"BD DepthCalibrationIncomplete";
@@ -539,9 +543,9 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     S<<endl;
   }
   if (m_DepthCalibration_OutofRange == true) { 
-	S<<"BD DepthCalibration_OutofRange";
-	if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
-	S<<endl;
+    S<<"BD DepthCalibration_OutofRange";
+    if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
+    S<<endl;
   }
 }
 
@@ -564,7 +568,8 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
     m_StripHits[h]->StreamRoa(S);  
   }
-
+  
+  // Those are the only BD's relevant for the roa format
   if (m_AspectIncomplete == true) {
     S<<"BD AspectIncomplete";
     if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
