@@ -34,7 +34,7 @@ using namespace std;
 #include <TCanvas.h>
 #include <TH1.h>
 #include <TH2.h>
-
+#include <TMath.h> //Cory
 // MEGAlib
 #include "MGlobal.h"
 #include "MFile.h"
@@ -74,6 +74,8 @@ private:
   bool m_Interrupt;
   //! The input file name
   MString m_FileName;
+	//! The threshold file name
+	MString m_THName;
 };
 
 
@@ -108,6 +110,7 @@ bool ThresholdDeterminator::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: ThresholdDeterminator <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   file name"<<endl;
+  Usage<<"         -t:   threshold OUTPUT file name"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -136,6 +139,15 @@ bool ThresholdDeterminator::ParseCommandLine(int argc, char** argv)
         return false;
       }
     } 
+
+		else if (Option == "-t") {
+    	if (!((argc > i+1) &&
+        	  (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+		}
+	}
     // Multiple arguments template
     /*
     else if (Option == "-??") {
@@ -153,18 +165,40 @@ bool ThresholdDeterminator::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
-    } else {
+    } else if (Option != "-t") {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
       return false;
     } 
+  
+
+    else if (Option == "-t") {
+      m_THName = argv[++i];
+      cout<<"Accepting threshold OUTPUT file name: "<<m_THName<<endl;
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
+
 
   return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+//Cory put fit function here b/c can't define function inside other function
+Double_t fitf(Double_t *x, Double_t *par) // define function for fit
+{
+	Double_t arg1 = 0; //Double_t arg2 = 0;
+	if (par[3] != 0) arg1 = (x[0]-par[2]) / (TMath::Sqrt(2.0)*par[3]);
+	//if (par[3] != 0) arg2 = (x[0]-par[2]) / par[3];
+	Double_t fitval = par[0] +par[1]*TMath::Erf( arg1 );
+	return fitval;
+}
 
 
 //! Do whatever analysis is necessary
@@ -194,28 +228,72 @@ bool ThresholdDeterminator::Analyze()
   delete Event;
   
   ofstream histfile; //output file type (make it writeable), class histfile
-  histfile.open("Thresholds.dat"); 
+ 	histfile.open(m_THName); 
   if (histfile.is_open() == false) {
     cerr<<"Unable to open thresholds file for writing!"<<endl;
     return false;
   }
-  
+
+
   for (auto H: Histograms) {
     TH1D* Hist = H.second;
     
-    /*
-    TCanvas* C = new TCanvas();
+/*   
+		TCanvas* C = new TCanvas();
     C->cd();
     Hist->Draw();
-    C->Update();
-    */
-    
-    for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
+    C->Update(); 
+*/
+
+//Cory Changes begin here
+	int uloc = 1; // declare this outside of for loop blocks to access later
+	int lloc = 1;
+  for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
       if (Hist->GetBinContent(b)  > 10) { 
-        histfile<<"TH "<<H.first.ToParsableString(true)<<" "<<Hist->GetBinCenter(b)<<endl;
+				lloc = b;
+        histfile<<"TH (LOWER) "<<H.first.ToParsableString(true)<<" "<<Hist->GetBinCenter(b)<<endl; //Cory changed Hist->GetBinCenter(b) to Nlow
         break;
       }
     }
+	//Cory upper threshhold
+
+	for (int b = Hist->GetNbinsX(); b >= 0; b = b-1) {
+      if (Hist->GetBinContent(b)  > 10 ) { 
+				uloc = b;
+      	histfile<<"TH (UPPER) "<<H.first.ToParsableString(true)<<" "<<Hist->GetBinCenter(b)<<endl;
+        break;
+      }
+    }
+	/* Double_t fitf(Double_t *x, Double_t *par) // define function for fit
+    {
+      Double_t arg1 = 0; Double_t arg2 = 0;
+      if (par[3] != 0) arg1 = (x[0]-par[2]) / (Tmath::Sqrt(2)*par[3]);
+      //if (par[3] != 0) arg2 = (x[0]-par[2]) / par[3];
+      Double_t fitval = par[0] +par[1]*TMath::Erf( (-1.0)*arg1*arg1 );
+		return fitval;
+		}*/
+	
+		TF1 *funcl = new TF1("fit_lower", fitf, lloc-5, lloc+5, 4); //TF1 object for fcn, lloc pm 50 defines range , last # is # of par
+    funcl->SetParameters((35/2), (35/2), lloc /*lloc*/, 0.05  /*sigma*/ ); //initialized par vals
+    funcl->SetParNames("Offset_Lower", "Scale_factor_Lower", "Mu_Lower", "Sigma_Lower"); //nice names for pars 
+    Hist->Fit("fit_lower"); 
+
+		TF1 *funcu = new TF1("fit_upper", fitf, uloc-5, uloc+5, 4); //TF1 object for fcn, lloc pm 50 defines range , last # is # of par
+    funcu->SetParameters((35/2), -(35/2), uloc /*uloc*/, 0.05 /*sigma*/ ); //initialized par vals
+    funcu->SetParNames("Offset_Upper", "Scale_factor_Upper", "Mu_Upper", "Sigma_Upper"); //nice names for pars 
+    Hist->Fit("fit_upper");
+
+//To get additional parameters (errors etc) in threshold file, uncomment this region
+/*
+   	for (int i=0;i<funcl->GetNpar();i++) {
+			histfile<<funcl->GetParName(i)<<" "<<funcl->GetParameter(i)<<endl;
+   }
+
+  	 for (int i=0;i<funcu->GetNpar();i++) {
+      histfile<<funcu->GetParName(i)<<" "<<funcu->GetParameter(i)<<endl;
+   }
+*/
+
   }
 
   histfile.close();
