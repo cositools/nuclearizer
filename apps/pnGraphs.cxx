@@ -47,6 +47,8 @@ using namespace std;
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleCrosstalkCorrection.h"
+#include "MNCTModuleChargeSharingCorrection.h"
 #include "MAssembly.h"
 
 
@@ -83,6 +85,11 @@ private:
 	unsigned int m_DetID;
 	//! output file names
 	MString m_OutFile;
+	//! True, if it should do the cross talk correction
+	bool m_CT;
+	//! True, if it should do the charge loss correction
+	bool m_CL;
+
 
 };
 
@@ -113,6 +120,9 @@ pnGraphs::~pnGraphs()
 //! Parse the command line
 bool pnGraphs::ParseCommandLine(int argc, char** argv)
 {
+	m_CT = false;
+	m_CL = false;
+
   ostringstream Usage;
   Usage<<endl;
   Usage<<"  Usage: pnGraphs <options>"<<endl;
@@ -123,6 +133,8 @@ bool pnGraphs::ParseCommandLine(int argc, char** argv)
 	Usage<<"                example: -s detID side"<< endl;
 	Usage<<"                side can be n or p"<< endl;
 	Usage<<"         -o:   outfile" << endl;
+	Usage<<"         -ct:  do cross talk correction " << endl;
+	Usage<<"         -cl:  do charge loss correction " << endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -203,6 +215,12 @@ bool pnGraphs::ParseCommandLine(int argc, char** argv)
 			m_OutFile = string(argv[i+1]);
 		}
 
+		if (Option == "-ct"){
+			m_CT = true;
+		}
+		if (Option == "-cl"){
+			m_CL = true;
+		}
 
 	}
 
@@ -220,6 +238,9 @@ bool pnGraphs::Analyze()
 	TStopwatch watch;
 	watch.Start();
 
+	cout << "correcting cross talk: " << m_CT << endl;
+	cout << "correcting charge loss: " << m_CL << endl;
+
 	if (m_Interrupt == true) return false;
 
   MSupervisor S;
@@ -235,10 +256,19 @@ bool pnGraphs::Analyze()
   MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
   S.SetModule(Pairing, 2);
 
+	MNCTModuleCrosstalkCorrection* CrossTalk = new MNCTModuleCrosstalkCorrection();
+	S.SetModule(CrossTalk, 3);
+
+	MNCTModuleChargeSharingCorrection* ChargeLoss = new MNCTModuleChargeSharingCorrection();
+	S.SetModule(ChargeLoss, 4);
+
   if (Loader->Initialize() == false) return false;
   if (Calibrator->Initialize() == false) return false;
   if (Pairing->Initialize() == false) return false;
-  
+	if (CrossTalk->Initialize() == false) return false;
+	if (ChargeLoss->Initialize() == false) return false; 
+
+ 
   map<int, TH2D*> Histograms;
   
   
@@ -249,6 +279,11 @@ bool pnGraphs::Analyze()
     Loader->AnalyzeEvent(Event);
     Calibrator->AnalyzeEvent(Event);
     Pairing->AnalyzeEvent(Event);
+		if (m_CT) {CrossTalk->AnalyzeEvent(Event);}
+		//note: correcting charge loss is not going to do anything because
+		//	this looks at the strip hit energies, and the charge loss correction
+		//  only changes the hit energies
+		if (m_CL) {ChargeLoss->AnalyzeEvent(Event);}
 
 	  if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
 			if (m_DetOp) {
@@ -259,24 +294,28 @@ bool pnGraphs::Analyze()
 	        double nEnergy = 0.0;    
 
 	        int DetectorID = 0;
-	        for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
-	          DetectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
-	          if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
-	            ++pNStrips;
-	            pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
-	          } else {
-	            ++nNStrips;
-	            nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
-	          }
-	        }
-	        if (pNStrips > 0 && nNStrips > 0) {
-	          if (Histograms[DetectorID] == 0) {
-	            TH2D* Hist = new TH2D("", MString("Detector ") + DetectorID, 1400, 0, 1400, 1400, 0, 1400);
-	            Hist->SetXTitle("p-Side Energy [keV]");
-	            Hist->SetYTitle("n-Side Energy [keV]");
-	            Histograms[DetectorID] = Hist;
-	          }
-	          Histograms[DetectorID]->Fill(pEnergy, nEnergy);
+					//don't add to pn-plot if a strip was hit multiple times
+					if (Event->GetHit(h)->GetStripHitMultipleTimes() == false){
+		        for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
+
+		          DetectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
+		          if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+		            ++pNStrips;
+		            pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+		          } else {
+		            ++nNStrips;
+		            nEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
+		          }
+		        }
+		        if (pNStrips > 0 && nNStrips > 0) {
+		          if (Histograms[DetectorID] == 0) {
+		            TH2D* Hist = new TH2D("", MString("Detector ") + DetectorID, 1400, 0, 1400, 1400, 0, 1400);
+		            Hist->SetXTitle("p-Side Energy [keV]");
+		            Hist->SetYTitle("n-Side Energy [keV]");
+		            Histograms[DetectorID] = Hist;
+		          }
+		          Histograms[DetectorID]->Fill(pEnergy, nEnergy);
+						}
 	        }
 	      }
 	    }

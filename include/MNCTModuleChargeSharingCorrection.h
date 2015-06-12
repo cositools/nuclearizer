@@ -51,6 +51,11 @@ class MNCTModuleChargeSharingCorrection : public MModule
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
+	vector<vector<double> > ParseOneSource(string);
+	void LoadCorrectionInfo();
+	double Interpolate(double,int,int);
+	double EstimateE0(double,double,int,int);
+	void dummy_func();	//for debugging
 
   // protected methods:
  protected:
@@ -62,6 +67,12 @@ class MNCTModuleChargeSharingCorrection : public MModule
 
   // protected members:
  protected:
+	//holds the fit parameter information
+	//B[source][detector][side]
+	vector<vector<vector<double> > > B;
+
+	//number of sources used for correction
+	int nSources;
 
 
   // private members:

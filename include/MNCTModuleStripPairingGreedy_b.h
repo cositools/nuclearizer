@@ -254,7 +254,10 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   vector<float> energyResolution; //energy resolution of the pairs
   vector<float> hitEnergy;  //energy of hit
 
+	//keep track of hits where charge sharing occurred or
+	// strips were hit multiple times
 	vector<int> stripHitMultipleTimes;
+	vector<int> chargeSharing;
 
   vector<float> detectorQualityFactors;
   vector<bool> noHits;
