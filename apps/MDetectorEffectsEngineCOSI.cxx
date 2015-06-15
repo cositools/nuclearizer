@@ -272,7 +272,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
   ParseEcalFile();
   //load dead strip information
   ParseDeadStripFile();
-  
+  //load threshold information
+	ParseTHFile();
+	
   MFileEventsSim* Reader = new MFileEventsSim(Geometry);
   if (Reader->Open(m_FileName) == false) {
     cout<<"Unable to open sim file "<<m_FileName<<" - Aborting!"<<endl; 
@@ -282,6 +284,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
   
   MString RoaFileName = m_FileName;
   RoaFileName.ReplaceAllInPlace(".sim", ".roa");
+	cout << "Output File: " << RoaFileName << endl;
   
   ofstream out;
   out.open(RoaFileName);
@@ -583,75 +586,45 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
 /******************************************************************************
  * Read in thresholds
  */
+
 void MNCTDetectorEffectsEngineCOSI::ParseTHFile()
 {
-  const int MAX_CHARS_PER_LINE = 512;
-  const int MAX_TOKENS_PER_LINE = 20;
-  const char* const DELIMITER = " ";
-  
-  vector<string> v;
-  vector<string> th_low;
-  vector<string> th_up;
-  
-  ifstream fin;
-  fin.open(m_THFilename); // open threshold file
-  // example "/data/BackupPalestine/EnergyDepthCalibration/Cs137/220814/Thresholds.dat"
-  if (!fin.good()) {
-    cout << "Unable to open threshold file!"; 
+  MParser Parser;
+  if (Parser.Open(m_THFilename, MFile::c_Read) == false){
+    cout << "Unable to open threshold file " << m_THFilename << endl;
+    return;
   }
-  
-  while (!fin.eof()) {
-    char buf[MAX_CHARS_PER_LINE];
-    fin.getline(buf, MAX_CHARS_PER_LINE);
-    
-    unsigned int n = 0;
-    
-    //tokens stored in array
-    const char* token[MAX_TOKENS_PER_LINE] = {}; // initialize at 0
-    
-    // line parsing
-    token[0] = strtok(buf, DELIMITER); // first token
-    if (token[0]) // zero if line is blank
-    {
-      for (n = 1; n < MAX_TOKENS_PER_LINE; n++)
-      {
-        token[n] = strtok(0, DELIMITER); // subsequent tokens
-        if (!token[n]) break; // no more tokens
-      }
-      
-      // tokens into vector
-      for (unsigned int i = 6; i < n; i = i + 7 )// n = #of tokens
-        v.push_back( token[i] );
-    }
-  }
-  
-  for (unsigned int x = 0; x< v.size(); x = x + 2) // must be <
-  {
-    th_low.push_back(v[x]);
-  }
-  // to print lower thresholds
-  /*
-   *  for (unsigned int x = 0; x != th_low.size(); x++)
-   *  {
-   *    cout << th_low[x] << endl;
-}
-*/
-  
-  for (unsigned int x = 1; x<= v.size(); x = x + 2) // must be <=
-  {
-    th_up.push_back(v[x]);
-  }
-  
-  //to print upper thresholds
-  /* 
-   *  for (unsigned int x = 0; x != th_up.size(); x++)
-   *  {
-   *    cout << th_up[x] << endl;
-}
-*/
-  
-}
+  map<MReadOutElementDoubleStrip, double> LowerTH;
+  map<MReadOutElementDoubleStrip, double> UpperTH; 
 
+  for (unsigned int i=0; i<Parser.GetNLines(); i++){
+    unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+    if (NTokens < 2) continue;
+    if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"TH") == true) {
+
+      if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(LOWER)") == true ||
+	 				Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
+
+	        MReadOutElementDoubleStrip R;
+  	      R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
+    	    R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4));
+      	  R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(5) == "p");
+
+        	if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(LOWER)") == true) {
+          		LowerTH[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+							//cout << LowerTH[R] << endl; //to verify lower thresholds
+        	}	
+      else if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
+          UpperTH[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+					//cout << UpperTH[R] << endl; //to verify upper thresholds
+      }
+      else {
+          cout << "Error parsing threshold file." << endl;
+      }
+      }
+    }
+	}
+}
 
 /******************************************************************************
  * Parse ecal file: should be done once at the beginning to save all the poly3 coefficients
