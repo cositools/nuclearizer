@@ -319,10 +319,10 @@ bool MNCTModuleDepthCalibrationLinearPixel::AnalyzeEvent(MReadOutAssembly* Event
 	//We can't calibrate LLD only events, so check first for those. But for multistrip events, one strip may have timing and one may not, but that event is still okay. Also, Alex and Alan have observed hits with weird timing values, like > 40, but the make is 36 (?), so I should check to for here too.
 	double time_x = -1;
 	double time_y = -1;
-	int strip_x;
-	int strip_y;
+	int strip_x = -1;
+	int strip_y = -1;
 
-    for (unsigned int i_s_hit = 0; i_s_hit < NStripHits; i_s_hit++) {
+  for (unsigned int i_s_hit = 0; i_s_hit < NStripHits; i_s_hit++) {
 	  //cout << "i_s_hit: " << i_s_hit << endl; 
 	  if (H->GetStripHit(i_s_hit)->IsXStrip() == true && (time_x == -1 || time_x == 0 || time_x > 36)) {
 		time_x = H->GetStripHit(i_s_hit)->GetTiming();

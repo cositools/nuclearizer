@@ -183,7 +183,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	}
 
 	string date_and_time = PacketA.date_and_time;
-	unsigned int nanoseconds = PacketA.nanoseconds;
+	//unsigned int nanoseconds = PacketA.nanoseconds;
 
 	//don't use this time for aspect determination!!! this is the timestamp of the event with respect to the system clock,
 	//which has nothing to do with the Unix second, but it is used to associate an MNCTAspect with an event

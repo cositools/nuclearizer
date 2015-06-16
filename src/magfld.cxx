@@ -145,7 +145,7 @@ vect MagField(double latitude, double longitude, double elevation)
 	/* north latitude */
 	static double y[2] = {32.,36.};
 	/* west longitude */
-	static double x[3] = {96.,104.,112.};
+	// static double x[3] = {96.,104.,112.};
 
 	/* Set up matrix for interpolation coefficients */
 	/* This is the inverse of the matrix of longitude sampling values */
@@ -376,7 +376,10 @@ void WMMInit(void)
 		c[0][0] = 0.0;
 		cd[0][0] = 0.0;
 
-		fgets(c_str, 80, wmmdat);
+		if (fgets(c_str, 80, wmmdat) == NULL) {
+      printf(" Error reading first data set \n");
+      return;
+    }
 		sscanf(c_str,"%f%s",&epoch,model);
 
 		while (fgets(c_str, 80, wmmdat) != NULL) {

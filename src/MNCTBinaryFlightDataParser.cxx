@@ -1141,8 +1141,8 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
 
 						//get the GPS week
-						int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 16; //16 seconds is number of leapseconds introduced since 1980 GPS epoch
-						int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
+						//int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 16; //16 seconds is number of leapseconds introduced since 1980 GPS epoch
+						//int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
 
 						string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
 						DSOPacket.date_and_time = TempString;

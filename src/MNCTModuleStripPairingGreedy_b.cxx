@@ -190,6 +190,10 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 
 						CheckForBadCombinations();
 						fourthChiSq = FindFinalPairs();
+            
+            if (fourthChiSq > 30) {
+              // ... may be later ... this is just in to have the compiler not complaining abaout an unsused variable 
+            }
 					}
 				}
 			}
@@ -1964,7 +1968,7 @@ void MNCTModuleStripPairingGreedy_b::PrintFinalPairs(){
 
 	cout << "----------------------" << endl << "Printing final pairs" << endl;
 
-	for (int p=0; p<finalPairs.size(); p++){
+	for (unsigned int p=0; p<finalPairs.size(); p++){
 		for (int axis=0; axis<2; axis++){
 			cout << finalPairs.at(p).at(axis) << '\t';
 		}
