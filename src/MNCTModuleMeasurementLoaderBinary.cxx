@@ -76,6 +76,10 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
   
   m_HasOptionsGUI = true;
   
+  // Set the histogram display
+  m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
+  m_Expos.push_back(m_ExpoAspectViewer);
+  
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
@@ -102,6 +106,8 @@ MNCTModuleMeasurementLoaderBinary::~MNCTModuleMeasurementLoaderBinary()
 bool MNCTModuleMeasurementLoaderBinary::Initialize()
 {
   // Initialize the module 
+
+  m_FileIsDone = false;
 
   if (m_In.is_open()) m_In.close();
   m_In.clear();
@@ -149,7 +155,7 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
 
   if (Read < Size) {
     m_FileIsDone = true;
-	 m_IgnoreBufTime = true;
+	  m_IgnoreBufTime = true;
   }
 
   if( m_FileIsDone && (m_EventsBuf.size() == 0) ){
@@ -200,7 +206,9 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   Event->SetTime( NewEvent->GetTime() );
   Event->SetMJD( NewEvent->GetMJD() );
   if (NewEvent->GetAspect() != 0) {
-    Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
+    MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
+    Event->SetAspect(A);
+    m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading());
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
   }
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | 

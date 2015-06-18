@@ -69,6 +69,7 @@ void MGUIOptionsMeasurementLoaderBinary::Create()
 
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
     dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetFileName());
+  m_FileSelector->SetFileType("Bin file", "*.dat");
   m_FileSelector->SetFileType("Bin file", "*.bin");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);

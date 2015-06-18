@@ -29,6 +29,7 @@ using namespace std;
 // Nuclearizer libs
 #include "MModule.h"
 #include "MNCTBinaryFlightDataParser.h"
+#include "MGUIExpoAspectViewer.h"
 
 // Forward declarations:
 
@@ -91,6 +92,9 @@ class MNCTModuleMeasurementLoaderBinary : public MModule, public MNCTBinaryFligh
 
   // private members:
  private:
+  //! A GUI to display the aspect data 
+  MGUIExpoAspectViewer* m_ExpoAspectViewer;
+
   //! The file name
   MString m_FileName;
   //! The file stream

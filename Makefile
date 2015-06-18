@@ -89,6 +89,7 @@ $(LB)/MNCTModuleReceiverCOSI2014.o \
 $(LB)/MGUIOptionsReceiverCOSI2014.o \
 $(LB)/MNCTModuleMeasurementLoaderBinary.o \
 $(LB)/MGUIOptionsMeasurementLoaderBinary.o \
+$(LB)/MGUIExpoAspectViewer.o \
 $(LB)/MGUIExpoEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibrationUniversal.o \
