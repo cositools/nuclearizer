@@ -72,7 +72,7 @@ class MGUIExpoAspectViewer : public MGUIExpo
   virtual void Export(const MString& FileName);
 
   //! Add data to the heading histogram
-  void AddHeading(MTime Time,double heading);
+  void AddHeading(MTime Time, double Heading);
 
   // protected methods:
  protected:

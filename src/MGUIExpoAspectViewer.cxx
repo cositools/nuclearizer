@@ -55,7 +55,7 @@ MGUIExpoAspectViewer::MGUIExpoAspectViewer(MModule* Module) : MGUIExpo(Module)
   m_Heading = new TGraph();
   m_HeadingCanvas = 0;
 
-  m_TimeCutOff = 60;
+  m_TimeCutOff = 60; // seconds 
   
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -97,7 +97,7 @@ void MGUIExpoAspectViewer::AddHeading(MTime Time, double Heading)
 
   // Ignore the data point if
   // (a) It is within 1 second of the old one AND
-  // (b) the heading chaneg is the same as before...
+  // (b) the heading change is smaller than 0.1 degree
   
   if (Time.GetAsSeconds() < m_Times.back().GetAsSeconds() + 1 && fabs(Heading - m_Headings.back()) < 0.1) {
     m_Mutex.UnLock();
