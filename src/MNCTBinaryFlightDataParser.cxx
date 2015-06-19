@@ -136,6 +136,9 @@ bool MNCTBinaryFlightDataParser::Initialize()
   m_NumBytesReceived = 0;
   m_LostBytes = 0;
   
+  m_LastDSOUnixTime = 0xffffffff;
+  m_LastAspectID = 0xffff;
+
   for (auto E: m_Events) {
     delete E;
   }
@@ -144,6 +147,20 @@ bool MNCTBinaryFlightDataParser::Initialize()
     delete E;
   }
   m_EventsBuf.clear();
+  
+  m_SBuf.clear();
+  
+  m_LastDateTimeString = "";
+  m_LastCorrectedClk = 0;
+  m_LastLatitude = 0;
+  m_LastLongitude = 0;
+  m_LastAltitude = 0;
+  m_LastGPSWeek = 0;
+  m_LastAspectID = 0;
+  LastComptonTimestamp = 0;
+  m_NumComptonBytes = 0;
+  m_NumRawDataBytes = 0;
+  m_NumBytesReceived = 0;
   
   // Load aspect reconstruction module
   delete m_AspectReconstructor;
@@ -1372,7 +1389,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	MySeconds = 0;
 	MySeconds = (((uint32_t)DSOString[11] & 0xFF) << 24) | (((uint32_t)DSOString[12] & 0xFF) << 16) | (((uint32_t)DSOString[13] & 0xFF)  << 8) | ((uint32_t)DSOString[14] & 0xFF);  
 	//printf("%02x %02x %02x %02x - ", (DSOString[11] & 0xFF),(DSOString[12] & 0xFF),(DSOString[13] & 0xFF),(DSOString[14] & 0xFF));
-	printf("DSO Packet: Milliseconds = %u, ",MySeconds);  //Again these are Carolyn's packets, not MNCTAspectPacket objects
+	if (g_Verbosity >= c_Info) printf("DSO Packet: Milliseconds = %u, ",MySeconds);  //Again these are Carolyn's packets, not MNCTAspectPacket objects
 	long intermediate_seconds = MySeconds;
 	GPS_Packet.GPSMilliseconds = MySeconds;
 
@@ -1381,7 +1398,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	double MyHeading = 0.0;
 	MyHeading_int = (((uint64_t)DSOString[15] & 0xFF) << 56) | (((uint64_t)DSOString[16] & 0xFF) << 48) | (((uint64_t)DSOString[17] & 0xFF) << 40) |  (((uint64_t)DSOString[18] & 0xFF) << 32) |  (((uint64_t)DSOString[19] & 0xFF) << 24) | (((uint64_t)DSOString[20] & 0xFF) << 20) |  (((uint64_t)DSOString[21] & 0xFF) << 8) | ((uint64_t)DSOString[22] & 0xFF);
 	MyHeading = *(double *) &MyHeading_int;
-	printf("Heading = %4.2f, ", MyHeading); 
+	if (g_Verbosity >= c_Info) printf("Heading = %4.2f, ", MyHeading); 
 	GPS_Packet.heading =  MyHeading;
 
 
@@ -1389,7 +1406,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	double MyPitch = 0.0;
 	MyPitch_int = (((uint64_t)DSOString[23] & 0xFF) << 56) | (((uint64_t)DSOString[24] & 0xFF) << 48) | (((uint64_t)DSOString[25] & 0xFF) << 40) |  (((uint64_t)DSOString[26] & 0xFF) << 32) |  (((uint64_t)DSOString[27] & 0xFF) << 24) | (((uint64_t)DSOString[28] & 0xFF) << 16) |  (((uint64_t)DSOString[29] & 0xFF) << 8) | ((uint64_t)DSOString[30] & 0xFF);
 	MyPitch = *(double *) &MyPitch_int;
-	printf("Pitch = %4.2f, ", MyPitch);  
+	if (g_Verbosity >= c_Info) printf("Pitch = %4.2f, ", MyPitch);  
 	GPS_Packet.pitch =  MyPitch;
 
 
@@ -1397,7 +1414,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	double MyRoll = 0.0;
 	MyRoll_int = (((uint64_t)DSOString[31] & 0xFF) << 56) | (((uint64_t)DSOString[32] & 0xFF) << 48) | (((uint64_t)DSOString[33] & 0xFF) << 40) |  (((uint64_t)DSOString[34] & 0xFF) << 32) |  (((uint64_t)DSOString[35] & 0xFF) << 24) | (((uint64_t)DSOString[36] & 0xFF) << 16) |  (((uint64_t)DSOString[37] & 0xFF) << 8) | ((uint64_t)DSOString[38] & 0xFF);
 	MyRoll = *(double *) &MyRoll_int;
-	printf("Roll = %4.2f, ", MyRoll);  
+	if (g_Verbosity >= c_Info) printf("Roll = %4.2f, ", MyRoll);  
 	GPS_Packet.roll =  MyRoll;
 
 
@@ -1405,17 +1422,17 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	double MyBRMS = 0.0;
 	MyBRMS_int = (((uint64_t)DSOString[39] & 0xFF) << 56) | (((uint64_t)DSOString[40] & 0xFF) << 48) | (((uint64_t)DSOString[41] & 0xFF) << 40) |  (((uint64_t)DSOString[42] & 0xFF) << 32) |  (((uint64_t)DSOString[43] & 0xFF) << 24) | (((uint64_t)DSOString[44] & 0xFF) << 16) |  (((uint64_t)DSOString[45] & 0xFF) << 8) | ((uint64_t)DSOString[46] & 0xFF);
 	MyBRMS = *(double *) &MyBRMS_int;
-	printf("BRMS = %f, ", MyBRMS);  
+	if (g_Verbosity >= c_Info) printf("BRMS = %f, ", MyBRMS);  
 	GPS_Packet.BRMS = MyBRMS;
 
 
 	uint8_t MyAtt_flag_1;
 	MyAtt_flag_1 = (uint8_t)DSOString[47] & 0xFF;
-	printf("Attitude Flag #1 = %u, ", MyAtt_flag_1);
+	if (g_Verbosity >= c_Info) printf("Attitude Flag #1 = %u, ", MyAtt_flag_1);
 
 	uint8_t MyAtt_flag_2;
 	MyAtt_flag_2 = (uint8_t)DSOString[48] & 0xFF;
-	printf("Attitude Flag #2 = %u, ", MyAtt_flag_2);
+	if (g_Verbosity >= c_Info) printf("Attitude Flag #2 = %u, ", MyAtt_flag_2);
 
 	GPS_Packet.AttFlag = ((uint16_t) MyAtt_flag_1 << 8) | ((uint16_t) MyAtt_flag_2);
 
@@ -1424,7 +1441,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	double MyLat;
 	MyLat_int = (((uint64_t)DSOString[49] & 0xFF) << 56) | (((uint64_t)DSOString[50] & 0xFF) << 48) | (((uint64_t)DSOString[51] & 0xFF) << 40) |  (((uint64_t)DSOString[52] & 0xFF) << 32) |  (((uint64_t)DSOString[53] & 0xFF) << 24) | (((uint64_t)DSOString[54] & 0xFF) << 16) |  (((uint64_t)DSOString[55] & 0xFF) << 8) | ((uint64_t)DSOString[56] & 0xFF);
 	MyLat = *(double *) &MyLat_int;
-	printf("Latitude = %4.2f, ", MyLat);  
+	if (g_Verbosity >= c_Info) printf("Latitude = %4.2f, ", MyLat);  
 	GPS_Packet.geographic_latitude =  MyLat;
 
 
@@ -1432,7 +1449,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	double MyLong = 0.0;
 	MyLong_int = (((uint64_t)DSOString[57] & 0xFF) << 56) | (((uint64_t)DSOString[58] & 0xFF) << 48) | (((uint64_t)DSOString[59] & 0xFF) << 40) | (((uint64_t)DSOString[60] & 0xFF) << 32) | (((uint64_t)DSOString[61] & 0xFF) << 24) | (((uint64_t)DSOString[62] & 0xFF) << 16) | (((uint64_t)DSOString[63] & 0xFF) << 8) | ((uint64_t)DSOString[64] & 0xFF);
 	MyLong = *(double *) &MyLong_int;
-	printf("Longitude = %4.2f, ", MyLong); 
+	if (g_Verbosity >= c_Info) printf("Longitude = %4.2f, ", MyLong); 
 	GPS_Packet.geographic_longitude =  MyLong;
 
 
@@ -1440,7 +1457,7 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	double MyAlt = 0.0;
 	MyAlt_int = (((uint64_t)DSOString[65] & 0xFF) << 56) | (((uint64_t)DSOString[66] & 0xFF) << 48) | (((uint64_t)DSOString[67] & 0xFF) << 40) |  (((uint64_t)DSOString[68] & 0xFF) << 32) |  (((uint64_t)DSOString[69] & 0xFF) << 24) | (((uint64_t)DSOString[70] & 0xFF) << 16) |  (((uint64_t)DSOString[71] & 0xFF) << 8) | ((uint64_t)DSOString[72] & 0xFF);
 	MyAlt = *(double *) &MyAlt_int;
-	printf("Altitude = %4.2f, ", MyAlt); 
+	if (g_Verbosity >= c_Info) printf("Altitude = %4.2f, ", MyAlt); 
 	GPS_Packet.elevation =  MyAlt; 
 
 
@@ -1448,29 +1465,31 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	uint16_t MyChecksum;
 	MyChecksum = (((uint16_t)DSOString[73] & 0xFF) << 8) | ((uint16_t)DSOString[74] & 0xFF);
 	//printf("Hex Checksum = %c %c %c %c %c- ", (char)(DSOString [72] & 0xFF), (char)(DSOString[73] & 0xFF), (char)(DSOString[74] & 0xFF), (char)(DSOString[75] & 0xFF), (char)(DSOString[76] & 0xFF));
-	printf("MyChecksum? = %u, ", MyChecksum);
+	if (g_Verbosity >= c_Info) printf("MyChecksum? = %u, ", MyChecksum);
 
 	uint32_t MyClock = 0;  //counting 10 MHz clock signal.
 	MyClock = (((uint32_t)DSOString[80] & 0xFF) << 24) | (((uint32_t)DSOString[81] & 0xFF) << 16) | (((uint32_t)DSOString[82] & 0xFF)  << 8) | ((uint32_t)DSOString[83] & 0xFF);  
-	printf("Clock =  %u. \n",MyClock);  
+	if (g_Verbosity >= c_Info) printf("Clock =  %u. \n",MyClock);  
 	GPS_Packet.PPSClk = MyClock;
 
-	printf("\n");  
-	GPS_Packet.GPS_or_magnetometer = 0;
-	printf("Now, here is what's from GPS_Packet: \n");
-	printf("Heading: \n"); 
-	printf("%f\n",GPS_Packet.heading); 
-	printf("Pitch: \n"); 
-	printf("%f\n",GPS_Packet.pitch); 
-	printf("Roll: \n"); 
-	printf("%f\n",GPS_Packet.roll); 
-	printf("Geographic Latitude: \n"); 
-	printf("%f\n",GPS_Packet.geographic_latitude); 
-	printf("Geographic Longitude: \n"); 
-	printf("%f\n",GPS_Packet.geographic_longitude);  
-	printf("Elevation: \n"); 
-	printf("%f\n",GPS_Packet.elevation); 
-
+  GPS_Packet.GPS_or_magnetometer = 0;
+  
+  if (g_Verbosity >= c_Info) {
+    printf("\n");  
+    printf("Now, here is what's from GPS_Packet: \n");
+    printf("Heading: \n"); 
+    printf("%f\n",GPS_Packet.heading); 
+    printf("Pitch: \n"); 
+    printf("%f\n",GPS_Packet.pitch); 
+    printf("Roll: \n"); 
+    printf("%f\n",GPS_Packet.roll); 
+    printf("Geographic Latitude: \n"); 
+    printf("%f\n",GPS_Packet.geographic_latitude); 
+    printf("Geographic Longitude: \n"); 
+    printf("%f\n",GPS_Packet.geographic_longitude);  
+    printf("Elevation: \n"); 
+    printf("%f\n",GPS_Packet.elevation); 
+  }
 
 	string slash = "/";
 	string colon = ":";
@@ -1534,15 +1553,16 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 	GPS_Packet.nanoseconds = nanoseconds;
 
 
+  if (g_Verbosity >= c_Info) {
+    printf("Date_and_Time: \n"); 
 
-	printf("Date_and_Time: \n"); 
+    cout << GPS_Packet.date_and_time << endl; 
 
-	cout << GPS_Packet.date_and_time << endl; 
+    printf("Nanoseconds: \n"); 
+    printf("%u\n",GPS_Packet.nanoseconds); 
 
-	printf("Nanoseconds: \n"); 
-	printf("%u\n",GPS_Packet.nanoseconds); 
-
-	printf("\n"); 
+    printf("\n"); 
+  }
 
 	return true;
 
@@ -1556,7 +1576,7 @@ bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
 	float MyRoll = 0.0;
 	MyRoll_int = (((int16_t)MagString[4] & 0xFF) << 8) | ((int16_t)MagString[5] & 0xFF);  
 	MyRoll = MyRoll_int/10.0;
-	printf("Magnetometer Packet: Roll = %4.2f, ",MyRoll); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	if (g_Verbosity >= c_Info) printf("Magnetometer Packet: Roll = %4.2f, ",MyRoll); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
 	M_Packet.roll =  MyRoll; 
 
 
@@ -1564,14 +1584,14 @@ bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
 	float MyMagRoll = 0.0;
 	MyMagRoll_int = (((int16_t)MagString[6] & 0xFF) << 8) | ((int16_t)MagString[7] & 0xFF);  
 	MyMagRoll = MyMagRoll_int/10.0;
-	printf("Mag Roll = %4.2f, ",MyMagRoll);  
+	if (g_Verbosity >= c_Info) printf("Mag Roll = %4.2f, ",MyMagRoll);  
 
 
 	int16_t MyInclination_int;
 	float MyInclination = 0.0;
 	MyInclination_int = (((int16_t)MagString[8] & 0xFF) << 8) | ((int16_t)MagString[9] & 0xFF);  
 	MyInclination = MyInclination_int/10.0;
-	printf("Inclination = %4.2f, ",MyInclination); 
+	if (g_Verbosity >= c_Info) printf("Inclination = %4.2f, ",MyInclination); 
 	M_Packet.pitch =  MyInclination; 
 
 
@@ -1579,14 +1599,14 @@ bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
 	float MyMagTot = 0.0;
 	MyMagTot_int = (((int16_t)MagString[10] & 0xFF) << 8) | ((int16_t)MagString[11] & 0xFF);  
 	MyMagTot = MyMagTot_int/10000.0;
-	printf("Mag Total = %4.2f, ",MyMagTot);  
+	if (g_Verbosity >= c_Info) printf("Mag Total = %4.2f, ",MyMagTot);  
 
 
 	int16_t MyAzi_int;
 	float MyAzi = 0.0;
 	MyAzi_int = (((int16_t)MagString[12] & 0xFF) << 8) | ((int16_t)MagString[13] & 0xFF);  
 	MyAzi = MyAzi_int/10.0;
-	printf("Azimuth = %4.2f, ",MyAzi);  
+	if (g_Verbosity >= c_Info) printf("Azimuth = %4.2f, ",MyAzi);  
 	M_Packet.heading =  MyAzi; 
 
 
@@ -1594,21 +1614,21 @@ bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
 	float MyAccel = 0.0;
 	MyAccel_int = (((int16_t)MagString[14] & 0xFF) << 8) | ((int16_t)MagString[15] & 0xFF);  
 	MyAccel = MyAccel_int/10000.0;
-	printf("Acceleration = %4.2f, ",MyAccel);  
+	if (g_Verbosity >= c_Info) printf("Acceleration = %4.2f, ",MyAccel);  
 
 
 	int16_t MyTemp_int;
 	float MyTemp = 0.0;
 	MyTemp_int = (((int16_t)MagString[16] & 0xFF) << 8) | ((int16_t)MagString[17] & 0xFF);  
 	MyTemp = MyTemp_int/100.0;
-	printf("Temperature = %4.2f, ",MyTemp);  
+	if (g_Verbosity >= c_Info) printf("Temperature = %4.2f, ",MyTemp);  
 
 
 	int16_t MyVolt_int;
 	float MyVolt = 0.0;
 	MyVolt_int = (((int16_t)MagString[18] & 0xFF) << 8) | ((int16_t)MagString[19] & 0xFF);  
 	MyVolt = MyVolt_int/100.0;
-	printf("Voltage = %4.2f, ",MyVolt);  
+	if (g_Verbosity >= c_Info) printf("Voltage = %4.2f, ",MyVolt);  
 
 
 	//CHECKSUM!
@@ -1625,38 +1645,39 @@ bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
 	 */
 
 
+  M_Packet.GPS_or_magnetometer = 1;
 
-	printf("\n");  
-	M_Packet.GPS_or_magnetometer = 1;
-	printf("Now, here is what's from M_Packet: \n");
-	printf("Heading: \n"); 
-	printf("%f\n",M_Packet.heading); 
-	printf("Pitch: \n"); 
-	printf("%f\n",M_Packet.pitch); 
-	printf("Roll: \n"); 
-	printf("%f\n",M_Packet.roll); 
+  if (g_Verbosity >= c_Info) {
+    printf("\n"); 
+    printf("Now, here is what's from M_Packet: \n");
+    printf("Heading: \n"); 
+    printf("%f\n",M_Packet.heading); 
+    printf("Pitch: \n"); 
+    printf("%f\n",M_Packet.pitch); 
+    printf("Roll: \n"); 
+    printf("%f\n",M_Packet.roll); 
 
-	// M_Packet.geographic_latitude = GPS_Packet.geographic_latitude;
-	// M_Packet.geographic_longitude = GPS_Packet.geographic_longitude;
-	// M_Packet.elevation = GPS_Packet.elevation;
+    // M_Packet.geographic_latitude = GPS_Packet.geographic_latitude;
+    // M_Packet.geographic_longitude = GPS_Packet.geographic_longitude;
+    // M_Packet.elevation = GPS_Packet.elevation;
 
-	printf("This is GPS stuff we put in the M_Packet: \n");
-	printf("Geographic Latitude: \n"); 
-	printf("%f\n",M_Packet.geographic_latitude); 
-	printf("Geographic Longitude: \n"); 
-	printf("%f\n",M_Packet.geographic_longitude);  
-	printf("Elevation: \n"); 
-	printf("%f\n",M_Packet.elevation); 
+    printf("This is GPS stuff we put in the M_Packet: \n");
+    printf("Geographic Latitude: \n"); 
+    printf("%f\n",M_Packet.geographic_latitude); 
+    printf("Geographic Longitude: \n"); 
+    printf("%f\n",M_Packet.geographic_longitude);  
+    printf("Elevation: \n"); 
+    printf("%f\n",M_Packet.elevation); 
 
-	// M_Packet.date_and_time = GPS_Packet.date_and_time;
-	// M_Packet.nanoseconds = GPS_Packet.nanoseconds;  
+    // M_Packet.date_and_time = GPS_Packet.date_and_time;
+    // M_Packet.nanoseconds = GPS_Packet.nanoseconds;  
 
-	printf("Date_and_Time: \n");
-	cout << M_Packet.date_and_time << endl;  
-	printf("Nanoseconds: \n"); 
-	printf("%u\n",M_Packet.nanoseconds);  
-	printf("\n"); 
-
+    printf("Date_and_Time: \n");
+    cout << M_Packet.date_and_time << endl;  
+    printf("Nanoseconds: \n"); 
+    printf("%u\n",M_Packet.nanoseconds);  
+    printf("\n"); 
+  }
 
 	//AR->AddAspectFrame(M_Packet);
 

@@ -239,11 +239,13 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		magnetic_declination = magdec_Cplusplus1;
 
 
-		if(test_or_not == 0){		
+		if (test_or_not == 0 && g_Verbosity >= c_Info) {		
 			printf("According to C++, magnetic_declination is: %9.5f \n",magdec_Cplusplus1);	
 		}
-		cout<<"magnetic declination = "<<magnetic_declination<<endl;
-		cout<<"lat = "<<lat<<" lon = "<<lon<<" altitude = "<<alt<<endl;
+		if (g_Verbosity >= c_Info) { 
+      cout<<"magnetic declination = "<<magnetic_declination<<endl;
+      cout<<"lat = "<<lat<<" lon = "<<lon<<" altitude = "<<alt<<endl;
+    }
 	}
 
 	//Now that we've gone through that crazy ordeal and have found the magnetic declination, we
@@ -454,9 +456,11 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Xnorm = sqrt( pow(X_proj[0],2.0) + pow(X_proj[1],2.0) );
 	double Ynorm = sqrt( pow(Y_proj[0],2.0) + pow(Y_proj[1],2.0) );
 
-	cout<<"heading = "<<heading<<" pitch = "<<pitch<<" roll = "<<roll<<endl;
-	cout<<"GPS_or_magnetometer = "<<GPS_or_magnetometer<<endl;
-
+  if (g_Verbosity >= c_Info) { 
+    cout<<"heading = "<<heading<<" pitch = "<<pitch<<" roll = "<<roll<<endl;
+    cout<<"GPS_or_magnetometer = "<<GPS_or_magnetometer<<endl;
+  }
+  
 	//IMPORTANT since the magnetometer reference frame has the X axis pointing at true north,
 	//we need to look at the azimuth angle from the X axis rather than the y axis (from GPS)
 	double Z_Azimuth,X_Azimuth,Y_Azimuth;
@@ -471,21 +475,21 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		} else {
 			Z_Azimuth = 0.0;
 		}
-		cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+		if (g_Verbosity >= c_Info) cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
 
 		if( Xnorm > 1.0E-9 ){
 			X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
 		} else {
 			X_Azimuth = 0.0;
 		}
-		cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+		if (g_Verbosity >= c_Info) cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
 
 		if( Ynorm > 1.0E-9 ){
 			Y_Azimuth = arccosine( Y_proj[1]/Ynorm ); if( Y_proj[0] < 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
 		} else {
 			Y_Azimuth = 0.0;
 		}
-		cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+		if (g_Verbosity >= c_Info) cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
 
 	} else {
 
@@ -497,21 +501,21 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		} else {
 			Z_Azimuth = 0.0;
 		}
-		cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+		if (g_Verbosity >= c_Info) cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
 
 		if( Xnorm > 1.0E-9 ){
 			X_Azimuth = arccosine( X_proj[0]/Xnorm ); if( X_proj[1] > 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
 		} else {
 			X_Azimuth = 0.0;
 		}
-		cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+		if (g_Verbosity >= c_Info) cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
 
 		if( Ynorm > 1.0E-9 ){
 			Y_Azimuth = arccosine( Y_proj[0]/Ynorm ); if( Y_proj[1] > 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
 		} else {
 			Y_Azimuth = 0.0;
 		}
-		cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+		if (g_Verbosity >= c_Info) cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
 
 	}
 
@@ -524,7 +528,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//Zdec = ZEquatorial[1];
 	double Zgalat = ZGalactic[1];
 	double Zgalon = ZGalactic[0];
-	cout<<"Z gal-lat = "<<Zgalat<<" Z gal-lon = "<<Zgalon<<endl;
+	if (g_Verbosity >= c_Info) cout<<"Z gal-lat = "<<Zgalat<<" Z gal-lon = "<<Zgalon<<endl;
 
 	vector<double> XGalactic; 
 	vector<double> XEquatorial;
@@ -534,7 +538,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//Xdec = XEquatorial[1];
 	double Xgalat = XGalactic[1];
 	double Xgalon = XGalactic[0];
-	cout<<"X gal-lat = "<<Xgalat<<" X gal-lon = "<<Xgalon<<endl;
+	if (g_Verbosity >= c_Info) cout<<"X gal-lat = "<<Xgalat<<" X gal-lon = "<<Xgalon<<endl;
 
 	vector<double> YGalactic; 
 	vector<double> YEquatorial;
@@ -544,7 +548,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	//Ydec = YEquatorial[1];
 	double Ygalat = YGalactic[1];
 	double Ygalon = YGalactic[0];
-	cout<<"Y gal-lat = "<<Ygalat<<" Y gal-lon = "<<Ygalon<<endl;
+	if (g_Verbosity >= c_Info) cout<<"Y gal-lat = "<<Ygalat<<" Y gal-lon = "<<Ygalon<<endl;
 
 	//MTimeA should already be filled out from earlier so the following paragraph is commented out;
 
