@@ -55,7 +55,7 @@ MGUIExpoAspectViewer::MGUIExpoAspectViewer(MModule* Module) : MGUIExpo(Module)
   m_Heading = new TGraph();
   m_HeadingCanvas = 0;
 
-  m_TimeCutOff = 60; // seconds 
+  m_TimeCutOff = 3600; // seconds 
   
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -156,7 +156,7 @@ void MGUIExpoAspectViewer::Create()
   m_HeadingCanvas->GetCanvas()->cd();
   m_HeadingCanvas->GetCanvas()->SetGridy();
   m_HeadingCanvas->GetCanvas()->SetGridx();
-  m_Heading->Draw("AC*");
+  m_Heading->Draw("AL");
   m_HeadingCanvas->GetCanvas()->Update();
   
   m_IsCreated = true;
@@ -171,7 +171,7 @@ void MGUIExpoAspectViewer::Create()
 void MGUIExpoAspectViewer::Update()
 {
   //! Update the frame
-
+  
   m_Mutex.Lock();
 
   m_Heading->Set(m_Times.size());
@@ -188,6 +188,11 @@ void MGUIExpoAspectViewer::Update()
   }
 
   if (m_HeadingCanvas != 0) {
+    if (m_Heading->GetHistogram() != nullptr && MString(m_Heading->GetHistogram()->GetXaxis()->GetTitle()).IsEmpty() == true) {
+      m_Heading->GetHistogram()->GetXaxis()->SetTitle("Time [seconds]");
+      m_Heading->GetHistogram()->GetYaxis()->SetTitle("Heading [degree]");
+      m_Heading->Draw("AL");
+   }
     m_HeadingCanvas->GetCanvas()->Modified();
     m_HeadingCanvas->GetCanvas()->Update();
   }
