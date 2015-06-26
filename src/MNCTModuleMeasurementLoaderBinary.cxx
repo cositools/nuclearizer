@@ -208,7 +208,8 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   if (NewEvent->GetAspect() != 0) {
     MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
     Event->SetAspect(A);
-    m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading());
+    //cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
+    m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
   }
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | 

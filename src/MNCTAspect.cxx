@@ -82,6 +82,13 @@ const MNCTAspect& MNCTAspect::operator= (const MNCTAspect& A)
   m_Flag = A.m_Flag;
 
   
+  
+  m_BRMS = A.m_BRMS;
+  m_AttFlag = A.m_AttFlag;
+  
+  
+  m_GPS_or_magnetometer = A.m_GPS_or_magnetometer;
+  
   m_Heading = A.m_Heading;
   m_Pitch = A.m_Pitch;
   m_Roll = A.m_Roll;
@@ -125,6 +132,13 @@ void MNCTAspect::Clear()
   
   m_Flag = 1;
 
+
+
+  m_BRMS = 0;
+  m_AttFlag =0;
+
+  m_GPS_or_magnetometer = 0;
+
   m_Heading = 0;
   m_Pitch = 0;
   m_Roll = 0;
@@ -160,7 +174,9 @@ void MNCTAspect::Clear()
 bool MNCTAspect::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
-       
+  S<<"BR "<<setprecision(8)<<m_BRMS<<endl;
+  S<<"AF "<<setprecision(8)<<m_AttFlag<<endl;
+  S<<"GM "<<setprecision(8)<<m_GPS_or_magnetometer<<endl;     
   S<<"HD "<<setprecision(8)<<m_Heading<<endl;
   S<<"PI "<<setprecision(8)<<m_Pitch<<endl;
   S<<"RL "<<setprecision(8)<<m_Roll<<endl;

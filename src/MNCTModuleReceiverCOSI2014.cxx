@@ -86,6 +86,10 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   
   m_Receiver = 0;
   
+  // Set the histogram display
+  m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
+  m_Expos.push_back(m_ExpoAspectViewer);
+  
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
@@ -440,7 +444,11 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
   Event->SetTime( NewEvent->GetTime() );
   Event->SetMJD( NewEvent->GetMJD() );
   if (NewEvent->GetAspect() != 0) {
-    Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );
+    //Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );  
+    MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
+    Event->SetAspect(A);
+    //cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
+    m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
   } else {
     Event->SetAspectIncomplete(true);

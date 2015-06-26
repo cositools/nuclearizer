@@ -53,17 +53,32 @@ class MNCTAspect
   //Ares' 1st set of adjustments begin here (there are more later).
   
   
-  //! Set the m_GPS_or_magnetometer
+  //! Set the MTime
   void SetTime(MTime tim) { m_Time = tim; }
-  //! Get the m_GPS_or_magnetometer
+  //! Get the MTime
   MTime GetTime() const { return m_Time; }
   
   
-  //! Set the m_GPS_or_magnetometer
+  //! Set the flag
   void SetFlag(int fla) { m_Flag = fla; }
-  //! Get the m_GPS_or_magnetometer
+  //! Get flag
   int GetFlag() const { return m_Flag; }
 
+ 
+  //! Set the BRMS
+  void SetBRMS(double BRM) { m_BRMS = BRM; }
+  //! Get the BRMS
+  double GetBRMS() const { return m_BRMS; } 
+  //! Set the AttFlag
+  void SetAttFlag(uint16_t Att) { m_AttFlag = Att; }
+  //! Get the AttFlag
+  uint16_t GetAttFlag() const { return m_AttFlag; } 
+ 
+ 
+  //! Set the m_GPS_or_magnetometer
+  void SetGPS_or_magnetometer(int GPS) { m_GPS_or_magnetometer = GPS; }
+  //! Get the m_GPS_or_magnetometer
+  int GetGPS_or_magnetometer() const { return m_GPS_or_magnetometer; } 
  
   //! Set the heading
   void SetHeading(double hea) { m_Heading = hea; }
@@ -168,8 +183,12 @@ class MNCTAspect
   //! 0=No Problem;1=Data is not trustworthy.
   int m_Flag;
 
-
-
+  //! This BRMS for aspect info.
+  double m_BRMS;
+  //! Attitude Flag
+  uint16_t m_AttFlag;
+  //! 0=GPS;1=Magnetometer
+  int m_GPS_or_magnetometer;
   //! This heading is used to determine whether or not data should be flagged as untrustworthy.
   double m_Heading;
   //! This pitch is used to determine whether or not data should be flagged as untrustworthy.

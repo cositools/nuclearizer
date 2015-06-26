@@ -17,6 +17,7 @@
 
 // Standard libs:
 #include <list>
+#include <string>
 using namespace std;
 
 // ROOT libs:
@@ -32,6 +33,7 @@ using namespace std;
 #include <TH1.h>
 #include <TH2.h>
 #include <TGraph.h>
+#include <TGLabel.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -72,7 +74,7 @@ class MGUIExpoAspectViewer : public MGUIExpo
   virtual void Export(const MString& FileName);
 
   //! Add data to the heading histogram
-  void AddHeading(MTime Time, double Heading);
+  void AddHeading(MTime Time, double Heading, int GPS_or_magnetometer, double BRMS, uint16_t AttFlag);
 
   // protected methods:
  protected:
@@ -83,18 +85,33 @@ class MGUIExpoAspectViewer : public MGUIExpo
 
   // private members:
  private:
+  //! Label
+  TGLabel* m_Label;
   //! Energy canvas
   TRootEmbeddedCanvas* m_HeadingCanvas;
-  //! Energy histogram
-  TGraph* m_Heading;
+  //! GPS graph
+  TGraph* m_Heading_GPS;
+  // Magnetometer graph
+  TGraph* m_Heading_Mag;
 
   //! The maximum time intervall to be kept (max-min) in seconds
   double m_TimeCutOff;
+  
+  //! Tracks if it is time to update the label
+  int m_Update;
 
-  //! Stored Times
-  list<MTime> m_Times;
-  //! Stored Headings
-  list<double> m_Headings;
+  //! Stored Time&Heading (GPS)
+  list<MTime> m_Times_GPS;
+  //! 
+  list<double> m_Headings_GPS;
+  //! Stored Time&Heading (Mag)
+  list<MTime> m_Times_Mag;
+  //!
+  list<double> m_Headings_Mag;
+  //! Stored Labels
+  list<string> m_Labels;
+  
+
 
 
 #ifdef ___CINT___

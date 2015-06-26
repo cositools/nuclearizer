@@ -30,6 +30,7 @@ using namespace std;
 // Nuclearizer libs
 #include "MModule.h"
 #include "MNCTBinaryFlightDataParser.h"
+#include "MGUIExpoAspectViewer.h"
 
 // Forward declarations:
 
@@ -119,6 +120,11 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
 
   // private members:
  private:
+ 
+  //! A GUI to display the aspect data 
+  MGUIExpoAspectViewer* m_ExpoAspectViewer;
+ 
+ 
   //! The name of the computer from which we receive the data
   MString m_DistributorName;
   //! The port on the computer from which we receive the data
