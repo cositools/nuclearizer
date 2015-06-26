@@ -142,32 +142,8 @@ void MGUIExpoAspectViewer::AddHeading(MTime Time, double Heading, int GPS_or_mag
   // (b) the heading change is smaller than 0.1 degree
   
   ostringstream LabelStream;
-  LabelStream<<"Heading: "<<Heading<<"   BRMS: "<<BRMS<<"   AttFlag: "<<AttFlag;
-  
-  /*
-  string Word_Heading = "Heading: ";
-  
-  ostringstream StringStream_Heading;
-  StringStream_Heading << Heading;
-  string String_Heading = StringStream_Heading.str();
-  
-  string Word_BRMS = "  BRMS: ";  
-  
-  ostringstream StringStream_BRMS;
-  StringStream_BRMS << BRMS;
-  string String_BRMS = StringStream_BRMS.str();
-  
-  string Word_AttFlag = "  AttFlag: ";  
-  
-  ostringstream StringStream_AttFlag;
-  StringStream_AttFlag << AttFlag;
-  string String_AttFlag = StringStream_AttFlag.str();
-  
-  
-  string String_Label = Word_Heading + String_Heading + Word_BRMS + String_BRMS + Word_AttFlag + String_AttFlag;
-  //const char * ConstCharStar_Label = String_Label.c_str();
-  */
-  
+  LabelStream<<"Heading: "<<Heading<<" deg - BRMS: "<<BRMS<<" deg - AttFlag: "<<AttFlag;
+    
   
   ////////////////////////
   
@@ -191,44 +167,17 @@ void MGUIExpoAspectViewer::AddHeading(MTime Time, double Heading, int GPS_or_mag
   
   
   ////////////////////////
-  int a = 0;
-  int b = 5;
   
   if (GPS_or_magnetometer==0){
   	m_Times_GPS.push_back(Time);
   	m_Headings_GPS.push_back(Heading);
   	m_Labels.push_back(LabelStream.str());
-  	if(m_Update<5){
-      //cout<<"Preparing to change text"<<endl;
-  	  m_Update=m_Update+1;
-    }
-    /*if(m_Update==1){
-      //cout<<"Preparing to change text"<<endl;
-      //m_Label->ChangeText(LabelStream.str().c_str());
-  	  m_Update=2;
-    }*/
-    else if(m_Update % b == a) {
-      m_Label->SetText(LabelStream.str().c_str());
-      m_Update = m_Update +1;
-    }
-    else{
-    	m_Update = m_Update +1;
-    }
-    
-
-    //else{
-    //  cout<<"Preparing to change despite not being update time"<<endl;
-    //  m_Label->ChangeText(LabelStream.str().c_str());
-    //}
-  	//cout<<"GPS: "<<Heading<<endl;
   }
   
   if (GPS_or_magnetometer==1){
   	m_Times_Mag.push_back(Time);
   	m_Headings_Mag.push_back(Heading);
   	m_Labels.push_back(LabelStream.str());
-  	//m_Label->ChangeText(ConstCharStar_Label);
-  	//cout<<"Mag:"<<Heading<<endl;
   }
 
   
@@ -301,7 +250,7 @@ void MGUIExpoAspectViewer::Create()
   
   
   m_Label = new TGLabel(this, "First Label") ; //, fTextGC->GetGC(), labelfont);
-  AddFrame(m_Label,  new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  AddFrame(m_Label,  new TGLayoutHints(kLHintsCenterX | kLHintsExpandX, 5, 5, 3, 4));
   //m_Label->SetTextColor(ycolor);
   //m_Label->ChangeText("New Label");
   
@@ -346,43 +295,16 @@ void MGUIExpoAspectViewer::Update()
 {
   //! Update the frame
 
-  cout<<"Now inside update function"<<endl;
-
-
-
   if (m_IsCreated == false){
-  	//fNeedRedraw = true;
-    cout<<"About to return"<<endl;  	
-  	return;
-  	cout<<"Return failed"<<endl;  
+    return;
   }
   
-
-  
-  cout<<"m_Labels size: "<<m_Labels.size()<<endl;  
-  
-  cout<<"Now past if statement"<<endl;
   
   m_Mutex.Lock();
-  m_Update=0;
 
-/*
-
-  //const char * Last_Label = m_Labels.back();
   if (m_Labels.size() > 0) {
-  	fNeedRedraw = true;
-  	m_Label->SetText(m_Labels.back().c_str());
-  	m_Update=0;
-  	
-  	fNeedRedraw = true;
-  	cout<<"Label text: "<<m_Labels.back().c_str()<<endl;
+    m_Label->SetText(m_Labels.back().c_str());
   }
-  else{
-  	m_Label->SetText("Second Label");
-  	cout<<"Label text: "<<m_Labels.back().c_str()<<endl;
-  }
-
-  cout<<"Finished printing label"<<endl; */
 
   double Max = 0;
   double Min = 360;
