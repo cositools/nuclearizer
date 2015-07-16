@@ -122,6 +122,7 @@ $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
 
 NUCLEARIZER_DEP_FILES := $(NUCLEARIZER_LIBS:.o=.d)
+NUCLEARIZER_H_FILES := $(addprefix inc/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
 
 FRETALON_DIR          := $(MEGALIB)/src/fretalon/framework
 FRETALON_CXX_MAIN     := $(FRETALON_DIR)/src/MAssembly.cxx $(FRETALON_DIR)/src/MReadOutAssembly.cxx
@@ -160,7 +161,8 @@ apps:
 	@$(MAKE) -C apps
 
 clean:
-	#@$(MAKE) clean_fretalonframework -C $(MEGALIB)/src
+	@-rm -f $(MEGALIB)/include/MAssembly.h $(MEGALIB)/include/MReadOutAssembly.h
+	@-rm -f $(FRETALON_LIBS) $(FRETALON_DEP_FILES)
 	@-rm -f $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DEP_FILES)
 	@-rm -f $(NUCLEARIZER_PRG)
 	@-rm -f *~ include/*~ src/*~
@@ -172,7 +174,7 @@ clean:
 
 $(FRETALON_DEP_FILES): $(LB)/%.d: $(FRETALON_DIR)/src/%.cxx
 	@echo "Creating dependencies for $(subst $(FRETALON_DIR)/src/,,$<) ..."
-	@set -e; rm -f $@; $(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
+	@set -e; rm -f $@; $(CXX) $(DEPFLAGS) $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
 
 $(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h $(LB)/%.d
 	@echo "Compiling $(subst $(FRETALON_DIR)/src/,,$<) ..."
@@ -180,7 +182,7 @@ $(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h $
 
 $(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
 	@echo "Creating dependencies for $(subst src/,,$<) ..."
-	@set -e; rm -f $@; $(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
+	@set -e; rm -f $@; $(CXX) $(DEPFLAGS) $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
 
 $(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
 	@echo "Compiling $(subst src/,,$<) ..."
@@ -194,8 +196,10 @@ $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZER_PRG)
 
+ifneq ($(MAKECMDGOALS),clean)
 -include $(NUCLEARIZER_DEP_FILES)
 -include $(FRETALON_DEP_FILES)
+endif
 
 #
 #----------------------------------------------------------------
