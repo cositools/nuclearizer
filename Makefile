@@ -57,11 +57,11 @@ PYTHONLIBS += `python-config --libs`
 endif
 
 # Names of the program
-NUCLEARIZERPRG = $(BN)/nuclearizer
-NUCLEARIZERCXX = src/MAssembly.cxx
+NUCLEARIZER_PRG = $(BN)/nuclearizer
+NUCLEARIZER_CXX_MAIN = src/MAssembly.cxx
 
 # The nuclearizer library
-NUCLEARIZERLIBS = \
+NUCLEARIZER_LIBS = \
 $(LB)/magfld.o \
 $(LB)/MReadOutAssembly.o \
 $(LB)/MNCTArray.o \
@@ -121,17 +121,19 @@ $(LB)/MGUIOptionsEventFilter.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
 
-FRETALONDIR         := $(MEGALIB)/src/fretalon/framework
-FRETALON_CXX_MAIN   := $(FRETALONDIR)/src/MAssembly.cxx $(FRETALONDIR)/src/MReadOutAssembly.cxx
-FRETALON_CXX_FILES  := $(wildcard $(FRETALONDIR)/src/*.cxx)
-FRETALON_CXX_FILES  := $(filter-out $(FRETALON_CXX_MAIN),$(FRETALON_CXX_FILES))
-FRETALON_H_FILES    := $(wildcard $(FRETALONDIR)/inc/*.h)
-FRETALON_H_FILES    := $(filter-out $(FRETALONDIR)/inc/MAssembly.h $(FRETALONDIR)/inc/MReadOutAssembly.h,$(FRETALON_H_FILES))
-FRETALONLIBS        := $(addprefix $(LB)/,$(notdir $(FRETALON_CXX_FILES:.cxx=.o)))
+NUCLEARIZER_DEP_FILES := $(NUCLEARIZER_LIBS:.o=.d)
 
+FRETALON_DIR          := $(MEGALIB)/src/fretalon/framework
+FRETALON_CXX_MAIN     := $(FRETALON_DIR)/src/MAssembly.cxx $(FRETALON_DIR)/src/MReadOutAssembly.cxx
+FRETALON_CXX_FILES    := $(wildcard $(FRETALON_DIR)/src/*.cxx)
+FRETALON_CXX_FILES    := $(filter-out $(FRETALON_CXX_MAIN),$(FRETALON_CXX_FILES))
+FRETALON_H_FILES      := $(wildcard $(FRETALON_DIR)/inc/*.h)
+FRETALON_H_FILES      := $(filter-out $(FRETALON_DIR)/inc/MAssembly.h $(FRETALON_DIR)/inc/MReadOutAssembly.h,$(FRETALON_H_FILES))
+FRETALON_LIBS         := $(addprefix $(LB)/,$(notdir $(FRETALON_CXX_FILES:.cxx=.o)))
+FRETALON_DEP_FILES    := $(FRETALON_LIBS:.o=.d)
 
 # The shared library
-NUCLEARIZERSHAREDLIB = $(LB)/libNuclearizer.$(DLL)
+NUCLEARIZER_SHARED_LIB = $(LB)/libNuclearizer.$(DLL)
 
 # External libraries
 # MEGAlib
@@ -144,23 +146,23 @@ ALLLIBS += -lMathCore
 # Command rules
 #
 
-all: 
-	@$(MAKE) $(NUCLEARIZERPRG)
+all:
+	@$(MAKE) $(NUCLEARIZER_PRG)
 	@$(MAKE) apps
 
 n: nuclearizer
 nuclearizer:
-	@$(MAKE) $(NUCLEARIZERPRG)
-	@$(NUCLEARIZERPRG) $(CMD)
+	@$(MAKE) $(NUCLEARIZER_PRG)
+	@$(NUCLEARIZER_PRG) $(CMD)
 
-apps: 
-	@$(MAKE) $(NUCLEARIZERSHAREDLIB)
+apps:
+	@$(MAKE) $(NUCLEARIZER_SHARED_LIB)
 	@$(MAKE) -C apps
 
 clean:
-	@$(MAKE) clean_fretalonframework -C $(MEGALIB)/src
-	@-rm -f $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERLIBS)
-	@-rm -f $(NUCLEARIZERPRG)
+	#@$(MAKE) clean_fretalonframework -C $(MEGALIB)/src
+	@-rm -f $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DEP_FILES)
+	@-rm -f $(NUCLEARIZER_PRG)
 	@-rm -f *~ include/*~ src/*~
 	@$(MAKE) clean -C apps
 
@@ -168,22 +170,32 @@ clean:
 # Explicit rules & dependencies:
 #
 
-$(FRETALONLIBS): $(LB)/%.o: $(FRETALONDIR)/src/%.cxx $(FRETALONDIR)/inc/%.h
-	@echo "Compiling $(subst $(FRETALONDIR)/src/,,$<) ..."
+$(FRETALON_DEP_FILES): $(LB)/%.d: $(FRETALON_DIR)/src/%.cxx
+	@echo "Creating dependencies for $(subst $(FRETALON_DIR)/src/,,$<) ..."
+	@set -e; rm -f $@; $(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
+
+$(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h $(LB)/%.d
+	@echo "Compiling $(subst $(FRETALON_DIR)/src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(NUCLEARIZERLIBS): $(LB)/%.o: src/%.cxx include/%.h
+$(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
+	@echo "Creating dependencies for $(subst src/,,$<) ..."
+	@set -e; rm -f $@; $(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
+
+$(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
- 
-$(NUCLEARIZERSHAREDLIB): $(FRETALONLIBS) $(NUCLEARIZERLIBS)
+
+$(NUCLEARIZER_SHARED_LIB): $(FRETALON_LIBS) $(NUCLEARIZER_LIBS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZERLIBS) $(FRETALONLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERSHAREDLIB)
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZER_SHARED_LIB)
 
-$(NUCLEARIZERPRG): $(NUCLEARIZERSHAREDLIB) $(NUCLEARIZERCXX)
-	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZERPRG)) ... Please stand by ... "
-	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZERCXX) $(NUCLEARIZERSHAREDLIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZERPRG)
+$(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX)
+	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZER_PRG)
 
+-include $(NUCLEARIZER_DEP_FILES)
+-include $(FRETALON_DEP_FILES)
 
 #
 #----------------------------------------------------------------
