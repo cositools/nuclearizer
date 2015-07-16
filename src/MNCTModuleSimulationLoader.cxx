@@ -41,6 +41,7 @@ using namespace std;
 #include "MNCTStripHit.h"
 #include "MNCTArray.h"
 #include "MNCTMath.h"
+#include "MNCTHit.h"
 #include "MGUIOptionsSimulationLoader.h"
 #include "MNCTInverseCrosstalkCorrection.h"
 #include "MSimEvent.h"
