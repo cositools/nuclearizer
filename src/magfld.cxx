@@ -9,8 +9,8 @@
 #include <math.h>
 #include <time.h>
 #include <sys/time.h>
-#include <X11/Xlib.h>	// In order to include 'gse.h'
-#include <sys/types.h>	// In order to include 'gse.h'
+//#include <X11/Xlib.h>	// In order to include 'gse.h'
+//#include <sys/types.h>	// In order to include 'gse.h'
 //#include "gse.h"
 
 //***********************************************************************
