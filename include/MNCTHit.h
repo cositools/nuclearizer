@@ -89,6 +89,10 @@ class MNCTHit
 	void SetStripHitMultipleTimes(bool stripHitMultipleTimes) {m_StripHitMultipleTimes = stripHitMultipleTimes;}
 	//! get m_StripHitMultipleTimes
 	bool GetStripHitMultipleTimes() const { return m_StripHitMultipleTimes; }
+	//! set charge sharing flag
+	void SetChargeSharing(bool chargeSharing) {m_ChargeSharing = chargeSharing; }
+	//! get m_ChargeSharing
+	bool GetChargeSharing() const { return m_ChargeSharing; }
  
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
@@ -137,6 +141,9 @@ class MNCTHit
 
 	//! true if hit contains strip that was hit multiple times
 	bool m_StripHitMultipleTimes;
+
+	//! true if hit contains charge sharing
+	bool m_ChargeSharing;
 
 #ifdef ___CINT___
  public:
