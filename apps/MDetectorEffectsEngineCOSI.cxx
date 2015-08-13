@@ -68,9 +68,9 @@ public:
   //! Interrupt the analysis
   void Interrupt() { m_Interrupt = true; }
   //! Read in and parse energy calibration file
-  void ParseEcalFile();
+  void ParseEnergyCalibrationFile();
   //! Read in and parse thresholds file
-  void ParseTHFile();
+  void ParseThresholdFile();
   //! Read in and parse dead strip file
   void ParseDeadStripFile();
   
@@ -83,7 +83,7 @@ private:
   //! Geometry file name
   MString m_GeometryFileName;
   //! Thresholds file name
-  MString m_THFilename;
+  MString m_ThresholdFilename;
   
   
   //! Calibration map between read-out element and fitted function for energy calibration
@@ -91,12 +91,12 @@ private:
   //! Calibration map between read-out element and fitted function for energy resolution calibration
   map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
   //! Energy calibration file name
-  MString m_ecalFilename;
+  MString m_EnergyCalibrationFilename;
   
   //! Dead strip file name
-  MString m_deadStripFilename;
+  MString m_DeadStripFilename;
   //! List of dead strips
-  int m_deadStrips[12][2][37];
+  int m_DeadStrips[12][2][37];
   
   //! Tiny helper class for MNCTDetectorEffectsEngineCOSI describing a special strip hit
   class MNCTDEEStripHit
@@ -120,6 +120,7 @@ private:
     //! A list of original strip hits making up this strip hit
     vector<MNCTDEEStripHit> m_SubStripHits;
   };
+  
 public:
   //! Convert Energy to ADC value
   int EnergyToADC(MNCTDEEStripHit& Hit, double energy);
@@ -207,15 +208,15 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
       m_GeometryFileName = argv[++i];
       cout<<"Accepting file name: "<<m_GeometryFileName<<endl;
     } else if (Option == "-e") {
-      m_ecalFilename = argv[++i];
-      cout << "Accepting energy calibration file name: " << m_ecalFilename << endl;
+      m_EnergyCalibrationFilename = argv[++i];
+      cout << "Accepting energy calibration file name: " << m_EnergyCalibrationFilename << endl;
     } else if (Option == "-t") {
-      m_THFilename = argv[++i];
-      cout << "Accepting threshold file name: " << m_THFilename << endl;
-      cout << "Accepting energy calibration file name: " << m_ecalFilename << endl;
+      m_ThresholdFilename = argv[++i];
+      cout << "Accepting threshold file name: " << m_ThresholdFilename << endl;
+      cout << "Accepting energy calibration file name: " << m_EnergyCalibrationFilename << endl;
     } else if (Option == "-d") {
-      m_deadStripFilename = argv[++i];
-      cout << "Accepting dead strip file name: " << m_deadStripFilename << endl;
+      m_DeadStripFilename = argv[++i];
+      cout << "Accepting dead strip file name: " << m_DeadStripFilename << endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -235,7 +236,7 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
     return false;
   }
     
-  if (m_THFilename == "") {
+  if (m_ThresholdFilename == "") {
     cout<<"Error: Need a threshold file name!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
@@ -269,12 +270,12 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
   }  
   
   //load energy calibration information
-  ParseEcalFile();
+  ParseEnergyCalibrationFile();
   //load dead strip information
   ParseDeadStripFile();
   //load threshold information
-	ParseTHFile();
-	
+  ParseThresholdFile();
+  
   MFileEventsSim* Reader = new MFileEventsSim(Geometry);
   if (Reader->Open(m_FileName) == false) {
     cout<<"Unable to open sim file "<<m_FileName<<" - Aborting!"<<endl; 
@@ -284,7 +285,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
   
   MString RoaFileName = m_FileName;
   RoaFileName.ReplaceAllInPlace(".sim", ".roa");
-	cout << "Output File: " << RoaFileName << endl;
+  cout << "Output File: " << RoaFileName << endl;
   
   ofstream out;
   out.open(RoaFileName);
@@ -294,7 +295,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
   out<<endl;
   
   //  TCanvas specCanvas("c","c",600,400); 
-  //  TH1D* spectrum = new TH1D("spec","spectrum",40,640,680);
+  //  Threshold1D* spectrum = new Threshold1D("spec","spectrum",40,640,680);
   
   //count how many events have multiple hits per strip
   int mult_hits_counter = 0;
@@ -312,10 +313,12 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     
     //cout<<Event->GetID()<<endl;
     
+    
+    
     // Step (1): Convert positions into strip hits
     list<MNCTDEEStripHit> StripHits;
     
-    // The real strips
+    // (1a) The real strips
     for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
       MSimHT* HT = Event->GetHTAt(h);
       MDVolumeSequence* VS = HT->GetVolumeSequence();
@@ -352,7 +355,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       StripHits.push_back(nSide);
     }
     
-    // and the guard ring hits
+    // (1b) The guard ring hits
     for (unsigned int h = 0; h < Event->GetNGRs(); ++h) {
       MSimGR* GR = Event->GetGRAt(h);
       MDVolumeSequence* VS = GR->GetVolumeSequence();
@@ -370,7 +373,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       GuardRingHit.m_Position = MVector(0, 0, 0); // <-- not important
     }
     
-    // Step (2): Merge strip hits
+    
+    // (1c): Merge strip hits
     list<MNCTDEEStripHit> MergedStripHits;
     while (StripHits.size() > 0) {
       MNCTDEEStripHit Start;
@@ -390,8 +394,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       MergedStripHits.push_back(Start);
     }
     
-    //check if any strip was hit multiple times
-    //for Clio to double check strip pairing
+    // Check if any strip was hit multiple times
+    // --> for Clio to double check strip pairing
     vector<int> pIDs, nIDs;
     pIDs.clear();
     nIDs.clear();
@@ -411,7 +415,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
         check_n = false;
       }
     }
-    if (check_n){
+    if (check_n) {
       for (unsigned int i=0; i<nIDs.size()-1; i++){
         if (nIDs.at(i) == nIDs.at(i+1)){
           mult_hits_counter += 1;
@@ -420,7 +424,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     }
     
     
-    // Step (3): Calculate and noise timing
+    // Step (2): Calculate and noise timing
     for (MNCTDEEStripHit& Hit: MergedStripHits) {
       double Energy = 0;
       double WeightedDepth = 0;
@@ -435,7 +439,12 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     }
     
     
-    // Step (4): Calculate and noise ADC values including charge loss, charge sharing, ADC overflow! 
+    // Step (3): Calculate and noise ADC values including charge loss, charge sharing, ADC overflow!
+    
+    // (3a) Do charge sharing
+    // (3b) Do charge loss
+    
+    // (3c) Noise energy deposit
     for (MNCTDEEStripHit& Hit: MergedStripHits) {
       double Energy = 0;
       for (MNCTDEEStripHit SubHit: Hit.m_SubStripHits) {
@@ -451,14 +460,16 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       //      Hit.m_ADC = int(10*Energy);
     }
     
+    // (3d) Handle ADC overflow
     
-    // Step (5): Apply thresholds and triggers including guard ring hits
-    //            (a) use the trigger threshold calibration and invert it here 
-    //            (b) take care of guard ring hits with their special thresholds
-    //            (c) take care of hits in dead strips
-    //            (d) throw out hits which did not trigger
     
-    //take care of dead strips:
+    // Step (4): Apply thresholds and triggers including guard ring hits
+    //           * use the trigger threshold calibration and invert it here 
+    //           * take care of guard ring hits with their special thresholds
+    //           * take care of hits in dead strips
+    //           * throw out hits which did not trigger
+    
+    // (4a) Take care of dead strips:
     list<MNCTDEEStripHit>::iterator j = MergedStripHits.begin();
     while (j != MergedStripHits.end()) {
       int det = (*j).m_ROE.GetDetectorID();
@@ -468,7 +479,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       if (side_b) {side = 1;}
       
       //if strip has been flagged as dead, erase strip hit
-      if (m_deadStrips[det][side][stripID-1] == 1){
+      if (m_DeadStrips[det][side][stripID-1] == 1){
         j = MergedStripHits.erase(j);
       }
       else {
@@ -476,8 +487,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       }
     }
     
-    
-    
+    // (4b) Handle trigger thresholds make sure we throw out timing too!
     list<MNCTDEEStripHit>::iterator i = MergedStripHits.begin();
     while (i != MergedStripHits.end()) {
       if ((*i).m_Energy < 20) { // Dummy threshold of 0 keV sharp
@@ -487,7 +497,10 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
       }
     }
     
-    // Step (6): Split into card cage events - i.e. split by detector
+    // (4c) Take care of guard ring vetoes
+    
+    
+    // Step (5): Split into card cage events - i.e. split by detector
     vector<vector<MNCTDEEStripHit>> CardCagedStripHits;
     for (MNCTDEEStripHit Hit: MergedStripHits) {
       bool Found = false;
@@ -505,14 +518,14 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     }
     
     
-    // Step (7): Determine and noise the global event time
+    // Step (6): Determine and noise the global event time
     vector<double> CardCageTiming(CardCagedStripHits.size());
     for (double& T: CardCageTiming) {
       T = Event->GetTime().GetAsSeconds();
     }
     
     
-    // Step (8): Dump event to file in ROA format
+    // Step (7): Dump event to file in ROA format
     for (unsigned int c = 0; c < CardCagedStripHits.size(); ++c) {
       out<<"SE"<<endl;
       out<<"# ID "<<Event->GetID()<<endl;
@@ -522,7 +535,6 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
         out<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<endl;
       }
     }
-    
     
     // Never forget to delete the event
     delete Event;
@@ -544,7 +556,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 
 /******************************************************************************
- * Convert energy to ADC value by reversing energy calibration done in MNCTModuleEnergyCalibrationUniversal.cxx
+ * Convert energy to ADC value by reversing energy calibration done in 
+ * MNCTModuleEnergyCalibrationUniversal.cxx
  */
 int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean_energy)
 {  
@@ -586,54 +599,54 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
 /******************************************************************************
  * Read in thresholds
  */
-
-void MNCTDetectorEffectsEngineCOSI::ParseTHFile()
+void MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 {
   MParser Parser;
-  if (Parser.Open(m_THFilename, MFile::c_Read) == false){
-    cout << "Unable to open threshold file " << m_THFilename << endl;
+  if (Parser.Open(m_ThresholdFilename, MFile::c_Read) == false) {
+    cout << "Unable to open threshold file " << m_ThresholdFilename << endl;
     return;
   }
-  map<MReadOutElementDoubleStrip, double> LowerTH;
-  map<MReadOutElementDoubleStrip, double> UpperTH; 
+  map<MReadOutElementDoubleStrip, double> LowerThreshold;
+  map<MReadOutElementDoubleStrip, double> UpperThreshold; 
 
-  for (unsigned int i=0; i<Parser.GetNLines(); i++){
+  for (unsigned int i=0; i<Parser.GetNLines(); i++) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
     if (NTokens < 2) continue;
-    if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"TH") == true) {
+    if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"Threshold") == true) {
 
       if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(LOWER)") == true ||
-	 				Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
+          Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
 
-	        MReadOutElementDoubleStrip R;
-  	      R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-    	    R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4));
-      	  R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(5) == "p");
+        MReadOutElementDoubleStrip R;
+        R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
+        R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4));
+        R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(5) == "p");
 
-        	if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(LOWER)") == true) {
-          		LowerTH[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
-							//cout << LowerTH[R] << endl; //to verify lower thresholds
-        	}	
-      else if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
-          UpperTH[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
-					//cout << UpperTH[R] << endl; //to verify upper thresholds
-      }
-      else {
+        if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(LOWER)") == true) {
+          LowerThreshold[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+          //cout << LowerThreshold[R] << endl; //to verify lower thresholds
+        } 
+        else if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
+          UpperThreshold[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+          //cout << UpperThreshold[R] << endl; //to verify upper thresholds
+        }
+        else {
           cout << "Error parsing threshold file." << endl;
-      }
+        }
       }
     }
-	}
+  }
 }
+
 
 /******************************************************************************
  * Parse ecal file: should be done once at the beginning to save all the poly3 coefficients
  */
-void MNCTDetectorEffectsEngineCOSI::ParseEcalFile()
+void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
 {
   MParser Parser;
-  if (Parser.Open(m_ecalFilename, MFile::c_Read) == false){
-    cout << "Unable to open calibration file " << m_ecalFilename << endl;
+  if (Parser.Open(m_EnergyCalibrationFilename, MFile::c_Read) == false){
+    cout << "Unable to open calibration file " << m_EnergyCalibrationFilename << endl;
     return;
   }
   
@@ -729,17 +742,17 @@ void MNCTDetectorEffectsEngineCOSI::ParseEcalFile()
  */
 void MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
 {  
-  //initialize m_deadStrips: set all values to 0
+  //initialize m_DeadStrips: set all values to 0
   for (int i=0; i<12; i++) {
     for (int j=0; j<2; j++) {
       for (int k=0; k<37; k++) {
-        m_deadStrips[i][j][k] = 0;
+        m_DeadStrips[i][j][k] = 0;
       }
     }
   }
   
   ifstream deadStripFile;
-  deadStripFile.open(m_deadStripFilename);
+  deadStripFile.open(m_DeadStripFilename);
   
   if (!deadStripFile.is_open()) {
     cout << "Error opening dead strip file" << endl;
@@ -765,11 +778,11 @@ void MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
     
     int det = lineVec.at(0);
     int side = lineVec.at(1);
-    int strip = lineVec.at(2)-1; //in file, strips go from 1-37; in m_deadStrips they go from 0-36
+    int strip = lineVec.at(2)-1; //in file, strips go from 1-37; in m_DeadStrips they go from 0-36
     lineVec.clear();
     
-    //any dead strips have their value in m_deadStrips set to 1 
-    m_deadStrips[det][side][strip] = 1;
+    //any dead strips have their value in m_DeadStrips set to 1 
+    m_DeadStrips[det][side][strip] = 1;
   }
 }
 
