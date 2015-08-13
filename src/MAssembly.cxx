@@ -136,6 +136,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MNCTModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   //m_Supervisor->AddAvailableModule(new MNCTModuleEventReconstruction());
+  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
 
   m_Supervisor->Load();
   

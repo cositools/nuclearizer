@@ -346,41 +346,42 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
   int i;
   int MaxIter = 1000;
 
-  Clear();
-  for( i = 0; i < MaxIter; i++ ){
-    //try 1000 times to get the complete event
-    F.ReadLine(Line);
-    const char* line = Line.Data();
-    //vector<MString> tokens = Line.Tokenize(" ");
-    if( Line.BeginsWith("SE") ){
-      if( i != 0 ){
-        //we read the full event in, break now
-        break;
-      }
-    }else if( Line.BeginsWith("ID") ){
-      unsigned int ID;
-      sscanf(&line[3],"%u",&ID);
-      SetID( ID );
-    } else if( Line.BeginsWith("TI") ){
-      MTime T = MTime();
-      T.Set(Line);
-      SetTime( T );
-    } else if( Line.BeginsWith("HT") ){
-      MNCTHit* h = new MNCTHit();
-      h->Parse(Line);
-      AddHit(h);
-    } else if( Line.BeginsWith("SH") ){
-      MNCTStripHit* sh = new MNCTStripHit();
-      sh->Parse(Line);
-      AddStripHit(sh);
-      if( m_Hits.size() > 0 ){
-        MNCTHit* h = m_Hits.back();
-        h->AddStripHit(sh);
-      }
-    } else if( Line.BeginsWith("BD") ){
-      SetFilteredOut(true);
-    }
-    //ignoring ASPECT info for right now
+	Clear();
+	for( i = 0; i < MaxIter; i++ ){
+		//try 1000 times to get the complete event
+		F.ReadLine(Line);
+		const char* line = Line.Data();
+		//vector<MString> tokens = Line.Tokenize(" ");
+		if( Line.BeginsWith("SE") ){
+			if( i != 0 ){
+				//we read the full event in, break now
+				break;
+			}
+		}else if( Line.BeginsWith("ID") ){
+			unsigned int ID;
+			sscanf(&line[3],"%u",&ID);
+			SetID( ID );
+		} else if( Line.BeginsWith("TI") ){
+			MTime T = MTime();
+			T.Set(Line);
+			SetTime( T );
+		} else if( Line.BeginsWith("HT") ){
+			MNCTHit* h = new MNCTHit();
+			h->Parse(Line);
+			AddHit(h);
+		} else if( Line.BeginsWith("SH") ){
+			MNCTStripHit* sh = new MNCTStripHit();
+			sh->Parse(Line);
+			AddStripHit(sh);
+			if( m_Hits.size() > 0 ){
+				//add this SH to the last read in HT
+				MNCTHit* h = m_Hits.back();
+				h->AddStripHit(sh);
+			}
+		} else if( Line.BeginsWith("BD") ){
+			SetFilteredOut(true);
+		}
+		//ignoring ASPECT info for right now
 
   }
 

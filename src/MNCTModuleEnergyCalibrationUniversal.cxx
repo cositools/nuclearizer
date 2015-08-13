@@ -306,6 +306,19 @@ MXmlNode* MNCTModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   return Node;
 }
 
+double MNCTModuleEnergyCalibrationUniversal::LookupEnergyResolution(MNCTStripHit* SH, double Energy){
+    MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
+	 TF1* FitRes = m_ResolutionCalibration[R];
+	 if( FitRes == 0 ){
+		 cout << "::LookupEnergyResolution: couldn't locate energy resolution" << endl;
+		 return -1.0;
+	 } else {
+		 double EnergyResolution = FitRes->Eval(Energy);
+		 return EnergyResolution;
+	 }
+}
+
+
 
 // MNCTModuleEnergyCalibrationUniversal.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

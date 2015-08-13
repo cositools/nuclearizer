@@ -1,8 +1,7 @@
 //TODO
 /*
+-redefine measured CTD histos so that bins are centered on 10' of nanoseconds
 -define photopeak criteria... use energy resolutions for the strips, and say +/- 2.35 sigma 
--right now data - sim events are inconsistent... selection on real data is multiple 2 strip events, and sim data single HT only (each HT is 2 strips). tw
--save depth histograms per detector
 
 	*/
 
@@ -354,7 +353,8 @@ int main(int argc, char** argv)
 			return -1;
 		}
 
-		FILE* fout = fopen("fits.txt","w");
+		FILE* fout = fopen("coeffs.txt","w");
+		fprintf(fout,"#format is 1) pixel code (10000*det + 100*Xchannel + Ychannel)  2) stretch 3) offset 4) scale 5) chi2 reduced");
 		TFile* rootF_fits = new TFile("fits.root","recreate");
 
 		for( unsigned int D = 0; D < 12; ++D ){
@@ -387,7 +387,7 @@ int main(int argc, char** argv)
 
 			int Ledge_bin, Redge_bin; FindEdgeBins(ctd_template, &Ledge_bin, &Redge_bin);
 			double max1_x = ctd_template->GetBinCenter(Ledge_bin); double max1 = ctd_template->GetBinContent(Ledge_bin);
-			double max2_x = ctd_template->GetBinCenter(Redge_bin); double max2 = ctd_template->GetBinContent(Redge_bin);
+			double max2_x = ctd_template->GetBinCenter(Redge_bin); //double max2 = ctd_template->GetBinContent(Redge_bin);
 
 			for( unsigned int Xch = 1; Xch <= 37; ++Xch ){
 				for( unsigned int Ych = 1; Ych <= 37; ++Ych ){
@@ -402,7 +402,7 @@ int main(int argc, char** argv)
 
 						FindEdgeBins(H, &Ledge_bin, &Redge_bin);
 						double cmax1_x = H->GetBinCenter(Ledge_bin); double cmax1 = H->GetBinContent(Ledge_bin);
-						double cmax2_x = H->GetBinCenter(Redge_bin); double cmax2 = H->GetBinContent(Redge_bin);
+						double cmax2_x = H->GetBinCenter(Redge_bin); //double cmax2 = H->GetBinContent(Redge_bin);
 
 
 						double stretch_guess = fabs(cmax1_x - cmax2_x)/fabs(max1_x - max2_x);
@@ -418,7 +418,7 @@ int main(int argc, char** argv)
 						H->Fit(fitfunc);
 						double* P; P = fitfunc->GetParameters();
 						double chi = fitfunc->GetChisquare()/57.0;//57 is number of bins minus number of fit parameters
-						fprintf(fout,"pixel:%d stretch:%f offset:%f scale:%f chi2red:%f\n",pixel_code,P[0],P[1],P[2],chi); 
+						fprintf(fout,"%d   %f   %f   %f   %f\n",pixel_code,P[0],P[1],P[2],chi); 
 						rootF_fits->WriteTObject(H);
 					}
 					delete H;
@@ -436,7 +436,7 @@ int main(int argc, char** argv)
 
 void FindEdgeBins(TH1D* H, int* L, int* R){
 
-	unsigned int i;
+	int i;
 
 	H->SetAxisRange(-300.0,0.0);
 	double maxL = H->GetMaximum();

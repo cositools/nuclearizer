@@ -107,6 +107,7 @@ $(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
 $(LB)/MGUIOptionsDepthCalibrationLinearPixel.o \
 $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIOptionsDepthCalibration3rdPolyPixel.o \
+$(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MGUIExpoStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy_a.o \
 $(LB)/MGUIOptionsStripPairing.o \

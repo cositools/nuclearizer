@@ -67,6 +67,9 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
 
+  //! Look up energy resolution
+  double LookupEnergyResolution(MNCTStripHit* SH, double Energy);
+
 
   // protected methods:
  protected:
