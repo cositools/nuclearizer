@@ -68,6 +68,14 @@ class MNCTModuleDepthCalibration : public MModule
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
 
+  //! Set the global timing FWHM noise
+  void SetTimingNoiseFWHM(const double Time) {m_TimingNoiseFWHM = Time;}
+  //! Get the global timing FWHM noise
+  double GetTimingNoiseFWHM() const {return m_TimingNoiseFWHM;}
+
+  //! Finalize
+  void Finalize();
+
   // protected methods:
  protected:
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
@@ -99,6 +107,9 @@ class MNCTModuleDepthCalibration : public MModule
   uint64_t m_NoError;
   uint64_t m_Error1;
   uint64_t m_Error2;
+  uint64_t m_Error3;
+  uint64_t m_ErrorSH;
+  double m_TimingNoiseFWHM;
 
 
   // private members:

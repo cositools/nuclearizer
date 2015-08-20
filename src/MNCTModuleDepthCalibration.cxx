@@ -40,6 +40,7 @@
 
 // ROOT libs:
 #include "TGClient.h"
+#include "TH1.h"
 
 // MEGAlib libs:
 
@@ -54,6 +55,7 @@ ClassImp(MNCTModuleDepthCalibration)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+TH1D* EHist;
 
 MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
 {
@@ -103,6 +105,9 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
 	m_Thicknesses[9] = 1.47;
 	m_Thicknesses[10] = 1.42;
 	m_Thicknesses[11] = 1.45;
+
+	SetTimingNoiseFWHM(12.5); //use 12.5 ns for FWHM noise on CTD measurements
+	EHist = new TH1D("","",50,0.0,200.0);
 
 }
 
@@ -192,6 +197,7 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
 		MVector GlobalPosition, PositionResolution;
 		int PosError;
+		int DetID = XStrips[0]->GetDetectorID();
 
 		//check for each of the four cases:
 		if( (XStrips.size() == 1) && (YStrips.size() == 1) ){
@@ -216,7 +222,7 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			PosError = CalculatePosition(XSH, YSH, GlobalPosition, PositionResolution);
 		} else {
 			//set too many SH bad flag
-			PosError = 2;
+			PosError = -1;
 		}
 
 		if( PosError == 0 ){
@@ -229,11 +235,18 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 		} else if( PosError == 2 ){
 			Event->SetDepthCalibrationIncomplete();
 			++m_Error2;
+		} else if( PosError == 3){
+			EHist->Fill(H->GetEnergy());
+			Event->SetDepthCalibrationIncomplete();
+			++m_Error3;
+		} else if( PosError == -1){
+			Event->SetDepthCalibrationIncomplete();
+			++m_ErrorSH;
 		}
 	}
 
 
-  return true;
+	return true;
 }
 
 MNCTStripHit* MNCTModuleDepthCalibration::GetDominantStrip(std::vector<MNCTStripHit*>& Strips, double& EnergyFraction){
@@ -264,16 +277,33 @@ int MNCTModuleDepthCalibration::CalculatePosition(MNCTStripHit* XSH, MNCTStripHi
 		//set the bad flag for depth
 		return 1;
 	} else {
+
+		if( (XSH->GetTiming() < 1.0E-6) || (YSH->GetTiming() < 1.0E-6) ){
+			//we don't have timing on one or both of the strips..... return with an error
+			//better yet, assign the event to the middle of the detector and set the position resolution to be large
+			return 3;
+		}
+
 		double CTD = (XSH->GetTiming() - YSH->GetTiming())*10.0;
 		double CTD_s = (CTD - Coeffs->at(1))/Coeffs->at(0); //apply inverse stretch and offset
+		double Xmin = m_Splines[DetID]->GetXmin();
+		double Xmax = m_Splines[DetID]->GetXmax();
+
+		//if the CTD is out of range, check if we should reject the event or assume it was an edge event
+		if(CTD_s < Xmin){
+			if(fabs(CTD_s - Xmin) <= (2.0*m_TimingNoiseFWHM)) CTD_s = Xmin; else return 2;
+		}
+		if( CTD_s > Xmax){
+			if(fabs(CTD_s - Xmax) <= (2.0*m_TimingNoiseFWHM)) CTD_s = Xmax; else return 2;
+		}
+
 		double Depth = m_Splines[DetID]->Eval(CTD_s);
 		double Zpos = m_Thicknesses[DetID] - Depth; //convert back to mass model coordinates [-thickness/2,+thickness/2]
 		double Xpos = ((double)YSH->GetStripID() - 19.0)*(-0.2);
 		double Ypos = ((double)XSH->GetStripID() - 19.0)*(-0.2);
-		//use lookup table for detector names ->DetName
 		GlobalPosition = m_Geometry->GetGlobalPosition( MVector(Xpos, Ypos, Zpos), m_DetectorNames[DetID]);
 		//to get position resolution, assume FWHM noise of 12.5 ns, say CTD is 70 ns, find the difference in depth between (70-6.25) and (70+6.25) and then call that the depth FWHM error.
-		double Z_FWHM = GetZFWHM( CTD_s, DetID, 12.5 );
+		double Z_FWHM = GetZFWHM( CTD_s, DetID, m_TimingNoiseFWHM );
 		PositionResolution.SetXYZ(0.2/sqrt(12.0), 0.2/sqrt(12.0), Z_FWHM/2.35);
 		return 0;
 	}
@@ -403,6 +433,24 @@ MXmlNode* MNCTModuleDepthCalibration::CreateXmlConfiguration()
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
 
   return Node;
+}
+
+void MNCTModuleDepthCalibration::Finalize()
+{
+
+	MModule::Finalize();
+	cout << "###################" << endl;
+	cout << "AWL depth cal stats" << endl;
+	cout << "###################" << endl;
+	cout << "Good hits: " << m_NoError << endl;
+	cout << "Number of hits missing calibration coefficients: " << m_Error1 << endl;
+	cout << "Number of hits too far outside of detector: " << m_Error2 << endl;
+	cout << "Number of hits missing timing information: " << m_Error3 << endl;
+	cout << "Number of hits with too many strip hits: " << m_ErrorSH << endl;
+	TFile* rootF = new TFile("EHist.root","recreate");
+	rootF->WriteTObject( EHist );
+	rootF->Close();
+
 }
 
 // MNCTModuleDepthCalibration.cxx: the end...

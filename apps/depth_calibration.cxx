@@ -354,7 +354,7 @@ int main(int argc, char** argv)
 		}
 
 		FILE* fout = fopen("coeffs.txt","w");
-		fprintf(fout,"#format is 1) pixel code (10000*det + 100*Xchannel + Ychannel)  2) stretch 3) offset 4) scale 5) chi2 reduced");
+		fprintf(fout,"#format is 1) pixel code (10000*det + 100*Xchannel + Ychannel)  2) stretch 3) offset 4) scale 5) chi2 reduced\n");
 		TFile* rootF_fits = new TFile("fits.root","recreate");
 
 		for( unsigned int D = 0; D < 12; ++D ){

@@ -102,10 +102,10 @@ $(LB)/MGUIOptionsCrosstalkCorrection.o \
 $(LB)/MNCTModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
 $(LB)/MNCTModuleDepthAndStripCalibration.o \
-$(LB)/MNCTModuleDepthCalibration.o \
 $(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
 $(LB)/MGUIOptionsDepthCalibrationLinearPixel.o \
 $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
+$(LB)/MNCTModuleDepthCalibration.o \
 $(LB)/MGUIOptionsDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MGUIExpoStripPairing.o \
