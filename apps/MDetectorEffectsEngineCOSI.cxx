@@ -60,7 +60,7 @@ public:
   MNCTDetectorEffectsEngineCOSI();
   //! Default destructor
   ~MNCTDetectorEffectsEngineCOSI();
-  
+
   //! Parse the command line
   bool ParseCommandLine(int argc, char** argv);
   //! Analyze whatever needs to be analyzed...
@@ -73,6 +73,8 @@ public:
   void ParseThresholdFile();
   //! Read in and parse dead strip file
   void ParseDeadStripFile();
+	//! noise shield energy
+	double NoiseShieldEnergy(double energy, MString ShieldName);
   
 private:
   //! True, if the analysis needs to be interrupted
@@ -299,19 +301,51 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
   
   //count how many events have multiple hits per strip
   int mult_hits_counter = 0;
-  
+
+	// for shield veto: shield pulse duration and card cage delay: constant for now
+	double shield_pulse_duration = 1.e-6;
+	double cc_delay = 700.e-9;
+	// for shield veto: gets updated with shield event times
+	// start at -10s so that it doesn't veto beginning events by accident
+	double shield_time = -10;
+
   MSimEvent* Event = 0;
   int RunningID = 0;
-  while ((Event = Reader->GetNextEvent()) != 0) {
+  while ((Event = Reader->GetNextEvent(false)) != 0) {
     // Hitting Ctrl-C raises this flag
     if (m_Interrupt == true) return false;
-    
+
     if (Event->GetNHTs() == 0) {
       delete Event;
       continue;
     }
     
-    //cout<<Event->GetID()<<endl;
+ 		// Step (0): Check whether events should be vetoed
+		double evt_time = Event->GetTime().GetAsSeconds();
+
+		// first check if there's another shield hit above the threshold
+		// if so, veto event
+		for (unsigned int h=0; h<Event->GetNHTs(); h++){
+			MSimHT* HT = Event->GetHTAt(h);
+			if (HT->GetDetectorType() == 4) {
+				MDVolumeSequence* VS = HT->GetVolumeSequence();
+				MDDetector* Detector = VS->GetDetector();
+				MString DetName = Detector->GetName();
+
+				double energy = HT->GetEnergy();
+				energy = NoiseShieldEnergy(energy,DetName);
+				HT->SetEnergy(energy);
+
+				if (energy > 80.){
+					shield_time = evt_time;
+				}
+			}
+		}
+
+		if (evt_time + cc_delay < shield_time + shield_pulse_duration){
+			delete Event;
+			continue;
+		}
     
     
     
@@ -321,7 +355,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
     // (1a) The real strips
     for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
       MSimHT* HT = Event->GetHTAt(h);
-      MDVolumeSequence* VS = HT->GetVolumeSequence();
+
+	    MDVolumeSequence* VS = HT->GetVolumeSequence();
       MDDetector* Detector = VS->GetDetector();
       MString DetectorName = Detector->GetName();
       DetectorName.RemoveAllInPlace("Detector");
@@ -544,7 +579,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
   //  specCanvas.Print("spectrum_adc.pdf");
   
   cout << "number of events with multiple hits per strip: " << mult_hits_counter << endl;
-  
+ 
   // Some cleanup
   out<<"EN"<<endl<<endl;
   out.close();
@@ -595,6 +630,30 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
   
 }
 
+/******************************************************************************
+ * Noise shield energy with measured resolution
+ */
+double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString shield_name)
+{ 
+
+	double resolution_consts[6] = {3.75,3.74,18.47,4.23,3.07,3.98};
+
+	shield_name.RemoveAllInPlace("Shield");
+	int shield_num = shield_name.ToInt();
+	shield_num = shield_num - 1;
+	double res_constant = resolution_consts[shield_num];
+
+	TF1* ShieldRes = new TF1("ShieldRes","[0]*(x^(1/2))",0,1000); //this is from Knoll
+	ShieldRes->SetParameter(0,res_constant);
+
+	double sigma = ShieldRes->Eval(energy);
+
+	TRandom3 r(0);
+  double noised_energy = r.Gaus(energy,sigma);
+ 
+	return noised_energy;
+ 
+}
 
 /******************************************************************************
  * Read in thresholds
@@ -815,7 +874,6 @@ void CatchSignal(int a)
     cout<<"If you hit "<<g_NInterrupts<<" more times, then I will abort immediately!"<<endl;
   }
 }
-
 
 /******************************************************************************
  * Main program
