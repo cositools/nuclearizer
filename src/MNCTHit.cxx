@@ -126,8 +126,13 @@ void MNCTHit::StreamEvta(ostream& S)
 {
   //! Stream the content to an ASCII file 
   
-  S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy<<endl;
+  S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
+       <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution<<endl;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 bool MNCTHit::Parse(MString &Line, int Version){
 
