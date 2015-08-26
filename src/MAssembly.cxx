@@ -102,7 +102,7 @@ MAssembly::MAssembly()
   m_Interrupt = false;
   m_UseGui = true;
   
-  m_Supervisor = new MSupervisor();
+  m_Supervisor = MSupervisor::GetSupervisor();
   
   m_Supervisor->SetConfigurationFileName(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
   m_Supervisor->UseMultiThreading(true);
@@ -155,8 +155,6 @@ MAssembly::MAssembly()
 MAssembly::~MAssembly()
 {
   // standard destructor
-  
-  delete m_Supervisor;
 }
 
 
