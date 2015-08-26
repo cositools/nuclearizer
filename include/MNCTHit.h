@@ -93,6 +93,14 @@ class MNCTHit
 	void SetChargeSharing(bool chargeSharing) {m_ChargeSharing = chargeSharing; }
 	//! get m_ChargeSharing
 	bool GetChargeSharing() const { return m_ChargeSharing; }
+	//! set m_NoDepth
+	void SetNoDepth(bool X = true) {m_NoDepth = X;}
+	//! get m_NoDepth
+	bool GetNoDepth(void) const { return m_NoDepth; }
+	//! set m_IsNonDominantNeighborStrip
+	void SetIsNondominantNeighborStrip(bool X = true) {m_IsNonDominantNeighborStrip = X;}
+	//! get m_IsNonDominantNeighborStrip
+	bool GetIsNondominantNeighborStrip(void) const {return m_IsNonDominantNeighborStrip;}
  
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
@@ -144,6 +152,12 @@ class MNCTHit
 
 	//! true if hit contains charge sharing
 	bool m_ChargeSharing;
+
+	//! true if depth is invalid, either because the pixel depth was uncalibrated, the hit was mapped too far out of the detector,or there was no timing data
+	bool m_NoDepth;
+
+	//! true if hit was made from a charge sharing event using a neighbor strip that had the lowere energy fraction
+	bool m_IsNonDominantNeighborStrip;
 
 #ifdef ___CINT___
  public:

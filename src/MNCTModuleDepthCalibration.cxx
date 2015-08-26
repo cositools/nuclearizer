@@ -57,6 +57,10 @@ ClassImp(MNCTModuleDepthCalibration)
 
 TH1D* EHist;
 
+void dummy(void){
+	return;
+}
+
 MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
 {
   // Construct an instance of MNCTModuleDepthCalibration
@@ -86,11 +90,6 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
   m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
-
-	for(unsigned int i = 0; i < 12; ++i){
-		char det_name[32]; sprintf(det_name,"Detector%d",i);
-		m_DetectorNames.push_back( MString(det_name) );
-	}
 
 	m_Thicknesses.resize(12);
 	m_Thicknesses[0] = 1.49;
@@ -161,15 +160,29 @@ bool MNCTModuleDepthCalibration::Initialize()
 		TFile* rootF = new TFile("new_splines.root","recreate");
 		for(unsigned int i = 0; i < 12; ++i){
 			TSpline3* Sp = m_Splines[i];
-			if( Sp != NULL ){
-				rootF->WriteTObject( Sp );
-			} else {
-				cout << "@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
+			unsigned int N = 1000;
+			double dx = (Sp->GetXmax() - Sp->GetXmin())/((double) (N-1));
+			vector<double> X; vector<double> Y;
+			for(unsigned int i = 0; i < N; ++i){
+				X.push_back(i*dx + Sp->GetXmin());
+				Y.push_back(Sp->Eval(i*dx + Sp->GetXmin()));
 			}
+			TGraph* gr = new TGraph(N,(double *) &X[0],(double *) &Y[0]);
+			rootF->WriteTObject(gr);
+			rootF->WriteTObject( Sp );
 		}
 		rootF->Close();
 	}
 
+	MDGeometry* MDG = m_Geometry;
+
+	for(unsigned int i = 0; i < 12; ++i){
+		char det_name[32]; sprintf(det_name,"GeWafer_%d",i);
+		MString MS(det_name);
+		MDVolume* DetVol = MDG->GetVolume(MS);
+		//		m_DetectorNames.push_back( MString(det_name) );
+		m_DetectorVolumes.push_back(DetVol);
+	}
 
 	return true;
 
@@ -182,11 +195,19 @@ bool MNCTModuleDepthCalibration::Initialize()
 bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
+	vector<MNCTHit*> NewHits;
 
 	for( unsigned int i = 0; i < Event->GetNHits(); ++i ){
 		MNCTHit* H = Event->GetHit(i);
-		//check here if the hit has a bad flag from the pairing!!!
+
+		//organize x and y strips into vectors
 		if( H == NULL ) continue;
+		if( H->GetNStripHits() == 0 ){
+			//have a hit with no strip hits... WTF?
+			cout << "HIT WITH NO STRIP HITS" << endl;
+			continue;
+		}
+			
 		std::vector<MNCTStripHit*> XStrips;
 		std::vector<MNCTStripHit*> YStrips;
 		for( unsigned int j = 0; j < H->GetNStripHits(); ++j){
@@ -195,56 +216,144 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			if( SH->IsXStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
 		}
 
-		MVector GlobalPosition, PositionResolution;
+		MVector LocalPosition, PositionResolution, GlobalPosition;
 		int PosError;
-		int DetID = XStrips[0]->GetDetectorID();
+		int DetID = H->GetStripHit(0)->GetDetectorID();
 
 		//check for each of the four cases:
+		int Error = 0;
+			
 		if( (XStrips.size() == 1) && (YStrips.size() == 1) ){
+
 			MNCTStripHit* XSH = XStrips[0]; MNCTStripHit* YSH = YStrips[0]; 
-			PosError = CalculatePosition(XSH, YSH, GlobalPosition, PositionResolution);
+			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
+//			GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
+			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
+			if( PosError != 0 ) {
+				Error = PosError; //record the positioning error 
+				H->SetNoDepth();
+			}
+
 		} else if( (XStrips.size() == 2) && (YStrips.size() == 1) ){
-			//should i be checking whether or not x strips are neighboring? strip pairing should already be doing this 
-			//perform a check on energy fraction... eventually need to include error here based on energy fraction and depth
+			//might want to perform a check on energy fraction... eventually need to include error here based on energy fraction and depth
+
 			double EnergyFraction;
 			MNCTStripHit* XSH = GetDominantStrip(XStrips, EnergyFraction);
 			MNCTStripHit* YSH = YStrips[0];
-			PosError = CalculatePosition(XSH, YSH, GlobalPosition, PositionResolution);
+			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
+//			GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
+			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
+			if( PosError != 0 ) {
+				Error = PosError; //record the positioning error 
+				H->SetNoDepth();
+			} else {
+				H->SetEnergy( XSH->GetEnergy() ); //reset energy to dominant strip energy
+				MNCTStripHit* XSH__;
+				//find the non-dominant strip
+				if( XStrips[0] == XSH ) XSH__ = XStrips[1]; else XSH__ = XStrips[0];
+				MVector Local2Position, Position2Resolution;
+				int Pos2Error = CalculateLocalPosition(XSH__, YSH, Local2Position, Position2Resolution);
+				Local2Position.SetZ( LocalPosition.GetZ() ); Position2Resolution.SetZ( PositionResolution.GetZ() );
+				//GlobalPosition = m_Geometry->GetGlobalPosition( Local2Position, m_DetectorNames[DetID]);
+				GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+				MNCTHit* NH = new MNCTHit();
+				NH->SetEnergy(XSH__->GetEnergy());
+				NH->SetPosition( GlobalPosition ); NH->SetPositionResolution( Position2Resolution );
+				NH->SetIsNondominantNeighborStrip();
+				NH->AddStripHit(XSH__); NH->AddStripHit(YSH);
+				NewHits.push_back(NH);
+			}
+
 		} else if( (XStrips.size() == 1) && (YStrips.size() == 2) ){
+
 			double EnergyFraction;
 			MNCTStripHit* XSH = XStrips[0];
 			MNCTStripHit* YSH = GetDominantStrip(YStrips, EnergyFraction);
-			PosError = CalculatePosition(XSH, YSH, GlobalPosition, PositionResolution);
+			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
+			//GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
+			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
+			if( PosError != 0 ) {
+				Error = PosError; //record the positioning error 
+				H->SetNoDepth();
+			} else {
+				H->SetEnergy( XSH->GetEnergy() ); //reset energy to dominant strip energy
+				MNCTStripHit* YSH__;
+				//find the non-dominant strip
+				if( YStrips[0] == YSH ) YSH__ = YStrips[1]; else YSH__ = YStrips[0];
+				MVector Local2Position, Position2Resolution;
+				int Pos2Error = CalculateLocalPosition(XSH, YSH__, Local2Position, Position2Resolution);
+				Local2Position.SetZ( LocalPosition.GetZ() ); Position2Resolution.SetZ( PositionResolution.GetZ() );
+				//GlobalPosition = m_Geometry->GetGlobalPosition( Local2Position, m_DetectorNames[DetID]);
+				GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+				MNCTHit* NH = new MNCTHit();
+				NH->SetEnergy(YSH__->GetEnergy());
+				NH->SetPosition( GlobalPosition ); NH->SetPositionResolution( Position2Resolution );
+				NH->SetIsNondominantNeighborStrip();
+				NH->AddStripHit(XSH); NH->AddStripHit(YSH__);
+				NewHits.push_back(NH);
+			}
+
+
 		} else if( (XStrips.size() == 2) && (YStrips.size() == 2) ){
+			//in this case use depth from dominant strips but use weighted X and Y positions
+
 			double EnergyFractionX, EnergyFractionY;
 			MNCTStripHit* XSH = GetDominantStrip(XStrips, EnergyFractionX);
 			MNCTStripHit* YSH = GetDominantStrip(YStrips, EnergyFractionY);
-			PosError = CalculatePosition(XSH, YSH, GlobalPosition, PositionResolution);
+			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
+			if( PosError != 0 ){
+				Error = PosError;
+				H->SetNoDepth();
+			}
+			//determine the weighted x and y positions
+			double Xpos1 = ((double)YStrips[0]->GetStripID() - 19.0)*(-0.2);
+			double Xpos2 = ((double)YStrips[1]->GetStripID() - 19.0)*(-0.2);
+			double Xpos = ((Xpos1)*YStrips[0]->GetEnergy() + (Xpos2)*YStrips[1]->GetEnergy())/(YStrips[0]->GetEnergy() + YStrips[1]->GetEnergy());
+
+			double Ypos1 = ((double)XStrips[0]->GetStripID() - 19.0)*(-0.2);
+			double Ypos2 = ((double)XStrips[1]->GetStripID() - 19.0)*(-0.2);
+			double Ypos = ((Ypos1)*XStrips[0]->GetEnergy() + (Ypos2)*XStrips[1]->GetEnergy())/(XStrips[0]->GetEnergy() + XStrips[1]->GetEnergy());
+
+			LocalPosition.SetX(Xpos); LocalPosition.SetY(Ypos);
+			//GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
+			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
+
 		} else {
 			//set too many SH bad flag
-			PosError = -1;
+			Error = -1;
 		}
 
-		if( PosError == 0 ){
+		if( Error == 0 ){
 			//good
-			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
 			++m_NoError;
-		} else if( PosError == 1 ){
+		} else if( Error == 1 ){
 			Event->SetDepthCalibrationIncomplete();
 			++m_Error1;
-		} else if( PosError == 2 ){
+		} else if( Error == 2 ){
 			Event->SetDepthCalibrationIncomplete();
 			++m_Error2;
-		} else if( PosError == 3){
+		} else if( Error == 3){
+			//Hits that were missing timing information
 			EHist->Fill(H->GetEnergy());
-			Event->SetDepthCalibrationIncomplete();
+			//don't set the globally bad flag
+			//Event->SetDepthCalibrationIncomplete();
 			++m_Error3;
-		} else if( PosError == -1){
+		} else if( Error == -1){
 			Event->SetDepthCalibrationIncomplete();
 			++m_ErrorSH;
 		}
+
+		if( H->GetPosition().GetZ() > 100000.0 ){
+			dummy();
+		}
 	}
 
+	//add the new hits from the 3-strip events to the event.  Don't do it in the loop above because we don't want to loop back over these new hits
+	for( const auto H: NewHits ) Event->AddHit(H);
 
 	return true;
 }
@@ -266,9 +375,10 @@ MNCTStripHit* MNCTModuleDepthCalibration::GetDominantStrip(std::vector<MNCTStrip
 
 }
 		
+/*
 
 //return zero if the position calculation is error-free
-int MNCTModuleDepthCalibration::CalculatePosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& GlobalPosition, MVector& PositionResolution){
+int MNCTModuleDepthCalibration::CalculatePosition_old(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& GlobalPosition, MVector& PositionResolution){
 
 	int DetID = XSH->GetDetectorID();
 	int pixel_code = 10000*DetID + 100*XSH->GetStripID() + YSH->GetStripID();
@@ -309,6 +419,76 @@ int MNCTModuleDepthCalibration::CalculatePosition(MNCTStripHit* XSH, MNCTStripHi
 	}
 }
 
+*/
+
+int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& LocalPosition, MVector& PositionResolution){
+
+	int RetVal = 0;
+
+	//first set the X and Y positions before we try and do anything with the Z position
+	double Xpos = ((double)YSH->GetStripID() - 19.0)*(-0.2);
+	double Ypos = ((double)XSH->GetStripID() - 19.0)*(-0.2);
+	double Zpos = 0.0;
+	double CTD_s = 0.0;
+
+	//now try and get z position
+	int DetID = XSH->GetDetectorID();
+	int pixel_code = 10000*DetID + 100*XSH->GetStripID() + YSH->GetStripID();
+	std::vector<double>* Coeffs = m_Coeffs[pixel_code];
+	if( Coeffs == NULL ){
+		//set the bad flag for depth
+
+		RetVal = 1;
+	} else {
+		if( (XSH->GetTiming() < 1.0E-6) || (YSH->GetTiming() < 1.0E-6) ){
+			//we don't have timing on one or both of the strips..... return with an error
+			//better yet, assign the event to the middle of the detector and set the position resolution to be large
+			RetVal = 3;
+		} else {
+
+			double CTD = (XSH->GetTiming() - YSH->GetTiming())*10.0;
+			CTD_s = (CTD - Coeffs->at(1))/Coeffs->at(0); //apply inverse stretch and offset
+			double Xmin = m_Splines[DetID]->GetXmin();
+			double Xmax = m_Splines[DetID]->GetXmax();
+
+			//if the CTD is out of range, check if we should reject the event or assume it was an edge event
+			if(CTD_s < Xmin){
+				if(fabs(CTD_s - Xmin) <= (2.0*m_TimingNoiseFWHM)) CTD_s = Xmin; else RetVal = 2;
+			} else if( CTD_s > Xmax){
+				if(fabs(CTD_s - Xmax) <= (2.0*m_TimingNoiseFWHM)) CTD_s = Xmax; else RetVal = 2;
+			}
+
+			if( RetVal == 0 ){
+				double Depth = m_Splines[DetID]->Eval(CTD_s);
+
+				//somtimes the splines will give a value that is juuuuuuust outside the edge, fix it here
+				if( Depth < 0.0 ){
+					Depth = 0.0;
+				} else if( Depth > m_Thicknesses[DetID] ){
+					Depth = m_Thicknesses[DetID];
+				}
+
+				Zpos = m_Thicknesses[DetID]/2.0 - Depth;
+			}
+
+		}
+	}
+
+	if( RetVal != 0 ) Zpos = 0.0;
+
+	//GlobalPosition = m_Geometry->GetGlobalPosition( MVector(Xpos, Ypos, Zpos), m_DetectorNames[DetID]);
+	LocalPosition.SetXYZ(Xpos, Ypos, Zpos);
+
+	//determine position resolution.  if depth could not be looked up, use Thickness/sqrt(12.0)
+	if( RetVal == 0 ){
+		double Z_FWHM = GetZFWHM( CTD_s, DetID, m_TimingNoiseFWHM );
+		PositionResolution.SetXYZ(0.2/sqrt(12.0), 0.2/sqrt(12.0), Z_FWHM/2.35);
+	} else {
+		PositionResolution.SetXYZ(0.2/sqrt(12.0), 0.2/sqrt(12.0), m_Thicknesses[DetID]/sqrt(12.0));
+	}
+
+	return RetVal;
+}
 
 double MNCTModuleDepthCalibration::GetZFWHM(double CTD_s, int DetID, double Noise){
 
@@ -352,7 +532,6 @@ bool MNCTModuleDepthCalibration::GetDepthSplines(MString fname, std::unordered_m
 			} else {
 				vector<MString> tokens = line.Tokenize(" ");
 				xvec.push_back(tokens[0].ToDouble()); yvec.push_back(tokens[1].ToDouble());
-
 			}
 		}
 	}
@@ -387,17 +566,39 @@ void MNCTModuleDepthCalibration::AddSpline(vector<double>& xvec, vector<double>&
 	newy = m*newx + b;
 	xvec.push_back(newx); yvec.push_back(newy);
 
-	double* x = &xvec[0]; double* y = &yvec[0];
+	//double* x = &xvec[0]; double* y = &yvec[0];
 	if( invert ){
+		//need to filter the data here so that there aren't knots that are too close together
+		bool Done = false;
+		while( !Done ){
+			Done = true;
+			for( unsigned int i = 1; i < (xvec.size()-1); ++i ){
+				if( (fabs(yvec[i] - yvec[i-1]) < 1.5) || (fabs(yvec[i] - yvec[i+1]) < 1.5) ){
+					xvec.erase(xvec.begin() + i);
+					yvec.erase(yvec.begin() + i);
+					Done = false;
+					break;
+				}
+			}
+		}
+
+		SplineMap[DetID] = new TSpline3("",(double*) &yvec[0],(double*) &xvec[0],xvec.size());
+
+
+/*
+
 		//need to make sure that none of the y elements is equal to the previous element... otherwise the inversion will give a nan
 		for( unsigned int i = 1; i < yvec.size(); ++i ){
 			//if( fabs(yvec[i] - yvec[i-1]) < 1.0E-6 ) yvec[i] += 2.0E-6;
-			if( yvec[i] <= yvec[i-1] ) yvec[i] = yvec[i-1] + 1.0E-6; 
+			//0.15 had the best performance
+			if( yvec[i] <= yvec[i-1] ) yvec[i] = yvec[i-1] + 0.1;
 
 		}
-		SplineMap[DetID] = new TSpline3("",y,x,xvec.size());
+		*/
+	//	TGraph* tg = new TGraph(xvec.size(),(double*) &xvec[0],(double*) &yvec[0]);
+	//	SplineMap[DetID] = new tmva::TSpline1("",tg);
 	} else {
-		SplineMap[DetID] = new TSpline3("",x,y,xvec.size());
+		SplineMap[DetID] = new TSpline3("",(double*) &xvec[0],(double*) &yvec[0],xvec.size());
 	}
 	xvec.clear(); yvec.clear();
 	return;

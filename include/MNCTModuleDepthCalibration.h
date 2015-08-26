@@ -81,7 +81,7 @@ class MNCTModuleDepthCalibration : public MModule
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
   MNCTStripHit* GetDominantStrip(std::vector<MNCTStripHit*>& Strips, double& EnergyFraction);
   //! Calculates the XYZ position of the hit.  Returns 0 if all is OK.
-  int CalculatePosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& GlobalPosition, MVector& PositionResolution);
+  int CalculateLocalPosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& GlobalPosition, MVector& PositionResolution);
   //! Converts the FWHM timing noise to FWHM depth noise
   double GetZFWHM(double CTD_s, int DetID, double Noise);
   //! Reads in spline data to convert CTD->Depth
@@ -110,6 +110,7 @@ class MNCTModuleDepthCalibration : public MModule
   uint64_t m_Error3;
   uint64_t m_ErrorSH;
   double m_TimingNoiseFWHM;
+  vector<MDVolume*> m_DetectorVolumes;
 
 
   // private members:

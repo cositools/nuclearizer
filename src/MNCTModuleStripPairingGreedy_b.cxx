@@ -583,64 +583,67 @@ void MNCTModuleStripPairingGreedy_b::CalculateEventQuality(MReadOutAssembly* Eve
 
 //output stuff
 void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int detector){
-  
-  
-  vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
- 
-  //pair indexes over the pairs (hits) -- for each pair, there is a new MNCTHit
-  //strip indexes over the strips in each pair on the x or y side
-  //n indexes over the list of strip hits in the MReadOutAssembly
-  
-  //this loop iterates over the pairs, and for each pair creates a new MNCTHit
-  //then, it iterates over each strip on the x side of that pair
-  //it then iterates over each stripHit in the MReadOutAssembly, checks that the detector is right,
-  //	that it's an x hit, and if it matches the strip, it is added to the MNCTHit
-  //the same is done in the second sub-loop for the y side
-  
-  //hit quality, energy, energy resolution only needs to be added once,
-  // (it's the same for x and y), so it is done on the x side
-  
-  bool addHit = false;
-  
-  for (unsigned int pair=0; pair<decodedFinalPairs.size(); pair++){
-    MNCTHit* Hit = new MNCTHit();
-    //x side
-    for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(0).size(); strip++){
-      for (unsigned int n = 0; n<Event->GetNStripHits(); n++){
-        if (detector == Event->GetStripHit(n)->GetDetectorID()){
-          if (Event->GetStripHit(n)->IsXStrip() == true){
-            if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(0).at(strip)){
-              Hit->AddStripHit(Event->GetStripHit(n));
-              Hit->SetHitQuality(hitQualityFactor.at(pair));
-              Hit->SetEnergyResolution(energyResolution.at(pair));
-              Hit->SetEnergy(hitEnergy.at(pair));
-              addHit = true;
-            }
-          }
-        }
-      }
-    }
-    //y side
-    for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(1).size(); strip++){
-      for (unsigned int n=0; n<Event->GetNStripHits(); n++){
-        if (detector == Event->GetStripHit(n)->GetDetectorID()){
-          if (Event->GetStripHit(n)->IsXStrip() == false){
-            if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(1).at(strip)){
-              Hit->AddStripHit(Event->GetStripHit(n));
-            }
-          }
-        }
-      }
-    }
-    if (addHit){
-      Event->AddHit(Hit);
-    }
+
+
+	vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
+
+	//pair indexes over the pairs (hits) -- for each pair, there is a new MNCTHit
+	//strip indexes over the strips in each pair on the x or y side
+	//n indexes over the list of strip hits in the MReadOutAssembly
+
+	//this loop iterates over the pairs, and for each pair creates a new MNCTHit
+	//then, it iterates over each strip on the x side of that pair
+	//it then iterates over each stripHit in the MReadOutAssembly, checks that the detector is right,
+	//	that it's an x hit, and if it matches the strip, it is added to the MNCTHit
+	//the same is done in the second sub-loop for the y side
+
+	//hit quality, energy, energy resolution only needs to be added once,
+	// (it's the same for x and y), so it is done on the x side
+
+	bool addHit = false;
+
+	for (unsigned int pair=0; pair<decodedFinalPairs.size(); pair++){
+		MNCTHit* Hit = new MNCTHit();
+		//x side
+		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(0).size(); strip++){
+			for (unsigned int n = 0; n<Event->GetNStripHits(); n++){
+				if (detector == Event->GetStripHit(n)->GetDetectorID()){
+					if (Event->GetStripHit(n)->IsXStrip() == true){
+						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(0).at(strip)){
+							Hit->AddStripHit(Event->GetStripHit(n));
+							Hit->SetHitQuality(hitQualityFactor.at(pair));
+							Hit->SetEnergyResolution(energyResolution.at(pair));
+							Hit->SetEnergy(hitEnergy.at(pair));
+							addHit = true;
+						}
+					}
+				}
+			}
+		}
+		//y side
+		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(1).size(); strip++){
+			for (unsigned int n=0; n<Event->GetNStripHits(); n++){
+				if (detector == Event->GetStripHit(n)->GetDetectorID()){
+					if (Event->GetStripHit(n)->IsXStrip() == false){
+						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(1).at(strip)){
+							Hit->AddStripHit(Event->GetStripHit(n));
+						}
+					}
+				}
+			}
+		}
+		if (addHit){
+			Event->AddHit(Hit);
+			if( Hit->GetNStripHits() == 0 ){
+				cout << "STRIP PAIRING BAD HIT" << endl;
+			}
+		}
 		if (stripHitMultipleTimes.at(pair) == 1){
 			Hit->SetStripHitMultipleTimes(true);
-/*			PrintXYStripsHitOrig();
-			PrintFinalPairs();
-			dummy_func();
-*/		}
+			/*			PrintXYStripsHitOrig();
+						PrintFinalPairs();
+						dummy_func();
+			 */		}
 		else {
 			Hit->SetStripHitMultipleTimes(false);
 		}
@@ -650,46 +653,46 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
 		else {
 			Hit->SetChargeSharing(false);
 		}
-    addHit = false;
+		addHit = false;
 
-		  //carolyn's addition for debugging CrossTalkOffset
- // int DetectorID = 0;
-//  DetectorID = Event->GetHit(0)->GetStripHit(0)->GetDetectorID(); 
-  //cout<<"Got DetectorID: "<<DetectorID<<endl;
-//  if (DetectorID == 1) {
-//    for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
-/*		cout << "NStripHits(): " << Hit->GetNStripHits() << endl;
-    if (Hit->GetNStripHits() == 4) {
-      int nXhits = 0;
-      int nYhits = 0;
-      int xhit_strip[3] = {0, 0, 0};
-      double xhit_energy[3] = {0.0, 0.0, 0.0};;
-      int yhit_strip[3] = {0, 0, 0};
-      double yhit_energy[3] = {0.0, 0.0, 0.0};
-      for (unsigned int s = 0; s < 4; ++s){
-        if (Hit->GetStripHit(s)->IsXStrip() == true){
-          xhit_strip[nXhits] = Hit->GetStripHit(s)->GetStripID();
-          xhit_energy[nXhits] = Hit->GetStripHit(s)->GetEnergy();
-          nXhits = nXhits + 1;
-        } else if (Hit->GetStripHit(s)->IsXStrip() == false){
-          yhit_strip[nYhits] = Hit->GetStripHit(s)->GetStripID();
-          yhit_energy[nYhits] = Hit->GetStripHit(s)->GetEnergy();
-           }
-      }
-    cout<<"Clio found number of x hits: "<<nXhits<<", & number of y hits: "<<nYhits<<endl;
-    cout<<"xHit1: "<<xhit_strip[0]<<", "<<xhit_energy[0]<<endl;
-    cout<<"xHit2: "<<xhit_strip[1]<<", "<<xhit_energy[1]<<endl;
-    cout<<"xHit3: "<<xhit_strip[2]<<", "<<xhit_energy[2]<<endl;
-    cout<<"yHit1: "<<yhit_strip[0]<<", "<<yhit_energy[0]<<endl;
-    cout<<"yHit2: "<<yhit_strip[1]<<", "<<yhit_energy[1]<<endl;
-    cout<<"yHit3: "<<yhit_strip[2]<<", "<<yhit_energy[2]<<endl;
-      }
-//  }
- // }
-*/
+		//carolyn's addition for debugging CrossTalkOffset
+		// int DetectorID = 0;
+		//  DetectorID = Event->GetHit(0)->GetStripHit(0)->GetDetectorID(); 
+		//cout<<"Got DetectorID: "<<DetectorID<<endl;
+		//  if (DetectorID == 1) {
+		//    for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+		/*		cout << "NStripHits(): " << Hit->GetNStripHits() << endl;
+				if (Hit->GetNStripHits() == 4) {
+				int nXhits = 0;
+				int nYhits = 0;
+				int xhit_strip[3] = {0, 0, 0};
+				double xhit_energy[3] = {0.0, 0.0, 0.0};;
+				int yhit_strip[3] = {0, 0, 0};
+				double yhit_energy[3] = {0.0, 0.0, 0.0};
+				for (unsigned int s = 0; s < 4; ++s){
+				if (Hit->GetStripHit(s)->IsXStrip() == true){
+				xhit_strip[nXhits] = Hit->GetStripHit(s)->GetStripID();
+				xhit_energy[nXhits] = Hit->GetStripHit(s)->GetEnergy();
+				nXhits = nXhits + 1;
+				} else if (Hit->GetStripHit(s)->IsXStrip() == false){
+				yhit_strip[nYhits] = Hit->GetStripHit(s)->GetStripID();
+				yhit_energy[nYhits] = Hit->GetStripHit(s)->GetEnergy();
+				}
+				}
+				cout<<"Clio found number of x hits: "<<nXhits<<", & number of y hits: "<<nYhits<<endl;
+				cout<<"xHit1: "<<xhit_strip[0]<<", "<<xhit_energy[0]<<endl;
+				cout<<"xHit2: "<<xhit_strip[1]<<", "<<xhit_energy[1]<<endl;
+				cout<<"xHit3: "<<xhit_strip[2]<<", "<<xhit_energy[2]<<endl;
+				cout<<"yHit1: "<<yhit_strip[0]<<", "<<yhit_energy[0]<<endl;
+				cout<<"yHit2: "<<yhit_strip[1]<<", "<<yhit_energy[1]<<endl;
+				cout<<"yHit3: "<<yhit_strip[2]<<", "<<yhit_energy[2]<<endl;
+				}
+		//  }
+		// }
+		 */
 
-  }
-  
+	}
+
 };
 
 //clears members in between each detector

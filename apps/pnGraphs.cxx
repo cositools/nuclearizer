@@ -222,18 +222,18 @@ bool pnGraphs::Analyze()
 
 	if (m_Interrupt == true) return false;
 
-  MSupervisor S;
+  MSupervisor* S = MSupervisor::GetSupervisor();
   
   MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
   Loader->SetFileName(m_FileName);
-  S.SetModule(Loader, 0);
+  S->SetModule(Loader, 0);
   
   MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
   Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/EnergyCalibration.ecal");
-  S.SetModule(Calibrator, 1);
+  S->SetModule(Calibrator, 1);
   
   MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
-  S.SetModule(Pairing, 2);
+  S->SetModule(Pairing, 2);
 
   if (Loader->Initialize() == false) return false;
   if (Calibrator->Initialize() == false) return false;
