@@ -57,6 +57,7 @@ ClassImp(MNCTModuleDepthCalibration)
 
 TH1D* EHist;
 
+//for debug breaking
 void dummy(void){
 	return;
 }
@@ -107,6 +108,14 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
 
 	SetTimingNoiseFWHM(12.5); //use 12.5 ns for FWHM noise on CTD measurements
 	EHist = new TH1D("","",50,0.0,200.0);
+
+	m_NoError = 0;
+	m_Error1 = 0;
+	m_Error2 = 0;
+	m_Error3 = 0;
+	m_Error4 = 0;
+	m_ErrorSH = 0;
+
 
 }
 
@@ -184,6 +193,13 @@ bool MNCTModuleDepthCalibration::Initialize()
 		m_DetectorVolumes.push_back(DetVol);
 	}
 
+	MSupervisor* S = MSupervisor::GetSupervisor();
+	m_EnergyCalibration = (MNCTModuleEnergyCalibrationUniversal*) S->GetAvailableModule("Universal energy calibrator");
+	if( m_EnergyCalibration == NULL ){\
+		cout << "MNCTModuleDepthCalibration: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
+		return false;
+	}
+
 	return true;
 
 }
@@ -219,6 +235,12 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 		MVector LocalPosition, PositionResolution, GlobalPosition;
 		int PosError;
 		int DetID = H->GetStripHit(0)->GetDetectorID();
+		bool MultiHit = H->GetStripHitMultipleTimes(); //if true, then depth for this hit is no good
+		bool BadDepth = false;
+		if( MultiHit ){
+			//might want to add more criteria here 
+			BadDepth = true;
+		}
 
 		//check for each of the four cases:
 		int Error = 0;
@@ -226,7 +248,7 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 		if( (XStrips.size() == 1) && (YStrips.size() == 1) ){
 
 			MNCTStripHit* XSH = XStrips[0]; MNCTStripHit* YSH = YStrips[0]; 
-			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
+			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution, BadDepth);
 //			GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
 			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
@@ -235,75 +257,60 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				H->SetNoDepth();
 			}
 
-		} else if( (XStrips.size() == 2) && (YStrips.size() == 1) ){
-			//might want to perform a check on energy fraction... eventually need to include error here based on energy fraction and depth
-
+		} else if( ((XStrips.size() == 2) && (YStrips.size() == 1)) || ((XStrips.size() == 1) && (YStrips.size() == 2)) ){
+			bool IsNeighborSideX;
 			double EnergyFraction;
-			MNCTStripHit* XSH = GetDominantStrip(XStrips, EnergyFraction);
-			MNCTStripHit* YSH = YStrips[0];
-			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
-//			GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
+			vector<MNCTStripHit*>* NeighborSideStrips;
+			MNCTStripHit* OtherSideStrip;
+
+			//determine strip situation
+			if( XStrips.size() == 2 ) { IsNeighborSideX = true; NeighborSideStrips = &XStrips; OtherSideStrip = YStrips[0];}
+			else { IsNeighborSideX = false; NeighborSideStrips = &YStrips; OtherSideStrip = XStrips[0];}
+			MNCTStripHit* DominantStrip = GetDominantStrip(*NeighborSideStrips, EnergyFraction);
+			MNCTStripHit* NonDominantStrip;
+			if( NeighborSideStrips->at(0) == DominantStrip ) NonDominantStrip = NeighborSideStrips->at(1); else NonDominantStrip = NeighborSideStrips->at(0);
+
+			//calculate the position in the detector's coordinate system
+			if( IsNeighborSideX ) {
+				PosError = CalculateLocalPosition(DominantStrip, OtherSideStrip, LocalPosition, PositionResolution, BadDepth);
+			} else {
+				PosError = CalculateLocalPosition(OtherSideStrip, DominantStrip, LocalPosition, PositionResolution, BadDepth);
+			}
+
+			//calculate the global position and set the hit's position and position resolution
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
 			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
+
 			if( PosError != 0 ) {
 				Error = PosError; //record the positioning error 
 				H->SetNoDepth();
 			} else {
-				H->SetEnergy( XSH->GetEnergy() ); //reset energy to dominant strip energy
-				MNCTStripHit* XSH__;
-				//find the non-dominant strip
-				if( XStrips[0] == XSH ) XSH__ = XStrips[1]; else XSH__ = XStrips[0];
+				H->SetEnergy( DominantStrip->GetEnergy() ); //reset energy to dominant strip energy
 				MVector Local2Position, Position2Resolution;
-				int Pos2Error = CalculateLocalPosition(XSH__, YSH, Local2Position, Position2Resolution);
+				int Pos2Error = 0;
+				if( IsNeighborSideX ) {
+					Pos2Error = CalculateLocalPosition(NonDominantStrip, OtherSideStrip, Local2Position, Position2Resolution, BadDepth);
+				} else {
+					Pos2Error = CalculateLocalPosition(OtherSideStrip, NonDominantStrip, Local2Position, Position2Resolution, BadDepth);
+				}
 				Local2Position.SetZ( LocalPosition.GetZ() ); Position2Resolution.SetZ( PositionResolution.GetZ() );
-				//GlobalPosition = m_Geometry->GetGlobalPosition( Local2Position, m_DetectorNames[DetID]);
-				GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+				GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(Local2Position);
 				MNCTHit* NH = new MNCTHit();
-				NH->SetEnergy(XSH__->GetEnergy());
+				NH->SetEnergy(NonDominantStrip->GetEnergy());
+				double Eres = m_EnergyCalibration->LookupEnergyResolution(NonDominantStrip, NonDominantStrip->GetEnergy()); NH->SetEnergyResolution(Eres);
 				NH->SetPosition( GlobalPosition ); NH->SetPositionResolution( Position2Resolution );
 				NH->SetIsNondominantNeighborStrip();
-				NH->AddStripHit(XSH__); NH->AddStripHit(YSH);
+				NH->AddStripHit(NonDominantStrip); NH->AddStripHit(OtherSideStrip);
 				NewHits.push_back(NH);
 			}
-
-		} else if( (XStrips.size() == 1) && (YStrips.size() == 2) ){
-
-			double EnergyFraction;
-			MNCTStripHit* XSH = XStrips[0];
-			MNCTStripHit* YSH = GetDominantStrip(YStrips, EnergyFraction);
-			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
-			//GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
-			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
-			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
-			if( PosError != 0 ) {
-				Error = PosError; //record the positioning error 
-				H->SetNoDepth();
-			} else {
-				H->SetEnergy( XSH->GetEnergy() ); //reset energy to dominant strip energy
-				MNCTStripHit* YSH__;
-				//find the non-dominant strip
-				if( YStrips[0] == YSH ) YSH__ = YStrips[1]; else YSH__ = YStrips[0];
-				MVector Local2Position, Position2Resolution;
-				int Pos2Error = CalculateLocalPosition(XSH, YSH__, Local2Position, Position2Resolution);
-				Local2Position.SetZ( LocalPosition.GetZ() ); Position2Resolution.SetZ( PositionResolution.GetZ() );
-				//GlobalPosition = m_Geometry->GetGlobalPosition( Local2Position, m_DetectorNames[DetID]);
-				GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
-				MNCTHit* NH = new MNCTHit();
-				NH->SetEnergy(YSH__->GetEnergy());
-				NH->SetPosition( GlobalPosition ); NH->SetPositionResolution( Position2Resolution );
-				NH->SetIsNondominantNeighborStrip();
-				NH->AddStripHit(XSH); NH->AddStripHit(YSH__);
-				NewHits.push_back(NH);
-			}
-
-
+		
 		} else if( (XStrips.size() == 2) && (YStrips.size() == 2) ){
 			//in this case use depth from dominant strips but use weighted X and Y positions
 
 			double EnergyFractionX, EnergyFractionY;
 			MNCTStripHit* XSH = GetDominantStrip(XStrips, EnergyFractionX);
 			MNCTStripHit* YSH = GetDominantStrip(YStrips, EnergyFractionY);
-			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution);
+			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution, BadDepth);
 			if( PosError != 0 ){
 				Error = PosError;
 				H->SetNoDepth();
@@ -338,18 +345,19 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			++m_Error2;
 		} else if( Error == 3){
 			//Hits that were missing timing information
-			EHist->Fill(H->GetEnergy());
+			//EHist->Fill(H->GetEnergy());
 			//don't set the globally bad flag
 			//Event->SetDepthCalibrationIncomplete();
 			++m_Error3;
+		} else if( Error == 4){
+			//hit was bad because of StripHitMultipleTimes flag from strip pairing
+			++m_Error4;
+			Event->SetDepthCalibrationIncomplete();
 		} else if( Error == -1){
 			Event->SetDepthCalibrationIncomplete();
 			++m_ErrorSH;
 		}
 
-		if( H->GetPosition().GetZ() > 100000.0 ){
-			dummy();
-		}
 	}
 
 	//add the new hits from the 3-strip events to the event.  Don't do it in the loop above because we don't want to loop back over these new hits
@@ -421,7 +429,7 @@ int MNCTModuleDepthCalibration::CalculatePosition_old(MNCTStripHit* XSH, MNCTStr
 
 */
 
-int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& LocalPosition, MVector& PositionResolution){
+int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& LocalPosition, MVector& PositionResolution, bool BadDepth){
 
 	int RetVal = 0;
 
@@ -437,8 +445,9 @@ int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTSt
 	std::vector<double>* Coeffs = m_Coeffs[pixel_code];
 	if( Coeffs == NULL ){
 		//set the bad flag for depth
-
 		RetVal = 1;
+	} else if( BadDepth == true ){
+		RetVal = 4;
 	} else {
 		if( (XSH->GetTiming() < 1.0E-6) || (YSH->GetTiming() < 1.0E-6) ){
 			//we don't have timing on one or both of the strips..... return with an error
@@ -647,6 +656,7 @@ void MNCTModuleDepthCalibration::Finalize()
 	cout << "Number of hits missing calibration coefficients: " << m_Error1 << endl;
 	cout << "Number of hits too far outside of detector: " << m_Error2 << endl;
 	cout << "Number of hits missing timing information: " << m_Error3 << endl;
+	cout << "Number of hits with strips hit multiple times: " << m_Error4 << endl;
 	cout << "Number of hits with too many strip hits: " << m_ErrorSH << endl;
 	TFile* rootF = new TFile("EHist.root","recreate");
 	rootF->WriteTObject( EHist );

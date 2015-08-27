@@ -103,6 +103,7 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MModule
   };
 
   map<int, DetectorMapping> DetMap;
+  vector<MDVolume*> m_DetectorVolumes;
 
 
 

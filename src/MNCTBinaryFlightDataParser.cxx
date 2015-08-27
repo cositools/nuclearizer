@@ -750,6 +750,7 @@ int MNCTBinaryFlightDataParser::RawDataframe2Struct( vector<uint8_t> Buf, datafr
 
 					++tx;
 					if( tx > MAX_TRIGS ){
+						//might want to copy below code regarding NumPayloadBytes since it will get skipped on the goto
 						goto loop_exit; //legitimate usage of goto... to break out of nested for loops
 					}
 
@@ -839,6 +840,11 @@ loop_exit:
 				N = 0;
 				//copy over triggers
 				for(unsigned int i = 0; i < tx; ++i ){ //loop over all triggers...
+					//at some point it would be cool to look into timing only triggers for better positioning
+					//in that case, don't throw out the timing only triggers here
+					//then below, in ConvertToMReadOutAssemblys, put the timing only strip hits in a separate buffer so that they don't interfere
+					//with all of the mainstream analysis.
+
 					if( TrigBuf[i].HasADC == true ){ //... but only copy over triggers that have ADC
 						NewTrig = TrigBuf[i];
 						NewTrig.CCId = DataOut->CCId;

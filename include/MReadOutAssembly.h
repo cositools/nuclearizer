@@ -123,6 +123,16 @@ class MReadOutAssembly
   //! Remove a strip hit
   void RemoveStripHit(unsigned int i);
 
+  //! Return the number of T Only strip hits
+  unsigned int GetNStripHitsTOnly() const { return m_StripHitsTOnly.size(); }
+  //! Return strip hit i
+  MNCTStripHit* GetStripHitTOnly(unsigned int i);
+  //! Adda T Only strip hit
+  void AddStripHitTOnly(MNCTStripHit*);
+  //! Remove a strip hit
+  void RemoveStripHitTOnly(unsigned int i);
+
+
   //! Return the number of guardring hits
   unsigned int GetNGuardringHits() const { return m_GuardringHits.size(); }
   //! Return guardring hit i
@@ -300,6 +310,9 @@ class MReadOutAssembly
 
   //! List of strip hits
   vector<MNCTStripHit*> m_StripHits;
+
+  //! List of strip hits with timing only
+  vector<MNCTStripHit*> m_StripHitsTOnly;
 
   //! List of guardring hits
   vector<MNCTGuardringHit*> m_GuardringHits;

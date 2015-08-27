@@ -258,6 +258,52 @@ void MReadOutAssembly::RemoveStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MNCTStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i) 
+{ 
+  //! Return strip hit i
+
+  if (i < m_StripHitsTOnly.size()) {
+    return m_StripHitsTOnly[i];
+  }
+
+  merr<<"Index out of bounds!"<<show;
+
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void MReadOutAssembly::AddStripHitTOnly(MNCTStripHit* StripHit)
+{
+  //! Add a strip hit
+	//comment this out for now since it might mess with other stuff
+	/*
+  int DetectorID = StripHit->GetDetectorID();
+  if ( (DetectorID>=0) && (DetectorID<=11) )
+    {
+      m_InDetector[DetectorID]=true;
+    }*/
+  return m_StripHitsTOnly.push_back(StripHit);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
+{
+  //! Remove a strip hit
+  if (i < m_StripHitsTOnly.size()) {
+    vector<MNCTStripHit*>::iterator it;
+    it = m_StripHitsTOnly.begin()+i;
+    m_StripHitsTOnly.erase(it);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MNCTHit* MReadOutAssembly::GetHit(unsigned int i) 
 { 
   //! Return hit i

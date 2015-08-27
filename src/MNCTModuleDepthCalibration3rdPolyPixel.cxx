@@ -260,6 +260,14 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
     }
     
   } // 'DetectorNumber' loop
+
+  MDGeometry* MDG = (MDGeometry*) m_Geometry;
+  for( int i = 0; i < 12; ++i ){
+	  char name[32];
+	  sprintf(name,"GeWafer_%d",i);
+	  MString MS(name);
+	  m_DetectorVolumes.push_back( MDG->GetVolume(MS) );
+  }
   
  
   // Seed the random number generator for dithering the CTD values in ::AnalyzeEvent
@@ -601,7 +609,8 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::AnalyzeEvent(MReadOutAssembly* Even
 
         //MVector PositionResolution(2.0/2.35, Z_FWHM/2.35, 2.0/2.35); //What? Why are the z and y resolutions wapped? Does the 2.35 come from FWHM -> sigma?
 		MVector PositionResolution(0.2/sqrt(12.0), 0.2/sqrt(12.0), Z_FWHM/2.35);
-        MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetMap[DetectorNumber].DetectorName); 
+        //AWL: MVector PositionInGlobal = m_Geometry->GetGlobalPosition(PositionInDetector, DetMap[DetectorNumber].DetectorName); 
+		MVector PositionInGlobal = m_DetectorVolumes[DetectorNumber]->GetPositionInWorldVolume(PositionInDetector);
         //cout << "Pos in det:    " << PositionInDetector << endl;
         //if (g_Verbosity >= c_Info) 
 		//cout << "Event: " << Event->GetID() << ", Pos in global (Det="<<DetectorName<<"): " << PositionInGlobal << endl;
