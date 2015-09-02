@@ -262,6 +262,20 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleEnergyCalibrationUniversal::Finalize()
+{
+  // Close the tranceiver 
+
+  MModule::Finalize();
+
+  for (auto& F: m_Calibration) delete F.second;
+  for (auto& F: m_ResolutionCalibration) delete F.second;
+  
+  return;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

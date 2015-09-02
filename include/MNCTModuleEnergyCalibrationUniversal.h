@@ -55,6 +55,9 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   
   //! Initialize the module
   virtual bool Initialize();
+  
+  //! Finalize the module
+  virtual void Finalize();
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
