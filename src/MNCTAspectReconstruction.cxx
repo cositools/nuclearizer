@@ -49,7 +49,7 @@
 #include <algorithm>
 #include <cctype>
 
-#include "Python.h"
+//#include "Python.h"
 
 using namespace std;
 
@@ -96,7 +96,7 @@ ClassImp(MNCTAspectReconstruction)
 MNCTAspectReconstruction::MNCTAspectReconstruction()
 {
 	// Construct an instance of MNCTAspectReconstruction
-	Py_Initialize();
+	//Py_Initialize();
 	Clear();
 }
 
@@ -107,7 +107,7 @@ MNCTAspectReconstruction::MNCTAspectReconstruction()
 MNCTAspectReconstruction::~MNCTAspectReconstruction()
 {
 	// Delete this instance of MNCTAspectReconstruction
-	Py_Finalize();
+	//Py_Finalize();
 }
 
 
