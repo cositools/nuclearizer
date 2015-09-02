@@ -266,6 +266,11 @@ bool MNCTModuleDepthCalibration3rdPolyPixel::Initialize()
 	  char name[32];
 	  sprintf(name,"GeWafer_%d",i);
 	  MString MS(name);
+    MDVolume* V = MDG->GetVolume(MS);
+    if (V == nullptr) {
+      cout<<"Cannot find volume "<<MS<<" in the geometry!"<<endl;
+      return false;
+    }
 	  m_DetectorVolumes.push_back( MDG->GetVolume(MS) );
   }
   
