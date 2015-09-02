@@ -24,6 +24,30 @@ using namespace std;
 
 class MNCTAspectPacket{
 	public:
+    //! Default constructor to initialize the avles with a default value
+    MNCTAspectPacket() {
+      GPS_or_magnetometer = 2;
+      test_or_not = 1;
+      date_and_time = "";
+      nanoseconds = 0;
+      geographic_longitude = 0;
+      geographic_latitude = 0;
+      elevation = 0;
+      heading = 0;
+      pitch = 0;
+      roll = 0;
+      PPSClk = 0;
+      CorrectedClk = 0;
+      Error = false;
+    
+      GPSMilliseconds = 0;
+      BRMS = 0;
+      AttFlag = 0;
+
+      GPSWeek = 0;
+    }
+    
+    
 		int GPS_or_magnetometer; //0=GPS;1=magnetometer;2=no good data at
 		/*specified time (when the GetAspect, GetAspectGPS, and 
 		GetAspectMagnetometer search functions fail to find an MNCTAspect
