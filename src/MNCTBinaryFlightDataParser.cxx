@@ -95,6 +95,8 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	m_LastAspectID = 0xffff;
 	
 	m_IgnoreBufTime = false; //used in the file loader to prevent events from getting stuck in m_Events when we are done reading the file
+	
+	m_AspectReconstructor = nullptr;
 }
 
 
@@ -165,6 +167,9 @@ bool MNCTBinaryFlightDataParser::Initialize()
   // Load aspect reconstruction module
   delete m_AspectReconstructor;
   m_AspectReconstructor = new MNCTAspectReconstruction();
+  
+  m_AspectMode = MNCTBinaryFlightDataParserAspectModes::c_Neither;
+  m_DataSelectionMode = MNCTBinaryFlightDataParserDataModes::c_Raw;
   
   return true;
 }
@@ -341,7 +346,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 
 	if (m_Events.size() > 0) {
 		//if (m_IgnoreAspect == true) {
-		if( m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Neither ){
+		if (m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Neither) {
 			return true;
 		} else {
 			if (m_Events[0]->GetAspect() != 0) {
