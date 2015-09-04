@@ -135,52 +135,12 @@ MNCTModuleDepthCalibration::~MNCTModuleDepthCalibration()
 bool MNCTModuleDepthCalibration::Initialize()
 {
 
-	//read in coeffs
-	MFile CoeffsFile;
-	if( CoeffsFile.Open(m_CoeffsFile) == false ){
-		cout << "Depth calibration: couldn't open coefficients file..." << endl;
+	m_DepthCalibrator = new MNCTDepthCalibrator();
+	if( m_DepthCalibrator->LoadCoeffsFile(m_CoeffsFile) == false ){
 		return false;
 	}
-	MString Line;
-	while( CoeffsFile.ReadLine( Line ) ){
-		if( !Line.BeginsWith("#") ){
-			std::vector<MString> Tokens = Line.Tokenize(" ");
-			if( Tokens.size() == 5 ){
-				int pixel_code = Tokens[0].ToInt();
-				double Stretch = Tokens[1].ToDouble();
-				double Offset = Tokens[2].ToDouble();
-				double Scale = Tokens[3].ToDouble();
-				double Chi2 = Tokens[4].ToDouble();
-				//last two tokens are amplitude and chi2, not really needed here
-				std::vector<double>* coeffs = new std::vector<double>();
-				coeffs->push_back(Stretch); coeffs->push_back(Offset); coeffs->push_back(Scale); coeffs->push_back(Chi2);
-				m_Coeffs[pixel_code] = coeffs;
-			}
-		}
-	}
-	CoeffsFile.Close();
-
-	//read in splines, true as 3rd arg gives CTD->Depth, false would give Depth->CTD
-	bool SplinesGood = GetDepthSplines(m_SplinesFile, m_Splines, true);
-	if( SplinesGood == false ){
-		cout << "Depth Calibration: couldn't read in spline file..." << endl;
+	if( m_DepthCalibrator->LoadSplinesFile(m_SplinesFile,true) == false ){
 		return false;
-	} else {
-		TFile* rootF = new TFile("new_splines.root","recreate");
-		for(unsigned int i = 0; i < 12; ++i){
-			TSpline3* Sp = m_Splines[i];
-			unsigned int N = 1000;
-			double dx = (Sp->GetXmax() - Sp->GetXmin())/((double) (N-1));
-			vector<double> X; vector<double> Y;
-			for(unsigned int i = 0; i < N; ++i){
-				X.push_back(i*dx + Sp->GetXmin());
-				Y.push_back(Sp->Eval(i*dx + Sp->GetXmin()));
-			}
-			TGraph* gr = new TGraph(N,(double *) &X[0],(double *) &Y[0]);
-			rootF->WriteTObject(gr);
-			rootF->WriteTObject( Sp );
-		}
-		rootF->Close();
 	}
 
 	MDGeometry* MDG = m_Geometry;
@@ -442,7 +402,8 @@ int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTSt
 	//now try and get z position
 	int DetID = XSH->GetDetectorID();
 	int pixel_code = 10000*DetID + 100*XSH->GetStripID() + YSH->GetStripID();
-	std::vector<double>* Coeffs = m_Coeffs[pixel_code];
+	//AWL std::vector<double>* Coeffs = m_Coeffs[pixel_code];
+	std::vector<double>* Coeffs = m_DepthCalibrator->GetPixelCoeffs(pixel_code);
 	if( Coeffs == NULL ){
 		//set the bad flag for depth
 		RetVal = 1;
@@ -455,10 +416,12 @@ int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTSt
 			RetVal = 3;
 		} else {
 
-			double CTD = (XSH->GetTiming() - YSH->GetTiming())*10.0;
+			double CTD = (XSH->GetTiming() - YSH->GetTiming());
 			CTD_s = (CTD - Coeffs->at(1))/Coeffs->at(0); //apply inverse stretch and offset
-			double Xmin = m_Splines[DetID]->GetXmin();
-			double Xmax = m_Splines[DetID]->GetXmax();
+			//AWL double Xmin = m_Splines[DetID]->GetXmin();
+			double Xmin = m_DepthCalibrator->GetSpline(DetID,false)->GetXmin();
+			//AWL double Xmax = m_Splines[DetID]->GetXmax();
+			double Xmax = m_DepthCalibrator->GetSpline(DetID,false)->GetXmax();
 
 			//if the CTD is out of range, check if we should reject the event or assume it was an edge event
 			if(CTD_s < Xmin){
@@ -468,7 +431,8 @@ int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTSt
 			}
 
 			if( RetVal == 0 ){
-				double Depth = m_Splines[DetID]->Eval(CTD_s);
+//				double Depth = m_Splines[DetID]->Eval(CTD_s);
+				double Depth = m_DepthCalibrator->GetSpline(DetID,false)->Eval(CTD_s);
 
 				//somtimes the splines will give a value that is juuuuuuust outside the edge, fix it here
 				if( Depth < 0.0 ){
@@ -501,7 +465,8 @@ int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTSt
 
 double MNCTModuleDepthCalibration::GetZFWHM(double CTD_s, int DetID, double Noise){
 
-	TSpline3* Sp = m_Splines[DetID];
+	//TSpline3* Sp = m_Splines[DetID];
+	TSpline3* Sp = m_DepthCalibrator->GetSpline(DetID, false);
 	double xmax = Sp->GetXmax(); double xmin = Sp->GetXmin();
 	double HalfNoise = Noise/2.0;
 	if( (CTD_s - HalfNoise) < xmin ){

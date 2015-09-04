@@ -323,6 +323,8 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 
 		//call this even if we don't get a packet, because in file mode we need to call this method when there is no
 		//more data to be read but there are still events in m_EventsBuf
+
+		/*
 		CheckEventsBuf();
 
 		if( m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither ){
@@ -342,7 +344,29 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				}
 			}
 		}
+		*/
 	}
+
+	CheckEventsBuf();
+
+	if( m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither ){
+		for( auto E: m_Events ){
+			if( E->GetAspect() == 0 ){
+				int gps_or_mag;
+				if( m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS ){
+					gps_or_mag = 0;
+				} else {
+					gps_or_mag = 1;
+				}
+				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime(), gps_or_mag);
+				if( A != 0 ){
+					//if the event is out of range, A->GetTime() will give -1
+					E->SetAspect(new MNCTAspect(*A));
+				}
+			}
+		}
+	}
+
 
 	if (m_Events.size() > 0) {
 		//if (m_IgnoreAspect == true) {
@@ -587,6 +611,10 @@ MReadOutAssembly * MNCTBinaryFlightDataParser::MergeEvents( deque<MReadOutAssemb
 		while( E->GetNStripHits() > 0){
 			BaseEvent->AddStripHit( E->GetStripHit(0) );
 			E->RemoveStripHit(0);
+		}
+		while( E->GetNStripHitsTOnly() > 0){
+			BaseEvent->AddStripHitTOnly( E->GetStripHitTOnly(0) );
+			E->RemoveStripHitTOnly(0);
 		}
 		//now we should free the memory for the MReadOutAssembly that we just copied the 
 		//strip hit from
@@ -849,13 +877,19 @@ loop_exit:
 					//in that case, don't throw out the timing only triggers here
 					//then below, in ConvertToMReadOutAssemblys, put the timing only strip hits in a separate buffer so that they don't interfere
 					//with all of the mainstream analysis.
+					NewTrig = TrigBuf[i];
+					NewTrig.CCId = DataOut->CCId;
+					Event.Triggers.push_back(NewTrig);
+					++N;
 
+					/*
 					if( TrigBuf[i].HasADC == true ){ //... but only copy over triggers that have ADC
 						NewTrig = TrigBuf[i];
 						NewTrig.CCId = DataOut->CCId;
 						Event.Triggers.push_back(NewTrig);
 						++N;
 					}
+					*/
 				}
 
 				Event.NumTriggers = N;
@@ -932,9 +966,26 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 			if( T.Board >= 4 && T.Board < 8 ) PosSide = false; else if( T.Board >= 0 && T.Board < 4 ) PosSide = true; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
 			StripHit->IsPositiveStrip(PosSide);
 			if( T.Channel >= 0 && T.Channel < 10 ) StripHit->SetStripID(m_StripMap[T.Board][T.Channel]+1); else {cout<<"bad trigger channel = "<<T.Channel<<endl; delete StripHit; continue;}
-			if( T.HasADC ) StripHit->SetADCUnits((double)((uint16_t)T.ADCBytes & 0x1fff));
-			if( T.HasTiming ) StripHit->SetTiming((double) (T.TimingByte & 0x3f));
-			NewEvent->AddStripHit( StripHit );
+			if( T.HasADC ) StripHit->SetADCUnits((double)((uint16_t)T.ADCBytes & 0x1fff)); else StripHit->SetADCUnits(0.0);
+			if( T.HasTiming ) {
+				unsigned int Val = 0;
+				//bit 7 is 1 if first edge is a falling edge
+				if( T.TimingByte & 0x80 ){
+					//IS falling edge
+					Val = ((T.TimingByte & 0x3f) << 1) + ((T.TimingByte & 0x1) ^ ((T.TimingByte >> 6) & 0x1));
+				} else {
+					//IS rising edge
+					Val = ((T.TimingByte & 0x3f) << 1) - ((T.TimingByte & 0x1) ^ ((T.TimingByte >> 6) & 0x1));
+				}
+				StripHit->SetTiming(Val * 5.0); //timing is set in ns with 5 ns resolution
+			} else {
+				StripHit->SetTiming(0.0);
+			}
+			if( T.HasADC ){
+				NewEvent->AddStripHit( StripHit );
+			} else {
+				NewEvent->AddStripHitTOnly( StripHit );
+			}
 		}
 		//now need to set parameters for the MReadOutAssembly
 		NewEvent->SetID(E.EventID);

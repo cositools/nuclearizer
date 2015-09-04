@@ -68,6 +68,12 @@ MReadOutAssembly::~MReadOutAssembly()
   }
   m_StripHits.clear();
 
+  // Delete all TOnly strip hits
+  for (unsigned int h = 0; h < m_StripHitsTOnly.size(); ++h) {
+    delete m_StripHitsTOnly[h];
+  }
+  m_StripHitsTOnly.clear();
+
   // Delete all hits
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     delete m_Hits[h];
@@ -121,6 +127,11 @@ void MReadOutAssembly::Clear()
     delete m_StripHits[h];
   }
   m_StripHits.clear();
+
+  for (unsigned int h = 0; h < m_StripHitsTOnly.size(); ++h) {
+    delete m_StripHitsTOnly[h];
+  }
+  m_StripHitsTOnly.clear();
 
   // Delete all hits
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {

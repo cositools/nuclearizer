@@ -25,6 +25,7 @@
 #include "MGlobal.h"
 #include "MModule.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
+#include "MNCTDepthCalibrator.h"
 
 // Forward declarations:
 
@@ -114,6 +115,7 @@ class MNCTModuleDepthCalibration : public MModule
   double m_TimingNoiseFWHM;
   vector<MDVolume*> m_DetectorVolumes;
   MNCTModuleEnergyCalibrationUniversal* m_EnergyCalibration;
+  MNCTDepthCalibrator* m_DepthCalibrator;
 
 
   // private members:

@@ -102,6 +102,8 @@ MNCTModuleMeasurementLoaderBinary::~MNCTModuleMeasurementLoaderBinary()
 
 ////////////////////////////////////////////////////////////////////////////////
 
+FILE * f_TOnly;
+
 
 bool MNCTModuleMeasurementLoaderBinary::Initialize()
 {
@@ -118,6 +120,7 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
   }
   
   if (MNCTBinaryFlightDataParser::Initialize() == false) return false;
+  f_TOnly = fopen("TOnly.txt","w");
   
   return MModule::Initialize();
 }
@@ -139,12 +142,24 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
     }
   }
   
-  unsigned int Size = 1000000; // We have to do a large chunk here or the main thread is going to sleep...
-  vector<char> Stream(Size);
-  m_In.read(&Stream[0], Size);
-  streamsize Read = m_In.gcount();
+  //unsigned int Size = 1000000; // We have to do a large chunk here or the main thread is going to sleep...
+  //vector<char> Stream(Size);
   // Check if we reached the end of the file, if yes, truncate, and set the OK flag to false
   // when the end of the file is reached, we want to 
+
+  //AWL restructured this so that we don't allocate/fill a 1MB array when there is nothing to read.  
+
+  vector<char> Stream;
+  unsigned int Size = 1000000;
+  streamsize Read;
+  if( m_FileIsDone ){
+	  Read = 0;
+  } else {
+	  Stream.reserve(Size);
+	  m_In.read(&Stream[0], Size);
+	  Read = m_In.gcount();
+  }
+
 
 
   /*
@@ -159,11 +174,14 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
   }
 
   if( m_FileIsDone && (m_EventsBuf.size() == 0) ){
-	  m_IsOK = false;
+	  //m_IsOK = false;
+	  m_IsFinished = true;
   }
 
   vector<uint8_t> Received(Read);
   for (unsigned int i = 0; i < Read; ++i) {
+//	  cout << "char: " << Received[i] << endl;
+//	 printf("char:%02X\n",(uint8_t)Stream[i]);
     Received[i] = (uint8_t) Stream[i];
   }
   
@@ -188,16 +206,53 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   NewEvent = m_Events[0];
   m_Events.pop_front();
 
+  //print TOnly info for these events
+  if( NewEvent->GetNStripHitsTOnly() > 0 ){
+	  fprintf(f_TOnly,">>>\n");
+	  for(unsigned int i = 0; i < NewEvent->GetNStripHits(); ++i){
+		  MNCTStripHit* SH = NewEvent->GetStripHit(i);
+		  int id = SH->GetStripID();
+		  int T = (int) SH->GetTiming();
+		  if( SH->IsXStrip() ){
+		  	fprintf(f_TOnly,"X%d---%d, ",id,T);
+		  } else {
+			fprintf(f_TOnly,"Y%d---%d; ",id,T);
+		  }
+	  }
+	  fprintf(f_TOnly,"\n###\n");
+	  for(unsigned int i = 0; i < NewEvent->GetNStripHitsTOnly(); ++i){
+		  MNCTStripHit* SH = NewEvent->GetStripHitTOnly(i);
+		  int id = SH->GetStripID();
+		  int T = (int) SH->GetTiming();
+		  if( SH->IsXStrip() ){
+		  	fprintf(f_TOnly,"X%d---%d, ",id,T);
+		  } else {
+			  fprintf(f_TOnly,"Y%d---%d, ",id,T);
+		  }
+	  }
+	  fprintf(f_TOnly,"\n<<<\n");
+  }
+
+
   // This checks if the event's aspect data was within the range of the retrieved aspect info
   if (NewEvent->GetAspect() != 0 && NewEvent->GetAspect()->GetOutOfRange()) {
     delete NewEvent;
     return false;
   }
 
+  //transfer over strip hits that have ADC
   while (NewEvent->GetNStripHits() > 0) {
     Event->AddStripHit( NewEvent->GetStripHit(0) );
     NewEvent->RemoveStripHit(0);
   }
+
+  /*
+  //transfer over strip hits that have timing and no ADC
+  while (NewEvent->GetNStripHitsTOnly() > 0){
+	  Event->AddStripHitTOnly( NewEvent->GetStripHitTOnly(0));
+	  NewEvent->RemoveStripHitTOnly(0);
+  }*/
+
 
   Event->SetID( NewEvent->GetID() );
   Event->SetFC( NewEvent->GetFC() );
@@ -269,6 +324,12 @@ bool MNCTModuleMeasurementLoaderBinary::ReadXmlConfiguration(MXmlNode* Node)
     m_DataSelectionMode = (MNCTBinaryFlightDataParserDataModes) DataSelectionModeNode->GetValueAsInt();
   }
 
+  MXmlNode* AspectSelectionModeNode = Node->GetNode("AspectSelectionMode");
+  if( AspectSelectionModeNode != 0 ){
+	  m_AspectMode = (MNCTBinaryFlightDataParserAspectModes) AspectSelectionModeNode->GetValueAsInt();
+  }
+
+
   return true;
 }
 
@@ -283,6 +344,7 @@ MXmlNode* MNCTModuleMeasurementLoaderBinary::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
   new MXmlNode(Node, "FileName", m_FileName);
   new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
+  new MXmlNode(Node, "AspectSelectionMode", (unsigned int) m_AspectMode);
   
   return Node;
 }

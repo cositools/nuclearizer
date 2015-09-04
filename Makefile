@@ -121,6 +121,7 @@ $(LB)/MGUIOptionsAspect.o \
 $(LB)/MGUIOptionsEventFilter.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
+$(LB)/MNCTDepthCalibrator.o
 
 NUCLEARIZER_DEP_FILES := $(NUCLEARIZER_LIBS:.o=.d)
 NUCLEARIZER_H_FILES := $(addprefix inc/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))

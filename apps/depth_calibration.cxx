@@ -210,7 +210,8 @@ int main(int argc, char** argv)
 							//							cout << "bad timing" << endl;
 							continue;
 						}
-						timing = (SHx->GetTiming() - SHy->GetTiming())*10.0 + 5.0; //add five for bin centering
+//						timing = (SHx->GetTiming() - SHy->GetTiming())*10.0 + 5.0; //add five for bin centering
+						timing = (SHx->GetTiming() - SHy->GetTiming()); //add five for bin centering
 
 						//check if we have a TH1D for this pixel yet
 						if( Histograms[pixel_code] == NULL ){
