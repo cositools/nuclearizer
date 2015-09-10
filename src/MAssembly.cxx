@@ -48,6 +48,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MString.h"
 #include "MTimer.h"
+#include "MFile.h"
 
 // Nuclearizer libs:
 #include "MGUIMainNuclearizer.h"
@@ -104,7 +105,10 @@ MAssembly::MAssembly()
   
   m_Supervisor = MSupervisor::GetSupervisor();
   
-  m_Supervisor->SetConfigurationFileName(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".nuclearizer.cfg"));
+  MString Cfg = "~/.nuclearizer.cfg";
+  MFile::ExpandFileName(Cfg);
+  m_Supervisor->SetConfigurationFileName(Cfg);
+  
   m_Supervisor->UseMultiThreading(true);
   
   m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
