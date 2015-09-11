@@ -1,11 +1,12 @@
 #include "MNCTDepthCalibrator.h"
 
+TFile* RootF;
+
 MNCTDepthCalibrator::MNCTDepthCalibrator()
 {
 	//need unordered_map m_Coeffs
 	m_CoeffsFileIsLoaded = false;
-	m_SplinesFileIsLoaded_Depth2CTD = false;
-	m_SplinesFileIsLoaded_CTD2Depth = false;
+	m_SplinesFileIsLoaded = false;
 	m_Thicknesses.reserve(12);
 	m_Thicknesses[0] = 1.49;
 	m_Thicknesses[1] = 1.45;
@@ -20,6 +21,7 @@ MNCTDepthCalibrator::MNCTDepthCalibrator()
 	m_Thicknesses[10] = 1.42;
 	m_Thicknesses[11] = 1.45;
 
+	RootF = new TFile("$NUCLEARIZER/resource/rootfiles/timing_splines.root","recreate");
 
 }
 
@@ -79,7 +81,7 @@ bool MNCTDepthCalibrator::LoadSplinesFile(MString FName, bool invert)
 	if( F.Open(FName) == false ){
 		return false;
 	}
-	vector<double> xvec, yvec;
+	vector<double> depthvec, ctdvec, anovec, catvec;
 	MString line;
 	int DetID, NewDetID;
 	while( F.ReadLine(line) ){
@@ -87,25 +89,40 @@ bool MNCTDepthCalibrator::LoadSplinesFile(MString FName, bool invert)
 			if( line.BeginsWith("#") ){
 				vector<MString> tokens = line.Tokenize(" ");
 				NewDetID = tokens[1].ToInt();
-				if( xvec.size() > 0 ) AddSpline(xvec, yvec, DetID, invert);
+				if( depthvec.size() > 0 ) {
+					AddSpline(depthvec, ctdvec, DetID, m_SplineMap_Depth2CTD, false);
+					AddSpline(depthvec, ctdvec, DetID, m_SplineMap_CTD2Depth, true);
+					AddSpline(depthvec, anovec, DetID, m_SplineMap_Depth2AnoTiming, false);
+					AddSpline(depthvec, catvec, DetID, m_SplineMap_Depth2CatTiming, false);
+				}
+				depthvec.clear(); ctdvec.clear(); anovec.clear(); catvec.clear();
 				DetID = NewDetID;
 			} else {
 				vector<MString> tokens = line.Tokenize(" ");
-				xvec.push_back(tokens[0].ToDouble()); yvec.push_back(tokens[1].ToDouble());
+				depthvec.push_back(tokens[0].ToDouble()); ctdvec.push_back(tokens[1].ToDouble());
+				anovec.push_back(tokens[2].ToDouble()); catvec.push_back(tokens[3].ToDouble());
 			}
 		}
 	}
 	//make last spline
-	if( xvec.size() > 0 ) AddSpline(xvec, yvec, DetID, invert);
+	if( depthvec.size() > 0 ){
+		AddSpline(depthvec, ctdvec, DetID, m_SplineMap_Depth2CTD, false);
+		AddSpline(depthvec, ctdvec, DetID, m_SplineMap_CTD2Depth, true);
+		AddSpline(depthvec, anovec, DetID, m_SplineMap_Depth2AnoTiming, false);
+		AddSpline(depthvec, catvec, DetID, m_SplineMap_Depth2CatTiming, false);
+	}
 
-	if( invert ) m_SplinesFileIsLoaded_CTD2Depth = true; else m_SplinesFileIsLoaded_Depth2CTD = true;
+	m_SplinesFileIsLoaded = true;
 	return true;
 
 }
 
-void MNCTDepthCalibrator::AddSpline(vector<double>& xvec, vector<double>& yvec, int DetID, bool invert){
+void MNCTDepthCalibrator::AddSpline(vector<double> xvec, vector<double> yvec, int DetID, std::unordered_map<int,TSpline3*>& SplineMap, bool invert){
 	//add one more point to the start and end, corresponding to the detector edges so that the spline covers the
 	//entire detector. just use a linear interpolation to get the edge values.
+
+	// the sparsify flag should be set to true if we X->CTD and Y->Depth... in this case, the X values near the detector edges are too close together and the 
+	// the spline will come out wrong.  When sparsify is set, it will remove data points that neighbor other data points too closely
 
 	//first extrapolate the lower side
 	double dx, dy, m, b, newx, newy;
@@ -129,14 +146,16 @@ void MNCTDepthCalibrator::AddSpline(vector<double>& xvec, vector<double>& yvec, 
 	newy = m*newx + b;
 	xvec.push_back(newx); yvec.push_back(newy);
 
-	//double* x = &xvec[0]; double* y = &yvec[0];
+//	double* x = &xvec[0]; double* y = &yvec[0];
+	double *x, *y;
 	if( invert ){
 		//need to filter the data here so that there aren't knots that are too close together
+		
 		bool Done = false;
 		while( !Done ){
 			Done = true;
 			for( unsigned int i = 1; i < (xvec.size()-1); ++i ){
-				if( (fabs(yvec[i] - yvec[i-1]) < 1.5) || (fabs(yvec[i] - yvec[i+1]) < 1.5) ){
+				if( (fabs(yvec[i] - yvec[i-1]) < 0.1) || (fabs(yvec[i] - yvec[i+1]) < 0.1) ){
 					xvec.erase(xvec.begin() + i);
 					yvec.erase(yvec.begin() + i);
 					Done = false;
@@ -144,18 +163,43 @@ void MNCTDepthCalibrator::AddSpline(vector<double>& xvec, vector<double>& yvec, 
 				}
 			}
 		}
-
-		m_SplineMap_CTD2Depth[DetID] = new TSpline3("",(double*) &yvec[0],(double*) &xvec[0],xvec.size());
-
+		
+		x = &yvec[0]; y = &xvec[0];
 	} else {
-		m_SplineMap_Depth2CTD[DetID] = new TSpline3("",(double*) &xvec[0],(double*) &yvec[0],xvec.size());
+		x = &xvec[0]; y = &yvec[0];
 	}
-	xvec.clear(); yvec.clear();
+
+	TSpline3* Sp = new TSpline3("",x,y,xvec.size());
+	SplineMap[DetID] = Sp;
+	double min = Sp->GetXmin();
+	double max = Sp->GetXmax();
+	int sN = 100;
+	double sdx = fabs(max-min)/(sN-1);
+	std::vector<double> sx, sy;
+	for( int i = 0; i < sN; ++i ){
+		double sx_ = (min + i*sdx); 
+		sx.push_back(sx_);
+		double sy_ = Sp->Eval(sx_);
+		sy.push_back(sy_);
+	}
+	TGraph* Gsp = new TGraph(sx.size(), (double*) &sx[0], (double*) &sy[0]);
+	Gsp->SetLineColor(2);
+	Gsp->SetLineWidth(3);
+	TGraph* Gd = new TGraph(xvec.size(), x, y);
+	Gd->SetLineStyle(2);
+	Gd->SetLineWidth(0);
+	Gd->SetMarkerStyle(3);
+	TMultiGraph* MG = new TMultiGraph();
+	MG->Add(Gd);
+	MG->Add(Gsp);
+	RootF->WriteTObject(MG);
+
 	return;
 }
 
 TSpline3* MNCTDepthCalibrator::GetSpline(int Det, bool Depth2CTD)
 {
+	/*
 	if( Depth2CTD ){
 		if( !m_SplinesFileIsLoaded_Depth2CTD ){
 			cout << "MNCTDepthCalibrator::GetSpline: cannot return spline, spline for Depth2CTD has not been loaded" << endl;
@@ -166,6 +210,11 @@ TSpline3* MNCTDepthCalibrator::GetSpline(int Det, bool Depth2CTD)
 			cout << "MNCTDepthCalibrator::GetSpline: cannot return spline, spline for CTD2Depth has not been loaded" << endl;
 			return NULL;
 		}
+	}*/
+
+	if( !m_SplinesFileIsLoaded ){
+		cout << "MNCTDepthCalibrator::GetSpline: cannot return spline because spline file was not loaded." << endl;
+		return NULL;
 	}
 
 	std::unordered_map<int,TSpline3*>* MapPtr;
@@ -177,6 +226,25 @@ TSpline3* MNCTDepthCalibrator::GetSpline(int Det, bool Depth2CTD)
 	}
 
 }
+
+TSpline3* MNCTDepthCalibrator::GetAnodeSpline(int Det){
+	if( !m_SplinesFileIsLoaded ){
+		cout << "MNCTDepthCalibrator::GetAnodeSpline: cannot return spline because spline file was not loaded." << endl;
+		return NULL;
+	}
+
+	return m_SplineMap_Depth2AnoTiming[Det];
+}
+
+TSpline3* MNCTDepthCalibrator::GetCathodeSpline(int Det){
+	if( !m_SplinesFileIsLoaded ){
+		cout << "MNCTDepthCalibrator::GetCathodeSpline: cannot return spline because spline file was not loaded." << endl;
+		return NULL;
+	}
+
+	return m_SplineMap_Depth2CatTiming[Det];
+}
+
 
 double MNCTDepthCalibrator::GetThickness(int DetID){
 	return m_Thicknesses[DetID];

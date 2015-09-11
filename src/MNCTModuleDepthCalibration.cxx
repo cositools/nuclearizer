@@ -92,7 +92,7 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
 
-	m_Thicknesses.resize(12);
+	m_Thicknesses.reserve(12);
 	m_Thicknesses[0] = 1.49;
 	m_Thicknesses[1] = 1.45;
 	m_Thicknesses[2] = 1.50;
@@ -342,52 +342,6 @@ MNCTStripHit* MNCTModuleDepthCalibration::GetDominantStrip(std::vector<MNCTStrip
 	return MaxStrip;
 
 }
-		
-/*
-
-//return zero if the position calculation is error-free
-int MNCTModuleDepthCalibration::CalculatePosition_old(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& GlobalPosition, MVector& PositionResolution){
-
-	int DetID = XSH->GetDetectorID();
-	int pixel_code = 10000*DetID + 100*XSH->GetStripID() + YSH->GetStripID();
-	std::vector<double>* Coeffs = m_Coeffs[pixel_code];
-	if( Coeffs == NULL ){
-		//set the bad flag for depth
-		return 1;
-	} else {
-
-		if( (XSH->GetTiming() < 1.0E-6) || (YSH->GetTiming() < 1.0E-6) ){
-			//we don't have timing on one or both of the strips..... return with an error
-			//better yet, assign the event to the middle of the detector and set the position resolution to be large
-			return 3;
-		}
-
-		double CTD = (XSH->GetTiming() - YSH->GetTiming())*10.0;
-		double CTD_s = (CTD - Coeffs->at(1))/Coeffs->at(0); //apply inverse stretch and offset
-		double Xmin = m_Splines[DetID]->GetXmin();
-		double Xmax = m_Splines[DetID]->GetXmax();
-
-		//if the CTD is out of range, check if we should reject the event or assume it was an edge event
-		if(CTD_s < Xmin){
-			if(fabs(CTD_s - Xmin) <= (2.0*m_TimingNoiseFWHM)) CTD_s = Xmin; else return 2;
-		}
-		if( CTD_s > Xmax){
-			if(fabs(CTD_s - Xmax) <= (2.0*m_TimingNoiseFWHM)) CTD_s = Xmax; else return 2;
-		}
-
-		double Depth = m_Splines[DetID]->Eval(CTD_s);
-		double Zpos = m_Thicknesses[DetID] - Depth; //convert back to mass model coordinates [-thickness/2,+thickness/2]
-		double Xpos = ((double)YSH->GetStripID() - 19.0)*(-0.2);
-		double Ypos = ((double)XSH->GetStripID() - 19.0)*(-0.2);
-		GlobalPosition = m_Geometry->GetGlobalPosition( MVector(Xpos, Ypos, Zpos), m_DetectorNames[DetID]);
-		//to get position resolution, assume FWHM noise of 12.5 ns, say CTD is 70 ns, find the difference in depth between (70-6.25) and (70+6.25) and then call that the depth FWHM error.
-		double Z_FWHM = GetZFWHM( CTD_s, DetID, m_TimingNoiseFWHM );
-		PositionResolution.SetXYZ(0.2/sqrt(12.0), 0.2/sqrt(12.0), Z_FWHM/2.35);
-		return 0;
-	}
-}
-
-*/
 
 int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& LocalPosition, MVector& PositionResolution, bool BadDepth){
 
@@ -487,96 +441,6 @@ void MNCTModuleDepthCalibration::ShowOptionsGUI()
 	gClient->WaitForUnmap(Options);
 }
 
-bool MNCTModuleDepthCalibration::GetDepthSplines(MString fname, std::unordered_map<int, TSpline3*>& SplineMap, bool invert){
-	//when invert flag is set to true, the splines returned are CTD->Depth
-	MFile F; 
-	if( F.Open(fname) == false ){
-		return false;
-	}
-	vector<double> xvec, yvec;
-	MString line;
-	int DetID, NewDetID;
-	while( F.ReadLine(line) ){
-		if( line.Length() != 0 ){
-			if( line.BeginsWith("#") ){
-				vector<MString> tokens = line.Tokenize(" ");
-				NewDetID = tokens[1].ToInt();
-				if( xvec.size() > 0 ) AddSpline(xvec, yvec, SplineMap, DetID, invert);
-				DetID = NewDetID;
-			} else {
-				vector<MString> tokens = line.Tokenize(" ");
-				xvec.push_back(tokens[0].ToDouble()); yvec.push_back(tokens[1].ToDouble());
-			}
-		}
-	}
-	//make last spline
-	if( xvec.size() > 0 ) AddSpline(xvec, yvec, SplineMap, DetID, invert);
-	return true;
-}
-
-void MNCTModuleDepthCalibration::AddSpline(vector<double>& xvec, vector<double>& yvec, unordered_map<int, TSpline3*>& SplineMap, int DetID, bool invert){
-	//add one more point to the start and end, corresponding to the detector edges so that the spline covers the
-	//entire detector. just use a linear interpolation to get the edge values.
-
-	//first extrapolate the lower side
-	double dx, dy, m, b, newx, newy;
-	dx = xvec[1] - xvec[0];
-	dy = yvec[1] - yvec[0];
-	m = dy / dx;
-	b = yvec[0] - m*xvec[0];
-	newx = xvec[0] - (dx/2.0);
-	newy = m*newx + b;
-	//	xvec.push_front(newx); yvec.push_front(newy);
-	xvec.insert(xvec.begin(), newx); yvec.insert(yvec.begin(), newy);
-
-
-	//next extrapolate the upper side
-	size_t N = xvec.size();
-	dx = xvec[N-1] - xvec[N-2];
-	dy = yvec[N-1] - yvec[N-2];
-	m = dy / dx;
-	b = yvec[N-1] - m*xvec[N-1];
-	newx = xvec[N-1] + (dx/2.0);
-	newy = m*newx + b;
-	xvec.push_back(newx); yvec.push_back(newy);
-
-	//double* x = &xvec[0]; double* y = &yvec[0];
-	if( invert ){
-		//need to filter the data here so that there aren't knots that are too close together
-		bool Done = false;
-		while( !Done ){
-			Done = true;
-			for( unsigned int i = 1; i < (xvec.size()-1); ++i ){
-				if( (fabs(yvec[i] - yvec[i-1]) < 1.5) || (fabs(yvec[i] - yvec[i+1]) < 1.5) ){
-					xvec.erase(xvec.begin() + i);
-					yvec.erase(yvec.begin() + i);
-					Done = false;
-					break;
-				}
-			}
-		}
-
-		SplineMap[DetID] = new TSpline3("",(double*) &yvec[0],(double*) &xvec[0],xvec.size());
-
-
-/*
-
-		//need to make sure that none of the y elements is equal to the previous element... otherwise the inversion will give a nan
-		for( unsigned int i = 1; i < yvec.size(); ++i ){
-			//if( fabs(yvec[i] - yvec[i-1]) < 1.0E-6 ) yvec[i] += 2.0E-6;
-			//0.15 had the best performance
-			if( yvec[i] <= yvec[i-1] ) yvec[i] = yvec[i-1] + 0.1;
-
-		}
-		*/
-	//	TGraph* tg = new TGraph(xvec.size(),(double*) &xvec[0],(double*) &yvec[0]);
-	//	SplineMap[DetID] = new tmva::TSpline1("",tg);
-	} else {
-		SplineMap[DetID] = new TSpline3("",(double*) &xvec[0],(double*) &yvec[0],xvec.size());
-	}
-	xvec.clear(); yvec.clear();
-	return;
-}
 
 bool MNCTModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
 {
