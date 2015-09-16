@@ -1,12 +1,3 @@
-//TODO:
-//-implement detector name vector for global position lookup
-//-ckech for bad flags from Clio's strip pairing
-//-handle events that get mapped out of detector
-//-check timing values before computing CTD, could be that some strips have zero timing because they didn't trigger FLD
-
-
-
-
 /*
  * MNCTModuleDepthCalibration.cxx
  *
@@ -341,7 +332,7 @@ MNCTStripHit* MNCTModuleDepthCalibration::GetDominantStrip(std::vector<MNCTStrip
 	EnergyFraction = MaxEnergy/TotalEnergy;
 	return MaxStrip;
 
-}
+
 
 int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& LocalPosition, MVector& PositionResolution, bool BadDepth){
 
