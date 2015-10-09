@@ -32,7 +32,7 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MNCTMath.h"
+//#include "MNCTMath.h"
 #include "MGUIOptionsStripPairing.h"
 
 ////////////////////////////////////////////////////////////////////////////////

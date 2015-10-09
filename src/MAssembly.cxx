@@ -51,7 +51,7 @@ using namespace std;
 #include "MFile.h"
 
 // Nuclearizer libs:
-#include "MGUIMainNuclearizer.h"
+//#include "MGUIMainNuclearizer.h"
 #include "MReadOutAssembly.h"
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
@@ -59,29 +59,29 @@ using namespace std;
 
 #include "MNCTModuleMeasurementLoaderROA.h"
 //#include "MNCTModuleMeasurementLoaderNCT2009.h"
-#include "MNCTModuleMeasurementLoaderGRIPS2013.h"
+//#include "MNCTModuleMeasurementLoaderGRIPS2013.h"
 #include "MNCTModuleReceiverCOSI2014.h"
 #include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTModuleSimulationLoader.h"
+//#include "MNCTModuleSimulationLoader.h"
 #include "MNCTModuleEnergyCalibration.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleEnergyCalibrationLinear.h"
 #include "MNCTModuleEnergyCalibrationNonlinear.h"
 #include "MNCTModuleCrosstalkCorrection.h"
 #include "MNCTModuleChargeSharingCorrection.h"
-#include "MNCTModuleDepthAndStripCalibration.h"
+//#include "MNCTModuleDepthAndStripCalibration.h"
 #include "MNCTModuleDepthCalibration.h"
 #include "MNCTModuleDepthCalibrationLinearStrip.h"
 #include "MNCTModuleDepthCalibrationLinearPixel.h"
 #include "MNCTModuleDepthCalibration3rdPolyPixel.h"
-#include "MNCTModuleStripPairing.h"
-#include "MNCTModuleStripPairingGreedy.h"
+//#include "MNCTModuleStripPairing.h"
+//#include "MNCTModuleStripPairingGreedy.h"
 #include "MNCTModuleStripPairingGreedy_a.h"
 #include "MNCTModuleStripPairingGreedy_b.h"
 #include "MNCTModuleFlagHits.h"
-#include "MNCTModuleAspect.h"
+//#include "MNCTModuleAspect.h"
 #include "MNCTModuleEventFilter.h"
-#include "MNCTModuleDumpEvent.h"
+//#include "MNCTModuleDumpEvent.h"
 #include "MNCTModuleEventSaver.h"
 
 
@@ -111,9 +111,9 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
+  //m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
   m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderROA());
-  m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderGRIPS2013());
+  //m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderGRIPS2013());
   //m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderNCT2009());
   m_Supervisor->AddAvailableModule(new MNCTModuleReceiverCOSI2014());
   m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderBinary());
@@ -135,7 +135,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_a());
   m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_b());
 	m_Supervisor->AddAvailableModule(new MNCTModuleFlagHits());
-  m_Supervisor->AddAvailableModule(new MNCTModuleAspect());
+  //m_Supervisor->AddAvailableModule(new MNCTModuleAspect());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDumpEvent());
   m_Supervisor->AddAvailableModule(new MNCTModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());

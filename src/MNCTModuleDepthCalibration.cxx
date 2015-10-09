@@ -331,7 +331,7 @@ MNCTStripHit* MNCTModuleDepthCalibration::GetDominantStrip(std::vector<MNCTStrip
 	}
 	EnergyFraction = MaxEnergy/TotalEnergy;
 	return MaxStrip;
-
+}
 
 
 int MNCTModuleDepthCalibration::CalculateLocalPosition(MNCTStripHit* XSH, MNCTStripHit* YSH, MVector& LocalPosition, MVector& PositionResolution, bool BadDepth){

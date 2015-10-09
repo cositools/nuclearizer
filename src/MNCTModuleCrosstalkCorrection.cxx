@@ -33,17 +33,17 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 
 // ROOT libs:
 #include "TGClient.h"
-#include "MString.h"
 #include "TFile.h"
 #include "TMatrixD.h"
 
 // MEGAlib libs:
-#include "MNCTMath.h"
 #include "MStreams.h"
 #include "MVector.h"
+#include "MString.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -64,25 +64,16 @@ NUCLEARIZER_CXX_MAIN = src/MAssembly.cxx
 NUCLEARIZER_LIBS = \
 $(LB)/magfld.o \
 $(LB)/MReadOutAssembly.o \
-$(LB)/MNCTArray.o \
-$(LB)/MNCTCoincidenceVolume.o \
-$(LB)/MNCTDetectorArray.o \
+$(LB)/MNCTMath.o \
 $(LB)/MNCTAspect.o \
 $(LB)/MNCTAspectReconstruction.o \
 $(LB)/MNCTHit.o \
-$(LB)/MNCTHitInVoxel.o \
-$(LB)/MNCTMath.o \
 $(LB)/MNCTTimeAndCoordinate.o \
 $(LB)/MNCTStrip.o \
-$(LB)/MNCTStripEnergyDepth.o \
 $(LB)/MNCTStripHit.o \
-$(LB)/MNCTDetectorResponse.o \
 $(LB)/MNCTGuardringHit.o \
-$(LB)/MNCTModuleSimulationLoader.o \
-$(LB)/MGUIOptionsSimulationLoader.o \
 $(LB)/MNCTModuleMeasurementLoader.o \
 $(LB)/MNCTModuleMeasurementLoaderROA.o \
-$(LB)/MNCTModuleMeasurementLoaderGRIPS2013.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
 $(LB)/MNCTBinaryFlightDataParser.o \
 $(LB)/MNCTModuleReceiverCOSI2014.o \
@@ -101,7 +92,6 @@ $(LB)/MNCTModuleCrosstalkCorrection.o \
 $(LB)/MGUIOptionsCrosstalkCorrection.o \
 $(LB)/MNCTModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
-$(LB)/MNCTModuleDepthAndStripCalibration.o \
 $(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
 $(LB)/MGUIOptionsDepthCalibrationLinearPixel.o \
 $(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
@@ -113,12 +103,10 @@ $(LB)/MNCTModuleStripPairingGreedy_a.o \
 $(LB)/MGUIOptionsStripPairing.o \
 $(LB)/MNCTModuleStripPairingGreedy_b.o \
 $(LB)/MNCTModuleFlagHits.o \
-$(LB)/MNCTModuleAspect.o \
-$(LB)/MNCTModuleEventFilter.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MNCTModuleEventSaver.o \
-$(LB)/MGUIOptionsAspect.o \
 $(LB)/MGUIOptionsEventFilter.o \
+$(LB)/MNCTModuleEventFilter.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
 $(LB)/MNCTDepthCalibrator.o
