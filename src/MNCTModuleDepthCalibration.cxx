@@ -66,9 +66,10 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
   m_XmlTag = "DepthCalibration";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(MAssembly::c_EventLoader);
-  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
-  AddPreceedingModuleType(MAssembly::c_StripPairing);
+  AddPreceedingModuleType(MAssembly::c_EventLoader, true);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
+  AddPreceedingModuleType(MAssembly::c_StripPairing, true);
+  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_DepthCorrection);
@@ -141,6 +142,11 @@ bool MNCTModuleDepthCalibration::Initialize()
 		MString MS(det_name);
 		MDVolume* DetVol = MDG->GetVolume(MS);
 		//		m_DetectorNames.push_back( MString(det_name) );
+    if (DetVol == 0) {
+      cout<<"Unable to find detector "<<MS<<endl;
+      cout<<"Do you have the correct geometry loaded?"<<endl;
+      return false;
+    }
 		m_DetectorVolumes.push_back(DetVol);
 	}
 
