@@ -2,12 +2,12 @@
  * MNCTDetectorEffectsEngineCOSI.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Alex Lowell, Cori Gerrity, Carolyn Kierans, Clio Sleator, Andreas Zoglauer.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * the copyright holders.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -298,6 +298,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 	//load threshold information
 	ParseThresholdFile();
 
+  m_DepthCalibrator = new MNCTDepthCalibrator();
 	if( m_DepthCalibrator->LoadCoeffsFile(m_DepthCalibrationCoeffsFileName) == false ){
 		cout << "Unable to load depth calibration coefficients file - Aborting!" << endl;
 		return false;
@@ -419,7 +420,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			if( Coeffs == NULL ){
 				//pixel is not calibrated! discard this event....
 				cout << "pixel " << PixelCode << " has no depth calibration... discarding event" << endl;
-				delete Event;
+				//delete Event;
 				continue;
 			}
 
@@ -499,15 +500,15 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		sort(pIDs.begin(),pIDs.end());
 		sort(nIDs.begin(),nIDs.end());
 		bool check_n = true;
-		for (unsigned int i=0; i<pIDs.size()-1; i++){
-			if (pIDs.at(i) == pIDs.at(i+1)){
+		for (unsigned int i = 1; i < pIDs.size(); i++){
+			if (pIDs.at(i-1) == pIDs.at(i)){
 				mult_hits_counter += 1;
 				check_n = false;
 			}
 		}
 		if (check_n) {
-			for (unsigned int i=0; i<nIDs.size()-1; i++){
-				if (nIDs.at(i) == nIDs.at(i+1)){
+			for (unsigned int i = 1; i < nIDs.size(); i++){
+				if (nIDs.at(i-1) == nIDs.at(i)){
 					mult_hits_counter += 1;
 				}
 			}
