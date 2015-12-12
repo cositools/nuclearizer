@@ -304,7 +304,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		return false;
 	}
 
-	if( m_DepthCalibrator->LoadSplinesFile(m_DepthCalibrationSplinesFileName, true) == false ){
+	if( m_DepthCalibrator->LoadSplinesFile(m_DepthCalibrationSplinesFileName) == false ){
 		cout << "Unable to load depth calibration splines file - Aborting!" << endl;
 		return false;
 	}
