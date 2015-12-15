@@ -74,7 +74,7 @@ std::vector<double>* MNCTDepthCalibrator::GetPixelCoeffs(int pixel_code)
 }
 
 
-bool MNCTDepthCalibrator::LoadSplinesFile(MString FName, bool invert)
+bool MNCTDepthCalibrator::LoadSplinesFile(MString FName)
 {
 	//when invert flag is set to true, the splines returned are CTD->Depth
 	MFile F; 

@@ -65,6 +65,11 @@ class MNCTBinaryFlightDataParser
   MNCTBinaryFlightDataParserAspectModes GetAspectMode() const { return m_AspectMode; }
   //! Set the aspect mode
   void SetAspectMode(MNCTBinaryFlightDataParserAspectModes Mode) { m_AspectMode = Mode; }
+
+  //! Enable/Disable Coincidence merging
+  void EnableCoincidenceMerging(bool X) {m_CoincidenceEnabled = X;}
+  //! Get coincidence merging true/false
+  bool GetCoincidenceMerging() const { return m_CoincidenceEnabled; }
  
   //! Parse some data, return true if the module is ready to analyze events
   virtual bool ParseData(vector<uint8_t> Received) ;
@@ -93,6 +98,9 @@ class MNCTBinaryFlightDataParser
 
   //! The aspect mode (c_GPS, c_Magnetometer, c_Neither)
   MNCTBinaryFlightDataParserAspectModes m_AspectMode;
+
+  //! Controls whether or not coincident events are merged
+  bool m_CoincidenceEnabled;
 
   //! internal event list - sorted but unmerged events
   deque<MReadOutAssembly*> m_EventsBuf;//sorted, unmerged events

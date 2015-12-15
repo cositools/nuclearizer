@@ -15,7 +15,7 @@ class MNCTDepthCalibrator
 		//! Return the coefficients for a pixel
 		std::vector<double>* GetPixelCoeffs(int pixel_code);
 		//! Load the splines file
-		bool LoadSplinesFile(MString FName, bool invert);
+		bool LoadSplinesFile(MString FName);
 		//! Return a pointer to a spline
 		TSpline3* GetSpline(int Det, bool Depth2CTD);
 		//! Return detector thickness

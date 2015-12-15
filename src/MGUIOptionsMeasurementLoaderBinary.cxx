@@ -89,6 +89,15 @@ void MGUIOptionsMeasurementLoaderBinary::Create()
   m_AspectMode->Create();
   m_OptionsFrame->AddFrame(m_AspectMode, LabelLayout);
 
+  m_CoincidenceMode = new MGUIERBList(m_OptionsFrame, "Enable/Disable merging of coincident events");
+  m_CoincidenceMode->Add("Disable");
+  m_CoincidenceMode->Add("Enable");
+  m_CoincidenceMode->SetSelected((int) dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetCoincidenceMerging());
+  m_CoincidenceMode->Create();
+  m_OptionsFrame->AddFrame(m_CoincidenceMode, LabelLayout);
+
+
+
   PostCreate();
 }
 
@@ -148,6 +157,15 @@ bool MGUIOptionsMeasurementLoaderBinary::OnApply()
   } else if (m_AspectMode->GetSelected() == 2) {
     dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);     
   }
+
+  if( m_CoincidenceMode->GetSelected() == 0 ){
+	  //false -> 0
+	  dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->EnableCoincidenceMerging(false);
+  } else if( m_CoincidenceMode->GetSelected() == 1 ){
+	  //true -> 1
+	  dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->EnableCoincidenceMerging(true);
+  }
+
 
 	return true;
 }

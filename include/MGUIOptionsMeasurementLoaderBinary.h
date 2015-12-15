@@ -73,6 +73,7 @@ class MGUIOptionsMeasurementLoaderBinary : public MGUIOptions
   MGUIEFileSelector* m_FileSelector;
   MGUIERBList* m_DataMode;
   MGUIERBList* m_AspectMode;
+  MGUIERBList* m_CoincidenceMode;
 
 
 #ifdef ___CINT___

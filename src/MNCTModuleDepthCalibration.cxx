@@ -131,7 +131,7 @@ bool MNCTModuleDepthCalibration::Initialize()
 	if( m_DepthCalibrator->LoadCoeffsFile(m_CoeffsFile) == false ){
 		return false;
 	}
-	if( m_DepthCalibrator->LoadSplinesFile(m_SplinesFile,true) == false ){
+	if( m_DepthCalibrator->LoadSplinesFile(m_SplinesFile) == false ){
 		return false;
 	}
 

@@ -329,6 +329,11 @@ bool MNCTModuleMeasurementLoaderBinary::ReadXmlConfiguration(MXmlNode* Node)
 	  m_AspectMode = (MNCTBinaryFlightDataParserAspectModes) AspectSelectionModeNode->GetValueAsInt();
   }
 
+  MXmlNode* CoincidenceMergingNode = Node->GetNode("CoincidenceMerging");
+  if( CoincidenceMergingNode != NULL ){
+	  m_CoincidenceEnabled = (bool) CoincidenceMergingNode->GetValueAsInt();
+  }
+
 
   return true;
 }
@@ -345,6 +350,7 @@ MXmlNode* MNCTModuleMeasurementLoaderBinary::CreateXmlConfiguration()
   new MXmlNode(Node, "FileName", m_FileName);
   new MXmlNode(Node, "DataSelectionMode", (unsigned int) m_DataSelectionMode);
   new MXmlNode(Node, "AspectSelectionMode", (unsigned int) m_AspectMode);
+  new MXmlNode(Node, "CoincidenceMerging",(unsigned int) m_CoincidenceEnabled);
   
   return Node;
 }

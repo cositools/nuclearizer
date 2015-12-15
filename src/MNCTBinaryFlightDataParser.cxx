@@ -97,6 +97,8 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	m_IgnoreBufTime = false; //used in the file loader to prevent events from getting stuck in m_Events when we are done reading the file
 	
 	m_AspectReconstructor = nullptr;
+
+	m_CoincidenceEnabled = true;
 }
 
 
@@ -573,12 +575,15 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 			MReadOutAssembly * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
 			deque<MReadOutAssembly*> EventList;
 			EventList.push_back(FirstEvent);
-			//now check if the next events are within the compton window
-			while( m_EventsBuf.size() > 0 ){
-				if( (m_EventsBuf[0]->GetCL() - FirstEvent->GetCL()) <= m_ComptonWindow ){
-					EventList.push_back( m_EventsBuf.front() ); m_EventsBuf.pop_front();
-				} else {
-					break;
+
+			if( m_CoincidenceEnabled ){
+				//now check if the next events are within the compton window
+				while( m_EventsBuf.size() > 0 ){
+					if( (m_EventsBuf[0]->GetCL() - FirstEvent->GetCL()) <= m_ComptonWindow ){
+						EventList.push_back( m_EventsBuf.front() ); m_EventsBuf.pop_front();
+					} else {
+						break;
+					}
 				}
 			}
 			//at this point, EventList contains all of the events to be merged, merge them
