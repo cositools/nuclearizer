@@ -427,7 +427,7 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
   //IMPORTANT: THE IF STATEMENT BELOW SETS CAPS ON THE KIND OF EVENTS ANALIZED BY THE CODE!!!!!!!!
   
   if( (n_x > 0) && (n_y > 0) && (fabs(n_x - n_y) < 5) && (n_x < 8) && (n_y < 8)) {
-    
+
     vector<int> xStripsHit, yStripsHit;
     vector<float> xEnergy, yEnergy, xSigma, ySigma;
     int stripID;
@@ -602,7 +602,8 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
 
 	bool addHit = false;
 
-	for (unsigned int pair=0; pair<decodedFinalPairs.size(); pair++){
+	for (unsigned int pair=0; pair<decodedFinalPairs.size(); pair++) {
+    addHit = false;
 		MNCTHit* Hit = new MNCTHit();
 		//x side
 		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(0).size(); strip++){
@@ -632,28 +633,31 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
 				}
 			}
 		}
-		if (addHit){
+		if (addHit) {
 			Event->AddHit(Hit);
 			if( Hit->GetNStripHits() == 0 ){
 				cout << "STRIP PAIRING BAD HIT" << endl;
 			}
-		}
-		if (stripHitMultipleTimes.at(pair) == 1){
-			Hit->SetStripHitMultipleTimes(true);
-			/*			PrintXYStripsHitOrig();
-						PrintFinalPairs();
-						dummy_func();
-			 */		}
-		else {
-			Hit->SetStripHitMultipleTimes(false);
-		}
-		if (chargeSharing.at(pair) == 1){
-			Hit->SetChargeSharing(true);
-		}
-		else {
-			Hit->SetChargeSharing(false);
-		}
-		addHit = false;
+
+      if (stripHitMultipleTimes.at(pair) == 1){
+        Hit->SetStripHitMultipleTimes(true);
+        /*			PrintXYStripsHitOrig();
+              PrintFinalPairs();
+              dummy_func();
+        */		}
+      else {
+        Hit->SetStripHitMultipleTimes(false);
+      }
+      if (chargeSharing.at(pair) == 1){
+        Hit->SetChargeSharing(true);
+      }
+      else {
+        Hit->SetChargeSharing(false);
+      }
+    } else {
+      delete Hit; 
+    }
+
 
 		//carolyn's addition for debugging CrossTalkOffset
 		// int DetectorID = 0;
@@ -701,10 +705,12 @@ void MNCTModuleStripPairingGreedy_b::ClearMembers(){
   stripsHit.clear();
   energy.clear();
   sig.clear();
+  
   nHits.clear();
 	nHitsAdj.clear();
   nHitsOrig.clear();
 	nThreeHitsAdj.clear();
+  
   badCombinations.clear();
   killMatrix.clear();
   weightMatrix.clear();
@@ -712,13 +718,14 @@ void MNCTModuleStripPairingGreedy_b::ClearMembers(){
 	finalPairEnergy.clear();
  	finalPairRes.clear();
 
-	stripHitMultipleTimes.clear();
-	chargeSharing.clear();
+  
   hitQualityFactor.clear();
   energyResolution.clear();
   hitEnergy.clear();
   //	detectorQualityFactors.clear();
   
+  stripHitMultipleTimes.clear();
+  chargeSharing.clear();
 };
 
 
