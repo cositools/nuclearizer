@@ -94,6 +94,9 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
 
+  // Do not allow pausing of this module
+  m_AllowPausing = false;
+  
   m_IsStartModule = true;
 }
 
