@@ -637,7 +637,11 @@ MReadOutAssembly * MNCTBinaryFlightDataParser::MergeEvents( deque<MReadOutAssemb
 void MNCTBinaryFlightDataParser::Finalize()
 {
 	// Close the tranceiver 
-
+  
+  while (m_EventsBuf.begin() != m_EventsBuf.end()) {
+    delete m_EventsBuf.front();
+    m_EventsBuf.pop_front();
+  }
 	while (m_Events.begin() != m_Events.end()) {
 		delete m_Events.front();
 		m_Events.pop_front();
