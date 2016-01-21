@@ -13,6 +13,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <map>
+#include <unordered_map>
 #include <unistd.h>
 using namespace std;
 
@@ -56,6 +57,7 @@ class options{
 		bool Use3StripEvents;
 		bool Use4StripEvents;
 		bool Use5nsBinning;
+		unordered_map<int,bool> UseDetectors;
 };
 
 
@@ -124,6 +126,10 @@ int main(int argc, char * argv[]){
 		Options->Use3StripEvents = true;
 		Options->Use4StripEvents = true;
 		Options->Use5nsBinning = false;
+		for(int i = 0; i < 12; ++i){
+			Options->UseDetectors[i] = true;
+		}
+
 	}
 
 	cout << boolalpha << endl;
@@ -134,6 +140,9 @@ int main(int argc, char * argv[]){
 	cout << "Use5nsBinning " << Options->Use5nsBinning << endl;
 	for(const auto v: Options->EnergyWindows){
 		cout << "Energy window: " << v->at(0) << " to " << v->at(1) << " keV" << endl;
+	}
+	for(const auto d: Options->UseDetectors){
+		cout << "Use Detector: " << d.first << endl;
 	}
 	cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
 
@@ -257,18 +266,21 @@ int main(int argc, char * argv[]){
 
 
 				if(event_type > 0){
-					if( CTDHistograms[pixel_code] == NULL ){
-						char name[64]; sprintf(name,"%d",pixel_code);
-						TH1D* new_hist;
-						if( Options->Use5nsBinning == true ){
-							new_hist = new TH1D(name, name, 120,(-300.0)-2.5, (+300.0)-2.5);
-						} else {
-							new_hist = new TH1D(name, name, 60, (-300.0)-5.0, (+300.0)-5.0);
-						}
+					if( Options->UseDetectors.count(pixel_code/10000) ){
+						if( CTDHistograms.count(pixel_code) == 0 ){
+							char name[64]; sprintf(name,"%d",pixel_code);
+							TH1D* new_hist;
+							if( Options->Use5nsBinning == true ){
+								new_hist = new TH1D(name, name, 120,(-300.0)-2.5, (+300.0)-2.5);
+							} else {
+								new_hist = new TH1D(name, name, 60, (-300.0)-5.0, (+300.0)-5.0);
+								//new_hist = new TH1D(name, name, 60, (-300.0), (+300.0));
+							}
 
-						CTDHistograms[pixel_code] = new_hist;
+							CTDHistograms[pixel_code] = new_hist;
+						}
+						CTDHistograms[pixel_code]->Fill(CTD);
 					}
-					CTDHistograms[pixel_code]->Fill(CTD);
 				}
 			}
 
@@ -370,7 +382,20 @@ bool ParseOptions(MString OptionsFileName, options* Options){
 			} else {
 				cout << "ParseOptions(): error parsing energy window, ignoring..." << endl;
 			}
+		} else if( Line.BeginsWith("UseDetector") ){
+			vector<MString> Tokens = Line.Tokenize(" ");
+			if(Tokens.size() == 2){
+				int DetectorID = Tokens[1].ToInt();
+				if( (DetectorID >= 0) && (DetectorID < 12) ){
+					Options->UseDetectors[DetectorID] = true;
+				} else {
+					cout << "ParseOptions(): invalid detector ID: " << DetectorID << " ignoring..." << endl;
+				}
+			} else {
+				cout << "ParseOptions(): parsing error for option UseDetector, ignoring..." << endl;
+			}
 		}
+
 	}
 
 	return true;
