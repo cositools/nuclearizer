@@ -31,6 +31,7 @@ using namespace std;
 #include <TRandom.h>
 #include <TMultiGraph.h>
 #include <TPaveStats.h>
+#include <TGraphErrors.h>
 
 // MEGAlib
 #include "MGlobal.h"
@@ -49,10 +50,12 @@ using namespace std;
 #include "MDGeometryQuest.h"
 #include "MNCTModuleMeasurementLoaderBinary.h"
 #include "MNCTBinaryFlightDataParser.h"
+#include "MFitFunctions.h"
 
 class options{
 	public:
 		vector<vector<double>*> EnergyWindows;
+		vector<int> GraphPixel;
 		bool Use2StripEvents;
 		bool Use3StripEvents;
 		bool Use4StripEvents;
@@ -67,6 +70,7 @@ bool ParseOptions(MString OptionsFileName, options* Op);
 
 int main(int argc, char * argv[]){
 
+
 	//arg1 is file containing filenames
 	//if arg2 is there, it is options file
 
@@ -74,29 +78,7 @@ int main(int argc, char * argv[]){
 	TApplication dcalscan("dcalscan",0,0);
 	options* Options = new options();
 	gStyle->SetOptFit(1);
-
-	/*
-	if(argc == 2){
-		//use default options
-		vector<double>* v = new vector<double>();
-		v->push_back(350.0); v->push_back(477.0);
-		Options->EnergyWindows.push_back(v);
-		v = new vector<double>();
-		v->push_back(656.0); v->push_back(668.0);
-		Options->EnergyWindows.push_back(v);
-
-		Options->Use2StripEvents = true;
-		Options->Use3StripEvents = true;
-		Options->Use4StripEvents = true;
-		Options->Use5nsBinning = false;
-
-	} else if(argc == 3){
-		//parse options file
-	} else {
-		cout << "first parameter is scan file names, second optional parameter is option file, aborting..." <<endl;
-		return -1;
-	}
-	*/
+	gROOT->SetBatch(kTRUE);
 
 	bool UseDefaults = false;
 	if(argc == 2){
@@ -129,7 +111,6 @@ int main(int argc, char * argv[]){
 		for(int i = 0; i < 12; ++i){
 			Options->UseDetectors[i] = true;
 		}
-
 	}
 
 	cout << boolalpha << endl;
@@ -143,6 +124,9 @@ int main(int argc, char * argv[]){
 	}
 	for(const auto d: Options->UseDetectors){
 		cout << "Use Detector: " << d.first << endl;
+	}
+	for(const auto i: Options->GraphPixel){
+		cout << "Make graph for pixel: " << i << endl;
 	}
 	cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
 
@@ -160,9 +144,23 @@ int main(int argc, char * argv[]){
 	GausFit->SetParName(0,"amplitude");
 	GausFit->SetParName(1,"mean");
 	GausFit->SetParName(2,"sigma");
-	GausFit->SetParLimits(0, 0.0, 1000.0);
+	GausFit->SetParLimits(0, 0.0, 10000.0);
 	GausFit->SetParLimits(1, -300.0, +300.0);
-	GausFit->SetParLimits(2, 0.0, 80.0);
+	GausFit->SetParLimits(2, 0.0, 100.0);
+	LorentzFit->SetParName(0,"amplitude");
+	LorentzFit->SetParName(1,"mean");
+	LorentzFit->SetParName(2,"sigma");
+	LorentzFit->SetParLimits(1,-300.0,+300.0);
+	LorentzFit->SetParLimits(2,-300.0,+300.0);
+
+	TF1* AsymmetricalGauss = new TF1("asymgaus",AsymGaus,-300,+300,5);
+	AsymmetricalGauss->SetParName(0,"offset");
+	AsymmetricalGauss->SetParName(1,"height");
+	AsymmetricalGauss->SetParName(2,"mean");
+	AsymmetricalGauss->SetParName(3,"left-sigma");
+	AsymmetricalGauss->SetParName(4,"right-sigma");
+
+	vector<map<int,vector<double>*>*> ParMaps;
 
 	//crosstalk...
 	while( Filenames.ReadLine(FName) ){
@@ -186,6 +184,8 @@ int main(int argc, char * argv[]){
 		MReadOutAssembly* Event = new MReadOutAssembly();
 		bool IsFinished = false;
 		map<int, TH1D*> CTDHistograms;
+		map<int,vector<double>*>* FitParams = new map<int,vector<double>*>();
+
 		unsigned int E2 = 0; unsigned int E3 = 0; unsigned int E4 = 0; unsigned int EMisc = 0;
 
 		while( IsFinished == false ){
@@ -273,8 +273,8 @@ int main(int argc, char * argv[]){
 							if( Options->Use5nsBinning == true ){
 								new_hist = new TH1D(name, name, 120,(-300.0)-2.5, (+300.0)-2.5);
 							} else {
-								new_hist = new TH1D(name, name, 60, (-300.0)-5.0, (+300.0)-5.0);
-								//new_hist = new TH1D(name, name, 60, (-300.0), (+300.0));
+								//new_hist = new TH1D(name, name, 60, (-300.0)-5.0, (+300.0)-5.0);
+								new_hist = new TH1D(name, name, 37, (-230.0)-5.0, (+140.0)-5.0);
 							}
 
 							CTDHistograms[pixel_code] = new_hist;
@@ -291,6 +291,8 @@ int main(int argc, char * argv[]){
 		MString RootFileName = FName.Append(".ctd.root");
 		TFile* rootF = new TFile(RootFileName.Data(),"recreate");
 		for(auto const &it: CTDHistograms) {
+			//vector<double>* V = new vector<double>(6);
+			vector<double>* V = new vector<double>(6);
 			TH1D* H = it.second;
 			double Maximum = H->GetMaximum();
 			double Mean = H->GetMean();
@@ -301,19 +303,113 @@ int main(int argc, char * argv[]){
 			LorentzFit->SetParameter(0,Maximum);
 			LorentzFit->SetParameter(1,Mean);
 			LorentzFit->SetParameter(2,Sigma);
-			H->Fit("mygaus","Lq");
-			H->Fit("lorentz","Lq");
+			AsymmetricalGauss->SetParLimits(0,0.0, Maximum);
+			AsymmetricalGauss->SetParLimits(1,0.0, 1.2*Maximum);
+			AsymmetricalGauss->SetParLimits(2,-300.0,+300.0);
+			AsymmetricalGauss->SetParLimits(3,1, 100);
+			AsymmetricalGauss->SetParLimits(4,1,100);
+			AsymmetricalGauss->SetParameter(0,0.0);
+			AsymmetricalGauss->SetParameter(1,Maximum);
+			AsymmetricalGauss->SetParameter(2,Mean);
+			AsymmetricalGauss->SetParameter(3,Sigma);
+			AsymmetricalGauss->SetParameter(4,Sigma);
+			//H->Fit(GausFit,"Lq");
+			//H->Fit(LorentzFit,"Lq");
+			H->Fit(AsymmetricalGauss,"Lq");
 			H->UseCurrentStyle();
+			(*V)[0] = LorentzFit->GetParameter(1); (*V)[1] = LorentzFit->GetParError(1);
+			//(*V)[2] = GausFit->GetParameter(1); (*V)[3] = GausFit->GetParError(1);
+			(*V)[4] = Mean; (*V)[5] = Sigma;
+			(*V)[2] = AsymmetricalGauss->GetParameter(2); (*V)[3] = AsymmetricalGauss->GetParError(2);
+			(*FitParams)[it.first] = V;
 			rootF->WriteTObject(it.second);
+			delete H;
 		}
 		rootF->Close();
 		cout << "2-strip events: " << E2 << endl;
 		cout << "3-strip events: " << E3 << endl;
 		cout << "4-strip events: " << E4 << endl;
 		cout << "misc. events:   " << EMisc << endl;
+		ParMaps.push_back(FitParams);
 
 
 	}
+
+	TFile* rootF = new TFile("pixel_plots.root","recreate");
+	for(int det = 0; det < 12; ++det){
+		for(int xch = 1; xch < 38; ++xch){
+			for(int ych = 1; ych < 38; ++ych){
+				int pixel = 10000*det + 100*xch + ych;
+				bool HaveData = false;
+				for(auto const parmap: ParMaps){
+					if((*parmap).count(pixel)){
+						HaveData = true;
+						break;
+					}
+				} 
+				if(HaveData){
+					//make the graph
+					vector<double> X;
+					vector<double> Y_lorentz, Y_gauss, Y_standard;
+					vector<double> EX;
+					vector<double> EY_lorentz, EY_gauss, EY_standard;
+					int x_ind = 0;
+					for(auto const parmap: ParMaps){
+						if((*parmap).count(pixel)){
+							vector<double>* values = (*parmap)[pixel];
+							X.push_back((double)x_ind); ++x_ind;
+							EX.push_back(0.0);
+							Y_lorentz.push_back((*values)[0]);
+							EY_lorentz.push_back((*values)[1]);
+							Y_gauss.push_back((*values)[2]);
+							EY_gauss.push_back((*values)[3]);
+							Y_standard.push_back((*values)[4]);
+							EY_standard.push_back((*values)[5]);
+						} 
+					}
+					char name[64]; sprintf(name, "%d", pixel);
+					TCanvas* tc = new TCanvas(name,name,400,400);
+					//tc->Divide(1,3);
+					TMultiGraph* mg = new TMultiGraph();
+
+					/*
+					sprintf(name,"%d-lorentz",pixel);
+					TGraphErrors* tg_lorentz = new TGraphErrors(X.size(), (double *) &X[0], (double *) &Y_lorentz[0], (double *) &EX[0], (double *) &EY_lorentz[0]);
+					tg_lorentz->SetLineColor(kRed);
+					tg_lorentz->SetMarkerStyle(21);
+					tg_lorentz->SetTitle(name);
+					//tg_lorentz->Draw("ALP");
+					mg->Add(tg_lorentz);
+					*/
+
+					sprintf(name,"%d-gauss",pixel);
+					TGraphErrors* tg_gauss = new TGraphErrors(X.size(), (double *) &X[0], (double *) &Y_gauss[0], (double *) &EX[0], (double *) &EY_gauss[0]);
+					tg_gauss->SetLineColor(kBlue);
+					tg_gauss->SetMarkerStyle(21);
+					tg_gauss->SetTitle(name);
+					//tg_gauss->Draw("ALP");
+					mg->Add(tg_gauss);
+
+					/*
+					sprintf(name,"%d-standard",pixel);
+					TGraphErrors* tg_standard = new TGraphErrors(X.size(), (double *) &X[0], (double *) &Y_standard[0], (double *) &EX[0], (double *) &EY_standard[0]);
+					tg_standard->SetMarkerStyle(21);
+					tg_standard->SetTitle(name);
+					//tg_standard->Draw("ALP");
+					mg->Add(tg_standard);
+					*/
+
+					mg->Draw("ALP");
+					tc->BuildLegend(0.2,0.67,0.45,0.88);
+					tc->Update();
+					rootF->WriteTObject(tc);
+				} else {
+					continue;
+				}
+			}
+		}
+	}
+	rootF->Close();
 
 	return 0;
 
@@ -394,9 +490,15 @@ bool ParseOptions(MString OptionsFileName, options* Options){
 			} else {
 				cout << "ParseOptions(): parsing error for option UseDetector, ignoring..." << endl;
 			}
+		} else if( Line.BeginsWith("GraphPixel")){
+			vector<MString> Tokens = Line.Tokenize(" ");
+			if(Tokens.size() == 2){
+				int Pixel = Tokens[1].ToInt();
+				Options->GraphPixel.push_back(Pixel);
+			}
 		}
-
 	}
 
 	return true;
 }
+
