@@ -120,7 +120,7 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
   }
   
   if (MNCTBinaryFlightDataParser::Initialize() == false) return false;
-  f_TOnly = fopen("TOnly.txt","w");
+  //f_TOnly = fopen("TOnly.txt","w");
   
   return MModule::Initialize();
 }
@@ -207,6 +207,7 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   m_Events.pop_front();
 
   //print TOnly info for these events
+  /*
   if( NewEvent->GetNStripHitsTOnly() > 0 ){
 	  fprintf(f_TOnly,">>>\n");
 	  for(unsigned int i = 0; i < NewEvent->GetNStripHits(); ++i){
@@ -232,6 +233,7 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
 	  }
 	  fprintf(f_TOnly,"\n<<<\n");
   }
+  */
 
 
   // This checks if the event's aspect data was within the range of the retrieved aspect info
