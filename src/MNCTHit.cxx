@@ -99,6 +99,18 @@ MNCTStripHit* MNCTHit::GetStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MNCTHit::RemoveStripHit(unsigned int i)
+{
+  //! Remove a strip hit
+  if (i < m_StripHits.size()) {
+    m_StripHits.erase(m_StripHits.begin()+i);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MNCTHit::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 

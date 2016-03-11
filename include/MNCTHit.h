@@ -74,6 +74,8 @@ class MNCTHit
   MNCTStripHit* GetStripHit(unsigned int i);
   //! Add a strip hit
   void AddStripHit(MNCTStripHit* StripHit) { return m_StripHits.push_back(StripHit); }
+  //! Remove a strip hit
+  void RemoveStripHit(unsigned int i); 
  
 	//! set cross talk flag
 	void SetCrossTalkFlag(bool PossibleCrossTalk) {m_PossibleCrossTalk = PossibleCrossTalk;}

@@ -146,6 +146,8 @@ class MReadOutAssembly
   MNCTHit* GetHit(unsigned int i);
   //! Add a hit
   void AddHit(MNCTHit* Hit) { return m_Hits.push_back(Hit); }
+  //! Remove a hit
+  void RemoveHit(unsigned int i);
 
   //! Return the number of simulation hits
   unsigned int GetNHitsSim() const { return m_HitsSim.size(); }

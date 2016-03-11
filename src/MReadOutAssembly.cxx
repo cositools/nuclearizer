@@ -332,6 +332,18 @@ MNCTHit* MReadOutAssembly::GetHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MReadOutAssembly::RemoveHit(unsigned int i)
+{
+  //! Remove a strip hit
+  if (i < m_Hits.size()) {
+    m_Hits.erase(m_Hits.begin()+i);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MNCTHit* MReadOutAssembly::GetHitSim(unsigned int i) 
 { 
   //! Return hit i
