@@ -69,7 +69,9 @@ void MGUIOptionsMeasurementLoader::Create()
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
     dynamic_cast<MNCTModuleMeasurementLoader*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Roa file", "*.roa");
+  m_FileSelector->SetFileType("Roa file", "*.roa.gz");
   m_FileSelector->SetFileType("Data file", "*.dat");
+  m_FileSelector->SetFileType("Data file", "*.dat.gz");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
