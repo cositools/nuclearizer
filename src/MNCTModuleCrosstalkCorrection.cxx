@@ -290,7 +290,9 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       //   << Event->GetStripHit(i)->GetEnergy() << " keV" << endl;
       Event->RemoveStripHit(i);
     }
-    i++;
+    else {
+	i++;
+	}
   }
   Event->SetAnalysisProgress(MAssembly::c_CrosstalkCorrection);
   
