@@ -170,10 +170,11 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level 
 	vector<MNCTHit*> NewHits;
 
-  
+  /*
   for (unsigned int i = 0; i < Event->GetNHits(); ++i) {
     Event->GetHit(i)->StreamDat(cout, 2);
   }
+  */
   
 	for( unsigned int i = 0; i < Event->GetNHits(); ++i ){
 		MNCTHit* H = Event->GetHit(i);
