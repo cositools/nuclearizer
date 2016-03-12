@@ -322,7 +322,7 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> StripHits, 
                                                      int det, unsigned int side)
 {
-  bool debug=true;
+  bool debug=false;
   bool debug_matrices=false;
   unsigned int N = StripHits.size();
   // Sort the strip hits
