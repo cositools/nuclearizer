@@ -571,6 +571,11 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 	}
 
 	if( m_EventsBuf.size() > 0 ){
+    if (m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() < 100000 && 
+        m_EventsBuf.size() > 500) {
+      cout<<"Something is strange: I have more than 500 events and all are within the time window of 10 milli-seconds"<<endl;
+    }    
+    
 		while(m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() >= Window ){
 			MReadOutAssembly * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
 			deque<MReadOutAssembly*> EventList;
