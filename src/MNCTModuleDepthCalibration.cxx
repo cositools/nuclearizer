@@ -152,13 +152,12 @@ bool MNCTModuleDepthCalibration::Initialize()
 
 	MSupervisor* S = MSupervisor::GetSupervisor();
 	m_EnergyCalibration = (MNCTModuleEnergyCalibrationUniversal*) S->GetAvailableModule("Universal energy calibrator");
-	if( m_EnergyCalibration == NULL ){\
+	if (m_EnergyCalibration == nullptr) {
 		cout << "MNCTModuleDepthCalibration: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
 		return false;
 	}
 
-	return true;
-
+	return MModule::Initialize();
 }
 
 
