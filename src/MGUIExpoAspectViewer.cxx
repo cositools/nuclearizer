@@ -340,7 +340,7 @@ void MGUIExpoAspectViewer::Update()
   }
   
 
-  if (m_HeadingCanvas != 0) {
+  if (m_HeadingCanvas != 0 && m_Heading_GPS->GetN() > 0) {
     if (m_Heading_GPS->GetHistogram() != nullptr && MString(m_Heading_GPS->GetHistogram()->GetXaxis()->GetTitle()).IsEmpty() == true) {
       m_Heading_GPS->GetHistogram()->GetXaxis()->SetTitle("Time [seconds]");
       m_Heading_GPS->GetHistogram()->GetYaxis()->SetTitle("Heading [degrees] (Blue=GPS, Red=Mag)");
