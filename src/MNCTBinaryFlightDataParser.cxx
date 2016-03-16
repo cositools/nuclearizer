@@ -603,6 +603,7 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 				m_EventsBuf.size() > 500) {
 			cout<<"Something is strange: I have more than 500 events and all are within the time window of 10 milli-seconds"<<endl;
 		}    
+	}
 
 	//pop good events
 	while(m_EventsBuf.size() > 0){

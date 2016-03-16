@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 	Loader->EnableCoincidenceMerging(false);
 
 	MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
-	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/Antarctica/EnergyCalibration.ecal");
+	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Berkeley/EnergyCalibration.ecal");
 
 	MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
 
