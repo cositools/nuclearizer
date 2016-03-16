@@ -430,7 +430,8 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
   m_Events.pop_front();
 
   //this checks if the event's aspect data was within the range of the retrieved aspect info
-  if (NewEvent->GetAspect() != 0 && NewEvent->GetAspect()->GetOutOfRange()) {
+  if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither &&
+      NewEvent->GetAspect() != 0 && NewEvent->GetAspect()->GetOutOfRange()) {
     cout<<"ERROR in MNCTModuleReceiverCOSI2014::AnalyzeEvent: Bad aspect (out of range)"<<endl;
     Event->SetAspectIncomplete(true);
   }
@@ -454,7 +455,9 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
     m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
   } else {
-    Event->SetAspectIncomplete(true);
+    if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither) {
+      Event->SetAspectIncomplete(true);
+    }
   }
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | 
                              MAssembly::c_EventLoaderMeasurement | 
