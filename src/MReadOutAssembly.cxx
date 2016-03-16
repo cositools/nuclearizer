@@ -462,14 +462,6 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
   }
 
 }
-      
-
-
-
-
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -487,7 +479,7 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     m_Aspect->StreamDat(S, Version);
   }
   
-  if( Version == 1 ){
+  if (Version == 1) {
     for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
       m_StripHits[h]->StreamDat(S, Version);  
     }
@@ -495,9 +487,9 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     for (unsigned int h = 0; h < m_Hits.size(); ++h) {
       m_Hits[h]->StreamDat(S, Version);  
     }
-  } else if( Version == 2 ){
-    for( auto H : m_Hits ){
-      H->StreamDat(S,2);
+  } else if (Version == 2) {
+    for (auto H : m_Hits) {
+      H->StreamDat(S, 2);
     }
   }
 
@@ -517,9 +509,9 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     S<<endl;
   }
   if (m_EnergyCalibrationIncomplete == true) {
-  S<<"BD EnergyCalibrationIncomplete";
-  if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
-  S<<endl;
+    S<<"BD EnergyCalibrationIncomplete";
+    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+    S<<endl;
   }
   if (m_EnergyResolutionCalibrationIncomplete == true) {
     S<<"BD EnergyResolutionCalibrationIncomplete";
@@ -532,8 +524,8 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     S<<endl;
   }
   if (m_LLDEvent == true) {
-  S<<"BD LLDEvent";
-  if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
+    S<<"BD LLDEvent";
+    if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
     S<<endl;
   }
   if (m_DepthCalibrationIncomplete == true) {
@@ -542,9 +534,9 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     S<<endl;
   }
   if (m_DepthCalibration_OutofRange == true) {
-  S<<"BD DepthCalibration_OutofRange";
-  if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
-  S<<endl;
+    S<<"BD DepthCalibration_OutofRange";
+    if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
+    S<<endl;
   }
 
 
