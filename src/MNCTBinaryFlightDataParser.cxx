@@ -72,9 +72,10 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	m_NumAspectPackets = 0;
 	m_NumOtherPackets = 0;
 	MAX_TRIGS = 80;
-	LastTimestamps.resize(12);
+	LastTimestamps.clear();
+	LastTimestamps.resize(12, 0);
 	dx = 0;
-	m_EventTimeWindow = 30 * 10000000;
+	m_EventTimeWindow = 60 * 10000000;
 	m_ComptonWindow = 2;
 
 	LoadStripMap();
@@ -128,8 +129,8 @@ bool MNCTBinaryFlightDataParser::Initialize()
   m_NumAspectPackets = 0;
   m_NumOtherPackets = 0;
 
-  LastTimestamps.clear();
-  LastTimestamps.resize(12);
+  //LastTimestamps.clear();
+  //LastTimestamps.resize(12);
   dx = 0;
 
   m_EventIDCounter = 0;
@@ -274,36 +275,34 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 		}
 		if( NewEvents.size() > 0 ){
 			for( auto E: NewEvents ){
-				//push the events onto the deque
-				//before we push the event into m_EventsBuf, check if we have a sync problem
-				/*
-					if( m_UseRawDataframes ){
-					if (LastTimestamps.size() >= CCId) {
-					cout<<"CRITICAL ALGORITHM ERROR:  The number of last time stamps in the array is smaller than the Compton ID"<<endl;
-					} else {
-					if( E->GetCL() > LastTimestamps[CCId] ) LastTimestamps[CCId] = E->GetCL(); else {
-				//sync problem detected...
-				//cout<<"sync error on CC "<<CCId<<", det "<<m_CCMap[CCId]<<", flushing m_EventsBuf"<<endl;
-				//FlushEventsBuf();
-				LastTimestamps[CCId] = E->GetCL();
-				}
-				}
-				} else if( m_UseComptonDataframes ){
-				LastComptonTimestamp = E->GetCL();
-				}
-				 */
 
-				//m_EventsBuf.push_back(E);
-				// insert sorted
-				deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+				int CCId = E->GetStripHit(0)->GetDetectorID();
+				uint64_t Lower;
+				if(m_EventTimeWindow > LastTimestamps[CCId]){
+					Lower = LastTimestamps[CCId] >> 2;
+				} else {
+					Lower = LastTimestamps[CCId] - m_EventTimeWindow;
+				}
 
-				m_EventsBuf.insert(I, E);
-				/*
-					cout<<"Sorrted?"<<endl;
-					for (auto Ev: m_EventsBuf) {
-					cout<<Ev->GetCL()<<endl; 
+				if(E->GetCL() < Lower){ //timestamp went back in time too far
+					cout << CCId << " past: current CL = " << E->GetCL() <<", LastCL = " << LastTimestamps[CCId];
+					if(m_EventsBuf.size() > 0) cout << ", frontCL = " << m_EventsBuf.front()->GetCL() << ", backCL = " << m_EventsBuf.back()->GetCL() << endl; else cout << endl;
+					while(m_EventsBuf.size() > 0){
+						MReadOutAssembly* E = m_EventsBuf[0]; m_EventsBuf.pop_front();
+						delete E;
 					}
-				 */
+					deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+					m_EventsBuf.insert(I, E);
+				} else if(E->GetCL() > (LastTimestamps[CCId] + m_EventTimeWindow)){ //timestamp is too far in the future
+					cout << CCId << " future: current CL = " << E->GetCL() <<", LastCL = " << LastTimestamps[CCId];
+					if(m_EventsBuf.size() > 0) cout << ", frontCL = " << m_EventsBuf.front()->GetCL() << ", backCL = " << m_EventsBuf.back()->GetCL() << endl; else cout << endl;
+					delete E;
+				} else {
+					deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+					m_EventsBuf.insert(I, E);
+				}
+				LastTimestamps[CCId] = E->GetCL();
+
 			}
 			NewEvents.clear();
 
@@ -562,6 +561,7 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 
 	int MergedEventCounter = 0;
 	unsigned long long Window;
+	static uint64_t counter = 0;
 
 	//in file mode we need a way to clear out the queue, do this by setting the search buffer time to zero
 	if( m_IgnoreBufTime ){
@@ -570,13 +570,43 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 		Window = m_EventTimeWindow;
 	}
 
+	/*
+	cout << "::::::::::::counter:" << counter << endl;
+	cout << ">> size: " << m_EventsBuf.size() << endl;
+	if(m_EventsBuf.size() > 0){
+		cout << ">> front: " << m_EventsBuf.front()->GetCL() << endl;
+		cout << ">> back: " << m_EventsBuf.back()->GetCL() << endl;
+	}
+	*/
+
+	/*
+	//pop bogus future timestamps
+	while(m_EventsBuf.size() > 0){
+		if( (m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL()) >= (2 * Window) ){
+			MReadOutAssembly* E = m_EventsBuf.back(); m_EventsBuf.pop_back();
+			delete E;
+		} else {
+			break;
+		}
+	}
+	*/
+
+	/*
+	cout << ".. size: " << m_EventsBuf.size() << endl;
+	if(m_EventsBuf.size() > 0){
+		cout << ".. front: " << m_EventsBuf.front()->GetCL() << endl;
+		cout << ".. back: " << m_EventsBuf.back()->GetCL() << endl;
+	}
+	*/
 	if( m_EventsBuf.size() > 0 ){
-    if (m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() < 100000 && 
-        m_EventsBuf.size() > 500) {
-      cout<<"Something is strange: I have more than 500 events and all are within the time window of 10 milli-seconds"<<endl;
-    }    
-    
-		while(m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() >= Window ){
+		if (m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() < 100000 && 
+				m_EventsBuf.size() > 500) {
+			cout<<"Something is strange: I have more than 500 events and all are within the time window of 10 milli-seconds"<<endl;
+		}    
+
+	//pop good events
+	while(m_EventsBuf.size() > 0){
+		if(m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() >= Window ){
 			MReadOutAssembly * FirstEvent = m_EventsBuf.front(); m_EventsBuf.pop_front();
 			deque<MReadOutAssembly*> EventList;
 			EventList.push_back(FirstEvent);
@@ -595,12 +625,21 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 			MReadOutAssembly * NewMergedEvent = MergeEvents( &EventList );
 			//now push this merged event onto the internal events deque
 			NewMergedEvent->SetID( ++m_EventIDCounter );
-
 			m_Events.push_back(NewMergedEvent);
-			if( m_EventsBuf.size() == 0 ) break;
+			//if( m_EventsBuf.size() == 0 ) break;
+		} else {
+			break;
 		}
-
 	}
+
+	/*
+	cout << "<< size: " << m_EventsBuf.size() << endl;
+	if(m_EventsBuf.size() > 0){
+		cout << "<< front: " << m_EventsBuf.front()->GetCL() << endl;
+		cout << "<< back: " << m_EventsBuf.back()->GetCL() << endl;
+	}
+	*/
+	++counter;
 
 	if( MergedEventCounter > 0 ) return true; else return false;
 }
@@ -1008,12 +1047,14 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 		Clk = 0;
 		if( RolloverOccurred ){
 			if( MiddleRollover ){
+				//cout << "middle rollover for CC " << DataIn->CCId << endl;
 				if( E.EventTime >= DataIn->Events.front().EventTime ){
 					Clk = E.EventTime | ((DataIn->SysTime - 0x0000000100000000) & 0x0000ffff00000000);
 				} else {
 					Clk = E.EventTime | (DataIn->SysTime & 0x0000ffff00000000);
 				}
 			} else {
+				//cout << "end rollover for CC " << DataIn->CCId << endl;
 				//the rollover happened between the last event timestamp and the DataIn systime
 				//NOTE the systime in the dataframe header is always latched AFTER the last event timestamp
 				Clk = E.EventTime | ((DataIn->SysTime - 0x0000000100000000) & 0x0000ffff00000000);

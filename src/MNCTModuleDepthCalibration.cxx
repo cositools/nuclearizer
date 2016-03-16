@@ -88,9 +88,9 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
 	m_Thicknesses[0] = 1.49;
 	m_Thicknesses[1] = 1.45;
 	m_Thicknesses[2] = 1.50;
-	m_Thicknesses[3] = 1.51;
-	m_Thicknesses[4] = 1.50;
-	m_Thicknesses[5] = 1.47;
+	m_Thicknesses[3] = 1.45;
+	m_Thicknesses[4] = 1.51;
+	m_Thicknesses[5] = 1.50;
 	m_Thicknesses[6] = 1.48;
 	m_Thicknesses[7] = 1.47;
 	m_Thicknesses[8] = 1.49;

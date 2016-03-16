@@ -196,6 +196,7 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
   MReadOutAssembly * NewEvent;
+  static uint64_t LastCL = 0;
   
   if (m_Events.size() == 0) {
     cout<<"ERROR in MNCTModuleMeasurementLoaderBinary::AnalyzeEvent: No events"<<endl;
@@ -205,6 +206,12 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
 
   NewEvent = m_Events[0];
   m_Events.pop_front();
+  /*
+  if(NewEvent->GetCL() < LastCL){
+	  cout << LastCL << "--->" << NewEvent->GetCL() << endl;
+  }
+  LastCL = NewEvent->GetCL();
+  */
 
   //print TOnly info for these events
   /*

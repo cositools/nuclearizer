@@ -7,7 +7,10 @@ MNCTDepthCalibrator::MNCTDepthCalibrator()
 	//need unordered_map m_Coeffs
 	m_CoeffsFileIsLoaded = false;
 	m_SplinesFileIsLoaded = false;
+	//m_ThicknessFileIsLoaded = false;
 	m_Thicknesses.reserve(12);
+
+	/*
 	m_Thicknesses[0] = 1.49;
 	m_Thicknesses[1] = 1.45;
 	m_Thicknesses[2] = 1.50;
@@ -20,10 +23,39 @@ MNCTDepthCalibrator::MNCTDepthCalibrator()
 	m_Thicknesses[9] = 1.47;
 	m_Thicknesses[10] = 1.42;
 	m_Thicknesses[11] = 1.45;
+	*/
 
 	RootF = new TFile("$NUCLEARIZER/resource/rootfiles/timing_splines.root","recreate");
 
 }
+
+/*
+bool MNCTDepthCalibrator::LoadThicknessFile(MString FName)
+{
+	MFile F;
+	if(!F.Open(FName)){
+		cout << "MNCTDepthCalibrator: failed to open detector thickness file..." << endl;
+		return false;
+	} else {
+		MString line;
+		while(F.ReadLine(line)){
+			vector<MString> Tokens = line.Tokenize(" ");
+			if(Tokens.size() == 2){
+				int DetID = Tokens[0].ToInt();
+				if(DetID < 12){
+					m_Thicknesses[DetID] = Tokens[1].ToDouble();
+				} else {
+					cout << "MNCTDepthCalibrator: bad detector ID when parsing detector thickness file... got: " << DetID << endl;
+					F.Close();
+					return false;
+				}
+			}
+		}
+		F.Close();
+		return true;
+	}
+}
+*/
 
 bool MNCTDepthCalibrator::LoadCoeffsFile(MString FName)
 {
