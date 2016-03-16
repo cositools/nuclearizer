@@ -324,6 +324,8 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
 	//add the new hits from the 3-strip events to the event.  Don't do it in the loop above because we don't want to loop back over these new hits
 	for( const auto H: NewHits ) Event->AddHit(H);
+  
+  Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
 
 	return true;
 }
