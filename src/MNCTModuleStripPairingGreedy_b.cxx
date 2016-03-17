@@ -145,7 +145,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 
     bool runRest = GetEventInfo(Event, detector);
 
-    if (nHits.at(0)>0 && nHits.at(1)>0 && runRest==true){
+    if (nHits[0]>0 && nHits[1]>0 && runRest==true){
 	    InitializeKillMatrices();
 	    CheckForAdjacentStrips();
 			CheckForBadCombinations();
@@ -344,7 +344,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 			if (Event->GetHit(h)->GetStripHitMultipleTimes() == false){
 		  	Event->SetStripPairingIncomplete(true,"bad pairing");
 			}
-/*			if (nHits.at(0) != 0 && nHits.at(1) != 0){
+/*			if (nHits[0] != 0 && nHits[1] != 0){
 				PrintXYStripsHitOrig();
 				PrintFinalPairs();
 				cout << "fourth chisq: " << fourthChiSq << endl;
@@ -500,8 +500,8 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
     sig.push_back(ySigma);
     
     //change n_x and n_y in case some strips had bad values for energy / error
-    n_x = stripsHit.at(0).size();
-    n_y = stripsHit.at(1).size();
+    n_x = stripsHit[0].size();
+    n_y = stripsHit[1].size();
     nHits.push_back(n_x);
     nHits.push_back(n_y);
 //    nHitsOrig = nHits;
@@ -513,25 +513,25 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
     //sort strips (and energy and resolution) in numerical order by strip ID
     //do this for each axis
     for (int axis=0; axis<2; axis++){
-      for (int i=0; i<nHits.at(axis)-1; i++){
+      for (int i=0; i<nHits[axis]-1; i++){
 				int min=i;
-        for (int j=i+1; j<nHits.at(axis); j++){
-          if (stripsHit.at(axis).at(j) < stripsHit.at(axis).at(min)){
+        for (int j=i+1; j<nHits[axis]; j++){
+          if (stripsHit[axis][j] < stripsHit[axis].at(min)){
             min = j;
 					}
 				}
 				if (min != i){
-          int tempStrip = stripsHit.at(axis).at(i);
-          stripsHit.at(axis).at(i) = stripsHit.at(axis).at(min);
-          stripsHit.at(axis).at(min) = tempStrip;
+          int tempStrip = stripsHit[axis][i];
+          stripsHit[axis][i] = stripsHit[axis].at(min);
+          stripsHit[axis].at(min) = tempStrip;
             
-          float tempEnergy = energy.at(axis).at(i);
-          energy.at(axis).at(i) = energy.at(axis).at(min);
-          energy.at(axis).at(min) = tempEnergy;
+          float tempEnergy = energy[axis][i];
+          energy[axis][i] = energy[axis].at(min);
+          energy[axis].at(min) = tempEnergy;
             
-          float tempSig = sig.at(axis).at(i);
-          sig.at(axis).at(i) = sig.at(axis).at(min);
-          sig.at(axis).at(min) = tempSig;
+          float tempSig = sig[axis][i];
+          sig[axis][i] = sig[axis].at(min);
+          sig[axis].at(min) = tempSig;
         }
       }
     }
@@ -556,7 +556,7 @@ void MNCTModuleStripPairingGreedy_b::CalculateDetectorQuality(){
   int counter = 0;
   
   for (unsigned int i=0; i<hitQualityFactor.size(); i++){
-    detectorQuality = detectorQuality + hitQualityFactor.at(i);
+    detectorQuality = detectorQuality + hitQualityFactor[i];
     counter += 1;
   }
   
@@ -570,10 +570,10 @@ void MNCTModuleStripPairingGreedy_b::CalculateEventQuality(MReadOutAssembly* Eve
   
   float eventQuality = 0;
   int counter = 0;
-  //	cout << detectorQualityFactors.at(2) << endl;
+  //	cout << detectorQualityFactors[2] << endl;
   
   for (int i=0; i<nDetectors; i++){
-    eventQuality = eventQuality + detectorQualityFactors.at(i);
+    eventQuality = eventQuality + detectorQualityFactors[i];
     counter += 1;
   }
   
@@ -606,11 +606,11 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
     addHit = false;
 		MNCTHit* Hit = new MNCTHit();
 		//x side
-		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(0).size(); strip++){
+		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair)[0].size(); strip++){
 			for (unsigned int n = 0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
 					if (Event->GetStripHit(n)->IsXStrip() == true){
-						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(0).at(strip)){
+						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair)[0].at(strip)){
 							Hit->AddStripHit(Event->GetStripHit(n));
 							Hit->SetHitQuality(hitQualityFactor.at(pair));
 							Hit->SetEnergyResolution(energyResolution.at(pair));
@@ -622,11 +622,11 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
 			}
 		}
 		//y side
-		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair).at(1).size(); strip++){
+		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair)[1].size(); strip++){
 			for (unsigned int n=0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
 					if (Event->GetStripHit(n)->IsXStrip() == false){
-						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair).at(1).at(strip)){
+						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair)[1].at(strip)){
 							Hit->AddStripHit(Event->GetStripHit(n));
 						}
 					}
@@ -741,17 +741,17 @@ float MNCTModuleStripPairingGreedy_b::CalculateSigma(){
   
   //find sigma(x)^2 and sigma(y)^2
   for (int axis=0; axis<2; axis++){
-    for (int i=0; i<nHitsOrig.at(axis); i++){
-      sigTotalSquared.at(axis) = sigTotalSquared.at(axis) + sig.at(axis).at(i)*sig.at(axis).at(i);
+    for (int i=0; i<nHitsOrig[axis]; i++){
+      sigTotalSquared[axis] = sigTotalSquared[axis] + sig[axis][i]*sig[axis][i];
     }
   }
   
   //find sigma(x) and sigma(y), store in vector sigTotal
-  sigTotal.push_back(sqrt(sigTotalSquared.at(0)));
-  sigTotal.push_back(sqrt(sigTotalSquared.at(1)));
+  sigTotal.push_back(sqrt(sigTotalSquared[0]));
+  sigTotal.push_back(sqrt(sigTotalSquared[1]));
   
   //find average sigma
-  float avgSigma = 0.5*(sigTotal.at(0)+sigTotal.at(1));
+  float avgSigma = 0.5*(sigTotal[0]+sigTotal[1]);
   
   //	cout << "avgSigma: " << avgSigma << endl;
   
@@ -771,13 +771,13 @@ bool MNCTModuleStripPairingGreedy_b::CheckInitialEnergyDifference(){
   
   //find total x energy and total  y energy
   for (int axis=0; axis<2; axis++){
-    for (int i=0; i<nHitsOrig.at(axis); i++){
-      eTotal.at(axis) = eTotal.at(axis) + energy.at(axis).at(i);
+    for (int i=0; i<nHitsOrig[axis]; i++){
+      eTotal[axis] = eTotal[axis] + energy[axis][i];
     }
   }
   
   //compare energy difference to 3*(avg sigma)	
-  if (fabs(eTotal.at(0)-eTotal.at(1)) < 3*avgSigma){
+  if (fabs(eTotal[0]-eTotal[1]) < 3*avgSigma){
     //		cout << "E difference less than 3 sigma" << endl;
     return true;
   }
@@ -842,39 +842,40 @@ bool MNCTModuleStripPairingGreedy_b::CheckForAdjacentStrips(){
   //iterate over x and y axes
   for (int axis=0; axis<2; axis++){
     //iterate over all but last hit on each axis
-    for (int i=0; i<nHits.at(axis)-1; i++){
+    for (int i=0; i<nHits[axis]-1; i++){
       //check for adjacent strips
-      if (stripsHit.at(axis).at(i)+1 == stripsHit.at(axis).at(i+1)){
+      if (stripsHit[axis][i]+1 == stripsHit[axis][i+1]){
         adjStrips = true;
         
         counter += 1;
         //label combined strip by adding 50 to the lower strip number
         //append combined strip number to stripsHit
-        adjStripLabel = stripsHit.at(axis).at(i) + 50;
-        stripsHit.at(axis).push_back(adjStripLabel);
+        adjStripLabel = stripsHit[axis][i] + 50;
+        stripsHit[axis].push_back(adjStripLabel);
         
         //add row and column to kill matrix
         ExpandKillMatrix(axis);
         
         //fill kill matrix
         //each element of the kill matrix is the vector sum of the constituent strips
-        for (int k=0; k<nHits.at(axis)+counter-1; k++){
-          killMatrix.at(axis).at(nHits.at(axis)+counter-1).at(k) = killMatrix.at(axis).at(i).at(k) + killMatrix.at(axis).at(i+1).at(k);
-          killMatrix.at(axis).at(k).at(nHits.at(axis)+counter-1) = killMatrix.at(axis).at(k).at(i) + killMatrix.at(axis).at(k).at(i+1);
+        int k_max = nHits[axis]+counter-1;
+        for (int k=0; k<k_max; k++){
+          killMatrix[axis][k_max][k] = killMatrix[axis][i][k] + killMatrix[axis][i+1][k];
+          killMatrix[axis][k][k_max] = killMatrix[axis][k][i] + killMatrix[axis][k][i+1];
         }
         
         //add the energies of the adjacent strips and append them to the energy vector
-        adjStripEnergy = energy.at(axis).at(i) + energy.at(axis).at(i+1);
-        energy.at(axis).push_back(adjStripEnergy);
+        adjStripEnergy = energy[axis][i] + energy[axis][i+1];
+        energy[axis].push_back(adjStripEnergy);
         
         //add the errors of the adjacent strips and append them to the error vector
-        adjStripSig = sqrt(sig.at(axis).at(i)*sig.at(axis).at(i)+sig.at(axis).at(i+1)*sig.at(axis).at(i+1));
-        sig.at(axis).push_back(adjStripSig);
+        adjStripSig = sqrt(sig[axis][i]*sig[axis][i]+sig[axis][i+1]*sig[axis][i+1]);
+        sig[axis].push_back(adjStripSig);
       }
     }
     //change the number of hits
-    nHits.at(axis) = nHits.at(axis) + counter;
-		nHitsAdj.at(axis) = nHits.at(axis) - nHitsOrig.at(axis);
+    nHits[axis] = nHits[axis] + counter;
+		nHitsAdj[axis] = nHits[axis] - nHitsOrig[axis];
 
     counter = 0;
   }
@@ -890,23 +891,23 @@ bool MNCTModuleStripPairingGreedy_b::CheckMultipleHits(){
   
   //	DefineEventInfo();
   
-  int n_x = nHitsOrig.at(0);
-  int n_y = nHitsOrig.at(1);
+  int n_x = nHitsOrig[0];
+  int n_y = nHitsOrig[1];
   
-  //	cout << "nx: " << nHits.at(0) << endl;
-  //	cout << "ny: " << nHits.at(1) << endl << endl;
+  //	cout << "nx: " << nHits[0] << endl;
+  //	cout << "ny: " << nHits[1] << endl << endl;
   
   if (n_x == n_y) {return false;}
   
   else if (n_x > n_y) {  //y strips have multiple hits, so want to make pairs from x: ie two x strips for one y strip
     AddMultipleHits(0);
-    //		for (int i=0; i<n_x; i++){cout << stripsHit.at(0).at(i) << endl;}
+    //		for (int i=0; i<n_x; i++){cout << stripsHit[0][i] << endl;}
     return true;
   }
   
   else {	//x strips have multiple hits, so want to make pairs from y: ie two y strips for one x strip
     AddMultipleHits(1);
-    //		for (int i=0; i<n_y; i++){cout << stripsHit.at(1).at(i) << endl;}
+    //		for (int i=0; i<n_y; i++){cout << stripsHit[1][i] << endl;}
     return true;
   }
 };
@@ -923,10 +924,10 @@ void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
   vector<float> pairEnergyVec, pairSigVec;
   
   //goal is to make all possible combinations of strips on one axis
-  for (int i=0; i<nHits.at(axis)-nThreeHitsAdj.at(axis); i++){
-    for (int j=i+1; j<nHits.at(axis)-nThreeHitsAdj.at(axis); j++){
-      x1 = stripsHit.at(axis).at(i);
-      x2 = stripsHit.at(axis).at(j);
+  for (int i=0; i<nHits[axis]-nThreeHitsAdj[axis]; i++){
+    for (int j=i+1; j<nHits[axis]-nThreeHitsAdj[axis]; j++){
+      x1 = stripsHit[axis][i];
+      x2 = stripsHit[axis][j];
       
       //label combinations by multiplying the lower strip number by 100 and adding it to the higher strip number
       //append combined strip to pairHitsVec
@@ -941,25 +942,26 @@ void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
       ExpandKillMatrix(axis);
       //fill kill matrix
       //each element is the vector sum of its constituent strips
-      for (int k=0; k<nHits.at(axis)+nPairs-1; k++){
-        killMatrix.at(axis).at(nHits.at(axis)+nPairs-1).at(k) = killMatrix.at(axis).at(i).at(k) + killMatrix.at(axis).at(j).at(k);
-        killMatrix.at(axis).at(k).at(nHits.at(axis)+nPairs-1) = killMatrix.at(axis).at(k).at(i) + killMatrix.at(axis).at(k).at(j);
+      int k_max = nHits[axis]+nPairs-1;
+      for (int k=0; k<nHits[axis]+nPairs-1; k++){
+        killMatrix[axis][k_max][k] = killMatrix[axis][i][k] + killMatrix[axis][j][k];
+        killMatrix[axis][k][k_max] = killMatrix[axis][k][i] + killMatrix[axis][k][j];
       }
       
       //print kill matrix
       /*
-      for (int m=0; m<nHits.at(axis)+nPairs-1; m++){
-        for (int n=0; n<nHits.at(axis)+nPairs-1; n++){
-          cout << killMatrix.at(axis).at(m).at(n) << '\t';
+      for (int m=0; m<nHits[axis]+nPairs-1; m++){
+        for (int n=0; n<nHits[axis]+nPairs-1; n++){
+          cout << killMatrix[axis][m][n] << '\t';
         }
         cout << endl;
       }
       */
       //add to energy and significance vectors
-      pairE = energy.at(axis).at(i)+energy.at(axis).at(j);
+      pairE = energy[axis][i]+energy[axis][j];
       pairEnergyVec.push_back(pairE);
       
-      pairSig = sqrt(sig.at(axis).at(i)*sig.at(axis).at(i)+sig.at(axis).at(j)*sig.at(axis).at(j));
+      pairSig = sqrt(sig[axis][i]*sig[axis][i]+sig[axis][j]*sig[axis][j]);
       pairSigVec.push_back(pairSig);
       
     }
@@ -967,25 +969,25 @@ void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
   /*
   cout << "-----checking order-----" << endl;
   for (int i=0; i<nPairs; i++){
-    cout << pairHitsVec.at(i) << endl;
+    cout << pairHitsVec[i] << endl;
   }
   */
   
   //add strip combinations info to stripsHit, energy, and sig
   for (int i=0; i<nPairs; i++){
-    stripsHit.at(axis).push_back(pairHitsVec.at(i));
-    energy.at(axis).push_back(pairEnergyVec.at(i));
-    sig.at(axis).push_back(pairSigVec.at(i));
+    stripsHit[axis].push_back(pairHitsVec[i]);
+    energy[axis].push_back(pairEnergyVec[i]);
+    sig[axis].push_back(pairSigVec[i]);
   }
   
   //change number of hits to account for multiple strips being hit
-  nHits.at(axis) = nHits.at(axis) + nPairs;
+  nHits[axis] = nHits[axis] + nPairs;
   
   //print final kill matrix
   //	cout << "printing final kill matrix..." << endl;
-  //	for (int i=0; i<nHits.at(axis); i++){
-  //		for (int j=0; j<nHits.at(axis); j++){
-  //			cout << killMatrix.at(axis).at(i).at(j) << '\t';
+  //	for (int i=0; i<nHits[axis]; i++){
+  //		for (int j=0; j<nHits[axis]; j++){
+  //			cout << killMatrix[axis][i][j] << '\t';
   //		}
   //		cout << endl;
   //	}
@@ -993,7 +995,7 @@ void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
   
   
   //	cout << "--------------------//------------------------" << endl;
-  //	for(int i=0; i<xStripsHit.size(); i++){cout << xStripsHit.at(i) << endl;}
+  //	for(int i=0; i<xStripsHit.size(); i++){cout << xStripsHit[i] << endl;}
   
   
 };
@@ -1004,51 +1006,52 @@ void MNCTModuleStripPairingGreedy_b::ChargeSharingThreeStrips(int axis){
 	int counter = 0;
 
 	//check pairs of adjacent strips
-	for (int i=nHitsOrig.at(axis); i<nHitsOrig.at(axis)+nHitsAdj.at(axis)-1; i++){
-		if ( fabs(stripsHit.at(axis).at(i+1) - stripsHit.at(axis).at(i)) == 1){
-			int sID_one = stripsHit.at(axis).at(i)-50;
+	for (int i=nHitsOrig[axis]; i<nHitsOrig[axis]+nHitsAdj[axis]-1; i++){
+		if ( fabs(stripsHit[axis][i+1] - stripsHit[axis][i]) == 1){
+			int sID_one = stripsHit[axis][i]-50;
 
 			//get strip IDs to check energies
 			int indOne = GetStripIndex(axis,sID_one);
 
 			//check energies
-			float eOne = energy.at(axis).at(indOne);
-			float eTwo = energy.at(axis).at(indOne+1);
-			float eThree = energy.at(axis).at(indOne+2);
+			float eOne = energy[axis][indOne];
+			float eTwo = energy[axis][indOne+1];
+			float eThree = energy[axis][indOne+2];
 
 			//if energy makes sense, get new "strip ID"
 			if (eTwo > eOne && eTwo > eThree){
 				int newStripID = 5000+sID_one;
-				stripsHit.at(axis).push_back(newStripID);
+				stripsHit[axis].push_back(newStripID);
 				float newEnergy = eOne+eTwo+eThree;
-				energy.at(axis).push_back(newEnergy);
+				energy[axis].push_back(newEnergy);
 
 				//get energy resolution
-				float eResOne = sig.at(axis).at(indOne);
-				float eResTwo = sig.at(axis).at(indOne+1);
-				float eResThree = sig.at(axis).at(indOne+2);
+				float eResOne = sig[axis][indOne];
+				float eResTwo = sig[axis][indOne+1];
+				float eResThree = sig[axis][indOne+2];
 				float newERes = sqrt(eResOne*eResOne + eResTwo*eResTwo + eResThree*eResThree);
-				sig.at(axis).push_back(newERes);
+				sig[axis].push_back(newERes);
 
 				counter += 1;
 
 				//add things to kill matrix
 				ExpandKillMatrix(axis);
 
-//				cout << "killMatrix.at(0).size(): " << killMatrix.at(0).size() << endl;
+//				cout << "killMatrix[0].size(): " << killMatrix[0].size() << endl;
 
 	      //each element is the vector sum of its constituent strips
-	      for (int k=0; k<nHits.at(axis)+counter-1; k++){
-	        killMatrix.at(axis).at(nHits.at(axis)+counter-1).at(k) = killMatrix.at(axis).at(indOne).at(k) + killMatrix.at(axis).at(indOne+1).at(k) + killMatrix.at(axis).at(indOne+2).at(k);
-	        killMatrix.at(axis).at(k).at(nHits.at(axis)+counter-1) = killMatrix.at(axis).at(k).at(indOne) + killMatrix.at(axis).at(k).at(indOne+1) + killMatrix.at(axis).at(k).at(indOne+2);
+        int k_max = nHits[axis]+counter-1;
+	      for (int k=0; k<k_max; k++){
+	        killMatrix[axis][k_max][k] = killMatrix[axis][indOne][k] + killMatrix[axis][indOne+1][k] + killMatrix[axis][indOne+2][k];
+	        killMatrix[axis][k][k_max] = killMatrix[axis][k][indOne] + killMatrix[axis][k][indOne+1] + killMatrix[axis][k][indOne+2];
 	      }
 
 			}
 		}
 	}
 
-	nHits.at(axis) = nHits.at(axis) + counter;
-	nThreeHitsAdj.at(axis) = nThreeHitsAdj.at(axis) + counter;
+	nHits[axis] = nHits[axis] + counter;
+	nThreeHitsAdj[axis] = nThreeHitsAdj[axis] + counter;
 
 };
 
@@ -1064,10 +1067,10 @@ void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
   vector<float> pairEnergyVec, pairSigVec;
   
   //goal is to make all possible combinations of strips on one axis
-  for (int i=0; i<nHitsOrig.at(axis)+nHitsAdj.at(axis); i++){
-    for (int j=nHitsOrig.at(axis)+nHitsAdj.at(axis)+nThreeHitsAdj.at(axis); j<nHits.at(axis); j++){
-      x1 = stripsHit.at(axis).at(i);
-      x2 = stripsHit.at(axis).at(j);
+  for (int i=0; i<nHitsOrig[axis]+nHitsAdj[axis]; i++){
+    for (int j=nHitsOrig[axis]+nHitsAdj[axis]+nThreeHitsAdj[axis]; j<nHits[axis]; j++){
+      x1 = stripsHit[axis][i];
+      x2 = stripsHit[axis][j];
       
       //label combinations by multiplying the lower strip number by 100 and adding it to the higher strip number
       //append combined strip to pairHitsVec
@@ -1082,25 +1085,33 @@ void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
       ExpandKillMatrix(axis);
       //fill kill matrix
       //each element is the vector sum of its constituent strips
-      for (int k=0; k<nHits.at(axis)+nPairs-1; k++){
-        killMatrix.at(axis).at(nHits.at(axis)+nPairs-1).at(k) = killMatrix.at(axis).at(i).at(k) + killMatrix.at(axis).at(j).at(k);
-        killMatrix.at(axis).at(k).at(nHits.at(axis)+nPairs-1) = killMatrix.at(axis).at(k).at(i) + killMatrix.at(axis).at(k).at(j);
+      /*
+      for (int k=0; k<nHits[axis]+nPairs-1; k++){
+        killMatrix[axis].at(nHits[axis]+nPairs-1)[k] = killMatrix[axis][i][k] + killMatrix[axis][j][k];
+        killMatrix[axis][k].at(nHits[axis]+nPairs-1) = killMatrix[axis][k][i] + killMatrix[axis][k][j];
+      }
+      */
+      int k_max = nHits[axis] + nPairs - 1;
+      vector<vector<int> >& SubMatrix = killMatrix[axis];
+      for (int k = 0; k < k_max; ++k){
+        SubMatrix[k_max][k] = SubMatrix[i][k] + SubMatrix[j][k];
+        SubMatrix[k][k_max] = SubMatrix[k][i] + SubMatrix[k][j];
       }
       
       //print kill matrix
       /*
-      for (int m=0; m<nHits.at(axis)+nPairs-1; m++){
-        for (int n=0; n<nHits.at(axis)+nPairs-1; n++){
-          cout << killMatrix.at(axis).at(m).at(n) << '\t';
+      for (int m=0; m<nHits[axis]+nPairs-1; m++){
+        for (int n=0; n<nHits[axis]+nPairs-1; n++){
+          cout << killMatrix[axis][m][n] << '\t';
         }
         cout << endl;
       }
       */
       //add to energy and significance vectors
-      pairE = energy.at(axis).at(i)+energy.at(axis).at(j);
+      pairE = energy[axis][i]+energy[axis][j];
       pairEnergyVec.push_back(pairE);
       
-      pairSig = sqrt(sig.at(axis).at(i)*sig.at(axis).at(i)+sig.at(axis).at(j)*sig.at(axis).at(j));
+      pairSig = sqrt(sig[axis][i]*sig[axis][i]+sig[axis][j]*sig[axis][j]);
       pairSigVec.push_back(pairSig);
       
     }
@@ -1108,25 +1119,25 @@ void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
   /*
   cout << "-----checking order-----" << endl;
   for (int i=0; i<nPairs; i++){
-    cout << pairHitsVec.at(i) << endl;
+    cout << pairHitsVec[i] << endl;
   }
   */
   
   //add strip combinations info to stripsHit, energy, and sig
   for (int i=0; i<nPairs; i++){
-    stripsHit.at(axis).push_back(pairHitsVec.at(i));
-    energy.at(axis).push_back(pairEnergyVec.at(i));
-    sig.at(axis).push_back(pairSigVec.at(i));
+    stripsHit[axis].push_back(pairHitsVec[i]);
+    energy[axis].push_back(pairEnergyVec[i]);
+    sig[axis].push_back(pairSigVec[i]);
   }
   
   //change number of hits to account for multiple strips being hit
-  nHits.at(axis) = nHits.at(axis) + nPairs;
+  nHits[axis] = nHits[axis] + nPairs;
   
   //print final kill matrix
   //	cout << "printing final kill matrix..." << endl;
-  //	for (int i=0; i<nHits.at(axis); i++){
-  //		for (int j=0; j<nHits.at(axis); j++){
-  //			cout << killMatrix.at(axis).at(i).at(j) << '\t';
+  //	for (int i=0; i<nHits[axis]; i++){
+  //		for (int j=0; j<nHits[axis]; j++){
+  //			cout << killMatrix[axis][i][j] << '\t';
   //		}
   //		cout << endl;
   //	}
@@ -1134,7 +1145,7 @@ void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
   
   
   //	cout << "--------------------//------------------------" << endl;
-  //	for(int i=0; i<xStripsHit.size(); i++){cout << xStripsHit.at(i) << endl;}
+  //	for(int i=0; i<xStripsHit.size(); i++){cout << xStripsHit[i] << endl;}
   
   
 };
@@ -1145,17 +1156,20 @@ void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
 void MNCTModuleStripPairingGreedy_b::InitializeBadCombinations(){
   
   badCombinations.clear();
+  badCombinations.push_back(vector<int>(nHits[0], 0));
+  badCombinations.push_back(vector<int>(nHits[1], 0));
   
+  /*
   vector<int> badCombX, badCombY;
-  for (int i=0; i<nHits.at(0); i++){
+  for (int i=0; i<nHits[0]; i++){
     badCombX.push_back(0);
   }
-  for (int i=0; i<nHits.at(1); i++){
+  for (int i=0; i<nHits[1]; i++){
     badCombY.push_back(0);
   }
   badCombinations.push_back(badCombX);
   badCombinations.push_back(badCombY);
-  
+  */
 };
 
 //check for combinations that take a strip into account more than once
@@ -1167,14 +1181,14 @@ void MNCTModuleStripPairingGreedy_b::CheckForBadCombinations(){
   //from the way the kill matrix is defined, if killMatrix[i][j]>1, than strip i is a bad combination
   for (int axis=0; axis<2; axis++){
 //		cout << axis << ": ";
-    for (int i=0; i<nHits.at(axis); i++){
-      for (int j=0; j<nHitsOrig.at(axis); j++){
+    for (int i=0; i<nHits[axis]; i++){
+      for (int j=0; j<nHitsOrig[axis]; j++){
         //add bad combinations to badCombinations vector
-        if (killMatrix.at(axis).at(i).at(j) > 1){
-          badCombinations.at(axis).at(i) = 1;
+        if (killMatrix[axis][i][j] > 1){
+          badCombinations[axis][i] = 1;
         }
       }
-//     			cout << badCombinations.at(axis).at(i) << "  ";
+//     			cout << badCombinations[axis][i] << "  ";
 
     }
 //    		cout << endl;
@@ -1186,10 +1200,10 @@ void MNCTModuleStripPairingGreedy_b::CheckForBadCombinations(){
 float MNCTModuleStripPairingGreedy_b::CalculateWeight(int xIndex, int yIndex){
   
   float weight;
-  float xE = energy.at(0).at(xIndex);
-  float yE = energy.at(1).at(yIndex);
-  float xS = sig.at(0).at(xIndex);
-  float yS = sig.at(1).at(yIndex);
+  float xE = energy[0][xIndex];
+  float yE = energy[1][yIndex];
+  float xS = sig[0][xIndex];
+  float yS = sig[1][yIndex];
   
   weight = (xE-yE)*(xE-yE)/((xS*xS)+(yS*yS));
   // cout << "weight: x=" << xIndex << ", y=" << yIndex << ": "<< weight << endl;
@@ -1201,17 +1215,18 @@ float MNCTModuleStripPairingGreedy_b::CalculateWeight(int xIndex, int yIndex){
 void MNCTModuleStripPairingGreedy_b::InitializeWeightMatrix(){
   
   weightMatrix.clear();
+  weightMatrix.resize(nHits[0], vector<float>(nHits[1], 0));
   
+  /*
   vector<float> col;
   
-  
-  for (int i=0; i<nHits.at(1); i++){
+  for (int i=0; i<nHits[1]; i++){
     col.push_back(0);
   }
-  for (int j=0; j<nHits.at(0); j++){
+  for (int j=0; j<nHits[0]; j++){
     weightMatrix.push_back(col);
   }
-  
+  */
 };
 
 //initializes kill matrices
@@ -1219,29 +1234,33 @@ void MNCTModuleStripPairingGreedy_b::InitializeWeightMatrix(){
 void MNCTModuleStripPairingGreedy_b::InitializeKillMatrices(){
   
   killMatrix.clear();
+  killMatrix.push_back(vector<vector<int>>(nHits[0], vector<int>(nHits[0], 0)));
+  killMatrix.push_back(vector<vector<int>>(nHits[1], vector<int>(nHits[1], 0)));
   
+  /*
   vector<int> col_x, col_y;
   vector<vector<int> > kill_x, kill_y;
   
-  for (int i=0; i<nHits.at(0); i++){
+  for (int i=0; i<nHits[0]; i++){
     col_x.push_back(0);
   }
-  for (int i=0; i<nHits.at(1); i++){
+  for (int i=0; i<nHits[1]; i++){
     col_y.push_back(0);
   }
-  for (int i=0; i<nHits.at(0); i++){
+  for (int i=0; i<nHits[0]; i++){
     kill_x.push_back(col_x);
   }
-  for (int i=0; i<nHits.at(1); i++){
+  for (int i=0; i<nHits[1]; i++){
     kill_y.push_back(col_y);
   }
   
   killMatrix.push_back(kill_x);
   killMatrix.push_back(kill_y);
+  */
   
   for (int axis=0; axis<2; axis++){
-    for (int i=0; i<nHits.at(axis); i++){
-      killMatrix.at(axis).at(i).at(i) = 1;
+    for (int i=0; i<nHits[axis]; i++){
+      killMatrix[axis][i][i] = 1;
     }
   }
   
@@ -1250,31 +1269,28 @@ void MNCTModuleStripPairingGreedy_b::InitializeKillMatrices(){
 //add row and column of 0s to kill matrix
 void MNCTModuleStripPairingGreedy_b::ExpandKillMatrix(int axis){
   
-  int size = killMatrix.at(axis).size();
-  vector<int> col;
+  int size = killMatrix[axis].size();
+
   //make a column that's 1 bigger than the size of the kill matrix
-  for (int i=0; i<size+1; i++){
-    col.push_back(0);
-  }
   //add the column to the kill matrix
-  killMatrix.at(axis).push_back(col);
+  killMatrix[axis].push_back(vector<int>(size+1, 0));
   
   //add a 0 to every row?
   for (int j=0; j<size; j++){
-    killMatrix.at(axis).at(j).push_back(0);
+    killMatrix[axis][j].push_back(0);
   }
   
   //set new diagonal term equal to 1
-  killMatrix.at(axis).at(size).at(size) = 1;
+  killMatrix[axis][size][size] = 1;
   
   // cout << kill_x.size() << endl;
   // for (int i=0; i<kill_x.size(); i++){
-  //   cout << "size: " << kill_x.at(i).size() << endl;
+  //   cout << "size: " << kill_x[i].size() << endl;
   // }
   
   //	for (int i=0; i<kill_x.size(); i++){
   //    for (int j=0; j<kill_x.size(); j++){
-  //      cout << kill_x.at(i).at(j) << '\t';
+  //      cout << kill_x[i][j] << '\t';
   //    }
   //    cout << endl;
   //  }
@@ -1285,10 +1301,10 @@ void MNCTModuleStripPairingGreedy_b::ExpandKillMatrix(int axis){
 //fills weight matrtix of 0s with the weights of each x-y pair
 void MNCTModuleStripPairingGreedy_b::CalculateWeightMatrix(){
   
-  int n_x = nHits.at(0);
-  int n_y = nHits.at(1);
-  int n_xOrig = nHitsOrig.at(0);
-  int n_yOrig = nHitsOrig.at(1);
+  int n_x = nHits[0];
+  int n_y = nHits[1];
+  int n_xOrig = nHitsOrig[0];
+  int n_yOrig = nHitsOrig[1];
   
   InitializeWeightMatrix();
   float weight;
@@ -1299,16 +1315,16 @@ void MNCTModuleStripPairingGreedy_b::CalculateWeightMatrix(){
   //if it's a bad pair, set weight to -1
   for (int i=0; i<n_x; i++){
     for (int j=0; j<n_y; j++){
-      if (badCombinations.at(0).at(i) == 0 && badCombinations.at(1).at(j) == 0){
+      if (badCombinations[0][i] == 0 && badCombinations[1][j] == 0){
 //        if (i<n_xOrig || j<n_yOrig){
-//				if (i<n_x-nHitsAdj.at(0) || j<n_y-nHitsAdj.at(1)){ 
-				if (i<n_xOrig + nHitsAdj.at(0) || j<n_yOrig + nHitsAdj.at(1)){
+//				if (i<n_x-nHitsAdj[0] || j<n_y-nHitsAdj[1]){ 
+				if (i<n_xOrig + nHitsAdj[0] || j<n_yOrig + nHitsAdj[1]){
           weight = CalculateWeight(i,j);
-          weightMatrix.at(i).at(j) = weight;
+          weightMatrix[i][j] = weight;
         }
-        else {weightMatrix.at(i).at(j) = -1;}
+        else {weightMatrix[i][j] = -1;}
       }
-      else {weightMatrix.at(i).at(j) = -1;}
+      else {weightMatrix[i][j] = -1;}
     }
   }
   
@@ -1320,18 +1336,18 @@ void MNCTModuleStripPairingGreedy_b::CalculateWeightMatrix(){
 //go through all elements of weight matrix and find minimum weight
 vector<int> MNCTModuleStripPairingGreedy_b::FindMinWeight(){
  
- 	int n_x = nHits.at(0);
-  int n_y = nHits.at(1);
+ 	int n_x = nHits[0];
+  int n_y = nHits[1];
   
   //set min_weight equal to the maximum float value that can possibly exist
   float min_weight = numeric_limits<float>::max();
-  float weight;
-  int xIndex, yIndex;
+  float weight = 0;
+  int xIndex = 0, yIndex = 0;
   //for each weight in the weight matrix, if it's lower than min_weight,
   //set min_weight to that weight
   for (int i=0; i<n_x; i++){
     for (int j=0; j<n_y; j++){
-      weight = weightMatrix.at(i).at(j);
+      weight = weightMatrix[i][j];
       if (weight < min_weight && weight >= 0){
         min_weight = weight;
         xIndex = i;
@@ -1344,44 +1360,56 @@ vector<int> MNCTModuleStripPairingGreedy_b::FindMinWeight(){
   }
   
   //set the final minimum weight to -1, so that this search can be re-done
-  weightMatrix.at(xIndex).at(yIndex) = -1;
+  weightMatrix[xIndex][yIndex] = -1;
   
   //	cout << "xIndex: " << xIndex << endl;
   //	cout << "yIndex: " << yIndex << endl;
   
   //return the indices of the minimum weight
-  vector<int> pairIndex;
-  pairIndex.push_back(xIndex);
-  pairIndex.push_back(yIndex);
+  vector<int> pairIndex(2);
+  pairIndex[0] = xIndex;
+  pairIndex[1] = yIndex;
   return pairIndex;
   
 };
 
+
 //once a pair is chosen (indexed by xIndex, yIndex), prevents program from repeating a strip
 void MNCTModuleStripPairingGreedy_b::ConflictingStrips(int xIndex, int yIndex){
   
-  vector<int> indices;
-  indices.push_back(xIndex);
-  indices.push_back(yIndex);
+  vector<int> indices = { xIndex, yIndex };
   
   //loop sets weight matrix to -1 at any place where a strip could be repeated
   //for example, if pair (x=1, y=2) is chosen, the weight matrix at (x=1, y=anything)
   //or (x=51, y=anything), or (x=105, y=anything), etc, must be set to -1
   //that way, strips don't repeat
   for (int axis=0; axis<2; axis++){
-    for (int i=0; i<nHits.at(axis); i++){
-      //			cout << i << '\t' << killMatrix.at(axis).at(indices.at(axis)).at(i) << endl;
-      if (killMatrix.at(axis).at(indices.at(axis)).at(i) != 0){
-        //				cout << "bad x: " << i << '\t' << stripsHit.at(axis).at(i) << endl;
-        //				cout << killMatrix.at(axis).at(indices.at(axis)).at(i) << endl;
+    for (int i=0; i<nHits[axis]; i++){
+      //			cout << i << '\t' << killMatrix[axis].at(indices[axis])[i] << endl;
+      if (killMatrix[axis][indices[axis]][i] != 0){
+        //				cout << "bad x: " << i << '\t' << stripsHit[axis][i] << endl;
+        //				cout << killMatrix[axis].at(indices[axis])[i] << endl;
         
         int j_max;
         if (axis==1){j_max = 0;}
         else {j_max = 1;}
+        
+        // --> time critical
+        /* slow version
         for (int j=0; j<nHits.at(j_max); j++){
-          if (axis==0){weightMatrix.at(i).at(j) = -1;}
-          if (axis==1){weightMatrix.at(j).at(i) = -1;}
+          if (axis==0){weightMatrix[i][j] = -1;}
+          if (axis==1){weightMatrix[j][i] = -1;}
         }
+        */
+        int max = nHits[j_max];
+        for (int j=0; j<max; ++j){
+          if (axis==0) {
+            weightMatrix[i][j] = -1;
+          } else if (axis==1) {
+            weightMatrix[j][i] = -1;
+          }
+        }
+        //<-- time critial end
       }
     }
   }
@@ -1395,9 +1423,11 @@ void MNCTModuleStripPairingGreedy_b::ConflictingStrips(int xIndex, int yIndex){
 int MNCTModuleStripPairingGreedy_b::CountNegativeElements(){
   
   int counter = 0;
-  for (int i=0; i<nHits.at(0); i++){
-    for (int j=0; j<nHits.at(1); j++){
-      if (weightMatrix.at(i).at(j) == -1){
+  int i_max = nHits[0];
+  for (int i=0; i<i_max; i++){
+    int j_max = nHits[1];
+    for (int j=0; j<j_max; j++){
+      if (weightMatrix[i][j] == -1){
         counter += 1;
       }
     }
@@ -1411,8 +1441,8 @@ int MNCTModuleStripPairingGreedy_b::CountNegativeElements(){
 float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 
   //initialize variables
-  int n_x = nHits.at(0);
-  int n_y = nHits.at(1);
+  int n_x = nHits[0];
+  int n_y = nHits[1];
 
   CalculateWeightMatrix();
   if (g_Verbosity >= c_Info) PrintXYStripsHit();
@@ -1436,41 +1466,41 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 //		PrintWeightMatrix();
     //find indices of the minimum weight
     vector<int> indices = FindMinWeight();
-    xIndex = indices.at(0);
-    yIndex = indices.at(1);
+    xIndex = indices[0];
+    yIndex = indices[1];
     //add the strip numbers at those indices to finalPairs
-    finalXStrip = stripsHit.at(0).at(xIndex);
-    finalYStrip = stripsHit.at(1).at(yIndex);
+    finalXStrip = stripsHit[0][xIndex];
+    finalYStrip = stripsHit[1][yIndex];
     pairVec.push_back(finalXStrip);
     pairVec.push_back(finalYStrip);
     finalPairs.push_back(pairVec);
     pairVec.clear();
 
-		energyPair.push_back(energy.at(0).at(xIndex));
-		energyPair.push_back(energy.at(1).at(yIndex));
+		energyPair.push_back(energy[0][xIndex]);
+		energyPair.push_back(energy[1][yIndex]);
 		finalPairEnergy.push_back(energyPair);
     energyPair.clear();
 
-		resPair.push_back(sig.at(0).at(xIndex));
-		resPair.push_back(sig.at(1).at(yIndex));
+		resPair.push_back(sig[0][xIndex]);
+		resPair.push_back(sig[1][yIndex]);
 		finalPairRes.push_back(resPair);
 		resPair.clear();
 
-		greedyChiSq += pow((energy.at(0).at(xIndex)-energy.at(1).at(yIndex)),2) / (pow(sig.at(0).at(xIndex),2) + pow(sig.at(1).at(yIndex),2));
+		greedyChiSq += pow((energy[0][xIndex]-energy[1][yIndex]),2) / (pow(sig[0][xIndex],2) + pow(sig[1][yIndex],2));
 
     //fill hit quality factor vector
-    weight = weightMatrix.at(xIndex).at(yIndex);
+    weight = weightMatrix[xIndex][yIndex];
     hitQualityFactor.push_back(weight);
     
     //fill hit energy resolution vector
-    float eResX = sig.at(0).at(xIndex);
-    float eResY = sig.at(1).at(yIndex);
+    float eResX = sig[0][xIndex];
+    float eResY = sig[1][yIndex];
     eRes = (sqrt(2)*eResX*eResY)/(eResX*eResX+eResY*eResY);
     energyResolution.push_back(eRes);
     
     //fill hit energy vector
-//    float eX = energy.at(0).at(xIndex);
-    float eY = energy.at(1).at(yIndex);
+//    float eX = energy[0][xIndex];
+    float eY = energy[1][yIndex];
 //    double inf = numeric_limits<double>::infinity();
     //sometimes the energy resolution is infinite (not sure why)
     //if it is, then take the average of the energies
@@ -1500,7 +1530,7 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
   if (g_Verbosity >= c_Info) {
     cout << "final pairs: " << endl;
     for (unsigned int i=0; i<finalPairs.size(); i++){
-      cout << finalPairs.at(i).at(0) << '\t' << finalPairs.at(i).at(1) << endl;
+      cout << finalPairs[i][0] << '\t' << finalPairs[i][1] << endl;
     }
 		cout << "chi sq: " << greedyChiSq << endl;
   }
@@ -1517,7 +1547,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 
 /*
 	for (unsigned int pair=0; pair<finalPairs.size(); pair++){
-		if (finalPairs.at(pair).at(0) > 100 && finalPairs.at(pair).at(1) > 100){
+		if (finalPairs.at(pair)[0] > 100 && finalPairs.at(pair)[1] > 100){
 			dummy_func();
 		}
 	}
@@ -1547,37 +1577,37 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 		yChargeSharing = false;
 
 		//charge sharing between two strips
-    if (finalPairs.at(i).at(0) > 50 && finalPairs.at(i).at(0) < 100){
-      xVec.push_back(finalPairs.at(i).at(0)-50);
-      xVec.push_back(finalPairs.at(i).at(0)+1-50);
+    if (finalPairs[i][0] > 50 && finalPairs[i][0] < 100){
+      xVec.push_back(finalPairs[i][0]-50);
+      xVec.push_back(finalPairs[i][0]+1-50);
 			xChargeSharing = true;
     }
 		//charge sharing between three strips
-		else if (finalPairs.at(i).at(0) > 5000 && finalPairs.at(i).at(0) < 5100){
-			xVec.push_back(finalPairs.at(i).at(0)-5000);
-			xVec.push_back(finalPairs.at(i).at(0)+1-5000);
-			xVec.push_back(finalPairs.at(i).at(0)+2-5000);
+		else if (finalPairs[i][0] > 5000 && finalPairs[i][0] < 5100){
+			xVec.push_back(finalPairs[i][0]-5000);
+			xVec.push_back(finalPairs[i][0]+1-5000);
+			xVec.push_back(finalPairs[i][0]+2-5000);
 			xChargeSharing = true;
 		}
 		//two hits on x: y strip hit twice
-    else if (finalPairs.at(i).at(0) > 100 && finalPairs.at(i).at(0) < 10000){
+    else if (finalPairs[i][0] > 100 && finalPairs[i][0] < 10000){
 			xTwoHits = true;
-      if (finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/100)*100 > 50){
+      if (finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100 > 50){
 				xChargeSharing = true;
-        xVec.push_back(finalPairs.at(i).at(0)/100);
-        xVec.push_back(finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/100)*100-50);
-        xVec.push_back(finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/100)*100+1-50);
+        xVec.push_back(finalPairs[i][0]/100);
+        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100-50);
+        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100+1-50);
       }
       else {
-        xVec.push_back(finalPairs.at(i).at(0)/100);
-        xVec.push_back(finalPairs.at(i).at(0) - (int)(finalPairs.at(i).at(0)/100)*100);
+        xVec.push_back(finalPairs[i][0]/100);
+        xVec.push_back(finalPairs[i][0] - (int)(finalPairs[i][0]/100)*100);
       }
     }
 		//three hits on x: y strip hit three times
-		else if (finalPairs.at(i).at(0) > 10000){
+		else if (finalPairs[i][0] > 10000){
 			xThreeHits = true;
-			xVec.push_back(finalPairs.at(i).at(0)/10000);
-			int lowerFourDigits = finalPairs.at(i).at(0)-(int)(finalPairs.at(i).at(0)/10000)*10000;
+			xVec.push_back(finalPairs[i][0]/10000);
+			int lowerFourDigits = finalPairs[i][0]-(int)(finalPairs[i][0]/10000)*10000;
 	    if (lowerFourDigits-(int)(lowerFourDigits/100)*100 > 50){
 				xChargeSharing = true;
         xVec.push_back(lowerFourDigits/100);
@@ -1590,36 +1620,36 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
       }
  		}
 		//simplest case: one hit on x, one on y
-    else if (finalPairs.at(i).at(0) < 38) {xVec.push_back(finalPairs.at(i).at(0));}
+    else if (finalPairs[i][0] < 38) {xVec.push_back(finalPairs[i][0]);}
     
-    if (finalPairs.at(i).at(1) > 50 && finalPairs.at(i).at(1) < 100){
-      yVec.push_back(finalPairs.at(i).at(1)-50);
-      yVec.push_back(finalPairs.at(i).at(1)+1-50);
+    if (finalPairs[i][1] > 50 && finalPairs[i][1] < 100){
+      yVec.push_back(finalPairs[i][1]-50);
+      yVec.push_back(finalPairs[i][1]+1-50);
 			yChargeSharing = true;
     }
-		else if (finalPairs.at(i).at(1) > 5000 && finalPairs.at(i).at(1) < 5100){
-			yVec.push_back(finalPairs.at(i).at(1)-5000);
-			yVec.push_back(finalPairs.at(i).at(1)+1-5000);
-			yVec.push_back(finalPairs.at(i).at(1)+2-5000);
+		else if (finalPairs[i][1] > 5000 && finalPairs[i][1] < 5100){
+			yVec.push_back(finalPairs[i][1]-5000);
+			yVec.push_back(finalPairs[i][1]+1-5000);
+			yVec.push_back(finalPairs[i][1]+2-5000);
 			yChargeSharing = true;
 		}
-    else if (finalPairs.at(i).at(1) > 100 && finalPairs.at(i).at(1) < 10000){
+    else if (finalPairs[i][1] > 100 && finalPairs[i][1] < 10000){
 			yTwoHits = true;
-      if (finalPairs.at(i).at(1)-(int)(finalPairs.at(i).at(1)/100)*100 > 50){
+      if (finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100 > 50){
 				yChargeSharing = true;
-        yVec.push_back(finalPairs.at(i).at(1)/100);
-        yVec.push_back(finalPairs.at(i).at(1)-(int)(finalPairs.at(i).at(1)/100)*100-50);
-        yVec.push_back(finalPairs.at(i).at(1)-(int)(finalPairs.at(i).at(1)/100)*100+1-50);
+        yVec.push_back(finalPairs[i][1]/100);
+        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100-50);
+        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100+1-50);
       }
       else {
-        yVec.push_back(finalPairs.at(i).at(1)/100);
-        yVec.push_back(finalPairs.at(i).at(1) - (int)(finalPairs.at(i).at(1)/100)*100);
+        yVec.push_back(finalPairs[i][1]/100);
+        yVec.push_back(finalPairs[i][1] - (int)(finalPairs[i][1]/100)*100);
       }
     }
-		else if (finalPairs.at(i).at(1) > 10000){
+		else if (finalPairs[i][1] > 10000){
 			yThreeHits = true;
-			yVec.push_back(finalPairs.at(i).at(1)/10000);
-			int lowerFourDigits = finalPairs.at(i).at(1)-(int)(finalPairs.at(i).at(1)/10000)*10000;
+			yVec.push_back(finalPairs[i][1]/10000);
+			int lowerFourDigits = finalPairs[i][1]-(int)(finalPairs[i][1]/10000)*10000;
 	    if (lowerFourDigits-(int)(lowerFourDigits/100)*100 > 50){
 				yChargeSharing = true;
         yVec.push_back(lowerFourDigits/100);
@@ -1631,7 +1661,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
         yVec.push_back(lowerFourDigits - (int)(lowerFourDigits/100)*100);
       }
  		}
-    else if (finalPairs.at(i).at(1) < 38) {yVec.push_back(finalPairs.at(i).at(1));}
+    else if (finalPairs[i][1] < 38) {yVec.push_back(finalPairs[i][1]);}
 
 		if (xTwoHits){
 			twoHitsCounter += 1;
@@ -1639,7 +1669,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 
 			vector<int> xVecNew;
 			//first hit
-			xVecNew.push_back(xVec.at(0));
+			xVecNew.push_back(xVec[0]);
 			pair.push_back(xVecNew);
 			pair.push_back(yVec);
 			decodedFinalPairs.push_back(pair);
@@ -1647,36 +1677,36 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			xVecNew.clear();
 			stripHitMultipleTimes.push_back(1);
 			chargeSharing.push_back(0);
-			indexOne = GetStripIndex(0,xVec.at(0));
+			indexOne = GetStripIndex(0,xVec[0]);
 
 			//second hit
 			if (xChargeSharing){
-				xVecNew.push_back(xVec.at(1));
-				xVecNew.push_back(xVec.at(2));
+				xVecNew.push_back(xVec[1]);
+				xVecNew.push_back(xVec[2]);
 				pair.push_back(xVecNew);
 				pair.push_back(yVec);
 				decodedFinalPairs.push_back(pair);
 				stripHitMultipleTimes.push_back(1);
 				chargeSharing.push_back(1);
-				indexTwo = GetStripIndex(0, (50+xVec.at(1)));
+				indexTwo = GetStripIndex(0, (50+xVec[1]));
 			}
 			else {
-				xVecNew.push_back(xVec.at(1));
+				xVecNew.push_back(xVec[1]);
 				pair.push_back(xVecNew);
 				pair.push_back(yVec);
   	  	decodedFinalPairs.push_back(pair);
 				stripHitMultipleTimes.push_back(1);
 				chargeSharing.push_back(0);
-				indexTwo = GetStripIndex(0, xVec.at(1));
+				indexTwo = GetStripIndex(0, xVec[1]);
 			}
 			xVecNew.clear();
 			//change energy and resolution for second hit
 			//also add hit quality, but keep it the same for now
 			//because there are multiple hits on a y strip, hit energy should be the energy of the x strip
-			float energyOne = energy.at(0).at(indexOne);
-			float energyTwo = energy.at(0).at(indexTwo);
-			float eResOne = sig.at(0).at(indexOne);
-			float eResTwo = sig.at(0).at(indexTwo);
+			float energyOne = energy[0][indexOne];
+			float energyTwo = energy[0][indexTwo];
+			float eResOne = sig[0][indexOne];
+			float eResTwo = sig[0][indexTwo];
 
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
@@ -1695,41 +1725,41 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			vector<int> yVecNew;
 			//first hit
 			pair.push_back(xVec);
-			yVecNew.push_back(yVec.at(0));
+			yVecNew.push_back(yVec[0]);
 			pair.push_back(yVecNew);
 			decodedFinalPairs.push_back(pair);
 			pair.clear();
 			yVecNew.clear();
 			stripHitMultipleTimes.push_back(1);
 			chargeSharing.push_back(0);
-			indexOne = GetStripIndex(1,yVec.at(0));
+			indexOne = GetStripIndex(1,yVec[0]);
 
 			//second hit
 			if (yChargeSharing){
-				yVecNew.push_back(yVec.at(1));
-				yVecNew.push_back(yVec.at(2));
+				yVecNew.push_back(yVec[1]);
+				yVecNew.push_back(yVec[2]);
 				pair.push_back(xVec);
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexTwo = GetStripIndex(1, (50+yVec.at(1)));
+				indexTwo = GetStripIndex(1, (50+yVec[1]));
 			}
 			else {
 				pair.push_back(xVec);
-				yVecNew.push_back(yVec.at(1));
+				yVecNew.push_back(yVec[1]);
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(0);
-				indexTwo = GetStripIndex(1,yVec.at(1));
+				indexTwo = GetStripIndex(1,yVec[1]);
 			}
 			stripHitMultipleTimes.push_back(1);
 			yVecNew.clear();
 			//change energy and resolution for second hit
 			//also add element to hit quality, need to do properly later
-			float energyOne = energy.at(1).at(indexOne);
-			float energyTwo = energy.at(1).at(indexTwo);
-			float eResOne = sig.at(1).at(indexOne);
-			float eResTwo = sig.at(1).at(indexTwo);
+			float energyOne = energy[1][indexOne];
+			float energyTwo = energy[1][indexTwo];
+			float eResOne = sig[1][indexOne];
+			float eResTwo = sig[1][indexTwo];
 
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
@@ -1747,57 +1777,57 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 
 			vector<int> xVecNew;
 			//first hit
-			xVecNew.push_back(xVec.at(0));
+			xVecNew.push_back(xVec[0]);
 			pair.push_back(xVecNew);
 			pair.push_back(yVec);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
 			chargeSharing.push_back(0);
-			indexOne = GetStripIndex(0,xVec.at(0));
+			indexOne = GetStripIndex(0,xVec[0]);
 			pair.clear();
 			xVecNew.clear();
 			//change energy and resolution for first hit
 			//hitEnergy.at(i+twoHitsCounter-1) = 
 
 			//second hit
-			xVecNew.push_back(xVec.at(1));
+			xVecNew.push_back(xVec[1]);
 			pair.push_back(xVecNew);
 			pair.push_back(yVec);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
 			chargeSharing.push_back(0);
-			indexTwo = GetStripIndex(0,xVec.at(1));
+			indexTwo = GetStripIndex(0,xVec[1]);
 			pair.clear();
 			xVecNew.clear();
 
 			//third hit
 			if (xChargeSharing){
-				xVecNew.push_back(xVec.at(2));
-				xVecNew.push_back(xVec.at(3));
+				xVecNew.push_back(xVec[2]);
+				xVecNew.push_back(xVec[3]);
 				pair.push_back(xVecNew);
 				pair.push_back(yVec);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexThree = GetStripIndex(0,(50+xVec.at(2)));
+				indexThree = GetStripIndex(0,(50+xVec[2]));
 			}
 			else {
-				xVecNew.push_back(xVec.at(2));
+				xVecNew.push_back(xVec[2]);
 				pair.push_back(xVecNew);
 				pair.push_back(yVec);
   	  	decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(0);
-				indexThree = GetStripIndex(0,xVec.at(2));
+				indexThree = GetStripIndex(0,xVec[2]);
 			}
 			stripHitMultipleTimes.push_back(1);
 			xVecNew.clear();
 			//change energy and resolution for second hit
 			//also add hit quality, but keep it the same for now
-			float energyOne = energy.at(0).at(indexOne);
-			float energyTwo = energy.at(0).at(indexTwo);
-			float energyThree = energy.at(0).at(indexThree);
-			float eResOne = sig.at(0).at(indexOne);
-			float eResTwo = sig.at(0).at(indexTwo);
-			float eResThree = sig.at(0).at(indexThree);
+			float energyOne = energy[0][indexOne];
+			float energyTwo = energy[0][indexTwo];
+			float energyThree = energy[0][indexThree];
+			float eResOne = sig[0][indexOne];
+			float eResTwo = sig[0][indexTwo];
+			float eResThree = sig[0][indexThree];
 
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
@@ -1821,52 +1851,52 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			vector<int> yVecNew;
 			//first hit
 			pair.push_back(xVec);
-			yVecNew.push_back(yVec.at(0));
+			yVecNew.push_back(yVec[0]);
 			pair.push_back(yVecNew);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
 			chargeSharing.push_back(0);
-			indexOne = GetStripIndex(1,yVec.at(0));
+			indexOne = GetStripIndex(1,yVec[0]);
 			pair.clear();
 			yVecNew.clear();
 			//second hit
 			pair.push_back(xVec);
-			yVecNew.push_back(yVec.at(1));
+			yVecNew.push_back(yVec[1]);
 			pair.push_back(yVecNew);
 			decodedFinalPairs.push_back(pair);
 			stripHitMultipleTimes.push_back(1);
 			chargeSharing.push_back(0);
-			indexTwo = GetStripIndex(1,yVec.at(1));
+			indexTwo = GetStripIndex(1,yVec[1]);
 			pair.clear();
 			yVecNew.clear();
 			//third hit
 			if (yChargeSharing){
-				yVecNew.push_back(yVec.at(2));
-				yVecNew.push_back(yVec.at(3));
+				yVecNew.push_back(yVec[2]);
+				yVecNew.push_back(yVec[3]);
 				pair.push_back(xVec);
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexThree = GetStripIndex(1,(50+yVec.at(2)));
+				indexThree = GetStripIndex(1,(50+yVec[2]));
 			}
 			else {
 				pair.push_back(xVec);
-				yVecNew.push_back(yVec.at(2));
+				yVecNew.push_back(yVec[2]);
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(0);
-				indexThree = GetStripIndex(1,yVec.at(2));
+				indexThree = GetStripIndex(1,yVec[2]);
 			}
 			stripHitMultipleTimes.push_back(1);
 			yVecNew.clear();
 			//change energy and resolution for second hit
 			//also add element to hit quality, need to do properly later
-			float energyOne = energy.at(1).at(indexOne);
-			float energyTwo = energy.at(1).at(indexTwo);
-			float energyThree = energy.at(1).at(indexThree);
-			float eResOne = sig.at(1).at(indexOne);
-			float eResTwo = sig.at(1).at(indexTwo);
-			float eResThree = sig.at(1).at(indexThree);
+			float energyOne = energy[1][indexOne];
+			float energyTwo = energy[1][indexTwo];
+			float energyThree = energy[1][indexThree];
+			float eResOne = sig[1][indexOne];
+			float eResTwo = sig[1][indexTwo];
+			float eResThree = sig[1][indexThree];
 
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
@@ -1896,17 +1926,17 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
     
 /*    cout << "pair: "  << endl;
     for (int j=0; j<pair.size(); j++){
-      for (int k=0; k<pair.at(j).size(); k++){
-        cout << pair.at(j).at(k) << '\t' ;
-        cout << pair.at(j).at(k) << endl;
+      for (int k=0; k<pair[j].size(); k++){
+        cout << pair[j][k] << '\t' ;
+        cout << pair[j][k] << endl;
       }
     }
   */  
     xVec.clear();
     yVec.clear();
     pair.clear();
-    //		pair.at(0).clear();
-    //	pair.at(1).clear();
+    //		pair[0].clear();
+    //	pair[1].clear();
     
   }
  
@@ -1914,12 +1944,12 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
   //print decodedFinalPairs
   
 //  cout << decodedFinalPairs.size() << endl;
-/*	cout << decodedFinalPairs.at(0).at(1).size() << endl;
+/*	cout << decodedFinalPairs[0][1].size() << endl;
   cout << "decoded final pairs" << endl;
   for (int i=0; i<decodedFinalPairs.size(); i++){
     for (int j=0; j<2; j++){
-      for (int k=0; k<decodedFinalPairs.at(i).at(j).size(); k++){
-        cout << decodedFinalPairs.at(i).at(j).at(k) << '\t';
+      for (int k=0; k<decodedFinalPairs[i][j].size(); k++){
+        cout << decodedFinalPairs[i][j][k] << '\t';
       }
       cout << '\t' << '\t';
     }
@@ -1939,11 +1969,11 @@ bool MNCTModuleStripPairingGreedy_b::CheckAllStripsWerePaired(){
   //count how many strips in decodedFinalPairs are equal to original strips
   for (int axis=0; axis<2; axis++){
     //n indexes original hits
-    for (int n=0; n<nHitsOrig.at(axis); n++){
+    for (int n=0; n<nHitsOrig[axis]; n++){
       //i, j, k index decodedFinalPairs
       for (unsigned int i=0; i<decodedFinalPairs.size(); i++){
-        for (unsigned int k=0; k<decodedFinalPairs.at(i).at(axis).size(); k++){
-          if (stripsHit.at(axis).at(n) == decodedFinalPairs.at(i).at(axis).at(k)){
+        for (unsigned int k=0; k<decodedFinalPairs[i][axis].size(); k++){
+          if (stripsHit[axis][n] == decodedFinalPairs[i][axis][k]){
             counter += 1;
           }
         }
@@ -1951,21 +1981,21 @@ bool MNCTModuleStripPairingGreedy_b::CheckAllStripsWerePaired(){
     }
   }
 
-/*	if (counter < nHitsOrig.at(0) + nHitsOrig.at(1)){
+/*	if (counter < nHitsOrig[0] + nHitsOrig[1]){
 		PrintXYStripsHit();
 		cout << "final pairs: " << endl;
 		for (int i=0; i<finalPairs.size(); i++){
-			cout << finalPairs.at(i).at(0) << '\t' << finalPairs.at(i).at(1) << endl;
+			cout << finalPairs[i][0] << '\t' << finalPairs[i][1] << endl;
 		}
 		dummy_func();
 	}
 */  
   //compare counter to total number of strips hit
-  if (counter > nHitsOrig.at(0)+nHitsOrig.at(1)){
+  if (counter > nHitsOrig[0]+nHitsOrig[1]){
     if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": There's something wrong with the code!" << endl;
     return false;
   }
-  else if (counter == nHitsOrig.at(0)+nHitsOrig.at(1)){
+  else if (counter == nHitsOrig[0]+nHitsOrig[1]){
     if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": All strips were paired successfully!" << endl;
     return true;
   }
@@ -2021,29 +2051,29 @@ void MNCTModuleStripPairingGreedy_b::PrintXYStripsHit(){
 //  cout << "stripsHit.size(): " << stripsHit.size() << endl;
   
   cout << "--------------------------" << endl << "Printing xStripsHit...." << endl;
-  for(int i=0; i<nHits.at(0); i++){
-    cout << stripsHit.at(0).at(i) << '\t' << energy.at(0).at(i);
-		cout << '\t' << sig.at(0).at(i) << endl;
+  for(int i=0; i<nHits[0]; i++){
+    cout << stripsHit[0][i] << '\t' << energy[0][i];
+		cout << '\t' << sig[0][i] << endl;
   }
  
 	cout << "total X energy: " << '\t';
 	float xE = 0;
-	for (int i=0; i<nHitsOrig.at(0); i++){
-		xE += energy.at(0).at(i);
+	for (int i=0; i<nHitsOrig[0]; i++){
+		xE += energy[0][i];
 	}
  	cout << xE << endl;
 
 
   cout << "--------------------------" << endl << "Printing yStripsHit...." << endl;
-  for(int i=0; i<nHits.at(1); i++){
-    cout << stripsHit.at(1).at(i) << '\t' << energy.at(1).at(i);
-		cout << '\t' << sig.at(1).at(i) << endl;
+  for(int i=0; i<nHits[1]; i++){
+    cout << stripsHit[1][i] << '\t' << energy[1][i];
+		cout << '\t' << sig[1][i] << endl;
   }
 
 	cout << "total Y energy: " << '\t';
 	float yE = 0;
-	for (int i=0; i<nHitsOrig.at(1); i++){
-		yE += energy.at(1).at(i);
+	for (int i=0; i<nHitsOrig[1]; i++){
+		yE += energy[1][i];
 	}
 	cout << yE << endl;  
 
@@ -2058,29 +2088,29 @@ void MNCTModuleStripPairingGreedy_b::PrintXYStripsHitOrig(){
 	}
  
   cout << "--------------------------" << endl << "Printing xStripsHit...." << endl;
-  for(int i=0; i<nHitsOrig.at(0); i++){
-    cout << stripsHit.at(0).at(i) << '\t' << energy.at(0).at(i);
-		cout << '\t' << sig.at(0).at(i) << endl;
+  for(int i=0; i<nHitsOrig[0]; i++){
+    cout << stripsHit[0][i] << '\t' << energy[0][i];
+		cout << '\t' << sig[0][i] << endl;
   }
  
 	cout << "total X energy: " << '\t';
 	float xE = 0;
-	for (int i=0; i<nHitsOrig.at(0); i++){
-		xE += energy.at(0).at(i);
+	for (int i=0; i<nHitsOrig[0]; i++){
+		xE += energy[0][i];
 	}
  	cout << xE << endl;
 
 
   cout << "--------------------------" << endl << "Printing yStripsHit...." << endl;
-  for(int i=0; i<nHitsOrig.at(1); i++){
-    cout << stripsHit.at(1).at(i) << '\t' << energy.at(1).at(i);
-		cout << '\t' << sig.at(1).at(i) << endl;
+  for(int i=0; i<nHitsOrig[1]; i++){
+    cout << stripsHit[1][i] << '\t' << energy[1][i];
+		cout << '\t' << sig[1][i] << endl;
   }
 
 	cout << "total Y energy: " << '\t';
 	float yE = 0;
-	for (int i=0; i<nHitsOrig.at(1); i++){
-		yE += energy.at(1).at(i);
+	for (int i=0; i<nHitsOrig[1]; i++){
+		yE += energy[1][i];
 	}
 	cout << yE << endl;  
 
@@ -2092,7 +2122,7 @@ void MNCTModuleStripPairingGreedy_b::PrintFinalPairs(){
 
 	for (unsigned int p=0; p<finalPairs.size(); p++){
 		for (int axis=0; axis<2; axis++){
-			cout << finalPairs.at(p).at(axis) << '\t';
+			cout << finalPairs[p][axis] << '\t';
 		}
 		cout << endl;
 	}
@@ -2104,16 +2134,16 @@ void MNCTModuleStripPairingGreedy_b::PrintWeightMatrix(){
   
   cout << "-------------------" << endl;
   
-  cout << nHits.at(1) << endl;
-  cout << nHits.at(0) << endl;
+  cout << nHits[1] << endl;
+  cout << nHits[0] << endl;
   cout << weightMatrix.size() << endl;
-  cout << weightMatrix.at(0).size() << endl;
-  //	cout << weightMatrix.at(1).size() << endl;
+  cout << weightMatrix[0].size() << endl;
+  //	cout << weightMatrix[1].size() << endl;
   
   cout << "printing matrix" << endl;
-  for (int i=0; i<nHits.at(1); i++){
-    for (int j=0; j<nHits.at(0); j++){
-      cout << weightMatrix.at(j).at(i) << '\t';
+  for (int i=0; i<nHits[1]; i++){
+    for (int j=0; j<nHits[0]; j++){
+      cout << weightMatrix[j][i] << '\t';
     }
     cout << endl;
   }
@@ -2127,9 +2157,9 @@ void MNCTModuleStripPairingGreedy_b::PrintKillMatrix(){
 
 	for (int axis=0; axis<2; axis++){
 		cout << "axis: " << axis << endl;
-		for (int m=0; m<nHits.at(axis); m++){
-			for (int n=0; n<nHits.at(axis); n++){
-				cout << killMatrix.at(axis).at(m).at(n) << '\t';
+		for (int m=0; m<nHits[axis]; m++){
+			for (int n=0; n<nHits[axis]; n++){
+				cout << killMatrix[axis][m][n] << '\t';
 			}
 			cout << endl;
 		}
@@ -2156,11 +2186,11 @@ void MNCTModuleStripPairingGreedy_b::SetStripsHit(vector<vector<int> > inputVec)
   stripsHit.clear();
   
   stripsHit = inputVec;
-  nHits.push_back(inputVec.at(0).size());
-  nHits.push_back(inputVec.at(1).size());
+  nHits.push_back(inputVec[0].size());
+  nHits.push_back(inputVec[1].size());
   nHitsOrig = nHits;
   
-  //	cout << "stripsHit size: " << stripsHit.size() << '\t' <<  stripsHit.at(0).size() << '\t' <<stripsHit.at(1).size() << endl;
+  //	cout << "stripsHit size: " << stripsHit.size() << '\t' <<  stripsHit[0].size() << '\t' <<stripsHit[1].size() << endl;
   
 };
 
@@ -2197,10 +2227,10 @@ void MNCTModuleStripPairingGreedy_b::SetFinalPairs(vector<vector<int> > inputVec
   /*
   cout << "printing final pairs: " << endl;
   cout << finalPairs.size() << endl;
-  cout << finalPairs.at(0).size() << endl;
-  cout << finalPairs.at(1).size() << endl;
-  for (int i=0; i<finalPairs.at(0).size(); i++){
-    cout << finalPairs.at(0).at(i) << '\t' << finalPairs.at(1).at(i) << endl;
+  cout << finalPairs[0].size() << endl;
+  cout << finalPairs[1].size() << endl;
+  for (int i=0; i<finalPairs[0].size(); i++){
+    cout << finalPairs[0][i] << '\t' << finalPairs[1][i] << endl;
   }
   */
 };
@@ -2228,8 +2258,8 @@ int MNCTModuleStripPairingGreedy_b::GetNBadCombinations(int axis){
 
 	int counter = 0;
 
-	for (int i=0; i<nHits.at(axis); i++){
-		if (badCombinations.at(axis).at(i) == 1){
+	for (int i=0; i<nHits[axis]; i++){
+		if (badCombinations[axis][i] == 1){
 			counter += 1;
 		}
 	}
@@ -2241,8 +2271,8 @@ int MNCTModuleStripPairingGreedy_b::GetStripIndex(int axis, int stripID){
 
 	int index = -1;
 
-	for (int i=0; i<nHits.at(axis); i++){
-		if (stripsHit.at(axis).at(i) == stripID){
+	for (int i=0; i<nHits[axis]; i++){
+		if (stripsHit[axis][i] == stripID){
 			index = i;
 		}
 	}
