@@ -171,8 +171,8 @@ bool MNCTBinaryFlightDataParser::Initialize()
   delete m_AspectReconstructor;
   m_AspectReconstructor = new MNCTAspectReconstruction();
   
-  m_AspectMode = MNCTBinaryFlightDataParserAspectModes::c_Neither;
-  m_DataSelectionMode = MNCTBinaryFlightDataParserDataModes::c_Raw;
+  //m_AspectMode = MNCTBinaryFlightDataParserAspectModes::c_Neither;
+  //m_DataSelectionMode = MNCTBinaryFlightDataParserDataModes::c_Raw;
   
   return true;
 }
@@ -1234,10 +1234,22 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	//and got 0x5494C5B1, which will rollover the lower three bytes in ~81 days
 	//so if we have a flight longer than ~81 days, use 0x55 for the upper byte
 	//if the lower three bytes is less than 0x0094C5B1
+
+	/* this was for COSI 14
+
 	if( UnixBytes > 0x0094C5B1 ){
 		UnixBytes |= 0x54000000;
 	} else {
 		UnixBytes |= 0x55000000;
+	}
+
+	*/
+
+	//COSI 16... need to replace this with GPS time eventually
+	if( UnixBytes > 0x00f7494c ){
+		UnixBytes |= 0x56000000;
+	} else {
+		UnixBytes |= 0x57000000;
 	}
 
 	time_t UnixTime = (time_t) UnixBytes;
