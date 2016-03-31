@@ -65,7 +65,7 @@ MNCTModuleDepthCalibrationLinearPixel::MNCTModuleDepthCalibrationLinearPixel() :
   // Set all module relevant information
   
   // Set the module name --- has to be unique
-  m_Name = "Linear Depth Calibration using pixel edge data";
+  m_Name = "Depth calibration - Linear using pixel edge data";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "DepthCalibrationLinearPixel";

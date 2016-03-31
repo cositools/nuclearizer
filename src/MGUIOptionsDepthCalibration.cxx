@@ -76,7 +76,7 @@ void MGUIOptionsDepthCalibration::Create()
 
 	m_SplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a splines file:",
 			dynamic_cast<MNCTModuleDepthCalibration*>(m_Module)->GetSplinesFileName());
-	m_SplinesFileSelector->SetFileType("splines", "*.txt");
+	m_SplinesFileSelector->SetFileType("splines", "*.ctd");
 	TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 	m_OptionsFrame->AddFrame(m_SplinesFileSelector, Label2Layout);
 

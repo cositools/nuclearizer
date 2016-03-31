@@ -218,7 +218,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 		Type = NextPacket[2];
 		if (g_Verbosity >= c_Info) {
 			//printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
-			cout<<"FNP: "<<Type<<" - "<<NextPacket.size()<<", dx = "<<dx<<", bufsize = "<<m_SBuf.size()<<endl;
+			cout<<"FNP: "<<hex<<Type<<" - "<<NextPacket.size()<<", dx = "<<dx<<", bufsize = "<<m_SBuf.size()<<endl;
 		}
 
 

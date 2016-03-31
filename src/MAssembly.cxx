@@ -123,30 +123,33 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationUniversal());
   m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationLinear());
   m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationNonlinear());
-  m_Supervisor->AddAvailableModule(new MNCTModuleCrosstalkCorrection());
+
+  //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairing());
+  //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());
+  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_a());
+  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_b());
   m_Supervisor->AddAvailableModule(new MNCTModuleChargeSharingCorrection());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDepthAndStripCalibration());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearStrip());
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearPixel());
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration3rdPolyPixel());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairing());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());
-  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_a());
-  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_b());
+  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
 	m_Supervisor->AddAvailableModule(new MNCTModuleFlagHits());
   //m_Supervisor->AddAvailableModule(new MNCTModuleAspect());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDumpEvent());
+
+  m_Supervisor->AddAvailableModule(new MNCTModuleCrosstalkCorrection());  
+  
   m_Supervisor->AddAvailableModule(new MNCTModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   //m_Supervisor->AddAvailableModule(new MNCTModuleEventReconstruction());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
 
   m_Supervisor->Load();
   
   m_Supervisor->SetUIProgramName("Nuclearizer");
   m_Supervisor->SetUIPicturePath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
-  m_Supervisor->SetUISubTitle("A measurement and simulation calibrator for COSI and GRIPS");
+  m_Supervisor->SetUISubTitle("The detector calibrator of the COmpton Spectrometer and Imager, COSI");
   m_Supervisor->SetUILeadAuthor("Andreas Zoglauer");
   m_Supervisor->SetUICoAuthors("Alan Chiu, Alex Lowell, Andreas Zoglauer,\nAres Hernandez, Carolyn Kierans, Clio Sleator,\nDaniel Perez-Becker, Eric Bellm, Jau-Shian Liang,\nMark Bandstra");
 }

@@ -378,6 +378,8 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
 
 bool MNCTModuleReceiverCOSI2014::IsReady() 
 {
+  if (g_Verbosity >= c_Info) mout<<"Events in receiver: "<<m_Events.size()<<endl;
+  
   if (m_Events.size() > 0) {
     if (m_IgnoreAspect == true) {
       return true;
@@ -404,9 +406,9 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
   vector<uint8_t> Received ;
   m_Receiver->Receive(Received);
   
-  //if (Received.size() != 0) {
-  //  cout<<"Received: "<<Received.size()<<endl;
-  //}
+  if (Received.size() != 0) {
+    if (g_Verbosity >= c_Info) cout<<"Received: "<<Received.size()<<" bytes"<<endl;
+  }
   
   return ParseData(Received);
 }

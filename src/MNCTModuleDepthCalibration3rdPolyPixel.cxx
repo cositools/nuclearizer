@@ -64,7 +64,7 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   // Set all module relevant information
   
   // Set the module name --- has to be unique
-  m_Name = "3rd order Polynomial Depth Calibration using pixel edge data";
+  m_Name = "Depth calibration - 3rd order polynomial using pixel edge data";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "DepthCalibration3rdPolyPixel";

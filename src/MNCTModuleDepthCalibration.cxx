@@ -60,7 +60,7 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Depth calibration";
+  m_Name = "Depth calibration"; // - Splines fitted to depth distribution (by Alex)";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "DepthCalibration";
@@ -151,7 +151,7 @@ bool MNCTModuleDepthCalibration::Initialize()
 	}
 
 	MSupervisor* S = MSupervisor::GetSupervisor();
-	m_EnergyCalibration = (MNCTModuleEnergyCalibrationUniversal*) S->GetAvailableModule("Universal energy calibrator");
+	m_EnergyCalibration = (MNCTModuleEnergyCalibrationUniversal*) S->GetAvailableModuleByXmlTag("EnergyCalibrationUniversal");
 	if (m_EnergyCalibration == nullptr) {
 		cout << "MNCTModuleDepthCalibration: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
 		return false;
