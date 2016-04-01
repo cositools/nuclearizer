@@ -215,7 +215,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	//int Rounds = 100;
 	//while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
 	while (FindNextPacket( NextPacket )) {
-		Type = NextPacket[2];
+		Type = NextPacket[2] & 0x0f;
 		if (g_Verbosity >= c_Info) {
 			//printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
 			cout<<"FNP: "<<hex<<Type<<" - "<<NextPacket.size()<<", dx = "<<dx<<", bufsize = "<<m_SBuf.size()<<endl;
@@ -248,11 +248,44 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					//cout<<"got compton dataframe!"<<endl;
 					Dataframe = new dataframe();
 					if( ComptonDataframe2Struct( NextPacket, Dataframe ) ){
+
+						uint64_t PacketKey = (Dataframe->UnixTime << 16) | Dataframe->PacketCounter;
+						if(m_ComptonRecord.count(PacketKey) == 1){
+							//cout << "duplicate compton packet, ID:" << Dataframe->PacketCounter << " UNIXT:" << Dataframe->UnixTime << endl;
+							delete Dataframe;
+							continue;
+						} else {
+							m_ComptonRecord[PacketKey] = NextPacket[2];
+						}
+
+						//trim the compton record
+						while(m_ComptonRecord.size() > 1000){
+							m_ComptonRecord.erase(m_ComptonRecord.begin());
+						}
+
 						ConvertToMReadOutAssemblys( Dataframe, &NewEvents );
 						//some provision to keep track of last timestamps
 					} else {
 						if (g_Verbosity >= c_Error) cout<<"BinaryFlightDataParser: Parsing error"<<endl;
 					}
+
+
+					//check the event continuity here
+					size_t NEvents = Dataframe->Events.size();
+					
+					/*
+					cout << "!@# ID:" << Dataframe->PacketCounter << " UNIXT:" << Dataframe->UnixTime << " (" << (int)Dataframe->Events[0].EventID << "," << (double)((double)NewEvents[0]->GetCL())*1E-7 << ")" 
+					                                                            << " <----> (" << (int)Dataframe->Events[NEvents-1].EventID << "," << (double)((double)NewEvents[NEvents-1]->GetCL())*1E-7 << ")" << endl;
+																									*/
+					printf("!@# ID:%u UNIXT:%u (%u,%f) <---> (%u,%f)\n",Dataframe->PacketCounter,
+							                                              Dataframe->UnixTime,
+																						 Dataframe->Events[0].EventID,
+																						 ((double)NewEvents[0]->GetCL())*1E-7,
+																						 Dataframe->Events[NEvents-1].EventID,
+																						 ((double)NewEvents[NEvents-1]->GetCL())*1E-7);
+
+
+
 					delete Dataframe;
 					m_NumComptonDataframes++;
 					m_NumComptonBytes += NextPacket.size();

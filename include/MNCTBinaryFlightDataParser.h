@@ -19,6 +19,7 @@
 // Standard libs:
 #include <list>
 #include <fstream>
+#include <map>
 using namespace std;
 
 // ROOT libs:
@@ -154,6 +155,7 @@ class MNCTBinaryFlightDataParser
   uint32_t m_NumRawDataBytes;
   uint32_t m_NumBytesReceived;
   uint32_t m_LostBytes;
+  map<uint64_t,int> m_ComptonRecord;
 	
 
 
