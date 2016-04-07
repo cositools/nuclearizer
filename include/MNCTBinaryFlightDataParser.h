@@ -155,7 +155,7 @@ class MNCTBinaryFlightDataParser
   uint32_t m_NumRawDataBytes;
   uint32_t m_NumBytesReceived;
   uint32_t m_LostBytes;
-  map<uint64_t,int> m_ComptonRecord;
+  map<uint64_t,int> m_PacketRecord;
 	
 
 

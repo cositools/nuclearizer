@@ -171,9 +171,6 @@ bool MNCTBinaryFlightDataParser::Initialize()
   delete m_AspectReconstructor;
   m_AspectReconstructor = new MNCTAspectReconstruction();
   
-  //m_AspectMode = MNCTBinaryFlightDataParserAspectModes::c_Neither;
-  //m_DataSelectionMode = MNCTBinaryFlightDataParserDataModes::c_Raw;
-  
   return true;
 }
 
@@ -211,11 +208,28 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	//FindNextPacket handles all the resyncing etc...
 
 	vector<uint8_t> NextPacket;
-	//dx = 0;
-	//int Rounds = 100;
-	//while( FindNextPacket( NextPacket ) && m_Interrupt == false && --Rounds > 0 ){ //loop until there are no more complete packets
 	while (FindNextPacket( NextPacket )) {
 		Type = NextPacket[2] & 0x0f;
+		
+		uint64_t PacketKey = ((uint64_t)NextPacket[3] << 40) | 
+			                  ((uint64_t)NextPacket[4] << 32) | 
+									((uint64_t)NextPacket[5] << 24) | 
+									((uint64_t)NextPacket[6] << 16) | 
+									((uint64_t)NextPacket[7] << 8) | 
+									Type;
+
+		if(m_PacketRecord.count(PacketKey) == 1){
+			//cout << "duplicate compton packet, ID:" << Dataframe->PacketCounter << " UNIXT:" << Dataframe->UnixTime << endl;
+			continue;
+		} else {
+			m_PacketRecord[PacketKey] = (NextPacket[2] & 0x80) >> 7; //mapped value of zero -> normal data, or openport A. mapped value of one -> openport B
+		}
+
+		//trim the packet record
+		while(m_PacketRecord.size() > 10000){
+			m_PacketRecord.erase(m_PacketRecord.begin());
+		}
+
 		if (g_Verbosity >= c_Info) {
 			//printf("FNP: %u - %lu, dx = %d, bufsize = %lu\n",Type, NextPacket.size(), dx, m_SBuf.size());
 			cout<<"FNP: "<<hex<<Type<<" - "<<NextPacket.size()<<", dx = "<<dx<<", bufsize = "<<m_SBuf.size()<<endl;
@@ -244,52 +258,26 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			case 0x01:
 				//compton dataframe
 				if( m_DataSelectionMode == MNCTBinaryFlightDataParserDataModes::c_Compton ){
-					//convert to dataframe class
-					//cout<<"got compton dataframe!"<<endl;
 					Dataframe = new dataframe();
 					if( ComptonDataframe2Struct( NextPacket, Dataframe ) ){
-
-						uint64_t PacketKey = (Dataframe->UnixTime << 16) | Dataframe->PacketCounter;
-						if(m_ComptonRecord.count(PacketKey) == 1){
-							//cout << "duplicate compton packet, ID:" << Dataframe->PacketCounter << " UNIXT:" << Dataframe->UnixTime << endl;
-							delete Dataframe;
-							continue;
-						} else {
-							m_ComptonRecord[PacketKey] = NextPacket[2];
-						}
-
-						//trim the compton record
-						while(m_ComptonRecord.size() > 1000){
-							m_ComptonRecord.erase(m_ComptonRecord.begin());
-						}
-
 						ConvertToMReadOutAssemblys( Dataframe, &NewEvents );
-						//some provision to keep track of last timestamps
 					} else {
 						if (g_Verbosity >= c_Error) cout<<"BinaryFlightDataParser: Parsing error"<<endl;
 					}
-
-
-					//check the event continuity here
 					size_t NEvents = Dataframe->Events.size();
 					
 					/*
-					cout << "!@# ID:" << Dataframe->PacketCounter << " UNIXT:" << Dataframe->UnixTime << " (" << (int)Dataframe->Events[0].EventID << "," << (double)((double)NewEvents[0]->GetCL())*1E-7 << ")" 
-					                                                            << " <----> (" << (int)Dataframe->Events[NEvents-1].EventID << "," << (double)((double)NewEvents[NEvents-1]->GetCL())*1E-7 << ")" << endl;
-																									*/
 					printf("!@# ID:%u UNIXT:%u (%u,%f) <---> (%u,%f)\n",Dataframe->PacketCounter,
 							                                              Dataframe->UnixTime,
 																						 Dataframe->Events[0].EventID,
 																						 ((double)NewEvents[0]->GetCL())*1E-7,
 																						 Dataframe->Events[NEvents-1].EventID,
 																						 ((double)NewEvents[NEvents-1]->GetCL())*1E-7);
-
-
+					*/
 
 					delete Dataframe;
 					m_NumComptonDataframes++;
 					m_NumComptonBytes += NextPacket.size();
-					//cout<<"NumComptonBytes "<<m_NumComptonBytes<<endl;
 
 				}
 				break;
@@ -308,15 +296,15 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 		}
 		if( NewEvents.size() > 0 ){
 			for( auto E: NewEvents ){
-
-				int CCId = E->GetStripHit(0)->GetDetectorID();
+				/*
+				int CCId = E->GetStripHit(0)->GetDetectorID(); //this line might be an issue since events from compton packets can have SHs from more than one detector
 				uint64_t Lower;
 				if(m_EventTimeWindow > LastTimestamps[CCId]){
-					Lower = LastTimestamps[CCId] >> 2;
+					Lower = LastTimestamps[CCId] >> 1;
 				} else {
 					Lower = LastTimestamps[CCId] - m_EventTimeWindow;
 				}
-
+				bool DeleteEvent = false;
 				if(E->GetCL() < Lower){ //timestamp went back in time too far
 					cout << CCId << " past: current CL = " << E->GetCL() <<", LastCL = " << LastTimestamps[CCId];
 					if(m_EventsBuf.size() > 0) cout << ", frontCL = " << m_EventsBuf.front()->GetCL() << ", backCL = " << m_EventsBuf.back()->GetCL() << endl; else cout << endl;
@@ -326,19 +314,63 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					}
 					deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
 					m_EventsBuf.insert(I, E);
-				} else if(E->GetCL() > (LastTimestamps[CCId] + m_EventTimeWindow)){ //timestamp is too far in the future
+				} else if(E->GetCL() > (LastTimestamps[CCId] + (m_EventTimeWindow << 1))){ //timestamp is too far in the future
 					cout << CCId << " future: current CL = " << E->GetCL() <<", LastCL = " << LastTimestamps[CCId];
 					if(m_EventsBuf.size() > 0) cout << ", frontCL = " << m_EventsBuf.front()->GetCL() << ", backCL = " << m_EventsBuf.back()->GetCL() << endl; else cout << endl;
-					delete E;
-				} else {
+					DeleteEvent = true;
+				} else {//timestamp is OK, insert the event into m_EventsBuf
 					deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
 					m_EventsBuf.insert(I, E);
 				}
 				LastTimestamps[CCId] = E->GetCL();
+				if(DeleteEvent){
+					delete E;
+				}*/
+
+				/*
+				if(m_EventsBuf.size() > 0){
+					if(m_EventsBuf.front()->GetCL() >= m_EventTimeWindow){
+						if(E->GetCL() < (m_EventsBuf.front()->GetCL() - m_EventTimeWindow)){ //event time jumped back too far
+							cout << "event time back-skip: this CL = " << E->GetCL() << ", front CL = " << m_EventsBuf.front()->GetCL() << ", back CL = " << m_EventsBuf.back()->GetCL() << endl;
+							while(m_EventsBuf.size() > 0){
+								MReadOutAssembly* Ev = m_EventsBuf.front(); m_EventsBuf.pop_front();
+								delete Ev;
+							}
+							deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+							m_EventsBuf.insert(I, E);
+						} else if(E->GetCL() > (m_EventsBuf.back()->GetCL() + (4*m_EventTimeWindow))){ //event time jumped forward too far
+							cout << "event time forward-skip: this CL = " << E->GetCL() << ", front CL = " << m_EventsBuf.front()->GetCL() << ", back CL = " << m_EventsBuf.back()->GetCL() << endl;
+							delete E;
+						} else {
+							deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+							m_EventsBuf.insert(I, E);
+						}
+					} else {
+							deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+							m_EventsBuf.insert(I, E);
+					}
+				} else {
+					m_EventsBuf.push_back(E);
+				}
+				*/
+				if(m_EventsBuf.size() > 0){
+					if(E->GetCL() < (m_EventsBuf.front()->GetCL() >> 1)){ //event time jumped back too far
+						cout << "event time back-skip: this CL = " << E->GetCL() << ", front CL = " << m_EventsBuf.front()->GetCL() << ", back CL = " << m_EventsBuf.back()->GetCL() << endl;
+						while(m_EventsBuf.size() > 0){
+							MReadOutAssembly* Ev = m_EventsBuf.front(); m_EventsBuf.pop_front();
+							delete Ev;
+						}
+						m_EventsBuf.push_back(E);
+					} else {
+						deque<MReadOutAssembly*>::iterator I = lower_bound(m_EventsBuf.begin(), m_EventsBuf.end(), E, MReadOutAssemblyReverseSort);
+						m_EventsBuf.insert(I, E);
+					}
+				} else {
+					m_EventsBuf.push_back(E);
+				}
 
 			}
 			NewEvents.clear();
-
 			if( m_UseRawDataframes ){
 				if (g_Verbosity >= c_Info) cout<<"BinaryFlightDataParser: T ::: ";;
 				for( auto E: LastTimestamps ){
@@ -348,37 +380,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			} else if( m_UseComptonDataframes ){
 				if (g_Verbosity >= c_Info) cout<<"BinaryFlightDataParser: T_compton ::: "<<LastComptonTimestamp<<endl;
 			}
-
-			//now sort m_EventsBuf
-			//SortEventsBuf();
-			//look thru m_EventsBuf for multi-detector events
-
 		}
-
-		//call this even if we don't get a packet, because in file mode we need to call this method when there is no
-		//more data to be read but there are still events in m_EventsBuf
-
-		/*
-		CheckEventsBuf();
-
-		if( m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither ){
-			for( auto E: m_Events ){
-				if( E->GetAspect() == 0 ){
-					int gps_or_mag;
-					if( m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS ){
-						gps_or_mag = 0;
-					} else {
-						gps_or_mag = 1;
-					}
-					MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime(), gps_or_mag);
-					if( A != 0 ){
-						//if the event is out of range, A->GetTime() will give -1
-						E->SetAspect(new MNCTAspect(*A));
-					}
-				}
-			}
-		}
-		*/
 	}
 
 	CheckEventsBuf();
@@ -400,7 +402,6 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			}
 		}
 	}
-
 
 	if (m_Events.size() > 0) {
 		//if (m_IgnoreAspect == true) {
