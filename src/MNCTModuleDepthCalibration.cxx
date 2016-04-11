@@ -86,7 +86,7 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
   
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
-  m_AllowMultipleInstances = true;
+  m_AllowMultipleInstances = false;
 
 	m_Thicknesses.reserve(12);
 	m_Thicknesses[0] = 1.49;
