@@ -83,6 +83,10 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
   m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
+  
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = true;
 
 	m_Thicknesses.reserve(12);
 	m_Thicknesses[0] = 1.49;
