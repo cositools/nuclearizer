@@ -39,6 +39,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGUIOptionsReceiverCOSI2014.h"
+#include "MGUIExpoReceiver.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,8 +86,11 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   m_LocalReceivingPort = 21530;  
   
   m_Receiver = 0;
+  m_ReceivedData = 0;
   
   // Set the histogram display
+  m_ExpoReceiver = new MGUIExpoReceiver(this);
+  m_Expos.push_back(m_ExpoReceiver);
   m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
   m_Expos.push_back(m_ExpoAspectViewer);
   
@@ -369,6 +373,8 @@ bool MNCTModuleReceiverCOSI2014::Initialize()
   
   if (MNCTBinaryFlightDataParser::Initialize() == false) return false;
   
+  m_ReceivedData = 0;
+  
   return MModule::Initialize();
 }
 
@@ -408,6 +414,14 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
   
   if (Received.size() != 0) {
     if (g_Verbosity >= c_Info) cout<<"Received: "<<Received.size()<<" bytes"<<endl;
+    
+    m_ReceivedData += Received.size();
+    m_ExpoReceiver->SetTimeReceived(MTime());
+    m_ExpoReceiver->SetBytesReceived(m_ReceivedData);
+    m_ExpoReceiver->SetRawFramesParsed(m_NumRawDataframes);
+    m_ExpoReceiver->SetComptonFramesParsed(m_NumComptonDataframes);
+    m_ExpoReceiver->SetAspectFramesParsed(m_NumAspectPackets);
+    m_ExpoReceiver->SetOtherFramesParsed(m_NumOtherPackets);
   }
   
   return ParseData(Received);

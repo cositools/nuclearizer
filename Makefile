@@ -78,6 +78,7 @@ $(LB)/MGUIOptionsMeasurementLoader.o \
 $(LB)/MNCTBinaryFlightDataParser.o \
 $(LB)/MNCTModuleReceiverCOSI2014.o \
 $(LB)/MGUIOptionsReceiverCOSI2014.o \
+$(LB)/MGUIExpoReceiver.o \
 $(LB)/MNCTModuleMeasurementLoaderBinary.o \
 $(LB)/MGUIOptionsMeasurementLoaderBinary.o \
 $(LB)/MGUIExpoAspectViewer.o \

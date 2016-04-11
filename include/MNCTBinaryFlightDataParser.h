@@ -115,6 +115,11 @@ class MNCTBinaryFlightDataParser
   //! Flag that tells CheckEventsBuf to ignore the buffer search time, used in file mode when the file is over
   bool m_IgnoreBufTime;
 
+  uint32_t m_NumRawDataframes;
+  uint32_t m_NumComptonDataframes;
+  uint32_t m_NumAspectPackets;
+  uint32_t m_NumOtherPackets;  
+ 
   // private members:
  private:
   
@@ -127,10 +132,6 @@ class MNCTBinaryFlightDataParser
   //added by AWL
   bool m_UseComptonDataframes;
   bool m_UseRawDataframes;
-  uint32_t m_NumRawDataframes;
-  uint32_t m_NumComptonDataframes;
-  uint32_t m_NumAspectPackets;
-  uint32_t m_NumOtherPackets;
   unsigned int MAX_TRIGS;
   unsigned long long m_EventTimeWindow;
   vector<uint64_t> LastTimestamps;

@@ -31,6 +31,7 @@ using namespace std;
 #include "MModule.h"
 #include "MNCTBinaryFlightDataParser.h"
 #include "MGUIExpoAspectViewer.h"
+#include "MGUIExpoReceiver.h"
 
 // Forward declarations:
 
@@ -123,6 +124,8 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
  
   //! A GUI to display the aspect data 
   MGUIExpoAspectViewer* m_ExpoAspectViewer;
+  //! A GUI to display the received data statistics 
+  MGUIExpoReceiver* m_ExpoReceiver;
  
  
   //! The name of the computer from which we receive the data
@@ -144,7 +147,11 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
   
   //! The transceiver
   MTransceiverTcpIpBinary* m_Receiver;
-   
+
+  //! The total received data
+  long m_ReceivedData;
+  //! Timer whne the last update summary was shown
+  
   //! Output stream for roa file
   ofstream m_Out;
 
