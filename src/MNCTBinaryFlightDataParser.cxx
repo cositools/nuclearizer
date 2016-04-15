@@ -398,6 +398,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				if( A != 0 ){
 					//if the event is out of range, A->GetTime() will give -1
 					E->SetAspect(new MNCTAspect(*A));
+					//E->ComputeAbsoluteTime();
 				}
 			}
 		}
@@ -1321,15 +1322,17 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 						MNCTAspectPacket DSOPacket;
 						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
 
-						//get the GPS week
-						//int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 16; //16 seconds is number of leapseconds introduced since 1980 GPS epoch
-						//int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
+						int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 17; //17 seconds is number of leapseconds introduced since 1980 GPS epoch
+						int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
+						uint64_t GPSms = ((uint64_t)GPSWeek*(7*24*60*60*1000)) + DSOPacket.GPSMilliseconds; //absolute GPS time down to the millisecond 
 
-						string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
-						DSOPacket.date_and_time = TempString;
+						//string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
+						//DSOPacket.date_and_time = TempString;
+
+						DSOPacket.PPSClk |= UpperClkBytes;
 						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
-						DSOPacket.CorrectedClk |= UpperClkBytes; //shift in the upper two clock bytes
 						DSOPacket.UnixTime = UnixTime;
+						DSOPacket.GPSms = GPSms;
 						m_LastDSOPacket = DSOPacket; m_LastDSOUnixTime = UnixTime; m_LastAspectID = AspectID;
 						//corrected clock is converted to MTime in AddAspectFrame
 						if( m_UseGPSDSO ){
@@ -1344,7 +1347,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 				} else if( Header.find("$M") == 0){
 					if( (wx + MagLen) <= Len ){
 						if( m_NumDSOReceived > 0 ){ //only use magnetometer if we have at least one dso msg
-							if( (UnixTime >= m_LastDSOUnixTime) && (AspectID >= m_LastAspectID) ){ 
+							if( (UnixTime >= m_LastDSOUnixTime) ){ //don't need a packet counter check because aspect packets are slower than once a second
 								//the above check on unix time and aspect ID are so that if we get misordered packets,
 								//and the first subpacket is a magnetometer packet, we won't use the DSO info 
 								//from the last DSO message processed, since this will have happened in the future.
@@ -1360,6 +1363,8 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 								MagPacket.date_and_time = m_LastDSOPacket.date_and_time;
 								MagPacket.CorrectedClk = m_LastDSOPacket.CorrectedClk;
 								MagPacket.UnixTime = UnixTime;
+								MagPacket.GPSms = m_LastDSOPacket.GPSms;
+								MagPacket.PPSClk = m_LastDSOPacket.PPSClk;
 
 								if( m_UseMagnetometer ){
 									m_AspectReconstructor->AddAspectFrame( MagPacket );
@@ -1390,6 +1395,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 
 }
 
+/*
 bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPacket ){
 
 	//look for '$'
@@ -1465,8 +1471,8 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
 						string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
 						DSOPacket.date_and_time = TempString;
+						DSOPacket.PPSClk |= UpperClkBytes;
 						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
-						DSOPacket.CorrectedClk |= UpperClkBytes; //shift in the upper two clock bytes
 						
 						//get the GPS week
 						int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 16; //16 seconds is number of leapseconds introduced since 1980 GPS epoch
@@ -1546,6 +1552,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 
 }
 
+*/
 
 bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspectPacket& GPS_Packet){
 

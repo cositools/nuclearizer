@@ -252,6 +252,12 @@ class MReadOutAssembly
   //! Build the next MReadoutAssemply from a .dat file
   bool GetNextFromDatFile(MFile &F);
 
+  //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
+  bool ComputeAbsoluteTime();
+
+  //! Get the MTime corresponding to absolute UTC time
+  MTime GetAbsoluteTime() const {return m_EventTimeUTC; }
+
 
   // protected methods:
  protected:
@@ -327,6 +333,9 @@ class MReadOutAssembly
 
   //! The physical event from event reconstruction
   MPhysicalEvent* m_PhysicalEvent; 
+
+  //! The time of the event in absolute UTC time
+  MTime m_EventTimeUTC;
 
   // Flags indicating the quality of the event
   bool m_AspectIncomplete;

@@ -45,6 +45,7 @@ class MNCTAspectPacket{
       AttFlag = 0;
 
       GPSWeek = 0;
+		GPSms = 0;
     }
     
     
@@ -76,6 +77,9 @@ class MNCTAspectPacket{
 
 		//Unix time
 		time_t UnixTime;
+
+		//absolute GPS time down to the ms
+		uint64_t GPSms;
 	
 	
   

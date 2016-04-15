@@ -46,7 +46,7 @@ ClassImp(MReadOutAssembly)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly::MReadOutAssembly() : m_Time(0)
+MReadOutAssembly::MReadOutAssembly() : m_Time(0), m_EventTimeUTC(0)
 {
   // Construct an instance of MReadOutAssembly
 
@@ -113,6 +113,7 @@ void MReadOutAssembly::Clear()
   m_CL = 0;
   m_FC = 0;
   m_Time = 0;
+  m_EventTimeUTC = 0;
   m_MJD = 0.0;
 
   m_Veto = false;
@@ -473,7 +474,8 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"TI "<<m_Time<<endl;
+  S<<"CL "<<m_Time<<endl;
+  S<<"TI "<<m_EventTimeUTC<<endl;
 
   if (m_Aspect != 0) {
     m_Aspect->StreamDat(S, Version);
@@ -554,7 +556,8 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"TI "<<m_Time<<endl;
+  S<<"CL "<<m_Time<<endl;
+  S<<"TI "<<m_EventTimeUTC<<endl;
 
   if (m_Aspect != 0) {
     m_Aspect->StreamEvta(S);
@@ -621,7 +624,8 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"TI "<<m_Time<<endl;
+  S<<"CL "<<m_Time<<endl;
+  S<<"TI "<<m_EventTimeUTC<<endl;
 
   if (m_Aspect != 0) {
     m_Aspect->StreamEvta(S);
@@ -689,6 +693,32 @@ bool MReadOutAssembly::IsBad() const
   return false;
 }
   
+bool MReadOutAssembly::ComputeAbsoluteTime()
+{
+
+	//the following code assumes that the clock board oscillator is exactly 10 MHz.
+	//in reality there is a +/- 25 ppm tolerance on the frequency, so worst case this
+	//would give an absolute timing error of 25 us.  This can be corrected for by 
+	//comparing the difference between PPS values from sample to sample. The GPS
+	//PPS timing error is much smaller (it is specd at 200 ns )
+
+	if(m_Aspect != 0){
+		int64_t dt = m_CL - m_Aspect->GetPPS();
+		MTime dT;
+		dT.Set((int)(dt/10000000),(int)((dt % 10000000)*100));
+		MTime UTCTimeTrunc = m_Aspect->GetUTCTime();
+		UTCTimeTrunc.Set(UTCTimeTrunc.GetAsSystemSeconds(), (long int)0);
+		UTCTimeTrunc += dT; //dT can be positive or negative, += operator calls Normalize()
+		m_EventTimeUTC.Set(UTCTimeTrunc);
+		cout << "m_Time = " << m_Time << ", m_EventTimeUTC = " << m_EventTimeUTC << ", dT = " << dT << endl;
+		return true;
+	} else {
+		return false;
+	}
+
+}
+
+
 
 // MReadOutAssembly.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

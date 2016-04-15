@@ -108,6 +108,9 @@ const MNCTAspect& MNCTAspect::operator= (const MNCTAspect& A)
   m_HorizonPointingZAxisElevation = A.m_HorizonPointingZAxisElevation;
 
   m_OutOfRange = A.m_OutOfRange;
+  m_GPSTime = A.m_GPSTime;
+  m_UTCTime = A.m_UTCTime;
+  m_PPS = A.m_PPS;
   
   return *this; 
 }
@@ -165,6 +168,9 @@ void MNCTAspect::Clear()
   m_HorizonPointingZAxisElevation = 0;
   
   m_OutOfRange = false;
+  m_PPS = 0;
+  m_GPSTime.Set(0);
+  m_UTCTime.Set(0);
 }
 
 

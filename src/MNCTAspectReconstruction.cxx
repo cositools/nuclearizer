@@ -181,11 +181,11 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	if( GPS_or_magnetometer == 0 ){
 		if( (PacketA.BRMS < 1.0E-6) || (PacketA.BRMS > 1.0) || (PacketA.AttFlag != 0) ){
 			//just gonna return true here for now...
-			return true;
+			return true; //AWL commented out so we could test the absolute timing of events
 		}
 	}
 
-	string date_and_time = PacketA.date_and_time;
+	//string date_and_time = PacketA.date_and_time;
 	//unsigned int nanoseconds = PacketA.nanoseconds;
 
 	//don't use this time for aspect determination!!! this is the timestamp of the event with respect to the system clock,
@@ -197,6 +197,16 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double ClkNanoseconds = (double) ClkModulo * 100.0;
 	MTimeA.Set( ClkSeconds, ClkNanoseconds);
 
+	//AWL
+	MTime GPSTime;
+	unsigned int sec = PacketA.GPSms/1000;
+	unsigned int nsec = (PacketA.GPSms % 1000)*1000000;
+	GPSTime.Set(sec,nsec);
+
+
+	//should have a flag to determine if we want COSI14 or COSI16 since the number of leap seconds for the COSI14 campaign was 16 and not 17
+	MTime UnixTimeFromGPSTime = GPSTime;
+	UnixTimeFromGPSTime.Set((unsigned int)GPSTime.GetAsSystemSeconds() - 17 + 315964800, (unsigned int)GPSTime.GetNanoSeconds());
 
 
 	/*
@@ -443,7 +453,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
 
 	//m_TCCalculator.SetUnixTime(MTimeA.GetAsSeconds());
-	m_TCCalculator.SetUnixTime(PacketA.UnixTime);
+	m_TCCalculator.SetUnixTime(PacketA.UnixTime); //AWL use the UnixTimeFromGPSTime
 
 	//dot Zhat/Xhat into (0,0,1) and take the arcos to get the zenith angle.  then convert this to elevation angle
 	double Z_Elevation = 90.0 - arccosine( Zhat[2] );
@@ -574,6 +584,11 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	Aspect->SetGalacticPointingZAxis(Zgalon, Zgalat);
 	Aspect->SetHorizonPointingXAxis(X_Azimuth, X_Elevation);//Again here,
 	Aspect->SetHorizonPointingZAxis(Z_Azimuth, Z_Elevation);//and here we see 
+	Aspect->SetUTCTime(UnixTimeFromGPSTime);
+//	cout << UnixTimeFromGPSTime.GetSeconds() << " ---> " << UnixTimeFromGPSTime.GetNanoSeconds() <<endl;
+	Aspect->SetGPSTime(GPSTime);
+	Aspect->SetPPS(PacketA.PPSClk);
+	//cout << "m_Aspect->GetPPS() returns " << Aspect->GetPPS() << endl; //this works
 	
 	
 	Aspect->SetBRMS(BRMS);

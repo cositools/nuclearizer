@@ -148,6 +148,16 @@ class MNCTAspect
   void SetGPSTime( const MTime GPSTime ) { m_GPSTime = GPSTime; }
   //! Get the GPS time for this event
   MTime GetGPSTime() { return m_GPSTime; }
+  //! Set the UTC time
+  void SetUTCTime( const MTime UTCTime ) { m_UTCTime = UTCTime; }
+  //! Get the UTC time
+  MTime GetUTCTime() { return m_UTCTime; }
+  //! Set the PPS
+  void SetPPS( const uint64_t PPS ) { m_PPS = PPS; }
+  //! Get the PPS
+  uint64_t GetPPS() { return m_PPS; }
+
+
   
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
@@ -231,6 +241,10 @@ class MNCTAspect
   bool m_OutOfRange;
   //! GPS time, resolution is milliseconds
   MTime m_GPSTime;
+  //! UTC time, typically derived from the GPS time 
+  MTime m_UTCTime;
+  //! PPS clock... this is the full 48 bit clock board time stamp that was latched on the rising edge of the last GPS pulse per second pulse
+  uint64_t m_PPS;
 
   
 

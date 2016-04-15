@@ -248,7 +248,7 @@ bool MNCTModuleReceiverCOSI2014::RequestConnection()
   delete m_Receiver;
   m_Receiver = new MTransceiverTcpIpBinary("Final receiver", m_LocalReceivingHostName, m_LocalReceivingPort);
   m_Receiver->SetVerbosity(3);
-  m_Receiver->SetMaximumBufferSize(100000000);
+  m_Receiver->SetMaximumBufferSize(1000000); //AWL made this smaller than the overflow size in ParseData which is 10 MB
   m_Receiver->RequestClient(true);
   m_Receiver->Connect(true, 10);
   
@@ -467,6 +467,7 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
     //Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );  
     MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
     Event->SetAspect(A);
+	 Event->ComputeAbsoluteTime();
     //cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
     m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
