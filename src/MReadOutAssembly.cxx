@@ -710,7 +710,7 @@ bool MReadOutAssembly::ComputeAbsoluteTime()
 		UTCTimeTrunc.Set(UTCTimeTrunc.GetAsSystemSeconds(), (long int)0);
 		UTCTimeTrunc += dT; //dT can be positive or negative, += operator calls Normalize()
 		m_EventTimeUTC.Set(UTCTimeTrunc);
-		cout << "m_Time = " << m_Time << ", m_EventTimeUTC = " << m_EventTimeUTC << ", dT = " << dT << endl;
+		//cout << "m_Time = " << m_Time << ", m_EventTimeUTC = " << m_EventTimeUTC << ", dT = " << dT << endl;
 		return true;
 	} else {
 		return false;
