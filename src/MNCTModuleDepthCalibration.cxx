@@ -495,9 +495,11 @@ void MNCTModuleDepthCalibration::Finalize()
 	cout << "Number of hits missing timing information: " << m_Error3 << endl;
 	cout << "Number of hits with strips hit multiple times: " << m_Error4 << endl;
 	cout << "Number of hits with too many strip hits: " << m_ErrorSH << endl;
+	/*
 	TFile* rootF = new TFile("EHist.root","recreate");
 	rootF->WriteTObject( EHist );
 	rootF->Close();
+	*/
 
 }
 

@@ -687,12 +687,14 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 			//return an aspect that has a time of -1
 			MNCTAspect* BadAspect = new MNCTAspect();
 			BadAspect->SetTime( (double) -1.0 );
+			cout << "bad aspect" << endl;
 			return BadAspect;
 		}
 
 		//now check if event time is newer than the newest aspect ... if it is, then return null, we
 		//need to wait for the newest aspect info to comein
 		if( ReqTime > m_Aspects_GPS.back()->GetTime() ){
+			cout << "too recent" << endl;
 			return 0;
 		}
 

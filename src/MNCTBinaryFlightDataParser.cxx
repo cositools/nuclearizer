@@ -171,6 +171,13 @@ bool MNCTBinaryFlightDataParser::Initialize()
   delete m_AspectReconstructor;
   m_AspectReconstructor = new MNCTAspectReconstruction();
   
+  if(m_DataSelectionMode == MNCTBinaryFlightDataParserDataModes::c_Compton){
+	  m_EventTimeWindow = 0;
+	  cout << "Receiver is using Compton mode -> Events might come in out of order over Openport! Enable coincidence search in Realta..." << endl;
+  } else {
+     m_EventTimeWindow = 60 * 10000000;
+  }
+
   return true;
 }
 
@@ -273,7 +280,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 																						 ((double)NewEvents[0]->GetCL())*1E-7,
 																						 Dataframe->Events[NEvents-1].EventID,
 																						 ((double)NewEvents[NEvents-1]->GetCL())*1E-7);
-					*/
+																						 */
 
 					delete Dataframe;
 					m_NumComptonDataframes++;
