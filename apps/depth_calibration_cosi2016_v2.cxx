@@ -1,11 +1,3 @@
-//TODO
-/*
--redefine measured CTD histos so that bins are centered on 10' of nanoseconds
--define photopeak criteria... use energy resolutions for the strips, and say +/- 2.35 sigma 
-
-	*/
-
-
 // Standard
 #include <iostream>
 #include <string>
@@ -13,7 +5,9 @@
 #include <csignal>
 #include <cstdlib>
 #include <map>
+#include <unordered_map>
 #include <unistd.h>
+#include <signal.h>
 using namespace std;
 
 // ROOT
@@ -88,18 +82,35 @@ class Options
 	public:
 		vector<vector<double>> EnergyWindows;
 		MString RawDataFilename;
+		MString RawDataOutputFilename;
 		MString SimulationFilename;
+		MString SimulationOutputFilename;
 		MString SplineFilename;
 		MString GeometryFilename;
+		MString EnergyCalibrationFilename;
+		MString FitDataFile;
+		MString FitSimFile;
 		bool ProcessRealData;
 		bool ProcessSimData;
 		bool PerformFits;
 		bool Use5nsBinning;
-		void Options(){
+		int Divisions;
+		int FitRebinSimCTD;
+		int FitRebinDataCTD;
+		Options(void){
+			EnergyCalibrationFilename = "$(NUCLEARIZER)/resource/calibration/COSI16/Berkeley/EnergyCalibration.ecal";
+			RawDataOutputFilename = "data_ctd.root";
+			SimulationOutputFilename = "sim_data.root";
+			FitDataFile = "data_ctd.root";
+			FitSimFile = "sim_data.root";
 			ProcessRealData = true;
 			ProcessSimData = true;
 			PerformFits = true;
 			Use5nsBinning = true;
+			FitRebinSimCTD = 0;
+			FitRebinDataCTD = 0;
+			Divisions = 1;
+			return;
 		}
 		bool ParseOptionsFile(MString fname){
 			MFile F;
@@ -110,7 +121,7 @@ class Options
 				while(F.ReadLine(line)){
 					vector<MString> Tokens = line.Tokenize(" ");
 					if(line.BeginsWith("RawDataFilename")){
-						if(Tokens.size() == 2) RawDataFile = Tokens[1];
+						if(Tokens.size() == 2) RawDataFilename = Tokens[1];
 					} else if(line.BeginsWith("SimulationFilename")){
 						if(Tokens.size() == 2) SimulationFilename = Tokens[1];
 					} else if(line.BeginsWith("SplineFilename")){
@@ -118,13 +129,13 @@ class Options
 					} else if(line.BeginsWith("GeometryFilename")){
 					  	if(Tokens.size() == 2) GeometryFilename = Tokens[1];	
 					} else if(line.BeginsWith("ProcessRealData")){
-						if(Tokens.size() == 2) ProcessRealData = Tokens[1].ToBool();
+						if(Tokens.size() == 2) ProcessRealData = Tokens[1].ToLower() == "true" ? true : false;
 					} else if(line.BeginsWith("ProcessSimData")){
-						if(Tokens.size() == 2) ProcessSimData = Tokens[1].ToBool();
+						if(Tokens.size() == 2) ProcessSimData = Tokens[1].ToLower() == "true" ? true : false;
 					} else if(line.BeginsWith("PerformFits")){
-						if(Tokens.size() == 2) PerformFits = Tokens[1].ToBool();
+						if(Tokens.size() == 2) PerformFits = Tokens[1].ToLower() == "true" ? true : false;
 					} else if(line.BeginsWith("Use5nsBinning")){
-						if(Tokens.size() == 2) Use5nsBinning = Tokens[1].ToBool();
+						if(Tokens.size() == 2) Use5nsBinning = Tokens[1].ToLower() == "true" ? true : false;
 					} else if(line.BeginsWith("EnergyWindow")){
 						if(Tokens.size() == 3){
 							vector<double> E;
@@ -132,6 +143,22 @@ class Options
 							E.push_back(Tokens[2].ToDouble());
 							EnergyWindows.push_back(E);
 						}
+					} else if(line.BeginsWith("Divisions")){
+						if(Tokens.size() == 2) Divisions = Tokens[1].ToInt();
+					} else if(line.BeginsWith("EnergyCalibrationFilename")){
+						if(Tokens.size() == 2) EnergyCalibrationFilename = Tokens[1];
+					} else if(line.BeginsWith("SimulationOutputFilename")){
+						if(Tokens.size() == 2) SimulationOutputFilename = Tokens[1];
+					} else if(line.BeginsWith("RawDataOutputFilename")){
+						if(Tokens.size() == 2) RawDataOutputFilename = Tokens[1];
+					} else if(line.BeginsWith("FitDataFile")){
+						if(Tokens.size() == 2) FitDataFile = Tokens[1];
+					} else if(line.BeginsWith("FitSimFile")){
+						if(Tokens.size() == 2) FitSimFile = Tokens[1];
+					} else if(line.BeginsWith("FitRebinSimCTD")){
+						if(Tokens.size() == 2) FitRebinSimCTD = Tokens[1].ToInt();
+					} else if(line.BeginsWith("FitRebinDataCTD")){
+						if(Tokens.size() == 2) FitRebinDataCTD = Tokens[1].ToInt();
 					}
 				}
 				F.Close();
@@ -139,19 +166,46 @@ class Options
 			}
 		}
 };
+Options* options = NULL;
+
+class DivisionTemplate
+{
+	public:
+		TH1D* H;
+		double max1_x;
+		double max2_x;
+		double max1;
+		DivisionTemplate(void){
+			H = NULL;
+			max1_x = 0;
+			max2_x = 0;
+			max1 = 0;
+		}
+};
+DivisionTemplate* Gctd = NULL;
 						
 double DetectorThicknesses[12];
-bool EnergyFilter(double Energy);
+bool EnergyFilter(double Energy, const vector<vector<double>>& EnergyWindows);
 MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrationUniversal* Calibrator);
 double ctd_template_fit_function(double* v, double* par);
 void FindEdgeBins(TH1D* H, int* L, int* R);
+int PixelCodeToDivision(int PixelCode, int Divisions);
 
-TH1D* Gctd; //used by root fit function 
-Options* options;
+//TH1D* Gctd; //used by root fit function 
+
+bool SignalExit = false;
+void Handler(int signo){
+	SignalExit = true;
+}
 
 int main(int argc, char** argv)
 {
+	signal(SIGINT, Handler);
+	MGlobal::Initialize("Standalone","");
+	TApplication dcal("dcal",0,0);
+	TRandom3 RNG(0);
 
+	//parse input options file
 	if(argc != 2){
 		cout << "please pass an options file as the only argument. exiting..." << endl;
 		return -1;
@@ -167,11 +221,8 @@ int main(int argc, char** argv)
 				E.push_back(0.0); E.push_back(1.0E7);
 				options->EnergyWindows.push_back(E);
 			}
+		}
 	}
-
-	MGlobal::Initialize("Standalone","");
-	TApplication dcal("dcal",0,0);
-	TRandom3 RNG(0);
 
 	// Load geometry:
 	MDGeometryQuest* Geometry = new MDGeometryQuest();
@@ -204,33 +255,48 @@ int main(int argc, char** argv)
 
 	//load splines
 	MNCTDepthCalibrator* m_DepthCalibrator = new MNCTDepthCalibrator();
-	if( m_DepthCalibrator->LoadSplinesFile(MString(argv[4])) == false){
+	if( m_DepthCalibrator->LoadSplinesFile(options->SplineFilename) == false){
 		cout << "failed to load splines file, exiting..." << endl;
 		return false;
 	}
 
 	//setup nuclearizer modules
-	MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
-	Loader->SetFileName(options->RawDataFilename);
-	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
-	Loader->EnableCoincidenceMerging(false);
 	MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
-	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Berkeley/EnergyCalibration.ecal");
+	Calibrator->SetFileName(options->EnergyCalibrationFilename);
 	MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
-	if (Loader->Initialize() == false) return false;
-	if (Calibrator->Initialize() == false) return false;
-	if (Pairing->Initialize() == false) return false;
+	if (Calibrator->Initialize() == false){
+		cout << "failed to initialize energy calibrator module, exiting..." << endl;
+		return false;
+	}
+	if (Pairing->Initialize() == false){
+		cout << "failed to initialize strip pairing module, exiting..." << endl;
+		return false;
+	}
 
 	//setup variables for processing of real data
 	std::map<int, TH1D*> Histograms; //map to store CTD histograms
 	unsigned int counter = 0;
 
-	if( Level & 0x1 ){ //process real data
+	if( options->ProcessRealData ){ //process real data
+
+		MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
+		Loader->SetFileName(options->RawDataFilename);
+		Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
+		Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
+		Loader->EnableCoincidenceMerging(false);
+		if (Loader->Initialize() == false) {
+			cout << "failed to initialize Loader module, exiting..." << endl;
+			return false;
+		}
 
 		bool IsFinished = false;
 		MReadOutAssembly* Event = new MReadOutAssembly();
 		while (IsFinished == false) {
+			if(SignalExit){
+				SignalExit = false;
+				cout << "exiting real data analysis" << endl;
+				break;
+			}
 			Event->Clear();
 			if( Loader->IsReady() ){
 				Loader->AnalyzeEvent(Event);
@@ -241,7 +307,7 @@ int main(int argc, char** argv)
 					MNCTHit* H = Event->GetHit(i);
 					unsigned int NStripHits = H->GetNStripHits();
 					if( NStripHits == 2 ){ //using 2-strip events only
-						bool EnergyGood = EnergyFilter(H->GetEnergy());
+						bool EnergyGood = EnergyFilter(H->GetEnergy(), options->EnergyWindows);
 						if( EnergyGood ){
 							int pixel_code;
 							double timing;
@@ -259,13 +325,21 @@ int main(int argc, char** argv)
 							if( (SHx->GetTiming() < 1E-6) || (SHy->GetTiming() < 1E-6) ){ //missing timing info
 								continue; 
 							}
-							timing = ((SHx->GetTiming() - SHy->GetTiming())); //add five for bin centering
+							timing = ((SHx->GetTiming() - SHy->GetTiming()));
 							if( Histograms[pixel_code] == NULL ){
 								char name[64]; sprintf(name,"%d",pixel_code);
 								//TH1D* new_hist = new TH1D(name, name, 60, -300.0, +300.0);
-								TH1D* new_hist = new TH1D(name,name,120,-300.0,+300.0);
+								TH1D* new_hist;
+								if(options->Use5nsBinning){
+									new_hist = new TH1D(name,name,120,-300.0,+300.0);
+								} else {
+									new_hist = new TH1D(name,name,60,-300.0,+300.0);
+								}
+
 								Histograms[pixel_code] = new_hist;
 							}
+							//if(timing >= -0.001) timing += 0.01; else timing -= 0.01; //to avoid roundoff problems near bin edges
+							timing += 0.01;
 							Histograms[pixel_code]->Fill(timing);
 						}
 					}
@@ -279,7 +353,7 @@ int main(int argc, char** argv)
 		//when done, overwrite the histograms in the root file
 		//check if subdir exists, if not, then create it
 		//mkdir will return 0 if it already exists
-		TFile* rootF = new TFile("data_ctd.root","recreate");
+		TFile* rootF = new TFile(options->RawDataOutputFilename,"recreate");
 		for(auto const &it: Histograms){
 			TH1D* hist = it.second;
 			rootF->WriteTObject(hist);
@@ -291,9 +365,11 @@ int main(int argc, char** argv)
 	}
 
 	//set up variables for simulation data processing
-	std::map<int, TH1D*> simHistograms;
+	//map<int, TH1D*> DivisionCTDs;
+	unordered_map<int, TH1D*> DivisionCTDs;
+	unordered_map<int, TH1D*> DivisionHistograms;
 
-	if( Level & 0x2 ){ //read in simulation data
+	if( options->ProcessSimData ){ //read in simulation data
 
 		MFileEventsSim* Reader = new MFileEventsSim(Geometry);
 		if (Reader->Open(options->SimulationFilename) == false) {
@@ -305,20 +381,28 @@ int main(int argc, char** argv)
 		vector<TH1D*> DepthHistograms;
 		for(int i = 0; i < 12; ++i){
 			char name[16]; sprintf(name,"depth_%d",i);
-			TH1D* H = new TH1D(name,name,1000,0.0,DetectorThicknesses[i]);
+			TH1D* H = new TH1D(name,name,100,0.0,DetectorThicknesses[i]);
 			DepthHistograms.push_back(H);
 		}
 		while ((simEvent = Reader->GetNextEvent()) != 0) {
 			//Reader->GetNextEvent() will print out some info about hits not being in sensitive volumes... this method will automatically exclude the weird HTs so that the code that follows
 			//doesn't have to deal with it.  these HTs come from hits that are at the sensitive Ge / Ge corner boundary.
+			if(SignalExit){
+				SignalExit = false;
+				cout << "exiting simulation data analysis" << endl;
+				break;
+			}
 			MReadOutAssembly* Event = RealizeSimEvent(simEvent, Calibrator);
 			if( Event == NULL ){
+				delete simEvent;
 				continue;
 			}
 			Pairing->AnalyzeEvent(Event);
 			for( unsigned int i = 0; i < Event->GetNHits(); ++i ){
 				MNCTHit* H = Event->GetHit(i);
-				if( (H->GetNStripHits() != 2) || (EnergyFilter(H->GetEnergy()) == false) ) continue; else {
+				if((H->GetNStripHits() != 2) || (EnergyFilter(H->GetEnergy(),options->EnergyWindows) == false)){
+					break; 
+				} else {
 					MNCTStripHit_s *SHx, *SHy;
 					if( H->GetStripHit(0)->IsXStrip() && !H->GetStripHit(1)->IsXStrip() ){
 						SHx = dynamic_cast<MNCTStripHit_s*>(H->GetStripHit(0)); SHy = dynamic_cast<MNCTStripHit_s*>(H->GetStripHit(1));
@@ -326,27 +410,44 @@ int main(int argc, char** argv)
 						SHx = dynamic_cast<MNCTStripHit_s*>(H->GetStripHit(1)); SHy = dynamic_cast<MNCTStripHit_s*>(H->GetStripHit(0));
 					} else {
 						//we didn't have 1 x and 1 y strip, log this and continue...
-						continue;
+						break;
 					}
 					//check that the depths agree
 					double Depth;
 					if( fabs(SHx->GetDepth() - SHy->GetDepth()) > 1.0E-6 ){
 						cout << "depths don't agree!" << endl;
-						continue;
+						break;
 					} else {
 						Depth = SHx->GetDepth();
 					}
+
 					int DetID = SHx->GetDetectorID();
+					int pixel_code = (10000*DetID) + (100*SHx->GetStripID()) + SHy->GetStripID();
+					int division_code = PixelCodeToDivision(pixel_code, options->Divisions);
+
+					//fill the depth division histogram
+					if(DivisionHistograms.count(division_code) == 1){
+						DivisionHistograms[division_code]->Fill(Depth);
+					} else {
+						char name[32]; snprintf(name, sizeof name, "divdepth_%d", division_code);
+						TH1D* H = new TH1D(name,name,100,0.0,DetectorThicknesses[DetID]);
+						H->Fill(Depth);
+						DivisionHistograms[division_code] = H;
+					}
+
+					//fill the depth (for the whole detector) histogram, and then fill the division CTD histogram
 					DepthHistograms[DetID]->Fill(Depth);
 					double Timing = m_DepthCalibrator->GetSpline(DetID,true)->Eval(Depth);
 					double Noise = RNG.Gaus(0,12.5/2.3548);
-					TH1D* hist = simHistograms[DetID];
-					if( hist == NULL ){
-						char name[64]; sprintf(name,"%d",DetID);
-						hist = new TH1D(name, name, 8*60, -300.0, +300.0);
-						simHistograms[DetID] = hist;
+					if(DivisionCTDs.count(division_code) == 1){
+						DivisionCTDs[division_code]->Fill(Timing+Noise);
+					} else {
+						char name[32]; snprintf(name,sizeof name, "divctd_%d", division_code);
+						TH1D* H = new TH1D(name, name, 240, -300.0, +300.0);
+						DivisionCTDs[division_code] = H;
+						H->Fill(Timing+Noise);
 					}
-					hist->Fill(Timing+Noise);
+
 				}
 			}
 			++counter;
@@ -355,41 +456,73 @@ int main(int argc, char** argv)
 			delete Event;
 		}
 		//write simulated CTD templates to root file
-		TFile* rootF = new TFile("sim_ctd.root","recreate");
-		for(auto const &it: simHistograms){
-			TH1D* hist = it.second;
-			rootF->WriteTObject(hist);
+		/*
+		TFile* rootF = new TFile(options->SimulationOutputFilename,"recreate");
+		for(auto const &it: DivisionCTDs){
+			TH1D* H = it.second;
+			rootF->WriteTObject(H);
 		}
 		for(int i = 0; i < 12; ++i){
 			rootF->WriteTObject(DepthHistograms[i]);
 		}
+		for(auto const &it: DivisionHistograms){
+			TH1D* H = it.second;
+			rootF->WriteTObject(H);
+		}
 		rootF->Close();
+		*/
+		TFile* rootF = new TFile(options->SimulationOutputFilename,"recreate");
+		for(int i = 0; i < 12; ++i){
+			DepthHistograms[i]->SetStats();
+			rootF->WriteTObject(DepthHistograms[i]);
+		}
+		vector<int> DivisionCTDKeys;
+		for(auto const &it: DivisionCTDs) DivisionCTDKeys.push_back(it.first);
+		sort(DivisionCTDKeys.begin(),DivisionCTDKeys.end());
+		for(size_t i = 0; i < DivisionCTDKeys.size(); ++i){
+			TH1D* H = DivisionCTDs[DivisionCTDKeys[i]];
+			H->SetStats();
+			rootF->WriteTObject(H);
+		}
+		vector<int> DivisionHistogramsKeys;
+		for(auto const &it: DivisionHistograms) DivisionHistogramsKeys.push_back(it.first);
+		sort(DivisionHistogramsKeys.begin(),DivisionHistogramsKeys.end());
+		for(size_t i = 0; i < DivisionHistogramsKeys.size(); ++i){
+			TH1D* H = DivisionHistograms[DivisionHistogramsKeys[i]];
+			H->SetStats();
+			rootF->WriteTObject(H);
+		}
+		rootF->Close();
+
+
+
+
+
 	}
 
-	if( Level & 0x4 ){
-		//perform the fits
-
-		//loop over pixel codes in order and try to read the pixel data from the root file
-		//first check if the root file exists
-
+	if( options->PerformFits ){
+		/*
 		TFile* rootF_mctd = new TFile("data_ctd.root","READ");
 		TFile* rootF_sctd = new TFile("sim_ctd.root","READ");
-
+		*/
+		unordered_map<int, DivisionTemplate*> TemplateMap;
+		TFile* rootF_mctd = new TFile(options->FitDataFile);
+		TFile* rootF_sctd = new TFile(options->FitSimFile);
 		if( rootF_mctd == NULL ){
 			cout << "couldn't open measured CTD root file, exiting..." << endl;
 			return -1;
 		}
-
 		if( rootF_sctd == NULL ){
 			cout << "couldn't open sim CTD root file, exiting..." << endl;
 			return -1;
 		}
-
 		FILE* fout = fopen("coeffs.txt","w");
 		fprintf(fout,"#format is 1) pixel code (10000*det + 100*Xchannel + Ychannel)  2) stretch 3) offset 4) scale 5) chi2 reduced\n");
 		TFile* rootF_fits = new TFile("fits.root","recreate");
-
+		TF1* fitfunc = new TF1("ctd_fitfunc",ctd_template_fit_function,-300.0,+300.0,3);
+		fitfunc->SetParNames("stretch","offset","scale");
 		for( unsigned int D = 0; D < 12; ++D ){
+			/*
 			char det_name[8]; sprintf(det_name,"%d",D);
 			TH1D* ctd_template = (TH1D*)rootF_sctd->Get(det_name);
 			if(ctd_template == NULL){
@@ -401,58 +534,63 @@ int main(int argc, char** argv)
 			TF1* fitfunc = new TF1("ctd_fitfunc",ctd_template_fit_function,-300.0,+300.0,3);
 			fitfunc->SetParameters(1.0, 0.0, 1.0); // first param is stretch, second is offset, third is scale
 			fitfunc->SetParNames("stretch","offset","scale");
-
-			//find maxima of CTD edges
-			/*
-			ctd_template->SetAxisRange(-300.0,0.0);
-			double max1 = ctd_template->GetMaximum();
-			double max1_bin = ctd_template->GetMaximumBin();
-			double max1_x = ctd_template->GetBinCenter(max1_bin);
-
-			ctd_template->SetAxisRange(0.0,300.0);
-			double max2 = ctd_template->GetMaximum();
-			double max2_bin = ctd_template->GetMaximumBin();
-			double max2_x = ctd_template->GetBinCenter(max2_bin);
-
-			ctd_template->SetAxisRange(-300.0,300.0);
-			*/
-
 			int Ledge_bin, Redge_bin; FindEdgeBins(ctd_template, &Ledge_bin, &Redge_bin);
 			double max1_x = ctd_template->GetBinCenter(Ledge_bin); double max1 = ctd_template->GetBinContent(Ledge_bin);
 			double max2_x = ctd_template->GetBinCenter(Redge_bin); //double max2 = ctd_template->GetBinContent(Redge_bin);
-
+			*/
 			for( unsigned int Xch = 1; Xch <= 37; ++Xch ){
 				for( unsigned int Ych = 1; Ych <= 37; ++Ych ){
+
+					//try to read the ctd
 					int pixel_code = 10000*D + 100*Xch + Ych;
 					char pixel_code_s[32]; sprintf(pixel_code_s,"%d",pixel_code);
 					TH1D* H = (TH1D*)rootF_mctd->Get(pixel_code_s);
-					if( H == NULL ) continue; else {
-						if( H->GetEntries() < 200 ) continue; //histogram has too few counts
-						cout << "found pixel:" << pixel_code << ", starting fit..." << endl;
-						//idea, use best fit from last pixel as starting values here since these parameters vary spacially (especially stretch factor), assuming chi2 is good enough
-						//MIGHT NEED TO CALL SET PARAMETERS AGAIN HERE 
-//						if( !UseLast ) fitfunc->SetParameters(1.0, 0.0, 1.0);
 
-						FindEdgeBins(H, &Ledge_bin, &Redge_bin);
+					if( H == NULL ) continue; else {
+
+						//set up the template
+						int division_code = PixelCodeToDivision(pixel_code, options->Divisions);
+						if(TemplateMap.count(division_code)){
+							Gctd = TemplateMap[division_code];
+						} else {
+							char division_name[32]; snprintf(division_name, sizeof division_name, "divctd_%d", division_code);
+							TH1D* ctd_template = (TH1D*)rootF_sctd->Get(division_name);
+							if(ctd_template == NULL){
+								cout << "could not read CTD template for division " << division_code << ", skipping pixel" << pixel_code << endl;
+								continue;
+							} else {
+								if(options->FitRebinSimCTD >= 2) ctd_template->Rebin(options->FitRebinSimCTD);
+								DivisionTemplate* dt = new DivisionTemplate();
+								dt->H = ctd_template;
+								int Ledge_bin, Redge_bin; FindEdgeBins(ctd_template, &Ledge_bin, &Redge_bin);
+								dt->max1_x = ctd_template->GetBinCenter(Ledge_bin);
+								dt->max2_x = ctd_template->GetBinCenter(Redge_bin);
+								dt->max1 = ctd_template->GetBinContent(Ledge_bin);
+								TemplateMap[division_code] = dt;
+								Gctd = dt; //set this globally so that the root fit function can see it
+							}
+						}
+
+						if( H->GetEntries() < 200 ) continue; //histogram has too few counts
+						if(options->FitRebinDataCTD >= 2) H->Rebin(options->FitRebinDataCTD);
+						cout << "found pixel:" << pixel_code << ", starting fit..." << endl;
+						int Ledge_bin,Redge_bin; FindEdgeBins(H, &Ledge_bin, &Redge_bin);
 						double cmax1_x = H->GetBinCenter(Ledge_bin); double cmax1 = H->GetBinContent(Ledge_bin);
 						double cmax2_x = H->GetBinCenter(Redge_bin); //double cmax2 = H->GetBinContent(Redge_bin);
-
-
-						double stretch_guess = fabs(cmax1_x - cmax2_x)/fabs(max1_x - max2_x);
+						double stretch_guess = fabs(cmax1_x - cmax2_x)/fabs(Gctd->max1_x - Gctd->max2_x);
 						cout << "stretch guess: "<<stretch_guess << endl;
-						double offset_guess = cmax1_x - (stretch_guess * max1_x);
+						double offset_guess = cmax1_x - (stretch_guess * Gctd->max1_x);
 						cout << "offset_guess: " << offset_guess << endl;
-						double scale_guess = cmax1/max1;
+						double scale_guess = cmax1/Gctd->max1;
 						cout << "scale_guess: " << scale_guess << endl;
-
 						fitfunc->SetParameters(stretch_guess, offset_guess, scale_guess);
-
-//						fitfunc->SetParameters(1.1,0.0,1.0);
 						H->Fit(fitfunc);
 						double* P; P = fitfunc->GetParameters();
-//						double chi = fitfunc->GetChisquare()/57.0;//57 is number of bins minus number of fit parameters
 						double chi = fitfunc->GetChisquare()/(H->GetNbinsX()-3.0);
 						fprintf(fout,"%d   %f   %f   %f   %f\n",pixel_code,P[0],P[1],P[2],chi); 
+						char title[32]; snprintf(title, sizeof title, "%d-%d", pixel_code, division_code);
+						H->SetTitle(title);
+						H->SetStats();
 						rootF_fits->WriteTObject(H);
 					}
 					delete H;
@@ -461,7 +599,6 @@ int main(int argc, char** argv)
 		}
 		fclose(fout);
 		rootF_fits->Close();
-
 	}
 
 	cout << "DONE" << endl;
@@ -498,7 +635,7 @@ double ctd_template_fit_function(double* v, double* par){
 	double offset = par[1];
 	double scale = par[2];
 	double x = v[0];
-	TH1D* H = Gctd; //Gctd is current global ctd template
+	TH1D* H = Gctd->H; //Gctd is current global ctd template
 
 	//apply inverse stretch/offset to find the x value with respect to the original histogram bins
 	double x_0 = (x - offset)/stretch;
@@ -525,21 +662,15 @@ double ctd_template_fit_function(double* v, double* par){
 
 }
 
-bool EnergyFilter(double Energy){
+bool EnergyFilter(double Energy, const vector<vector<double>>& EnergyWindows){
 
-	double continuum_low = 200.0;
-	double continuum_high = 477.0;
-	double photopeak_low = 650.0;
-	double photopeak_high = 670.0;
-
-	if( (Energy >= continuum_low) && (Energy <= continuum_high) ){
-		return true;
-	} else if( (Energy >= photopeak_low) && (Energy <= photopeak_high) ){
-		return true;
-	} else {
-		return false;
-
+	for(const auto it: EnergyWindows){
+		if((Energy >= it[0]) && (Energy <= it[1])){
+			return true;
+		}
 	}
+
+	return false;
 }
 
 MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrationUniversal* Calibrator){
@@ -552,9 +683,10 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrati
 		MDVolumeSequence* VS = HT->GetVolumeSequence();
 		MDDetector* Detector = VS->GetDetector();
 		MString DetectorName = Detector->GetName();
-		if(!DetectorName.BeginsWith("Detector")){
-			delete Event;
-			return NULL;
+		if(!DetectorName.BeginsWith("Detector")){ //shield hit
+			//delete Event;
+			//return NULL;
+			continue;
 		}
 		DetectorName.RemoveAllInPlace("Detector");
 		int DetectorID = DetectorName.ToInt();
@@ -609,3 +741,16 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrati
 
 }
 
+int PixelCodeToDivision(int PixelCode, int Divisions){
+	int d = PixelCode/10000;
+	int y = PixelCode % 100;
+	int x = ((PixelCode % 10000) - y)/100;
+	y--; //map strips into range 0 - 36
+	x--;
+	int xd = x/(36/Divisions);
+	if(xd == Divisions) xd--;
+	int yd = y/(36/Divisions);
+	if(yd == Divisions) yd--;
+	//return (d*1000) + (xd + 1)*(yd + 1);
+	return (d*1000) + (xd * Divisions) + yd;
+}
