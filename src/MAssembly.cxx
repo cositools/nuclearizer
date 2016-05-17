@@ -237,6 +237,7 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     if (Option == "--auto" || Option == "-a") {
       m_UseGui = false;
       gROOT->SetBatch(true);
+      m_Supervisor->UseUI(false);
       m_Supervisor->Analyze();
       m_Supervisor->Exit();
       return false;
