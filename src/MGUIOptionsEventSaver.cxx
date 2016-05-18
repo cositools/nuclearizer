@@ -100,7 +100,7 @@ void MGUIOptionsEventSaver::Create()
  
   TGLayoutHints* SplitFileTimeLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);  
   m_SplitFileTime = new MGUIEEntry(m_OptionsFrame, "Split the file after this time [sec]:", false, 
-    dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetSplitFileTime().GetAsSystemSeconds(), true, 0);
+    dynamic_cast<MNCTModuleEventSaver*>(m_Module)->GetSplitFileTime().GetAsSystemSeconds(), true, 0l);
   if (m_SplitFile->IsOn() == false) m_SplitFileTime->SetEnabled(false);
   m_OptionsFrame->AddFrame(m_SplitFileTime, SplitFileTimeLayout);
   
