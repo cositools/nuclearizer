@@ -270,15 +270,32 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
   Event->SetTime( NewEvent->GetTime() );
   Event->SetMJD( NewEvent->GetMJD() );
   if (NewEvent->GetAspect() != 0) {
-    MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
-    Event->SetAspect(A);
-    //cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
-    m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
-    Event->SetAnalysisProgress(MAssembly::c_Aspect);
+    if (NewEvent->GetAspect()->GetGalacticPointingXAxisLongitude() == 0 && 
+        NewEvent->GetAspect()->GetGalacticPointingZAxisLongitude() == 0 &&
+        NewEvent->GetAspect()->GetGalacticPointingXAxisLatitude() == 0 && 
+        NewEvent->GetAspect()->GetGalacticPointingZAxisLatitude() == 0) {
+      cout<<"FIXME Alex: Something went wrong with the aspect reconstruction..."<<endl;
+      Event->SetAspectIncomplete(true);
+    } else {
+      MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
+      Event->SetAspect(A);
+      Event->ComputeAbsoluteTime();
+      //cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
+      m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
+      Event->SetAnalysisProgress(MAssembly::c_Aspect);
+    }
+  } else {
+    if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither) {
+      Event->SetAspectIncomplete(true);
+    }
   }
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | 
                              MAssembly::c_EventLoaderMeasurement | 
                              MAssembly::c_EventOrdering);
+
+  if (Event->GetTime().GetAsSystemSeconds() == 0) {
+    Event->SetTimeIncomplete(true);
+  }
   
   delete NewEvent;
   
