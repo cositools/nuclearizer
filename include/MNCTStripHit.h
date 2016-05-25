@@ -98,6 +98,10 @@ class MNCTStripHit
   //! Return the Timing of the top side
   double GetTiming() const { return m_Timing; }
 
+  //! Set the Temperature of the relavent preamp (in degrees C)
+  void SetPreampTemp(double PreampTemp) { m_PreampTemp = PreampTemp; }
+  //! Return the Temperature of the relavent preamp (in degrees C)
+  double GetPreampTemp() const { return m_PreampTemp; }
 
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
@@ -135,7 +139,8 @@ class MNCTStripHit
   double m_EnergyResolution;
   //! Timing of the top side
   double m_Timing;
-
+  //! Temperature of Preamp
+  double m_PreampTemp;
 
 #ifdef ___CINT___
  public:

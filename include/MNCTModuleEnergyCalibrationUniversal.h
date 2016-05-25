@@ -73,11 +73,19 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   //! Look up energy resolution
   double LookupEnergyResolution(MNCTStripHit* SH, double Energy);
 
+  //! Enable/Disable Preamp Temp Correction
+  void EnablePreampTempCorrection(bool X) {m_TemperatureEnabled = X;}
+  //! Get coincidence merging true/false
+  bool GetPreampTempCorrection() const { return m_TemperatureEnabled; }
+
 
   // protected methods:
  protected:
-   //! The calibration file name
-   MString m_FileName;
+  //! The calibration file name
+  MString m_FileName;
+  //! Preamp Temperature Correction
+  bool m_TemperatureEnabled;
+
 
   // private methods:
  private:

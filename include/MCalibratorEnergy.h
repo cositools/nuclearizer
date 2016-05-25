@@ -58,6 +58,12 @@ class MCalibratorEnergy
   //! Dump a string about the class
   virtual MString ToString() const;
   
+  //! Enable/Disable Preamp Temp Correction
+  void EnablePreampTempCorrection(bool X) {m_TemperatureEnabled = X;}
+  //! Get coincidence merging true/false
+  bool GetPreampTempCorrection() const { return m_TemperatureEnabled; }
+
+
   // protected methods:
  protected:
 
@@ -72,6 +78,8 @@ class MCalibratorEnergy
   MReadOutElement* m_ReadOut;
   //! Check if this calibrator has multiple entries
   bool m_HasMultipleEntries;
+  //! Preamp Temperature Correction
+  bool m_TemperatureEnabled;
 
   // private members:
  private:

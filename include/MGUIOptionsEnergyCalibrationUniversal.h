@@ -30,6 +30,7 @@
 #include "MGlobal.h"
 #include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
+#include "MGUIERBList.h"
 
 // Nuclearizer libs:
 #include "MModule.h"
@@ -70,7 +71,7 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
  private:
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
-
+  MGUIERBList* m_TemperatureMode;
 
 #ifdef ___CINT___
  public:

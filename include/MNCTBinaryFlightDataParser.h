@@ -118,6 +118,7 @@ class MNCTBinaryFlightDataParser
   uint32_t m_NumRawDataframes;
   uint32_t m_NumComptonDataframes;
   uint32_t m_NumAspectPackets;
+  uint32_t m_NumSettingsPackets;
   uint32_t m_NumOtherPackets;  
  
   // private members:
@@ -159,6 +160,7 @@ class MNCTBinaryFlightDataParser
   map<uint64_t,int> m_PacketRecord;
 	
 
+  vector<uint16_t> m_PreampTemps;
 
   int m_StripMap[8][10];
   int m_CCMap[12];
