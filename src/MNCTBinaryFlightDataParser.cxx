@@ -40,6 +40,8 @@ using namespace std;
 // MEGAlib libs:
 #include "MNCTStripHit.h"
 
+//Pipeline Tools:
+#include "GCUSettingsParser.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,6 +72,7 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	m_NumRawDataframes = 0;
 	m_NumComptonDataframes = 0;
 	m_NumAspectPackets = 0;
+	m_NumSettingsPackets = 0;
 	m_NumOtherPackets = 0;
 	MAX_TRIGS = 80;
 	LastTimestamps.clear();
@@ -127,7 +130,9 @@ bool MNCTBinaryFlightDataParser::Initialize()
   m_NumRawDataframes = 0;
   m_NumComptonDataframes = 0;
   m_NumAspectPackets = 0;
+  m_NumSettingsPackets = 0;
   m_NumOtherPackets = 0;
+
 
   //LastTimestamps.clear();
   //LastTimestamps.resize(12);
@@ -166,7 +171,9 @@ bool MNCTBinaryFlightDataParser::Initialize()
   m_NumComptonBytes = 0;
   m_NumRawDataBytes = 0;
   m_NumBytesReceived = 0;
-  
+ 
+  m_PreampTemps.reserve(24);
+ 
   // Load aspect reconstruction module
   delete m_AspectReconstructor;
   m_AspectReconstructor = new MNCTAspectReconstruction();
@@ -202,10 +209,10 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	int ParseErr;
 	//unsigned int CCId = 0;
 
+	struct GCUSettingsPacket* SettingsPacket;
 
 	SyncWord.push_back(0xEB);
 	SyncWord.push_back(0x90);
-
 	m_NumBytesReceived += Received.size();
 	if (g_Verbosity >= c_Info) cout<<"BinaryFlightDataParser: NumBytesReceived "<<m_NumBytesReceived<<endl;
 
@@ -296,15 +303,44 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				}
 				m_NumAspectPackets++;
 				break;
+			case 0x0b:
+				//preamp temperatures
+				SettingsPacket = ParseGCUSettingsPacket(&NextPacket[0]);
+				//Order of PreampTemps are defined as Det0 DC, Det0 AC, Det1 DC, Det1, AC...etc
+				m_PreampTemps[0] = SettingsPacket->RpiTemp_Brd2_Ch0;
+				m_PreampTemps[1] = SettingsPacket->RpiTemp_Brd2_Ch3;
+				m_PreampTemps[2] = SettingsPacket->RpiTemp_Brd0_Ch6;
+				m_PreampTemps[3] = SettingsPacket->RpiTemp_Brd2_Ch2;
+				m_PreampTemps[4] = SettingsPacket->RpiTemp_Brd0_Ch7;
+				m_PreampTemps[5] = SettingsPacket->RpiTemp_Brd2_Ch1;
+				m_PreampTemps[6] = SettingsPacket->RpiTemp_Brd1_Ch6;
+				m_PreampTemps[7] = SettingsPacket->RpiTemp_Brd2_Ch4;
+				m_PreampTemps[8] = SettingsPacket->RpiTemp_Brd1_Ch7;
+				m_PreampTemps[9] = SettingsPacket->RpiTemp_Brd2_Ch5;
+				m_PreampTemps[10] = SettingsPacket->RpiTemp_Brd2_Ch7;
+				m_PreampTemps[11] = SettingsPacket->RpiTemp_Brd2_Ch6;
+				m_PreampTemps[12] = SettingsPacket->RpiTemp_Brd1_Ch5;
+				m_PreampTemps[13] = SettingsPacket->RpiTemp_Brd1_Ch2;
+				m_PreampTemps[14] = SettingsPacket->RpiTemp_Brd1_Ch4;
+				m_PreampTemps[15] = SettingsPacket->RpiTemp_Brd1_Ch1;
+				m_PreampTemps[16] = SettingsPacket->RpiTemp_Brd1_Ch3;
+				m_PreampTemps[17] = SettingsPacket->RpiTemp_Brd1_Ch0;
+				m_PreampTemps[18] = SettingsPacket->RpiTemp_Brd0_Ch3;
+				m_PreampTemps[19] = SettingsPacket->RpiTemp_Brd0_Ch0;
+				m_PreampTemps[20] = SettingsPacket->RpiTemp_Brd0_Ch4;
+				m_PreampTemps[21] = SettingsPacket->RpiTemp_Brd0_Ch1;
+				m_PreampTemps[22] = SettingsPacket->RpiTemp_Brd0_Ch5;
+				m_PreampTemps[23] = SettingsPacket->RpiTemp_Brd0_Ch2;
+				m_NumSettingsPackets++;
+				break;
 			default:
 				//don't care
 				m_NumOtherPackets++;
-
 		}
 		if( NewEvents.size() > 0 ){
 			for( auto E: NewEvents ){
 				/*
-				int CCId = E->GetStripHit(0)->GetDetectorID(); //this line might be an issue since events from compton packets can have SHs from more than one detector
+				int CCId = E->GetStripHit(0)>GetDetectorID(); //this line might be an issue since events from compton packets can have SHs from more than one detector
 				uint64_t Lower;
 				if(m_EventTimeWindow > LastTimestamps[CCId]){
 					Lower = LastTimestamps[CCId] >> 1;
@@ -410,6 +446,22 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			}
 		}
 	}
+
+
+	//Preamp Temp Allocation
+	int striphits;
+	int det;
+	int side;
+	double temp;
+	for( auto E: m_Events ){
+		striphits = E->GetNStripHits();
+		for(int s = 0; s < striphits; s++) {
+			det = E->GetStripHit(s)->GetDetectorID();
+			side = E->GetStripHit(s)->IsXStrip() == true;
+			temp = (m_PreampTemps[det*2 + side]*0.0005/0.5)*2.471*100 - 273.0;
+			E->GetStripHit(s)->SetPreampTemp(temp);
+		}
+	}	
 
 	if (m_Events.size() > 0) {
 		//if (m_IgnoreAspect == true) {

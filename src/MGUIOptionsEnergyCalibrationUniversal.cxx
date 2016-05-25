@@ -29,6 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MModule.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 
 
@@ -72,7 +73,13 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
-  
+  m_TemperatureMode = new MGUIERBList(m_OptionsFrame, "Enable/Disable preamp temperature correction");
+  m_TemperatureMode->Add("Disable");
+  m_TemperatureMode->Add("Enable");
+  m_TemperatureMode->SetSelected((int) dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection());
+  m_TemperatureMode->Create();
+  m_OptionsFrame->AddFrame(m_TemperatureMode, LabelLayout);
+
   PostCreate();
 }
 
@@ -117,6 +124,16 @@ bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
 
   dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 	
+  if( m_TemperatureMode->GetSelected() == 0 ){      
+	//false -> 0     
+    dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(false);
+  } else if( m_TemperatureMode->GetSelected() == 1 ){
+    //true -> 1
+    dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(true);
+  }
+
+
+
 	return true;
 }
 

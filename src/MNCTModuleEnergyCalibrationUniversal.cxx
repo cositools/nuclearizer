@@ -43,6 +43,7 @@ using namespace std;
 // Nuclearizer libs:
 #include "MReadOutElement.h"
 #include "MReadOutElementDoubleStrip.h"
+#include "MCalibratorEnergy.h"
 #include "MCalibratorEnergyPointwiseLinear.h"
 #include "MGUIOptionsEnergyCalibrationUniversal.h"
 #include "MGUIExpoEnergyCalibration.h"
@@ -229,6 +230,8 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     MNCTStripHit* SH = Event->GetStripHit(i);
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
 
+	//cout<<SH->GetPreampTemp()<<endl;
+	
     TF1* Fit = m_Calibration[R];
 		TF1* FitRes = m_ResolutionCalibration[R];
     if (Fit == 0) {
@@ -242,6 +245,17 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       } else if (Energy < 0) {
         Energy = 0;
       }
+
+	  //Preamp Temperature Correction
+	  if ( m_TemperatureEnabled ) {
+		//cout<<"CHANGING ENERGY "<<Energy<<endl;
+		double temp = SH->GetPreampTemp();
+		//cout<<temp<<endl;
+		Energy = Energy/(-0.0075/23.*temp+1.012);
+		//cout<<Energy<<endl;
+	  }
+
+
       SH->SetEnergy(Energy);
 			if (FitRes == 0) {
 				if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy Resolution fit not found for read-out element "<<R<<endl;
@@ -303,6 +317,11 @@ bool MNCTModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
     m_FileName = FileNameNode->GetValue();
   }
   
+  MXmlNode* PreampTemperatureNode = Node->GetNode("PreampTemperature");
+  if( PreampTemperatureNode != NULL ){
+      m_TemperatureEnabled = (bool) PreampTemperatureNode->GetValueAsInt();
+  }
+
   return true;
 }
 
@@ -316,7 +335,8 @@ MXmlNode* MNCTModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
-  
+  new MXmlNode(Node, "PreampTemperature",(unsigned int) m_TemperatureEnabled);  
+
   return Node;
 }
 
