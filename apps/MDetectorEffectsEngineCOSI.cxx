@@ -439,7 +439,6 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
 			double Depth_ = PositionInDetector.GetZ();
 			double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
-//			cout << "Depth_ = " << Depth_ << ", Depth = " << Depth << ", Det = " << DetectorID << ", Thickness = " << m_DepthCalibrator->GetThickness(DetectorID) << endl;
 
 			// Not sure about if p or n-side is up, but we can debug this later
 			pSide.m_ROE.SetStripID(GP.GetXGrid()+1);
@@ -461,9 +460,10 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			//detector. the only place where this has any impact is when a strip is hit multiple times.  in this case, the lowest timing value for the strip is accepted, but to really get the
 			//comparison right would involve knowing the time delays per strip.
 
-			//pSide.m_Timing = (m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)/Coeffs->at(0)) + Coeffs->at(1);
-			//nSide.m_Timing = m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)/Coeffs->at(0);
+			pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0);
+			nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0);
 
+			/*
 			double CTD_ = m_DepthCalibrator->GetSpline(DetectorID, true)->Eval(Depth);
 			double CTD = (CTD_ * Coeffs->at(0)) + Coeffs->at(1); //apply stretch and offset
 
@@ -475,6 +475,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			//round to lowest increment of 5
 			pSide.m_Timing = pSide.m_Timing - fmod(pSide.m_Timing,5.0);
 			nSide.m_Timing = nSide.m_Timing - fmod(nSide.m_Timing,5.0);
+			cout << "Depth_ = " << Depth_ << ", Depth = " << Depth << ", Det = " << DetectorID << ", Thickness = " << m_DepthCalibrator->GetThickness(DetectorID) << ",pTiming = " << pSide.m_Timing << ", nTiming = " << nSide.m_Timing << endl;
+			*/
 
 			//!!!!!!! HERE WE SHOULD SET THE TIMING TO ZERO IF THE ENERGY IS LESS THAN THE FLD THRESHOLD!!!!!!! AWL
 			pSide.m_Energy = HT->GetEnergy();
@@ -616,26 +618,18 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			}
 		}
 
-		/*
-			before merging, CTD will computed for each hit and each striphit will have a timing value.  after strips are merged, if a strip is hit more than once, take the smallest timing value, because 
-			that will be the only timing value measured by the electronics
-
-
-		 */
-
-
 		// Step (2): Calculate and noise timing
+		const double TimingNoise = 3.76; //ns//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be (12.5/2.35)/sqrt(2)
 		for (MNCTDEEStripHit& Hit: MergedStripHits) {
-			//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be:
-			//(12.5/2.35)/sqrt(2)
-
-			double LowestNoisedTiming = Hit.m_Timing += gRandom->Gaus(0,(12.5/2.35)/sqrt(2));
-			for( MNCTDEEStripHit SubHit: Hit.m_SubStripHits){
-				SubHit.m_Timing += gRandom->Gaus(0,(12.5/2.35)/sqrt(2));
-				if( SubHit.m_Timing < LowestNoisedTiming ) LowestNoisedTiming = SubHit.m_Timing;
+			
+			//find lowest timing value 
+			double LowestNoisedTiming = Hit.m_SubStripHits.front().m_Timing + gRandom->Gaus(0,TimingNoise);
+			for(size_t i = 1; i < Hit.m_SubStripHits.size(); ++i){
+				double Timing = Hit.m_SubStripHits.at(i).m_Timing + gRandom->Gaus(0,TimingNoise);
+				//SubHit.m_Timing += gRandom->Gaus(0,TimingNoise);
+				if( Timing < LowestNoisedTiming ) LowestNoisedTiming = Timing;
 			}
-			double remainder = fmod(LowestNoisedTiming,5.0);
-			LowestNoisedTiming -= remainder;
+			LowestNoisedTiming -= fmod(LowestNoisedTiming,5.0); //round down to nearest multiple of 5
 			Hit.m_Timing = LowestNoisedTiming;
 
 		}
