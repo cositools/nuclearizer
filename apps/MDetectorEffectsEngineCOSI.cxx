@@ -292,6 +292,9 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
  */
 bool MNCTDetectorEffectsEngineCOSI::Analyze()
 {
+
+	static TRandom3 r(0);
+
 	// Load geometry:
 	MDGeometryQuest* Geometry = new MDGeometryQuest();
 	if (Geometry->ScanSetupFile(m_GeometryFileName) == true) {
@@ -415,6 +418,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			MDVolumeSequence* VS = HT->GetVolumeSequence();
 			MDDetector* Detector = VS->GetDetector();
 			MString DetectorName = Detector->GetName();
+			if(!DetectorName.BeginsWith("Detector")){
+				continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
+			}
 			DetectorName.RemoveAllInPlace("Detector");
 			int DetectorID = DetectorName.ToInt();
 
@@ -431,8 +437,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			// Convert position into
 			MVector PositionInDetector = VS->GetPositionInSensitiveVolume();
 			MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
-			double Depth = PositionInDetector.GetZ();
-			Depth = -(Depth - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
+			double Depth_ = PositionInDetector.GetZ();
+			double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
+//			cout << "Depth_ = " << Depth_ << ", Depth = " << Depth << ", Det = " << DetectorID << ", Thickness = " << m_DepthCalibrator->GetThickness(DetectorID) << endl;
 
 			// Not sure about if p or n-side is up, but we can debug this later
 			pSide.m_ROE.SetStripID(GP.GetXGrid()+1);
@@ -454,9 +461,22 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			//detector. the only place where this has any impact is when a strip is hit multiple times.  in this case, the lowest timing value for the strip is accepted, but to really get the
 			//comparison right would involve knowing the time delays per strip.
 
-			pSide.m_Timing = (m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)/Coeffs->at(0)) + Coeffs->at(1);
-			nSide.m_Timing = m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)/Coeffs->at(0);
+			//pSide.m_Timing = (m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)/Coeffs->at(0)) + Coeffs->at(1);
+			//nSide.m_Timing = m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)/Coeffs->at(0);
 
+			double CTD_ = m_DepthCalibrator->GetSpline(DetectorID, true)->Eval(Depth);
+			double CTD = (CTD_ * Coeffs->at(1)) + Coeffs->at(1); //apply stretch and offset
+
+			//add noise
+			const double TimingError = 3.75; //this comes from assuming that the CTD timing noise is 12.5 ns FWHM
+			pSide.m_Timing = CTD + r.Gaus(0,TimingError);
+			nSide.m_Timing = r.Gaus(0,TimingError);
+
+			//round to lowest increment of 5
+			pSide.m_Timing = pSide.m_Timing - fmod(pSide.m_Timing,5.0);
+			nSide.m_Timing = nSide.m_Timing - fmod(nSide.m_Timing,5.0);
+
+			//!!!!!!! HERE WE SHOULD SET THE TIMING TO ZERO IF THE ENERGY IS LESS THAN THE FLD THRESHOLD!!!!!!! AWL
 			pSide.m_Energy = HT->GetEnergy();
 			nSide.m_Energy = HT->GetEnergy();
 
@@ -745,6 +765,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean_energy)
 {  
 	//first, need to simulate energy spread
+	static TRandom3 r(0);
 	TF1* FitRes = m_ResolutionCalibration[Hit.m_ROE];
 	//resolution is a function of energy
 	double EnergyResolution = 3; //default to 3keV...does this make sense?
@@ -753,7 +774,7 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
 	}
 
 	//get energy from gaussian around mean_energy with sigma=EnergyResolution
-	TRandom3 r(0);
+	//TRandom3 r(0);
 	double energy = r.Gaus(mean_energy,EnergyResolution);
 	//  spectrum->Fill(energy);
 

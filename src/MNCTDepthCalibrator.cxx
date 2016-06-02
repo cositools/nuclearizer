@@ -11,19 +11,41 @@ MNCTDepthCalibrator::MNCTDepthCalibrator()
 	m_Thicknesses.reserve(12);
 
 	/*
-	m_Thicknesses[0] = 1.49;
-	m_Thicknesses[1] = 1.45;
-	m_Thicknesses[2] = 1.50;
-	m_Thicknesses[3] = 1.51;
-	m_Thicknesses[4] = 1.50;
-	m_Thicknesses[5] = 1.47;
-	m_Thicknesses[6] = 1.48;
-	m_Thicknesses[7] = 1.47;
-	m_Thicknesses[8] = 1.49;
-	m_Thicknesses[9] = 1.47;
-	m_Thicknesses[10] = 1.42;
-	m_Thicknesses[11] = 1.45;
+	if(Year == 2014){
+
+		m_Thicknesses[0] = 1.49;
+		m_Thicknesses[1] = 1.45;
+		m_Thicknesses[2] = 1.50;
+		m_Thicknesses[3] = 1.51;
+		m_Thicknesses[4] = 1.50;
+		m_Thicknesses[5] = 1.47;
+		m_Thicknesses[6] = 1.48;
+		m_Thicknesses[7] = 1.47;
+		m_Thicknesses[8] = 1.49;
+		m_Thicknesses[9] = 1.47;
+		m_Thicknesses[10] = 1.42;
+		m_Thicknesses[11] = 1.45;
+
+	} else if(Year == 2016){
+
+		m_Thicknesses[0] = 1.49;
+		m_Thicknesses[1] = 1.45;
+		m_Thicknesses[2] = 1.50;
+		m_Thicknesses[3] = 1.45;
+		m_Thicknesses[4] = 1.51;
+		m_Thicknesses[5] = 1.50;
+		m_Thicknesses[6] = 1.48;
+		m_Thicknesses[7] = 1.47;
+		m_Thicknesses[8] = 1.49;
+		m_Thicknesses[9] = 1.47;
+		m_Thicknesses[10] = 1.42;
+		m_Thicknesses[11] = 1.45;
+
+	}
 	*/
+
+
+
 
 	RootF = new TFile("$NUCLEARIZER/resource/rootfiles/timing_splines.root","recreate");
 
@@ -127,6 +149,8 @@ bool MNCTDepthCalibrator::LoadSplinesFile(MString FName)
 					AddSpline(depthvec, anovec, DetID, m_SplineMap_Depth2AnoTiming, false);
 					AddSpline(depthvec, catvec, DetID, m_SplineMap_Depth2CatTiming, false);
 				}
+				m_Thicknesses[NewDetID] = tokens[3].ToDouble();
+				cout << "MNCTDepthCalibrator: from splines file, detector " << NewDetID << " has thicknesss " << m_Thicknesses[NewDetID] << endl;
 				depthvec.clear(); ctdvec.clear(); anovec.clear(); catvec.clear();
 				DetID = NewDetID;
 			} else {
