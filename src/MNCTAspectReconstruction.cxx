@@ -133,6 +133,7 @@ void MNCTAspectReconstruction::Clear()
 		delete A;
 	}
 	m_Aspects_Magnetometer.clear();	
+	m_IsDone = false;
 
 }
 
@@ -181,6 +182,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	if( GPS_or_magnetometer == 0 ){
 		if( (PacketA.BRMS < 1.0E-6) || (PacketA.BRMS > 1.0) || (PacketA.AttFlag != 0) ){
 			//just gonna return true here for now...
+			delete Aspect;
 			return true; //AWL commented out so we could test the absolute timing of events
 		}
 	}
@@ -672,91 +674,58 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 	MNCTAspect* ReqAspect = 0;
 
 	if(GPS_Or_Magnetometer == 0){
-
-
-
-
 		//check that there are aspect packets 
 		if( m_Aspects_GPS.size() == 0 ){
 			return 0;
-		}
-
-		//first need to check that event time is not older than the oldest Aspect we have
-		//otherwise events won't get popped off of m_Events, since the first event will never get aspect info
-		if( ReqTime < m_Aspects_GPS.front()->GetTime() ){
-			//return an aspect that has a time of -1
-			MNCTAspect* BadAspect = new MNCTAspect();
-			BadAspect->SetTime( (double) -1.0 );
-			cout << "bad aspect" << endl;
-			return BadAspect;
-		}
-
-		//now check if event time is newer than the newest aspect ... if it is, then return null, we
-		//need to wait for the newest aspect info to comein
-		if( ReqTime > m_Aspects_GPS.back()->GetTime() ){
-			cout << "too recent" << endl;
-			return 0;
-		}
-
-		//this loop will only go if there are at least 2 aspects 
-		for( int i = m_Aspects_GPS.size()-2; i > -1; --i ){
-			if( ReqTime > m_Aspects_GPS[i]->GetTime() ){ //found the lower bracketing value
-				if( (ReqTime - m_Aspects_GPS[i]->GetTime()) <= (m_Aspects_GPS[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
-					ReqAspect = m_Aspects_GPS[i];
-					break;
-				} else {
-					ReqAspect = m_Aspects_GPS[i+1];
-					break;
+		} else if( ReqTime < m_Aspects_GPS.front()->GetTime() ){
+			ReqAspect = m_Aspects_GPS.front();
+		} else if( ReqTime > m_Aspects_GPS.back()->GetTime() ){
+			if(m_IsDone){
+				ReqAspect = m_Aspects_GPS.back();
+			} else {
+				ReqAspect = 0;
+			}
+		} else {
+			for( int i = m_Aspects_GPS.size()-2; i > -1; --i ){//this loop will only go if there are at least 2 aspects 
+				if( ReqTime > m_Aspects_GPS[i]->GetTime() ){ //found the lower bracketing value
+					if( (ReqTime - m_Aspects_GPS[i]->GetTime()) <= (m_Aspects_GPS[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
+						ReqAspect = m_Aspects_GPS[i];
+						break;
+					} else {
+						ReqAspect = m_Aspects_GPS[i+1];
+						break;
+					}
 				}
 			}
 		}
 
-	}
-
-	if(GPS_Or_Magnetometer == 1){
-
-
-
+	} else if(GPS_Or_Magnetometer == 1){
 
 		//check that there are aspect packets 
 		if( m_Aspects_Magnetometer.size() == 0 ){
 			return 0;
-		}
-
-		//first need to check that event time is not older than the oldest Aspect we have
-		//otherwise events won't get popped off of m_Events, since the first event will never get aspect info
-		if( ReqTime < m_Aspects_Magnetometer.front()->GetTime() ){
-			//return an aspect that has a time of -1
-			MNCTAspect* BadAspect = new MNCTAspect();
-			BadAspect->SetTime( (double) -1.0 );
-			return BadAspect;
-		}
-
-		//now check if event time is newer than the newest aspect ... if it is, then return null, we
-		//need to wait for the newest aspect info to comein
-		if( ReqTime > m_Aspects_Magnetometer.back()->GetTime() ){
-			return 0;
-		}
-
-		//this loop will only go if there are at least 2 aspects 
-		for( int i = m_Aspects_Magnetometer.size()-2; i > -1; --i ){
-			if( ReqTime > m_Aspects_Magnetometer[i]->GetTime() ){ //found the lower bracketing value
-				if( (ReqTime - m_Aspects_Magnetometer[i]->GetTime()) <= (m_Aspects_Magnetometer[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
-					ReqAspect = m_Aspects_Magnetometer[i];
-					break;
-				} else {
-					ReqAspect = m_Aspects_Magnetometer[i+1];
-					break;
+		} else if( ReqTime < m_Aspects_Magnetometer.front()->GetTime() ){
+			ReqAspect = m_Aspects_Magnetometer.front();
+		} else if( ReqTime > m_Aspects_Magnetometer.back()->GetTime() ){
+			if(m_IsDone){
+				ReqAspect = m_Aspects_Magnetometer.back();
+			} else {
+				ReqAspect = 0;
+			}
+		} else {
+			for( int i = m_Aspects_Magnetometer.size()-2; i > -1; --i ){
+				if( ReqTime > m_Aspects_Magnetometer[i]->GetTime() ){ //found the lower bracketing value
+					if( (ReqTime - m_Aspects_Magnetometer[i]->GetTime()) <= (m_Aspects_Magnetometer[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
+						ReqAspect = m_Aspects_Magnetometer[i];
+						break;
+					} else {
+						ReqAspect = m_Aspects_Magnetometer[i+1];
+						break;
+					}
 				}
 			}
 		}
-
 	}
-
-
-
-	//if there is a flag for bad aspect, then still return the aspect.  the calling thread should check 
-	//for this flag and set BD for the event
 
 	return ReqAspect;
 

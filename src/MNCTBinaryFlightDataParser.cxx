@@ -66,7 +66,6 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	// Construct an instance of MNCTBinaryFlightDataParser
 
 	m_DataSelectionMode = MNCTBinaryFlightDataParserDataModes::c_All;
-
 	m_UseComptonDataframes = false;
 	m_UseRawDataframes = true;
 	m_NumRawDataframes = 0;
@@ -80,29 +79,22 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	dx = 0;
 	m_EventTimeWindow = 60 * 10000000;
 	m_ComptonWindow = 2;
-
 	LoadStripMap();
 	LoadCCMap();
-
 	m_EventIDCounter = 0;
 	m_LastCorrectedClk = 0xffffffffffffffff;
-
 	m_UseGPSDSO = true; //simply sets whether or not we add these frames to the Aspect deque
 	m_UseMagnetometer = true; //^^^^
 	m_NumDSOReceived = 0;
 	m_NumComptonBytes = 0;
 	m_NumBytesReceived = 0;
 	m_LostBytes = 0;
-
 	m_IgnoreAspect = false;
 	m_LastDSOUnixTime = 0xffffffff;
 	m_LastAspectID = 0xffff;
-	
-	m_IgnoreBufTime = false; //used in the file loader to prevent events from getting stuck in m_Events when we are done reading the file
-	
 	m_AspectReconstructor = nullptr;
-
 	m_CoincidenceEnabled = true;
+	m_IsDone = false;
 }
 
 
@@ -655,43 +647,14 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 
 	int MergedEventCounter = 0;
 	unsigned long long Window;
-	static uint64_t counter = 0;
 
 	//in file mode we need a way to clear out the queue, do this by setting the search buffer time to zero
-	if( m_IgnoreBufTime ){
+	if( m_IsDone ){
 		Window = 0;
 	} else {
 		Window = m_EventTimeWindow;
 	}
 
-	/*
-	cout << "::::::::::::counter:" << counter << endl;
-	cout << ">> size: " << m_EventsBuf.size() << endl;
-	if(m_EventsBuf.size() > 0){
-		cout << ">> front: " << m_EventsBuf.front()->GetCL() << endl;
-		cout << ">> back: " << m_EventsBuf.back()->GetCL() << endl;
-	}
-	*/
-
-	/*
-	//pop bogus future timestamps
-	while(m_EventsBuf.size() > 0){
-		if( (m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL()) >= (2 * Window) ){
-			MReadOutAssembly* E = m_EventsBuf.back(); m_EventsBuf.pop_back();
-			delete E;
-		} else {
-			break;
-		}
-	}
-	*/
-
-	/*
-	cout << ".. size: " << m_EventsBuf.size() << endl;
-	if(m_EventsBuf.size() > 0){
-		cout << ".. front: " << m_EventsBuf.front()->GetCL() << endl;
-		cout << ".. back: " << m_EventsBuf.back()->GetCL() << endl;
-	}
-	*/
 	if( m_EventsBuf.size() > 0 ){
 		if (m_EventsBuf.back()->GetCL() - m_EventsBuf.front()->GetCL() < 100000 && 
 				m_EventsBuf.size() > 500) {
@@ -726,15 +689,6 @@ bool MNCTBinaryFlightDataParser::CheckEventsBuf(void){
 			break;
 		}
 	}
-
-	/*
-	cout << "<< size: " << m_EventsBuf.size() << endl;
-	if(m_EventsBuf.size() > 0){
-		cout << "<< front: " << m_EventsBuf.front()->GetCL() << endl;
-		cout << "<< back: " << m_EventsBuf.back()->GetCL() << endl;
-	}
-	*/
-	++counter;
 
 	if( MergedEventCounter > 0 ) return true; else return false;
 }
@@ -1310,7 +1264,7 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	AspectID |= ((uint16_t) NextPacket[6]) << 8;
 	AspectID |= ((uint16_t) NextPacket[7]);
 
-	///////////////////////////////////////
+	//////////////////////////////////////
 	/// GCU only sends the lower three ///
 	/// unix time bytes because the    ///
 	/// upper one won't change during a///
@@ -1361,6 +1315,9 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	UpperClkBytes = 0; UpperClkBytes = ((uint64_t) NextPacket[10] << 40) | ((uint64_t) NextPacket[11] << 32);
 	wx = 12;
 
+	int64_t LastPPSTimestamp = 0;
+	bool PPSRollover = false;
+
 
 	while( wx < Len ){
 
@@ -1381,14 +1338,30 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 						MNCTAspectPacket DSOPacket;
 						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
 
+						//check if the lower 32 bits of the PPS are too close (1.5 seconds) to the rollover boundary
+						if((0x00ffffffff - DSOPacket.PPSClk) < 15000000){
+							wx += DSOLen;
+							continue;
+						}
+
+
 						int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 17; //17 seconds is number of leapseconds introduced since 1980 GPS epoch
 						int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
 						uint64_t GPSms = ((uint64_t)GPSWeek*(7*24*60*60*1000)) + DSOPacket.GPSMilliseconds; //absolute GPS time down to the millisecond 
 
-						//string TempString = cpp_DateString + DSOPacket.date_and_time; //prepend the date, date computed above using unix time
-						//DSOPacket.date_and_time = TempString;
 
-						DSOPacket.PPSClk |= UpperClkBytes;
+
+						if(DSOPacket.PPSClk < (LastPPSTimestamp & 0xffffffff)){
+							PPSRollover = true;
+						}
+
+						if(PPSRollover){
+							DSOPacket.PPSClk |= (UpperClkBytes + 0x0000000100000000);
+						}else{
+							DSOPacket.PPSClk |= UpperClkBytes;
+						}
+
+						LastPPSTimestamp = DSOPacket.PPSClk;
 						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
 						DSOPacket.UnixTime = UnixTime;
 						DSOPacket.GPSms = GPSms;
@@ -1994,6 +1967,12 @@ bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, 
 
 	if( wx != BufSize ) return false; else return true;
 
+}
+
+void MNCTBinaryFlightDataParser::SetIsDone(bool IsDone)
+{
+	m_IsDone = IsDone;
+	m_AspectReconstructor->SetIsDone(IsDone);
 }
 
 // MNCTBinaryFlightDataParser.cxx: the end...

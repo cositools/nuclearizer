@@ -69,6 +69,12 @@ class MNCTAspectReconstruction
 
   //! Get the aspect for the given time, return 0 if we do not have enough data for the given time
   MNCTAspect* GetPreviousMagnetometer(MTime Time);
+
+  //! Set the is done flag, used in file mode to signify that there is not more data coming
+  void SetIsDone(bool IsDone) {m_IsDone = IsDone;}
+
+  //! Get the is done flag
+  bool GetIsDone() {return m_IsDone;}
   
   
   
@@ -112,6 +118,7 @@ double Vincenty(double old_glat, double new_glat, double old_glon, double new_gl
  private:
 
   MNCTTimeAndCoordinate m_TCCalculator;
+  bool m_IsDone;
 
   // protected members:
  protected:

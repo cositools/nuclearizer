@@ -465,7 +465,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			//nSide.m_Timing = m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)/Coeffs->at(0);
 
 			double CTD_ = m_DepthCalibrator->GetSpline(DetectorID, true)->Eval(Depth);
-			double CTD = (CTD_ * Coeffs->at(1)) + Coeffs->at(1); //apply stretch and offset
+			double CTD = (CTD_ * Coeffs->at(0)) + Coeffs->at(1); //apply stretch and offset
 
 			//add noise
 			const double TimingError = 3.75; //this comes from assuming that the CTD timing noise is 12.5 ns FWHM

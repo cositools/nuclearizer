@@ -81,6 +81,12 @@ class MNCTBinaryFlightDataParser
   //! Finalize the module
   virtual void Finalize();
 
+  //! Set the Is done flag... this also sets the IsDone flag for the aspect reconstruction stuff
+  void SetIsDone(bool IsDone);
+
+  //! Get the IsDone flag
+  bool GetIsDone() {return m_IsDone;}
+
   // protected methods:
  protected:
 
@@ -96,25 +102,18 @@ class MNCTBinaryFlightDataParser
  protected:
   //! The data selection mode (raw, Compton, all)
   MNCTBinaryFlightDataParserDataModes m_DataSelectionMode;
-
   //! The aspect mode (c_GPS, c_Magnetometer, c_Neither)
   MNCTBinaryFlightDataParserAspectModes m_AspectMode;
-
   //! Controls whether or not coincident events are merged
   bool m_CoincidenceEnabled;
-
   //! internal event list - sorted but unmerged events
   deque<MReadOutAssembly*> m_EventsBuf;//sorted, unmerged events
-
   //! The internal event list - final merged events
   deque<MReadOutAssembly*> m_Events;
-
   //! If true ignore aspect information if not ready
   bool m_IgnoreAspect;
-
-  //! Flag that tells CheckEventsBuf to ignore the buffer search time, used in file mode when the file is over
-  bool m_IgnoreBufTime;
-
+  //! Notify parser than we are done getting new data... this will result in some flushing
+  bool m_IsDone;
   uint32_t m_NumRawDataframes;
   uint32_t m_NumComptonDataframes;
   uint32_t m_NumAspectPackets;
@@ -158,10 +157,7 @@ class MNCTBinaryFlightDataParser
   uint32_t m_NumBytesReceived;
   uint32_t m_LostBytes;
   map<uint64_t,int> m_PacketRecord;
-	
-
   vector<uint16_t> m_PreampTemps;
-
   int m_StripMap[8][10];
   int m_CCMap[12];
 
