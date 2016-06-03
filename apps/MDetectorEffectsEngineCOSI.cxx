@@ -454,31 +454,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 				continue;
 			}
 
-			//really the offset fit parameter (Coeffs->at(1)) carries information about the time delay of both channels.  currently, we don't know what the delay is on a strip for strip basis,
-			//we only know it per pixel. so for now, just add the offset value to the anode side.  really the offset should be broken up into the anode and cathode parts, but just adding the 
-			//whole offset to one side should be ok to first order and should give the same measured CTD... the offset values are not too big to begin with, and they don't change much over the 
-			//detector. the only place where this has any impact is when a strip is hit multiple times.  in this case, the lowest timing value for the strip is accepted, but to really get the
-			//comparison right would involve knowing the time delays per strip.
+			pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0);
+			nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0);
 
-			pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0);
-			nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0);
-
-			/*
-			double CTD_ = m_DepthCalibrator->GetSpline(DetectorID, true)->Eval(Depth);
-			double CTD = (CTD_ * Coeffs->at(0)) + Coeffs->at(1); //apply stretch and offset
-
-			//add noise
-			const double TimingError = 3.75; //this comes from assuming that the CTD timing noise is 12.5 ns FWHM
-			pSide.m_Timing = CTD + r.Gaus(0,TimingError);
-			nSide.m_Timing = r.Gaus(0,TimingError);
-
-			//round to lowest increment of 5
-			pSide.m_Timing = pSide.m_Timing - fmod(pSide.m_Timing,5.0);
-			nSide.m_Timing = nSide.m_Timing - fmod(nSide.m_Timing,5.0);
-			cout << "Depth_ = " << Depth_ << ", Depth = " << Depth << ", Det = " << DetectorID << ", Thickness = " << m_DepthCalibrator->GetThickness(DetectorID) << ",pTiming = " << pSide.m_Timing << ", nTiming = " << nSide.m_Timing << endl;
-			*/
-
-			//!!!!!!! HERE WE SHOULD SET THE TIMING TO ZERO IF THE ENERGY IS LESS THAN THE FLD THRESHOLD!!!!!!! AWL
 			pSide.m_Energy = HT->GetEnergy();
 			nSide.m_Energy = HT->GetEnergy();
 
@@ -689,6 +667,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			if ((*i).m_Energy < 20) { // Dummy threshold of 0 keV sharp
 				i = MergedStripHits.erase(i);
 			} else {
+				if((*i).m_Energy < 55){
+					(*i).m_Timing = 0.0;
+				}
 				++i;
 			}
 		}
