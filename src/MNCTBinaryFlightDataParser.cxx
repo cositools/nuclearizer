@@ -39,10 +39,13 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MNCTStripHit.h"
+#include "MFile.h"
+#include "MNCTModuleEventSaver.h"
 
 //Pipeline Tools:
 #include "GCUSettingsParser.h"
-
+#include "GCUHousekeepingParser.h"
+#include "LivetimeParser.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -72,6 +75,8 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	m_NumComptonDataframes = 0;
 	m_NumAspectPackets = 0;
 	m_NumSettingsPackets = 0;
+    m_NumGCUHkpPackets = 0;
+	m_NumLivetimePackets = 0;
 	m_NumOtherPackets = 0;
 	MAX_TRIGS = 80;
 	LastTimestamps.clear();
@@ -94,7 +99,7 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
 	m_LastAspectID = 0xffff;
 	m_AspectReconstructor = nullptr;
 	m_CoincidenceEnabled = true;
-	m_IsDone = false;
+
 }
 
 
@@ -123,6 +128,8 @@ bool MNCTBinaryFlightDataParser::Initialize()
   m_NumComptonDataframes = 0;
   m_NumAspectPackets = 0;
   m_NumSettingsPackets = 0;
+  m_NumGCUHkpPackets = 0;
+  m_NumLivetimePackets = 0;
   m_NumOtherPackets = 0;
 
 
@@ -177,6 +184,20 @@ bool MNCTBinaryFlightDataParser::Initialize()
      m_EventTimeWindow = 60 * 10000000;
   }
 
+
+//Turns out the EventSaver modeule is always open, even if it's not selected in Nuclearizer, so this will make a .hkp file with the prefix with the name of the last saved file in Nuclearizer... for now.
+  MSupervisor* S = MSupervisor::GetSupervisor();
+  m_EventSaver = (MNCTModuleEventSaver*) S->GetAvailableModuleByXmlTag("XmlTagEventSaver");
+  if (m_EventSaver == nullptr) {
+	cout<<"MNCTBinaryFlightDataParser: Could not find file name for Housekeeping file"<<endl;
+	return false;
+  } else {
+	m_HkpOutFile = m_EventSaver->GetFileName();
+    m_HkpOutFile.RemoveInPlace(m_HkpOutFile.Last('.'));
+    m_HkpOutFile += ".hkp";
+  	Housekeeping.open(m_HkpOutFile);
+  }
+
   return true;
 }
 
@@ -193,7 +214,6 @@ bool MReadOutAssemblyReverseSort(MReadOutAssembly* E1, MReadOutAssembly* E2) {
 
 bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received) 
 {
-
 	uint8_t Type;
 	vector <MReadOutAssembly*> NewEvents;
 	vector<unsigned char> SyncWord;
@@ -202,6 +222,13 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	//unsigned int CCId = 0;
 
 	struct GCUSettingsPacket* SettingsPacket;
+    struct GCUHousekeepingPacket* GCUHkpPacket;
+	struct LivetimePacket CCLivetimePacket;
+	uint8_t GCUUnixTimeMSB;
+	double ShieldNumCounts;
+	double ShieldTimeInterval;
+	double ShieldCountRate;
+	MNCTAspect* LatestAspect;
 
 	SyncWord.push_back(0xEB);
 	SyncWord.push_back(0x90);
@@ -292,11 +319,58 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				if (g_Verbosity >= c_Info) cout<<"got aspect packet!"<<endl;
 				if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither) {
 					ProcessAspect( NextPacket );
+
+					//Print info into housekeeping file 
+                    if (Housekeeping.is_open() == true) {
+						LatestAspect = m_AspectReconstructor->GetLastAspectInDeque();
+						if (((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS) && (LatestAspect->GetGPS_or_magnetometer() == 0)) || ((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) && (LatestAspect->GetGPS_or_magnetometer() == 1))) {
+							Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\n\n";
+						}
+					}
 				}
 				m_NumAspectPackets++;
 				break;
+			case 0x06:
+				//livetime packet
+				if (g_Verbosity >= c_Info) cout<<"got livetime packet!"<<endl;
+				//wait to get a gcu_hkp packet to use the unix time most sig bit
+				if (m_NumGCUHkpPackets > 0) {
+					ParseLivetime(&CCLivetimePacket,&NextPacket[0]);
+					//Print CC livetime info into housekeeping file
+					if (Housekeeping.is_open() == true) {
+						Housekeeping<<"LT\nTI "<<((GCUUnixTimeMSB << 24) | CCLivetimePacket.UnixTime)<<"\nID "<<CCLivetimePacket.PacketCounter<<"\nDU 1";;
+						for (int i = 0; i < 12; ++i) {
+							if (CCLivetimePacket.CCHasLivetime[i] == 1) {
+								Housekeeping<<"\nCC"<<i<<" "<<(CCLivetimePacket.TotalLivetime[i])/3051.;
+							} else {
+								Housekeeping<<"\nCC"<<i<<" -1";
+							}
+						}
+						Housekeeping<<"\n\n";
+					}
+				}
+				m_NumLivetimePackets++;
+				break;
+			case 0x07:
+				//gcu hkp packet
+				if (g_Verbosity >= c_Info) cout<<"got GCU housekeeping packet!"<<endl;
+				GCUHkpPacket = ParseGCUHousekeepingPacket(&NextPacket[0]);
+				GCUUnixTimeMSB = GCUHkpPacket->UnixTimeMSB;
+
+				//Calculate shield rate
+				ShieldNumCounts = static_cast <double> (GCUHkpPacket->NumCounts[0]);
+				ShieldTimeInterval = (static_cast <double> (GCUHkpPacket->TimeInterval[0]))*1e-7;
+				ShieldCountRate = ShieldNumCounts/ShieldTimeInterval;
+
+				//Print info into housekeeping file
+				if (Housekeeping.is_open() == true) {
+					Housekeeping<<"HKP\nTI "<<((GCUUnixTimeMSB << 24) | GCUHkpPacket->UnixTime)<<"\nID "<<GCUHkpPacket->PacketCounter<<"\nDU 5"<<"\nSR "<<ShieldCountRate<<"\n\n";
+				}
+				m_NumGCUHkpPackets++;
+				break;
 			case 0x0b:
 				//preamp temperatures
+				if (g_Verbosity >= c_Info) cout<<"got settings packet!"<<endl;
 				SettingsPacket = ParseGCUSettingsPacket(&NextPacket[0]);
 				//Order of PreampTemps are defined as Det0 DC, Det0 AC, Det1 DC, Det1, AC...etc
 				m_PreampTemps[0] = SettingsPacket->RpiTemp_Brd2_Ch0;
@@ -739,6 +813,8 @@ void MNCTBinaryFlightDataParser::Finalize()
 		delete m_Events.front();
 		m_Events.pop_front();
 	}
+
+	Housekeeping.close();
 
 	return;
 }

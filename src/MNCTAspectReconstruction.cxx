@@ -602,6 +602,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 		m_Aspects_GPS.push_back(Aspect);
 		sort(m_Aspects_GPS.begin(), m_Aspects_GPS.end(), MTimeSort);
+		SetLastAspectInDeque(m_Aspects_GPS);
 	}
 
 
@@ -609,6 +610,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 		m_Aspects_Magnetometer.push_back(Aspect);
 		sort(m_Aspects_Magnetometer.begin(), m_Aspects_Magnetometer.end(), MTimeSort);
+		SetLastAspectInDeque(m_Aspects_Magnetometer);
 
 	}
 
@@ -1026,6 +1028,11 @@ bool MTimeSort( MNCTAspect* A1, MNCTAspect* A2 ){
 	return A1->GetTime() < A2->GetTime();
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
+void MNCTAspectReconstruction::SetLastAspectInDeque(deque<MNCTAspect*> CurrentDeque){
+	LastAspectInDeque = CurrentDeque.back();
+}
 
 // MNCTAspectReconstruction.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

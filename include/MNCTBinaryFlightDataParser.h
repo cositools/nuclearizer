@@ -27,10 +27,13 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MTransceiverTcpIpBinary.h"
+#include "MFile.h"
 
 // Nuclearizer libs
 #include "MNCTAspectReconstruction.h"
 #include "MReadOutAssembly.h"
+#include "MNCTModuleEventSaver.h"
+#include "MNCTTimeAndCoordinate.h"
 
 // Forward declarations:
 
@@ -106,6 +109,8 @@ class MNCTBinaryFlightDataParser
   MNCTBinaryFlightDataParserAspectModes m_AspectMode;
   //! Controls whether or not coincident events are merged
   bool m_CoincidenceEnabled;
+  MNCTModuleEventSaver* m_EventSaver;
+
   //! internal event list - sorted but unmerged events
   deque<MReadOutAssembly*> m_EventsBuf;//sorted, unmerged events
   //! The internal event list - final merged events
@@ -118,6 +123,8 @@ class MNCTBinaryFlightDataParser
   uint32_t m_NumComptonDataframes;
   uint32_t m_NumAspectPackets;
   uint32_t m_NumSettingsPackets;
+  uint32_t m_NumGCUHkpPackets;
+  uint32_t m_NumLivetimePackets;
   uint32_t m_NumOtherPackets;  
  
   // private members:
@@ -127,7 +134,7 @@ class MNCTBinaryFlightDataParser
   
   //! The aspect reconstructor
   MNCTAspectReconstruction* m_AspectReconstructor;
-
+  MNCTTimeAndCoordinate m_TCCalculator;
   
   //added by AWL
   bool m_UseComptonDataframes;
@@ -158,6 +165,9 @@ class MNCTBinaryFlightDataParser
   uint32_t m_LostBytes;
   map<uint64_t,int> m_PacketRecord;
   vector<uint16_t> m_PreampTemps;
+  MString m_HkpOutFile;
+  ofstream Housekeeping;
+
   int m_StripMap[8][10];
   int m_CCMap[12];
 

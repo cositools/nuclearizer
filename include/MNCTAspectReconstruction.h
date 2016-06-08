@@ -56,8 +56,8 @@ class MNCTAspectReconstruction
 ////////////////////////////////////////////////////////////////////////////////
   
   //Ares' adjustments begin here.
-  
-  
+
+
   //! Get the aspect for the given time, return 0 if we do not have enough data for the given time
   MNCTAspect* GetAspectGPS(MTime Time);
 
@@ -77,7 +77,9 @@ class MNCTAspectReconstruction
   bool GetIsDone() {return m_IsDone;}
   
   
-  
+ 
+  void SetLastAspectInDeque(deque<MNCTAspect*> CurrentDeque);
+  MNCTAspect* GetLastAspectInDeque() const {return LastAspectInDeque;}
   
   
 //!The following are trig functions that work with degrees.  
@@ -101,7 +103,7 @@ double arctangent2(double y, double x);
 //!The Spherical Vincenty Formula (used to compute exact great circle distance between two points on a sphere). 
 double Vincenty(double old_glat, double new_glat, double old_glon, double new_glon); 
   
-  
+MNCTAspect* LastAspectInDeque;  
   
   
   
@@ -129,7 +131,6 @@ double Vincenty(double old_glat, double new_glat, double old_glon, double new_gl
   //! Internal lists of reconstructed aspects
   deque<MNCTAspect*> m_Aspects_GPS;
   deque<MNCTAspect*> m_Aspects_Magnetometer;
-
 
 #ifdef ___CINT___
  public:
