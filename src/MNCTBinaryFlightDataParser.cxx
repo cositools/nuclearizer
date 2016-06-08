@@ -191,13 +191,20 @@ bool MNCTBinaryFlightDataParser::Initialize()
   if (m_EventSaver == nullptr) {
 	cout<<"MNCTBinaryFlightDataParser: Could not find file name for Housekeeping file"<<endl;
 	return false;
-  } else {
+  } else {   
 	m_HkpOutFile = m_EventSaver->GetFileName();
     m_HkpOutFile.RemoveInPlace(m_HkpOutFile.Last('.'));
     m_HkpOutFile += ".hkp";
-  	Housekeeping.open(m_HkpOutFile);
+    MFile::ExpandFileName(m_HkpOutFile);
+  	if (Housekeeping.is_open() == true) Housekeeping.close();
+    Housekeeping.clear();
+    Housekeeping.open(m_HkpOutFile, std::ofstream::out);
+    if (Housekeeping.is_open() == false) {
+      cout<<"MNCTBinaryFlightDataParser: Unable to open housekeeping data file \""<<m_HkpOutFile<<"\""<<endl;
+      return false;
+    }
+    
   }
-
   return true;
 }
 
@@ -353,6 +360,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				break;
 			case 0x07:
 				//gcu hkp packet
+
 				if (g_Verbosity >= c_Info) cout<<"got GCU housekeeping packet!"<<endl;
 				GCUHkpPacket = ParseGCUHousekeepingPacket(&NextPacket[0]);
 				GCUUnixTimeMSB = GCUHkpPacket->UnixTimeMSB;
@@ -815,7 +823,7 @@ void MNCTBinaryFlightDataParser::Finalize()
 	}
 
 	Housekeeping.close();
-
+	cout<<"HOUSEKEEPING FILE CLOSED"<<endl;
 	return;
 }
 
