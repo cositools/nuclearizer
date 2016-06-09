@@ -48,6 +48,7 @@
 #include <cstring>
 #include <algorithm>
 #include <cctype>
+#include <map>
 
 //#include "Python.h"
 
@@ -77,6 +78,74 @@ using namespace std;
 #include "MFile.h"
 
 ////////////////////////////////////////////////////////////////////////////////
+/*
+class tirecord
+{
+	public:
+		tirecord(size_t length){
+			m_Length = length;
+		}
+		uint64_t Add(MTime T, uint64_t PPS){ //T should be an MTime corresponding to the GPS time in a DSO packet
+			long int t = T.GetAsSystemSeconds(); //don't need the nanoseconds field here
+			uint64_t Ret = 0;
+			if(m_Record.count(t) == 1){
+				Ret = m_Record[t];
+			} else {
+				if(m_Record.size() > 1){
+					map<long int,uint64_t>::iterator i = m_Record.lower_bound(t);
+					--i;
+					long int dt = t - i->first;
+					MTime mdt(dt,(long int)0); //MTime GPS second delta
+					uint64_t PPSLSBs = PPS & 0xffffffff;
+					uint64_t PPSMSBs = PPS & 0x0000ffff00000000;
+					uint64_t NewPPS = 0;
+					bool Success = false;
+					int x,y;
+					for(x = -1; x <= 1; ++x){ //tweak MSBs
+						for(y = -2; y <= 2; ++y){ //tweak LSBs
+							NewPPS = (PPSMSBs + (0x0000000100000000)*x) | PPSLSBs;
+							NewPPS += (10000000)*y;
+							uint64_t dPPS = NewPPS - i->second;
+							long int sec = (long int)(dPPS/10000000);
+							long int nsec = (long int)((dPPS % 10000000)*100);
+							MTime mdPPS(sec,nsec); //MTime PPS delta
+							double diff = fabs(mdPPS.GetAsDouble() - mdt.GetAsDouble());
+							//cout << "diff = " << diff << endl;
+							if(diff <= 0.250){
+								Success = true;
+								break;
+							}
+						}
+						if(Success) break;
+					}
+					if(Success){
+						if(NewPPS != PPS){
+							cout << "TIRecord:corrected PPS, x = " << x << ", y = " << y << endl;
+						}
+						m_Record[t] = NewPPS;
+						Ret = NewPPS;
+					} else {
+						cout << "TIRecord:failed, expect TI issues!!!" << endl;
+						Ret = PPS;
+					}
+				} else {
+					m_Record[t] = PPS;
+					Ret = PPS;
+				}
+			}
+
+			while(m_Record.size() > m_Length) m_Record.erase(m_Record.begin()); //trim record down to size
+			return Ret;
+
+
+		}
+
+	private:
+		size_t m_Length;
+		map<long int,uint64_t> m_Record;
+
+};
+*/
 
 
 #ifdef ___CINT___
@@ -155,30 +224,14 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 
 	MNCTAspect* Aspect = new MNCTAspect;
-
-
-	//Here we record the geographic longitude & latitude, as well as the height above sea
-	//level (known as "elevation" in here). We also record the date and time as well as 
-	//whether our data is from the GPS or magnetometer. 
-
 	double BRMS = PacketA.BRMS;
 	uint16_t AttFlag = PacketA.AttFlag;
-	
 	int GPS_or_magnetometer = PacketA.GPS_or_magnetometer;
 	int test_or_not = PacketA.test_or_not;
 	double geographic_longitude = PacketA.geographic_longitude;
 	double geographic_latitude = PacketA.geographic_latitude;
 	double elevation = PacketA.elevation; //Note "elevation" here is height above sea
-	//level. This name was used to avoid confusion with pyephem (which defines
-	//what it calls "elevation" that way). This "elevation" will eventually become the
-	//"altitude" in the MNCTAspect object that will be created at the end of this program.
 
-	//Below we look at the time data which should have been saved into packetA into 2
-	//attributes: the string "date_and_time" and the unsigned int "nanoseconds." We use
-	//these bits of info to build 7 separate unsigned ints of time information to be used
-	//later when we finally build the MNCTAspect object
-
-	//first check if we should reject this GPS packet:
 	if( GPS_or_magnetometer == 0 ){
 		if( (PacketA.BRMS < 1.0E-6) || (PacketA.BRMS > 1.0) || (PacketA.AttFlag != 0) ){
 			//just gonna return true here for now...
@@ -187,73 +240,27 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		}
 	}
 
-	//string date_and_time = PacketA.date_and_time;
-	//unsigned int nanoseconds = PacketA.nanoseconds;
+	MTime UTCTime((long int)PacketA.UnixTime, (long int)(PacketA.GPSms % 1000)*1000000);
+	MTime ClkTime((long int)(PacketA.PPSClk/10000000),(long int)((PacketA.PPSClk % 10000000)*100)); //start with PPS value
+	ClkTime += MTime((long int)0,(long int)(PacketA.GPSms % 1000)*1000000); //then add offset corresponding to the number of ms into the current second
 
-	//don't use this time for aspect determination!!! this is the timestamp of the event with respect to the system clock,
-	//which has nothing to do with the Unix second, but it is used to associate an MNCTAspect with an event
-	//via the system clock
-	MTime MTimeA;
-	uint64_t ClkModulo = PacketA.CorrectedClk % 10000000;
-	double ClkSeconds = (double) (PacketA.CorrectedClk - ClkModulo); ClkSeconds = ClkSeconds/10000000.;
-	double ClkNanoseconds = (double) ClkModulo * 100.0;
-	MTimeA.Set( ClkSeconds, ClkNanoseconds);
-
-	//AWL
-	MTime GPSTime;
-	unsigned int sec = PacketA.GPSms/1000;
-	unsigned int nsec = (PacketA.GPSms % 1000)*1000000;
-	GPSTime.Set(sec,nsec);
+	double magnetic_heading = PacketA.heading;
+	double magnetic_declination = 0.0;
 
 
-	//should have a flag to determine if we want COSI14 or COSI16 since the number of leap seconds for the COSI14 campaign was 16 and not 17
-	MTime UnixTimeFromGPSTime = GPSTime;
-	UnixTimeFromGPSTime.Set((unsigned int)GPSTime.GetAsSystemSeconds() - 17 + 315964800, (unsigned int)GPSTime.GetNanoSeconds());
-
-
-	/*
-	MTime GPSTime;
-	int WeekSeconds = PacketA.GPSMilliseconds/1000;
-	int WeekMilliseconds = PacketA.GPSMilliseconds % 1000;
-	
-	double GPSSeconds = (PacketA.GPSWeek * 60.0 * 60.0 *24.0 * 7.0)
-	*/
-
-
-	//Here we record heading, pitch, and roll. It's a bit more complicated than you might think.
-
-	double magnetic_heading = PacketA.heading;//Don't be alarmed that we are recording the 
-	/*heading saved into PacketA (using Alex's code that parses data from the Frame) as
-	  the double known as "magnetic_heading." In the case of the magnetometer, you see, the
-	  "heading" measured by the magnetometer is actually the magnetic heading (or rather,
-	  heading but with respect to magnetic north instead of true north). The difference
-	  between what the magnetometer thinks is heading and what the true heading is, is thus
-	  the difference between north and magnettic north, known as the "magnetic declination."
-	  Thus our next step is to declare magnetic declination initially at 0, leave it alone
-	  if we are using the GPS, or change it to what the magnetic declination actually is at
-	  our current location if we are using the magnetometer. Then, we add the magnetic heading
-	  and magnetic declination together to finally get the desired true heading.*/
-
-	double magnetic_declination = 0.0; //This is the magnetic declination we were just discussing.
-
-
+	//compute magnetic declination
 	if (GPS_or_magnetometer == 1){
-
 		float lon = geographic_longitude;
 		float lat = geographic_latitude;
 		float alt = elevation;
-
-
 		MTime MagMTime;
-		MagMTime.Set(PacketA.UnixTime);
+		MagMTime.Set(UTCTime);
 		double frac_Year = MagMTime.GetAsYears();
 		float gcu_fracYear = frac_Year;
 		//magfld* MF = new magfld();
 		void WMMInit();
 		float magdec_Cplusplus1 = MagDec(lat, lon, alt, gcu_fracYear);
 		magnetic_declination = magdec_Cplusplus1;
-
-
 		if (test_or_not == 0 && g_Verbosity >= c_Info) {		
 			printf("According to C++, magnetic_declination is: %9.5f \n",magdec_Cplusplus1);	
 		}
@@ -263,21 +270,13 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
     }
 	}
 
-	//Now that we've gone through that crazy ordeal and have found the magnetic declination, we
-	//add it to the magnetic heading to find and record the true heading, as promised:
-
 	double heading = magnetic_heading + magnetic_declination;
 	heading = 360.0-heading;
 
-	//Now, we record the pitch.	
-
 	double pitch =  PacketA.pitch;
 	if (GPS_or_magnetometer == 1){
-		pitch = pitch - 90.0; //The magnetometer defines pitch with a 90 degree offset. That's
-		//why we have no choice but to subtract by 90 in the event that the magnetometer is
-		//being used.
+		pitch = pitch - 90.0; //The magnetometer defines pitch with a 90 degree offset
 	}
-
 
 	double roll = PacketA.roll;
 	if( GPS_or_magnetometer == 1 ){
@@ -288,16 +287,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		}
 	}
 
-
-	//Here we print heading, pitch, and roll and announce which device is giving us the info. Please
-	//note that even with the offsets above the heading, pitch and roll will not be the same for 
-	//both devices because they are not aligned properly. This is taken into account later in the code.
-
-
 	double Z[3][3], Y[3][3], X[3][3], YX[3][3], ZYX[3][3];
-
-	//Here we build the heading, pitch, and roll rotation matrices, named "Z," "Y," and "X,"
-	//respectively.
 
 	Z[0][0] = cosine(heading);
 	Z[0][1] = 0.0 - sine(heading);
@@ -454,8 +444,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
 
-	//m_TCCalculator.SetUnixTime(MTimeA.GetAsSeconds());
-	m_TCCalculator.SetUnixTime(PacketA.UnixTime); //AWL use the UnixTimeFromGPSTime
+	m_TCCalculator.SetUnixTime(UTCTime.GetAsSystemSeconds()); //AWL use the UnixTimeFromGPSTime
 
 	//dot Zhat/Xhat into (0,0,1) and take the arcos to get the zenith angle.  then convert this to elevation angle
 	double Z_Elevation = 90.0 - arccosine( Zhat[2] );
@@ -565,17 +554,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Ygalon = YGalactic[0];
 	if (g_Verbosity >= c_Info) cout<<"Y gal-lat = "<<Ygalat<<" Y gal-lon = "<<Ygalon<<endl;
 
-	//MTimeA should already be filled out from earlier so the following paragraph is commented out;
-
-	//MTime MTimeA;
-
-	//Ares had this:
-	//MTimeA.Set(m_Year,m_Month,m_Day,m_Hour,m_Minute,m_Second,m_NanoSecond);
-
-	//Using this instead so that we can sort badsed on clock board time
-	//MTimeA.Set(m_Year,m_Month,m_Day,m_Hour,m_Minute,m_Second,m_NanoSecond);
-
-	Aspect->SetTime(MTimeA);
+	Aspect->SetTime(ClkTime);
 	Aspect->SetHeading(heading);
 	Aspect->SetPitch(pitch);
 	Aspect->SetRoll(roll);		
@@ -586,9 +565,9 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	Aspect->SetGalacticPointingZAxis(Zgalon, Zgalat);
 	Aspect->SetHorizonPointingXAxis(X_Azimuth, X_Elevation);//Again here,
 	Aspect->SetHorizonPointingZAxis(Z_Azimuth, Z_Elevation);//and here we see 
-	Aspect->SetUTCTime(UnixTimeFromGPSTime);
+	Aspect->SetUTCTime(UTCTime);
 //	cout << UnixTimeFromGPSTime.GetSeconds() << " ---> " << UnixTimeFromGPSTime.GetNanoSeconds() <<endl;
-	Aspect->SetGPSTime(GPSTime);
+	//Aspect->SetGPSTime(GPSTime);
 	Aspect->SetPPS(PacketA.PPSClk);
 	//cout << "m_Aspect->GetPPS() returns " << Aspect->GetPPS() << endl; //this works
 	
@@ -602,6 +581,11 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 		m_Aspects_GPS.push_back(Aspect);
 		sort(m_Aspects_GPS.begin(), m_Aspects_GPS.end(), MTimeSort);
+		while(m_Aspects_GPS.size() > 256){
+			auto x = m_Aspects_GPS.front();
+			m_Aspects_GPS.pop_front();
+			delete x;
+		}
 		SetLastAspectInDeque(m_Aspects_GPS);
 	}
 
@@ -610,6 +594,11 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 		m_Aspects_Magnetometer.push_back(Aspect);
 		sort(m_Aspects_Magnetometer.begin(), m_Aspects_Magnetometer.end(), MTimeSort);
+		while(m_Aspects_Magnetometer.size() > 256){
+			auto x = m_Aspects_Magnetometer.front();
+			m_Aspects_Magnetometer.pop_front();
+			delete x;
+		}
 		SetLastAspectInDeque(m_Aspects_Magnetometer);
 
 	}

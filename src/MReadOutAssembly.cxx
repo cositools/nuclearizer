@@ -702,6 +702,18 @@ bool MReadOutAssembly::ComputeAbsoluteTime()
 	//comparing the difference between PPS values from sample to sample. The GPS
 	//PPS timing error is much smaller (it is specd at 200 ns )
 
+	/*
+
+	int64_t dt = m_CL - PPS;
+	MTime dT;
+	dT.Set((int)(dt/10000000),(int)((dt % 10000000)*100));
+	MTime UTC(UTCSecond,(long int)0);
+	UTC += dT; //dT can be positive or negative, += operator calls Normalize()
+	m_EventTimeUTC.Set(UTC);
+	return true;
+
+	*/
+
 	if(m_Aspect != 0){
 		int64_t dt = m_CL - m_Aspect->GetPPS();
 		MTime dT;

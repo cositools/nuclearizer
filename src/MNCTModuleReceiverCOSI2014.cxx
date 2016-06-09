@@ -469,6 +469,7 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
     Event->SetAspect(A);
 	 Event->ComputeAbsoluteTime();
     //cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
+	 //Event->SetAbsoluteTime(NewEvent->GetAbsoluteTime());
     m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
   } else {

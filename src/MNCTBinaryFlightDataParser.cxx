@@ -55,6 +55,9 @@ ClassImp(MNCTBinaryFlightDataParser)
 #endif
 
 
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -64,7 +67,7 @@ bool MReadOutAssemblyTimeCompare(MReadOutAssembly* E1, MReadOutAssembly* E2);
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser()
+MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser() : TIRecord(1000)
 {
 	// Construct an instance of MNCTBinaryFlightDataParser
 
@@ -513,9 +516,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				}
 				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime(), gps_or_mag);
 				if( A != 0 ){
-					//if the event is out of range, A->GetTime() will give -1
 					E->SetAspect(new MNCTAspect(*A));
-					//E->ComputeAbsoluteTime();
 				}
 			}
 		}
@@ -1334,12 +1335,8 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	int wx = 0; // skip to first byte
 	bool NotEnoughBytes = false;
 	int i;
-	struct tm * timeinfo;
-	char DateString[32];
-	string cpp_DateString;
 	//uint32_t LastClkSample;
 	uint64_t UpperClkBytes;
-
 
 	int DSOLen = 84; //length of the DSO message including the last 5 bytes for the clock
 	int MagLen = 24; //length of the magnetometer message including my "$M" header
@@ -1348,24 +1345,10 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	AspectID |= ((uint16_t) NextPacket[6]) << 8;
 	AspectID |= ((uint16_t) NextPacket[7]);
 
-	//////////////////////////////////////
-	/// GCU only sends the lower three ///
-	/// unix time bytes because the    ///
-	/// upper one won't change during a///
-	/// 100 day flight.  take the upper///
-	/// unix byte from the local comp  ///
-	/// and shift it in.               ///
-	//////////////////////////////////////
-
 	int UnixBytes = 0;
 	UnixBytes |= ((int) NextPacket[3] << 16);
 	UnixBytes |= ((int) NextPacket[4] << 8);
 	UnixBytes |= ((int) NextPacket[5]);
-
-	//checked the GCU unix time before launch on 12/20/14-00:32:00 UTC
-	//and got 0x5494C5B1, which will rollover the lower three bytes in ~81 days
-	//so if we have a flight longer than ~81 days, use 0x55 for the upper byte
-	//if the lower three bytes is less than 0x0094C5B1
 
 	/* this was for COSI 14
 
@@ -1385,24 +1368,8 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	}
 
 	time_t UnixTime = (time_t) UnixBytes;
-	timeinfo = gmtime(&UnixTime);
-	//date format has to be year/month/day for Ares' thing to work
-	strftime( DateString, sizeof(DateString), "%Y/%m/%d", timeinfo);
-	//should figure out what day it is, but then use the GPS millisecond to figure out exactly what time it is
-	//then use the GPS ms time to figure out exactly what time it is
-
-	//now use strftime to get a date string using this time
-	//according to Ares the GPS week starts at 23:59:44 on saturday night DOUBLE CHECK THIS
-	cpp_DateString = string( DateString ); 
-
-	//get the upper two 10 MHz clock byte from the beginning of the packet
 	UpperClkBytes = 0; UpperClkBytes = ((uint64_t) NextPacket[10] << 40) | ((uint64_t) NextPacket[11] << 32);
 	wx = 12;
-
-	int64_t LastPPSTimestamp = 0;
-	bool PPSRollover = false;
-
-
 	while( wx < Len ){
 
 		if( NextPacket[wx] == '$' ){
@@ -1411,48 +1378,34 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 				//determine the type:
 				string Header ;
 				for( i = 0; i < 10; ++i ) Header += (char) NextPacket[wx + i];
-
 				////////////////////// DSO Msg //////////////////////////////////
 				if( Header.find("$PASHR,DSO") == 0 ){
 					//check that we have enough bytes in the buffer for this
 					if( (wx + DSOLen) <= Len ){
-						m_NumDSOReceived++;
 						vector<uint8_t> DSOMsg;
 						DSOMsg.assign( NextPacket.begin() + wx, NextPacket.begin() + wx + DSOLen );
 						MNCTAspectPacket DSOPacket;
 						DecodeDSO( DSOMsg, DSOPacket );//transfer info from DSO msg into an MNCTAspectPacket
-
-						//check if the lower 32 bits of the PPS are too close (1.5 seconds) to the rollover boundary
-						if((0x00ffffffff - DSOPacket.PPSClk) < 15000000){
-							wx += DSOLen;
-							continue;
-						}
-
-
-						int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 17; //17 seconds is number of leapseconds introduced since 1980 GPS epoch
-						int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
-						uint64_t GPSms = ((uint64_t)GPSWeek*(7*24*60*60*1000)) + DSOPacket.GPSMilliseconds; //absolute GPS time down to the millisecond 
-
-
-
-						if(DSOPacket.PPSClk < (LastPPSTimestamp & 0xffffffff)){
-							PPSRollover = true;
-						}
-
-						if(PPSRollover){
-							DSOPacket.PPSClk |= (UpperClkBytes + 0x0000000100000000);
-						}else{
-							DSOPacket.PPSClk |= UpperClkBytes;
-						}
-
-						LastPPSTimestamp = DSOPacket.PPSClk;
-						DSOPacket.CorrectedClk = DSOPacket.PPSClk + ((DSOPacket.GPSMilliseconds % 1000)*10000);//estimate the clock board value at the time of the DSO message
-						DSOPacket.UnixTime = UnixTime;
-						DSOPacket.GPSms = GPSms;
-						m_LastDSOPacket = DSOPacket; m_LastDSOUnixTime = UnixTime; m_LastAspectID = AspectID;
-						//corrected clock is converted to MTime in AddAspectFrame
-						if( m_UseGPSDSO ){
-							m_AspectReconstructor->AddAspectFrame( DSOPacket );
+						DSOPacket.PPSClk |= UpperClkBytes;
+						long int SecondsSinceGPSEpoch = (UnixTime - 315964800) + 17; //17 seconds is number of leapseconds introduced since 1980 GPS epoch
+						long int GPSWeek = SecondsSinceGPSEpoch/(60*60*24*7);
+						int64_t GPSms = ((uint64_t)GPSWeek*(7*24*60*60*1000)) + DSOPacket.GPSMilliseconds; //absolute GPS time down to the millisecond 
+						MTime GPSTime((long int)(GPSms/1000),(long int)((GPSms % 1000)*10000));
+						MTime UTCTime((unsigned int)(GPSTime.GetAsSystemSeconds() -17 + 315964800), GPSTime.GetNanoSeconds());
+						long int UTCSec = UTCTime.GetAsSystemSeconds();
+						int64_t PPS = DSOPacket.PPSClk;
+						bool FoundPPS = TIRecord.AddCorrect(UTCSec,PPS);
+						if(FoundPPS){
+							DSOPacket.PPSClk = PPS;
+							DSOPacket.UnixTime = UTCSec;
+							DSOPacket.GPSms = GPSms;
+							m_LastDSOPacket = DSOPacket; 
+							m_LastDSOUnixTime = UTCSec;
+							m_LastAspectID = AspectID;
+							if( m_UseGPSDSO ){
+								m_AspectReconstructor->AddAspectFrame( DSOPacket );
+								m_NumDSOReceived++;
+							}
 						}
 						wx += DSOLen;
 					} else {

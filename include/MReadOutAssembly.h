@@ -233,13 +233,10 @@ class MReadOutAssembly
   bool HasAnalysisProgress(uint64_t Progress) const { return (m_AnalysisProgress & Progress) == Progress ? true : false; }
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
-  
-
   //! Set the Quality of this Event
   void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
   //!Return the Quality of this Event
   double GetEventQuality() const { return m_EventQuality; }
-
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
   //! Steam the content in a way Nuclearizer can read it in again
@@ -248,13 +245,12 @@ class MReadOutAssembly
   void StreamEvta(ostream& S);
   //! Stream the content in MEGAlib's roa format 
   void StreamRoa(ostream& S, bool WithDescriptor = true);
-
   //! Build the next MReadoutAssemply from a .dat file
   bool GetNextFromDatFile(MFile &F);
-
   //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
   bool ComputeAbsoluteTime();
-
+  //! Set the MTime corresponding to absolute UTC time
+  void SetAbsoluteTime(MTime T) {m_EventTimeUTC = T;}
   //! Get the MTime corresponding to absolute UTC time
   MTime GetAbsoluteTime() const {return m_EventTimeUTC; }
 

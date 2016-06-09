@@ -263,12 +263,11 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
 		NewEvent->RemoveStripHit(0);
 	}
 
-	/*
 	//transfer over strip hits that have timing and no ADC
 	while (NewEvent->GetNStripHitsTOnly() > 0){
-	Event->AddStripHitTOnly( NewEvent->GetStripHitTOnly(0));
-	NewEvent->RemoveStripHitTOnly(0);
-	}*/
+		Event->AddStripHitTOnly( NewEvent->GetStripHitTOnly(0));
+		NewEvent->RemoveStripHitTOnly(0);
+	}
 
 
 	Event->SetID( NewEvent->GetID() );
@@ -281,6 +280,7 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
 		MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
 		Event->SetAspect(A);
 		Event->ComputeAbsoluteTime();
+		//Event->SetAbsoluteTime(NewEvent->GetAbsoluteTime());
 		if(Event->GetTime() == Event->GetAbsoluteTime()){
 			cout << "times are equal" << endl;
 		}

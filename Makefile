@@ -112,6 +112,7 @@ $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
 $(LB)/MNCTDepthCalibrator.o\
 $(LB)/GCUSettingsParser.o\
+$(LB)/MNCTTIRecord.o\
 $(LB)/GCUHousekeepingParser.o\
 $(LB)/LivetimeParser.o
 

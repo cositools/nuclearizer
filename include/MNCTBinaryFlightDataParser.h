@@ -90,6 +90,9 @@ class MNCTBinaryFlightDataParser
   //! Get the IsDone flag
   bool GetIsDone() {return m_IsDone;}
 
+  //! Get access to m_AspectReconstructor
+  MNCTAspectReconstruction* GetAspectReconstructor() const { return m_AspectReconstructor; }
+
   // protected methods:
  protected:
 
@@ -134,6 +137,7 @@ class MNCTBinaryFlightDataParser
   
   //! The aspect reconstructor
   MNCTAspectReconstruction* m_AspectReconstructor;
+  MNCTTIRecord TIRecord;
   MNCTTimeAndCoordinate m_TCCalculator;
   
   //added by AWL
