@@ -1407,6 +1407,10 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 								m_NumDSOReceived++;
 							}
 						}
+						if(m_NumDSOReceived < 20){
+							cout << "GPSms = " << GPSms << endl;
+						}
+
 						wx += DSOLen;
 					} else {
 						NotEnoughBytes = true;
