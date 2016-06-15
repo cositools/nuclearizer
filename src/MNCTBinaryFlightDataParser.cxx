@@ -343,6 +343,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 							Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\n\n";
 						}
 					}
+					//cout<<"GZ: "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<endl;
 				}
 				m_NumAspectPackets++;
 				break;

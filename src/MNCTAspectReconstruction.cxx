@@ -201,6 +201,8 @@ void MNCTAspectReconstruction::Clear()
 	for (auto A: m_Aspects_Magnetometer) {
 		delete A;
 	}
+
+	LastAspectInDeque = 0;
 	m_Aspects_Magnetometer.clear();	
 	m_IsDone = false;
 
@@ -1020,7 +1022,12 @@ bool MTimeSort( MNCTAspect* A1, MNCTAspect* A2 ){
 //////////////////////////////////////////////////////////////////////////////
 
 void MNCTAspectReconstruction::SetLastAspectInDeque(deque<MNCTAspect*> CurrentDeque){
-	LastAspectInDeque = CurrentDeque.back();
+	
+	if (CurrentDeque.empty()) {
+		LastAspectInDeque = 0;
+	} else {
+		LastAspectInDeque = CurrentDeque.back();
+	}
 }
 
 // MNCTAspectReconstruction.cxx: the end...
