@@ -188,7 +188,11 @@ bool MNCTBinaryFlightDataParser::Initialize()
   }
 
 
+ 
+	//AWL: this block of code prevents using the nuclearizer library outside of the nuclearizer gui when the event saver module isn't instantiated.  
+  //AWL: changing this so that if it fails, we continue with the analysis and 
 //Turns out the EventSaver modeule is always open, even if it's not selected in Nuclearizer, so this will make a .hkp file with the prefix with the name of the last saved file in Nuclearizer... for now.
+  /*
   MSupervisor* S = MSupervisor::GetSupervisor();
   m_EventSaver = (MNCTModuleEventSaver*) S->GetAvailableModuleByXmlTag("XmlTagEventSaver");
   if (m_EventSaver == nullptr) {
@@ -208,6 +212,8 @@ bool MNCTBinaryFlightDataParser::Initialize()
     }
     
   }
+  */
+  Housekeeping.open(MString("hkp.hkp", std::ofstream::out));
   return true;
 }
 
