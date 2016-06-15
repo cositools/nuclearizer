@@ -338,9 +338,11 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 
 					//Print info into housekeeping file 
                     if (Housekeeping.is_open() == true) {
-						LatestAspect = m_AspectReconstructor->GetLastAspectInDeque();
-						if (((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS) && (LatestAspect->GetGPS_or_magnetometer() == 0)) || ((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) && (LatestAspect->GetGPS_or_magnetometer() == 1))) {
-							Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\n\n";
+						if (m_AspectReconstructor->GetLastAspectInDeque() != 0) { 
+							LatestAspect = m_AspectReconstructor->GetLastAspectInDeque();
+							if (((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS) && (LatestAspect->GetGPS_or_magnetometer() == 0)) || ((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) && (LatestAspect->GetGPS_or_magnetometer() == 1))) {
+								Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\n\n";
+							}
 						}
 					}
 					//cout<<"GZ: "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<endl;
