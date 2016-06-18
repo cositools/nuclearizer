@@ -290,6 +290,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	}
 
 	double Z[3][3], Y[3][3], X[3][3], YX[3][3], ZYX[3][3];
+	double Z_[3][3], Y_[3][3], X_[3][3], YX_[3][3], ZYX_[3][3];
 
 	Z[0][0] = cosine(heading);
 	Z[0][1] = 0.0 - sine(heading);
@@ -377,6 +378,100 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	if( GPS_or_magnetometer == 0 ){
 
+		//First, apply GPS pre-rotation matrix ZYX_
+
+		//corrections from Crab observation 2016
+		const double dh = 5.2;
+		const double dp = -0.5;
+		const double dr = -0.5;
+
+		Z_[0][0] = cosine(-90 + dh);
+		Z_[0][1] = 0.0 - sine(-90 + dh);
+		Z_[0][2] = 0.0;
+
+		Z_[1][0] = sine(-90 + dh);
+		Z_[1][1] = cosine(-90 + dh);
+		Z_[1][2] = 0.0;
+
+		Z_[2][0] = 0.0;
+		Z_[2][1] = 0.0;
+		Z_[2][2] = 1.0;
+
+		Y_[0][0] = cosine(dr);
+		Y_[0][1] = 0.0;
+		Y_[0][2] = sine(dr);
+
+		Y_[1][0] = 0.0;
+		Y_[1][1] = 1.0;
+		Y_[1][2] = 0.0;
+
+		Y_[2][0] = 0.0 - sine(dr);
+		Y_[2][1] = 0.0;
+		Y_[2][2] = cosine(dr);
+
+		X_[0][0] = 1.0;
+		X_[0][1] = 0.0;
+		X_[0][2] = 0.0;
+
+		X_[1][0] = 0.0;
+		X_[1][1] = cosine(dp);
+		X_[1][2] = 0.0 - sine(dp);
+
+		X_[2][0] = 0.0;
+		X_[2][1] = sine(dp);
+		X_[2][2] = cosine(dp);
+
+		for(int i=0;i<3;i++){
+			for(int j=0;j<3;j++){   
+				YX_[i][j]=0;
+				for(int k=0;k<3;k++){
+					//ares' X and Y are backwards, changing this from YX to XY
+					//so the full rotation is ZXY
+					//YX[i][j]=YX[i][j]+Y[i][k]*X[k][j];
+					YX_[i][j]=YX_[i][j]+X_[i][k]*Y_[k][j];
+				}
+			}
+		}
+
+		for(int i=0;i<3;i++){
+			for(int j=0;j<3;j++){   
+				ZYX_[i][j]=0;
+				for(int k=0;k<3;k++){
+					ZYX_[i][j]=ZYX_[i][j]+Z_[i][k]*YX_[k][j];
+				}
+			}
+		}
+
+		for(int i=0;i<3;i++){
+			double Q = 0;
+			for(int k=0;k<3;k++){
+				Q += ZYX_[i][k] * Yhat[k];
+			}
+			temp[i] = Q;
+		}
+		Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
+
+		//transform Xhat
+		for(int i=0;i<3;i++){
+			double Q = 0;
+			for(int k=0;k<3;k++){
+				Q += ZYX_[i][k] * Xhat[k];
+			}
+			temp[i] = Q;
+		}
+		Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
+
+		//transform Zhat
+		for(int i=0;i<3;i++){
+			double Q = 0;
+			for(int k=0;k<3;k++){
+				Q += ZYX_[i][k] * Zhat[k];
+			}
+			temp[i] = Q;
+		}
+		Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
+
+		/*
 		Z[0][0] = cosine(-90.0);
 		Z[0][1] = 0.0 - sine(-90.0);
 		Z[0][2] = 0.0;
@@ -408,6 +503,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 			temp[i] = Q;
 		}
 		Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
+		*/
 
 	}
 

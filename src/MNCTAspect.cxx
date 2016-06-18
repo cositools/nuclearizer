@@ -209,7 +209,7 @@ void MNCTAspect::StreamEvta(ostream& S)
   S<<"GZ "<<setprecision(8)<<m_GalacticPointingZAxisLongitude<<" "<<m_GalacticPointingZAxisLatitude<<endl;
   S<<"HX "<<setprecision(8)<<m_HorizonPointingXAxisAzimuthNorth<<" "<<m_HorizonPointingXAxisElevation<<endl;
   S<<"HZ "<<setprecision(8)<<m_HorizonPointingZAxisAzimuthNorth<<" "<<m_HorizonPointingZAxisElevation<<endl;
-  S<<"CC AS "<<setprecision(8)<<m_Latitude<<" "<<m_Longitude<<" "<<m_Heading<<" "<<m_Pitch<<" "<<m_Roll<<endl;
+  S<<"CC AS "<<setprecision(8)<<m_Latitude<<" "<<m_Longitude<<" "<<m_Heading<<" "<<m_Pitch<<" "<<m_Roll<<" "<<m_UTCTime<<endl;
 }
 
 
