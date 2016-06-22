@@ -94,9 +94,6 @@ class MNCTDetectorEffectsEngineCOSI
 		//! Depth calibration splines file name
 		MString m_DepthCalibrationSplinesFileName;
 
-		//! Whether simulation file includes ionization: defaults to false
-		bool m_IonIncluded;
-
 		//! Calibration map between read-out element and fitted function for energy calibration
 		map<MReadOutElementDoubleStrip, TF1*> m_EnergyCalibration;
 		//! Calibration map between read-out element and fitted function for energy resolution calibration
@@ -133,11 +130,15 @@ class MNCTDetectorEffectsEngineCOSI
 
 				std::vector<MNCTDEEStripHit> m_OppositeStrips;
 
-				//! True if one of the interactions that led to this particle was Ionization
-				bool m_FromIonization;
+				//! list of origins of strip hits from cosima output
+				vector<int> m_Origins;
 
 				//! A list of original strip hits making up this strip hit
 				vector<MNCTDEEStripHit> m_SubStripHits;
+
+				//! lists indices of other substriphits that have same IA origin
+				vector<int> m_SharedOrigin;
+
 		};
 
 	public:
@@ -186,7 +187,6 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
 	Usage<<"         -h:   print this help"<<endl;
 	Usage<<"         -D:   depth calibration coefficients filename"<<endl;
 	Usage<<"         -s:   depth calibration splines file"<<endl;
-	Usage<<"         -i:   1 (true) if ionization included in simulation file, 0 (false) otherwise (defaults to false)"<< endl;
 	Usage<<endl;
 
 	string Option;
@@ -200,8 +200,6 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
 		}
 	}
 
-	//set ionization included flag to false as default
-	m_IonIncluded = false;
 
 	// Now parse the command line options:
 	for (int i = 1; i < argc; i++) {
@@ -248,9 +246,6 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCommandLine(int argc, char** argv)
 		} else if (Option == "-s"){
 			m_DepthCalibrationSplinesFileName = argv[++i];
 			cout << "Accepting depth calibration splines file name: " << m_DepthCalibrationSplinesFileName << endl;
-		} else if (Option == "-i"){
-			m_IonIncluded = atoi(argv[++i]);
-			cout << "Accepting Ionization Included option: " << m_IonIncluded << endl;
 		} else {
 			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
 			cout<<Usage.str()<<endl;
@@ -348,7 +343,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 	//count how many events have multiple hits per strip
 	int mult_hits_counter = 0;
-	int ion_counter = 0;
+	int charge_loss_counter = 0;
 
 	// for shield veto: shield pulse duration and card cage delay: constant for now
 	double shield_pulse_duration = 1.e-6;
@@ -407,7 +402,6 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		// Step (1): Convert positions into strip hits
 		list<MNCTDEEStripHit> StripHits;
 
-		//for Clio to check how many strips get hit multiple times: need to save hit information
 		vector<vector<MNCTDEEStripHit> > SimHits;
 		vector<MNCTDEEStripHit> tempVec;
 
@@ -441,8 +435,10 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
 
 			// Not sure about if p or n-side is up, but we can debug this later
-			pSide.m_ROE.SetStripID(GP.GetXGrid()+1);
-			nSide.m_ROE.SetStripID(GP.GetYGrid()+1);
+			pSide.m_ROE.SetStripID(38-(GP.GetXGrid()+1));
+			nSide.m_ROE.SetStripID(38-(GP.GetYGrid()+1));
+
+//			cout << pSide.m_ROE.GetStripID() << '\t' << nSide.m_ROE.GetStripID() << endl;
 
 			//SetStripID needs to be called before we can look up the depth calibration coefficients
 			int PixelCode = DetectorID*10000 + pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID();
@@ -463,20 +459,10 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			pSide.m_Position = PositionInDetector;
 			nSide.m_Position = PositionInDetector;
 
-			//default
-			pSide.m_FromIonization = false;
-			nSide.m_FromIonization = false;
 			//check for ionization if it's in the sim file
-			if (m_IonIncluded){
-				vector<int> origins = HT->GetOrigins();
-				for (unsigned int o=0; o<origins.size(); o++){
-					MSimIA* ia = IAs.at(origins.at(o)-1);
-					if (ia->GetProcess() == "IONI"){
-						pSide.m_FromIonization = true;
-						nSide.m_FromIonization = true;
-					}
-				}
-			}
+			vector<int> origins = HT->GetOrigins();
+			pSide.m_Origins = origins;
+			nSide.m_Origins = origins;
 
 
 			StripHits.push_back(pSide);
@@ -491,51 +477,6 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			SimHits.push_back(tempVec);
 
 		}
-
-		// Check if any strip was hit multiple times
-		// --> for Clio to double check strip pairing
-		vector<int> pIDs, nIDs;
-		for (unsigned int det=0; det<12; det++){
-			pIDs.clear();
-			nIDs.clear();
-			for (unsigned int H=0; H<SimHits.size(); H++){
-				if (SimHits.at(H).at(0).m_ROE.GetDetectorID() == det){
-					int id = SimHits.at(H).at(0).m_ROE.GetStripID();
-					pIDs.push_back(id);
-				}
-				if (SimHits.at(H).at(1).m_ROE.GetDetectorID() == det){
-					int id = SimHits.at(H).at(1).m_ROE.GetStripID();
-					nIDs.push_back(id);
-				}
-			}
-
-			//should be same number of p strips as n strips, but just in case:
-			if (pIDs.size() != nIDs.size()){ continue; }
-
-//			cout << "Det: " << det << endl;
-
-			for (unsigned int i=0; i<pIDs.size(); i++){
-				for (unsigned int j=i+1; j<pIDs.size(); j++){
-					if (pIDs.at(i) == pIDs.at(j)){
-						if ( fabs(nIDs.at(i) - nIDs.at(j)) > 1 ){
-							mult_hits_counter++;
-						}
-						break;
-					}
-				}
-			}
-			for (unsigned int i=0; i<nIDs.size(); i++){
-				for (unsigned int j=i+1; j<nIDs.size(); j++){
-					if (nIDs.at(i) == nIDs.at(j)){
-						if ( fabs(pIDs.at(i) - pIDs.at(j)) > 1 ){
-							mult_hits_counter++;
-						}
-						break;
-					}
-				}
-			}
-		}
-
 
 
 		// (1b) The guard ring hits
@@ -577,22 +518,35 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			MergedStripHits.push_back(Start);
 		}
 
+		bool fromSameInteraction = true;
 		for (MNCTDEEStripHit& Hit: MergedStripHits){
-			int num_no_ion = 0;
-			if (Hit.m_SubStripHits.size() > 1){
-				for (MNCTDEEStripHit& SubHit: Hit.m_SubStripHits){
-//					cout << SubHit.m_ROE.GetStripID() << '\t' << SubHit.m_Position << '\t' << SubHit.m_Energy << '\t' << SubHit.m_FromIonization << endl;
-					if (SubHit.m_FromIonization == false){
-						num_no_ion++;
+			int nSubHits = Hit.m_SubStripHits.size();
+			if (nSubHits > 1){
+				for (int i=0; i<nSubHits-1; i++){
+					for (int j=i+1; j<nSubHits; j++){
+						MNCTDEEStripHit& SubHit1 = Hit.m_SubStripHits.at(i);
+						MNCTDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(j);
+						fromSameInteraction = false;
+	
+						for (unsigned int o1=0; o1<SubHit1.m_Origins.size(); o1++){
+							for (unsigned int o2=0; o2<SubHit2.m_Origins.size(); o2++){
+								if (SubHit1.m_Origins.at(o1) == SubHit2.m_Origins.at(o2)){
+									fromSameInteraction = true;
+								}
+							}
+						}
+						if (fromSameInteraction){
+							//have to mark it in the strip hits so that
+							// charge loss effect can be applied
+							SubHit1.m_SharedOrigin.push_back(j);
+							SubHit2.m_SharedOrigin.push_back(i);
+						}
+
+						//these counters are not actually counting the right thing right now...
+						if (fromSameInteraction){ charge_loss_counter++; }
+						else{	mult_hits_counter++; }
 					}
 				}
-			}
-			if (num_no_ion >= 2){ 
-				ion_counter++;
-//				cout << Event->GetID() << endl;
-//				for (MNCTDEEStripHit& SubHit: Hit.m_SubStripHits){
-//					cout << SubHit.m_ROE.GetStripID() << '\t' << SubHit.m_Position << '\t' << SubHit.m_Energy << '\t' << SubHit.m_FromIonization << endl;
-//				}
 			}
 		}
 
@@ -678,7 +632,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 
 		// Step (5): Split into card cage events - i.e. split by detector
-		vector<vector<MNCTDEEStripHit>> CardCagedStripHits;
+/*		vector<vector<MNCTDEEStripHit>> CardCagedStripHits;
 		for (MNCTDEEStripHit Hit: MergedStripHits) {
 			bool Found = false;
 			for (vector<MNCTDEEStripHit>& V: CardCagedStripHits) {
@@ -700,19 +654,21 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		for (double& T: CardCageTiming) {
 			T = Event->GetTime().GetAsSeconds();
 		}
-
+*/
 
 		// Step (7): Dump event to file in ROA format
-		for (unsigned int c = 0; c < CardCagedStripHits.size(); ++c) {
-			out<<"SE"<<endl;
-			out<<"# ID "<<Event->GetID()<<endl;
-			out<<"ID "<<++RunningID<<endl;
-			out<<"TI "<<CardCageTiming[c]<<endl;
-			for (MNCTDEEStripHit Hit: CardCagedStripHits[c]) {
+		out<<"SE"<<endl;
+		out<<"# ID "<<Event->GetID()<<endl;
+		out<<"ID "<<++RunningID<<endl;
+//		out<<"TI "<<CardCageTiming[c]<<endl;
+		out<<"TI "<<Event->GetTime().GetAsSeconds() << endl;
+//		for (unsigned int c = 0; c < CardCagedStripHits.size(); ++c) {
+//			for (MNCTDEEStripHit Hit: CardCagedStripHits[c]) {
+		for (MNCTDEEStripHit Hit: MergedStripHits){
 				out<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<endl;
 			}
-		}
-
+//			}
+//		}
 		// Never forget to delete the event
 		delete Event;
 	}
@@ -721,7 +677,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 	//  specCanvas.Print("spectrum_adc.pdf");
 
 //	cout << "number of events with multiple hits per strip: " << mult_hits_counter << endl;
-//	cout << "counting from ionization: " << ion_counter << endl;
+//	cout << "charge loss applies counter: " << charge_loss_counter << endl;
 
 	// Some cleanup
 	out<<"EN"<<endl<<endl;
