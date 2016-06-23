@@ -104,22 +104,86 @@ MNCTModuleMeasurementLoaderBinary::~MNCTModuleMeasurementLoaderBinary()
 
 FILE * f_TOnly;
 
+bool MNCTModuleMeasurementLoaderBinary::OpenNextFile()
+{
+  //! Open next file, return false on error
+
+  ++m_OpenFileID;
+  if (m_OpenFileID >= (int) m_BinaryFileNames.size()) return false;
+  
+  if (m_In.is_open()) m_In.close();
+  m_In.clear();
+  
+  m_In.open(m_BinaryFileNames[m_OpenFileID], ios::binary);
+  if (m_In.is_open() == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to load file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+    return false;
+  }
+  
+  if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Opened file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+  
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 bool MNCTModuleMeasurementLoaderBinary::Initialize()
 {
 	// Initialize the module 
 
 	m_FileIsDone = false;
+  m_BinaryFileNames.clear();
+  m_OpenFileID = -1;
 
 	if (m_In.is_open()) m_In.close();
-	m_In.clear();
-	m_In.open(m_FileName, ios::binary);
-	if (m_In.is_open() == false) {
-		if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to load file \""<<m_FileName<<"\""<<endl;
-		return false;
-	}
+  m_In.clear();
+  
+  // Firest check if we can read is as text file, look for "TYPE" or "IN" in the first 10 lines
+  ifstream in;
+  in.open(m_FileName);
+  if (in.is_open() == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_FileName<<"\""<<endl;
+    return false;
+  } 
 
-	if (MNCTBinaryFlightDataParser::Initialize() == false) return false;
+  MString Directory = "./";
+  MString Line;
+  int Counter = 10;
+  while (in.good()) {
+    Line.ReadLine(in);
+    --Counter;
+    if (Line.BeginsWith("DIR") == true) {
+      Line.RemoveInPlace(0, 4);
+      Directory = Line + "/";
+      Counter++;
+    } else if (Line.BeginsWith("IN") == true) {
+      Line.RemoveInPlace(0, 3);
+      Line = Directory + Line;
+      if (MFile::Exists(Line) == false) {
+        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to find file \""<<Line<<"\""<<endl;
+        return false;
+      }
+      m_BinaryFileNames.push_back(Line);  
+      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Added file \""<<m_BinaryFileNames.back()<<"\""<<endl;
+      Counter++;
+    }
+    if (Counter == 0) break;
+  }
+  if (m_BinaryFileNames.size() == 0) {
+    m_BinaryFileNames.push_back(m_FileName);
+  }
+  
+  if (OpenNextFile() == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open the file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+    return false;
+  }
+
+
+	if (MNCTBinaryFlightDataParser::Initialize() == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Initilization of the parser module failed!"<<endl;     
+    return false;
+  }
 	//f_TOnly = fopen("TOnly.txt","w");
 
 	return MModule::Initialize();
@@ -152,7 +216,7 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
 	vector<char> Stream;
 	unsigned int Size = 1000000;
 	streamsize Read;
-	if( m_FileIsDone ){
+	if (m_FileIsDone == true) {
 		Read = 0;
 	} else {
 		Stream.reserve(Size);
@@ -160,7 +224,14 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
 		Read = m_In.gcount();
 	}
 
-
+	// If we do not read anything, try again with the next file
+  if (Read == 0) {
+    if (OpenNextFile() == true) {
+      Stream.reserve(Size);
+      m_In.read(&Stream[0], Size);
+      Read = m_In.gcount();      
+    }
+  }
 
 	/*
 		if (Read < Size) {
@@ -175,13 +246,13 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
 	}
 	*/
 
-	if(Read == 0){
+	if (Read == 0) {
 		m_FileIsDone = true;
 		SetIsDone(true);
 	}
 
 
-	if( m_FileIsDone && (m_EventsBuf.size() == 0) ){
+	if (m_FileIsDone  == true && m_EventsBuf.size() == 0) {
 		//m_IsOK = false;
 		m_IsFinished = true;
 	}

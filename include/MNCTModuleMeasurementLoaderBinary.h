@@ -82,6 +82,9 @@ class MNCTModuleMeasurementLoaderBinary : public MModule, public MNCTBinaryFligh
   //! Perform Handshake
   bool DoHandshake();
 
+  //! Open next file, return false on error
+  bool OpenNextFile();
+  
   // private methods:
  private:
 
@@ -97,8 +100,12 @@ class MNCTModuleMeasurementLoaderBinary : public MModule, public MNCTBinaryFligh
 
   //! The file name
   MString m_FileName;
-  //! The file stream
+  //! The current binary data stream
   ifstream m_In;
+  //! A list of all binary data files
+  vector<MString> m_BinaryFileNames;
+  //! The currently open binary file name (-1 none is open)
+  int m_OpenFileID;
   //! Flag indicating that file read is over
   bool m_FileIsDone;
   
