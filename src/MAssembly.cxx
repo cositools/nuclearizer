@@ -71,6 +71,7 @@ using namespace std;
 #include "MNCTModuleChargeSharingCorrection.h"
 //#include "MNCTModuleDepthAndStripCalibration.h"
 #include "MNCTModuleDepthCalibration.h"
+#include "MNCTModuleDepthCalibrationB.h"
 #include "MNCTModuleDepthCalibrationLinearStrip.h"
 #include "MNCTModuleDepthCalibrationLinearPixel.h"
 #include "MNCTModuleDepthCalibration3rdPolyPixel.h"
@@ -135,6 +136,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearPixel());
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration3rdPolyPixel());
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
+  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationB());
 	m_Supervisor->AddAvailableModule(new MNCTModuleFlagHits());
   //m_Supervisor->AddAvailableModule(new MNCTModuleAspect());
   //m_Supervisor->AddAvailableModule(new MNCTModuleDumpEvent());

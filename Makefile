@@ -114,7 +114,10 @@ $(LB)/MNCTDepthCalibrator.o\
 $(LB)/GCUSettingsParser.o\
 $(LB)/MNCTTIRecord.o\
 $(LB)/GCUHousekeepingParser.o\
-$(LB)/LivetimeParser.o
+$(LB)/LivetimeParser.o\
+$(LB)/MNCTDepthCalibratorB.o\
+$(LB)/MNCTModuleDepthCalibrationB.o\
+$(LB)/MGUIOptionsDepthCalibrationB.o
 
 NUCLEARIZER_DEP_FILES := $(NUCLEARIZER_LIBS:.o=.d)
 NUCLEARIZER_H_FILES := $(addprefix inc/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
