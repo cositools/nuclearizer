@@ -193,6 +193,7 @@ bool MNCTAspect::StreamDat(ostream& S, int Version)
   S<<"GZ "<<setprecision(8)<<m_GalacticPointingZAxisLongitude<<" "<<m_GalacticPointingZAxisLatitude<<endl;
   S<<"HX "<<setprecision(8)<<m_HorizonPointingXAxisAzimuthNorth<<" "<<m_HorizonPointingXAxisElevation<<endl;
   S<<"HZ "<<setprecision(8)<<m_HorizonPointingZAxisAzimuthNorth<<" "<<m_HorizonPointingZAxisElevation<<endl;
+  S<<"OR "<<setprecision(8)<<m_Heading<<" "<<m_Pitch<<" "<<m_Roll<<endl;
 
   return true;
 }
