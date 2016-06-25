@@ -55,7 +55,7 @@ bool MNCTTIRecord::Add(long int t, int64_t PPS)
 				auto i1 = m_Record.begin();
 				map<long int,int64_t>::iterator i2 = i1++;
 				MTime dUTC(i2->first - i1->first,(long int)0);
-				MTime dPPS(((i2->second - i1->second)/10000000),((i2->second - i1->second)%10000000)*100);
+				MTime dPPS((long int)((i2->second - i1->second)/10000000),(long int)((i2->second - i1->second)%10000000)*100);
 				double diff = fabs(dUTC.GetAsDouble() - dPPS.GetAsDouble());
 				if(diff >= 0.100) m_Record.erase(m_Record.begin());
 			}
@@ -75,7 +75,7 @@ bool MNCTTIRecord::AddCorrect(long int& t, int64_t& PPS)
 			auto i1 = m_Record.begin();
 			map<long int,int64_t>::iterator i2 = i1++;
 			MTime dUTC(i2->first - i1->first,(long int)0);
-			MTime dPPS(((i2->second - i1->second)/10000000),((i2->second - i1->second)%10000000)*100);
+			MTime dPPS((long int)((i2->second - i1->second)/10000000),(long int)((i2->second - i1->second)%10000000)*100);
 			double diff = fabs(dUTC.GetAsDouble() - dPPS.GetAsDouble());
 			if(diff >= 0.100) m_Record.erase(m_Record.begin());
 		}
