@@ -39,6 +39,7 @@ int main(int argc, char ** argv){
 
 	fout->Close();
 	f1->Close();
+	////
 	for(const auto f:fn){
 		f->Close();
 	}
