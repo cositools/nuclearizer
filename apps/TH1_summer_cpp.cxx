@@ -22,11 +22,11 @@ int main(int argc, char ** argv){
 	}
 
 	for(int i = 0; i < l->GetSize(); ++i){
-		TH1* h1 = (TH1*) f1->Get(l->At(i)->GetName());
+		TH1D* h1 = (TH1D*) f1->Get(l->At(i)->GetName());
 		if(h1 != NULL){
-			cout << "summing TH1's with name " << h1->GetName() << endl;
+			cout << "summing TH1D's with name " << h1->GetName() << endl;
 			for(const auto f:fn){
-				TH1* h = (TH1*) f->Get(h1->GetName());
+				TH1D* h = (TH1D*) f->Get(h1->GetName());
 				if(h != NULL){
 					h1->Add(h);
 				} else {

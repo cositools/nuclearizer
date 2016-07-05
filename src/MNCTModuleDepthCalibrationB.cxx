@@ -366,6 +366,10 @@ int MNCTModuleDepthCalibrationB::CalculateLocalPosition(MNCTStripHit* XSH, MNCTS
 			}
 			
 			if( RetVal == 0 ){
+				if((Z < 0.0) || (Z > m_Thicknesses[DetID])){
+					cout << "BadZ = " << Z <<" ("<< XSH->GetStripID() << "," << YSH->GetStripID() << ")" << endl;
+				}
+
 				Zpos = m_Thicknesses[DetID]/2.0 - Z;
 			}
 
