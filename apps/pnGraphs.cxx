@@ -48,7 +48,7 @@ using namespace std;
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleStripPairingGreedy_b.h"
 #include "MAssembly.h"
-
+#include "MNCTModuleMeasurementLoaderBinary.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -235,6 +235,9 @@ bool pnGraphs::Analyze()
   MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
   S->SetModule(Pairing, 2);
 
+  MNCTModuleMeasurementLoaderBinary* MLB = new MNCTModuleMeasurementLoaderBinary();
+  MLB->Initialize();
+  
   if (Loader->Initialize() == false) return false;
   if (Calibrator->Initialize() == false) return false;
   if (Pairing->Initialize() == false) return false;

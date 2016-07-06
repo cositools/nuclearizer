@@ -81,6 +81,7 @@ void MNCTStripHit::Clear()
   m_Energy = 0;
   m_EnergyResolution = 0;
   m_Timing = 0;
+  m_Origins.clear();
 }
 
 
@@ -138,7 +139,18 @@ bool MNCTStripHit::Parse(MString& Line, int Version)
   */
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+//! Set the origins from the simulations (take care of duplicates)
+void MNCTStripHit::AddOrigins(vector<int> Origins)
+{
+  m_Origins.insert(m_Origins.end(), Origins.begin(), Origins.end());
+  sort(m_Origins.begin(), m_Origins.end());
+  m_Origins.erase(unique(m_Origins.begin(), m_Origins.end()), m_Origins.end());
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -175,7 +187,12 @@ void MNCTStripHit::StreamRoa(ostream& S)
    <<m_ReadOutElement->GetStripID()<<" "
    <<((m_ReadOutElement->IsPositiveStrip() == true) ? "p" : "n")<<" "
    <<m_ADCUnits<<" "
-   <<m_Timing<<endl;
+   <<m_Timing;
+  for (unsigned int i = 0; i < m_Origins.size(); ++i) {
+    if (i != 0) S<<";";
+    S<<m_Origins[i]; 
+  }
+  S<<endl;
 }
 
 

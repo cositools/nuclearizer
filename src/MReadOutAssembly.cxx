@@ -46,7 +46,7 @@ ClassImp(MReadOutAssembly)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly::MReadOutAssembly() : m_Time(0), m_EventTimeUTC(0)
+MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_EventTimeUTC(0)
 {
   // Construct an instance of MReadOutAssembly
 
@@ -108,6 +108,8 @@ void MReadOutAssembly::Clear()
 {
   //! Reset all data
 
+  MReadOutSequence::Clear();
+  
   m_ID = g_UnsignedIntNotDefined;
   m_TI = 0;
   m_CL = 0;
@@ -345,33 +347,20 @@ void MReadOutAssembly::RemoveHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTHit* MReadOutAssembly::GetHitSim(unsigned int i) 
-{ 
-  //! Return hit i
-  
-  if (i < m_HitsSim.size()) {
-    return m_HitsSim[i]; 
-  }
-
-  merr<<"Index out of bounds!"<<show;
-
-  return 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool MReadOutAssembly::Parse(MString& Line, int Version)
-{
-
-  if( Line.BeginsWith("SE") ) return true;
-  if( Line.BeginsWith("TI") ){
+{  
+  // Handles SE, TI, RO, IA
+  if (MReadOutSequence::Parse(Line) == true) return true;
+  
+  /* In base class
+  if (Line.BeginsWith("SE")) return true;
+  if (Line.BeginsWith("TI")) {
     m_Time.Set(Line);
     return true;
   }
-  //skipping aspect for now
-  if( Line.BeginsWith("HT") ){
+  */
+  // skipping aspect for now
+  if (Line.BeginsWith("HT")) {
     MNCTHit* h = new MNCTHit();
     if( h->Parse(Line,1) ){
       AddHit(h);
@@ -380,30 +369,31 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
       return false;
     }
   }
-  if( Line.BeginsWith("SH") ){
-    //assuming that the SHs belong to the last read hit
+  if (Line.BeginsWith("SH")) {
+    // assuming that the SHs belong to the last read hit
     MNCTHit* h = m_Hits.back();
-    if( h != NULL ){
+    if (h != nullptr) {
       MNCTStripHit* SH = new MNCTStripHit();
-      if( SH->Parse(Line,2) ){
+      if (SH->Parse(Line, 2)) {
         h->AddStripHit(SH);
         return true;
       } else {
+        delete SH;
         return false;
       }
     } else {
       return false;
     }
   }
-  if( Line.BeginsWith("BD") ){
-    //set a bad flag
-    //too lazy RN to go thru each flag.  the following should do::
+  if (Line.BeginsWith("BD")) {
+    // set a bad flag
+    // too lazy RN to go thru each flag.  the following should do::
     m_FilteredOut = true;
     return true;
   }
 
-  return false;
 
+  return false;
 }
 
 
@@ -477,6 +467,10 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
 
+  for (MSimIA& IA: m_SimIAs) {
+    S<<IA.ToSimString()<<endl; 
+  }
+  
   if (m_Aspect != 0) {
     m_Aspect->StreamDat(S, Version);
   }
@@ -562,6 +556,10 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   if (m_Aspect != 0) {
     m_Aspect->StreamEvta(S);
   }
+
+  for (MSimIA& IA: m_SimIAs) {
+    S<<IA.ToSimString()<<endl; 
+  }
   
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     m_Hits[h]->StreamEvta(S);  
@@ -629,6 +627,10 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
 
   if (m_Aspect != 0) {
     m_Aspect->StreamEvta(S);
+  }
+
+  for (MSimIA& IA: m_SimIAs) {
+    S<<IA.ToSimString()<<endl; 
   }
 
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {

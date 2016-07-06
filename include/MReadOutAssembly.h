@@ -23,11 +23,13 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MReadOut.h"
+#include "MReadOutSequence.h"
 #include "MNCTAspect.h"
 #include "MNCTStripHit.h"
 #include "MNCTGuardringHit.h"
 #include "MNCTHit.h"
 #include "MPhysicalEvent.h"
+#include "MSimIA.h"
 
 // Forward declarations:
 
@@ -35,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MReadOutAssembly
+class MReadOutAssembly : public MReadOutSequence
 {
   // public interface:
  public:
@@ -45,16 +47,18 @@ class MReadOutAssembly
   virtual ~MReadOutAssembly();
 
   //! Reset all data
-  void Clear();
+  virtual void Clear();
 
   //! Delete Hits
   void DeleteHits();
   
+  /*
   //! Set the ID of this event
   void SetID(unsigned long ID) { m_ID = ID; }
   //! Return the ID of this event
   unsigned long GetID() const { return m_ID; }
-
+  */
+  
   //! Set the Frame Counter of this event
   void SetFC(unsigned int FC) { m_FC = FC; }
   //! Return the Frame Counter of this event
@@ -68,13 +72,19 @@ class MReadOutAssembly
   void SetCL(uint64_t CL) { m_CL = CL;}
   uint64_t GetCL() const { return m_CL;}
 
+  /*
   //! Set and get the Time of this event
   void SetTime(MTime Time) { m_Time = Time; }
   MTime GetTime() const { return m_Time; }
-
+  */
+  
   //! Set and get the Modified Julian Date of this event
   void SetMJD(double MJD) { m_MJD = MJD; }
   double GetMJD() const { return m_MJD; }
+  
+  //! Set and get the UTC time of this event
+  void SetTimeUTC(const MTime& TimeUTC) { m_EventTimeUTC = TimeUTC; }
+  MTime GetTimeUTC() const { return m_EventTimeUTC; }
   
   //! Set the aspect
   void SetAspect(MNCTAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
@@ -156,6 +166,13 @@ class MReadOutAssembly
   //! Move hits to simulation hits list
   void MoveHitsToSim() {m_HitsSim = m_Hits; m_Hits.clear();}
 
+  /*
+  //! Return the number of simulation interactions
+  unsigned int GetNSimIAs() const { return m_IAs.size(); }
+  //! Return simulation hit i
+  MSimIA* GetSimIA(unsigned int i);
+  */
+  
   //! Set the physical event from event reconstruction
   void SetPhysicalEvent(MPhysicalEvent* Event);
   //! Return the physical event 
@@ -166,7 +183,7 @@ class MReadOutAssembly
   //! Return read out i - throws an exception of the index is not found
   //MReadOut& GetReadOut(unsigned int i);
   //! Add a read out
-  void AddReadOut(MReadOut& ReadOut) {}
+  // void AddReadOut(MReadOut& ReadOut) {}
   //! Remove a read out - does do nothing if the index is not found
   //void RemoveReadOut(unsigned int i);
 
@@ -272,7 +289,7 @@ class MReadOutAssembly
   // private members:
  private:
   //! ID of this event
-  unsigned long m_ID;
+  // unsigned long m_ID; // in base class
 
   //! Frame Counter of this event
   unsigned int m_FC;
@@ -282,8 +299,11 @@ class MReadOutAssembly
   uint64_t m_CL;
 
   //! Time and MJD of this event
-  MTime m_Time;
   double m_MJD;
+  // MTime m_Time; // in base class
+
+  //! The time of the event in absolute UTC time
+  MTime m_EventTimeUTC;
 
   //! The aspect information - will be zero if not set!
   MNCTAspect* m_Aspect;
@@ -329,9 +349,6 @@ class MReadOutAssembly
 
   //! The physical event from event reconstruction
   MPhysicalEvent* m_PhysicalEvent; 
-
-  //! The time of the event in absolute UTC time
-  MTime m_EventTimeUTC;
 
   // Flags indicating the quality of the event
   bool m_AspectIncomplete;

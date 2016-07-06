@@ -47,15 +47,6 @@ CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
 # Comment this line out if you want to accept warnings
 #CXXFLAGS += -Werror -Wno-unused-variable
 
-# Python
-ifeq ($(ARCH),macosx)
-CXXFLAGS += -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7
-PYTHONLIBS  += -L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/ -lpython2.7
-else
-CXXFLAGS += `python-config --includes`
-PYTHONLIBS += `python-config --libs`
-endif
-
 # Names of the program
 NUCLEARIZER_PRG = $(BN)/nuclearizer
 NUCLEARIZER_CXX_MAIN = src/MAssembly.cxx
@@ -188,11 +179,11 @@ $(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
 
 $(NUCLEARIZER_SHARED_LIB): $(FRETALON_LIBS) $(NUCLEARIZER_LIBS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZER_SHARED_LIB)
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
 
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
-	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(NUCLEARIZER_PRG)
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(NUCLEARIZER_DEP_FILES)

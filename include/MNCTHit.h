@@ -96,7 +96,7 @@ class MNCTHit
 	//! get m_ChargeSharing
 	bool GetChargeSharing() const { return m_ChargeSharing; }
 	//! set m_NoDepth
-	void SetNoDepth(bool X = true) {m_NoDepth = X;}
+	void SetNoDepth(bool X = true) { m_NoDepth = X;}
 	//! get m_NoDepth
 	bool GetNoDepth(void) const { return m_NoDepth; }
 	//! set m_IsNonDominantNeighborStrip

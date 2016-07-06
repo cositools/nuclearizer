@@ -103,6 +103,13 @@ class MNCTStripHit
   //! Return the Temperature of the relavent preamp (in degrees C)
   double GetPreampTemp() const { return m_PreampTemp; }
 
+  //! Set the origins from the simulations (take care of duplicates)
+  void AddOrigins(vector<int> Origins);
+  //! Get the origins from the simulation
+  vector<int> GetOrigins() const { return m_Origins; }
+  
+  
+  
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
   //! Dump the content into a file stream
@@ -141,6 +148,9 @@ class MNCTStripHit
   double m_Timing;
   //! Temperature of Preamp
   double m_PreampTemp;
+  
+  //! Origin IAs from simulations
+  vector<int> m_Origins;
 
 #ifdef ___CINT___
  public:

@@ -38,7 +38,7 @@
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
-
+#include "MReadOutDataOrigins.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -165,24 +165,19 @@ bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
   
   Event->Clear();
 
-  MReadOutSequence ROS;
-  m_ROAFile.ReadNext(ROS);
-
-  if (ROS.GetNumberOfReadOuts() == 0) {
+  m_ROAFile.ReadNext(*Event);
+  
+  if (Event->GetNumberOfReadOuts() == 0) {
     cout<<m_Name<<": No more read-outs available in File"<<endl;
     return false;
   }
   
   m_NEventsInFile++;
   m_NGoodEventsInFile++;
+
   
-  Event->SetID(ROS.GetID());
-  Event->SetTime(ROS.GetTime());
-  Event->SetCL(ROS.GetClock());
-  
-  
-  for (unsigned int r = 0; r < ROS.GetNumberOfReadOuts(); ++r) {
-    MReadOut RO = ROS.GetReadOut(r);
+  for (unsigned int r = 0; r < Event->GetNumberOfReadOuts(); ++r) {
+    MReadOut RO = Event->GetReadOut(r);
     const MReadOutElementDoubleStrip* Strip = 
       dynamic_cast<const MReadOutElementDoubleStrip*>(&(RO.GetReadOutElement()));
       
@@ -190,6 +185,8 @@ bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
       dynamic_cast<const MReadOutDataADCValue*>(RO.GetReadOutData().Get(MReadOutDataADCValue::m_TypeID));
     const MReadOutDataTiming* Timing = 
       dynamic_cast<const MReadOutDataTiming*>(RO.GetReadOutData().Get(MReadOutDataTiming::m_TypeID));
+    const MReadOutDataOrigins* Origins = 
+      dynamic_cast<const MReadOutDataOrigins*>(RO.GetReadOutData().Get(MReadOutDataOrigins::m_TypeID));
     
     
     MNCTStripHit* SH = new MNCTStripHit();
@@ -199,8 +196,17 @@ bool MNCTModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
     
     SH->SetTiming(Timing->GetTiming());
     SH->SetADCUnits(ADC->GetADCValue());
+    
+    if (Origins != nullptr) {
+      SH->AddOrigins(Origins->GetOrigins());
+    }
+    
+    
     Event->AddStripHit(SH);
   }
+  
+  Event->SetTimeUTC(Event->GetTime());
+  
   
   return true;
 }

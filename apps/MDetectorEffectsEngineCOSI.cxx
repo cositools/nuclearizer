@@ -128,10 +128,10 @@ class MNCTDetectorEffectsEngineCOSI
 				//! True if this is a guard ring
 				bool m_IsGuardRing;
 
-				std::vector<MNCTDEEStripHit> m_OppositeStrips;
+				vector<MNCTDEEStripHit> m_OppositeStrips;
 
 				//! list of origins of strip hits from cosima output
-				vector<int> m_Origins;
+				list<int> m_Origins;
 
 				//! A list of original strip hits making up this strip hit
 				vector<MNCTDEEStripHit> m_SubStripHits;
@@ -335,7 +335,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 	out.open(RoaFileName);
 	out<<endl;
 	out<<"TYPE   ROA"<<endl;
-	out<<"UF     doublesidedstrip adcwithtiming"<<endl;
+	out<<"UF     doublesidedstrip adc-timing-origins"<<endl;
 	out<<endl;
 
 	//  TCanvas specCanvas("c","c",600,400); 
@@ -460,10 +460,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			nSide.m_Position = PositionInDetector;
 
 			//check for ionization if it's in the sim file
-			vector<int> origins = HT->GetOrigins();
-			pSide.m_Origins = origins;
-			nSide.m_Origins = origins;
-
+			vector<int> origin = HT->GetOrigins();
+			pSide.m_Origins = list<int>(origin.begin(), origin.end());
+			nSide.m_Origins = list<int>(origin.begin(), origin.end());
 
 			StripHits.push_back(pSide);
 			StripHits.push_back(nSide);
@@ -527,10 +526,10 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 						MNCTDEEStripHit& SubHit1 = Hit.m_SubStripHits.at(i);
 						MNCTDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(j);
 						fromSameInteraction = false;
-	
-						for (unsigned int o1=0; o1<SubHit1.m_Origins.size(); o1++){
-							for (unsigned int o2=0; o2<SubHit2.m_Origins.size(); o2++){
-								if (SubHit1.m_Origins.at(o1) == SubHit2.m_Origins.at(o2)){
+	          
+            for (int o1: SubHit1.m_Origins) {
+              for (int o2: SubHit1.m_Origins) {
+								if (o1 == o2){
 									fromSameInteraction = true;
 								}
 							}
@@ -550,6 +549,18 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			}
 		}
 
+		// Merge origins
+		for (MNCTDEEStripHit& Hit: MergedStripHits) {
+      Hit.m_Origins.clear();
+      for (MNCTDEEStripHit& SubHit: Hit.m_SubStripHits) {
+        for (int& Origin: SubHit.m_Origins) {
+          Hit.m_Origins.push_back(Origin);
+        }
+      }
+      Hit.m_Origins.sort();
+      Hit.m_Origins.unique();      
+    }
+		
 		// Step (2): Calculate and noise timing
 		const double TimingNoise = 3.76; //ns//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be (12.5/2.35)/sqrt(2)
 		for (MNCTDEEStripHit& Hit: MergedStripHits) {
@@ -656,19 +667,27 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		}
 */
 
+
 		// Step (7): Dump event to file in ROA format
 		out<<"SE"<<endl;
 		out<<"# ID "<<Event->GetID()<<endl;
 		out<<"ID "<<++RunningID<<endl;
-//		out<<"TI "<<CardCageTiming[c]<<endl;
+    for (unsigned int i = 0; i < IAs.size(); ++i) {
+      out<<IAs[i]->ToSimString();
+    }
 		out<<"TI "<<Event->GetTime().GetAsSeconds() << endl;
-//		for (unsigned int c = 0; c < CardCagedStripHits.size(); ++c) {
-//			for (MNCTDEEStripHit Hit: CardCagedStripHits[c]) {
 		for (MNCTDEEStripHit Hit: MergedStripHits){
-				out<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<endl;
-			}
-//			}
-//		}
+			out<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing;
+      
+      MString Origins;
+      for (int Origin: Hit.m_Origins) {
+        if (Origins != "") Origins += ";";
+        Origins += Origin;
+      }
+      if (Origins == "") Origins += "-";
+      out<<" "<<Origins<<endl;
+		}
+		
 		// Never forget to delete the event
 		delete Event;
 	}

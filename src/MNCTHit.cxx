@@ -138,8 +138,22 @@ void MNCTHit::StreamEvta(ostream& S)
 {
   //! Stream the content to an ASCII file 
   
+  // Assemble the origin information;
+  vector<int> Origins;
+  for (MNCTStripHit* H: m_StripHits) {
+    for (int O: H->GetOrigins()) {
+      Origins.push_back(O);
+    }
+  }
+  sort(Origins.begin(), Origins.end());
+  Origins.erase(unique(Origins.begin(), Origins.end()), Origins.end());
+  
   S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
-       <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution<<endl;
+       <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution;
+  for (unsigned int i = 0; i < Origins.size(); ++i) {
+    S<<";"<<Origins[i]; 
+  }
+  S<<endl;
 }
 
 
