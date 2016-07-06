@@ -312,21 +312,15 @@ bool ThresholdDeterminator::ReadNextEvent(MFileReadOuts& ROAFile, MReadOutAssemb
   
   Event->Clear();
 
-  MReadOutSequence ROS;
-  ROAFile.ReadNext(ROS);
+  ROAFile.ReadNext(*Event);
 
-  if (ROS.GetNumberOfReadOuts() == 0) {
+  if (Event->GetNumberOfReadOuts() == 0) {
     cout<<"No more read-outs available in File"<<endl;
     return false;
   }
-   
-  Event->SetID(ROS.GetID());
-  Event->SetTime(ROS.GetTime());
-  Event->SetCL(ROS.GetClock());
   
-  
-  for (unsigned int r = 0; r < ROS.GetNumberOfReadOuts(); ++r) {
-    MReadOut RO = ROS.GetReadOut(r);
+  for (unsigned int r = 0; r < Event->GetNumberOfReadOuts(); ++r) {
+    MReadOut RO = Event->GetReadOut(r);
     const MReadOutElementDoubleStrip* Strip = 
       dynamic_cast<const MReadOutElementDoubleStrip*>(&(RO.GetReadOutElement()));
       
