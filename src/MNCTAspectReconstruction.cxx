@@ -380,6 +380,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 		//First, apply GPS pre-rotation matrix ZYX_
 
+    /*
 		//corrections from Crab observation 2016
 		const double dh = 5.2;
 		const double dp = -0.5;
@@ -471,7 +472,9 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		}
 		Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
 
-		/*
+    */
+    
+		// Uncorrected version:
 		Z[0][0] = cosine(-90.0);
 		Z[0][1] = 0.0 - sine(-90.0);
 		Z[0][2] = 0.0;
@@ -503,7 +506,6 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 			temp[i] = Q;
 		}
 		Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
-		*/
 
 	}
 
