@@ -353,19 +353,23 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 	double shield_time = -10;
 
 	MSimEvent* Event = 0;
-	int RunningID = 0;
+	//int RunningID = 0;
+  
 	while ((Event = Reader->GetNextEvent(false)) != 0) {
-		// Hitting Ctrl-C raises this flag
+
+    // Hitting Ctrl-C raises this flag
 		if (m_Interrupt == true) return false;
 
 		if (Event->GetNHTs() == 0) {
+      cout<<Event->GetID()<<": No hits"<<endl;
 			delete Event;
 			continue;
 		}
 
+		
 		// Step (0): Check whether events should be vetoed
 		double evt_time = Event->GetTime().GetAsSeconds();
-
+    
 		// first check if there's another shield hit above the threshold
 		// if so, veto event
 		for (unsigned int h=0; h<Event->GetNHTs(); h++){
@@ -387,6 +391,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 		if (evt_time + cc_delay < shield_time + shield_pulse_duration){
 			delete Event;
+      cout<<Event->GetID()<<": Vetoed"<<endl;
 			continue;
 		}
 
@@ -435,8 +440,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
 
 			// Not sure about if p or n-side is up, but we can debug this later
-			pSide.m_ROE.SetStripID(38-(GP.GetXGrid()+1));
-			nSide.m_ROE.SetStripID(38-(GP.GetYGrid()+1));
+			pSide.m_ROE.SetStripID(38-(GP.GetYGrid()+1));
+			nSide.m_ROE.SetStripID(38-(GP.GetXGrid()+1));
 
 //			cout << pSide.m_ROE.GetStripID() << '\t' << nSide.m_ROE.GetStripID() << endl;
 
@@ -670,10 +675,10 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 		// Step (7): Dump event to file in ROA format
 		out<<"SE"<<endl;
-		out<<"# ID "<<Event->GetID()<<endl;
-		out<<"ID "<<++RunningID<<endl;
+		out<<"ID "<<Event->GetID()<<endl;
+		//out<<"ID "<<++RunningID<<endl;
     for (unsigned int i = 0; i < IAs.size(); ++i) {
-      out<<IAs[i]->ToSimString();
+      out<<IAs[i]->ToSimString()<<endl;
     }
 		out<<"TI "<<Event->GetTime().GetAsSeconds() << endl;
 		for (MNCTDEEStripHit Hit: MergedStripHits){
