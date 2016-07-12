@@ -78,6 +78,8 @@ class MNCTDetectorEffectsEngineCOSI
 		void ParseDeadStripFile();
 		//! noise shield energy
 		double NoiseShieldEnergy(double energy, MString ShieldName);
+		//! Read and initialize charge loss coefficients
+		void InitializeChargeLoss();
 
 	private:
 		//! True, if the analysis needs to be interrupted
@@ -109,6 +111,9 @@ class MNCTDetectorEffectsEngineCOSI
 		//! Depth calibrator class
 		MNCTDepthCalibrator* m_DepthCalibrator;
 
+		//! Charge loss fit coefficients
+		double m_ChargeLossCoefficients[12][2][2];
+
 		//! Tiny helper class for MNCTDetectorEffectsEngineCOSI describing a special strip hit
 		class MNCTDEEStripHit
 		{
@@ -130,6 +135,9 @@ class MNCTDetectorEffectsEngineCOSI
 
 				vector<MNCTDEEStripHit> m_OppositeStrips;
 
+				//! 
+				int m_ID;
+
 				//! list of origins of strip hits from cosima output
 				list<int> m_Origins;
 
@@ -138,6 +146,9 @@ class MNCTDetectorEffectsEngineCOSI
 
 				//! lists indices of other substriphits that have same IA origin
 				vector<int> m_SharedOrigin;
+
+				//! for charge loss
+				int m_OppositeStrip;
 
 		};
 
@@ -290,6 +301,8 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 	static TRandom3 r(0);
 
+	static TRandom3 R(0);
+
 	// Load geometry:
 	MDGeometryQuest* Geometry = new MDGeometryQuest();
 	if (Geometry->ScanSetupFile(m_GeometryFileName) == true) {
@@ -307,6 +320,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 	ParseDeadStripFile();
 	//load threshold information
 	ParseThresholdFile();
+
+	//load charge loss coefficients
+	InitializeChargeLoss();
 
   m_DepthCalibrator = new MNCTDepthCalibrator();
 	if( m_DepthCalibrator->LoadCoeffsFile(m_DepthCalibrationCoeffsFileName) == false ){
@@ -343,6 +359,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 	//count how many events have multiple hits per strip
 	int mult_hits_counter = 0;
+	int total_hits_counter = 0;
 	int charge_loss_counter = 0;
 
 	// for shield veto: shield pulse duration and card cage delay: constant for now
@@ -407,8 +424,6 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		// Step (1): Convert positions into strip hits
 		list<MNCTDEEStripHit> StripHits;
 
-		vector<vector<MNCTDEEStripHit> > SimHits;
-		vector<MNCTDEEStripHit> tempVec;
 
 		// (1a) The real strips
 		for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
@@ -425,6 +440,13 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 			MNCTDEEStripHit pSide;
 			MNCTDEEStripHit nSide;
+
+			//should be unique identifiers
+			pSide.m_ID = h*10;
+			nSide.m_ID = h*10+5;
+
+			pSide.m_OppositeStrip = nSide.m_ID;
+			nSide.m_OppositeStrip = pSide.m_ID;
 
 			pSide.m_ROE.IsPositiveStrip(true);
 			nSide.m_ROE.IsPositiveStrip(false);
@@ -471,14 +493,19 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 			StripHits.push_back(pSide);
 			StripHits.push_back(nSide);
+//			int currentSize = StripHits.size();
+//			StripHits.at(currentSize-1).m_OppositeStrip = &StripHits.at(currentSize-2);
+//			StripHits.at(currentSize-2).m_OppositeStrip = &StripHits.at(currentSize-1);
+
+
+//			cout << pSide.m_Energy << '\t';
+//			cout << pSide.m_OppositeStrip->m_Energy << '\t';
+//			cout << nSide.m_Energy << endl;
+//			cout << nSide.m_OppositeStrip->m_Energy << endl;
 
 			//set the m_Opposite pointers to each other
 
-			//add striphits to SimHits vector
-			tempVec.clear();
-			tempVec.push_back(pSide);
-			tempVec.push_back(nSide);
-			SimHits.push_back(tempVec);
+			total_hits_counter++;
 
 		}
 
@@ -502,6 +529,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		}
 
 
+
 		// (1c): Merge strip hits
 		list<MNCTDEEStripHit> MergedStripHits;
 		while (StripHits.size() > 0) {
@@ -510,24 +538,55 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 			StripHits.pop_front();
 			Start.m_ROE = Start.m_SubStripHits.front().m_ROE;
 
+//			cout << "------" << endl;
+//			cout << Start.m_SubStripHits[0].m_Energy << '\t';
+//			cout << Start.m_SubStripHits[0].m_OppositeStrip->m_Energy << endl;
+
 			list<MNCTDEEStripHit>::iterator i = StripHits.begin();
 			while (i != StripHits.end()) {
 				if ((*i).m_ROE == Start.m_ROE) {
 					Start.m_SubStripHits.push_back(*i);
+//					cout << (*i).m_Energy << '\t';
+//					cout << (*i).m_OppositeStrip->m_Energy << endl;
 					i = StripHits.erase(i);
 				} else {
 					++i;
 				}
 			}
+//			cout << "-----------" << endl;
 			MergedStripHits.push_back(Start);
 		}
 
 		bool fromSameInteraction = true;
 		for (MNCTDEEStripHit& Hit: MergedStripHits){
+			int nIndep = 0;
 			int nSubHits = Hit.m_SubStripHits.size();
 			if (nSubHits > 1){
-				for (int i=0; i<nSubHits-1; i++){
-					for (int j=i+1; j<nSubHits; j++){
+				for (int i=0; i<nSubHits; i++){
+					bool sharedOrigin = false;
+					for (int j=0; j<nSubHits; j++){
+						if (i != j){
+							MNCTDEEStripHit& SubHit1 = Hit.m_SubStripHits.at(i);
+							MNCTDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(j);
+
+							for (int o1: SubHit1.m_Origins){
+								for (int o2: SubHit2.m_Origins){
+									if (o1 == o2){ sharedOrigin = true; }
+								}
+							}
+						}
+					}
+					if (!sharedOrigin){ nIndep++; }
+				}
+				if (nIndep == 1){ nIndep++; }
+				cout << Event->GetID() << '\t' << Hit.m_ROE.GetDetectorID() << '\t'<<  nIndep << '\t' << nSubHits << '\t';
+				cout << Hit.m_SubStripHits.at(0).m_Energy << endl;
+				mult_hits_counter += nIndep;
+			}
+		}
+
+/*
+
 						MNCTDEEStripHit& SubHit1 = Hit.m_SubStripHits.at(i);
 						MNCTDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(j);
 						fromSameInteraction = false;
@@ -543,17 +602,21 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 							//have to mark it in the strip hits so that
 							// charge loss effect can be applied
 							SubHit1.m_SharedOrigin.push_back(j);
-							SubHit2.m_SharedOrigin.push_back(i);
+//							SubHit2.m_SharedOrigin.push_back(i);
+							nSameInteraction++;
 						}
 
 						//these counters are not actually counting the right thing right now...
-						if (fromSameInteraction){ charge_loss_counter++; }
-						else{	mult_hits_counter++; }
+//						if (fromSameInteraction){ charge_loss_counter++; }
+//						else{	mult_hits_counter++; }
 					}
 				}
+				if (nSameInteraction > nSubHits){ nSameInteraction = nSubHits; }
+				mult_hits_counter += nSubHits-nSameInteraction;
+				charge_loss_counter += nSameInteraction;
 			}
 		}
-
+*/
 		// Merge origins
 		for (MNCTDEEStripHit& Hit: MergedStripHits) {
       Hit.m_Origins.clear();
@@ -587,6 +650,134 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 
 		// (3a) Do charge sharing
 		// (3b) Do charge loss
+//		for (MNCTDEEStripHit& Hit: MergedStripHits){
+/*		list<MNCTDEEStripHit>::iterator it1;
+		for (it1=MergedStripHits.begin(); it1!=MergedStripHits.end(); it1++){
+			MNCTDEEStripHit& Hit = *it1;
+			int det = Hit.m_ROE.GetDetectorID();
+			int side = 0;
+			if (Hit.m_ROE.IsPositiveStrip()){ side = 1; }
+			int nSubHits = Hit.m_SubStripHits.size();
+
+			if (nSubHits == 2){
+				int ID0 = Hit.m_SubStripHits.at(0).m_OppositeStrip;
+				int ID1 = Hit.m_SubStripHits.at(1).m_OppositeStrip;
+				cout << "IDs: " << ID0 << '\t' << ID1 << endl;
+				double m_E0 = 0;
+				double m_E1 = 0;
+
+				list<MNCTDEEStripHit>::iterator it2;
+//				for (MNCTDEEStripHit& H2: MergedStripHits){
+				for (it2=MergedStripHits.begin(); it2!=MergedStripHits.end(); it2++){
+					MNCTDEEStripHit& H2 = *it2;
+					for (unsigned int s=0; s<H2.m_SubStripHits.size(); s++){
+//						cout << H2.m_SubStripHits.at(s).m_ID << '\t' << H2.m_Energy << endl;
+						if (H2.m_SubStripHits.at(s).m_ID == ID0) { m_E0 = H2.m_SubStripHits.at(s).m_Energy; }
+						if (H2.m_SubStripHits.at(s).m_ID == ID1) { m_E1 = H2.m_SubStripHits.at(s).m_Energy; }
+					}
+				}
+
+
+				cout << Hit.m_SubStripHits.at(0).m_Energy << '\t' << m_E0 << endl;
+				cout << Hit.m_SubStripHits.at(1).m_Energy << '\t' << m_E1 << endl;
+//				cout << Hit.m_SubStripHits.at(0).m_OppositeStrip->m_Energy << '\t';
+//				cout << Hit.m_SubStripHits.at(1).m_OppositeStrip->m_Energy << endl;
+			}
+*/
+
+/*
+		for (MNCTDEEStripHit& Hit: MergedStripHits){
+			int det = Hit.m_ROE.GetDetectorID();
+			int side = 0;
+			if (Hit.m_ROE.IsPositiveStrip()){ side = 1; }
+			int nSubHits = Hit.m_SubStripHits.size();
+
+			for (int i=0; i<nSubHits; i++){
+				MNCTDEEStripHit& SubHit = Hit.m_SubStripHits.at(i);
+				//only doing ONE CASE for now
+				if (SubHit.m_SharedOrigin.size() == 1){
+//					if (fabs(SubHit.m_OppositeStrip->m_ROE.GetStripID()-Hit.m_SubStripHits.at(SubHit.m_SharedOrigin.at(0)).m_OppositeStrip->m_ROE.GetStripID()) == 1){
+					MNCTDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(SubHit.m_SharedOrigin.at(0));
+					double E1_true = 0;
+					double E2_true = 0;
+
+					int ID1 = SubHit.m_ID;
+					int ID2 = SubHit2.m_ID;
+
+					MNCTDEEStripHit* SHToCorrect1, *SHToCorrect2; 
+					bool foundSH1 = false;
+					bool foundSH2 = false;
+
+					for (MNCTDEEStripHit& H2: MergedStripHits){
+						for (unsigned int j=0; j<H2.m_SubStripHits.size(); j++){
+							if (H2.m_SubStripHits.at(j).m_ID == ID1){
+								SHToCorrect1 = &H2.m_SubStripHits.at(j);
+								foundSH1 = true;
+							}
+							if (H2.m_SubStripHits.at(j).m_ID == ID2){
+								SHToCorrect2 = &H2.m_SubStripHits.at(j);
+								foundSH2 = true;
+							}
+						}
+					}
+
+					if (!foundSH1 or !foundSH2){ continue; }
+
+					if (fabs(SHToCorrect1->m_ROE.GetStripID()-SHToCorrect2->m_ROE.GetStripID())>1){ continue; }
+
+					E1_true = SHToCorrect1->m_Energy;
+					E2_true = SHToCorrect2->m_Energy;
+
+
+//					cout << E1_true << '\t' << E2_true << endl;
+//					cout << fabs(E1_true - E2_true) << endl;
+//					if (fabs(E1_true-E2_true) < 392){ break; }
+					//assuming frac stays constant throughout this (not sure about this)
+					double frac = fabs(E1_true - E2_true)/(E1_true + E2_true);
+//					double frac = R.Uniform(M-0.1,M+0.1);
+//					double frac = R.Gaus(M,0.25);
+//					if (frac > 1){ frac = M; }
+
+
+
+					//linearly interpolate B from charge loss interpolation coeffs
+					double A0 = m_ChargeLossCoefficients[det][side][0];
+					double A1 = m_ChargeLossCoefficients[det][side][1];
+//					double B = A0 + A1*(E1_true + E2_true);
+					//sum is E1+E2 once charge loss effect is applied
+					double mean = (E1_true+E2_true-A0*(E1_true+E2_true-frac))/(1+A1*(E1_true+E2_true-frac));
+//					double sum = E1_true+E2_true-B*(E1_true+E2_true - frac);
+//					if (E1_true+E2_true > 630){ cout << E1_true + E2_true << '\t' << sum<<'\t'<<frac<<'\t' <<E1_true << '\t' << E2_true<< endl; }
+					double sigma = 8;
+//					TRandom R;
+					double sum = R.Gaus(mean,sigma);
+					if (sum > 662){ sum = mean; }
+
+//					cout << "resetting energy" << endl;
+*/
+/*
+					if (E1_true+E2_true > 600){
+						cout << "****" << endl;
+						cout << E1_true+E2_true << '\t' << sum << endl;
+						cout << M << '\t' << frac << endl;
+						cout << E1_true << '\t' << E2_true << endl;
+						cout << 0.5*sum*(1+frac) << '\t' << 0.5*sum*(1-frac) << endl;
+					}
+*/
+/*					if (E1_true > E2_true){
+						SHToCorrect1->m_Energy = 0.5*sum*(1+frac);
+						SHToCorrect2->m_Energy = 0.5*sum*(1-frac);
+					}
+					else {
+						SHToCorrect1->m_Energy = 0.5*sum*(1-frac);
+						SHToCorrect2->m_Energy = 0.5*sum*(1+frac);
+					}
+
+//				}
+			}
+		}
+		}
+*/
 
 		// (3c) Noise energy deposit
 		for (MNCTDEEStripHit& Hit: MergedStripHits) {
@@ -632,15 +823,15 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 		}
 
 		// (4b) Handle trigger thresholds make sure we throw out timing too!
-		list<MNCTDEEStripHit>::iterator i = MergedStripHits.begin();
-		while (i != MergedStripHits.end()) {
-			if ((*i).m_Energy < 20) { // Dummy threshold of 0 keV sharp
-				i = MergedStripHits.erase(i);
+		list<MNCTDEEStripHit>::iterator k = MergedStripHits.begin();
+		while (k != MergedStripHits.end()) {
+			if ((*k).m_Energy < 20) { // Dummy threshold of 0 keV sharp
+				k = MergedStripHits.erase(k);
 			} else {
-				if((*i).m_Energy < 55){
-					(*i).m_Timing = 0.0;
+				if((*k).m_Energy < 55){
+					(*k).m_Timing = 0.0;
 				}
-				++i;
+				++k;
 			}
 		}
 
@@ -700,8 +891,9 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 	//  spectrum->Draw();
 	//  specCanvas.Print("spectrum_adc.pdf");
 
-//	cout << "number of events with multiple hits per strip: " << mult_hits_counter << endl;
-//	cout << "charge loss applies counter: " << charge_loss_counter << endl;
+	cout << "total hits: " << total_hits_counter << endl;
+	cout << "number of events with multiple hits per strip: " << mult_hits_counter << endl;
+	cout << "charge loss applies counter: " << charge_loss_counter << endl;
 
 	// Some cleanup
 	out<<"EN"<<endl<<endl;
@@ -779,6 +971,77 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
 
 }
 
+/******************************************************************************
+ * Calculate new summed energy of two strips affected by charge loss
+ */
+void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
+{ 
+
+	vector<string> filenames;
+	filenames.push_back("./ChargeLossCorrectionScaled_Ba133.log");
+	filenames.push_back("./ChargeLossCorrectionScaled_Cs137.log");
+
+	vector<vector<vector<double> > > coefficients;
+
+	for (unsigned int f=0; f<filenames.size(); f++){
+		vector<double> tempOneDet;
+		vector<vector<double> > tempOneSource;
+		string line;
+		int c=0;
+		double B;
+
+		ifstream clFile;
+		clFile.open(filenames.at(f));
+
+		if (clFile.is_open()){
+			while (!clFile.eof()){
+				c++;
+				getline(clFile,line);
+
+				if (c <= 24){
+					B = stod(line);
+					if (c%2 != 0){ tempOneDet.push_back(B);}
+					else {
+						tempOneDet.push_back(B);
+						tempOneSource.push_back(tempOneDet);
+						tempOneDet.clear();
+					}
+				}
+			}
+		}
+
+		clFile.close();
+		coefficients.push_back(tempOneSource);
+		tempOneSource.clear();
+	}
+
+	double energies[2] = {356,662};
+	double points[2];
+	double A0;
+	double A1;
+
+	for (int det=0; det<12; det++){
+		for (int side=0; side<2; side++){
+			points[0] = coefficients.at(0).at(det).at(side);
+			points[1] = coefficients.at(1).at(det).at(side);
+
+			TGraph *g = new TGraph(2,energies,points);
+			TF1 *f = new TF1("f","[0]+[1]*x",energies[0],energies[1]);
+			g->Fit("f","RQ");
+
+			A0 = f->GetParameter(0);
+			A1 = f->GetParameter(1);
+
+			m_ChargeLossCoefficients[det][side][0] = A0;
+			m_ChargeLossCoefficients[det][side][1] = A1;
+
+			delete g;
+			delete f;
+		}
+	}
+
+
+}
 /******************************************************************************
  * Read in thresholds
  */

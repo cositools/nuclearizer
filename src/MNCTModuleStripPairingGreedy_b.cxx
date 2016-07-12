@@ -149,6 +149,8 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
     if (nHits[0]>0 && nHits[1]>0 && runRest==true){
 	    InitializeKillMatrices();
 	    CheckForAdjacentStrips();
+			AddMultipleHits(0);
+			AddMultipleHits(1);
 			CheckForBadCombinations();
 			firstChiSq = FindFinalPairs();
 
@@ -193,8 +195,8 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 					finalPairEnergy.clear();
 					finalPairRes.clear();
 
-					AddMultipleHits(0);
-					AddMultipleHits(1);
+//					AddMultipleHits(0);
+//					AddMultipleHits(1);
 
 					CheckForBadCombinations();
 					thirdChiSq = FindFinalPairs();
@@ -280,6 +282,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 
 
      	CalculateDetectorQuality();
+			if (Event->GetID() == 33){ PrintFinalPairs(); }
 			WriteHits(Event, detector);
 
 /*			if (thirdChiSq != -1){
@@ -1955,15 +1958,16 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 			}
 			else { chargeSharing.push_back(1); }
 		}
-    
-/*    cout << "pair: "  << endl;
+/*   
+   cout << "pair: "  << endl;
     for (int j=0; j<pair.size(); j++){
       for (int k=0; k<pair[j].size(); k++){
         cout << pair[j][k] << '\t' ;
         cout << pair[j][k] << endl;
       }
     }
-  */  
+*/
+
     xVec.clear();
     yVec.clear();
     pair.clear();

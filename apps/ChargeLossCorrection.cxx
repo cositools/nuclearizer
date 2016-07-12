@@ -35,6 +35,7 @@ using namespace std;
 #include <TH1.h>
 #include <TH2.h>
 #include <TStopwatch.h>
+#include <TProfile.h>
 
 // MEGAlib
 #include "MGlobal.h"
@@ -46,8 +47,11 @@ using namespace std;
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
+#include "MNCTBinaryFlightDataParser.h"
+#include "MNCTModuleMeasurementLoaderBinary.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleCrosstalkCorrection.h"
 #include "MNCTModuleChargeSharingCorrection.h"
 #include "MAssembly.h"
 
@@ -84,6 +88,8 @@ private:
 	MString m_OutFile;
 	//! energy E0
 	float m_E0;
+	//! option to correct charge loss or not
+	bool m_CorrectCL;
 
 };
 
@@ -124,6 +130,7 @@ bool ChargeLossCorrection::ParseCommandLine(int argc, char** argv)
 	Usage<<"                example: -s detID side"<< endl;
 	Usage<<"                side can be n or p"<< endl;
 	Usage<<"         -o:   outfile" << endl;
+	Usage<<"         -c:   correct charge loss" << endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -137,6 +144,8 @@ bool ChargeLossCorrection::ParseCommandLine(int argc, char** argv)
       return false;
     }
   }
+
+	m_CorrectCL = false;
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
@@ -172,13 +181,16 @@ bool ChargeLossCorrection::ParseCommandLine(int argc, char** argv)
     } 
 
 		if (Option == "-e"){
-			m_E0 = atof(argv[i+1]);
+			m_E0 = atof(argv[++i]);
 		}
 
 		if (Option == "-o"){
-			m_OutFile = string(argv[i+1]);
+			m_OutFile = string(argv[++i]);
 		}
 
+		if (Option == "-c"){
+			m_CorrectCL = true;
+		}
 
 	}
 
@@ -193,7 +205,23 @@ bool ChargeLossCorrection::ParseCommandLine(int argc, char** argv)
 bool ChargeLossCorrection::Analyze()
 {
 	cout << "E0: " << m_E0 << endl;
+	cout << "correctCL: " << m_CorrectCL << endl;
 
+
+/*	TH2D* h2 = new TH2D("fracmap","fracmap",356*2,-356,356,35,356-30,356+5);
+//	for (int i=-662; i<662; i++){
+//		for (int j=662-30; j<662+5; j++){
+	for (int i=0; i<356*2; i++){
+		for (int j=0; j<35; j++){
+			float c = ((float)i-356)/((float)j+356-30);
+			cout << c << endl;
+			h2->SetBinContent(i,j,c);
+		}
+	}
+	TCanvas *ctemp = new TCanvas();
+	h2->Draw("colz");
+	ctemp->Print("frac_map.pdf");
+*/	
 	//time code just to see
 	TStopwatch watch;
 	watch.Start();
@@ -202,24 +230,38 @@ bool ChargeLossCorrection::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
+  MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
+//	MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
   Loader->SetFileName(m_FileName);
+	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
+	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
+	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
   
   MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
-  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/EnergyCalibration.ecal");
+  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_051016.ecal");
   S->SetModule(Calibrator, 1);
   
   MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
   S->SetModule(Pairing, 2);
 
-//	MNCTModuleChargeSharingCorrection* ChargeLoss = new MNCTModuleChargeSharingCorrection();
-//	S.SetModule(ChargeLoss, 3);
+	MNCTModuleCrosstalkCorrection* CrossTalk = new MNCTModuleCrosstalkCorrection();
+	CrossTalk->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Berkeley/CrossTalkCorrection_Results.txt");
+	S->SetModule(CrossTalk,3);
+
+	MNCTModuleChargeSharingCorrection* ChargeLoss = new MNCTModuleChargeSharingCorrection();
+	S->SetModule(ChargeLoss,4);
+
 
   if (Loader->Initialize() == false) return false;
   if (Calibrator->Initialize() == false) return false;
   if (Pairing->Initialize() == false) return false;
-  
+	if (CrossTalk->Initialize() == false) return false;
+  if (m_CorrectCL){
+		if (ChargeLoss->Initialize() == false) return false;
+	}
+
+
   map<int, TH2D*> Histograms;
  	vector<vector<vector<float> > > crossTalkCoeffs;
 	crossTalkCoeffs = LoadCrossTalk(); 
@@ -228,155 +270,117 @@ bool ChargeLossCorrection::Analyze()
   MReadOutAssembly* Event = new MReadOutAssembly();
   while (IsFinished == false && m_Interrupt == false) {
     Event->Clear();
-    Loader->AnalyzeEvent(Event);
-    Calibrator->AnalyzeEvent(Event);
-    Pairing->AnalyzeEvent(Event);
+		if (Loader->IsReady() ){
+	    Loader->AnalyzeEvent(Event);
+	    Calibrator->AnalyzeEvent(Event);
+	    Pairing->AnalyzeEvent(Event);
+			CrossTalk->AnalyzeEvent(Event);
+			if (m_CorrectCL) {ChargeLoss->AnalyzeEvent(Event);}
 
-	  if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
-			vector<int> xStripIDs, yStripIDs;
-			vector<float> xEnergy, yEnergy;
-			for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
-				//variables to add to histograms
-				float sum = 0.0;
-				float diff = 0.0;
-				float xE, yE = 0.0;
-				float dE = 0.0;
-				int detectorID = 0;
-				int histID = -1;
+			if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
+//		  if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
+				vector<int> xStripIDs, yStripIDs;
+				vector<float> xEnergy, yEnergy;
+				for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+					//variables to add to histograms
+					float sum = 0.0;
+					float diff = 0.0;
+					float scaled_sum = 0.0;
+					float frac = 0.0;
+					float xE, yE = 0.0;
+					int detectorID = 0;
+					int histID = -1;
+	
+					if (Event->GetHit(h)->GetNStripHits()==3){
+						for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); s++){
+							detectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
+							if (Event->GetHit(h)->GetStripHit(s)->IsXStrip()){
+								xStripIDs.push_back(Event->GetHit(h)->GetStripHit(s)->GetStripID());
+								xE = Event->GetHit(h)->GetStripHit(s)->GetEnergy();
+								xEnergy.push_back(xE);
+							}
+							else {
+								yStripIDs.push_back(Event->GetHit(h)->GetStripHit(s)->GetStripID());
+								yE = Event->GetHit(h)->GetStripHit(s)->GetEnergy();
+								yEnergy.push_back(yE);
+							}
+						}
+						if (xStripIDs.size() == 2){
+							if (fabs(xStripIDs.at(0)-xStripIDs.at(1)) == 1){
+								sum = xEnergy.at(0) + xEnergy.at(1);
+								if (m_CorrectCL){ sum = Event->GetHit(h)->GetEnergy(); }
+								diff = fabs(xEnergy.at(0) - xEnergy.at(1));
+								scaled_sum = sum/m_E0;
+								frac = diff/sum;
+								histID = 10*detectorID;
+							}
+						}
+						else if (yStripIDs.size() == 2){
+							if (fabs(yStripIDs.at(0)-yStripIDs.at(1)) == 1){
+								sum = yEnergy.at(0) + yEnergy.at(1);
+								if (m_CorrectCL){ sum = Event->GetHit(h)->GetEnergy(); }
+								diff = fabs(yEnergy.at(0) - yEnergy.at(1));
+								scaled_sum = sum/m_E0;
+								frac = diff/sum;
+								histID = 10*detectorID + 1;
+							}
+							else {
+	//							cout << "not accepted: " << endl;
+	//							cout << yStripIDs.at(0) << '\t' << yStripIDs.at(1) << endl;
+	//							cout << yEnergy.at(0) << '\t' << yEnergy.at(1) << endl;
+							}
+						}
+		      	if (histID != -1) {
+							int nxbins = m_E0*2;
+							int nybins = 35;
+							int xlowlim = -1;
+							int xhighlim = 1;
+							float ylowlim = (m_E0-30)/m_E0;  //30.0/m_E0;
+							float yhighlim = (m_E0+5)/m_E0; //5.0/m_E0;
 
-				if (Event->GetHit(h)->GetNStripHits()==3){
-					for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); s++){
-						detectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
-						if (Event->GetHit(h)->GetStripHit(s)->IsXStrip()){
-							xStripIDs.push_back(Event->GetHit(h)->GetStripHit(s)->GetStripID());
-							xE = Event->GetHit(h)->GetStripHit(s)->GetEnergy();
-							//cross talk correction
-							dE = crossTalkCoeffs[detectorID][1][0] + crossTalkCoeffs[detectorID][1][1]*xE;
-							xEnergy.push_back(xE-dE);
-						}
-						else {
-							yStripIDs.push_back(Event->GetHit(h)->GetStripHit(s)->GetStripID());
-							yE = Event->GetHit(h)->GetStripHit(s)->GetEnergy();
-							//cross talk correction
-							dE = crossTalkCoeffs[detectorID][0][0] + crossTalkCoeffs[detectorID][0][1]*yE;
-							yEnergy.push_back(yE-dE);
-						}
-					}
-					if (xStripIDs.size() == 2){
-						if (fabs(xStripIDs.at(0)-xStripIDs.at(1)) == 1){
-			//				cout << "P accepted: " << endl;
-			//				cout << xStripIDs.at(0) << '\t' << xStripIDs.at(1) << endl;
-			//				cout << xEnergy.at(0) << '\t' << xEnergy.at(1) << endl;
-							sum = xEnergy.at(0) + xEnergy.at(1);
-							diff = fabs(xEnergy.at(0) - xEnergy.at(1));
-							histID = 10*detectorID;
-//							cout << "sum: " << sum << endl;
-//							cout << "n energy: " << yEnergy.at(0) << endl;
-//							cout << "diff: " << diff << endl;
-							dummy_func();
-						}
-					}
-					else if (yStripIDs.size() == 2){
-						if (fabs(yStripIDs.at(0)-yStripIDs.at(1)) == 1){
-//							cout << "N accepted: " << endl;
-//							cout << yStripIDs.at(0) << '\t' << yStripIDs.at(1) << endl;
-//							cout << yEnergy.at(0) << '\t' << yEnergy.at(1) << endl;
-							sum = yEnergy.at(0) + yEnergy.at(1);
-							diff = fabs(yEnergy.at(0) - yEnergy.at(1));
-							histID = 10*detectorID + 1;
-//							cout << "sum: " << sum << endl;
-//							cout << "p energy: " << xEnergy.at(0) << endl;
-//							cout << "diff: " << diff << endl;
-							dummy_func();
-						}
-						else {
-//							cout << "not accepted: " << endl;
-//							cout << yStripIDs.at(0) << '\t' << yStripIDs.at(1) << endl;
-//							cout << yEnergy.at(0) << '\t' << yEnergy.at(1) << endl;
-						}
-					}
-	      	if (histID != -1) {
-						int nxbins = 0;
-						int nybins = 0;
-						int xlowlim = 0;
-						int xhighlim = 0;
-						int ylowlim = 0;
-						int yhighlim = 0;
-						if (m_E0 == 662.){
-							ylowlim = 630;
-							yhighlim = 680;
-							nybins = 50;
-							xlowlim = -600;
-							xhighlim = 600;
-							nxbins = 1200;
-						}
-						else if (m_E0 == 1333.){
-							ylowlim = 1300;
-							yhighlim = 1350;
-							nybins = 50;
-							xlowlim = -1500;
-							xhighlim = 1500;
-							nxbins = 3000;
-						}
-						else if (m_E0 == 356.){
-							ylowlim = 325;
-							yhighlim = 365;
-							nybins = 40;
-							xlowlim = -300;
-							xhighlim = 300;
-							nxbins = 600;
-						}
-						else if (m_E0 == 122){
-							ylowlim = 90;
-							yhighlim = 130;
-							nybins = 40;
-							xlowlim = -100;
-							xhighlim = 100;
-							nxbins = 200;
-						}
-	      	  if (Histograms[histID] == 0) {
-		      	   TH2D* Hist = new TH2D("", "", nxbins,xlowlim,xhighlim,nybins,ylowlim,yhighlim);
-							if (histID%10 == 0){
-		      	    Hist->SetTitle(MString("Detector ")+detectorID+MString(" p Side"));
-							}
-							else if (histID%10 == 1){
-								Hist->SetTitle(MString("Detector ")+detectorID+MString(" n Side"));
-							}
-	      	    Hist->SetXTitle("Difference [keV]");
-	      	    Hist->SetYTitle("Sum [keV]");
-	      	    Histograms[histID] = Hist;
-	      	  }
-	      	  Histograms[histID]->Fill(diff,sum);
-						Histograms[histID]->Fill(-diff,sum);
-	      	}
-	  	  }
-//				cout << "----------" << endl;
-				xEnergy.clear();
-				yEnergy.clear();
-				xStripIDs.clear();
-				yStripIDs.clear();
+							if (m_CorrectCL){ yhighlim = (m_E0+30)/m_E0; nybins = 60; }
+
+		      	  if (Histograms[histID] == 0) {
+			      	   TH2D* Hist = new TH2D("", "", nxbins,xlowlim,xhighlim,nybins,ylowlim,yhighlim);
+								if (histID%10 == 0){
+			      	    Hist->SetTitle(MString("Detector ")+detectorID+MString(" p Side"));
+									Hist->SetName(MString("Det")+detectorID+MString("Pside"));
+								}
+								else if (histID%10 == 1){
+									Hist->SetTitle(MString("Detector ")+detectorID+MString(" n Side"));
+									Hist->SetName(MString("Det")+detectorID+MString("Nside"));
+								}
+		      	    Hist->SetXTitle("Fraction");
+		      	    Hist->SetYTitle("Sum [keV]");
+		      	    Histograms[histID] = Hist;
+		      	  }
+//							cout << "frac: " << frac << "    scaled_sum: " << scaled_sum << endl;
+		      	  Histograms[histID]->Fill(frac,scaled_sum);
+							Histograms[histID]->Fill(-frac,scaled_sum);
+		      	}
+		  	  }
+	//				cout << "----------" << endl;
+					xEnergy.clear();
+					yEnergy.clear();
+					xStripIDs.clear();
+					yStripIDs.clear();
+				}
 			}
-		}
- 
+
+		} 
     IsFinished = Loader->IsFinished();
 	}
 
-
 	//fit and plot histograms
 	//make fit functions
-	int low=300;
-	int high=600;
-	if (m_E0 == 356){
-		low = 150;
-		high = 300;
-	}
-	else if (m_E0 == 1333){
-		low = 1000;
-		high = 1500;
-	}
-	TF1* highE_fitFunc = new TF1("highE","[1]-[0]*([1]-x)",low,high);
+
+	float DMax = m_E0*((m_E0-511./2)/(m_E0+511./2));
+
+//	TF1* highE_fitFunc = new TF1("highE","[1]-[0]*([1]-x)",DMax+0.15*m_E0,m_E0);
+	TF1* highE_fitFunc = new TF1("highE","([1]-[0]*([1]-x))/[1]",(DMax+0.15*m_E0)/m_E0,m_E0);
 	highE_fitFunc->FixParameter(1,m_E0);
-	TF1* lowE_fitFunc = new TF1("lowE","[1]-([0]/(2*[1]))*([1]*[1]-x*x)",0,100);
+//	TF1* lowE_fitFunc = new TF1("lowE","[1]-([0]/(2*[1]))*([1]*[1]-x*x)",0,m_E0);
+	TF1* lowE_fitFunc = new TF1("lowE","1-([0]/(2*[1]*[1]))*([1]*[1]-x*x)",0,1);
 	lowE_fitFunc->FixParameter(1,m_E0);
 
 	//setup output file
@@ -384,34 +388,92 @@ bool ChargeLossCorrection::Analyze()
 	logFitStats.open("ChargeLossCorrection.log");
 	logFitStats << "Det" << '\t' << "side" << '\t' << "B" << endl << endl;
 
-	int det=0;
-	int side=0;
-	int i=0;
+
+	//make map of TProfiles, save histograms
+  map<int, TProfile*> Profiles;
+
+	map<int, TH1D*> Projections;
+
 	for (auto H: Histograms){
+		if (H.first == 0){
 		TCanvas* C = new TCanvas();
-		C->SetWindowSize(1000,1000);
 //		C->SetLogz();
 		C->cd();
 		H.second->Draw("colz");
+
+		int det = H.first/10;
+		int side=0;
+		if (H.first%10 != 0){ side=1; }
+		TFile f(m_OutFile+MString("_Det")+det+MString("_Side")+side+MString("_Hist.root"),"new");
+		H.second->Write();
+		f.Close();
+
+		TH2D* tempHist = (TH2D*)H.second->Clone();
+		double max_val = tempHist->GetMaximum();
+		cout << H.second->GetEntries() << '\t' << max_val << endl;
+		for (int x=0; x<tempHist->GetNbinsX(); x++){
+			for (int y=0; y<tempHist->GetNbinsY(); y++){
+				if (tempHist->GetBinContent(x,y) < max_val/2.){
+					tempHist->SetBinContent(x,y,0);
+					tempHist->SetBinError(x,y,0);
+				}
+			}
+		}
+
+		int nBins = H.second->GetNbinsX();
+		for (int b=m_E0+0.05*nBins/2.+1; b<nBins; b+=0.05*nBins/2.){
+			float f = H.second->GetXaxis()->GetBinCenter(b);
+			cout << b << '\t' << f << endl;
+//		if (H.first == 0){
+			TH1D* Proj = H.second->ProjectionY(MString("f")+f,b-0.05*nBins,b,"");
+			Proj->SetTitle(MString("Frac=")+f);
+			Projections[b] = Proj;
+		}
+		for (auto P: Projections){
+			TCanvas* C2 = new TCanvas();
+			C2->cd();
+			P.second->Draw();
+		}
+		}
+
+		}
+/*
+		TProfile* P = tempHist->ProfileX();
+//		TProfile* P = H.second->ProfileX();
+		Profiles[H.first] = P;
+	}
+	}
+
+	//fit Profiles and log fit statistics
+	for (auto P: Profiles){
+		TCanvas* C = new TCanvas();
+		C->cd();
+
 		double param = 0.0;
 		if (m_E0 > 300){
-			H.second->Fit("highE","R");
+			P.second->Fit("highE","R");
 			param = highE_fitFunc->GetParameter(0);
 		}
 		else {
-			H.second->Fit("lowE","R");
+			P.second->Fit("lowE","R");
 			param = lowE_fitFunc->GetParameter(0);
 		}
-		C->Update();
 
-		det = i/2;
-		side = i%2;
+//		P.second->Draw();
+
+		int det = P.first/10;
+		int side=0;
+		if (P.first%10 != 0){ side=1; }
+
 		logFitStats << det << '\t' << side << '\t' << param << endl;
 
-		C->Print(m_OutFile+MString("_Det")+det+MString("_Side")+side+MString(".pdf"));
-		i++;
-	}
+		TFile f(m_OutFile+MString("_Det")+det+MString("_Side")+side+MString("_Profile.root"),"new");
+		P.second->Write();
+		f.Close();
 
+//		C->Print(m_OutFile+MString("_Det")+det+MString("_Side")+side+MString(".pdf"));
+	}
+*/
 	watch.Stop();
 	cout << "total time (s): " << watch.CpuTime() << endl;
  

@@ -57,6 +57,8 @@ using namespace std;
 //#include "MReadOutDataADCValueWithTiming.h"
 #include "MSupervisor.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
+#include "MNCTBinaryFlightDataParser.h"
+#include "MNCTModuleMeasurementLoaderBinary.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleStripPairingGreedy_b.h"
 #include "MNCTModuleCrosstalkCorrection.h"
@@ -157,6 +159,7 @@ bool ChargeLossOffsets::ParseCommandLine(int argc, char** argv)
     }
   }
 
+
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
@@ -215,15 +218,14 @@ bool ChargeLossOffsets::ParseCommandLine(int argc, char** argv)
 			cout << "Accepting output file name: " << m_Outfile << endl;
 		}
 
-	}
 
-	if (Option == "-c"){
-		correctCL = true;
-		cout << "applying charge loss correction" << endl;
-	}
-	else { correctCL = false; }
-	cout << "correcting charge loss?" << '\t' << correctCL << endl;
+		if (Option == "-c"){
+			correctCL = atoi(argv[i+1]);
+		}
+//		else { correctCL = false; }
+		cout << "correcting charge loss?" << '\t' << correctCL << endl;
 
+	}
 	return true;
 }
 
@@ -244,12 +246,16 @@ bool ChargeLossOffsets::Analyze()
   MSupervisor *S = MSupervisor::GetSupervisor();
   
   MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
+//	MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
   Loader->SetFileName(m_FileName);
+//	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
+//	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
+//	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
-  
+ 
   MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
 //  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/EnergyCalibration.ecal");
-	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/Palestine/EnergyCalibration.ecal");
+	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/EnergyCalibration.ecal");
   S->SetModule(Calibrator, 1);
   
   MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
@@ -257,6 +263,7 @@ bool ChargeLossOffsets::Analyze()
   S->SetModule(Pairing, 2);
 
 	MNCTModuleCrosstalkCorrection* CrossTalk = new MNCTModuleCrosstalkCorrection();
+	CrossTalk->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/CrossTalkCorrection_Results_060716.txt");
 	S->SetModule(CrossTalk,3);
 
 	MNCTModuleChargeSharingCorrection* ChargeLoss = new MNCTModuleChargeSharingCorrection();
@@ -268,7 +275,6 @@ bool ChargeLossOffsets::Analyze()
 	if (CrossTalk->Initialize() == false) return false; 
 	if (ChargeLoss->Initialize() == false) return false;
 
-
   map<int, TH1D*> Histograms; 
  
   bool IsFinished = false;
@@ -276,64 +282,79 @@ bool ChargeLossOffsets::Analyze()
 
 	while (IsFinished == false && m_Interrupt == false) {
 		Event->Clear();
-		Loader->AnalyzeEvent(Event);
-		Calibrator->AnalyzeEvent(Event);
- 		Pairing->AnalyzeEvent(Event);
-		CrossTalk->AnalyzeEvent(Event);
+		if (Loader->IsReady() ){
+			Loader->AnalyzeEvent(Event);
+			Calibrator->AnalyzeEvent(Event);
+	 		Pairing->AnalyzeEvent(Event);
+//			CrossTalk->AnalyzeEvent(Event);
+	
+			if (correctCL==1){ChargeLoss->AnalyzeEvent(Event);}
+	
+//			CrossTalk->AnalyzeEvent(Event);
 
-		if (correctCL){ChargeLoss->AnalyzeEvent(Event);}
+//			if (Event->HasAnalysisProgress(MAssembly::c_CrosstalkCorrection) == true) {
+			if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
+				int nHits = Event->GetNHits();
+				for (int h=0; h<nHits; h++){
+					MNCTHit *Hit = Event->GetHit(h);
+					//exclude anything w multiple hits per strip
+					if (Hit->GetStripHitMultipleTimesX() == false && Hit->GetStripHitMultipleTimesY() == false){
+					int nStripHits = Hit->GetNStripHits();
+					int nXStripHits = 0, nYStripHits = 0;
+	
+					int detector = 0;
+					int histID = -1;
+	
+					double hitEnergy = 0.0;
+					double xEnergy = 0.0;
+					double yEnergy = 0.0;
 
-		if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
-			int nHits = Event->GetNHits();
-			for (int h=0; h<nHits; h++){
-				MNCTHit *Hit = Event->GetHit(h);
-				//exclude anything w multiple hits per strip
-				if (Hit->GetStripHitMultipleTimes() == false){
-				int nStripHits = Hit->GetNStripHits();
-				int nXStripHits = 0, nYStripHits = 0;
-
-				int detector = 0;
-				int histID = -1;
-
-				double hitEnergy = 0.0;
-				double xEnergy = 0.0;
-				double yEnergy = 0.0;
-
-				for (int sh=0; sh<nStripHits; sh++){
-					MNCTStripHit *StripHit = Hit->GetStripHit(sh);
-					detector = StripHit->GetDetectorID();
-
-					if (StripHit->IsXStrip() == true){
-						nXStripHits++;
-						xEnergy += StripHit->GetEnergy();
+					vector<int> xStripIDs;
+					vector<int> yStripIDs;
+	
+					for (int sh=0; sh<nStripHits; sh++){
+						MNCTStripHit *StripHit = Hit->GetStripHit(sh);
+						detector = StripHit->GetDetectorID();
+	
+						if (StripHit->IsXStrip() == true){
+							nXStripHits++;
+							xEnergy += StripHit->GetEnergy();
+							xStripIDs.push_back(StripHit->GetStripID());
+						}
+						else {
+							nYStripHits++;
+							yEnergy += StripHit->GetEnergy();
+							yStripIDs.push_back(StripHit->GetStripID());
+						}
 					}
-					else {
-						nYStripHits++;
-						yEnergy += StripHit->GetEnergy();
+					//get all hits with 2 adj strips on p side
+					if (nXStripHits==2 && nYStripHits==1){
+//						cout << xEnergy << '\t' << Hit->GetEnergy() << endl;
+						if (fabs(xStripIDs[0]-xStripIDs[1])==1){
+							histID = 10*detector;
+							hitEnergy = xEnergy;
+						}
 					}
-				}
-				//get all hits with 2 adj strips on p side
-				if (nXStripHits==2 && nYStripHits==1){
-					histID = 10*detector;
-	//				hitEnergy = xEnergy;
-				}
-				//get all hits with 2 adj strips on n side
-				else if (nXStripHits==1 && nYStripHits==2){
-					histID = 10*detector+1;
-//					hitEnergy = yEnergy;
-				}
-
-				if (histID != -1){
-					if (Histograms[histID] == 0){
-//						TH1D* Hist = new TH1D("","",100,lineEnergy-30,lineEnergy+30);
-						TH1D* Hist = new TH1D("","",500,lineEnergy-30,lineEnergy+30);
-						Hist->SetXTitle("Energy (keV)");
-						Hist->SetYTitle("Counts");
-
-						Histograms[histID] = Hist;
+					//get all hits with 2 adj strips on n side
+					else if (nXStripHits==1 && nYStripHits==2){
+						if (fabs(yStripIDs[0]-yStripIDs[1])==1){
+							histID = 10*detector+1;
+							hitEnergy = yEnergy;
+						}
 					}
-					hitEnergy = Hit->GetEnergy();
-					Histograms[histID]->Fill(hitEnergy);
+	
+					if (histID != -1){
+						if (Histograms[histID] == 0){
+	//						TH1D* Hist = new TH1D("","",100,lineEnergy-30,lineEnergy+30);
+							TH1D* Hist = new TH1D("","",500,lineEnergy-30,lineEnergy+30);
+							Hist->SetXTitle("Energy (keV)");
+							Hist->SetYTitle("Counts");
+	
+							Histograms[histID] = Hist;
+						}
+						hitEnergy = Hit->GetEnergy();
+						Histograms[histID]->Fill(hitEnergy);
+					}
 				}
 			}
 		}
@@ -382,11 +403,19 @@ bool ChargeLossOffsets::Analyze()
 
 			if (side == 0){
 				Histograms[histID]->SetTitle(MString("Detector ")+det+MString(" p side"));
+				Histograms[histID]->SetName(MString("Det")+det+MString("Pside"));
 			}
-			else {Histograms[histID]->SetTitle(MString("Detector ")+det+MString(" n side"));}
+			else {
+				Histograms[histID]->SetTitle(MString("Detector ")+det+MString(" n side"));
+				Histograms[histID]->SetName(MString("Det")+det+MString("Nside"));
+			}
 
 			Histograms[histID]->Draw();
-			Histograms[histID]->Fit("f_gausstail","R");
+//			Histograms[histID]->Fit("f_gausstail","R");
+
+			TFile f(m_Outfile+MString("_Det")+det+MString("_Side")+side+MString("_Spectrum.root"),"new");
+			Histograms[histID]->Write();
+			f.Close();
 
 			double mean = f_gausstail->GetParameter(3);
 			double meanErr = f_gausstail->GetParError(3);
