@@ -82,7 +82,8 @@ MNCTModuleChargeSharingCorrection::MNCTModuleChargeSharingCorrection() : MModule
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
 
-	nSources = 4;
+//	m_nSources = 4;
+	m_nSources = 3;
 }
 
 
@@ -101,7 +102,11 @@ MNCTModuleChargeSharingCorrection::~MNCTModuleChargeSharingCorrection()
 bool MNCTModuleChargeSharingCorrection::Initialize()
 {
   // Initialize the module 
-  
+
+ 	//load correction files
+	LoadCorrectionInfo();
+//	LoadCorrectionInfoUpdated();
+ 
   return true;
 }
 
@@ -111,8 +116,6 @@ bool MNCTModuleChargeSharingCorrection::Initialize()
 
 bool MNCTModuleChargeSharingCorrection::AnalyzeEvent(MReadOutAssembly* Event) 
 {
-	//load correction files
-	LoadCorrectionInfo();
 
 
   // Main data analysis routine, which updates the event to a new level 
@@ -194,39 +197,18 @@ bool MNCTModuleChargeSharingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       {
         if (((XStripID[0]-XStripID[1])==1) || ((XStripID[0]-XStripID[1])==-1))
         {
-					double correctedE0 = EstimateE0(XEnergy[0],XEnergy[1],detector,0);
-					//for debugging
-/*					if ((correctedE0 < 760&&correctedE0 > 560) || (XTotalEnergy<760 && XTotalEnergy>560) || (YTotalEnergy<760 && YTotalEnergy>560)){
-						cout << "y total energy: " << YTotalEnergy << endl;
-						cout << "x total energy: " << XTotalEnergy << endl;
-						cout << "xEnergy[0]: " << XEnergy[0] << endl;
-						cout << "xEnergy[1]: " << XEnergy[1] << endl;
-						cout << "yEnergy[0]: " << YEnergy[0] << endl;
-						cout << "corrected energy: " << correctedE0 << endl;
-						dummy_func();
-					}
-*/
-					//print original hit energy
-/*					cout << "-------------------" << endl;
-					cout << "p side" << endl;
-					cout << "x total energy: " << XTotalEnergy << endl;
-					cout << "y total energy: " << YTotalEnergy << endl;
-					cout << "corrected energy: " << correctedE0 << endl;
-					cout << "..........." << endl;
-					cout << "original hit energy: " << H->GetEnergy() << endl;
-*/
+					double correctedE0 = EstimateE0(XEnergy[0],XEnergy[1],YTotalEnergy,detector,0);
 					//for now, choose the higher energy
-	//				if (correctedE0 < YTotalEnergy){
-	//					H->SetEnergy(YTotalEnergy);
-	//					H->SetEnergyResolution(sqrt(YEnergyVar));
-	//				}
-	//				else {
+					if (correctedE0 < YTotalEnergy){
+						H->SetEnergy(YTotalEnergy);
+						H->SetEnergyResolution(sqrt(YEnergyVar));
+					}
+					else {
+//					if (correctedE0 < YTotalEnergy){
 	          H->SetEnergy(correctedE0);
 	          H->SetEnergyResolution(sqrt(XEnergyVar));
 	//				}
-					//print final hit energy
-//					cout << "final hit energy: " << H->GetEnergy() << endl;
-//					dummy_func();
+					}
         }
       }
       else if (NYStripHits==2 && NXStripHits==1)
@@ -266,7 +248,7 @@ bool MNCTModuleChargeSharingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         if ( (((YStripID[0]-YStripID[1])==1) || ((YStripID[0]-YStripID[1])==-1)) &&
           (((XStripID[0]-XStripID[1])==1) || ((XStripID[0]-XStripID[1])==-1)))
         {
-					double correctedXE0 = EstimateE0(XEnergy[0],XEnergy[1],detector,0);
+					double correctedXE0 = EstimateE0(XEnergy[0],XEnergy[1],YTotalEnergy,detector,0);
 //					double correctedYE0 = EstimateE0(YEnergy[0],YEnergy[1],detector,1);
 					//for now, choose the higher energy
 //					if (correctedXE0 > correctedYE0){
@@ -312,7 +294,6 @@ vector<vector<double> > MNCTModuleChargeSharingCorrection::ParseOneSource(string
 	if (clFile.is_open()){
 		while (!clFile.eof()){
 			c++;
-//			cout << c << endl;
 			getline(clFile,line);
 
 			if (c <= 24){
@@ -336,71 +317,134 @@ vector<vector<double> > MNCTModuleChargeSharingCorrection::ParseOneSource(string
 
 };
 
+void MNCTModuleChargeSharingCorrection::LoadCorrectionInfoUpdated(){
+
+	string filename = "./ChargeLossCorrectionScaled_Ba133.log";
+
+	m_Bfrac = ParseOneSource(filename);
+
+};
+
 
 void MNCTModuleChargeSharingCorrection::LoadCorrectionInfo(){
 
 	vector<string> filenames;
- 	filenames.push_back("./ChargeLossCorrection/ChargeLossCorrection_122.log");
-	filenames.push_back("./ChargeLossCorrection/ChargeLossCorrection_356.log");
-	filenames.push_back("./ChargeLossCorrection/ChargeLossCorrection_662.log");
-	filenames.push_back("./ChargeLossCorrection/ChargeLossCorrection_1333.log");
+ 	filenames.push_back("./ChargeLossCorrectionScaled_Co57.log");
+	filenames.push_back("./ChargeLossCorrectionScaled_Ba133.log");
+	filenames.push_back("./ChargeLossCorrectionScaled_Cs137_2.log");
+//	filenames.push_back("./ChargeLossCoeffs_Co60.log");
 
-	for (int i=0; i<filenames.size(); i++){
+	for (unsigned int i=0; i<filenames.size(); i++){
 		vector<vector<double> > oneSource = ParseOneSource(filenames.at(i));
-		B.push_back(oneSource);
+		m_B.push_back(oneSource);
 		oneSource.clear();
 	}
+
+	//find coefficients for linear interpolation
+//	double energies[4] = {122,356,662,1333};
+	double energies[3] = {122,356,662};
+	double points[m_nSources];
+	double A0;
+	double A1;
+
+	for (int det=0; det<12; det++){
+		for (int side=0; side<2; side++){
+//			points[0] = m_B.at(0).at(det).at(side);
+//			points[1] = m_B.at(1).at(det).at(side);
+//			points[2] = m_B.at(2).at(det).at(side);
+//			points[3] = m_B.at(3).at(det).at(side);
+
+			points[0] = m_B.at(0).at(det).at(side);
+			points[1] = m_B.at(1).at(det).at(side);
+			points[2] = m_B.at(2).at(det).at(side);
+
+			TGraph *g = new TGraph(m_nSources,energies,points);
+			TF1 *f = new TF1("f","[0]+[1]*x",energies[0],energies[m_nSources-1]);
+			g->Fit("f","RQ");
+
+			A0 = f->GetParameter(0);
+			A1 = f->GetParameter(1);
+
+			m_linInterpCoeffs[det][side][0] = A0;
+			m_linInterpCoeffs[det][side][1] = A1;
+
+			delete g;
+			delete f;
+
+		}
+	}
+
+	cout << "Charge loss correction loaded" << endl;
 
 };
 
 
 double MNCTModuleChargeSharingCorrection::Interpolate(double E0, int det, int side){
 
-	double energies[4] = {122,356,662,1333};
-	double points[nSources];
-	points[0] = B.at(0).at(det).at(side);
-	points[1] = B.at(1).at(det).at(side);
-	points[2] = B.at(2).at(det).at(side);
-	points[3] = B.at(3).at(det).at(side);
+	double A0 = m_linInterpCoeffs[det][side][0];
+	double A1 = m_linInterpCoeffs[det][side][1];
 
-	TGraph* bGraph = new TGraph(nSources,energies,points);
+	double val = A0+A1*E0;
 
-	double val = bGraph->Eval(E0);
+//	cout << m_B.at(1).at(det).at(side) << '\t' << val << endl;
+
 	return val;
 
 };
 
 
 
-double MNCTModuleChargeSharingCorrection::EstimateE0(double enOne, double enTwo, int det, int side){
+double MNCTModuleChargeSharingCorrection::EstimateE0(double enOne, double enTwo, double eOtherSide, int det, int side){
 
 	double sum = enOne+enTwo;
 	double diff = fabs(enOne-enTwo);
+	double frac = diff/sum;
+	double scaled_sum = sum/eOtherSide;
+
+	//NOT SURE ABOUT THIS
+//	if (scaled_sum > 1){ return eOtherSide; }//enOne+enTwo; }
+
 //	double b = Interpolate(enOne,det,side);
-	double b = Interpolate(sum,det,side);
+//	double b = Interpolate(sum,det,side);
+		double b = Interpolate(eOtherSide,det,side);
+//	double b = 0.01;
+//	double b = m_Bfrac[det][side];
 
-	//debugging
-/*	if (side == 0 && sum > 600){
-		cout << "-----------------------------" << endl;
-		cout << "sum: " << sum << endl;
-		cout << "diff: " << diff << endl;
-		cout << "b: " << b << endl;
-	}
-*/
-	double correctedE0;
-	if (sum < 300){
-		correctedE0 = 1/(2-b)*(sum+sqrt(sum*sum - b*(2-b)*diff*diff));
-	}
-	else {
-		correctedE0 = (sum-b*diff)/(1-b);
-	}
+//	double DMax = sum*((sum-511./2)/(sum+511./2));
+	double E0 = 356;
+	double DMax = E0*((E0-511./2)/(E0+511./2));
 
-	//debugging
-/*	if (side == 0 && sum > 600){
-		cout << "correctedE0: " << correctedE0 << endl;
-		dummy_func();
-	}
-*/
+	double correctedE0 = sum;
+//	if (diff >= DMax+0.15*sum){
+//	if (diff >= DMax+0.15*E0){
+//	if (frac >= 0.5){
+//	if (scaled_sum < 0.75){
+//	if (sum < 300){
+//		correctedE0 = sum/(1/(2-b)*(scaled_sum+sqrt(scaled_sum*scaled_sum - b*(2-b)*frac*frac)));
+//		if (sum<eOtherSide){
+//		correctedE0 = 1/(2-b)*(sum+sqrt(sum*sum - b*(2-b)*frac*frac));
+//		}
+/*		if (sum < eOtherSide){
+			cout << enOne << '\t' << enTwo << '\t';
+			cout << sum << '\t' << correctedE0 << '\t' << eOtherSide << endl;
+		}*/
+//	}
+//	else {
+//		correctedE0 = (sum-b*diff)/(1-b);
+		if (sum<eOtherSide){
+		correctedE0 = (sum-b*frac)/(1-b);
+		}
+/*		if (sum < eOtherSide-10){
+			cout << enOne << '\t' << enTwo << '\t' << sum << '\t';
+			cout << correctedE0 << '\t' << eOtherSide << '\t' << endl;
+		}*/
+//	}
+//	}
+
+//	if (correctedE0 > eOtherSide) { cout << correctedE0 << '\t' << eOtherSide << endl; correctedE0 = eOtherSide; }
+
+//	if (correctedE0/662. > 1){ correctedE0 = sum; }
+
 	return correctedE0;
 
 };

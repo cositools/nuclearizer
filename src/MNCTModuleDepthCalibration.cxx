@@ -69,7 +69,7 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
   AddPreceedingModuleType(MAssembly::c_EventLoader, true);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
-  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
+//  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_DepthCorrection);
@@ -201,9 +201,10 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 		MVector LocalPosition, PositionResolution, GlobalPosition;
 		int PosError;
 		int DetID = H->GetStripHit(0)->GetDetectorID();
-		bool MultiHit = H->GetStripHitMultipleTimes(); //if true, then depth for this hit is no good
+		bool MultiHitX = H->GetStripHitMultipleTimesX(); //if true, then depth for this hit is no good
+		bool MultiHitY = H->GetStripHitMultipleTimesY();
 		bool BadDepth = false;
-		if( MultiHit ){
+		if( MultiHitX || MultiHitY ){
 			//might want to add more criteria here 
 			BadDepth = true;
 		}

@@ -299,15 +299,26 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   // Recalculate the total hit energy now the the individual strips have been corrected.
   for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
     double energy = 0;
-    for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {
-      //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
-      if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
-        energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
-      }
-    }
+  	//if y strip was hit multiple times, need to use the x energy
+		if (Event->GetHit(sh)->GetStripHitMultipleTimesY()){
+			for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
+				if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+					energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+				}
+			}
+		}
+		else{
+	  	for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {	
+	      //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
+	      if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+	        energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+	      }
+	    }
+		}
+
     Event->GetHit(sh)->SetEnergy(energy);
   }
-  
+
   Event->SetAnalysisProgress(MAssembly::c_CrosstalkCorrection);
   
   return true;
