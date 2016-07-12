@@ -149,8 +149,8 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
     if (nHits[0]>0 && nHits[1]>0 && runRest==true){
 	    InitializeKillMatrices();
 	    CheckForAdjacentStrips();
-			AddMultipleHits(0);
-			AddMultipleHits(1);
+//			AddMultipleHits(0);
+//			AddMultipleHits(1);
 			CheckForBadCombinations();
 			firstChiSq = FindFinalPairs();
 
@@ -195,8 +195,8 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 					finalPairEnergy.clear();
 					finalPairRes.clear();
 
-//					AddMultipleHits(0);
-//					AddMultipleHits(1);
+					AddMultipleHits(0);
+					AddMultipleHits(1);
 
 					CheckForBadCombinations();
 					thirdChiSq = FindFinalPairs();
@@ -282,7 +282,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 
 
      	CalculateDetectorQuality();
-			if (Event->GetID() == 33){ PrintFinalPairs(); }
+//			if (Event->GetID() == 33){ PrintFinalPairs(); }
 			WriteHits(Event, detector);
 
 /*			if (thirdChiSq != -1){
