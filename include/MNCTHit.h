@@ -87,10 +87,16 @@ class MNCTHit
 	//! get charge loss flag value
 	bool GetChargeLossFlag() const { return m_PossibleChargeLoss; }
 
-	//! set strip hit multiple times flag
-	void SetStripHitMultipleTimes(bool stripHitMultipleTimes) {m_StripHitMultipleTimes = stripHitMultipleTimes;}
-	//! get m_StripHitMultipleTimes
-	bool GetStripHitMultipleTimes() const { return m_StripHitMultipleTimes; }
+	//! set x strip hit multiple times flag
+	void SetStripHitMultipleTimesX(bool stripHitMultipleTimesX) {m_StripHitMultipleTimesX = stripHitMultipleTimesX;}
+	//! get m_StripHitMultipleTimesX
+	bool GetStripHitMultipleTimesX() const { return m_StripHitMultipleTimesX; }
+	//! set y strip hit multiple times flag
+	void SetStripHitMultipleTimesY(bool stripHitMultipleTimesY) {m_StripHitMultipleTimesY = stripHitMultipleTimesY;}
+	//! get m_StripHitMultipleTimesY
+	bool GetStripHitMultipleTimesY() const { return m_StripHitMultipleTimesY; }
+
+
 	//! set charge sharing flag
 	void SetChargeSharing(bool chargeSharing) {m_ChargeSharing = chargeSharing; }
 	//! get m_ChargeSharing
@@ -150,7 +156,8 @@ class MNCTHit
 	bool m_PossibleChargeLoss;
 
 	//! true if hit contains strip that was hit multiple times
-	bool m_StripHitMultipleTimes;
+	bool m_StripHitMultipleTimesX;
+	bool m_StripHitMultipleTimesY;
 
 	//! true if hit contains charge sharing
 	bool m_ChargeSharing;

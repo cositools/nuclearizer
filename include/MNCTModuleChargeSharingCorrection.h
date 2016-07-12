@@ -53,8 +53,9 @@ class MNCTModuleChargeSharingCorrection : public MModule
 
 	vector<vector<double> > ParseOneSource(string);
 	void LoadCorrectionInfo();
+	void LoadCorrectionInfoUpdated();
 	double Interpolate(double,int,int);
-	double EstimateE0(double,double,int,int);
+	double EstimateE0(double,double,double,int,int);
 	void dummy_func();	//for debugging
 
   // protected methods:
@@ -69,10 +70,18 @@ class MNCTModuleChargeSharingCorrection : public MModule
  protected:
 	//holds the fit parameter information
 	//B[source][detector][side]
-	vector<vector<vector<double> > > B;
+	vector<vector<vector<double> > > m_B;
+
+	//holds B for fractional fits
+	//B[detector][side]
+	vector<vector<double> > m_Bfrac;
+
+	//holds linear interpolation coefficients
+	//m_linInterpCoeffs[detector][side][0 or 1]
+	double m_linInterpCoeffs[12][2][2];
 
 	//number of sources used for correction
-	int nSources;
+	int m_nSources;
 
 
   // private members:

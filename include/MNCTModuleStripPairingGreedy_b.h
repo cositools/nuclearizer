@@ -256,7 +256,8 @@ class MNCTModuleStripPairingGreedy_b : public MModule
 
 	//keep track of hits where charge sharing occurred or
 	// strips were hit multiple times
-	vector<int> stripHitMultipleTimes;
+	vector<int> xStripHitMultipleTimes;
+	vector<int> yStripHitMultipleTimes;
 	vector<int> chargeSharing;
 
   vector<float> detectorQualityFactors;
