@@ -130,6 +130,9 @@ class MNCTBinaryFlightDataParser
   uint32_t m_NumLivetimePackets;
   uint32_t m_NumOtherPackets;  
  
+  //! The housekeeping file name
+  MString m_HousekeepingFileName;
+  
   // private members:
  private:
   
@@ -169,8 +172,9 @@ class MNCTBinaryFlightDataParser
   uint32_t m_LostBytes;
   map<uint64_t,int> m_PacketRecord;
   vector<uint16_t> m_PreampTemps;
-  MString m_HkpOutFile;
-  ofstream Housekeeping;
+  
+  //! The house-keeping file stream
+  ofstream m_Housekeeping;
 
   int m_StripMap[8][10];
   int m_CCMap[12];

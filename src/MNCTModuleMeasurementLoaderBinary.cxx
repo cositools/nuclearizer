@@ -161,11 +161,13 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
       Line.RemoveInPlace(0, 3);
       Line = Directory + Line;
       if (MFile::Exists(Line) == false) {
-        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to find file \""<<Line<<"\""<<endl;
+        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to find file \""<<Line<<"\""<<endl;
+
         return false;
       }
       m_BinaryFileNames.push_back(Line);
-      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Added file \""<<m_BinaryFileNames.back()<<"\""<<endl;
+      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Added file \""<<m_BinaryFileNames.back()<<"\""<<endl;
+
       Counter++;
     }
     if (Counter == 0) break;
@@ -179,7 +181,12 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
     return false;
   }
 
-
+  // Set the housekeeping file name
+  m_HousekeepingFileName = m_FileName;
+  if (m_HousekeepingFileName.Last('.') != string::npos) {
+    m_HousekeepingFileName.RemoveInPlace(m_HousekeepingFileName.Last('.'), m_HousekeepingFileName.Length() - m_HousekeepingFileName.Last('.'));
+  }
+  m_HousekeepingFileName += ".hkp";
 
 	if (MNCTBinaryFlightDataParser::Initialize() == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to initilize flight data parser"<<endl;

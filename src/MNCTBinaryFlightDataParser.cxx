@@ -102,7 +102,7 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser() : TIRecord(1000)
 	m_LastAspectID = 0xffff;
 	m_AspectReconstructor = nullptr;
 	m_CoincidenceEnabled = true;
-
+  m_HousekeepingFileName = "Housekeeping.hkp";
 }
 
 
@@ -213,7 +213,19 @@ bool MNCTBinaryFlightDataParser::Initialize()
     
   }
   */
-  Housekeeping.open(MString("hkp.hkp", std::ofstream::out));
+  
+  // Handle the housekeeping file
+  
+  if (m_Housekeeping.is_open() == true) {
+    m_Housekeeping.close();
+    m_Housekeeping.clear();    
+  }
+  m_Housekeeping.open(m_HousekeepingFileName);
+  if (m_Housekeeping.is_open() == false) {
+    cout<<"Error: Unable to open housekeeping file for writing: "<<m_HousekeepingFileName<<endl;
+    return false;
+  }
+  
   return true;
 }
 
@@ -337,11 +349,11 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					ProcessAspect( NextPacket );
 
 					//Print info into housekeeping file 
-                    if (Housekeeping.is_open() == true) {
+                    if (m_Housekeeping.is_open() == true) {
 						if (m_AspectReconstructor->GetLastAspectInDeque() != 0) { 
 							LatestAspect = m_AspectReconstructor->GetLastAspectInDeque();
 							if (((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS) && (LatestAspect->GetGPS_or_magnetometer() == 0)) || ((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) && (LatestAspect->GetGPS_or_magnetometer() == 1))) {
-								Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\n\n";
+								m_Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\n\n";
 							}
 						}
 					}
@@ -356,16 +368,16 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				if (m_NumGCUHkpPackets > 0) {
 					ParseLivetime(&CCLivetimePacket,&NextPacket[0]);
 					//Print CC livetime info into housekeeping file
-					if (Housekeeping.is_open() == true) {
-						Housekeeping<<"LT\nTI "<<((GCUUnixTimeMSB << 24) | CCLivetimePacket.UnixTime)<<"\nID "<<CCLivetimePacket.PacketCounter<<"\nDU 1";;
+					if (m_Housekeeping.is_open() == true) {
+						m_Housekeeping<<"LT\nTI "<<((GCUUnixTimeMSB << 24) | CCLivetimePacket.UnixTime)<<"\nID "<<CCLivetimePacket.PacketCounter<<"\nDU 1";;
 						for (int i = 0; i < 12; ++i) {
 							if (CCLivetimePacket.CCHasLivetime[i] == 1) {
-								Housekeeping<<"\nCC"<<i<<" "<<(CCLivetimePacket.TotalLivetime[i])/3051.;
+								m_Housekeeping<<"\nCC"<<i<<" "<<(CCLivetimePacket.TotalLivetime[i])/3051.;
 							} else {
-								Housekeeping<<"\nCC"<<i<<" -1";
+								m_Housekeeping<<"\nCC"<<i<<" -1";
 							}
 						}
-						Housekeeping<<"\n\n";
+						m_Housekeeping<<"\n\n";
 					}
 				}
 				m_NumLivetimePackets++;
@@ -383,8 +395,8 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				ShieldCountRate = ShieldNumCounts/ShieldTimeInterval;
 
 				//Print info into housekeeping file
-				if (Housekeeping.is_open() == true) {
-					Housekeeping<<"HKP\nTI "<<((GCUUnixTimeMSB << 24) | GCUHkpPacket->UnixTime)<<"\nID "<<GCUHkpPacket->PacketCounter<<"\nDU 5"<<"\nSR "<<ShieldCountRate<<"\n\n";
+				if (m_Housekeeping.is_open() == true) {
+					m_Housekeeping<<"HKP\nTI "<<((GCUUnixTimeMSB << 24) | GCUHkpPacket->UnixTime)<<"\nID "<<GCUHkpPacket->PacketCounter<<"\nDU 5"<<"\nSR "<<ShieldCountRate<<"\n\n";
 				}
 				m_NumGCUHkpPackets++;
 				break;
@@ -832,7 +844,7 @@ void MNCTBinaryFlightDataParser::Finalize()
 		m_Events.pop_front();
 	}
 
-	Housekeeping.close();
+	m_Housekeeping.close();
 	cout<<"HOUSEKEEPING FILE CLOSED"<<endl;
 	return;
 }
