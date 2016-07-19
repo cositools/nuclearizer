@@ -204,7 +204,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
 		if (CalibratorType == "p1") {
 			double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
 			double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-			TF1* resolutionfit = new TF1("P1","([0]+[1]*x)^(1/2)",0.,2000.);
+			TF1* resolutionfit = new TF1("P1","sqrt([0]+[1]*x) / 2.355",0.,2000.);
 			resolutionfit->FixParameter(0,f0);
 			resolutionfit->FixParameter(1,f1);
 

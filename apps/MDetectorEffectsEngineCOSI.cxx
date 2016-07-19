@@ -322,7 +322,7 @@ bool MNCTDetectorEffectsEngineCOSI::Analyze()
 	ParseThresholdFile();
 
 	//load charge loss coefficients
-	InitializeChargeLoss();
+	//InitializeChargeLoss();
 
   m_DepthCalibrator = new MNCTDepthCalibrator();
 	if( m_DepthCalibrator->LoadCoeffsFile(m_DepthCalibrationCoeffsFileName) == false ){
@@ -915,14 +915,15 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
 	static TRandom3 r(0);
 	TF1* FitRes = m_ResolutionCalibration[Hit.m_ROE];
 	//resolution is a function of energy
-	double EnergyResolution = 3; //default to 3keV...does this make sense?
+	double EnergyResolutionFWHM = 3; //default to 3keV...does this make sense?
 	if (FitRes != 0){
-		EnergyResolution = FitRes->Eval(mean_energy);
+		EnergyResolutionFWHM = FitRes->Eval(mean_energy);
+    cout<<"Energy Res: "<<EnergyResolutionFWHM<<" (FWHM) at "<<mean_energy<<endl;
 	}
 
 	//get energy from gaussian around mean_energy with sigma=EnergyResolution
 	//TRandom3 r(0);
-	double energy = r.Gaus(mean_energy,EnergyResolution);
+	double energy = r.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
 	//  spectrum->Fill(energy);
 
 	//  if (fabs(mean_energy-662.) < 5){
@@ -1022,6 +1023,11 @@ void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
 
 	for (int det=0; det<12; det++){
 		for (int side=0; side<2; side++){
+      if (coefficients.at(0).size() < 12 || coefficients.at(1).size() < 12) {
+        cout<<"Error: The charge loss coefficients do not cover all 12 detectors..."<<endl;
+        continue;
+      }
+
 			points[0] = coefficients.at(0).at(det).at(side);
 			points[1] = coefficients.at(1).at(det).at(side);
 
@@ -1172,14 +1178,13 @@ void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
 		if (CalibratorType == "p1"){
 			double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
 			double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-			TF1* resolutionfit = new TF1("P1","([0]+[1]*x)^(1/2)",0.,2000.);
-			resolutionfit->FixParameter(0,f0);
-			resolutionfit->FixParameter(1,f1);
-
+			TF1* resolutionfit = new TF1("P1","sqrt([0]+[1]*x)",0.,2000.);
+			resolutionfit->SetParameter(0,f0);
+			resolutionfit->SetParameter(1,f1);
+      
 			m_ResolutionCalibration[CR.first] = resolutionfit;
 		}
 	}
-
 }
 
 

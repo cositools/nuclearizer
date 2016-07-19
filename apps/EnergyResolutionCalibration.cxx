@@ -59,7 +59,7 @@ int main()
 //open and read and parse the .ecal file and make a plot for each detector side of all the strips with the correct fit - using P1 from Mark's thesis (a0  +a1*x)^(1/2) for now.
 //The parameters from the fit will be appended to the .ecal file and then when loading the .ecal file through Nuclearizer with MNCTModuleEnergyCalibrationUniversal.cxx, the resolution will be parsed out
 
-	TF1 *P1 = new TF1("P1","([0] + [1]*x)^(1/2)",0,2000);
+	TF1 *P1 = new TF1("P1","sqrt([0] + [1]*x)",0,2000);
 	P1->SetParameter(0,5);
 	P1->SetParameter(0,0.001);
 //	TF1 *P0 = new TF1("P0", "[0]^(1/2)",0,2000);
@@ -98,7 +98,7 @@ int main()
 
 
 	MParser Parser;
-	if (Parser.Open("~/Software/Nuclearizer/resource/calibration/COSI16/EnergyCalibration.ecal") == false) {
+	if (Parser.Open("EnergyCalibration.ecal") == false) {
 		cout<<"Unable to open calibration file "<<endl;
 		return false;
 	}
@@ -163,6 +163,13 @@ int main()
 			++k1;
 		}
 		g->Fit("P1","Q");
+    /*
+    MString Name = CP.first.ToString() + ".pdf";
+    Name.ReplaceAll(" ", "_");
+    Name.ReplaceAll(",", "");
+    Name.ReplaceAll(":", "");
+    g->SaveAs(Name);
+    */
 		DetGraphs[GraphID]->Add(g);
 
 		TF1 *fit = g->GetFunction("P1");
