@@ -141,7 +141,8 @@ bool MNCTModuleCrosstalkCorrection::Initialize()
   }
 
 
-//  Read in the file from the Nuclearizer GUI
+  // Read in the file from the Nuclearizer GUI
+  MFile::ExpandFileName(m_FileName);
   fstream File;
   File.open(m_FileName, ios_base::in);
   // Read the calibration coefficients line-by-line
