@@ -1516,15 +1516,15 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
     hitQualityFactor.push_back(weight);
     
     //fill hit energy resolution vector
-    float eResX = sig[0][xIndex];
-    float eResY = sig[1][yIndex];
-    eRes = (sqrt(2)*eResX*eResY)/(eResX*eResX+eResY*eResY);
-    energyResolution.push_back(eRes);
+    //float eResX = sig[0][xIndex];
+    //float eResY = sig[1][yIndex];
+    //eRes = (sqrt(2)*eResX*eResY)/(eResX*eResX+eResY*eResY);
+    //energyResolution.push_back(eRes);
     
     //fill hit energy vector
-//    float eX = energy[0][xIndex];
-    float eY = energy[1][yIndex];
-//    double inf = numeric_limits<double>::infinity();
+    //float eX = energy[0][xIndex];
+    //float eY = energy[1][yIndex];
+    //double inf = numeric_limits<double>::infinity();
     //sometimes the energy resolution is infinite (not sure why)
     //if it is, then take the average of the energies
     //otherwise use correct formula
@@ -1534,8 +1534,15 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
     //else {
     //  hitE = (eX+eY)/2;
     //}
+    
+    
     // At this stage we can only use ONE side, the above formula we can only use AFTER charge charging/cross talk correction!
-    hitEnergy.push_back(eY); //hitEnergy.push_back(hitE);
+    
+    float eY = energy[1][yIndex];
+    hitEnergy.push_back(eY);
+    float eResY = sig[1][yIndex];
+    energyResolution.push_back(eResY);
+  
     
     //		PrintWeightMatrix();
     //call ConflictingStrips to avoid repeating strips

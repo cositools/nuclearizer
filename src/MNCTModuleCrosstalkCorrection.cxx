@@ -77,7 +77,7 @@ MNCTModuleCrosstalkCorrection::MNCTModuleCrosstalkCorrection() : MModule()
   AddModuleType(MAssembly::c_CrosstalkCorrection);
   
   // Set all modules, which can follow this module
-	AddSucceedingModuleType(MAssembly::c_NoRestriction); 
+  AddSucceedingModuleType(MAssembly::c_NoRestriction); 
  
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
@@ -108,7 +108,7 @@ bool MNCTModuleCrosstalkCorrection::Initialize()
   // Initialize the module
 
 
-	
+  
   
   //for (int DetectorNumber=0; DetectorNumber<10; DetectorNumber++) {
    // mout << "Attempting to load energy crosstalk data for D" << DetectorNumber << endl;
@@ -122,78 +122,79 @@ bool MNCTModuleCrosstalkCorrection::Initialize()
    // +"/crosstalk_D"+ DetectorNumberString + ".csv";
     
     // Set calibration to default
-	for (int detnum=0; detnum < 12; detnum++) {
-		for (int side = 0; side <= 1; side++) {
-			for (unsigned int skip = 0; skip <= 2; skip++) {
-				m_CrosstalkCoeffs[detnum][side][skip][0] = 0.;
+  for (int detnum=0; detnum < 12; detnum++) {
+    for (int side = 0; side <= 1; side++) {
+      for (unsigned int skip = 0; skip <= 2; skip++) {
+        m_CrosstalkCoeffs[detnum][side][skip][0] = 0.;
         m_CrosstalkCoeffs[detnum][side][skip][1] = 0.;
       }
     }
-	}
+  }
 
 
     // Reset flags telling if calibration has been loaded
-	for (int detnum=0; detnum < 12; detnum++) {
-		for (unsigned int skip=0; skip <= 2; skip++) {
-			m_IsCalibrationLoaded[detnum][0][skip] = false;
-			m_IsCalibrationLoaded[detnum][1][skip] = false;
-		}
-	}
+  for (int detnum=0; detnum < 12; detnum++) {
+    for (unsigned int skip=0; skip <= 2; skip++) {
+      m_IsCalibrationLoaded[detnum][0][skip] = false;
+      m_IsCalibrationLoaded[detnum][1][skip] = false;
+    }
+  }
 
 
-//	Read in the file from the Nuclearizer GUI
-	fstream File;
-	File.open(m_FileName, ios_base::in);
-	// Read the calibration coefficients line-by-line
-	if (File.is_open() == false) {
-		mout<<"***Warning: Unable to open file for crosstalk calibration"<<endl;	
-	} else {
-	
-		MString Line;
-		while(!File.eof()) {
-			Line.ReadLine(File);
-			if (Line.BeginsWith("#") == false) {
-				//mout << Line << endl;
-				int DetNum, PosSide;
+//  Read in the file from the Nuclearizer GUI
+  fstream File;
+  File.open(m_FileName, ios_base::in);
+  // Read the calibration coefficients line-by-line
+  if (File.is_open() == false) {
+    mout<<"***Warning: Unable to open file for crosstalk calibration"<<endl;
+    return false;
+  } else {
+  
+    MString Line;
+    while(!File.eof()) {
+      Line.ReadLine(File);
+      if (Line.BeginsWith("#") == false) {
+        //mout << Line << endl;
+        int DetNum, PosSide;
         int NSkip;
         double a0, a1;
         if (sscanf(Line.Data(), "%d %d %d %lf %lf\n", &DetNum,&PosSide,&NSkip,&a0,&a1) == 5) {
-					//mout << DetNum <<" "<< PosSide << " " << NSkip << " " << a0 << " " << a1 << endl;
+          //mout << DetNum <<" "<< PosSide << " " << NSkip << " " << a0 << " " << a1 << endl;
           m_CrosstalkCoeffs[DetNum][PosSide][NSkip][0] = a0;
           m_CrosstalkCoeffs[DetNum][PosSide][NSkip][1] = a1;
           m_IsCalibrationLoaded[DetNum][PosSide][NSkip] = true;
 
         }
-			}
+      }
     }
   }  // done reading from file
 
 
 
   // Check if data has been properly loaded
-	for (int detnum = 0; detnum < 12; detnum++) {
-		m_IsCalibrationLoadedDet[detnum] = true;
- 		for (int side=0; side<2; side++) {
-			for (unsigned int nskip=0; nskip<=2; nskip++) {
-				if (m_IsCalibrationLoaded[detnum][side][nskip]==false) {
-					m_IsCalibrationLoadedDet[detnum] = false;
-				}
-			}
-		}
+  for (int detnum = 0; detnum < 12; detnum++) {
+    m_IsCalibrationLoadedDet[detnum] = true;
+    for (int side=0; side<2; side++) {
+      for (unsigned int nskip=0; nskip<=2; nskip++) {
+        if (m_IsCalibrationLoaded[detnum][side][nskip]==false) {
+          m_IsCalibrationLoadedDet[detnum] = false;
+        }
+      }
+    }
 
-  	if (m_IsCalibrationLoadedDet[detnum] == true)	{
-			//mout << "Cross-talk data for D" << detnum << " successfully loaded!" << endl;
-  	} else {
-			mout << "***Warning: Unable to fully load cross-talk data for D" << detnum << ".  Defaults were used." << endl;
-    	// Set calibration to default
-			for (int i=0; i<=1; i++) {
-				for (int j=0; j<=2; j++) {
-					m_CrosstalkCoeffs[detnum][i][j][0] = 0.;
-        	m_CrosstalkCoeffs[detnum][i][j][1] = 0.;
-      	}
-			}
-		}
-	} // 'DetectorNumber' loop
+    if (m_IsCalibrationLoadedDet[detnum] == true) {
+      //mout << "Cross-talk data for D" << detnum << " successfully loaded!" << endl;
+    } else {
+      mout << "***Warning: Unable to fully load cross-talk data for D" << detnum << ".  Defaults were used." << endl;
+      // Set calibration to default
+      for (int i=0; i<=1; i++) {
+        for (int j=0; j<=2; j++) {
+          m_CrosstalkCoeffs[detnum][i][j][0] = 0.;
+          m_CrosstalkCoeffs[detnum][i][j][1] = 0.;
+        }
+      }
+    }
+  } // 'DetectorNumber' loop
   
   
   return MModule::Initialize();
@@ -231,7 +232,7 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level 
   
  //for (unsigned int sh=0; sh < Event->GetNHits(); sh++) {
- 	unsigned int NStripHits = Event->GetNStripHits();
+  unsigned int NStripHits = Event->GetNStripHits();
   vector<MNCTStripHit*> StripHits;
   bool debug=false;
   
@@ -267,8 +268,8 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       }
     }
   }
-	
-	
+  
+  
   // Remove any strips that have negative energy after the correction FROM the Hits -- we still keep them around
   // in the strip hits
   const double RemovalEneryLimit = 5.0;
@@ -296,28 +297,152 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
   
+  /*
   // Recalculate the total hit energy now the the individual strips have been corrected.
   for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
     double energy = 0;
-  	//if y strip was hit multiple times, need to use the x energy
-		if (Event->GetHit(sh)->GetStripHitMultipleTimesY()){
-			for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-				if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
-					energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
-				}
-			}
-		}
-		else{
-	  	for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {	
-	      //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
-	      if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
-	        energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
-	      }
-	    }
-		}
-
+    // if y strip was hit multiple times, need to use the x energy
+    if (Event->GetHit(sh)->GetStripHitMultipleTimesX()){
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false){
+          energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+        }
+      }
+    }
+    else{
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {        
+        // for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true) {
+          energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+        }
+      }
+    }
+    
     Event->GetHit(sh)->SetEnergy(energy);
   }
+  */
+  
+  /*
+  // Recalculate the total hit energy now the the individual strips have been corrected.
+  for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
+    double energy = 0;
+    // if y strip was hit multiple times, need to use the x energy
+    if (Event->GetHit(sh)->GetStripHitMultipleTimesY()){
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+          energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+        }
+      }
+    }
+    else{
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {        
+        // for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+          energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+        }
+      }
+    }
+    
+    Event->GetHit(sh)->SetEnergy(energy);
+  }
+  */
+  
+  
+  // Recalculate the total hit energy now that the individual strips have been corrected.
+  for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
+    double Energy = 0;
+    double Resolution = 0.0;
+    
+    // Handle what happens if strips have been hit multiple times:
+    
+    // If both have been hit multiple times, we don't do anything - we keep the result from the strip pairing
+    if (Event->GetHit(sh)->GetStripHitMultipleTimesX() == true && 
+        Event->GetHit(sh)->GetStripHitMultipleTimesY() == true) {
+      continue;
+    }
+    // If y strip was hit multiple times, need to use the x energy
+    else if (Event->GetHit(sh)->GetStripHitMultipleTimesY() == true) {
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+          Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        }
+      }
+      Resolution = sqrt(Resolution);
+      //cout<<"Using X (my): "<<Energy<<endl;
+    
+    } 
+    // If x strip was hit multiple times, need to use the y energy
+    else if (Event->GetHit(sh)->GetStripHitMultipleTimesX() == true) {
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false){
+          Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        }
+      }
+      Resolution = sqrt(Resolution);
+      //cout<<"Using Y (mx): "<<Energy<<endl;
+    } 
+    // Best case: Can do all corrections:
+    else {
+      double EnergyX = 0.0;
+      double SigmaXSquared = 0.0;
+      double EnergyY = 0.0;
+      double SigmaYSquared = 0.0;
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {  
+        //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
+        
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+          EnergyY += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          SigmaYSquared += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        } else {
+          EnergyX += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          SigmaXSquared += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        }
+      }
+      
+      if (SigmaXSquared > 0 && SigmaYSquared > 0) {
+        //
+        double EnergyDiff = fabs(EnergyX - EnergyY);
+        double MinSigmaSquared = min(SigmaXSquared, SigmaYSquared);
+        
+        const double DecisionUsingHigherMeasurement = 4.0;
+        
+        if (EnergyDiff > DecisionUsingHigherMeasurement*sqrt(MinSigmaSquared)) {
+          if (EnergyX > EnergyY) {
+            Energy = EnergyX;
+            Resolution = sqrt(SigmaXSquared);
+            //cout<<"Using X (Y too small): "<<EnergyX<<endl;
+          } else {
+            Energy = EnergyY;
+            Resolution = sqrt(SigmaYSquared);
+            //cout<<"Using Y (X too small): "<<EnergyY<<endl;            
+          }
+        } else {
+          Energy = (EnergyX/SigmaXSquared + EnergyY/SigmaYSquared) / (1.0/SigmaXSquared + 1.0/SigmaYSquared);
+          Resolution = sqrt( 1.0 / (1.0/SigmaXSquared + 1.0/SigmaYSquared) );
+          //cout<<"Corrected: "<<Energy<<" vs. "<<EnergyX<<":"<<EnergyY<<endl;
+        }
+      } else if (SigmaXSquared > 0) {
+        Energy = EnergyX;
+        Resolution = sqrt(SigmaXSquared);
+        //cout<<"Using X: "<<EnergyX<<endl;
+      } else if (SigmaYSquared > 0) {
+        Energy = EnergyY;
+        Resolution = sqrt(SigmaYSquared);
+        //cout<<"Using Y: "<<EnergyY<<endl;
+      }
+      /*
+      ofstream out;
+      out.open("energy.txt", ios::app);
+      out<<EnergyX<<" "<<EnergyY<<endl;
+      out.close();
+      */
+    }
+    Event->GetHit(sh)->SetEnergy(Energy);
+    Event->GetHit(sh)->SetEnergyResolution(Resolution);
+  }
+  
 
   Event->SetAnalysisProgress(MAssembly::c_CrosstalkCorrection);
   
@@ -448,7 +573,9 @@ void MNCTModuleCrosstalkCorrection::ShowOptionsGUI()
   gClient->WaitForUnmap(Options);
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 bool MNCTModuleCrosstalkCorrection::ReadXmlConfiguration(MXmlNode* Node)
 {
@@ -456,12 +583,14 @@ bool MNCTModuleCrosstalkCorrection::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* FileNameNode = Node->GetNode("FileName");
   if (FileNameNode != 0) {
-	m_FileName = FileNameNode->GetValue();
+    m_FileName = FileNameNode->GetValue();
   }
   return true;
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
+
 
 MXmlNode* MNCTModuleCrosstalkCorrection::CreateXmlConfiguration()
 {
