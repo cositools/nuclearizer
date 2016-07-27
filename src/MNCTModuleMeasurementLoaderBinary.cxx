@@ -158,8 +158,11 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
       Directory = Line + "/";
       Counter++;
     } else if (Line.BeginsWith("IN") == true) {
-      Line.RemoveInPlace(0, 3);
-      Line = Directory + Line;
+      Line.RemoveInPlace(0, 2);
+      Line.StripFrontInPlace();
+      if (Line.BeginsWith("/") == false) {
+        Line = Directory + Line;
+      }
       if (MFile::Exists(Line) == false) {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to find file \""<<Line<<"\""<<endl;
 
