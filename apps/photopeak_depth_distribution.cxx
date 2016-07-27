@@ -39,11 +39,13 @@ class Options
 		vector<vector<double>> EnergyWindows;
 		MString Filename;
 		MString OutputFilename;
+		int NDepthBins;
 		Options(void): EnergyWindows(12){
 			EnergyCalibrationFilename = "$NUCLEARIZER/resource/calibration/COSI16/Wanaka/EnergyCalibration_051016.ecal";
 			GeometryFilename = "";
 			Filename = "";
 			OutputFilename = "photopeak_depth_histograms.root";
+			NDepthBins = 15;
 			return;
 		}
 		bool ParseOptionsFile(MString fname){
@@ -68,6 +70,10 @@ class Options
 						if(Tokens.size() == 2) Filename = Tokens[1];
 					} else if(line.BeginsWith("GeometryFilename")){
 						if(Tokens.size() == 2) GeometryFilename = Tokens[1];
+					} else if(line.BeginsWith("NDepthBins")){
+						if(Tokens.size() == 2) NDepthBins = Tokens[1].ToInt();
+					} else if(line.BeginsWith("OutputFilename")){
+						if(Tokens.size() == 2) OutputFilename = Tokens[1];
 					} else {
 						//cout << "BAD INPUT IN OPTIONS FILE: " << line << endl;
 					}
@@ -123,7 +129,6 @@ int main(int argc, char** argv)
 		cout << "failed to load geometry file " << options->GeometryFilename << ", aborting..." << endl;
 	} else {
 		for(int i = 0; i < 12; ++i){
-			cout << i << ": " << options->EnergyWindows[i][0] << " to " << options->EnergyWindows[i][1] << endl; 
 			char name[32]; snprintf(name,sizeof name,"GeWafer_%d",i);
 			MDVolume* V = G->GetVolume(MString(name));
 			if(V != 0){
@@ -141,7 +146,7 @@ int main(int argc, char** argv)
 				DetectorThicknesses[i] = 1.5;
 			}
 			char hname[32]; snprintf(hname, sizeof hname, "depth_photo_%d", i);
-			DepthHistograms[i] = new TH1D(hname,hname,15,0.0,DetectorThicknesses[i]);
+			DepthHistograms[i] = new TH1D(hname,hname,options->NDepthBins,0.0,DetectorThicknesses[i]);
 		}
 		cout<<"Geometry "<<G->GetName()<<" loaded!"<<endl;
 	}
@@ -153,24 +158,12 @@ int main(int argc, char** argv)
 		if(E == 0) break; else{
 			if(E->GetType() == MPhysicalEvent::c_Photo){
 				MVector V = E->GetPosition();
-				MDVolumeSequence VS = G->GetVolumeSequence(V);
+				MDVolumeSequence VS = G->GetVolumeSequence(V, true, true);
+				//MDVolumeSequence VS = G->GetVolumeSequence(V);
 				MDDetector* D = VS.GetDetector();
 				if(D == 0){
 					BadEventsZH->Fill(E->GetPosition().GetZ());
-					//cout << "D is null, event ID is " << E->GetId() << endl;
-
-					/*
-					cout << "deepest volume for bad hit at " << E->GetPosition() << " is " << VS.GetDeepestVolume()->GetName() << endl;
-					for(int i = 0; i < 12; ++i){
-						char detname[32]; snprintf(detname, sizeof detname, "GeWafer_%d", i);
-						MDVolume* vvv = G->GetVolume(MString(detname));
-						MVector RelPos = VS.GetPositionInVolume(E->GetPosition(), vvv);
-						//cout << "---> relative to detector " << i <<" "<< RelPos << endl;
-					}
-					*/
-					
-
-
+					cout << "event ID is " << E->GetId() << "deepest volume for bad hit at " << E->GetPosition() << " is " << VS.GetDeepestVolume()->GetName() << endl;
 					continue;
 				}
 				MString DS = D->GetName();

@@ -102,6 +102,7 @@ MNCTModuleDepthCalibrationB::~MNCTModuleDepthCalibrationB()
 
 ////////////////////////////////////////////////////////////////////////////////
 
+FILE* fdebug;
 
 bool MNCTModuleDepthCalibrationB::Initialize()
 {
@@ -132,6 +133,8 @@ bool MNCTModuleDepthCalibrationB::Initialize()
 		cout << "MNCTModuleDepthCalibrationB: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
 		return false;
 	}
+
+	fdebug = fopen("fdebug","w");
 
 	return MModule::Initialize();
 }
@@ -188,6 +191,18 @@ bool MNCTModuleDepthCalibrationB::AnalyzeEvent(MReadOutAssembly* Event)
 			if( PosError != 0 ) {
 				Error = PosError; //record the positioning error 
 				H->SetNoDepth();
+			} else {
+				/*
+				int d = XSH->GetDetectorID();
+				int pixel_code = (10000*d) + (100*XSH->GetStripID()) + YSH->GetStripID();
+				double thick = m_Thicknesses[d];
+				double z = LocalPosition.GetZ() + (thick/2.0);
+				if(z <= 0.1){
+					static int xc = 0;
+					fprintf(fdebug,"n=%d px=%d x=%3.3f y=%3.3f ctd=%3.3f z=%3.3f\n",xc,pixel_code,XSH->GetTiming(),YSH->GetTiming(),XSH->GetTiming() - YSH->GetTiming(),z);
+					++xc;
+				}
+				*/
 			}
 
 		} else if( ((XStrips.size() == 2) && (YStrips.size() == 1)) || ((XStrips.size() == 1) && (YStrips.size() == 2)) ){
@@ -236,6 +251,8 @@ bool MNCTModuleDepthCalibrationB::AnalyzeEvent(MReadOutAssembly* Event)
 				NH->AddStripHit(NonDominantStrip); NH->AddStripHit(OtherSideStrip);
 				NewHits.push_back(NH);
 			}
+
+			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1x1
 		
 		} else if( (XStrips.size() == 2) && (YStrips.size() == 2) ){
 			//in this case use depth from dominant strips but use weighted X and Y positions
@@ -261,6 +278,7 @@ bool MNCTModuleDepthCalibrationB::AnalyzeEvent(MReadOutAssembly* Event)
 			//GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
 			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
+			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1X1
 
 		} else {
 			//set too many SH bad flag
@@ -281,6 +299,7 @@ bool MNCTModuleDepthCalibrationB::AnalyzeEvent(MReadOutAssembly* Event)
 			//EHist->Fill(H->GetEnergy());
 			//don't set the globally bad flag
 			//Event->SetDepthCalibrationIncomplete();
+			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1X1
 			++m_Error3;
 		} else if( Error == 4){
 			//hit was bad because of StripHitMultipleTimes flag from strip pairing
@@ -326,6 +345,7 @@ int MNCTModuleDepthCalibrationB::CalculateLocalPosition(MNCTStripHit* XSH, MNCTS
 	double Ypos = ((double)XSH->GetStripID() - 19.0)*(-0.2);
 	double Zpos = 0.0;
 	double CTD_s = 0.0;
+	int CTD = 0;
 
 	//now try and get z position
 	int DetID = XSH->GetDetectorID();
@@ -343,7 +363,7 @@ int MNCTModuleDepthCalibrationB::CalculateLocalPosition(MNCTStripHit* XSH, MNCTS
 		} else {
 
 			double CTD_f = (XSH->GetTiming() - YSH->GetTiming());
-			int CTD = CTD_f < 0 ? (int)(CTD_f - 0.001) : (int)(CTD_f + 0.001); //to ensure that the cast always gives us the integer we want
+			CTD = CTD_f < 0 ? (int)(CTD_f - 0.001) : (int)(CTD_f + 0.001); //to ensure that the cast always gives us the integer we want
 			double Z = 0.0;
 			bool FoundZ = m_DepthCalibrator->GetZ(pixel_code, CTD, Z);
 			if(!FoundZ){
@@ -367,9 +387,6 @@ int MNCTModuleDepthCalibrationB::CalculateLocalPosition(MNCTStripHit* XSH, MNCTS
 			}
 			
 			if( RetVal == 0 ){
-				if((Z < 0.0) || (Z > m_Thicknesses[DetID])){
-					cout << "BadZ = " << Z <<" ("<< XSH->GetStripID() << "," << YSH->GetStripID() << ")" << endl;
-				}
 
 				Zpos = m_Thicknesses[DetID]/2.0 - Z;
 			}
@@ -446,6 +463,7 @@ void MNCTModuleDepthCalibrationB::Finalize()
 	rootF->WriteTObject( EHist );
 	rootF->Close();
 	*/
+	fclose(fdebug);
 
 }
 

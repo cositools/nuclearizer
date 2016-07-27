@@ -409,8 +409,10 @@ int main(int argc, char** argv)
 						MDGridPoint GP = Detector->GetGridPoint(Vec);
 					//	int XStrip = GP.GetXGrid() + 1;
 					//	int YStrip = GP.GetYGrid() + 1;
-						int XStrip = 38 - (GP.GetXGrid() + 1);
-						int YStrip = 38 - (GP.GetYGrid() + 1);
+				//		int XStrip = 38 - (GP.GetXGrid() + 1);
+				//		int YStrip = 38 - (GP.GetYGrid() + 1);
+						int XStrip = 38 - (GP.GetYGrid() + 1);
+						int YStrip = 38 - (GP.GetXGrid() + 1);
 						int PixelCode = (10000*DetectorID) + (100*XStrip) + YStrip;
 						int DivisionCode = PixelCodeToDivision(PixelCode, options->Divisions);
 
