@@ -44,6 +44,8 @@ class MNCTAspectReconstruction
 		virtual ~MNCTAspectReconstruction();
 		//! Reset all data
 		void Clear();
+		//!Initialize the module
+		virtual bool Initialize();
 		//! Add and reconstruction one or more aspect frames - return false on error
 		bool AddAspectFrame(MNCTAspectPacket PacketA); 
 		//! Get the aspect for the given time, return 0 if we do not have enough data for the given time

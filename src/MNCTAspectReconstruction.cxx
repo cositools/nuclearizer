@@ -24,19 +24,12 @@
 
 
 // Include the header:
+#include "MNCTAspectReconstruction.h"
 
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-//Ares' 1st set of adjustments begin here (there are more later).
-
-
+// Standard libs:
 #include "stdio.h"
 #include "cstdio"
 #include "cstdlib"
-
 #include <time.h>
 #include <iostream>
 #include <fstream>
@@ -49,26 +42,7 @@
 #include <algorithm>
 #include <cctype>
 #include <map>
-
-//#include "Python.h"
-
 using namespace std;
-
-
-//Ares' 1st set of adjustments end here (there are more later).
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-
-#include "MNCTAspectReconstruction.h"
-#include "MNCTAspectPacket.h"
-#include "magfld.h"
-
-
-
-// Standard libs:
 
 // ROOT libs:
 
@@ -76,114 +50,36 @@ using namespace std;
 #include "MStreams.h"
 #include "MString.h"
 #include "MFile.h"
+#include "MNCTAspectPacket.h"
+#include "magfld.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-class tirecord
-{
-	public:
-		tirecord(size_t length){
-			m_Length = length;
-		}
-		uint64_t Add(MTime T, uint64_t PPS){ //T should be an MTime corresponding to the GPS time in a DSO packet
-			long int t = T.GetAsSystemSeconds(); //don't need the nanoseconds field here
-			uint64_t Ret = 0;
-			if(m_Record.count(t) == 1){
-				Ret = m_Record[t];
-			} else {
-				if(m_Record.size() > 1){
-					map<long int,uint64_t>::iterator i = m_Record.lower_bound(t);
-					--i;
-					long int dt = t - i->first;
-					MTime mdt(dt,(long int)0); //MTime GPS second delta
-					uint64_t PPSLSBs = PPS & 0xffffffff;
-					uint64_t PPSMSBs = PPS & 0x0000ffff00000000;
-					uint64_t NewPPS = 0;
-					bool Success = false;
-					int x,y;
-					for(x = -1; x <= 1; ++x){ //tweak MSBs
-						for(y = -2; y <= 2; ++y){ //tweak LSBs
-							NewPPS = (PPSMSBs + (0x0000000100000000)*x) | PPSLSBs;
-							NewPPS += (10000000)*y;
-							uint64_t dPPS = NewPPS - i->second;
-							long int sec = (long int)(dPPS/10000000);
-							long int nsec = (long int)((dPPS % 10000000)*100);
-							MTime mdPPS(sec,nsec); //MTime PPS delta
-							double diff = fabs(mdPPS.GetAsDouble() - mdt.GetAsDouble());
-							//cout << "diff = " << diff << endl;
-							if(diff <= 0.250){
-								Success = true;
-								break;
-							}
-						}
-						if(Success) break;
-					}
-					if(Success){
-						if(NewPPS != PPS){
-							cout << "TIRecord:corrected PPS, x = " << x << ", y = " << y << endl;
-						}
-						m_Record[t] = NewPPS;
-						Ret = NewPPS;
-					} else {
-						cout << "TIRecord:failed, expect TI issues!!!" << endl;
-						Ret = PPS;
-					}
-				} else {
-					m_Record[t] = PPS;
-					Ret = PPS;
-				}
-			}
-
-			while(m_Record.size() > m_Length) m_Record.erase(m_Record.begin()); //trim record down to size
-			return Ret;
-
-
-		}
-
-	private:
-		size_t m_Length;
-		map<long int,uint64_t> m_Record;
-
-};
-*/
-
 
 #ifdef ___CINT___
 ClassImp(MNCTAspectReconstruction)
 #endif
 
 
-	////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-	//Ares' 2nd set of adjustments begin here (there are more later).
+bool MTimeSort( MNCTAspect* A1, MNCTAspect* A2 );
 
-	bool MTimeSort( MNCTAspect* A1, MNCTAspect* A2 );
-
+////////////////////////////////////////////////////////////////////////////////
 
 MNCTAspectReconstruction::MNCTAspectReconstruction()
 {
 	// Construct an instance of MNCTAspectReconstruction
-	//Py_Initialize();
 	Clear();
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 MNCTAspectReconstruction::~MNCTAspectReconstruction()
 {
 	// Delete this instance of MNCTAspectReconstruction
-	//Py_Finalize();
 }
 
-
-//Ares' 2nd set of adjustments end here (there are more later).
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -210,14 +106,18 @@ void MNCTAspectReconstruction::Clear()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+bool MNCTAspectReconstruction::Initialize()
+{
+	//Initialize the module
+	
+	double RotGPSCryo_XY[3][3], RotGPSCryo_ZXY[3][3];
+	double Rot_XY[3][3], Rot_ZXY[3][3];
+
+	return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-//Ares' 3rd (and last) set of adjustments begin here.
-
-
 
 // Add and reconstruction one or more aspect frames - return false on error
 
@@ -246,7 +146,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	MTime ClkTime((long int)(PacketA.PPSClk/10000000),(long int)((PacketA.PPSClk % 10000000)*100)); //start with PPS value
 	ClkTime += MTime((long int)0,(long int)(PacketA.GPSms % 1000)*1000000); //then add offset corresponding to the number of ms into the current second
 
-	double magnetic_heading = PacketA.heading;
+	double heading = PacketA.heading;
 	double magnetic_declination = 0.0;
 
 
@@ -265,15 +165,17 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		magnetic_declination = magdec_Cplusplus1;
 		if (test_or_not == 0 && g_Verbosity >= c_Info) {		
 			printf("According to C++, magnetic_declination is: %9.5f \n",magdec_Cplusplus1);	
+	
 		}
 		if (g_Verbosity >= c_Info) { 
-      cout<<"magnetic declination = "<<magnetic_declination<<endl;
-      cout<<"lat = "<<lat<<" lon = "<<lon<<" altitude = "<<alt<<endl;
-    }
+      		cout<<"magnetic declination = "<<magnetic_declination<<endl;
+      		cout<<"lat = "<<lat<<" lon = "<<lon<<" altitude = "<<alt<<endl;
+   	  	}
 	}
 
-	double heading = magnetic_heading + magnetic_declination;
-	heading = 360.0-heading;
+	heading = heading + magnetic_declination; //if GPS packet, magnetic_declination = 0.
+
+	heading = 360.0-heading;//The GPS system defines a positive heading angle as a clockwise rotation, and with the y direction as the forward facing vector, and the x direction as the right facing vector (when observing the system from above, down the z-axis), a 90 degree positve heading rotation would transform from the +y axis of the GPS to the +x axis of the GPS. The "360-heading" here transforms the heading angle into a right-handed coorindate system (a 90 degree postion heading rotation wouls transform the +x axis of the GPS to the +y axis of the GPS) so we can apply the traditional rotaion matrices.
 
 	double pitch =  PacketA.pitch;
 	if (GPS_or_magnetometer == 1){
@@ -289,286 +191,178 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		}
 	}
 
-	double Z[3][3], Y[3][3], X[3][3], YX[3][3], ZYX[3][3];
-	double Z_[3][3], Y_[3][3], X_[3][3], YX_[3][3], ZYX_[3][3];
+   	if (g_Verbosity >= c_Info) {
+    	cout<<"heading = "<<heading<<" pitch = "<<pitch<<" roll = "<<roll<<endl;
+     	cout<<"GPS_or_magnetometer = "<<GPS_or_magnetometer<<endl;
+   	}
 
-	Z[0][0] = cosine(heading);
-	Z[0][1] = 0.0 - sine(heading);
-	Z[0][2] = 0.0;
 
-	Z[1][0] = sine(heading);
-	Z[1][1] = cosine(heading);
-	Z[1][2] = 0.0;
 
-	Z[2][0] = 0.0;
-	Z[2][1] = 0.0;
-	Z[2][2] = 1.0;
+	//definte the rotation matrices (https://en.wikipedia.org/wiki/Davenport_chained_rotations) to allow us to tranform from heading, pitch and roll, to the local GPS coordinates, and vise versa.
 
-	Y[0][0] = cosine(roll);
-	Y[0][1] = 0.0;
-	Y[0][2] = sine(roll);
+	double Rot_Z[3][3] = { {cosine(heading), -sine(heading), 0.0}, {sine(heading), cosine(heading), 0.0}, {0.0, 0.0, 1.0} };
+	double Rot_Y[3][3] = { {cosine(roll), 0.0, sine(roll)}, {0.0, 1.0, 0.0}, {-sine(roll), 0.0, cosine(roll)} };
+	double Rot_X[3][3] = { {1.0, 0.0, 0.0}, {0.0, cosine(pitch), -sine(pitch)}, {0.0, sine(pitch), cosine(pitch)} };
 
-	Y[1][0] = 0.0;
-	Y[1][1] = 1.0;
-	Y[1][2] = 0.0;
-
-	Y[2][0] = 0.0 - sine(roll);
-	Y[2][1] = 0.0;
-	Y[2][2] = cosine(roll);
-
-	X[0][0] = 1.0;
-	X[0][1] = 0.0;
-	X[0][2] = 0.0;
-
-	X[1][0] = 0.0;
-	X[1][1] = cosine(pitch);
-	X[1][2] = 0.0 - sine(pitch);
-
-	X[2][0] = 0.0;
-	X[2][1] = sine(pitch);
-	X[2][2] = cosine(pitch);
-
+	//multiply matricies together to get full rotation matrix from heading, pitch, and roll back to local GPS coordinates. The convention for Tait-Bryan chained rotations is to apply the rotations in this order: Yaw, Pitch, Roll. Here, the matricies are written in reverse to represent an extrinsic rotation. CK double check the output makes sense.
 	for(int i=0;i<3;i++){
 		for(int j=0;j<3;j++){   
-			YX[i][j]=0;
+			Rot_XY[i][j]=0;
 			for(int k=0;k<3;k++){
-				//ares' X and Y are backwards, changing this from YX to XY
-				//so the full rotation is ZXY
-				//YX[i][j]=YX[i][j]+Y[i][k]*X[k][j];
-				YX[i][j]=YX[i][j]+X[i][k]*Y[k][j];
+				Rot_XY[i][j]=Rot_XY[i][j] + Rot_X[i][k]*Rot_Y[k][j];
 			}
 		}
 	}
 
 	for(int i=0;i<3;i++){
 		for(int j=0;j<3;j++){   
-			ZYX[i][j]=0;
+			Rot_ZXY[i][j]=0;
 			for(int k=0;k<3;k++){
-				ZYX[i][j]=ZYX[i][j]+Z[i][k]*YX[k][j];
+				//Still some question about the order of this rotation here. CK is pretty convinced this is right, but it would be worth switching the order here if we're still having aspect problems down the line.
+				Rot_ZXY[i][j]=Rot_ZXY[i][j] + Rot_Z[i][k]*Rot_XY[k][j];
 			}
 		}
 	}
 
-	double Zhat[3];
-	double Xhat[3];
-	double Yhat[3];
-	double temp[3];
 
-	Zhat[0] = 0.0;
-	Zhat[1] = 0.0;
-	Zhat[2] = 1.0;
 
-	Xhat[0] = 1.0;
-	Xhat[1] = 0.0;
-	Xhat[2] = 0.0;
-
-	Yhat[0] = 0.0;
-	Yhat[1] = 1.0;
-	Yhat[2] = 0.0;
-
-	//first assume that Xhat Yhat and Zhat are the unit vectors in the unrotated GPS frame.  This unrotated frame has
-	//Yhat pointing at True North and Z pointing towards the zenith (i.e. it has 0 pitch 0 heading and 0 roll) 
-
-	//these unit vectors need to be rotated so that they are aligned with the cryostat's coordinate system.  
-	//to first order, this should be a -90 rotation about the Z axis.  //to second order, there should be a 
-	//~0.5 degree rotation about the GPS X axis. 
-
-	//if this is GPS data, we first need to rotate the Xhat and Yhat vectors to line up with the cryostat's X and Y directions
-	//the magnetometer doesn't require this step because its axes are already aligned with the cryostat
+	//Now, define the GPS pre-rotation matrix RotGPSCryo_ZXY, which is the rotation matrix between the cryostat coorindates, with +x pointing towards the front of the gondola (sun side), and the GPS coordinates, with +y pointing towards the back of the gonodla. To first order, this is just a -90 degree rotation around the z-axis.
+	//The magnetometer doesn't require this extra rotation matrix because its axes are already aligned with the cryostat
 
 	if( GPS_or_magnetometer == 0 ){
 
-		//First, apply GPS pre-rotation matrix ZYX_
-
-    /*
+		//To second order, the GPS and cryostat are not perfectly aligned. Theodolite measurements were taken to better understand this offset, but have not yet been applied here. Once the Crab was detected during the 2016 flight, Alex worked towards getting the relative offsets that better centered the Crab, these are added below, but this is only preliminary and should be better defined.
 		//corrections from Crab observation 2016
 		const double dh = 5.2;
 		const double dp = -0.5;
 		const double dr = -0.5;
 
-		Z_[0][0] = cosine(-90 + dh);
-		Z_[0][1] = 0.0 - sine(-90 + dh);
-		Z_[0][2] = 0.0;
 
-		Z_[1][0] = sine(-90 + dh);
-		Z_[1][1] = cosine(-90 + dh);
-		Z_[1][2] = 0.0;
+		//define the three axis rotation matricies:
+		double RotGPSCryo_Z[3][3] = { {cosine(-90 + dh), -sine(-90 + dh), 0.0}, {sine(-90 + dh), cosine(-90 + dh), 0.0}, {0.0, 0.0, 1.0} };
+		double RotGPSCryo_Y[3][3] = { {cosine(dr), 0.0, sine(dr)}, {0.0, 1.0, 0.0}, {-sine(dr), 0.0, cosine(dr)} };
+		double RotGPSCryo_X[3][3] = { {1.0, 0.0, 0.0}, {0.0, cosine(dp), -sine(dp)}, {0.0, sine(dp), cosine(dp)} };
 
-		Z_[2][0] = 0.0;
-		Z_[2][1] = 0.0;
-		Z_[2][2] = 1.0;
-
-		Y_[0][0] = cosine(dr);
-		Y_[0][1] = 0.0;
-		Y_[0][2] = sine(dr);
-
-		Y_[1][0] = 0.0;
-		Y_[1][1] = 1.0;
-		Y_[1][2] = 0.0;
-
-		Y_[2][0] = 0.0 - sine(dr);
-		Y_[2][1] = 0.0;
-		Y_[2][2] = cosine(dr);
-
-		X_[0][0] = 1.0;
-		X_[0][1] = 0.0;
-		X_[0][2] = 0.0;
-
-		X_[1][0] = 0.0;
-		X_[1][1] = cosine(dp);
-		X_[1][2] = 0.0 - sine(dp);
-
-		X_[2][0] = 0.0;
-		X_[2][1] = sine(dp);
-		X_[2][2] = cosine(dp);
-
+		//multiply the rotaion matricies to make one total 3x3 matrix that represents the 3-d rotation between cryostat coordinates and GPS coordinates. Using the same convention as above.
 		for(int i=0;i<3;i++){
 			for(int j=0;j<3;j++){   
-				YX_[i][j]=0;
+		   	RotGPSCryo_XY[i][j]=0;
 				for(int k=0;k<3;k++){
-					//ares' X and Y are backwards, changing this from YX to XY
-					//so the full rotation is ZXY
-					//YX[i][j]=YX[i][j]+Y[i][k]*X[k][j];
-					YX_[i][j]=YX_[i][j]+X_[i][k]*Y_[k][j];
+					RotGPSCryo_XY[i][j] = RotGPSCryo_XY[i][j] + RotGPSCryo_X[i][k]*RotGPSCryo_Y[k][j];
 				}
 			}
 		}
 
 		for(int i=0;i<3;i++){
 			for(int j=0;j<3;j++){   
-				ZYX_[i][j]=0;
+				RotGPSCryo_ZXY[i][j]=0;
 				for(int k=0;k<3;k++){
-					ZYX_[i][j]=ZYX_[i][j]+Z_[i][k]*YX_[k][j];
+					RotGPSCryo_ZXY[i][j] = RotGPSCryo_ZXY[i][j] + RotGPSCryo_Z[i][k]*RotGPSCryo_XY[k][j];
 				}
 			}
 		}
+	}
 
-		for(int i=0;i<3;i++){
-			double Q = 0;
-			for(int k=0;k<3;k++){
-				Q += ZYX_[i][k] * Yhat[k];
-			}
-			temp[i] = Q;
-		}
-		Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
+
+    //define the axes of the unrotated GPS coordinate system with unit vectors xhat, yhat and zhat. yhat points true north, and zhats points towards      the zenith in this unrotated frame (i.e. 0 pitch, 0 roll, 0 heading).
+    double Zhat[3] = {0.0, 0.0, 1.0};
+    double Yhat[3] = {0.0, 1.0, 0.0};
+    double Xhat[3] = {1.0, 0.0, 0.0};
+    double temp[3];
+		
+	//Transform the xhat, yhat and zhat into the cryostat coordinate system. These unit vectors now represent the pointing of the cryostat axis in the GPS local coorindate system.
+	
+	if( GPS_or_magnetometer == 0 ){
 
 		//transform Xhat
 		for(int i=0;i<3;i++){
 			double Q = 0;
 			for(int k=0;k<3;k++){
-				Q += ZYX_[i][k] * Xhat[k];
+				Q += RotGPSCryo_ZXY[i][k] * Xhat[k];
 			}
 			temp[i] = Q;
 		}
 		Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
+
+        //transform Yhat
+        for(int i=0;i<3;i++){
+            double Q = 0; 
+            for(int k=0;k<3;k++){
+                Q += RotGPSCryo_ZXY[i][k] * Yhat[k];
+            }    
+            temp[i] = Q; 
+        }    
+        Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
 
 		//transform Zhat
 		for(int i=0;i<3;i++){
 			double Q = 0;
 			for(int k=0;k<3;k++){
-				Q += ZYX_[i][k] * Zhat[k];
+				Q += RotGPSCryo_ZXY[i][k] * Zhat[k];
 			}
 			temp[i] = Q;
 		}
 		Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
 
-    */
-    
-		// Uncorrected version:
-		Z[0][0] = cosine(-90.0);
-		Z[0][1] = 0.0 - sine(-90.0);
-		Z[0][2] = 0.0;
-
-		Z[1][0] = sine(-90.0);
-		Z[1][1] = cosine(-90.0);
-		Z[1][2] = 0.0;
-
-		Z[2][0] = 0.0;
-		Z[2][1] = 0.0;
-		Z[2][2] = 1.0;
-
-		//transform Yhat
-		for(int i=0;i<3;i++){
-			double Q = 0;
-			for(int k=0;k<3;k++){
-				Q += Z[i][k] * Yhat[k];
-			}
-			temp[i] = Q;
-		}
-		Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
-
-		//transform Xhat
-		for(int i=0;i<3;i++){
-			double Q = 0;
-			for(int k=0;k<3;k++){
-				Q += Z[i][k] * Xhat[k];
-			}
-			temp[i] = Q;
-		}
-		Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
-
 	}
 
-	//now Yhat and Xhat point in the Y and X directions in the cryostat's frame.
-	//now apply the full ZYX rotation matrix to Zhat, Xhat, and Yhat
 
-	//transform Zhat
-	for(int i=0;i<3;i++){
-		double Q = 0;
-		for(int k=0;k<3;k++){
-			Q += ZYX[i][k] * Zhat[k];
-		}
-		temp[i] = Q;
-	}
-	Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
-
-	//transform Yhat
-	for(int i=0;i<3;i++){
-		double Q = 0;
-		for(int k=0;k<3;k++){
-			Q += ZYX[i][k] * Yhat[k];
-		}
-		temp[i] = Q;
-	}
-	Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
+	//now Zhat, Yhat, and Xhat are represent cryostat's axis in the GPS local frame, apply the full ZXY rotation matrix to Zhat, Xhat, and Yhat to determine the true cryostat pointing taking into account heading, pitch and roll, in the unrotated GPS reference frame, with +y pointing north and +z pointing towards the zenith..
 
 	//transform Xhat
 	for(int i=0;i<3;i++){
 		double Q = 0;
 		for(int k=0;k<3;k++){
-			Q += ZYX[i][k] * Xhat[k];
+			Q += Rot_ZXY[i][k] * Xhat[k];
 		}
 		temp[i] = Q;
 	}
 	Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
 
-	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
+    //transform Yhat
+    for(int i=0;i<3;i++){
+        double Q = 0;
+        for(int k=0;k<3;k++){
+            Q += Rot_ZXY[i][k] * Yhat[k];
+        }
+        temp[i] = Q;
+    }
+    Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
 
+    //transform Zhat
+    for(int i=0;i<3;i++){
+        double Q = 0;
+        for(int k=0;k<3;k++){
+            Q += Rot_ZXY[i][k] * Zhat[k];
+        }
+        temp[i] = Q;
+    }
+    Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
+
+
+	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
 	m_TCCalculator.SetUnixTime(UTCTime.GetAsSystemSeconds()); //AWL use the UnixTimeFromGPSTime
 
-	//dot Zhat/Xhat into (0,0,1) and take the arcos to get the zenith angle.  then convert this to elevation angle
+	//dot Zhat/Yhat/Xhat into (0,0,1) and take the arccos to get the zenith angle.  then convert this to elevation angle
 	double Z_Elevation = 90.0 - arccosine( Zhat[2] );
-	double X_Elevation = 90.0 - arccosine( Xhat[2] );
 	double Y_Elevation = 90.0 - arccosine( Yhat[2] );
+    double X_Elevation = 90.0 - arccosine( Xhat[2] );
 
-	//get azimuth of Zhat/Xhat by projecting into X-Y plane, re-normalizing, and dotting into (0,1,0)
+	//get azimuth of Zhat/Yhat/Xhat by projecting into X-Y plane, re-normalizing, and dotting into (0,1,0)
 	double Z_proj[3]; Z_proj[0] = Zhat[0]; Z_proj[1] = Zhat[1]; Z_proj[2] = 0.0;
-	double X_proj[3]; X_proj[0] = Xhat[0]; X_proj[1] = Xhat[1]; X_proj[2] = 0.0;
 	double Y_proj[3]; Y_proj[0] = Yhat[0]; Y_proj[1] = Yhat[1]; Y_proj[2] = 0.0;
+    double X_proj[3]; X_proj[0] = Xhat[0]; X_proj[1] = Xhat[1]; X_proj[2] = 0.0;
 
 	double Znorm = sqrt( pow(Z_proj[0],2.0) + pow(Z_proj[1],2.0) );
-	double Xnorm = sqrt( pow(X_proj[0],2.0) + pow(X_proj[1],2.0) );
 	double Ynorm = sqrt( pow(Y_proj[0],2.0) + pow(Y_proj[1],2.0) );
+    double Xnorm = sqrt( pow(X_proj[0],2.0) + pow(X_proj[1],2.0) );
 
-  if (g_Verbosity >= c_Info) { 
-    cout<<"heading = "<<heading<<" pitch = "<<pitch<<" roll = "<<roll<<endl;
-    cout<<"GPS_or_magnetometer = "<<GPS_or_magnetometer<<endl;
-  }
   
 	//IMPORTANT since the magnetometer reference frame has the X axis pointing at true north,
 	//we need to look at the azimuth angle from the X axis rather than the y axis (from GPS)
 	double Z_Azimuth,X_Azimuth,Y_Azimuth;
-
+	
+	//Azimuth calculation for GPS:
 	if( GPS_or_magnetometer == 0 ){
 
 		//for GPS, the azimuth angle is the angle between the projected vector and the y axis, so pass the y component 
@@ -579,21 +373,25 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		} else {
 			Z_Azimuth = 0.0;
 		}
-		if (g_Verbosity >= c_Info) cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
-
-		if( Xnorm > 1.0E-9 ){
-			X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
-		} else {
-			X_Azimuth = 0.0;
-		}
-		if (g_Verbosity >= c_Info) cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
 
 		if( Ynorm > 1.0E-9 ){
 			Y_Azimuth = arccosine( Y_proj[1]/Ynorm ); if( Y_proj[0] < 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
 		} else {
 			Y_Azimuth = 0.0;
 		}
-		if (g_Verbosity >= c_Info) cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+
+        if( Xnorm > 1.0E-9 ){
+            X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
+        } else {
+            X_Azimuth = 0.0;
+        }
+
+        if (g_Verbosity >= c_Info){
+			cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+			cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+			cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+		}
+
 
 	} else {
 
@@ -605,25 +403,30 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		} else {
 			Z_Azimuth = 0.0;
 		}
-		if (g_Verbosity >= c_Info) cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
 
 		if( Xnorm > 1.0E-9 ){
 			X_Azimuth = arccosine( X_proj[0]/Xnorm ); if( X_proj[1] > 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
 		} else {
 			X_Azimuth = 0.0;
 		}
-		if (g_Verbosity >= c_Info) cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
 
 		if( Ynorm > 1.0E-9 ){
 			Y_Azimuth = arccosine( Y_proj[0]/Ynorm ); if( Y_proj[1] > 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
 		} else {
 			Y_Azimuth = 0.0;
 		}
-		if (g_Verbosity >= c_Info) cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+	
+		if (g_Verbosity >= c_Info) {
+			cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+			cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+			cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;		
+		}
 
 	}
 
 
+
+	//Need to double check the TCCalculator used here!	
 	vector<double> ZGalactic; 
 	vector<double> ZEquatorial;
 	ZEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Z_Azimuth, Z_Elevation);
@@ -633,16 +436,6 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Zgalat = ZGalactic[1];
 	double Zgalon = ZGalactic[0];
 	if (g_Verbosity >= c_Info) cout<<"Z gal-lat = "<<Zgalat<<" Z gal-lon = "<<Zgalon<<endl;
-
-	vector<double> XGalactic; 
-	vector<double> XEquatorial;
-	XEquatorial= m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(X_Azimuth, X_Elevation);
-	XGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(XEquatorial);	
-	//Xra = XEquatorial[0];
-	//Xdec = XEquatorial[1];
-	double Xgalat = XGalactic[1];
-	double Xgalon = XGalactic[0];
-	if (g_Verbosity >= c_Info) cout<<"X gal-lat = "<<Xgalat<<" X gal-lon = "<<Xgalon<<endl;
 
 	vector<double> YGalactic; 
 	vector<double> YEquatorial;
@@ -654,27 +447,35 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Ygalon = YGalactic[0];
 	if (g_Verbosity >= c_Info) cout<<"Y gal-lat = "<<Ygalat<<" Y gal-lon = "<<Ygalon<<endl;
 
+    vector<double> XGalactic; 
+    vector<double> XEquatorial;
+    XEquatorial= m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(X_Azimuth, X_Elevation);
+    XGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(XEquatorial);
+    //Xra = XEquatorial[0];
+    //Xdec = XEquatorial[1];
+    double Xgalat = XGalactic[1];
+    double Xgalon = XGalactic[0];
+    if (g_Verbosity >= c_Info) cout<<"X gal-lat = "<<Xgalat<<" X gal-lon = "<<Xgalon<<endl;
+
+
 	Aspect->SetTime(ClkTime);
 	Aspect->SetHeading(heading);
 	Aspect->SetPitch(pitch);
 	Aspect->SetRoll(roll);		
 	Aspect->SetLatitude(geographic_latitude);
 	Aspect->SetLongitude(geographic_longitude);
-	Aspect->SetAltitude(elevation); // This is what we talked about. Our "elevation" 
+	Aspect->SetAltitude(elevation);
 	Aspect->SetGalacticPointingXAxis(Xgalon, Xgalat);
 	Aspect->SetGalacticPointingZAxis(Zgalon, Zgalat);
-	Aspect->SetHorizonPointingXAxis(X_Azimuth, X_Elevation);//Again here,
-	Aspect->SetHorizonPointingZAxis(Z_Azimuth, Z_Elevation);//and here we see 
+	Aspect->SetHorizonPointingXAxis(X_Azimuth, X_Elevation);
+	Aspect->SetHorizonPointingZAxis(Z_Azimuth, Z_Elevation);
 	Aspect->SetUTCTime(UTCTime);
-//	cout << UnixTimeFromGPSTime.GetSeconds() << " ---> " << UnixTimeFromGPSTime.GetNanoSeconds() <<endl;
+	//cout << UnixTimeFromGPSTime.GetSeconds() << " ---> " << UnixTimeFromGPSTime.GetNanoSeconds() <<endl;
 	//Aspect->SetGPSTime(GPSTime);
 	Aspect->SetPPS(PacketA.PPSClk);
 	//cout << "m_Aspect->GetPPS() returns " << Aspect->GetPPS() << endl; //this works
-	
-	
 	Aspect->SetBRMS(BRMS);
 	Aspect->SetAttFlag(AttFlag);
-	
 	Aspect->SetGPS_or_magnetometer(GPS_or_magnetometer);
 
 	if (GPS_or_magnetometer == 0){
@@ -686,7 +487,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 			m_Aspects_GPS.pop_front();
 			delete x;
 		}
-		SetLastAspectInDeque(m_Aspects_GPS);
+		SetLastAspectInDeque(m_Aspects_GPS); //For housekeeping file
 	}
 
 
@@ -699,7 +500,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 			m_Aspects_Magnetometer.pop_front();
 			delete x;
 		}
-		SetLastAspectInDeque(m_Aspects_Magnetometer);
+		SetLastAspectInDeque(m_Aspects_Magnetometer); //For housekeeping file
 
 	}
 
@@ -710,55 +511,6 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-//////////////////////////////////////////////////////////////////////////////// 
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////// 
-
-
-
-//Below we see various search functions useful for acquiring aspect information if given the time.
-
-
-/*Okay, first off, we see the "GetAspect()" function. This function behaves like the GetAspectGPS()
-  function (more on that function later) except that if it is unable to find good GPS data for a given
-  time it will try to find good magnetometer data instead.*/
 
 MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnetometer){
 
@@ -822,71 +574,6 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 
 }
 
-/*
-
-	MNCTAspect* MNCTAspectReconstruction::GetAspect_ares(MTime Time){
-	MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Desired_Candidate_MNCTAspect = new MNCTAspect();
-	uint64_t int_ClkSeconds = (PacketA.CorrectedClk/10000000) * 10000000;
-	double ClkSeconds = (double) int_ClkSeconds;
-	uint64_t int_ClkNanoseconds = PacketA.CorrectedClk % 10000000;
-	double ClkNanoseconds = ((double) int_ClkNanoseconds) *100.0; //clock board ticks are in units of 100 ns
-
-	MNCTAspect* Lower_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Upper_MNCTAspect = new MNCTAspect();
-	Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
-	MTime time_after_last_data;
-	MTime time_until_next_data;
-	for(unsigned int i = 0; i < m_Aspects.size(); i++){
-	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time < 0){
-	time_after_last_data = Time - m_Aspects[i]->GetTime();
-	Lower_MNCTAspect = m_Aspects[i];
-	}
-	else if (m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time >= 0){
-	time_until_next_data = m_Aspects[i]->GetTime() - Time;
-	Upper_MNCTAspect = m_Aspects[i];
-	if(time_after_last_data < time_until_next_data){
-	Desired_Candidate_MNCTAspect = Lower_MNCTAspect;
-	if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-	Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-	}
-	}
-	else{
-	Desired_Candidate_MNCTAspect = Upper_MNCTAspect;
-	if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-	Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-	}
-	}
-	break;
-	}	
-	}
-	if(Desired_MNCTAspect->GetGPS_Or_Magnetometer() == 2){
-	MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Desired_Candidate_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Lower_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Upper_MNCTAspect = new MNCTAspect();
-	Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
-	MTime time_after_last_data;
-	MTime time_until_next_data;
-	for(unsigned int i = 0; i < m_Aspects.size(); i++){
-	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time < 0){
-	time_after_last_data = Time - m_Aspects[i]->GetTime();
-	Lower_MNCTAspect = m_Aspects[i];
-	}
-	else if (m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time >= 0){
-	time_until_next_data = m_Aspects[i]->GetTime() - Time;
-	Upper_MNCTAspect = m_Aspects[i];
-	if(time_after_last_data < time_until_next_data){
-	Desired_Candidate_MNCTAspect = Lower_MNCTAspect;
-	if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-	Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-	}
-	}
-	else{
-	Desired_Candidate_MNCTAspect = Upper_MNCTAspect;
-	if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-	Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-	}
 	}
 	break;
 	}	
@@ -896,171 +583,7 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 return Desired_MNCTAspect;
 }
 
-*/
-//Okay, here's that GetAspectGPS() function we were talking about.
 
-
-/*
-
-	MNCTAspect* MNCTAspectReconstruction::GetAspectGPS(MTime Time){
-	MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Desired_Candidate_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Lower_MNCTAspect = new MNCTAspect();
-	MNCTAspect* Upper_MNCTAspect = new MNCTAspect();
-	Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
-	MTime time_after_last_data;
-	MTime time_until_next_data;
-	for(unsigned int i = 0; i < m_Aspects.size(); i++){
-	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time < 0){
-	time_after_last_data = Time - m_Aspects[i]->GetTime();
-	Lower_MNCTAspect = m_Aspects[i];
-	}
-	else if (m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time >= 0){
-	time_until_next_data = m_Aspects[i]->GetTime() - Time;
-	Upper_MNCTAspect = m_Aspects[i];
-	if(time_after_last_data < time_until_next_data){
-	Desired_Candidate_MNCTAspect = Lower_MNCTAspect;
-	if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-	Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-	}
-	}
-	else{
-	Desired_Candidate_MNCTAspect = Upper_MNCTAspect;
-	if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-	Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-	}
-	}
-	break;
-	}	
-	}
-	return Desired_MNCTAspect;
-	}
-
-//Here's GetAspectMagnetometer(). It's just like its counterpart with the GPS.
-
-MNCTAspect* MNCTAspectReconstruction::GetAspectMagnetometer(MTime Time){
-MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
-MNCTAspect* Desired_Candidate_MNCTAspect = new MNCTAspect();
-MNCTAspect* Lower_MNCTAspect = new MNCTAspect();
-MNCTAspect* Upper_MNCTAspect = new MNCTAspect();
-Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
-MTime time_after_last_data;
-MTime time_until_next_data;
-for(unsigned int i = 0; i < m_Aspects.size(); i++){
-if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time < 0){
-time_after_last_data = Time - m_Aspects[i]->GetTime();
-Lower_MNCTAspect = m_Aspects[i];
-}
-else if (m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time >= 0){
-time_until_next_data = m_Aspects[i]->GetTime() - Time;
-Upper_MNCTAspect = m_Aspects[i];
-if(time_after_last_data < time_until_next_data){
-Desired_Candidate_MNCTAspect = Lower_MNCTAspect;
-if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-}
-}
-else{
-Desired_Candidate_MNCTAspect = Upper_MNCTAspect;
-if(Desired_Candidate_MNCTAspect->GetFlag() == 0){
-Desired_MNCTAspect = Desired_Candidate_MNCTAspect;
-}
-}
-break;
-}	
-}
-return Desired_MNCTAspect;
-}
-
-*/
-
-/*This function, GetPreviousGPS(), was not created for the purposes of being used by people as it will 
-  give you the previous GPS aspect data even it is bad data. The purpose of this function is to be used
-  by the main chunk of this file to check and see if a piece of data should recieve a flag. Specifically,
-  this function is used to retrieve old Aspect data to compare it to Aspect data being inspected for 
-  flagging.*/
-
-/*
-
-	MNCTAspect* MNCTAspectReconstruction::GetPreviousGPS(MTime Time){
-	MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
-	int Lower_Index = 0;
-	int Upper_Index = 0;
-	int Critical_Index = 0;
-	Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
-	MTime time_after_last_data;
-	MTime time_until_next_data;
-	for (unsigned int i = 0; i < m_Aspects.size(); i++){
-	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time < 0){
-	time_after_last_data = Time - m_Aspects[i]->GetTime();
-	Lower_Index = i;
-	}
-	else if (m_Aspects[i]->GetGPS_Or_Magnetometer() == 0 && m_Aspects[i]->GetTime() - Time >= 0){
-	time_until_next_data = m_Aspects[i]->GetTime() - Time;
-	Upper_Index = i;
-	if(time_after_last_data < time_until_next_data){
-	Critical_Index = Lower_Index;				
-	}
-	else{
-	Critical_Index = Upper_Index;				
-	}
-	break;
-	}	
-	}  
-	for (int i = Critical_Index - 1; i >= 0; i--){
-	if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 0){
-	Desired_MNCTAspect = m_Aspects[i];
-	break;
-	}
-	}	
-	return Desired_MNCTAspect;
-	}
-
-//This is the equivalent GetPrevious function, but for the magnetometer this time.
-
-MNCTAspect* MNCTAspectReconstruction::GetPreviousMagnetometer(MTime Time){
-MNCTAspect* Desired_MNCTAspect = new MNCTAspect();
-int Lower_Index = 0;
-int Upper_Index = 0;
-int Critical_Index = 0;
-Desired_MNCTAspect->SetGPS_Or_Magnetometer(2); 
-MTime time_after_last_data;
-MTime time_until_next_data;
-for(unsigned int i = 0; i < m_Aspects.size(); i++){
-if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time < 0){
-time_after_last_data = Time - m_Aspects[i]->GetTime();
-Lower_Index = i;
-}
-else if (m_Aspects[i]->GetGPS_Or_Magnetometer() == 1 && m_Aspects[i]->GetTime() - Time >= 0){
-time_until_next_data = m_Aspects[i]->GetTime() - Time;
-Upper_Index = i;
-if(time_after_last_data < time_until_next_data){
-Critical_Index = Lower_Index;				
-}
-else{
-Critical_Index = Upper_Index;				
-}
-break;
-}	
-}  
-for (int i = Critical_Index - 1; i >= 0; i--){
-if(m_Aspects[i]->GetGPS_Or_Magnetometer() == 1){
-Desired_MNCTAspect = m_Aspects[i];
-break;
-}
-}	     
-return Desired_MNCTAspect;
-}
-
-
-
-*/
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1103,14 +626,6 @@ double MNCTAspectReconstruction::Vincenty(double old_glat, double new_glat, doub
 	return great_circle_distance;
 }
 
-//Okay, okay, okay... Now we're really, really done. Thanks for bearing with these comments from the beginning to
-//the end. Hopefully, they thoroughly explained how this code works.
-
-
-//Ares' 3rd (and last) set of adjustments end here.
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 bool MTimeSort( MNCTAspect* A1, MNCTAspect* A2 ){
@@ -1120,7 +635,8 @@ bool MTimeSort( MNCTAspect* A1, MNCTAspect* A2 ){
 //////////////////////////////////////////////////////////////////////////////
 
 void MNCTAspectReconstruction::SetLastAspectInDeque(deque<MNCTAspect*> CurrentDeque){
-	
+	//Created for the housekeeping file.
+
 	if (CurrentDeque.empty()) {
 		LastAspectInDeque = 0;
 	} else {
