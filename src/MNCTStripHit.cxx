@@ -81,6 +81,7 @@ void MNCTStripHit::Clear()
   m_Energy = 0;
   m_EnergyResolution = 0;
   m_Timing = 0;
+  m_PreampTemp = 0;
   m_Origins.clear();
 }
 
