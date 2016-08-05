@@ -1,5 +1,36 @@
+/*
+ * MNCTDepthCalibratorB.h
+ *
+ * Copyright (C) by Alex Lowell.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
+#ifndef __MNCTDepthCalibratorB__
+#define __MNCTDepthCalibratorB__
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Standard libs:
 #include <unordered_map>
+using namespace std;
+
+// ROOT libs:
+
+// MEGAlib libs:
+#include "MGlobal.h"
 #include "MString.h"
+
+// Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 class MNCTDepthCalibratorB
 {
@@ -17,4 +48,13 @@ class MNCTDepthCalibratorB
 		bool m_LookupTablesLoaded;
 		unordered_map<int,unordered_map<int,double>*> m_PixelTables;
 
+
+
+#ifdef ___CINT___
+ public:
+  ClassDef(MNCTDepthCalibratorB, 0) // no description
+#endif
+
 };
+
+#endif

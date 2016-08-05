@@ -1,9 +1,39 @@
-#include "TSpline.h"
+/*
+ * MNCTDepthCalibrator.h
+ *
+ * Copyright (C) by Alex Lowell.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
+#ifndef __MNCTDepthCalibrator__
+#define __MNCTDepthCalibrator__
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Standard libs:
 #include <unordered_map>
 #include <vector>
+
+// ROOT libs:
+#include "TMultiGraph.h"
+#include "TSpline.h"
+
+// MEGAlib libs:
+#include "MGlobal.h"
 #include "MString.h"
 #include "MFile.h"
-#include "TMultiGraph.h"
+
+// Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 class MNCTDepthCalibrator
 {
@@ -41,4 +71,13 @@ class MNCTDepthCalibrator
 		bool m_CoeffsFileIsLoaded;
 		std::vector<double> m_Thicknesses;
 
+
+
+#ifdef ___CINT___
+ public:
+  ClassDef(MNCTDepthCalibrator, 0) // no description
+#endif
+
 };
+
+#endif
