@@ -1,7 +1,7 @@
 /*
  * MDummy.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by YOUR NAME HERE.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.

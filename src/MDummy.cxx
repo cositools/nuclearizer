@@ -2,7 +2,7 @@
  * MDummy.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by YOUR NAME HERE.
  * All rights reserved.
  *
  *
