@@ -55,6 +55,7 @@ NUCLEARIZER_CXX_MAIN = src/MAssembly.cxx
 NUCLEARIZER_LIBS = \
 $(LB)/magfld.o \
 $(LB)/MReadOutAssembly.o \
+$(LB)/MNCTDetectorEffectsEngineCOSI.o \
 $(LB)/MNCTMath.o \
 $(LB)/MNCTAspect.o \
 $(LB)/MNCTAspectReconstruction.o \
@@ -63,6 +64,8 @@ $(LB)/MNCTTimeAndCoordinate.o \
 $(LB)/MNCTStrip.o \
 $(LB)/MNCTStripHit.o \
 $(LB)/MNCTGuardringHit.o \
+$(LB)/MNCTModuleSimulationLoader.o \
+$(LB)/MGUIOptionsSimulationLoader.o \
 $(LB)/MNCTModuleMeasurementLoader.o \
 $(LB)/MNCTModuleMeasurementLoaderROA.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
@@ -109,6 +112,8 @@ $(LB)/LivetimeParser.o\
 $(LB)/MNCTDepthCalibratorB.o\
 $(LB)/MNCTModuleDepthCalibrationB.o\
 $(LB)/MGUIOptionsDepthCalibrationB.o
+
+
 
 NUCLEARIZER_DEP_FILES := $(NUCLEARIZER_LIBS:.o=.d)
 NUCLEARIZER_H_FILES := $(addprefix inc/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))

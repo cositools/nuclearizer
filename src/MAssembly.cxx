@@ -57,6 +57,7 @@ using namespace std;
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
 
+#include "MNCTModuleSimulationLoader.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
 //#include "MNCTModuleMeasurementLoaderNCT2009.h"
 //#include "MNCTModuleMeasurementLoaderGRIPS2013.h"
@@ -112,7 +113,7 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  //m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
+  m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
   m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderROA());
   //m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderGRIPS2013());
   //m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderNCT2009());
