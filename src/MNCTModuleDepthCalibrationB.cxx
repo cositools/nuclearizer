@@ -252,7 +252,7 @@ bool MNCTModuleDepthCalibrationB::AnalyzeEvent(MReadOutAssembly* Event)
 				NewHits.push_back(NH);
 			}
 
-			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1x1
+//			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1x1
 		
 		} else if( (XStrips.size() == 2) && (YStrips.size() == 2) ){
 			//in this case use depth from dominant strips but use weighted X and Y positions
@@ -278,7 +278,7 @@ bool MNCTModuleDepthCalibrationB::AnalyzeEvent(MReadOutAssembly* Event)
 			//GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
 			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
-			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1X1
+//			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1X1
 
 		} else {
 			//set too many SH bad flag
@@ -299,7 +299,7 @@ bool MNCTModuleDepthCalibrationB::AnalyzeEvent(MReadOutAssembly* Event)
 			//EHist->Fill(H->GetEnergy());
 			//don't set the globally bad flag
 			//Event->SetDepthCalibrationIncomplete();
-			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1X1
+//			Event->SetDepthCalibrationIncomplete(); //for testing purposes!!! filtering out events that are not 1x1 strip AWL1X1
 			++m_Error3;
 		} else if( Error == 4){
 			//hit was bad because of StripHitMultipleTimes flag from strip pairing

@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <iomanip>
+#include <algorithm>
 using namespace std;
 
 // ROOT libs:

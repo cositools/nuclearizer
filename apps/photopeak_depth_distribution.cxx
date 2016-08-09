@@ -96,7 +96,7 @@ bool EnergyFilter(double Energy, const vector<vector<double>>& EnergyWindows);
 int main(int argc, char** argv)
 {
 
-	//signal(SIGINT, Handler);
+	signal(SIGINT, Handler);
 	MGlobal::Initialize("Standalone","");
 	TApplication xyscan("photopeak_depth_distribution",0,0);
 	MString InputFile;
@@ -155,6 +155,7 @@ int main(int argc, char** argv)
 	TH1D* BadEventsZH = new TH1D("badz","badz",1000,-10,10);
 	while(1){
 		MPhysicalEvent* E = F.GetNextEvent();
+		if(SignalExit) break;
 		if(E == 0) break; else{
 			if(E->GetType() == MPhysicalEvent::c_Photo){
 				MVector V = E->GetPosition();
