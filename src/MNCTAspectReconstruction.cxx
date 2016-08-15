@@ -110,10 +110,6 @@ void MNCTAspectReconstruction::Clear()
 bool MNCTAspectReconstruction::Initialize()
 {
 	//Initialize the module
-	
-	double RotGPSCryo_XY[3][3], RotGPSCryo_ZXY[3][3];
-	double Rot_XY[3][3], Rot_ZXY[3][3];
-
 	return true;
 }
 
@@ -204,6 +200,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Rot_Y[3][3] = { {cosine(roll), 0.0, sine(roll)}, {0.0, 1.0, 0.0}, {-sine(roll), 0.0, cosine(roll)} };
 	double Rot_X[3][3] = { {1.0, 0.0, 0.0}, {0.0, cosine(pitch), -sine(pitch)}, {0.0, sine(pitch), cosine(pitch)} };
 
+	double Rot_XY[3][3], Rot_ZXY[3][3];
+
 	//multiply matricies together to get full rotation matrix from heading, pitch, and roll back to local GPS coordinates. The convention for Tait-Bryan chained rotations is to apply the rotations in this order: Yaw, Pitch, Roll. Here, the matricies are written in reverse to represent an extrinsic rotation. CK double check the output makes sense.
 	for(int i=0;i<3;i++){
 		for(int j=0;j<3;j++){   
@@ -225,6 +223,12 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	}
 
 
+    //define the axes of the unrotated GPS coordinate system with unit vectors xhat, yhat and zhat. yhat points true north, and zhats points towards the zenith in this unrotated frame (i.e. 0 pitch, 0 roll, 0 heading).
+    double Zhat[3] = {0.0, 0.0, 1.0};
+    double Yhat[3] = {0.0, 1.0, 0.0};
+    double Xhat[3] = {1.0, 0.0, 0.0};
+    double temp[3];
+	
 
 	//Now, define the GPS pre-rotation matrix RotGPSCryo_ZXY, which is the rotation matrix between the cryostat coorindates, with +x pointing towards the front of the gondola (sun side), and the GPS coordinates, with +y pointing towards the back of the gonodla. To first order, this is just a -90 degree rotation around the z-axis.
 	//The magnetometer doesn't require this extra rotation matrix because its axes are already aligned with the cryostat
@@ -232,16 +236,22 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	if( GPS_or_magnetometer == 0 ){
 
 		//To second order, the GPS and cryostat are not perfectly aligned. Theodolite measurements were taken to better understand this offset, but have not yet been applied here. Once the Crab was detected during the 2016 flight, Alex worked towards getting the relative offsets that better centered the Crab, these are added below, but this is only preliminary and should be better defined.
-		//corrections from Crab observation 2016
-		const double dh = 5.2;
-		const double dp = -0.5;
-		const double dr = -0.5;
-
+		const double dh = 0.0;
+		const double dp = 0.0;
+		const double dr = 0.0;
+		//Corrections from Crab observations 2016:
+	/*	dh = 5.2;
+		dp = -0.5;
+		dr = -0.5;
+	*/
 
 		//define the three axis rotation matricies:
 		double RotGPSCryo_Z[3][3] = { {cosine(-90 + dh), -sine(-90 + dh), 0.0}, {sine(-90 + dh), cosine(-90 + dh), 0.0}, {0.0, 0.0, 1.0} };
 		double RotGPSCryo_Y[3][3] = { {cosine(dr), 0.0, sine(dr)}, {0.0, 1.0, 0.0}, {-sine(dr), 0.0, cosine(dr)} };
 		double RotGPSCryo_X[3][3] = { {1.0, 0.0, 0.0}, {0.0, cosine(dp), -sine(dp)}, {0.0, sine(dp), cosine(dp)} };
+		
+
+		double RotGPSCryo_XY[3][3], RotGPSCryo_ZXY[3][3];
 
 		//multiply the rotaion matricies to make one total 3x3 matrix that represents the 3-d rotation between cryostat coordinates and GPS coordinates. Using the same convention as above.
 		for(int i=0;i<3;i++){
@@ -261,18 +271,10 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 				}
 			}
 		}
-	}
 
 
-    //define the axes of the unrotated GPS coordinate system with unit vectors xhat, yhat and zhat. yhat points true north, and zhats points towards      the zenith in this unrotated frame (i.e. 0 pitch, 0 roll, 0 heading).
-    double Zhat[3] = {0.0, 0.0, 1.0};
-    double Yhat[3] = {0.0, 1.0, 0.0};
-    double Xhat[3] = {1.0, 0.0, 0.0};
-    double temp[3];
-		
-	//Transform the xhat, yhat and zhat into the cryostat coordinate system. These unit vectors now represent the pointing of the cryostat axis in the GPS local coorindate system.
 	
-	if( GPS_or_magnetometer == 0 ){
+	//Transform the xhat, yhat and zhat into the cryostat coordinate system. These unit vectors now represent the pointing of the cryostat axis in the GPS local coorindate system.
 
 		//transform Xhat
 		for(int i=0;i<3;i++){
@@ -571,16 +573,6 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 	}
 
 	return ReqAspect;
-
-}
-
-	}
-	break;
-	}	
-	}
-
-	}
-return Desired_MNCTAspect;
 }
 
 
