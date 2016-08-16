@@ -184,6 +184,8 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   Usage<<"             Automatically start analysis without GUI"<<endl;
   Usage<<"      -m --multithreading:"<<endl;
   Usage<<"             0: false (default), else: true"<<endl;
+  Usage<<"      -g --geometry:"<<endl;
+  Usage<<"             Use this geometry file"<<endl;
   Usage<<"      -v --verbosity:"<<endl;
   Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info"<<endl;
   Usage<<"      -h --help:"<<endl;
@@ -208,6 +210,7 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     
     // Single argument
     if (Option == "-c" || Option == "--configuration" ||
+        Option == "-g" || Option == "--geometry" ||
         Option == "-m" || Option == "--multithreading") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
@@ -231,6 +234,14 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Using multithreading: "<<(atoi(argv[i]) != 0 ? "yes" : "no")<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
+    }
+  }
+  
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--geometry" || Option == "-g") {
+      m_Supervisor->SetGeometryFileName(argv[++i]);
+      cout<<"Command-line parser: Use geometry file "<<argv[i]<<endl;
     }
   }
   
