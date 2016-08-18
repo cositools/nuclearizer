@@ -79,6 +79,12 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   bool GetPreampTempCorrection() const { return m_TemperatureEnabled; }
 
 
+	//! Standalone function to return energy of certain strip given ADC
+	double GetEnergy(MReadOutElementDoubleStrip R, double ADC);
+	//! Standalone function to return ADC of certain strip given energy
+	double GetADC(MReadOutElementDoubleStrip R, double energy);
+
+
   // protected methods:
  protected:
   //! The calibration file name

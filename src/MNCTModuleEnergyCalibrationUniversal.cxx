@@ -276,7 +276,42 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
   return true;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
+double MNCTModuleEnergyCalibrationUniversal::GetEnergy(MReadOutElementDoubleStrip R, double ADC){
+	
+    TF1* Fit = m_Calibration[R];
+  
+		double Energy;
+		if (Fit == 0){ Energy = 0; }
+	  else {
+    	Energy = Fit->Eval(ADC);
+      if (Energy < 0 && ADC > 100) {
+        Energy = 0;
+      } else if (Energy < 0) {
+        Energy = 0;
+      }
+		}
+
+	return Energy;
+
+}
+
+double MNCTModuleEnergyCalibrationUniversal::GetADC(MReadOutElementDoubleStrip R, double energy){
+
+	TF1* Fit = m_Calibration[R];
+
+	double ADC;
+	if (Fit == 0){ ADC = 0; }
+	else{
+		ADC = Fit->GetX(energy);
+	}
+
+	return ADC;
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 
 void MNCTModuleEnergyCalibrationUniversal::Finalize()
