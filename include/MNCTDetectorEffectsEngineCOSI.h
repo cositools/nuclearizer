@@ -189,6 +189,13 @@ protected:
     //! The roa output file
     ofstream m_Roa;
     
+		//! Calibration map between read-out element and LLD thresholds
+		map<MReadOutElementDoubleStrip, double> m_LLDThresholds;
+		//! Calibration map between read-out element and fast thresholds
+		map<MReadOutElementDoubleStrip, double> m_FSTThresholds;
+		//! Calibration map between read-out element and fast threshold noise
+		map<MReadOutElementDoubleStrip, double> m_FSTNoise;
+
     //! Calibration map between read-out element and fitted function for energy calibration
     map<MReadOutElementDoubleStrip, TF1*> m_EnergyCalibration;
     //! Calibration map between read-out element and fitted function for energy resolution calibration

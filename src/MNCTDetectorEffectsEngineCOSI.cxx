@@ -635,10 +635,12 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     // (4b) Handle trigger thresholds make sure we throw out timing too!
     list<MNCTDEEStripHit>::iterator k = MergedStripHits.begin();
     while (k != MergedStripHits.end()) {
-      if ((*k).m_Energy < 20) { // Dummy threshold of 0 keV sharp
+
+      if ((*k).m_Energy < m_LLDThresholds[(*k).m_ROE]) { // Dummy threshold of 0 keV sharp
         k = MergedStripHits.erase(k);
       } else {
-        if((*k).m_Energy < 55){
+        if(gRandom->Gaus((*k).m_Energy,m_FSTNoise[(*k).m_ROE]) < m_FSTThresholds[(*k).m_ROE]){
+//				if ((*k).m_Energy < rThresh.Gaus(m_FSTThresholds[(*k).m_ROE],m_FSTNoise[(*k).m_ROE])){
           (*k).m_Timing = 0.0;
         }
         ++k;
@@ -810,13 +812,13 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
   shield_num = shield_num - 1;
   double res_constant = resolution_consts[shield_num];
 
-  TF1* ShieldRes = new TF1("ShieldRes","[0]*(x^(1/2))",0,1000); //this is from Knoll
-  ShieldRes->SetParameter(0,res_constant);
+//  TF1* ShieldRes = new TF1("ShieldRes","[0]*(x^(1/2))",0,1000); //this is from Knoll
+//  ShieldRes->SetParameter(0,res_constant);
 
-  double sigma = ShieldRes->Eval(energy);
+//  double sigma = ShieldRes->Eval(energy);
+	double sigma = res_constant*pow(energy,1./2);
 
-  TRandom3 r(0);
-  double noised_energy = r.Gaus(energy,sigma);
+  double noised_energy = gRandom->Gaus(energy,sigma);
 
   return noised_energy;
 
@@ -911,35 +913,26 @@ void MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
     cout << "Unable to open threshold file " << m_ThresholdFileName << endl;
     return;
   }
-  map<MReadOutElementDoubleStrip, double> LowerThreshold;
-  map<MReadOutElementDoubleStrip, double> UpperThreshold; 
 
   for (unsigned int i=0; i<Parser.GetNLines(); i++) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
-    if (NTokens < 2) continue;
-    if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"Threshold") == true) {
+		if (NTokens != 4){ continue; } //this shouldn't happen but just in case
 
-      if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(LOWER)") == true ||
-          Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
+		//decode identifier
+		int identifier = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+		int det = identifier / 1000;
+		int strip = (identifier % 1000) / 10;
+		bool isPos = identifier % 10;
 
-        MReadOutElementDoubleStrip R;
-        R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-        R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4));
-        R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(5) == "p");
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(det);
+		R.SetStripID(strip);
+		R.IsPositiveStrip(isPos);
 
-        if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(LOWER)") == true) {
-          LowerThreshold[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
-          //cout << LowerThreshold[R] << endl; //to verify lower thresholds
-        } 
-        else if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"(UPPER)") == true) {
-          UpperThreshold[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
-          //cout << UpperThreshold[R] << endl; //to verify upper thresholds
-        }
-        else {
-          cout << "Error parsing threshold file." << endl;
-        }
-      }
-    }
+		m_LLDThresholds[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
+		m_FSTThresholds[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
+		m_FSTNoise[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
+
   }
 }
 
