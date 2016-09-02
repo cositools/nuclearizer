@@ -180,6 +180,10 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   Usage<<"      -c --configuration <filename>.xml.cfg:"<<endl;
   Usage<<"             Use this file as configuration file."<<endl;
   Usage<<"             If no configuration file is give ~/.nuclearizer.xml.cfg is used"<<endl;
+  Usage<<"      -C --change-configuration <pattern>:"<<endl;
+  Usage<<"             Replace any value in the configuration file (-C can be used multiple times)"<<endl;
+  Usage<<"             E.g. to change the roa file, one would set pattern to:"<<endl;
+  Usage<<"             -C ModuleOptions.XmlTagMeasurementLoaderROA.FileName=My.roa"<<endl;
   Usage<<"      -a --auto:"<<endl;
   Usage<<"             Automatically start analysis without GUI"<<endl;
   Usage<<"      -m --multithreading:"<<endl;
@@ -236,6 +240,18 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
       // Parse later
     }
   }
+  
+  // Look if we need to change the configuration
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--change-configuration" || Option == "-C") {
+      if (m_Supervisor->ChangeConfiguration(argv[++i]) == false) {
+        cout<<"ERROR: Command-line parser: Unable to change this configuration value: "<<argv[i]<<endl;        
+      } else {
+        cout<<"Command-line parser: Changing this configuration value: "<<argv[i]<<endl;
+      }
+    }
+  }  
   
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
