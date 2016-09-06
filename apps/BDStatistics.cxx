@@ -76,6 +76,8 @@ private:
   bool m_Interrupt;
   //! The input file name
   MString m_FileName;
+  //! If true just the output is summarized by the first string in the BD text 
+  bool m_Short;
 };
 
 
@@ -83,7 +85,7 @@ private:
 
 
 //! Default constructor
-BDStatistics::BDStatistics() : m_Interrupt(false)
+BDStatistics::BDStatistics() : m_Interrupt(false), m_Short(true)
 {
   gStyle->SetPalette(1, 0);
 }
@@ -110,6 +112,7 @@ bool BDStatistics::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: BDStatistics <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   evta file name"<<endl;
+  Usage<<"         -l:   if set, sort by the complete BD text and not just the first keyword"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -155,6 +158,9 @@ bool BDStatistics::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
+    } else if (Option == "-l") {
+      m_Short = false;
+      cout<<"Accepting long format"<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -182,8 +188,6 @@ bool BDStatistics::Analyze()
     return false;
   }
   
-  int LineLength = 10000;
-  char* LineBuffer = new char[LineLength];
   MTokenizer Tokenizer;
 
   bool IsStart = true;
@@ -208,9 +212,13 @@ bool BDStatistics::Analyze()
       }
     }
     if (Line.BeginsWith("BD")) {
-      Tokenizer.Analyse(Line);
-      if (Tokenizer.GetNTokens() <= 1) continue;
-      BDTypeCounter[Tokenizer.GetTokenAtAsString(1)]++;
+      if (m_Short == true) {
+        Tokenizer.Analyse(Line);
+        if (Tokenizer.GetNTokens() <= 1) continue;
+        BDTypeCounter[Tokenizer.GetTokenAtAsString(1)]++;
+      } else {
+        BDTypeCounter[Line]++;        
+      }
       FoundBD = true;
     }
   }
@@ -222,7 +230,7 @@ bool BDStatistics::Analyze()
   cout<<"Distribution of BD flags (one event can have multiple BD flags): "<<endl;
   for (auto I = BDTypeCounter.begin(); I != BDTypeCounter.end(); ++I) {
     cout<<"  "<<(*I).first<<":";
-    for (unsigned int i = (*I).first.Length(); i < 38; ++i) cout<<" ";
+    for (unsigned int i = (*I).first.Length(); i < 52; ++i) cout<<" ";
     cout.width(10); cout<<right<<(*I).second<<" (="<<setw(5)<<setprecision(2)<<fixed<<100.0*double((*I).second)/double (NEvents)<<"%)"<<endl;
   }
   cout<<endl;
