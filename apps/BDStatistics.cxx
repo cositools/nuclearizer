@@ -109,7 +109,7 @@ bool BDStatistics::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: BDStatistics <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  Usage<<"         -f:   file name"<<endl;
+  Usage<<"         -f:   evta file name"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -176,9 +176,8 @@ bool BDStatistics::Analyze()
 
   map<MString, int> BDTypeCounter; 
   
-  ifstream in;
-  in.open(m_FileName);
-  if (in.is_open() == false) {
+  MFile File;
+  if (File.Open(m_FileName) == false) {
     cout<<"Unable to open file: "<<m_FileName<<endl;
     return false;
   }
@@ -193,8 +192,11 @@ bool BDStatistics::Analyze()
   unsigned int NEvents = 0;
   unsigned int NBDEvents = 0;
   
-  while (in.getline(LineBuffer, LineLength, '\n')) {
-    if (LineBuffer[0] == 'S' && LineBuffer[1] == 'E') {
+  MString Line;
+  while (File.ReadLine(Line) == true) {
+    if (m_Interrupt == true) break;
+    
+    if (Line.BeginsWith("SE")) {
       if (IsStart == false) {
         ++NEvents;
         if (FoundBD == true) {
@@ -205,8 +207,8 @@ bool BDStatistics::Analyze()
         IsStart = false;
       }
     }
-    if (LineBuffer[0] == 'B' && LineBuffer[1] == 'D') {
-      Tokenizer.Analyse(LineBuffer);
+    if (Line.BeginsWith("BD")) {
+      Tokenizer.Analyse(Line);
       if (Tokenizer.GetNTokens() <= 1) continue;
       BDTypeCounter[Tokenizer.GetTokenAtAsString(1)]++;
       FoundBD = true;
