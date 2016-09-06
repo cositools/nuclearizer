@@ -229,7 +229,7 @@ void MGUIExpoAspectViewer::Create()
   
   
   // label + horizontal line
-  TGGC *fTextGC;
+  //TGGC *fTextGC;
   const TGFont *font = gClient->GetFont("-*-times-bold-r-*-*-18-*-*-*-*-*-*-*");
   if (!font){
     font = gClient->GetResourcePool()->GetDefaultFont();
@@ -239,7 +239,7 @@ void MGUIExpoAspectViewer::Create()
   gval.fMask = kGCBackground | kGCFont | kGCForeground;
   gval.fFont = font->GetFontHandle();
   gClient->GetColorByName("yellow", gval.fBackground);
-  fTextGC = gClient->GetGC(&gval, kTRUE);
+  //fTextGC = gClient->GetGC(&gval, kTRUE);
 
 
   ULong_t bcolor, ycolor;
