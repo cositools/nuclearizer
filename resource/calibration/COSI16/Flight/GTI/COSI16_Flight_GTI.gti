@@ -1,0 +1,14 @@
+
+TYPE GTI
+
+# Launch Time: 2016/05/16_23:35:00  
+# System Off : 2016/07/02_16:51:00  
+GT 1463441700.0000000000 1467478260.0000000000
+
+# Include the preferred GTI files  
+IN COSI16_BeforeFloatAlt.gti
+IN COSI16_SystemProblems.gti
+IN COSI16_HighShieldRates.gti 
+
+ 
+

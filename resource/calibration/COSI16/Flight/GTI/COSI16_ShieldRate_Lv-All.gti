@@ -1,0 +1,21 @@
+
+TYPE GTI
+
+IN COSI16_ShieldRate_Lv1_lt-07850.gti    
+
+IN COSI16_ShieldRate_Lv2_07850-08800.gti 
+
+IN COSI16_ShieldRate_Lv3_08800-10500.gti 
+
+IN COSI16_ShieldRate_Lv4_10500-12500.gti 
+
+IN COSI16_ShieldRate_Lv5_12500-15000.gti 
+
+IN COSI16_ShieldRate_Lv6_15000-21000.gti 
+
+IN COSI16_ShieldRate_Lv7_21000-29000.gti
+
+IN COSI16_ShieldRate_Lv8_ge-29000.gti
+
+ 
+
