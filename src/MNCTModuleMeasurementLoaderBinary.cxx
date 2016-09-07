@@ -69,7 +69,7 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
 	AddSucceedingModuleType(MAssembly::c_NoRestriction);
 
 	// Set the module name --- has to be unique
-	m_Name = "Data packet loader, sorter, and aspect reconstructor for COSI 2014";
+	m_Name = "Data packet loader, sorter, and aspect reconstructor for COSI 2014/16";
 
 	// Set the XML tag --- has to be unique --- no spaces allowed
 	m_XmlTag = "XmlTagMeasurementLoaderBinary";  
