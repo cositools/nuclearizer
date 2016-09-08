@@ -432,7 +432,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	vector<double> ZGalactic; 
 	vector<double> ZEquatorial;
 	ZEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Z_Azimuth, Z_Elevation);
-	ZGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(ZEquatorial);
+	ZGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic2(ZEquatorial);
 	//Zra = ZEquatorial[0];
 	//Zdec = ZEquatorial[1];
 	double Zgalat = ZGalactic[1];
@@ -441,8 +441,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	vector<double> YGalactic; 
 	vector<double> YEquatorial;
-	YEquatorial= m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Y_Azimuth, Y_Elevation);
-	YGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(YEquatorial);	
+	YEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Y_Azimuth, Y_Elevation);
+	YGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic2(YEquatorial);	
 	//Yra = YEquatorial[0];
 	//Ydec = YEquatorial[1];
 	double Ygalat = YGalactic[1];
@@ -451,8 +451,8 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
     vector<double> XGalactic; 
     vector<double> XEquatorial;
-    XEquatorial= m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(X_Azimuth, X_Elevation);
-    XGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic(XEquatorial);
+    XEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(X_Azimuth, X_Elevation);
+	XGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic2(XEquatorial);
     //Xra = XEquatorial[0];
     //Xdec = XEquatorial[1];
     double Xgalat = XGalactic[1];

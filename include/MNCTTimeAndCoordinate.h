@@ -57,6 +57,12 @@ class MNCTTimeAndCoordinate
   static const double c_GAngle2;
   static const double c_GAngle3;
   
+  //! constants to convert equitorial to galactic coordinates an alternate way - CK 2016
+  //NOTE: the accuarcy is about 0.01 degrees.
+  static const double c_RA_g;
+  static const double c_dec_g;
+  static const double c_dec_c;  
+
 	
  public:
   //!
@@ -115,8 +121,11 @@ class MNCTTimeAndCoordinate
 
   //! astronomical coordinates conversion
   vector<double> Equatorial2Galactic(vector<double> radec);
+  vector<double> Equatorial2Galactic2(vector<double> radec);
   vector<double> Horizon2Galactic(double azi, double alt){return Equatorial2Galactic(Horizon2Equatorial(azi, alt));}
   vector<double> Horizon2Equatorial(double azi, double alt);
+  vector<double> Horizon2Equatorial2(double azi, double alt);	
+
 
   //! Coordinate transformations from dGPS angles (pitch, roll, yaw) to Horizon coordinates
   // rotation matrix to convert vector in dGPS frame to vector in horizon coordinates

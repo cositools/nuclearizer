@@ -49,16 +49,21 @@ ClassImp(MNCTTimeAndCoordinate)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
 const double MNCTTimeAndCoordinate::c_Day2Second = 86400.;
 const double MNCTTimeAndCoordinate::c_Second2Day = 1./86400.;
 const double MNCTTimeAndCoordinate::c_MJDJD = 2400000.5; //constant for converting MJD to JD
 const double MNCTTimeAndCoordinate::c_UnixTimeMJD = 40587.0; //MJD when Unix time starts
+
 const double MNCTTimeAndCoordinate::c_TAI2TT = 32.184; //TT = TAI+32.184
 const double MNCTTimeAndCoordinate::c_LeapSeconds = 0.0; // Unix Time and GPS Time = UT + LeapSeconds
-const double MNCTTimeAndCoordinate::c_GAngle1 = 282.85;
+const double MNCTTimeAndCoordinate::c_GAngle1 = 282.85; //J2000
 const double MNCTTimeAndCoordinate::c_GAngle2 = 62.9;
 const double MNCTTimeAndCoordinate::c_GAngle3 = -33.0;
+
+const double MNCTTimeAndCoordinate::c_RA_g = 192.85; //J2000 RA of Galactic North Pole in degrees
+const double MNCTTimeAndCoordinate::c_dec_g = 27.128333333; //J2000 dec of Galactic North Pole in degrees
+const double MNCTTimeAndCoordinate::c_dec_c = -28.929656275; //J2000 dec of Galactic Center in degrees
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,19 +74,6 @@ MNCTTimeAndCoordinate::MNCTTimeAndCoordinate()
   m_TimeSinceMJDZero = 0;
   m_Longitude = 0;
   m_Latitude = 0;
-
-  // initialize cryostat to dGPS rotation matrix
-  m_Cryo_to_dGPS_Rotation.ResizeTo(3,3);
-  m_Cryo_to_dGPS_Rotation[0][0] =  0.67165431;
-  m_Cryo_to_dGPS_Rotation[0][1] = -0.74314688;
-  m_Cryo_to_dGPS_Rotation[0][2] =  0.12958872;
-  m_Cryo_to_dGPS_Rotation[1][0] =  0.74084079;
-  m_Cryo_to_dGPS_Rotation[1][1] =  0.6461111;
-  m_Cryo_to_dGPS_Rotation[1][2] = -0.1159381;
-  m_Cryo_to_dGPS_Rotation[2][0] = -0.00116692;
-  m_Cryo_to_dGPS_Rotation[2][1] =  0.17390276;
-  m_Cryo_to_dGPS_Rotation[2][2] =  0.98451351;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,13 +103,39 @@ vector<double> MNCTTimeAndCoordinate::Equatorial2Galactic(vector<double> radec)
   vector<double> galactic;
   galactic.push_back( R2D(dir.Phi()) );
   if(galactic[0]>=360.0)galactic[0]-=360.0;
-  if(galactic[0]<0.0)galactic[0]+=360.0;
+  if(galactic[0]<0.0)galactic[0]+=360.0;  
   galactic.push_back( Zenith2ELV(R2D(dir.Theta())) );
-
-//  cout << R2D(dir.Phi()) << ' ' << Zenith2ELV(R2D(dir.Theta())) <<'\n';
+  //cout << R2D(dir.Phi()) << ' ' << Zenith2ELV(R2D(dir.Theta())) <<'\n';
 
   return galactic;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+//Different conversion written by Carolyn Kierans August 2016 - give more precise results vs. above
+vector<double> MNCTTimeAndCoordinate::Equatorial2Galactic2(vector<double> radec)
+{
+
+	double gal_lat = R2D(asin( sin(D2R(radec[1]))*sin(D2R(c_dec_g)) + cos(D2R(radec[1]))*cos(D2R(c_dec_g))*cos(D2R(c_RA_g-radec[0]))));
+	double J = (sin(D2R(radec[1]))*cos(D2R(c_dec_g)) - cos(D2R(radec[1]))*sin(D2R(c_dec_g))*cos(D2R(radec[0]-c_RA_g)))/cos(D2R(gal_lat));
+	double K = R2D(asin( cos(D2R(radec[1]))*sin(D2R(radec[0]-c_RA_g))/cos(D2R(gal_lat))));
+	double Q = R2D(acos( sin(D2R(c_dec_c))/cos(D2R(c_dec_g))));
+
+	double gal_long;
+	if (J<0) {
+		gal_long = Q+K -180;
+	} else {
+		gal_long = Q-K;
+	}
+	if (gal_long<0) gal_long = gal_long + 360;
+
+	vector<double> galactic;
+	galactic.push_back(gal_long);
+	galactic.push_back( gal_lat);
+
+	return galactic;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -125,7 +143,7 @@ vector<double> MNCTTimeAndCoordinate::Horizon2Equatorial(double azi, double alt)
 {
   double local_sidereal_time = LAST_degrees();
   MVector dir;
-  
+
   dir.SetMagThetaPhi(1, D2R(ELV2Zenith(alt)), D2R(PositiveDegree(180-azi)));
   dir.RotateY( D2R(ELV2Zenith(m_Latitude)) );
 
@@ -136,11 +154,38 @@ vector<double> MNCTTimeAndCoordinate::Horizon2Equatorial(double azi, double alt)
   radec.push_back( Zenith2ELV(R2D(dir.Theta())) );
 
   //cout << local_sidereal_time + R2D(dir.Phi()) << ' ' << D2R(ELV2Zenith(alt)) << ' ' << ' ' << (R2D(dir.Theta())) <<'\n';
-
   return radec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+//Different converion written by Carolyn Kierans August 2016 - gives idential results as above
+vector<double> MNCTTimeAndCoordinate::Horizon2Equatorial2(double azi, double alt)
+{
+	double local_sidereal_time = LAST_degrees();
+	double A = PositiveDegree(180-azi);//Convention to measure westward from *south*
+	double phi = m_Latitude;
+	double a = alt;
+
+	double local_Hour_Angle = R2D( atan( sin(D2R(A)) / ( cos(D2R(A))*sin(D2R(phi)) + tan(D2R(a))*cos(D2R(phi)) ) ) );
+	//need to make sure we end up in the right coordinate after using atan:
+	if ( (sin(D2R(A)) < 0)  && (cos(D2R(A))*sin(D2R(phi)) + tan(D2R(a))*cos(D2R(phi)) < 0)) {
+		local_Hour_Angle = local_Hour_Angle - 180;
+	} else if ( (sin(D2R(A)) > 0) && (cos(D2R(A))*sin(D2R(phi)) + tan(D2R(a))*cos(D2R(phi)) < 0)) {
+		local_Hour_Angle = local_Hour_Angle + 180;
+	}
+	
+	vector<double> radec;
+	radec.push_back( PositiveDegree(local_sidereal_time + local_Hour_Angle));
+	double dec = R2D( asin( sin(D2R(a))*sin(D2R(phi)) - cos(D2R(a))*cos(D2R(phi))*cos(D2R(A)) ) );
+	radec.push_back( dec );
+
+	return radec;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 // Find MJD at previous UT midnight
 double MNCTTimeAndCoordinate::MJD_at_previous_midnight()
@@ -158,7 +203,7 @@ double MNCTTimeAndCoordinate::Hours_since_previous_midnight()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Calculate the equation of equinoxes (converts mean to apparent sidereal time)
+// Calculate the equation of equinoxes (to convert mean to apparent sidereal time)
 double MNCTTimeAndCoordinate::Equation_of_equinoxes_hours()
 {
   double eqeq, D, DeltaPsi, Omega, L, epsilon;
@@ -180,7 +225,7 @@ double MNCTTimeAndCoordinate::Equation_of_equinoxes_hours()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Calculate GMST from MJD
+// Calculate Greenwich Mean Sidereal Time (GMST) from Modified Julian Date (MJD)
 double MNCTTimeAndCoordinate::GMST_hours()
 {
   double D, D0, H, T, GMST_hr;
@@ -209,7 +254,7 @@ double MNCTTimeAndCoordinate::GMST_hours()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Calculate GAST in hours
+// Calculate Greenwich Apparent Sidereal Time (GAST) in hours
 double MNCTTimeAndCoordinate::GAST_hours()
 {
   double GAST_hr;
@@ -222,7 +267,7 @@ double MNCTTimeAndCoordinate::GAST_hours()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Calculate GMST in degrees
+// Calculate Greenwich Mean Sidereal Time (GMST) in degrees
 double MNCTTimeAndCoordinate::GMST_degrees()
 {
   double GMST_deg;
@@ -235,7 +280,7 @@ double MNCTTimeAndCoordinate::GMST_degrees()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Calculate GAST in degrees
+// Calculate Greenwich Apparent Sidereal Time (GAST) in degrees
 double MNCTTimeAndCoordinate::GAST_degrees()
 {
   double GAST_deg;
@@ -248,7 +293,7 @@ double MNCTTimeAndCoordinate::GAST_degrees()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Calculate LMST in degrees
+// Calculate Local Mean Sidereal Time (LMST) in degrees
 double MNCTTimeAndCoordinate::LMST_degrees()
 {
   double LMST_deg;
@@ -262,7 +307,7 @@ double MNCTTimeAndCoordinate::LMST_degrees()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Calculate LAST in degrees
+// Calculate Local Apparent Sidereal Time (LAST) in degrees
 double MNCTTimeAndCoordinate::LAST_degrees()
 {
   double LAST_deg;
@@ -272,94 +317,6 @@ double MNCTTimeAndCoordinate::LAST_degrees()
   //mout << "   Lon(deg): " << m_Longitude << endl;
   //mout << "   LAST(deg):" << LAST_deg << endl;
   return LAST_deg;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// coordinate rotation from dGPS to Horizon coordinates
-TMatrixD MNCTTimeAndCoordinate::dGPS_to_Horizon_Rotation(double pitch_deg, double roll_deg, double yaw_deg)
-{
-  TMatrixD PRY_Rotation(3,3);
-  double sin_th = TMath::Sin(D2R(pitch_deg));
-  double cos_th = TMath::Cos(D2R(pitch_deg));
-  double sin_ps = TMath::Sin(D2R(roll_deg));
-  double cos_ps = TMath::Cos(D2R(roll_deg));
-  double sin_ph = TMath::Sin(D2R(yaw_deg));
-  double cos_ph = TMath::Cos(D2R(yaw_deg));
-
-  
-  PRY_Rotation[0][0] = cos_th*cos_ph;
-  PRY_Rotation[0][1] = sin_ps*sin_th*cos_ph + cos_ps*sin_ph;
-  PRY_Rotation[0][2] = -cos_ps*sin_th*cos_ph + sin_ps*sin_ph;;
-  PRY_Rotation[1][0] = -cos_th*sin_ph;
-  PRY_Rotation[1][1] = -sin_ps*sin_th*sin_ph + cos_ps*cos_ph;;
-  PRY_Rotation[1][2] = cos_ps*sin_th*sin_ph + sin_ps*cos_ph;;
-  PRY_Rotation[2][0] = sin_th;
-  PRY_Rotation[2][1] = -cos_th*sin_ps;
-  PRY_Rotation[2][2] = cos_th*cos_ps;
-  
-
-/*  
-  PRY_Rotation[0][0] = cos_th*cos_ph;
-  PRY_Rotation[0][1] = cos_th*sin_ph;
-  PRY_Rotation[0][2] =   -1.0*sin_th;
-  PRY_Rotation[1][0] = sin_ps*sin_th*cos_ph - cos_ps*sin_ph;
-  PRY_Rotation[1][1] = sin_ps*sin_th*sin_ph + cos_ps*cos_ph;
-  PRY_Rotation[1][2] = cos_th*sin_ps;
-  PRY_Rotation[2][0] = cos_ps*sin_th*cos_ph + sin_ps*sin_ph;
-  PRY_Rotation[2][1] = cos_ps*sin_th*sin_ph - sin_ps*cos_ph;
-  PRY_Rotation[2][2] = cos_th*cos_ps;
-*/
-  
-  return PRY_Rotation;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// coordinate rotation from dGPS to Horizon coordinates
-TMatrixD MNCTTimeAndCoordinate::Cryo_to_Horizon_Rotation(double pitch_deg, double roll_deg, double yaw_deg)
-{
-  TMatrixD Full_Rotation = dGPS_to_Horizon_Rotation(pitch_deg, roll_deg, yaw_deg)*m_Cryo_to_dGPS_Rotation;
-  return Full_Rotation;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// convert cryostat vector into Horizon (azi, alt) coordinates
-vector<double> MNCTTimeAndCoordinate::CryoVector_to_Horizon(TMatrixD Vector_cryo, double pitch_deg, double roll_deg, double yaw_deg)
-{
-  TMatrixD Vector_horizon = Cryo_to_Horizon_Rotation(pitch_deg,roll_deg,yaw_deg) * Vector_cryo;
-  double azi = R2D(TMath::ATan2(-1.0*Vector_horizon[1][0], Vector_horizon[0][0]));
-  double alt = R2D(TMath::ATan(Vector_horizon[2][0]
-			       /TMath::Hypot(Vector_horizon[0][0],Vector_horizon[1][0])));
-  vector<double> Coord_horizon;
-  Coord_horizon.push_back(azi);
-  Coord_horizon.push_back(alt);
-  return Coord_horizon;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// convert cryostat X axis into Horizon (azi, alt) coordinates
-vector<double> MNCTTimeAndCoordinate::CryoX_to_Horizon(double pitch_deg, double roll_deg, double yaw_deg)
-{
-  TMatrixD CryoX(3,1);
-  CryoX[0][0] = 1.;
-  CryoX[1][0] = 0.;
-  CryoX[2][0] = 0.;
-  return CryoVector_to_Horizon(CryoX, pitch_deg, roll_deg, yaw_deg);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// convert cryostat Z axis into Horizon (azi, alt) coordinates
-vector<double> MNCTTimeAndCoordinate::CryoZ_to_Horizon(double pitch_deg, double roll_deg, double yaw_deg)
-{
-  TMatrixD CryoZ(3,1);
-  CryoZ[0][0] = 0.;
-  CryoZ[1][0] = 0.;
-  CryoZ[2][0] = 1.;
-  return CryoVector_to_Horizon(CryoZ, pitch_deg, roll_deg, yaw_deg);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
