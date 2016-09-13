@@ -565,6 +565,8 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     m_Hits[h]->StreamEvta(S);  
   }
   
+  S<<"CC NStripHits "<<m_StripHits.size()<<endl;
+  
   if (m_AspectIncomplete == true) {
     S<<"BD AspectIncomplete";
     if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
