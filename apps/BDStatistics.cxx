@@ -180,7 +180,13 @@ bool BDStatistics::Analyze()
 {
   if (m_Interrupt == true) return false;
 
-  map<MString, int> BDTypeCounter; 
+  unsigned int NEventsAll = 0;
+  unsigned int NBDEventsAll = 0;
+  map<MString, int> BDTypeCounterAll; 
+
+  unsigned int NEventsTwoPlus = 0;
+  unsigned int NBDEventsTwoPlus = 0;
+  map<MString, int> BDTypeCounterTwoPlus; 
   
   MFile File;
   if (File.Open(m_FileName) == false) {
@@ -191,47 +197,81 @@ bool BDStatistics::Analyze()
   MTokenizer Tokenizer;
 
   bool IsStart = true;
-  bool FoundBD = false;
 
-  unsigned int NEvents = 0;
-  unsigned int NBDEvents = 0;
   
   MString Line;
+  vector<MString> BDStore;
+  int NStripHits = 0;
   while (File.ReadLine(Line) == true) {
     if (m_Interrupt == true) break;
     
     if (Line.BeginsWith("SE")) {
       if (IsStart == false) {
-        ++NEvents;
-        if (FoundBD == true) {
-          ++NBDEvents;
+        if (NStripHits > 0) {
+          ++NEventsAll;
+          if (BDStore.size() > 0) {
+            ++NBDEventsAll;
+          }
+
+          for (MString Line: BDStore) {
+            if (m_Short == true) {
+              Tokenizer.Analyse(Line);
+              if (Tokenizer.GetNTokens() <= 1) continue;
+              BDTypeCounterAll[Tokenizer.GetTokenAtAsString(1)]++;
+            } else {
+              BDTypeCounterAll[Line]++;        
+            }
+          }
+          
+          if (NStripHits > 2) {
+            ++NEventsTwoPlus;
+            if (BDStore.size() > 0) {
+              ++NBDEventsTwoPlus;
+            }
+           for (MString Line: BDStore) {
+              if (m_Short == true) {
+                Tokenizer.Analyse(Line);
+                if (Tokenizer.GetNTokens() <= 1) continue;
+                BDTypeCounterTwoPlus[Tokenizer.GetTokenAtAsString(1)]++;
+              } else {
+                BDTypeCounterTwoPlus[Line]++;        
+              }
+            }
+          }
+        } else {
+          cout<<"Error: No strip hits, did you use a roa file?"<<endl; 
         }
-        FoundBD = false;
+        BDStore.clear();
+        NStripHits = 0;        
       } else {
         IsStart = false;
       }
     }
+    if (Line.BeginsWith("CC NStripHits")) {
+      Tokenizer.Analyse(Line);
+      if (Tokenizer.GetNTokens() == 3) NStripHits = Tokenizer.GetTokenAtAsInt(2);
+    }
     if (Line.BeginsWith("BD")) {
-      if (m_Short == true) {
-        Tokenizer.Analyse(Line);
-        if (Tokenizer.GetNTokens() <= 1) continue;
-        BDTypeCounter[Tokenizer.GetTokenAtAsString(1)]++;
-      } else {
-        BDTypeCounter[Line]++;        
-      }
-      FoundBD = true;
+      BDStore.push_back(Line);
     }
   }
   
   cout<<endl;
   cout<<endl;
-  cout<<"Events flagged as bad: "<<NBDEvents<<" out of "<<NEvents<<" corresponding to "<<setprecision(2)<<fixed<<100.0*double(NBDEvents)/double (NEvents)<<" %"<<endl;
+  cout<<"Events flagged as bad: "<<NBDEventsAll<<" out of "<<NEventsAll<<" events"<<endl;
   cout<<endl;
-  cout<<"Distribution of BD flags (one event can have multiple BD flags): "<<endl;
-  for (auto I = BDTypeCounter.begin(); I != BDTypeCounter.end(); ++I) {
+  cout<<"Distribution of BD flags (one event can have multiple BD flags) -- ALL EVENTS ("<<setprecision(2)<<fixed<<100.0*double(NBDEventsAll)/double (NEventsAll)<<" % flagged as bad): "<<endl;
+  for (auto I = BDTypeCounterAll.begin(); I != BDTypeCounterAll.end(); ++I) {
     cout<<"  "<<(*I).first<<":";
     for (unsigned int i = (*I).first.Length(); i < 52; ++i) cout<<" ";
-    cout.width(10); cout<<right<<(*I).second<<" (="<<setw(5)<<setprecision(2)<<fixed<<100.0*double((*I).second)/double (NEvents)<<"%)"<<endl;
+    cout.width(10); cout<<right<<(*I).second<<" (="<<setw(5)<<setprecision(2)<<fixed<<100.0*double((*I).second)/double (NEventsAll)<<"%)"<<endl;
+  }
+  cout<<endl;
+  cout<<"Distribution of BD flags (one event can have multiple BD flags) -- EVENTS with more than 2 strips hit ("<<setprecision(2)<<fixed<<100.0*double(NBDEventsTwoPlus)/double (NEventsTwoPlus)<<" % flagged as bad): "<<endl;
+  for (auto I = BDTypeCounterTwoPlus.begin(); I != BDTypeCounterTwoPlus.end(); ++I) {
+    cout<<"  "<<(*I).first<<":";
+    for (unsigned int i = (*I).first.Length(); i < 52; ++i) cout<<" ";
+    cout.width(10); cout<<right<<(*I).second<<" (="<<setw(5)<<setprecision(2)<<fixed<<100.0*double((*I).second)/double (NEventsTwoPlus)<<"%)"<<endl;
   }
   cout<<endl;
   cout<<endl;
