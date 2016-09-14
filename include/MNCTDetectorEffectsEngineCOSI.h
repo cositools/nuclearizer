@@ -201,6 +201,11 @@ protected:
     //! Calibration map between read-out element and fitted function for energy resolution calibration
     map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
 
+		//! Stores dead time for each detector
+		double m_CCDeadTime[12];
+		//! Stores last time detector was hit to check if detector still dead
+		double m_LastHitTime[12];
+
     //! List of dead strips
     int m_DeadStrips[12][2][37];
 

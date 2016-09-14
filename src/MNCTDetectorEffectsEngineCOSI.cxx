@@ -125,6 +125,14 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   //load charge loss coefficients
   //InitializeChargeLoss();
 
+	//initialize dead time
+	for (int i=0; i<12; i++){ m_CCDeadTime[i] = 0.0006; }
+
+	//initialize last time to 0 (will this exclude first event?)
+	for (int i=0; i<12; i++){
+		m_LastHitTime[i] = 0;
+	}
+
   m_DepthCalibrator = new MNCTDepthCalibrator();
   if( m_DepthCalibrator->LoadCoeffsFile(m_DepthCalibrationCoeffsFileName) == false ){
     cout << "Unable to load depth calibration coefficients file - Aborting!" << endl;
@@ -193,6 +201,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       continue;
     }
 
+
     
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
@@ -234,7 +243,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     // Step (1): Convert positions into strip hits
     list<MNCTDEEStripHit> StripHits;
 
-
     // (1a) The real strips
     for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
       MSimHT* HT = SimEvent->GetHTAt(h);
@@ -243,10 +251,11 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       MDDetector* Detector = VS->GetDetector();
       MString DetectorName = Detector->GetName();
       if(!DetectorName.BeginsWith("Detector")){
-        continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
+       continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
       }
       DetectorName.RemoveAllInPlace("Detector");
       int DetectorID = DetectorName.ToInt();
+
 
       MNCTDEEStripHit pSide;
       MNCTDEEStripHit nSide;
@@ -367,7 +376,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       MergedStripHits.push_back(Start);
     }
 
-    bool fromSameInteraction = true;
+//    bool fromSameInteraction = true;
     for (MNCTDEEStripHit& Hit: MergedStripHits){
       int nIndep = 0;
       int nSubHits = Hit.m_SubStripHits.size();
@@ -598,11 +607,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
       Hit.m_Energy = Energy;
       Hit.m_ADC = EnergyToADC(Hit,Energy);
-      //      spectrum->Fill(Energy);
-      //      cout << "Energy: " << Energy << '\t';
-      //      cout << "ADC: " << Hit.m_ADC << endl;
-      // Let's do a dummy energy:
-      //      Hit.m_ADC = int(10*Energy);
     }
 
     // (3d) Handle ADC overflow
@@ -639,8 +643,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       if ((*k).m_Energy < m_LLDThresholds[(*k).m_ROE]) { // Dummy threshold of 0 keV sharp
         k = MergedStripHits.erase(k);
       } else {
-        if(gRandom->Gaus((*k).m_Energy,m_FSTNoise[(*k).m_ROE]) < m_FSTThresholds[(*k).m_ROE]){
-//				if ((*k).m_Energy < rThresh.Gaus(m_FSTThresholds[(*k).m_ROE],m_FSTNoise[(*k).m_ROE])){
+//        if(gRandom->Gaus((*k).m_Energy,m_FSTNoise[(*k).m_ROE]) < m_FSTThresholds[(*k).m_ROE]){
+				if ((*k).m_Energy < gRandom->Gaus(m_FSTThresholds[(*k).m_ROE],m_FSTNoise[(*k).m_ROE])){
           (*k).m_Timing = 0.0;
         }
         ++k;
@@ -648,6 +652,30 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 
     // (4c) Take care of guard ring vetoes
+
+		// (4d) Make sure there is at least one strip left on each side of each detector
+		//  If not, remove remaining strip(s) from detector because they won't trigger detector
+		int xExists[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+		int yExists[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+
+		//look for (at least) one strip on each side
+		list<MNCTDEEStripHit>::iterator tr = MergedStripHits.begin();
+		while (tr != MergedStripHits.end()) {
+			int DetID = (*tr).m_ROE.GetDetectorID();
+			if ((*tr).m_ROE.IsPositiveStrip()){ xExists[DetID] = 1; }
+			else{ yExists[DetID] = 1; }
+			++tr;
+		}
+
+		//remove hits that won't trigger detector
+		tr = MergedStripHits.begin();
+		while (tr != MergedStripHits.end()) {
+			int DetID = (*tr).m_ROE.GetDetectorID();
+			if ( xExists[DetID] == 0 || yExists[DetID] == 0){
+				tr = MergedStripHits.erase(tr);
+			}
+			else{ ++tr; }
+		}
 
 
     // Step (5): Split into card cage events - i.e. split by detector
@@ -675,8 +703,37 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 */
 
+		//Step (6.5): Dead time
+		//figure out which detectors are currently dead
+		int updateLastHitTime[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+		int detIsDead[12];
 
-    // Step (7): 
+		for (int d=0; d<12; d++){
+			//second conditional for running multiple sim files when t starts at 0
+			if (m_LastHitTime[d] + m_CCDeadTime[d] > evt_time && m_LastHitTime[d]<evt_time){ detIsDead[d] = 1; }
+			else { detIsDead[d] = 0; }
+		}
+		//erase strip hits in dead detectors
+    list<MNCTDEEStripHit>::iterator DT = MergedStripHits.begin();
+    while (DT != MergedStripHits.end()) {
+      int DetID = (*DT).m_ROE.GetDetectorID();
+      if (detIsDead[DetID] == 1){
+        DT = MergedStripHits.erase(DT);
+      }
+      else {
+				updateLastHitTime[DetID] = 1;
+        ++DT;
+      }
+    }
+		//update last hit time for live detectors that were hit
+		for (int d=0; d<12; d++){
+			if (updateLastHitTime[d] == 1){
+				m_LastHitTime[d] = evt_time;
+			}
+		}
+
+ 
+ 	  // Step (7): 
     
     // (1) Move the information to the read-out-assembly
     Event->SetID(SimEvent->GetID());
@@ -774,7 +831,8 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
   //get energy from gaussian around mean_energy with sigma=EnergyResolution
   //TRandom3 r(0);
   double energy = r.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
-  //  spectrum->Fill(energy);
+//	double energy = mean_energy; 
+ //  spectrum->Fill(energy);
 
   //  if (fabs(mean_energy-662.) < 5){
   //    cout << mean_energy << '\t' << EnergyResolution << '\t' << energy << endl;
