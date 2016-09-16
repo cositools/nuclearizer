@@ -44,7 +44,13 @@ class MNCTModuleSimulationLoader : public MModule, public MNCTDetectorEffectsEng
   
   //! Create a new object of this class 
   virtual MNCTModuleSimulationLoader* Clone() { return new MNCTModuleSimulationLoader(); }
+ 
+  //! Set the geometry
+  virtual void SetGeometry(MDGeometryQuest* Geometry) { MModule::SetGeometry(Geometry); }
   
+  //! Set geometry file name
+  void SetGeometryFileName(const MString& FileName) { cout<<"Use SetGeometry instead"<<endl; abort(); }
+ 
   //! Initialize the module
   virtual bool Initialize();
 
