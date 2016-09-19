@@ -141,12 +141,15 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 	//need to look at Chi-Sq, not final hit n and p energies
 	float chi_sq[nDetectors];
 
+	//to keep track of what flags to give bad hits
+	int notEnoughStrips[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+
   for (int detector = 0; detector < nDetectors; detector++){
 		firstChiSq = secondChiSq = thirdChiSq = fourthChiSq = -1;
 
-    bool runRest = GetEventInfo(Event, detector);
+    int doAnalysis = GetEventInfo(Event, detector);
 
-    if (nHits[0]>0 && nHits[1]>0 && runRest==true){
+    if (doAnalysis == 1){
 	    InitializeKillMatrices();
 	    CheckForAdjacentStrips();
 //			AddMultipleHits(0);
@@ -279,7 +282,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 			}
 
 
-
+//			PrintFinalPairs();
 
      	CalculateDetectorQuality();
 //			if (Event->GetID() == 33){ PrintFinalPairs(); }
@@ -292,12 +295,29 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 				dummy_func();
 			}
 */		}
-    else {
+    else if (doAnalysis == -1) {
 	    detectorQualityFactors.push_back(0);
+			notEnoughStrips[detector] = 1;
 	  }
+		else if (doAnalysis == -2) {
+			detectorQualityFactors.push_back(0);
+			notEnoughStrips[detector] = 2;
+		}
+		else{ cout << "TELL CLIO TO FIX THIS!" << endl; }
 	}
 	CalculateEventQuality(Event, nDetectors);
 	detectorQualityFactors.clear();
+
+	//flag hits without enough strips
+	bool flagNotEnoughStrips = true;
+	for (int det=0; det<12; det++){
+		if (notEnoughStrips[det] == 0){
+			flagNotEnoughStrips = false;
+			break;
+		}
+	}
+	if (flagNotEnoughStrips){ Event->SetStripPairingIncomplete(true,"bad number of strip hits"); }
+
 
 	for (unsigned int h = 0; h < Event->GetNHits(); h++){
 		if (Event->GetHit(h)->GetStripHitMultipleTimesX() == true || Event->GetHit(h)->GetStripHitMultipleTimesY() == true){
@@ -412,13 +432,26 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
     }
   }
 
+/*
+	if (Event->GetNHits()==0 && Event->IsStripPairingIncomplete() == false){
+		for (unsigned int sh=0; sh<Event->GetNStripHits(); sh++){
+			MNCTStripHit* striphit = Event->GetStripHit(sh);
+			cout << striphit->GetDetectorID() << '\t';
+			cout << striphit->GetStripID() << '\t';
+			cout << striphit->IsPositiveStrip() << '\t';
+			cout << striphit->GetEnergy() << endl;
+		}
+		dummy_func();
+	}
+*/
+
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
   
   return true;
 };
 
 //this function takes the MReadOutAssembly and get all the info from it.
-bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int detector) {
+int MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int detector) {
   
   ClearMembers();  
   
@@ -476,16 +509,6 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
 		xTotalUnc = sqrt(xTotalUnc);
 		yTotalUnc = sqrt(yTotalUnc);
 
-//		double diff = fabs(xTotalEnergy-yTotalEnergy);
-
-//		if (diff > 2*xTotalUnc + 2*yTotalUnc + 20){
-//    if (fabs(xTotalEnergy-yTotalEnergy) > 30.){ 
-//	     nHits.push_back(0);
- //	  	 nHits.push_back(0);
-	// 	   return false;
-//			Event->SetStripPairingIncomplete(true,"mismatched start energies");
- //  	}    
-
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
         if (Event->GetStripHit(i)->IsXStrip() == true){
@@ -528,6 +551,11 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
   	nHitsOrig.push_back(n_x);
 		nHitsOrig.push_back(n_y);  
     
+		//check strip numbers again: some strips could have bad energy or resolution
+		// causing there not to be enough strip hits
+		if(!( (n_x > 0) && (n_y > 0) && (fabs(n_x - n_y) < 5) && (n_x < 8) && (n_y < 8))) {
+			return -2;
+		}
     
     
     //sort strips (and energy and resolution) in numerical order by strip ID
@@ -559,13 +587,13 @@ bool MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int d
 //			PrintXYStripsHit();
 //			dummy_func();
 //		}
-		return true;
+		return 1;
   }
 
   else {
     nHits.push_back(0);
     nHits.push_back(0);
-    return false;
+    return -1;
   }
   
 };      

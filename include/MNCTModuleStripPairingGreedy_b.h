@@ -151,7 +151,7 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
 //other functions
-  bool GetEventInfo(MReadOutAssembly*, int);
+  int GetEventInfo(MReadOutAssembly*, int);
   void WriteHits(MReadOutAssembly*, int);
   void ClearMembers();  //clears member vectors in between detectors
   bool CheckInitialEnergyDifference();
