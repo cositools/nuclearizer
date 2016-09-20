@@ -366,6 +366,7 @@ int MNCTModuleDepthCalibrationB::CalculateLocalPosition(MNCTStripHit* XSH, MNCTS
 			CTD = CTD_f < 0 ? (int)(CTD_f - 0.001) : (int)(CTD_f + 0.001); //to ensure that the cast always gives us the integer we want
 			double Z = 0.0;
 			bool FoundZ = m_DepthCalibrator->GetZ(pixel_code, CTD, Z);
+			/*
 			if(!FoundZ){
 				//check if we are within 4 entries of the edge of the lookup table
 				if(CTD >= 0){
@@ -380,6 +381,7 @@ int MNCTModuleDepthCalibrationB::CalculateLocalPosition(MNCTStripHit* XSH, MNCTS
 					}
 				}
 			}
+			*/
 			if(!FoundZ){
 				RetVal = 2;
 			} else {

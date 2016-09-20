@@ -25,6 +25,8 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MString.h"
+#include "TGraph.h"
+#include "TRandom.h"
 
 // Forward declarations:
 
@@ -41,12 +43,13 @@ class MNCTDepthCalibratorB
 		bool LoadLookupTables(MString Fname);
 		//! Check if lookup table exists for a pixel
 		bool PixelTableExists(int Pixel);
-		//! Get Z from Pixel ID and measured CTD value
-		bool GetZ(int Pixel, int CTD, double& Z);
+		//! Get Z from Pixel ID and measured CTD value.
+		bool GetZ(int Pixel, double t, double& z, double R = 5.0);
 
 	private:
 		bool m_LookupTablesLoaded;
-		unordered_map<int,unordered_map<int,double>*> m_PixelTables;
+		unordered_map<int,TGraph*> m_PixelTables;
+		TRandom m_Rand;
 
 
 

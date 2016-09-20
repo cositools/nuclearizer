@@ -877,6 +877,7 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
 	double sigma = res_constant*pow(energy,1./2);
 
   double noised_energy = gRandom->Gaus(energy,sigma);
+  //delete ShieldRes;
 
   return noised_energy;
 

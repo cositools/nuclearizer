@@ -447,6 +447,15 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 */
 
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
+  /*
+  if(Event->GetNHits() == 0){
+	  cout << "++++" << endl;
+	  for(int z = 0; z < Event->GetNStripHits(); ++z){
+		  Event->GetStripHit(z)->StreamDat(cout);
+	  }
+	  cout << "----" << endl;
+  }
+  */
   
   return true;
 };

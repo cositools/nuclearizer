@@ -231,6 +231,7 @@ bool compare_striphits(MNCTStripHit* SH1, MNCTStripHit* SH2)
 bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
+
   
  //for (unsigned int sh=0; sh < Event->GetNHits(); sh++) {
   unsigned int NStripHits = Event->GetNStripHits();

@@ -86,7 +86,7 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
 
 	m_IsStartModule = true;
 
-	m_IgnoreAspect = true;
+	m_IgnoreAspect = false; //this was set to true and was causing events to be pushed through the pipeline before aspect info was available for them AWL Sep 20 2016
 	m_FileIsDone = false;
 }
 
@@ -207,7 +207,7 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
 bool MNCTModuleMeasurementLoaderBinary::IsReady() 
 {
 	if (m_Events.size() > 0) {
-		if (m_IgnoreAspect == true) {
+		if (GetAspectMode() == MNCTBinaryFlightDataParserAspectModes::c_Neither) {
 			return true;
 		} else {
 			MNCTAspect* A = m_Events[0]->GetAspect();
