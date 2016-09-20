@@ -303,20 +303,21 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 			detectorQualityFactors.push_back(0);
 			notEnoughStrips[detector] = 2;
 		}
-		else{ cout << "TELL CLIO TO FIX THIS!" << endl; }
+		else if (doAnalysis == -3) {
+			detectorQualityFactors.push_back(0);
+			notEnoughStrips[detector] = 3;
+		}
 	}
 	CalculateEventQuality(Event, nDetectors);
 	detectorQualityFactors.clear();
 
 	//flag hits without enough strips
-	bool flagNotEnoughStrips = true;
 	for (int det=0; det<12; det++){
-		if (notEnoughStrips[det] == 0){
-			flagNotEnoughStrips = false;
+		if (notEnoughStrips[det] == 1 || notEnoughStrips[det] == 2){
+			Event->SetStripPairingIncomplete(true,"bad number of strip hits");
 			break;
 		}
 	}
-	if (flagNotEnoughStrips){ Event->SetStripPairingIncomplete(true,"bad number of strip hits"); }
 
 
 	for (unsigned int h = 0; h < Event->GetNHits(); h++){
@@ -471,10 +472,11 @@ int MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int de
       
     }
   }
-  
-  //	cout << "detector: " << detector << endl;
-  //	cout << "n_x: " << n_x << endl;
-  //	cout << "n_y: " << n_y << endl;
+ 
+	//no strip hits in detector: different return value
+	// (don't want to flag as bad if there weren't any strip hits...)
+	if (n_x == 0 && n_y == 0){ return -3; }
+ 
   
   
   //IMPORTANT: THE IF STATEMENT BELOW SETS CAPS ON THE KIND OF EVENTS ANALIZED BY THE CODE!!!!!!!!
@@ -1507,7 +1509,7 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 	vector<float> resPair;
   float weight;
   //float hitE;
-  float eRes;
+//  float eRes;
 	float greedyChiSq = 0;
 
   //	cout << "nElements: " << nElements << endl;
