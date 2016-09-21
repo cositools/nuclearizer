@@ -645,6 +645,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       } else {
 //        if(gRandom->Gaus((*k).m_Energy,m_FSTNoise[(*k).m_ROE]) < m_FSTThresholds[(*k).m_ROE]){
 				if ((*k).m_Energy < gRandom->Gaus(m_FSTThresholds[(*k).m_ROE],m_FSTNoise[(*k).m_ROE])){
+//				if ((*k).m_Energy < m_FSTThresholds[(*k).m_ROE]){
           (*k).m_Timing = 0.0;
         }
         ++k;
@@ -662,8 +663,10 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		list<MNCTDEEStripHit>::iterator tr = MergedStripHits.begin();
 		while (tr != MergedStripHits.end()) {
 			int DetID = (*tr).m_ROE.GetDetectorID();
-			if ((*tr).m_ROE.IsPositiveStrip()){ xExists[DetID] = 1; }
-			else{ yExists[DetID] = 1; }
+			if ((*tr).m_Timing != 0){
+				if ((*tr).m_ROE.IsPositiveStrip()){ xExists[DetID] = 1; }
+				else{ yExists[DetID] = 1; }
+			}
 			++tr;
 		}
 
@@ -877,7 +880,6 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
 	double sigma = res_constant*pow(energy,1./2);
 
   double noised_energy = gRandom->Gaus(energy,sigma);
-  //delete ShieldRes;
 
   return noised_energy;
 
