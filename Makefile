@@ -111,7 +111,9 @@ $(LB)/GCUHousekeepingParser.o\
 $(LB)/LivetimeParser.o\
 $(LB)/MNCTDepthCalibratorB.o\
 $(LB)/MNCTModuleDepthCalibrationB.o\
-$(LB)/MGUIOptionsDepthCalibrationB.o
+$(LB)/MGUIOptionsDepthCalibrationB.o\
+$(LB)/MGUIOptionsResponseGenerator.o\
+$(LB)/MNCTModuleResponseGenerator.o\
 
 
 
@@ -133,7 +135,7 @@ NUCLEARIZER_SHARED_LIB = $(LB)/libNuclearizer.$(DLL)
 # External libraries
 # MEGAlib
 #ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectralyzeGui -lSpectralyze  -L$(MEGALIB)/lib -L$(LB) 
-ALLLIBS = -L$(LB) -lSpectralyzeGui -lSpectralyze -lFretalonBase -lSivan -lSpectralyze -lRevanGui -lRevan -lGeomega -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
+ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
 # ROOT
 ALLLIBS += -lMathCore
 

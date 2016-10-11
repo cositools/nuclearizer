@@ -85,6 +85,7 @@ using namespace std;
 #include "MNCTModuleEventFilter.h"
 //#include "MNCTModuleDumpEvent.h"
 #include "MNCTModuleEventSaver.h"
+#include "MNCTModuleResponseGenerator.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -146,6 +147,7 @@ MAssembly::MAssembly()
   
   m_Supervisor->AddAvailableModule(new MNCTModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
+  m_Supervisor->AddAvailableModule(new MNCTModuleResponseGenerator());
   //m_Supervisor->AddAvailableModule(new MNCTModuleEventReconstruction());
 
   m_Supervisor->Load();
