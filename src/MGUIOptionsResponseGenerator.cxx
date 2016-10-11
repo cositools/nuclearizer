@@ -68,7 +68,7 @@ void MGUIOptionsResponseGenerator::Create()
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);  
   
-  m_Mode = new MGUIERBList(m_OptionsFrame, "Please a response type:");
+  m_Mode = new MGUIERBList(m_OptionsFrame, "Please select a response type:");
   m_Mode->Add("Spectral");
   m_Mode->Add("Bayesian event reconstruction");
   m_Mode->Add("Imaging");
@@ -76,6 +76,9 @@ void MGUIOptionsResponseGenerator::Create()
   m_Mode->Create();
   m_OptionsFrame->AddFrame(m_Mode, LabelLayout);
 
+  m_ResponseName = new MGUIEEntry(m_OptionsFrame, "Please choose a response name: ", false,
+                                  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->GetResponseName());
+  m_OptionsFrame->AddFrame(m_ResponseName, LabelLayout);
   
   m_RevanCfgFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a revan configuration file:",
   dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->GetRevanConfigurationFileName());
@@ -131,6 +134,7 @@ bool MGUIOptionsResponseGenerator::OnApply()
   // Modify this to store the data in the module!
 
   dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetMode(m_Mode->GetSelected());
+  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetResponseName(m_ResponseName->GetAsString());
   dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetRevanConfigurationFileName(m_RevanCfgFileSelector->GetFileName());
   dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetMimrecConfigurationFileName(m_MimrecCfgFileSelector->GetFileName());
   

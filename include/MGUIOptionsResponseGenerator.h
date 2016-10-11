@@ -73,6 +73,9 @@ class MGUIOptionsResponseGenerator : public MGUIOptions
   //! Select the mode
   MGUIERBList* m_Mode;
 
+  //! Select the mode
+  MGUIEEntry* m_ResponseName;
+
   //! Select the revan configuration file
   MGUIEFileSelector* m_RevanCfgFileSelector;
   //! Select the mimrec configuration file

@@ -54,6 +54,11 @@ class MNCTModuleResponseGenerator : public MModule
   //! Set the mode
   void SetMode(unsigned int Mode) { m_Mode = Mode; }
 
+  //! Get the response name
+  MString GetResponseName() const { return m_ResponseName; }
+  //! Set the response name
+  void SetResponseName(MString ResponseName) { m_ResponseName = ResponseName; }
+
   //! Get the revan configuration file name
   MString GetRevanConfigurationFileName() const { return m_RevanConfigurationFileName; }
   //! Set the revan configuration file name
@@ -100,6 +105,10 @@ class MNCTModuleResponseGenerator : public MModule
  private:
   //! The operation mode
   unsigned int m_Mode;
+  
+  //! The response name
+  MString m_ResponseName;
+  
   //! The revan configuration file name
   MString m_RevanConfigurationFileName;
   //! The mimrec configuration file name

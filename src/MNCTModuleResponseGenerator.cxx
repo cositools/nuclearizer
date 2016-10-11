@@ -76,6 +76,7 @@ MNCTModuleResponseGenerator::MNCTModuleResponseGenerator() : MModule()
   m_HasOptionsGUI = true;
   
   m_Mode = c_Spectrum;
+  m_ResponseName = "Response";
   
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
@@ -103,7 +104,7 @@ bool MNCTModuleResponseGenerator::Initialize()
     MResponseSpectral* Response = new MResponseSpectral();
 
     Response->SetGeometryFileName(m_Geometry->GetFileName());
-    Response->SetResponseName("Dummy");
+    Response->SetResponseName(MString(gSystem->WorkingDirectory()) + "/" + m_ResponseName);
     
     Response->SetCompression(true);
     Response->SetSaveAfterNumberOfEvents(100000);
@@ -182,15 +183,19 @@ bool MNCTModuleResponseGenerator::ReadXmlConfiguration(MXmlNode* Node)
   //! Read the configuration data from an XML node
   
   MXmlNode* ModeNode = Node->GetNode("Mode");
-  if (ModeNode != 0) {
+  if (ModeNode != nullptr) {
     m_Mode = ModeNode->GetValueAsUnsignedInt();
   }
+  MXmlNode* ResponseNameNode = Node->GetNode("Name");
+  if (ResponseNameNode != nullptr) {
+    m_ResponseName = ResponseNameNode->GetValueAsString();
+  }  
   MXmlNode* MimrecConfigurationFileNameNode = Node->GetNode("MimrecConfigurationFileName");
-  if (MimrecConfigurationFileNameNode != 0) {
+  if (MimrecConfigurationFileNameNode != nullptr) {
     m_MimrecConfigurationFileName = MimrecConfigurationFileNameNode->GetValueAsString();
   }
   MXmlNode* RevanConfigurationFileNameNode = Node->GetNode("RevanConfigurationFileName");
-  if (RevanConfigurationFileNameNode != 0) {
+  if (RevanConfigurationFileNameNode != nullptr) {
     m_RevanConfigurationFileName = RevanConfigurationFileNameNode->GetValueAsString();
   }
 
@@ -205,8 +210,9 @@ MXmlNode* MNCTModuleResponseGenerator::CreateXmlConfiguration()
 {
   //! Create an XML node tree from the configuration
 
-  MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
+  MXmlNode* Node = new MXmlNode(nullptr, m_XmlTag);  
   new MXmlNode(Node, "Mode", m_Mode);
+  new MXmlNode(Node, "Name", m_ResponseName);
   new MXmlNode(Node, "MimrecConfigurationFileName", m_MimrecConfigurationFileName);
   new MXmlNode(Node, "RevanConfigurationFileName", m_RevanConfigurationFileName);
 
