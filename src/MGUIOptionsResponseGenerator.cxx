@@ -70,7 +70,9 @@ void MGUIOptionsResponseGenerator::Create()
   
   m_Mode = new MGUIERBList(m_OptionsFrame, "Please select a response type:");
   m_Mode->Add("Spectral");
+  m_Mode->Add("Clustering");
   m_Mode->Add("Bayesian event reconstruction");
+  m_Mode->Add("Efficiency");
   m_Mode->Add("Imaging");
   m_Mode->SetSelected(dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->GetMode());
   m_Mode->Create();

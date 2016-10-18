@@ -34,6 +34,10 @@
 #include "MTime.h"
 #include "MGUIOptionsResponseGenerator.h"
 #include "MResponseSpectral.h"
+#include "MResponseClusteringDSS.h"
+#include "MResponseImagingEfficiency.h"
+#include "MResponseMultipleCompton.h"
+#include "MResponseImagingARM.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +81,7 @@ MNCTModuleResponseGenerator::MNCTModuleResponseGenerator() : MModule()
   
   m_Mode = c_Spectrum;
   m_ResponseName = "Response";
+  m_Response = nullptr;
   
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
@@ -89,7 +94,7 @@ MNCTModuleResponseGenerator::MNCTModuleResponseGenerator() : MModule()
 
 MNCTModuleResponseGenerator::~MNCTModuleResponseGenerator()
 {
-  // Destructor
+  delete m_Response;
 }
 
 
@@ -100,23 +105,35 @@ bool MNCTModuleResponseGenerator::Initialize()
 {
   // Initialize the module
   
+  delete m_Response;
+  
   if (m_Mode == c_Spectrum) {
     MResponseSpectral* Response = new MResponseSpectral();
-
-    Response->SetGeometryFileName(m_Geometry->GetFileName());
-    Response->SetResponseName(MString(gSystem->WorkingDirectory()) + "/" + m_ResponseName);
-    
-    Response->SetCompression(true);
-    Response->SetSaveAfterNumberOfEvents(100000);
-    
-    Response->SetRevanConfigurationFileName(m_RevanConfigurationFileName);
-    Response->SetMimrecConfigurationFileName(m_MimrecConfigurationFileName);
- 
-    if (Response->Initialize() == false) return false;
-
+    m_Response = Response; 
+  } else if (m_Mode == c_Clustering) {
+    MResponseClusteringDSS* Response = new MResponseClusteringDSS();
+    m_Response = Response; 
+  } else if (m_Mode == c_Efficiency) {
+    MResponseImagingEfficiency* Response = new MResponseImagingEfficiency();
+    m_Response = Response; 
+  } else if (m_Mode == c_BayesianER) {
+    MResponseMultipleCompton* Response = new MResponseMultipleCompton();
+    m_Response = Response; 
+  } else if (m_Mode == c_Imaging) {
+    MResponseImagingARM* Response = new MResponseImagingARM();
     m_Response = Response; 
   }
   
+  m_Response->SetGeometryFileName(m_Geometry->GetFileName());
+  m_Response->SetResponseName(MString(gSystem->WorkingDirectory()) + "/" + m_ResponseName);
+    
+  m_Response->SetCompression(true);
+  m_Response->SetSaveAfterNumberOfEvents(100000);
+    
+  m_Response->SetRevanSettingsFileName(m_RevanConfigurationFileName);
+  m_Response->SetMimrecSettingsFileName(m_MimrecConfigurationFileName);
+ 
+  if (m_Response->Initialize() == false) return false;
   
   return MModule::Initialize();
 }

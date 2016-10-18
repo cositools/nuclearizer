@@ -86,9 +86,11 @@ class MNCTModuleResponseGenerator : public MModule
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
 
-  static const unsigned int c_Spectrum  = 0;
-  static const unsigned int c_EventReconstruction  = 1;
-  static const unsigned int c_Imaging = 2;
+  static const unsigned int c_Spectrum             = 0;
+  static const unsigned int c_Clustering           = 1;
+  static const unsigned int c_BayesianER           = 2;
+  static const unsigned int c_Efficiency           = 3;
+  static const unsigned int c_Imaging              = 4;
   
   // protected methods:
  protected:
