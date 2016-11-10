@@ -1,0 +1,26 @@
+# Response Matrix 2
+Version 1
+
+# Name
+NM MC: Good/Bad ratio (=prior)
+
+# The order of the matrix
+OD 2
+
+# The number of simulated events
+TS 0
+
+# The far-field start area (if zero a non-far-field simulation, or non-spherical start area was used)
+SA 0
+
+# Are the values centered?
+CE true
+
+Type ResponseMatrixO2Stream
+A1 0 1 2 
+N1 GoodBad
+A2 2 3 4 5 6 7 8 
+N2 Sequence length
+StartStream 12
+5.45847e+07 1.94086e+06 1.10054e+08 1.09535e+06 2.7404e+08 572172 7.54233e+08 211830 2.31251e+09 57977 8.18114e+09 12232 
+StopStream
