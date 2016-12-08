@@ -126,7 +126,7 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   //InitializeChargeLoss();
 
 	//initialize dead time
-	for (int i=0; i<12; i++){ m_CCDeadTime[i] = 0.0006; }
+	for (int i=0; i<12; i++){ m_CCDeadTime[i] = 0.0006; m_TotalDeadTime[i] = 0.; m_TriggerRates[i]=0;}
 
 	//initialize last time to 0 (will this exclude first event?)
 	for (int i=0; i<12; i++){
@@ -174,12 +174,16 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   m_ChargeLossCounter = 0;
 
   // for shield veto: shield pulse duration and card cage delay: constant for now
-  m_ShieldPulseDuration = 1.e-6;
+  m_ShieldPulseDuration = 1.7e-6;
   m_CCDelay = 700.e-9;
   // for shield veto: gets updated with shield event times
   // start at -10s so that it doesn't veto beginning events by accident
   m_ShieldTime = -10;  
-  
+ 
+	m_IsShieldDead = false;
+
+	m_NumShieldCounts = 0;
+ 
   return true;
 }
     
@@ -202,10 +206,18 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 
 
+/*		for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+      MSimHT* HT = SimEvent->GetHTAt(h);
+      if (HT->GetDetectorType() == 4) { m_NumShieldCounts++; }
+		}
+*/
     
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
-    
+		bool hasDetHits = false;
+		bool hasShieldHits = false;
+		bool increaseShieldDeadTime = false;
+
     // first check if there's another shield hit above the threshold
     // if so, veto event
     for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
@@ -220,13 +232,22 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         HT->SetEnergy(energy);
 
         if (energy > 80.) {
-          m_ShieldTime = evt_time;
+					if (m_ShieldTime + m_ShieldPulseDuration < evt_time){ hasShieldHits = true; }
+					increaseShieldDeadTime = true;
+         	m_ShieldTime = evt_time;
         }
-      }
+	    }
+			else if (HT->GetDetectorType() == 3){ hasDetHits = true; }
     }
 
-    if (evt_time + m_CCDelay < m_ShieldTime + m_ShieldPulseDuration){
-      delete SimEvent;
+		if (hasShieldHits == true){ m_NumShieldCounts++; }
+		if (increaseShieldDeadTime == true){ m_ShieldDeadTime += m_ShieldPulseDuration; }
+
+		if (evt_time + m_CCDelay < m_ShieldTime + m_ShieldPulseDuration){
+//		if (evt_time == m_ShieldTime){// && hasDetHits == true){
+//		if (abs(evt_time-m_ShieldTime) < 400e-9){
+//			if (hasDetHits == true){ m_NumShieldCounts++; }
+ 		  delete SimEvent;
       //cout<<SimEvent->GetID()<<": Vetoed"<<endl;
       continue;
     }
@@ -329,13 +350,14 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 
 
+    list<MNCTDEEStripHit> GuardRingHits;
     // (1b) The guard ring hits
     for (unsigned int h = 0; h < SimEvent->GetNGRs(); ++h) {
       MSimGR* GR = SimEvent->GetGRAt(h);
       MDVolumeSequence* VS = GR->GetVolumeSequence();
       MDDetector* Detector = VS->GetDetector();
       MString DetectorName = Detector->GetName();
-      DetectorName.RemoveAllInPlace("Detector_");
+      DetectorName.RemoveAllInPlace("Detector");
       int DetectorID = DetectorName.ToInt();
 
       MNCTDEEStripHit GuardRingHit;
@@ -345,6 +367,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
       GuardRingHit.m_Energy = GR->GetEnergy();
       GuardRingHit.m_Position = MVector(0, 0, 0); // <-- not important
+
+			GuardRingHits.push_back(GuardRingHit);
     }
 
 
@@ -375,6 +399,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 //      cout << "-----------" << endl;
       MergedStripHits.push_back(Start);
     }
+
 
 //    bool fromSameInteraction = true;
     for (MNCTDEEStripHit& Hit: MergedStripHits){
@@ -652,8 +677,25 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
     }
 
-    // (4c) Take care of guard ring vetoes
-
+/*    // (4c) Take care of guard ring vetoes
+		list<MNCTDEEStripHit>::iterator gr = GuardRingHits.begin();
+		int grHit[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+		while (gr != GuardRingHits.end()) {
+			if ((*gr).m_Energy > 25){
+				int detID = (*gr).m_ROE.GetDetectorID();
+				grHit[detID] = 1;
+			}
+			++gr;
+		}
+		list<MNCTDEEStripHit>::iterator grVeto = MergedStripHits.begin();
+		while (grVeto != MergedStripHits.end()){
+			int detID = (*grVeto).m_ROE.GetDetectorID();
+			if (grHit[detID] == 1){ 
+				grVeto = MergedStripHits.erase(grVeto);
+			}
+			else{ ++grVeto; }
+		}
+*/
 		// (4d) Make sure there is at least one strip left on each side of each detector
 		//  If not, remove remaining strip(s) from detector because they won't trigger detector
 		int xExists[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
@@ -663,7 +705,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		list<MNCTDEEStripHit>::iterator tr = MergedStripHits.begin();
 		while (tr != MergedStripHits.end()) {
 			int DetID = (*tr).m_ROE.GetDetectorID();
-			if ((*tr).m_Timing != 0){
+			if ((*tr).m_Timing != 0 && (*tr).m_Energy != 0){
 				if ((*tr).m_ROE.IsPositiveStrip()){ xExists[DetID] = 1; }
 				else{ yExists[DetID] = 1; }
 			}
@@ -677,7 +719,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			if ( xExists[DetID] == 0 || yExists[DetID] == 0){
 				tr = MergedStripHits.erase(tr);
 			}
-			else{ ++tr; }
+			else{ ++tr;}
 		}
 
 
@@ -710,16 +752,19 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		//figure out which detectors are currently dead
 		int updateLastHitTime[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 		int detIsDead[12];
+//		int detHit[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
 		for (int d=0; d<12; d++){
 			//second conditional for running multiple sim files when t starts at 0
 			if (m_LastHitTime[d] + m_CCDeadTime[d] > evt_time && m_LastHitTime[d]<evt_time){ detIsDead[d] = 1; }
 			else { detIsDead[d] = 0; }
 		}
+
 		//erase strip hits in dead detectors
     list<MNCTDEEStripHit>::iterator DT = MergedStripHits.begin();
     while (DT != MergedStripHits.end()) {
       int DetID = (*DT).m_ROE.GetDetectorID();
+//			detHit[DetID] = 1;
       if (detIsDead[DetID] == 1){
         DT = MergedStripHits.erase(DT);
       }
@@ -728,15 +773,27 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         ++DT;
       }
     }
+
 		//update last hit time for live detectors that were hit
 		for (int d=0; d<12; d++){
 			if (updateLastHitTime[d] == 1){
 				m_LastHitTime[d] = evt_time;
+				m_TotalDeadTime[d] += m_CCDeadTime[d];
+				m_TriggerRates[d] += 1;
 			}
+//			if (detHit[d] == 1){ m_TriggerRates[d] += 1; }
 		}
-
  
  	  // Step (7): 
+		//check if there are any hits left in the event
+		int HitCounter = 0;
+		for (MNCTDEEStripHit Hit: MergedStripHits){
+			HitCounter++;
+		}
+		if (HitCounter == 0){
+			delete SimEvent;
+			continue;
+		}
     
     // (1) Move the information to the read-out-assembly
     Event->SetID(SimEvent->GetID());
@@ -780,6 +837,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
     }
 
+
     // Never forget to delete the event
     delete SimEvent;
     
@@ -801,6 +859,16 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
   cout << "total hits: " << m_TotalHitsCounter << endl;
   cout << "number of events with multiple hits per strip: " << m_MultipleHitsCounter << endl;
   cout << "charge loss applies counter: " << m_ChargeLossCounter << endl;
+	cout << "Num shield counts: " << m_NumShieldCounts << endl;
+	cout << "Dead time " << endl;
+	for (int i=0; i<12; i++){
+		cout << i << ":\t" << m_TotalDeadTime[i] << endl;
+	}
+	cout << "Trigger rates" << endl;
+	for (int i=0; i<12; i++){
+		cout << i << ":\t" << m_TriggerRates[i] << endl;
+	}
+	cout << "Shield dead time: " << m_ShieldDeadTime << endl;
 
   if (m_SaveToFile == true) {
     m_Roa<<"EN"<<endl<<endl;

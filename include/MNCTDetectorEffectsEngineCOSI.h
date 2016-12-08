@@ -205,6 +205,10 @@ protected:
 		double m_CCDeadTime[12];
 		//! Stores last time detector was hit to check if detector still dead
 		double m_LastHitTime[12];
+		double m_TotalDeadTime[12];
+		int m_TriggerRates[12];
+
+		double m_ShieldDeadTime;
 
     //! List of dead strips
     int m_DeadStrips[12][2][37];
@@ -222,6 +226,9 @@ protected:
     double m_ShieldPulseDuration;
     double m_CCDelay;
     double m_ShieldTime;  
+		bool m_IsShieldDead;
+
+		int m_NumShieldCounts;
 
 #ifdef ___CINT___
  public:
