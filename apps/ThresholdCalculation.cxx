@@ -188,12 +188,12 @@ bool ThresholdCalculation::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
-//	MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
+//  MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
+	MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
   Loader->SetFileName(m_FileName);
-	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
-	Loader->EnableCoincidenceMerging(true);
+//	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
+//	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
+//	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
   
   MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
@@ -252,9 +252,10 @@ bool ThresholdCalculation::Analyze()
     IsFinished = Loader->IsFinished();
 	}
 
-/*
+
 	//save spectra
 	for (auto H: LLDSpec){
+//	for (auto H: FSTSpec){
 		char name[16];
 		sprintf(name,"lld_%05d.root",H.first);
 		TFile f(name,"new");
@@ -267,7 +268,7 @@ bool ThresholdCalculation::Analyze()
 		}
 		f.Close();
 	}
-*/
+
 
 /*
 	for (auto H: FSTSpec){
@@ -279,13 +280,13 @@ bool ThresholdCalculation::Analyze()
 	}
 */
 
-
+/*
 	map<int, float> lld_thresholds;
 	map<int, float> spectrum_kink;
 	LLDThresholds(LLDSpec,lld_thresholds,spectrum_kink);
 //	FSTThresholdsLine(FSTSpec,lld_thresholds,spectrum_kink,Calibrator);
 	FSTThresholdsErf(FSTSpec,lld_thresholds,spectrum_kink,Calibrator);
-
+*/
 
 	cout << "all spectra analyzed and saved" << endl;
 
@@ -316,7 +317,8 @@ void ThresholdCalculation::LLDThresholds(map<int, TH1D*> LLDSpec, map<int, float
 	for (auto H: LLDSpec){
 		//limit the fit range like this to just fit the slope of the LLD spectrum and not overcount
 		// LLD counts after the kink
-		TF1* line = new TF1("line","[0]*x+[1]",lld_thresholds[H.first],lld_thresholds[H.first]+100);
+		TF1* line = new TF1("line","[0]*x+[1]",lld_thresholds[H.first]+50,lld_thresholds[H.first]+200);
+		line->SetParLimits(0,-100000,0);
 		H.second->Fit("line","RQ");
 
 		//calculate x intercept
@@ -415,7 +417,7 @@ void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, fl
 
 	//save results in file
 	FILE * fp;
-	fp = fopen("thresholds_erf.txt","w+");
+	fp = fopen("thresholds_erf_sim.txt","w+");
 	for (auto H: FSTSpec){
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
