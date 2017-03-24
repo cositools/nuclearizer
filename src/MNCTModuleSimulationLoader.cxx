@@ -101,10 +101,10 @@ bool MNCTModuleSimulationLoader::Initialize()
   }
   
   MSupervisor* S = MSupervisor::GetSupervisor();
-  MNCTModuleEventSaver* Saver = dynamic_cast<MNCTModuleEventSaver*>(S->GetAvailableModuleByXmlTag("MNCTModuleEventSaver"));
+  MNCTModuleEventSaver* Saver = dynamic_cast<MNCTModuleEventSaver*>(S->GetAvailableModuleByXmlTag("XmlTagEventSaver"));
   if (Saver != nullptr) {
     Saver->SetStartAreaFarField(m_StartAreaFarField);
-  }  
+  }
   
   return true;
 }
@@ -136,7 +136,7 @@ void MNCTModuleSimulationLoader::Finalize()
   // Initialize the module 
 
   MSupervisor* S = MSupervisor::GetSupervisor();
-  MNCTModuleEventSaver* Saver = dynamic_cast<MNCTModuleEventSaver*>(S->GetAvailableModuleByXmlTag("MNCTModuleEventSaver"));
+  MNCTModuleEventSaver* Saver = dynamic_cast<MNCTModuleEventSaver*>(S->GetAvailableModuleByXmlTag("XmlTagEventSaver"));
   if (Saver != nullptr) {
     Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
   }    
