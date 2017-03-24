@@ -84,6 +84,9 @@ MNCTModuleEventSaver::MNCTModuleEventSaver() : MModule()
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
+  
+  m_StartAreaFarField = 0.0;
+  m_NumberOfSimulatedEvents = 0;
 }
 
 
@@ -171,6 +174,13 @@ bool MNCTModuleEventSaver::Initialize()
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
+  if (m_StartAreaFarField != 0.0) {
+    Header<<"StartAreaFarField "<<m_StartAreaFarField<<endl;
+    Header<<endl;
+    Header<<"TB 0"<<endl;
+    Header<<endl;
+  }
+  
   m_Header = Header.str();
 
   m_Out.Write(m_Header);
@@ -248,8 +258,14 @@ void MNCTModuleEventSaver::Finalize()
     m_SubFileOut.Close();
   }
 
-  m_Out.Write("EN\n");
+  m_Out.WriteLine("EN");
+  m_Out.WriteLine();
+  if (m_NumberOfSimulatedEvents > 0) {
+    m_Out.WriteLine(MString("TE ") + m_NumberOfSimulatedEvents);
+  }
+  m_Out.WriteLine();
   m_Out.Close();
+  
   
   return;
 }

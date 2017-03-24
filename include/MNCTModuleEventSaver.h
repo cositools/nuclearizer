@@ -78,6 +78,11 @@ class MNCTModuleEventSaver : public MModule
   //! Set the time after which the file should be split
   void SetSplitFileTime(MTime SplitFileTime) { m_SplitFileTime = SplitFileTime; }
   
+  //! Set the start area of the far field simulation if there was any
+  void SetStartAreaFarField(double Area) { m_StartAreaFarField = Area; } 
+  //! Set the number if simulated events
+  void SetSimulatedEvents(long NumberOfSimulatedEvents) { m_NumberOfSimulatedEvents = NumberOfSimulatedEvents; } 
+  
   //! Initialize the module
   virtual bool Initialize();
 
@@ -161,6 +166,10 @@ class MNCTModuleEventSaver : public MModule
   //! Start time in case we split the file in mutliples
   MTime m_SubFileStart;
 
+  //! The start area of far field simulations
+  double m_StartAreaFarField;
+  //! The numebr of simulated events
+  long m_NumberOfSimulatedEvents;
   
 #ifdef ___CINT___
  public:

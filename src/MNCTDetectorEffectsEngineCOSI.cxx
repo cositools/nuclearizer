@@ -154,6 +154,7 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
     m_Reader->ShowProgress();
   }
 
+  m_StartAreaFarField = m_Reader->GetSimulationStartAreaFarField();
   
   if (m_SaveToFile == true) {
     cout << "Output File: " << m_RoaFileName << endl;

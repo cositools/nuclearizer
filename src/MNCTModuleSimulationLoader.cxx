@@ -33,6 +33,7 @@
 
 // MEGAlib libs:
 #include "MGUIOptionsSimulationLoader.h"
+#include "MNCTModuleEventSaver.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +96,17 @@ bool MNCTModuleSimulationLoader::Initialize()
   // Initialize the module 
 
   MNCTDetectorEffectsEngineCOSI::SetGeometry(MModule::m_Geometry);
-  return MNCTDetectorEffectsEngineCOSI::Initialize();
+  if (MNCTDetectorEffectsEngineCOSI::Initialize() == false) {
+    return false;
+  }
+  
+  MSupervisor* S = MSupervisor::GetSupervisor();
+  MNCTModuleEventSaver* Saver = dynamic_cast<MNCTModuleEventSaver*>(S->GetAvailableModuleByXmlTag("MNCTModuleEventSaver"));
+  if (Saver != nullptr) {
+    Saver->SetStartAreaFarField(m_StartAreaFarField);
+  }  
+  
+  return true;
 }
 
 
@@ -124,6 +135,12 @@ void MNCTModuleSimulationLoader::Finalize()
 {
   // Initialize the module 
 
+  MSupervisor* S = MSupervisor::GetSupervisor();
+  MNCTModuleEventSaver* Saver = dynamic_cast<MNCTModuleEventSaver*>(S->GetAvailableModuleByXmlTag("MNCTModuleEventSaver"));
+  if (Saver != nullptr) {
+    Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
+  }    
+  
   MNCTDetectorEffectsEngineCOSI::Finalize();
 }
 
