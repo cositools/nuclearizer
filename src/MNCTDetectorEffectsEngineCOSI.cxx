@@ -154,7 +154,6 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
     m_Reader->ShowProgress();
   }
 
-  m_StartAreaFarField = m_Reader->GetSimulationStartAreaFarField();
   
   if (m_SaveToFile == true) {
     cout << "Output File: " << m_RoaFileName << endl;
@@ -261,6 +260,20 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       IAs.push_back(ia);
     }
 
+		// Step (0.5): Get aspect information
+		if (SimEvent->HasGalacticPointing()){
+			Event->SetSimAspectInfo(true);
+
+			double phi = SimEvent->GetGalacticPointingXAxis().Phi()*c_Deg;
+			if (phi < 0.0){ phi += 360; }
+			Event->SetGalacticPointingXAxisPhi(phi);
+			Event->SetGalacticPointingXAxisTheta(SimEvent->GetGalacticPointingXAxis().Theta()*c_Deg-90);
+
+			phi = SimEvent->GetGalacticPointingZAxis().Phi()*c_Deg;
+			if (phi < 0.0){ phi += 360; }
+			Event->SetGalacticPointingZAxisPhi(phi);
+			Event->SetGalacticPointingZAxisTheta(SimEvent->GetGalacticPointingZAxis().Theta()*c_Deg-90);
+		}
 
     // Step (1): Convert positions into strip hits
     list<MNCTDEEStripHit> StripHits;
@@ -430,38 +443,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
     }
 
-/*
 
-            MNCTDEEStripHit& SubHit1 = Hit.m_SubStripHits.at(i);
-            MNCTDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(j);
-            fromSameInteraction = false;
-            
-            for (int o1: SubHit1.m_Origins) {
-              for (int o2: SubHit1.m_Origins) {
-                if (o1 == o2){/COSIa122914_0116th.dat
-                  fromSameInteraction = true;
-                }
-              }
-            }
-            if (fromSameInteraction){
-              //have to mark it in the strip hits so that
-              // charge loss effect can be applied
-              SubHit1.m_SharedOrigin.push_back(j);
-//              SubHit2.m_SharedOrigin.push_back(i);
-              nSameInteraction++;
-            }
-
-            //these counters are not actually counting the right thing right now...
-//            if (fromSameInteraction){ m_ChargeLossCounter++; }
-//            else{ m_MultipleHitsCounter++; }
-          }
-        }
-        if (nSameInteraction > nSubHits){ nSameInteraction = nSubHits; }
-        m_MultipleHitsCounter += nSubHits-nSameInteraction;
-        m_ChargeLossCounter += nSameInteraction;
-      }
-    }
-*/
     // Merge origins
     for (MNCTDEEStripHit& Hit: MergedStripHits) {
       Hit.m_Origins.clear();
@@ -491,139 +473,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 
 
-    // Step (3): Calculate and noise ADC values including charge loss, charge sharing, ADC overflow!
-
-    // (3a) Do charge sharing
-    // (3b) Do charge loss
-//    for (MNCTDEEStripHit& Hit: MergedStripHits){
-/*    list<MNCTDEEStripHit>::iterator it1;
-    for (it1=MergedStripHits.begin(); it1!=MergedStripHits.end(); it1++){
-      MNCTDEEStripHit& Hit = *it1;
-      int det = Hit.m_ROE.GetDetectorID();
-      int side = 0;
-      if (Hit.m_ROE.IsPositiveStrip()){ side = 1; }
-      int nSubHits = Hit.m_SubStripHits.size();
-
-      if (nSubHits == 2){
-        int ID0 = Hit.m_SubStripHits.at(0).m_OppositeStrip;
-        int ID1 = Hit.m_SubStripHits.at(1).m_OppositeStrip;
-        cout << "IDs: " << ID0 << '\t' << ID1 << endl;
-        double m_E0 = 0;
-        double m_E1 = 0;
-
-        list<MNCTDEEStripHit>::iterator it2;
-//        for (MNCTDEEStripHit& H2: MergedStripHits){
-        for (it2=MergedStripHits.begin(); it2!=MergedStripHits.end(); it2++){
-          MNCTDEEStripHit& H2 = *it2;
-          for (unsigned int s=0; s<H2.m_SubStripHits.size(); s++){
-//            cout << H2.m_SubStripHits.at(s).m_ID << '\t' << H2.m_Energy << endl;
-            if (H2.m_SubStripHits.at(s).m_ID == ID0) { m_E0 = H2.m_SubStripHits.at(s).m_Energy; }
-            if (H2.m_SubStripHits.at(s).m_ID == ID1) { m_E1 = H2.m_SubStripHits.at(s).m_Energy; }
-          }
-        }
-
-
-        cout << Hit.m_SubStripHits.at(0).m_Energy << '\t' << m_E0 << endl;
-        cout << Hit.m_SubStripHits.at(1).m_Energy << '\t' << m_E1 << endl;
-//        cout << Hit.m_SubStripHits.at(0).m_OppositeStrip->m_Energy << '\t';
-//        cout << Hit.m_SubStripHits.at(1).m_OppositeStrip->m_Energy << endl;
-      }
-*/
-
-/*
-    for (MNCTDEEStripHit& Hit: MergedStripHits){
-      int det = Hit.m_ROE.GetDetectorID();
-      int side = 0;
-      if (Hit.m_ROE.IsPositiveStrip()){ side = 1; }
-      int nSubHits = Hit.m_SubStripHits.size();
-
-      for (int i=0; i<nSubHits; i++){
-        MNCTDEEStripHit& SubHit = Hit.m_SubStripHits.at(i);
-        //only doing ONE CASE for now
-        if (SubHit.m_SharedOrigin.size() == 1){
-//          if (fabs(SubHit.m_OppositeStrip->m_ROE.GetStripID()-Hit.m_SubStripHits.at(SubHit.m_SharedOrigin.at(0)).m_OppositeStrip->m_ROE.GetStripID()) == 1){
-          MNCTDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(SubHit.m_SharedOrigin.at(0));
-          double E1_true = 0;
-          double E2_true = 0;
-
-          int ID1 = SubHit.m_ID;
-          int ID2 = SubHit2.m_ID;
-
-          MNCTDEEStripHit* SHToCorrect1, *SHToCorrect2; 
-          bool foundSH1 = false;
-          bool foundSH2 = false;
-
-          for (MNCTDEEStripHit& H2: MergedStripHits){
-            for (unsigned int j=0; j<H2.m_SubStripHits.size(); j++){
-              if (H2.m_SubStripHits.at(j).m_ID == ID1){
-                SHToCorrect1 = &H2.m_SubStripHits.at(j);
-                foundSH1 = true;
-              }
-              if (H2.m_SubStripHits.at(j).m_ID == ID2){
-                SHToCorrect2 = &H2.m_SubStripHits.at(j);
-                foundSH2 = true;
-              }
-            }
-          }
-
-          if (!foundSH1 or !foundSH2){ continue; }
-
-          if (fabs(SHToCorrect1->m_ROE.GetStripID()-SHToCorrect2->m_ROE.GetStripID())>1){ continue; }
-
-          E1_true = SHToCorrect1->m_Energy;
-          E2_true = SHToCorrect2->m_Energy;
-
-
-//          cout << E1_true << '\t' << E2_true << endl;
-//          cout << fabs(E1_true - E2_true) << endl;
-//          if (fabs(E1_true-E2_true) < 392){ break; }
-          //assuming frac stays constant throughout this (not sure about this)
-          double frac = fabs(E1_true - E2_true)/(E1_true + E2_true);
-//          double frac = R.Uniform(M-0.1,M+0.1);
-//          double frac = R.Gaus(M,0.25);
-//          if (frac > 1){ frac = M; }
-
-
-
-          //linearly interpolate B from charge loss interpolation coeffs
-          double A0 = m_ChargeLossCoefficients[det][side][0];
-          double A1 = m_ChargeLossCoefficients[det][side][1];
-//          double B = A0 + A1*(E1_true + E2_true);
-          //sum is E1+E2 once charge loss effect is applied
-          double mean = (E1_true+E2_true-A0*(E1_true+E2_true-frac))/(1+A1*(E1_true+E2_true-frac));
-//          double sum = E1_true+E2_true-B*(E1_true+E2_true - frac);
-//          if (E1_true+E2_true > 630){ cout << E1_true + E2_true << '\t' << sum<<'\t'<<frac<<'\t' <<E1_true << '\t' << E2_true<< endl; }
-          double sigma = 8;
-//          TRandom R;
-          double sum = R.Gaus(mean,sigma);
-          if (sum > 662){ sum = mean; }
-
-//          cout << "resetting energy" << endl;
-*/
-/*
-          if (E1_true+E2_true > 600){
-            cout << "****" << endl;
-            cout << E1_true+E2_true << '\t' << sum << endl;
-            cout << M << '\t' << frac << endl;
-            cout << E1_true << '\t' << E2_true << endl;
-            cout << 0.5*sum*(1+frac) << '\t' << 0.5*sum*(1-frac) << endl;
-          }
-*/
-/*          if (E1_true > E2_true){
-            SHToCorrect1->m_Energy = 0.5*sum*(1+frac);
-            SHToCorrect2->m_Energy = 0.5*sum*(1-frac);
-          }
-          else {
-            SHToCorrect1->m_Energy = 0.5*sum*(1-frac);
-            SHToCorrect2->m_Energy = 0.5*sum*(1+frac);
-          }
-
-//        }
-      }
-    }
-    }
-*/
-
+ 
     // (3c) Noise energy deposit
     for (MNCTDEEStripHit& Hit: MergedStripHits) {
       double Energy = 0;

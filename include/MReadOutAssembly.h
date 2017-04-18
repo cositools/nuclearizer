@@ -91,6 +91,21 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the aspect - will be zero if the aspect has not been set!
   MNCTAspect* GetAspect() { return m_Aspect; }
   
+	//! Set and get simulation aspect information
+	void SetGalacticPointingXAxisTheta(double theta){ m_GalacticPointingXAxisTheta = theta; }
+	void SetGalacticPointingXAxisPhi(double phi){ m_GalacticPointingXAxisPhi = phi; }
+	void SetGalacticPointingZAxisTheta(double theta){ m_GalacticPointingZAxisTheta = theta; }
+	void SetGalacticPointingZAxisPhi(double phi){ m_GalacticPointingZAxisPhi = phi; }
+
+	double GetGalacticPointingXAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisTheta;} else{return 0;}}
+	double GetGalacticPointingXAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisPhi;} else{return 0;}}
+	double GetGalacticPointingZAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisTheta;} else{return 0;}}
+	double GetGalacticPointingZAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisPhi;} else{return 0;}}
+
+	void SetSimAspectInfo(bool TF){ m_HasSimAspectInfo = TF; }
+	bool HasSimAspectInfo(){ return m_HasSimAspectInfo; }
+
+
   //! Find out if the event contains strip hits in a given detector
   bool InDetector(int DetectorID);
 
@@ -307,7 +322,16 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! The aspect information - will be zero if not set!
   MNCTAspect* m_Aspect;
-  
+
+	//Added by Clio:
+	//! The aspect information from the simulation, only used in DEE
+	// (Simulation aspect information doesn't have everything in Aspect packet)
+	double m_GalacticPointingXAxisTheta;
+	double m_GalacticPointingXAxisPhi;
+	double m_GalacticPointingZAxisTheta;
+	double m_GalacticPointingZAxisPhi;
+	bool m_HasSimAspectInfo;
+ 
   //! Quality of this event
   double m_EventQuality;
 

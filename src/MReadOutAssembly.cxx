@@ -52,7 +52,8 @@ MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_EventTimeUTC(0)
 
   m_PhysicalEvent = 0; // Set pointer to zero before delete
   m_Aspect = 0;
-  
+ 	m_HasSimAspectInfo = false;
+ 
   Clear();
 }
 
@@ -556,6 +557,11 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   if (m_Aspect != 0) {
     m_Aspect->StreamEvta(S);
   }
+
+	if (m_HasSimAspectInfo){
+		S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
+		S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
+	}
 
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
