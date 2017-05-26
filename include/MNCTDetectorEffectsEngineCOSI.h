@@ -135,8 +135,8 @@ protected:
     
     vector<MNCTDEEStripHit> m_OppositeStrips;
     
-    //! 
-    int m_ID;
+    //! ID of the event
+    long m_ID;
     
     //! list of origins of strip hits from cosima output
     list<int> m_Origins;
@@ -225,16 +225,16 @@ private:
   //! Charge loss fit coefficients
   double m_ChargeLossCoefficients[12][2][2];
   
-  unsigned int m_MultipleHitsCounter;
-  unsigned int m_TotalHitsCounter;
-  unsigned int m_ChargeLossCounter;
+  unsigned long m_MultipleHitsCounter;
+  unsigned long m_TotalHitsCounter;
+  unsigned long m_ChargeLossCounter;
   
   double m_ShieldPulseDuration;
   double m_CCDelay;
   double m_ShieldTime;  
   bool m_IsShieldDead;
   
-  int m_NumShieldCounts;
+  long m_NumShieldCounts;
   
   
   #ifdef ___CINT___
