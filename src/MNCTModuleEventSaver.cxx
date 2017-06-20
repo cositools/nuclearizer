@@ -162,8 +162,9 @@ bool MNCTModuleEventSaver::Initialize()
     Header<<endl;
   } else if (m_Mode == c_EvtaFile) {
     Header<<endl;
-    Header<<"Version 21"<<endl;
-    Header<<"Type EVTA"<<endl;
+//    Header<<"Version 21"<<endl;
+ 		Header<<"Version 200"<<endl;
+	  Header<<"Type EVTA"<<endl;
     Header<<endl;
   } else if (m_Mode == c_RoaFile) {
     Header<<endl;
@@ -261,7 +262,7 @@ void MNCTModuleEventSaver::Finalize()
   m_Out.WriteLine("EN");
   m_Out.WriteLine();
   if (m_NumberOfSimulatedEvents > 0) {
-    m_Out.WriteLine(MString("TE ") + m_NumberOfSimulatedEvents);
+    m_Out.WriteLine(MString("TS ") + m_NumberOfSimulatedEvents);
   }
   m_Out.WriteLine();
   m_Out.Close();
