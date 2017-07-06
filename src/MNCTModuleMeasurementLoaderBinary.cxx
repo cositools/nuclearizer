@@ -88,6 +88,8 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
 
 	m_IgnoreAspect = false; //this was set to true and was causing events to be pushed through the pipeline before aspect info was available for them AWL Sep 20 2016
 	m_FileIsDone = false;
+  
+  m_IsZipped = false;
 }
 
 
@@ -111,13 +113,25 @@ bool MNCTModuleMeasurementLoaderBinary::OpenNextFile()
   ++m_OpenFileID;
   if (m_OpenFileID >= (int) m_BinaryFileNames.size()) return false;
   
-  if (m_In.is_open()) m_In.close();
-  m_In.clear();
+  m_IsZipped = m_BinaryFileNames[m_OpenFileID].EndsWith(".gz");
   
-  m_In.open(m_BinaryFileNames[m_OpenFileID], ios::binary);
-  if (m_In.is_open() == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to load file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
-    return false;
+  if (m_IsZipped == false) {
+    if (m_In.is_open()) m_In.close();
+    m_In.clear();
+  
+    m_In.open(m_BinaryFileNames[m_OpenFileID], ios::binary);
+    if (m_In.is_open() == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+      return false;
+    }
+  } else {
+    if (m_ZipFile != NULL) gzclose(m_ZipFile);
+    
+    m_ZipFile = gzopen(m_BinaryFileNames[m_OpenFileID], "rb");
+    if (m_ZipFile == NULL) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+      return false;
+    }
   }
   
   if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Opened file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
@@ -231,16 +245,40 @@ bool MNCTModuleMeasurementLoaderBinary::IsReady()
 		Read = 0;
 	} else {
 		Stream.reserve(Size);
-		m_In.read(&Stream[0], Size);
-		Read = m_In.gcount();
+    if (m_IsZipped == false) {
+      m_In.read(&Stream[0], Size);
+      Read = m_In.gcount();
+    } else {
+      Read = 0;
+      for (unsigned int i = 0; i < Size; ++i) {
+        int c = gzgetc(m_ZipFile);
+        if (c == -1) {
+          break;
+        }
+        Stream[i] = (char) c;
+        Read = i+1;
+      }
+    }
 	}
 
 	// If we do not read anything, try again with the next file
   if (Read == 0) {
     if (OpenNextFile() == true) {
       Stream.reserve(Size);
-      m_In.read(&Stream[0], Size);
-      Read = m_In.gcount();      
+      if (m_IsZipped == false) {
+        m_In.read(&Stream[0], Size);
+        Read = m_In.gcount();
+      } else {
+        Read = 0;
+        for (unsigned int i = 0; i < Size; ++i) {
+          int c = gzgetc(m_ZipFile);
+          if (c == -1) {
+            break;
+          }
+          Stream[i] = (char) c;
+          Read = i+1;
+        }
+      }  
     }
   }
 

@@ -22,6 +22,7 @@
 using namespace std;
 
 // ROOT libs:
+#include "zlib.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -100,8 +101,12 @@ class MNCTModuleMeasurementLoaderBinary : public MModule, public MNCTBinaryFligh
 
   //! The file name
   MString m_FileName;
-  //! The current binary data stream
+  //! True if the current fiule is gzip'ed
+  bool m_IsZipped;
+  //! The current binary data stream uncompressed
   ifstream m_In;
+  //! The basic file stream for zlib
+  gzFile m_ZipFile;
   //! A list of all binary data files
   vector<MString> m_BinaryFileNames;
   //! The currently open binary file name (-1 none is open)
