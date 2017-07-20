@@ -207,13 +207,20 @@ private:
   //! Calibration map between read-out element and fitted function for energy resolution calibration
   map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
   
+	//! Dead time buffer with 16 slots
+	double m_DeadTimeBuffer[12][16];
   //! Stores dead time for each detector
   double m_CCDeadTime[12];
+	//! Stores last hit time for any detector
+	double m_LastHitTime;
   //! Stores last time detector was hit to check if detector still dead
-  double m_LastHitTime[12];
+  double m_LastHitTimeByDet[12];
   double m_TotalDeadTime[12];
   int m_TriggerRates[12];
   
+	int m_MaxBufferFullIndex;
+	int m_MaxBufferDetector;
+
   double m_ShieldDeadTime;
   
   //! List of dead strips

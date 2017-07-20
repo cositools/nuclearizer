@@ -126,12 +126,20 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   //InitializeChargeLoss();
 
 	//initialize dead time
-	for (int i=0; i<12; i++){ m_CCDeadTime[i] = 0.0006; m_TotalDeadTime[i] = 0.; m_TriggerRates[i]=0;}
+	for (int i=0; i<12; i++){
+		m_CCDeadTime[i] = 1e-5; m_TotalDeadTime[i] = 0.; m_TriggerRates[i]=0;
+		for (int j=0; j<16; j++){
+			m_DeadTimeBuffer[i][j] = -1;
+		}
+	}
 
 	//initialize last time to 0 (will this exclude first event?)
+	m_LastHitTime = 0;
 	for (int i=0; i<12; i++){
-		m_LastHitTime[i] = 0;
+		m_LastHitTimeByDet[i] = 0;
 	}
+
+	m_MaxBufferFullIndex = 0;
 
   m_DepthCalibrator = new MNCTDepthCalibrator();
   if( m_DepthCalibrator->LoadCoeffsFile(m_DepthCalibrationCoeffsFileName) == false ){
@@ -600,14 +608,13 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 */
 
 		//Step (6.5): Dead time
-		//figure out which detectors are currently dead
+		//figure out which detectors are currently dead -- 10us dead time per event
 		int updateLastHitTime[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 		int detIsDead[12];
-//		int detHit[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
 		for (int d=0; d<12; d++){
 			//second conditional for running multiple sim files when t starts at 0
-			if (m_LastHitTime[d] + m_CCDeadTime[d] > evt_time && m_LastHitTime[d]<evt_time){ detIsDead[d] = 1; }
+			if (m_LastHitTimeByDet[d] + m_CCDeadTime[d] > evt_time && m_LastHitTimeByDet[d]<evt_time){ detIsDead[d] = 1; }
 			else { detIsDead[d] = 0; }
 		}
 
@@ -628,12 +635,88 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		//update last hit time for live detectors that were hit
 		for (int d=0; d<12; d++){
 			if (updateLastHitTime[d] == 1){
-				m_LastHitTime[d] = evt_time;
+				m_LastHitTimeByDet[d] = evt_time;
 				m_TotalDeadTime[d] += m_CCDeadTime[d];
-				m_TriggerRates[d] += 1;
 			}
-//			if (detHit[d] == 1){ m_TriggerRates[d] += 1; }
 		}
+
+		// Step (6.75):
+		//figure out if dead time buffers are full, and update them accordingly
+		double empty_buffer_val = -1;
+		double time_buffer_empty = .000625;
+		int nBuffSlots = 16;
+
+		//increase buffer times if necessary
+		for (int d=0; d<12; d++){
+			int indexOfLargest = -1;
+			double maxTime = -1;
+			for (int s=0; s<nBuffSlots; s++){
+				//if buffer slot not empty
+				if (m_DeadTimeBuffer[d][s] != -1){
+					//if buffer slot has exceeded time to empty, set it to empty
+					if (m_DeadTimeBuffer[d][s] >= time_buffer_empty){
+						m_DeadTimeBuffer[d][s] = empty_buffer_val;
+					}
+					//otherwise, find index of largest buffer slot and increase ONLY that slot
+					else {
+						if (m_DeadTimeBuffer[d][s] > maxTime){
+							maxTime = m_DeadTimeBuffer[d][s];
+							indexOfLargest = s;
+						}
+					}
+				}
+			}
+			if (indexOfLargest != -1){ m_DeadTimeBuffer[d][indexOfLargest] += evt_time-m_LastHitTime; }
+		}
+
+
+		//figure out which detectors were hit
+		int bufferFull[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+ 
+		//check if buffer is full for each detector
+		for (int d=0; d<12; d++){
+			int nextEmptySlot = 16;
+			for (int s=0; s<nBuffSlots; s++){
+				if (m_DeadTimeBuffer[d][s] == empty_buffer_val){
+					nextEmptySlot = s;
+					break;
+				}
+			}
+			bufferFull[d] = nextEmptySlot;
+		}
+
+		for (int i=0; i<12; i++){
+			if (bufferFull[i] > m_MaxBufferFullIndex){ m_MaxBufferFullIndex = bufferFull[i]; m_MaxBufferDetector = i; }
+		}
+
+
+/*		if (bufferFull[0] == 16){
+			cout << "************" << endl;
+			cout << "evt_time: " << evt_time << '\t' << "last time: " << m_LastHitTime << endl;
+			cout << "Buffer values: " << endl;
+			for (int i=0; i<16; i++){
+				cout << m_DeadTimeBuffer[0][i] << '\t';
+			}
+			cout << endl;
+
+			cout << "next empty slot: " << bufferFull[0] << endl;
+	}
+*/
+		//erase strip hits in detectors when buffer is full
+	  list<MNCTDEEStripHit>::iterator DH = MergedStripHits.begin();
+    while (DH != MergedStripHits.end()) {
+      int DetID = (*DH).m_ROE.GetDetectorID();
+			if (bufferFull[DetID] == 16){
+				DH = MergedStripHits.erase(DH);
+			}
+			else {
+				m_DeadTimeBuffer[DetID][bufferFull[DetID]] = 0;
+				++DH;
+			}
+    }
+
+		//update LastHitTime
+		m_LastHitTime = evt_time;
  
  	  // Step (7): 
 		//check if there are any hits left in the event
@@ -645,7 +728,21 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			delete SimEvent;
 			continue;
 		}
-    
+   
+		//update trigger rates
+		set<int> detectorsHit;
+	  list<MNCTDEEStripHit>::iterator TR = MergedStripHits.begin();
+    while (TR != MergedStripHits.end()) {
+      int DetID = (*TR).m_ROE.GetDetectorID();
+			detectorsHit.insert(DetID);
+			++TR;
+    }
+
+		for (set<int>::iterator s=detectorsHit.begin(); s!=detectorsHit.end(); ++s){
+			int detID = *s;
+			m_TriggerRates[detID] += 1;
+		}
+ 
     // (1) Move the information to the read-out-assembly
     Event->SetID(SimEvent->GetID());
     Event->SetTimeUTC(SimEvent->GetTime());
@@ -720,6 +817,8 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
 		cout << i << ":\t" << m_TriggerRates[i] << endl;
 	}
 	cout << "Shield dead time: " << m_ShieldDeadTime << endl;
+
+	cout << "Max buffer full index: " << m_MaxBufferFullIndex << '\t' << "Detector " << m_MaxBufferDetector << endl;
 
   if (m_SaveToFile == true) {
     m_Roa<<"EN"<<endl<<endl;
