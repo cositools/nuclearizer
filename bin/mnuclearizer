@@ -165,6 +165,7 @@ for SIMFILE in ${FILES}; do
     echo "       For details see mnuclearizer --help"
     echo " "  
   fi
+  sleep 1
 done
 
 
