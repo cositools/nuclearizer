@@ -1,0 +1,175 @@
+#! /bin/bash
+
+help() {
+  echo ""
+  echo "mnuclearizer - run multiple parallel instances of nuclearizer using sim or dat files";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Options:";
+  echo "    -n <nice>:      The nice level as an integer (default: 0)"
+  echo "    -c <file name>: Nuclearizer configuration file name"
+  echo "    -f <file name>: Long list of sim or dat files"
+  echo "";
+  echo "Example:";
+  echo "    mnuclearizer -c Nuclearizer.cfg -n 19 -f RunTest*.sim";
+  echo "";
+  echo "This script runs multiple nuclearizer sessions in parallel. By default as many instances as the system has cores are started. But each nuclearizer run is in itself multi-threaded."
+  echo "";
+}
+
+if [ $# -eq 0 ]; then
+    echo "Error: This script requires one or more input parameter, not $#"
+    exit -1;
+fi
+
+CMD=( "$@" )
+
+THREADS=1
+NICELEVEL=0
+CFG=""
+FILES=""
+
+# Find the default number of threads
+if [[ ${OSTYPE} == darwin* ]]; then
+  THREADS=`sysctl -n hw.logicalcpu_max`
+elif [[ ${OSTYPE} == linux* ]]; then
+  THREADS=`grep processor /proc/cpuinfo | wc -l`
+fi
+
+# Check if nuclearizer exists
+if (`test -f ${MEGAlib}/bin/nulcearizer`); then
+  echo " "
+  echo "ERROR: The nuclearizer executable does not exist. Try to (re-)compile MEGAlib & Nuclearizer."
+  echo " "
+  exit 1;
+fi
+
+
+while [ $# -gt 0 ] ; do
+  case $1 in
+  -h|--help)
+    help;
+    exit 0;;
+  -t)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -t need an argument";
+      echo "       For details see mnuclearizer --help"
+      echo " "
+      exit 0;
+    fi
+    THREADS=$1;
+    #echo "Using ${Threads} threads";
+    ;;
+  -c)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -c needs an argument";
+      echo "       For details see mnuclearizer --help"
+      echo " "
+      exit 0;
+    fi
+    CFG=$1;
+    #echo "Using ${Threads} threads";
+    ;;
+  -n)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Option -n needs an argument";
+      echo "       For details see mnuclearizer --help"
+      echo " "
+      exit 0;
+    fi
+    NICELEVEL=$1;
+    #echo "Using nice level ${Nice}";
+    ;;
+  -f)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Option -f needs at least one argument";
+      echo "       For details see mnuclearizer --help"
+      echo " "
+      exit 0;
+    fi
+    while [ $# -ne 0 ]; do
+      FILES+=" "$1;
+      shift;
+    done
+    ;;
+  *)
+    ;;
+  esac
+
+  shift
+done
+
+
+if echo ${THREADS} | grep "^[0-9]*$" > /tmp/aux
+then
+  rm /tmp/aux
+else
+  echo " "
+  echo "Error: The value behind threads must be a number";
+  echo "       For details see mnuclearizer --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+
+
+if echo ${NICE} | grep "^[0-9]*$" > /tmp/aux
+then
+  rm /tmp/aux
+else
+  echo " "
+  echo "Error: The value behind nice must be a number";
+  echo "       For details see mnuclearizer --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+
+if [[ ! -f ${CFG} ]]; then
+  echo " "
+  echo "Error: You need to provide an existing nuclearizer configuration file"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+
+echo " "
+echo "Launching mnuclearizer"
+echo " "
+echo "Number of threads to use:  Number of cores"
+echo "Nice level:                ${NICELEVEL}"
+echo "Revan configuration file:  ${CFG}"
+echo "Input files:               ${FILES}"
+
+
+# Now run, nuclearizer RUN!
+for SIMFILE in ${FILES}; do
+  mwait --p=nuclearizer --i=cores
+  echo "Launching nuclearizer for file ${SIMFILE}"
+  if [[ ${SIMFILE} == *.sim ]] || [[ ${SIMFILE} == *.sim.gz ]]; then
+    #nuclearizer -m 0 -c ${CFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g)
+    nohup nice -n ${NICELEVEL} bash -c "source ${MEGALIB}/bin/source-megalib.sh; nuclearizer -m 1 -c ${CFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g)" > /dev/null &
+  elif [[ ${SIMFILE} == *.dat ]] || [[ ${SIMFILE} == *.dat.gz ]]; then
+    nohup nice -n ${NICELEVEL} bash -c "source ${MEGALIB}/bin/source-megalib.sh; nuclearizer -m 1 -c ${CFG} -a -n -C ModuleOptions.XmlTagMeasurementLoaderBinary.FileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.dat/.evta/g)" > /dev/null &  
+  else 
+    echo " "
+    echo "Error: The data file must be a sim(.gz) or .dat(.gz) file";
+    echo "       For details see mnuclearizer --help"
+    echo " "  
+  fi
+done
+
+
+# We always wait until all nuclearizer runs have finished
+echo "Waiting till all nuclearizer runs have finished..."
+wait
+
+exit 0;
