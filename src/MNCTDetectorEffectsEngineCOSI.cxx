@@ -161,6 +161,7 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   if (m_ShowProgressBar == true) {
     m_Reader->ShowProgress();
   }
+  m_StartAreaFarField = m_Reader->GetSimulationStartAreaFarField();
 
   
   if (m_SaveToFile == true) {
