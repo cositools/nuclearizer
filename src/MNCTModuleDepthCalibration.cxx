@@ -253,6 +253,7 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				H->SetNoDepth();
 			} else {
 				H->SetEnergy( DominantStrip->GetEnergy() ); //reset energy to dominant strip energy
+        H->RemoveStripHit(NonDominantStrip);
 				MVector Local2Position, Position2Resolution;
 				int Pos2Error = 0;
 				if( IsNeighborSideX ) {
