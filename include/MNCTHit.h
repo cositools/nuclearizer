@@ -76,7 +76,9 @@ class MNCTHit
   void AddStripHit(MNCTStripHit* StripHit) { return m_StripHits.push_back(StripHit); }
   //! Remove a strip hit
   void RemoveStripHit(unsigned int i); 
- 
+  //! Remove a strip hit
+  void RemoveStripHit(MNCTStripHit* StripHit); 
+  
 	//! set cross talk flag
 	void SetCrossTalkFlag(bool PossibleCrossTalk) {m_PossibleCrossTalk = PossibleCrossTalk;}
 	//! get cross talk flag value
@@ -109,7 +111,12 @@ class MNCTHit
 	void SetIsNondominantNeighborStrip(bool X = true) {m_IsNonDominantNeighborStrip = X;}
 	//! get m_IsNonDominantNeighborStrip
 	bool GetIsNondominantNeighborStrip(void) const {return m_IsNonDominantNeighborStrip;}
- 
+	
+	//! Set the origins from the simulations (take care of duplicates)
+	void AddOrigins(vector<int> Origins);
+  //! Get the origins from the simulation
+  vector<int> GetOrigins() const { return m_Origins; }
+  
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
   //! Stream the content in MEGAlib's evta format 
@@ -167,7 +174,12 @@ class MNCTHit
 
 	//! true if hit was made from a charge sharing event using a neighbor strip that had the lowere energy fraction
 	bool m_IsNonDominantNeighborStrip;
-
+  
+  //! Origin IAs from simulations
+  vector<int> m_Origins;
+  
+  
+  
 #ifdef ___CINT___
  public:
   ClassDef(MNCTHit, 0) // no description

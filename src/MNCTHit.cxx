@@ -77,6 +77,7 @@ void MNCTHit::Clear()
   m_EnergyResolution = g_DoubleNotDefined;
 
   m_StripHits.clear();
+  m_Origins.clear();
 }
 
 
@@ -112,6 +113,19 @@ void MNCTHit::RemoveStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MNCTHit::RemoveStripHit(MNCTStripHit* StripHit)
+{
+  //! Remove a strip hit
+  
+  vector<MNCTStripHit*>::iterator I = find(m_StripHits.begin(), m_StripHits.end(), StripHit);
+  if (I != m_StripHits.end()) {
+    m_StripHits.erase(I); 
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MNCTHit::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file 
@@ -141,13 +155,32 @@ void MNCTHit::StreamEvta(ostream& S)
   
   // Assemble the origin information;
   vector<int> Origins;
-  for (MNCTStripHit* H: m_StripHits) {
-    for (int O: H->GetOrigins()) {
-      Origins.push_back(O);
+  
+  // Fix the origins: only those existing both on x and y strips count
+  vector<int> xOrigins;
+  vector<int> yOrigins;
+  for (unsigned int s = 0; s < GetNStripHits(); ++s) {
+    GetStripHit(s)->StreamRoa(cout);
+    vector<int> NewOrigins = GetStripHit(s)->GetOrigins();
+    if (GetStripHit(s)->IsPositiveStrip() == true) {
+      for (int o: NewOrigins) {
+        xOrigins.push_back(o);
+      }
+    } else {
+      for (int o: NewOrigins) {
+        yOrigins.push_back(o);
+      }
     }
   }
-  sort(Origins.begin(), Origins.end());
-  Origins.erase(unique(Origins.begin(), Origins.end()), Origins.end());
+  
+  sort(xOrigins.begin(), xOrigins.end());
+  xOrigins.erase(unique(xOrigins.begin(), xOrigins.end()), xOrigins.end());
+  sort(yOrigins.begin(), yOrigins.end());
+  yOrigins.erase(unique(yOrigins.begin(), yOrigins.end()), yOrigins.end());
+  
+  set_intersection(xOrigins.begin(), xOrigins.end(),
+                   yOrigins.begin(), yOrigins.end(),
+                   std::back_inserter(Origins));
   
   S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
        <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution;
@@ -194,6 +227,18 @@ bool MNCTHit::Parse(MString &Line, int Version){
 	}
 	*/
 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the origins from the simulations (take care of duplicates)
+void MNCTHit::AddOrigins(vector<int> Origins)
+{
+  m_Origins.insert(m_Origins.end(), Origins.begin(), Origins.end());
+  sort(m_Origins.begin(), m_Origins.end());
+  m_Origins.erase(unique(m_Origins.begin(), m_Origins.end()), m_Origins.end());
 }
 
 
