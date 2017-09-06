@@ -49,7 +49,7 @@ ClassImp(MNCTModuleMeasurementLoaderBinary)
 #endif
 
 
-	////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 
 MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule(), MNCTBinaryFlightDataParser()
@@ -76,10 +76,6 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
 
 	m_HasOptionsGUI = true;
 
-	// Set the histogram display
-	m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
-	m_Expos.push_back(m_ExpoAspectViewer);
-
 	// Allow the use of multiple threads and instances
 	m_AllowMultiThreading = true;
 	m_AllowMultipleInstances = false;
@@ -99,6 +95,21 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
 MNCTModuleMeasurementLoaderBinary::~MNCTModuleMeasurementLoaderBinary()
 {
 	// Delete this instance of MNCTModuleMeasurementLoaderBinary
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleMeasurementLoaderBinary::CreateExpos()
+{
+  // Create all expos
+  
+  if (HasExpos() == true) return;
+  
+  // Set the histogram display
+  m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
+  m_Expos.push_back(m_ExpoAspectViewer);
 }
 
 

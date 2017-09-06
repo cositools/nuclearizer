@@ -85,13 +85,6 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
   m_HasOptionsGUI = true;
   
-  // Set the histogram display
-  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
-  m_ExpoDepthCalibration->SetDepthHistogramArrangement(3, 4);
-  //m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.000001, 1.500001); //-0.7499, 0.7501);
-  m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.5, 2.0);
-  m_Expos.push_back(m_ExpoDepthCalibration);  
-  
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
 }
@@ -103,6 +96,24 @@ MNCTModuleDepthCalibration3rdPolyPixel::MNCTModuleDepthCalibration3rdPolyPixel()
 MNCTModuleDepthCalibration3rdPolyPixel::~MNCTModuleDepthCalibration3rdPolyPixel()
 {
   // Delete this instance of MNCTModuleDepthCalibration3rdPolyPixel
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleDepthCalibration3rdPolyPixel::CreateExpos()
+{
+  // Create all expos
+  
+  if (HasExpos() == true) return;
+  
+  // Set the histogram display
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
+  m_ExpoDepthCalibration->SetDepthHistogramArrangement(3, 4);
+  //m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.000001, 1.500001); //-0.7499, 0.7501);
+  m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.5, 2.0);
+  m_Expos.push_back(m_ExpoDepthCalibration);  
 }
 
 

@@ -54,7 +54,7 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
-
+  
   //! The creation part which gets overwritten
   virtual void Create();
 

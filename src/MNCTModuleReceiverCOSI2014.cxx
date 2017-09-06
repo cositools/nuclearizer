@@ -70,7 +70,7 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   // Set the module name --- has to be unique
-  m_Name = "Data packet receiver, sorter, and aspect reconstructor for COSI 2014";
+  m_Name = "Data packet receiver, sorter, and aspect reconstructor for COSI 2014/2016";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagReceiverCOSI2014";  
@@ -87,12 +87,6 @@ MNCTModuleReceiverCOSI2014::MNCTModuleReceiverCOSI2014() : MModule(), MNCTBinary
   
   m_Receiver = 0;
   m_ReceivedData = 0;
-  
-  // Set the histogram display
-  m_ExpoReceiver = new MGUIExpoReceiver(this);
-  m_Expos.push_back(m_ExpoReceiver);
-  m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
-  m_Expos.push_back(m_ExpoAspectViewer);
   
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
@@ -112,6 +106,24 @@ MNCTModuleReceiverCOSI2014::~MNCTModuleReceiverCOSI2014()
 {
   // Delete this instance of MNCTModuleReceiverCOSI2014
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleReceiverCOSI2014::CreateExpos()
+{
+  // Create all expos
+  
+  if (HasExpos() == true) return;
+  
+  // Set the histogram display
+  m_ExpoReceiver = new MGUIExpoReceiver(this);
+  m_Expos.push_back(m_ExpoReceiver);
+  m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
+  m_Expos.push_back(m_ExpoAspectViewer);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

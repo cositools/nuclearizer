@@ -84,11 +84,6 @@ MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : M
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
   
-  // Set the histogram display
-  m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
-  m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
-  m_Expos.push_back(m_ExpoEnergyCalibration);
-  
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = true;
@@ -101,6 +96,21 @@ MNCTModuleEnergyCalibrationUniversal::MNCTModuleEnergyCalibrationUniversal() : M
 MNCTModuleEnergyCalibrationUniversal::~MNCTModuleEnergyCalibrationUniversal()
 {
   // Delete this instance of MNCTModuleEnergyCalibrationUniversal
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleEnergyCalibrationUniversal::CreateExpos()
+{
+  // If they are already created, return
+  if (m_Expos.size() != 0) return;
+  
+  // Set the histogram display
+  m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
+  m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
+  m_Expos.push_back(m_ExpoEnergyCalibration);  
 }
 
 
@@ -229,11 +239,11 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     MNCTStripHit* SH = Event->GetStripHit(i);
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
-
-	//cout<<SH->GetPreampTemp()<<endl;
-	
+    
+    //cout<<SH->GetPreampTemp()<<endl;
+    
     TF1* Fit = m_Calibration[R];
-		TF1* FitRes = m_ResolutionCalibration[R];
+    TF1* FitRes = m_ResolutionCalibration[R];
     if (Fit == 0) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
       Event->SetEnergyCalibrationIncomplete_BadStrip(true);
@@ -245,34 +255,36 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       } else if (Energy < 0) {
         Energy = 0;
       }
-
-	  //Preamp Temperature Correction
-	  if ( m_TemperatureEnabled ) {
-		//cout<<"CHANGING ENERGY "<<Energy<<endl;
-		double temp = SH->GetPreampTemp();
-		//cout<<temp<<endl;
-		Energy = Energy/(-0.0075/23.*temp+1.012);
-		//cout<<Energy<<endl;
-	  }
-
-
+      
+      //Preamp Temperature Correction
+      if ( m_TemperatureEnabled ) {
+        //cout<<"CHANGING ENERGY "<<Energy<<endl;
+        double temp = SH->GetPreampTemp();
+        //cout<<temp<<endl;
+        Energy = Energy/(-0.0075/23.*temp+1.012);
+        //cout<<Energy<<endl;
+      }
+      
+      
       SH->SetEnergy(Energy);
-			if (FitRes == 0) {
-				if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy Resolution fit not found for read-out element "<<R<<endl;
-				Event->SetEnergyResolutionCalibrationIncomplete(true);
-			} else {
-				double EnergyResolution = FitRes->Eval(Energy);
-				SH->SetEnergyResolution(EnergyResolution);
-			}
-    if (R.IsPositiveStrip() == true) {
-        m_ExpoEnergyCalibration->AddEnergy(Energy);
+      if (FitRes == 0) {
+        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy Resolution fit not found for read-out element "<<R<<endl;
+        Event->SetEnergyResolutionCalibrationIncomplete(true);
+      } else {
+        double EnergyResolution = FitRes->Eval(Energy);
+        SH->SetEnergyResolution(EnergyResolution);
+      }
+      if (R.IsPositiveStrip() == true) {
+        if (HasExpos() == true) {
+          m_ExpoEnergyCalibration->AddEnergy(Energy);
+        }
       }
       
       if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     } 
   } 
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
-
+  
   return true;
 }
 

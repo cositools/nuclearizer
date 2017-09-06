@@ -81,11 +81,6 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
   m_NMatches = 0;
   m_TotalMatches = 0;
   
-  // Set the histogram display
-  m_ExpoStripPairing = new MGUIExpoStripPairing(this);
-  m_ExpoStripPairing->SetEnergiesHistogramParameters(1500, 0, 1500);
-  m_Expos.push_back(m_ExpoStripPairing);
-  
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = true;
@@ -98,6 +93,22 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
 MNCTModuleStripPairingGreedy_b::~MNCTModuleStripPairingGreedy_b()
 {
   // Delete this instance of MNCTModuleStripPairingGreedy_b
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleStripPairingGreedy_b::CreateExpos()
+{
+  // Create all expos
+  
+  if (HasExpos() == true) return;
+  
+  // Set the histogram display
+  m_ExpoStripPairing = new MGUIExpoStripPairing(this);
+  m_ExpoStripPairing->SetEnergiesHistogramParameters(1500, 0, 1500);
+  m_Expos.push_back(m_ExpoStripPairing);
 }
 
 

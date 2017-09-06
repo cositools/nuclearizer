@@ -111,8 +111,6 @@ MNCTModuleDepthCalibration::MNCTModuleDepthCalibration() : MModule()
 	m_Error3 = 0;
 	m_Error4 = 0;
 	m_ErrorSH = 0;
-
-
 }
 
 

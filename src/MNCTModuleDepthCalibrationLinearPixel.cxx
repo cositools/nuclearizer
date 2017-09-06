@@ -110,6 +110,24 @@ MNCTModuleDepthCalibrationLinearPixel::~MNCTModuleDepthCalibrationLinearPixel()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MNCTModuleDepthCalibrationLinearPixel::CreateExpos()
+{
+  // Create all expos
+  
+  if (HasExpos() == true) return;
+  
+  // Set the histogram display
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
+  m_ExpoDepthCalibration->SetDepthHistogramArrangement(3, 4);
+  //m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.000001, 1.500001); //-0.7499, 0.7501);
+  m_ExpoDepthCalibration->SetDepthHistogramParameters(75, -0.5, 2.0);
+  m_Expos.push_back(m_ExpoDepthCalibration);  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MNCTModuleDepthCalibrationLinearPixel::Initialize()
 {
 // Initialize the Module

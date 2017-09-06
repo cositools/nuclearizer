@@ -85,6 +85,9 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
   //! Return if the module is ready to analyze events
   virtual bool IsReady();
   
+  //! Create the expos
+  virtual void CreateExpos();
+  
   //! Initialize the module
   virtual bool Initialize();
 

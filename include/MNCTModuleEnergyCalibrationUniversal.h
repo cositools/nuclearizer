@@ -53,6 +53,9 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   //! Get the calibration file name
   MString GetFileName() const { return m_FileName; }
   
+  //! Create the expos
+  virtual void CreateExpos();
+  
   //! Initialize the module
   virtual bool Initialize();
   
