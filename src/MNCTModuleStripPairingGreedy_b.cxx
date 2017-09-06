@@ -372,8 +372,10 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
       }
     }
     if (pNStrips > 0 && nNStrips > 0) { // Just a place holder atthe moment...
-			if (Event->GetHit(h)->GetStripHitMultipleTimesX() == false && Event->GetHit(h)->GetStripHitMultipleTimesY() == false){
-	      m_ExpoStripPairing->AddEnergies(pEnergy, nEnergy);
+			if (Event->GetHit(h)->GetStripHitMultipleTimesX() == false && Event->GetHit(h)->GetStripHitMultipleTimesY() == false) {
+        if (HasExpos() == true) {
+          m_ExpoStripPairing->AddEnergies(pEnergy, nEnergy);
+        }
 			}
     }
     

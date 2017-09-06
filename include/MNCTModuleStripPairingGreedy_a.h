@@ -95,6 +95,9 @@ class MNCTModuleStripPairingGreedy_a : public MModule
   
   //! Create a new object of this class 
   virtual MNCTModuleStripPairingGreedy_a* Clone() { return new MNCTModuleStripPairingGreedy_a(); }
+  
+  //! Create the expos
+  virtual void CreateExpos();
 
   //! Initialize the module
   virtual bool Initialize();

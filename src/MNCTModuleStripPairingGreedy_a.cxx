@@ -78,11 +78,6 @@ MNCTModuleStripPairingGreedy_a::MNCTModuleStripPairingGreedy_a() : MModule()
   m_NBadMatches =0;
   m_NMatches =0;
   m_TotalMatches=0;
-  
-  // Set the histogram display
-  m_ExpoStripPairing = new MGUIExpoStripPairing(this);
-  m_ExpoStripPairing->SetEnergiesHistogramParameters(1000, 0, 1000);
-  m_Expos.push_back(m_ExpoStripPairing);
 }
 
 
@@ -92,6 +87,22 @@ MNCTModuleStripPairingGreedy_a::MNCTModuleStripPairingGreedy_a() : MModule()
 MNCTModuleStripPairingGreedy_a::~MNCTModuleStripPairingGreedy_a()
 {
   // Delete this instance of MNCTModuleStripPairingGreedy_a
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNCTModuleStripPairingGreedy_a::CreateExpos()
+{
+  // Create all expos
+  
+  if (HasExpos() == true) return;
+  
+  // Set the histogram display
+  m_ExpoStripPairing = new MGUIExpoStripPairing(this);
+  m_ExpoStripPairing->SetEnergiesHistogramParameters(1000, 0, 1000);
+  m_Expos.push_back(m_ExpoStripPairing);
 }
 
 
@@ -868,7 +879,9 @@ bool MNCTModuleStripPairingGreedy_a::AnalyzeEvent(MReadOutAssembly* Event)
         nUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
       }
     }
-    m_ExpoStripPairing->AddEnergies(pEnergy, nEnergy);
+    if (HasExpos() == true) {
+      m_ExpoStripPairing->AddEnergies(pEnergy, nEnergy);
+    }
     
     pUncertainty = sqrt(pUncertainty);
     nUncertainty = sqrt(nUncertainty);

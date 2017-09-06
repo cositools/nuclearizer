@@ -428,12 +428,14 @@ bool MNCTModuleReceiverCOSI2014::IsReady()
     if (g_Verbosity >= c_Info) cout<<"Received: "<<Received.size()<<" bytes"<<endl;
     
     m_ReceivedData += Received.size();
-    m_ExpoReceiver->SetTimeReceived(MTime());
-    m_ExpoReceiver->SetBytesReceived(m_ReceivedData);
-    m_ExpoReceiver->SetRawFramesParsed(m_NumRawDataframes);
-    m_ExpoReceiver->SetComptonFramesParsed(m_NumComptonDataframes);
-    m_ExpoReceiver->SetAspectFramesParsed(m_NumAspectPackets);
-    m_ExpoReceiver->SetOtherFramesParsed(m_NumOtherPackets);
+    if (HasExpos() == true) {
+      m_ExpoReceiver->SetTimeReceived(MTime());
+      m_ExpoReceiver->SetBytesReceived(m_ReceivedData);
+      m_ExpoReceiver->SetRawFramesParsed(m_NumRawDataframes);
+      m_ExpoReceiver->SetComptonFramesParsed(m_NumComptonDataframes);
+      m_ExpoReceiver->SetAspectFramesParsed(m_NumAspectPackets);
+      m_ExpoReceiver->SetOtherFramesParsed(m_NumOtherPackets);
+    }
   }
   
   return ParseData(Received);
@@ -479,10 +481,12 @@ bool MNCTModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
     //Event->SetAspect(new MNCTAspect(*(NewEvent->GetAspect())) );  
     MNCTAspect* A = new MNCTAspect(*(NewEvent->GetAspect()));
     Event->SetAspect(A);
-	 Event->ComputeAbsoluteTime();
+	  Event->ComputeAbsoluteTime();
     //cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
-	 //Event->SetAbsoluteTime(NewEvent->GetAbsoluteTime());
-    m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
+	  //Event->SetAbsoluteTime(NewEvent->GetAbsoluteTime());
+    if (HasExpos() == true) {
+      m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
+    }
     Event->SetAnalysisProgress(MAssembly::c_Aspect);
   } else {
     if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither) {

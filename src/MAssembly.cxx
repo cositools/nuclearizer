@@ -277,7 +277,9 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   }
   
   if (m_UseGui == true) {
-    m_Supervisor->LaunchUI();
+    if (m_Supervisor->LaunchUI() == false) {
+      return false; 
+    }
   }
   
   return true;
