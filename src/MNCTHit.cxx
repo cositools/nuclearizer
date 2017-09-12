@@ -160,7 +160,7 @@ void MNCTHit::StreamEvta(ostream& S)
   vector<int> xOrigins;
   vector<int> yOrigins;
   for (unsigned int s = 0; s < GetNStripHits(); ++s) {
-    GetStripHit(s)->StreamRoa(cout);
+    //GetStripHit(s)->StreamRoa(cout);
     vector<int> NewOrigins = GetStripHit(s)->GetOrigins();
     if (GetStripHit(s)->IsPositiveStrip() == true) {
       for (int o: NewOrigins) {
@@ -181,6 +181,19 @@ void MNCTHit::StreamEvta(ostream& S)
   set_intersection(xOrigins.begin(), xOrigins.end(),
                    yOrigins.begin(), yOrigins.end(),
                    std::back_inserter(Origins));
+
+  if ((xOrigins.size() != 0 || yOrigins.size() != 0) && Origins.size() == 0) {
+    // This is the case when the strip pairing got screwed up completely, and the hits got mixed
+    // In this case we need to keep the mixing:
+    for (unsigned int s = 0; s < GetNStripHits(); ++s) {
+      vector<int> NewOrigins = GetStripHit(s)->GetOrigins();
+      for (int o: NewOrigins) {
+        Origins.push_back(o);
+      }
+    }
+    sort(Origins.begin(), Origins.end());
+    Origins.erase(unique(Origins.begin(), Origins.end()), Origins.end());
+  }
   
   S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
        <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution;
@@ -188,6 +201,7 @@ void MNCTHit::StreamEvta(ostream& S)
     S<<";"<<Origins[i]; 
   }
   S<<endl;
+
 }
 
 
