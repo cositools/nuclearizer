@@ -346,18 +346,20 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 				//aspect packet
 				if (g_Verbosity >= c_Info) cout<<"got aspect packet!"<<endl;
 				if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither) {
+	
 					ProcessAspect( NextPacket );
 
 					//Print info into housekeeping file 
-                    if (m_Housekeeping.is_open() == true) {
+        	                      if (m_Housekeeping.is_open() == true) {
 						if (m_AspectReconstructor->GetLastAspectInDeque() != 0) { 
 							LatestAspect = m_AspectReconstructor->GetLastAspectInDeque();
 							if (((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS) && (LatestAspect->GetGPS_or_magnetometer() == 0)) || ((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) && (LatestAspect->GetGPS_or_magnetometer() == 1))) {
-								m_Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\n\n";
+								m_Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\nGPS "<<LatestAspect->GetHeading()<<" "<<LatestAspect->GetPitch()<<" "<<LatestAspect->GetRoll()<<"\n\n";
 							}
 						}
 					}
 					//cout<<"GZ: "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<endl;
+				
 				}
 				m_NumAspectPackets++;
 				break;
