@@ -52,7 +52,8 @@ using namespace std;
 #include "MFile.h"
 #include "MNCTAspectPacket.h"
 #include "magfld.h"
-
+#include "MRotation.h"
+#include "MQuaternion.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -196,239 +197,108 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 	//definte the rotation matrices (https://en.wikipedia.org/wiki/Davenport_chained_rotations) to allow us to tranform from heading, pitch and roll, to the local GPS coordinates, and vise versa.
 
-	double Rot_Z[3][3] = { {cosine(heading), -sine(heading), 0.0}, {sine(heading), cosine(heading), 0.0}, {0.0, 0.0, 1.0} };
-	double Rot_Y[3][3] = { {cosine(roll), 0.0, sine(roll)}, {0.0, 1.0, 0.0}, {-sine(roll), 0.0, cosine(roll)} };
-	double Rot_X[3][3] = { {1.0, 0.0, 0.0}, {0.0, cosine(pitch), -sine(pitch)}, {0.0, sine(pitch), cosine(pitch)} };
-
-	double Rot_XY[3][3], Rot_ZXY[3][3];
-
-	//multiply matricies together to get full rotation matrix from heading, pitch, and roll back to local GPS coordinates. The convention for Tait-Bryan chained rotations is to apply the rotations in this order: Yaw, Pitch, Roll. Here, the matricies are written in reverse to represent an extrinsic rotation. CK double check the output makes sense.
-	for(int i=0;i<3;i++){
-		for(int j=0;j<3;j++){   
-			Rot_XY[i][j]=0;
-			for(int k=0;k<3;k++){
-				Rot_XY[i][j]=Rot_XY[i][j] + Rot_X[i][k]*Rot_Y[k][j];
-			}
-		}
-	}
-
-	for(int i=0;i<3;i++){
-		for(int j=0;j<3;j++){   
-			Rot_ZXY[i][j]=0;
-			for(int k=0;k<3;k++){
-				//Still some question about the order of this rotation here. CK is pretty convinced this is right, but it would be worth switching the order here if we're still having aspect problems down the line.
-				Rot_ZXY[i][j]=Rot_ZXY[i][j] + Rot_Z[i][k]*Rot_XY[k][j];
-			}
-		}
-	}
-
-
-    //define the axes of the unrotated GPS coordinate system with unit vectors xhat, yhat and zhat. yhat points true north, and zhats points towards the zenith in this unrotated frame (i.e. 0 pitch, 0 roll, 0 heading).
-    double Zhat[3] = {0.0, 0.0, 1.0};
-    double Yhat[3] = {0.0, 1.0, 0.0};
-    double Xhat[3] = {1.0, 0.0, 0.0};
-    double temp[3];
+	MRotation ROT_Z(cos(heading*c_Rad), sin(heading*c_Rad), 0.0, -sin(heading*c_Rad), cos(heading*c_Rad), 0.0, 0.0, 0.0, 1.0);
+	MRotation ROT_Y(cos(roll*c_Rad), 0.0, -sin(roll*c_Rad), 0.0, 1.0, 0.0, sin(roll*c_Rad),  0.0, cos(roll*c_Rad));
+	MRotation ROT_X(1.0, 0.0, 0.0, 0.0, cos(pitch*c_Rad), sin(pitch*c_Rad), 0.0, -sin(pitch*c_Rad), cos(pitch*c_Rad));
+	MRotation ROT_XY = ROT_X*ROT_Y;
+	MRotation ROT_ZXY = ROT_Z*ROT_XY;
 	
 
-	//Now, define the GPS pre-rotation matrix RotGPSCryo_ZXY, which is the rotation matrix between the cryostat coorindates, with +x pointing towards the front of the gondola (sun side), and the GPS coordinates, with +y pointing towards the back of the gonodla. To first order, this is just a -90 degree rotation around the z-axis.
-	//The magnetometer doesn't require this extra rotation matrix because its axes are already aligned with the cryostat
+	//Now, define the GPS pre-rotation matrix RotGPSCryo, which is the rotation matrix between the cryostat coorindates, with +x pointing towards the front of the gondola (sun side), and the GPS coordinates, with +y pointing towards the back of the gonodla. To first order, this is just a -90 degree rotation around the z-axis.
+    //The magnetometer doesn't require this extra rotation matrix because its axes are already aligned with the cryostat
+	MRotation RotGPSCryo;
+
 
 	if( GPS_or_magnetometer == 0 ){
 
-		//To second order, the GPS and cryostat are not perfectly aligned. Theodolite measurements were taken to better understand this offset, but have not yet been applied here. Once the Crab was detected during the 2016 flight, Alex worked towards getting the relative offsets that better centered the Crab, these are added below, but this is only preliminary and should be better defined.
+	//To second order, the GPS and cryostat are not perfectly aligned. Theodolite measurements were taken to better understand this offset, but have not yet been applied here.
+
 		const double dh = 0.0;
 		const double dp = 0.0;
 		const double dr = 0.0;
-		//Corrections from Crab observations 2016:
-	/*	dh = 5.2;
-		dp = -0.5;
-		dr = -0.5;
-	*/
 
-		//define the three axis rotation matricies:
-		double RotGPSCryo_Z[3][3] = { {cosine(-90 + dh), -sine(-90 + dh), 0.0}, {sine(-90 + dh), cosine(-90 + dh), 0.0}, {0.0, 0.0, 1.0} };
-		double RotGPSCryo_Y[3][3] = { {cosine(dr), 0.0, sine(dr)}, {0.0, 1.0, 0.0}, {-sine(dr), 0.0, cosine(dr)} };
-		double RotGPSCryo_X[3][3] = { {1.0, 0.0, 0.0}, {0.0, cosine(dp), -sine(dp)}, {0.0, sine(dp), cosine(dp)} };
-		
-
-		double RotGPSCryo_XY[3][3], RotGPSCryo_ZXY[3][3];
-
-		//multiply the rotaion matricies to make one total 3x3 matrix that represents the 3-d rotation between cryostat coordinates and GPS coordinates. Using the same convention as above.
-		for(int i=0;i<3;i++){
-			for(int j=0;j<3;j++){   
-		   	RotGPSCryo_XY[i][j]=0;
-				for(int k=0;k<3;k++){
-					RotGPSCryo_XY[i][j] = RotGPSCryo_XY[i][j] + RotGPSCryo_X[i][k]*RotGPSCryo_Y[k][j];
-				}
-			}
-		}
-
-		for(int i=0;i<3;i++){
-			for(int j=0;j<3;j++){   
-				RotGPSCryo_ZXY[i][j]=0;
-				for(int k=0;k<3;k++){
-					RotGPSCryo_ZXY[i][j] = RotGPSCryo_ZXY[i][j] + RotGPSCryo_Z[i][k]*RotGPSCryo_XY[k][j];
-				}
-			}
-		}
-
-
-	
-	//Transform the xhat, yhat and zhat into the cryostat coordinate system. These unit vectors now represent the pointing of the cryostat axis in the GPS local coorindate system.
-
-		//transform Xhat
-		for(int i=0;i<3;i++){
-			double Q = 0;
-			for(int k=0;k<3;k++){
-				Q += RotGPSCryo_ZXY[i][k] * Xhat[k];
-			}
-			temp[i] = Q;
-		}
-		Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
-
-        //transform Yhat
-        for(int i=0;i<3;i++){
-            double Q = 0; 
-            for(int k=0;k<3;k++){
-                Q += RotGPSCryo_ZXY[i][k] * Yhat[k];
-            }    
-            temp[i] = Q; 
-        }    
-        Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
-
-		//transform Zhat
-		for(int i=0;i<3;i++){
-			double Q = 0;
-			for(int k=0;k<3;k++){
-				Q += RotGPSCryo_ZXY[i][k] * Zhat[k];
-			}
-			temp[i] = Q;
-		}
-		Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
+		MRotation RotGPSCryo_z(cos( (-90.0 + dh)*c_Rad), sin( (-90.0 + dh)*c_Rad), 0.0, -sin( (-90.0 + dh)*c_Rad), cos( (-90.0 + dh)*c_Rad), 0.0, 0.0, 0.0, 1.0);
+		MRotation RotGPSCryo_y(cos(dr*c_Rad), 0.0, -sin(dr*c_Rad), 0.0, 1.0, 0.0, sin(dr*c_Rad), 0.0, cos(dr*c_Rad));
+		MRotation RotGPSCryo_x(1.0, 0.0, 0.0, 0.0, cos(dp*c_Rad), sin(dp*c_Rad), 0.0, -sin(dp*c_Rad), cos(dp*c_Rad));
+		RotGPSCryo = RotGPSCryo_z;
 
 	}
 
 
-	//now Zhat, Yhat, and Xhat are represent cryostat's axis in the GPS local frame, apply the full ZXY rotation matrix to Zhat, Xhat, and Yhat to determine the true cryostat pointing taking into account heading, pitch and roll, in the unrotated GPS reference frame, with +y pointing north and +z pointing towards the zenith..
+	//Full Rotation includes the GPS pre-rotation and the GPS Rotation matrix defined above
+	MRotation FullRot = RotGPSCryo*ROT_ZXY;
 
-	//transform Xhat
-	for(int i=0;i<3;i++){
-		double Q = 0;
-		for(int k=0;k<3;k++){
-			Q += Rot_ZXY[i][k] * Xhat[k];
-		}
-		temp[i] = Q;
-	}
-	Xhat[0] = temp[0]; Xhat[1] = temp[1]; Xhat[2] = temp[2];
-
-    //transform Yhat
-    for(int i=0;i<3;i++){
-        double Q = 0;
-        for(int k=0;k<3;k++){
-            Q += Rot_ZXY[i][k] * Yhat[k];
-        }
-        temp[i] = Q;
-    }
-    Yhat[0] = temp[0]; Yhat[1] = temp[1]; Yhat[2] = temp[2];
-
-    //transform Zhat
-    for(int i=0;i<3;i++){
-        double Q = 0;
-        for(int k=0;k<3;k++){
-            Q += Rot_ZXY[i][k] * Zhat[k];
-        }
-        temp[i] = Q;
-    }
-    Zhat[0] = temp[0]; Zhat[1] = temp[1]; Zhat[2] = temp[2];
+	//Calcualte the Elevation
+	double Z_Elevation = 90.0 - acos(FullRot.GetZZ())*c_Deg;
+	double Y_Elevation = 90.0 - acos(FullRot.GetZY())*c_Deg;
+	double X_Elevation = 90.0 - acos(FullRot.GetZX())*c_Deg;
 
 
-	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
-	m_TCCalculator.SetUnixTime(UTCTime.GetAsSystemSeconds()); //AWL use the UnixTimeFromGPSTime
-
-	//dot Zhat/Yhat/Xhat into (0,0,1) and take the arccos to get the zenith angle.  then convert this to elevation angle
-	double Z_Elevation = 90.0 - arccosine( Zhat[2] );
-	double Y_Elevation = 90.0 - arccosine( Yhat[2] );
-    double X_Elevation = 90.0 - arccosine( Xhat[2] );
-
-	//get azimuth of Zhat/Yhat/Xhat by projecting into X-Y plane, re-normalizing, and dotting into (0,1,0)
-	double Z_proj[3]; Z_proj[0] = Zhat[0]; Z_proj[1] = Zhat[1]; Z_proj[2] = 0.0;
-	double Y_proj[3]; Y_proj[0] = Yhat[0]; Y_proj[1] = Yhat[1]; Y_proj[2] = 0.0;
-    double X_proj[3]; X_proj[0] = Xhat[0]; X_proj[1] = Xhat[1]; X_proj[2] = 0.0;
-
-	double Znorm = sqrt( pow(Z_proj[0],2.0) + pow(Z_proj[1],2.0) );
-	double Ynorm = sqrt( pow(Y_proj[0],2.0) + pow(Y_proj[1],2.0) );
-    double Xnorm = sqrt( pow(X_proj[0],2.0) + pow(X_proj[1],2.0) );
-
-  
+	//Calculate the Azimuth
+	//by projecting into X-Y plane, re-normalizing
 	//IMPORTANT since the magnetometer reference frame has the X axis pointing at true north,
 	//we need to look at the azimuth angle from the X axis rather than the y axis (from GPS)
-	double Z_Azimuth,X_Azimuth,Y_Azimuth;
-	
+	double Z_Azimuth, X_Azimuth, Y_Azimuth;
+	MVector X_proj(FullRot.GetXX(), FullRot.GetYX(), 0);
+	X_proj = X_proj.Unitize();
+	MVector Y_proj(FullRot.GetXY(), FullRot.GetYY(), 0);
+	Y_proj = Y_proj.Unitize();
+	MVector Z_proj(FullRot.GetXZ(), FullRot.GetYZ(), 0);
+	Z_proj = Z_proj.Unitize();
+       
+
 	//Azimuth calculation for GPS:
 	if( GPS_or_magnetometer == 0 ){
 
-		//for GPS, the azimuth angle is the angle between the projected vector and the y axis, so pass the y component 
-		//of the projected vectors to the arccosine
+		//for GPS, the azimuth angle is the angle between the projected vector and the y axis		
+		X_Azimuth = acos(X_proj.GetY())*c_Deg;
+		if (X_proj.GetX() < 0.0) X_Azimuth = 360.0 - X_Azimuth;
 
-		if( Znorm > 1.0E-9 ){
-			Z_Azimuth = arccosine( Z_proj[1]/Znorm ); if( Z_proj[0] < 0.0 ) Z_Azimuth = 360.0 - Z_Azimuth;
-		} else {
-			Z_Azimuth = 0.0;
+		Y_Azimuth = acos(Y_proj.GetY())*c_Deg;        
+		if (Y_proj.GetX() < 0.0) Y_Azimuth = 360.0 - Y_Azimuth;
+
+		Z_Azimuth = acos(Z_proj.GetY())*c_Deg;
+		if (Z_proj.GetX() < 0.0) Z_Azimuth = 360.0 - Z_Azimuth;
+
+
+		if (g_Verbosity >= c_Info){
+			cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+			cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+			cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
 		}
+	//Azimuth calculation for Magnetometer
+	} else {
 
-		if( Ynorm > 1.0E-9 ){
-			Y_Azimuth = arccosine( Y_proj[1]/Ynorm ); if( Y_proj[0] < 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
-		} else {
-			Y_Azimuth = 0.0;
-		}
+		//for magnetometer, the azimuth angle is the angle between the projected vector and the x axis
+		X_Azimuth = acos(X_proj.GetX())*c_Deg;
+		if (X_proj.GetY() > 0.0) X_Azimuth = 360.0 - X_Azimuth;
 
-        if( Xnorm > 1.0E-9 ){
-            X_Azimuth = arccosine( X_proj[1]/Xnorm ); if( X_proj[0] < 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
-        } else {
-            X_Azimuth = 0.0;
-        }
+		Y_Azimuth = acos(Y_proj.GetX())*c_Deg;        
+		if (Y_proj.GetY() > 0.0) Y_Azimuth = 360.0 - Y_Azimuth;
 
-        if (g_Verbosity >= c_Info){
+		Z_Azimuth = acos(Z_proj.GetX())*c_Deg;
+		if (Z_proj.GetY() > 0.0) Z_Azimuth = 360.0 - Z_Azimuth;
+
+
+		if (g_Verbosity >= c_Info) {
 			cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
 			cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
 			cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
 		}
 
-
-	} else {
-
-		//for magnetometer, the azimuth angle is the angle between the projected vector and the x axis, so pass the x component 
-		//of the projected vectors to the arccosine
-
-		if( Znorm > 1.0E-9 ){
-			Z_Azimuth = arccosine( Z_proj[0]/Znorm ); if( Z_proj[1] > 0.0 ) Z_Azimuth = 360.0 - Z_Azimuth;
-		} else {
-			Z_Azimuth = 0.0;
-		}
-
-		if( Xnorm > 1.0E-9 ){
-			X_Azimuth = arccosine( X_proj[0]/Xnorm ); if( X_proj[1] > 0.0 ) X_Azimuth = 360.0 - X_Azimuth;
-		} else {
-			X_Azimuth = 0.0;
-		}
-
-		if( Ynorm > 1.0E-9 ){
-			Y_Azimuth = arccosine( Y_proj[0]/Ynorm ); if( Y_proj[1] > 0.0 ) Y_Azimuth = 360.0 - Y_Azimuth;
-		} else {
-			Y_Azimuth = 0.0;
-		}
-	
-		if (g_Verbosity >= c_Info) {
-			cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
-			cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
-			cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;		
-		}
-
 	}
 
 
 
-	//Need to double check the TCCalculator used here!	
+
+	//Define appropriate paramters for the TimeAndCoordinate Calculatr:
+	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
+	m_TCCalculator.SetUnixTime(UTCTime.GetAsSystemSeconds()); //AWL use the UnixTimeFromGPSTime
+
+
+
+
+	//Convert to Equatorial and Galactic
 	vector<double> ZGalactic; 
 	vector<double> ZEquatorial;
 	ZEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Z_Azimuth, Z_Elevation);
@@ -449,15 +319,15 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	double Ygalon = YGalactic[0];
 	if (g_Verbosity >= c_Info) cout<<"Y gal-lat = "<<Ygalat<<" Y gal-lon = "<<Ygalon<<endl;
 
-    vector<double> XGalactic; 
-    vector<double> XEquatorial;
-    XEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(X_Azimuth, X_Elevation);
+	vector<double> XGalactic; 
+	vector<double> XEquatorial;
+	XEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(X_Azimuth, X_Elevation);
 	XGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic2(XEquatorial);
-    //Xra = XEquatorial[0];
-    //Xdec = XEquatorial[1];
-    double Xgalat = XGalactic[1];
-    double Xgalon = XGalactic[0];
-    if (g_Verbosity >= c_Info) cout<<"X gal-lat = "<<Xgalat<<" X gal-lon = "<<Xgalon<<endl;
+	//Xra = XEquatorial[0];
+	//Xdec = XEquatorial[1];
+	double Xgalat = XGalactic[1];
+ 	double Xgalon = XGalactic[0];
+	if (g_Verbosity >= c_Info) cout<<"X gal-lat = "<<Xgalat<<" X gal-lon = "<<Xgalon<<endl;
 
 
 	Aspect->SetTime(ClkTime);
@@ -582,42 +452,43 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 //Here we make trig functions that work with degrees.
 
 double MNCTAspectReconstruction::sine(double sine_input){
-	double sine_output = sin((sine_input * 3.14159265359)/180);
-	return sine_output;
+    double sine_output = sin((sine_input * 3.14159265359)/180);
+    return sine_output;
 }
 double MNCTAspectReconstruction::arcsine(double arcsine_input){
-	double arcsine_output = ((asin(arcsine_input))*180)/3.14159265359;
-	return arcsine_output;
+    double arcsine_output = ((asin(arcsine_input))*180)/3.14159265359;
+    return arcsine_output;
 }
 double MNCTAspectReconstruction::cosine(double cosine_input){
-	double cosine_output = cos((cosine_input * 3.14159265359)/180);
-	return cosine_output;
+    double cosine_output = cos((cosine_input * 3.14159265359)/180);
+    return cosine_output;
 }
 double MNCTAspectReconstruction::arccosine(double arccosine_input){
-	double arccosine_output = ((acos(arccosine_input))*180)/3.14159265359;
-	return arccosine_output;
+    double arccosine_output = ((acos(arccosine_input))*180)/3.14159265359;
+    return arccosine_output;
 }
 double MNCTAspectReconstruction::tangent(double tangent_input){
-	double tangent_output = tan((tangent_input * 3.14159265359)/180);
-	return tangent_output;
+    double tangent_output = tan((tangent_input * 3.14159265359)/180);
+    return tangent_output;
 }
 double MNCTAspectReconstruction::arctangent(double arctangent_input){
-	double angle_in_degrees = ((atan(arctangent_input))*180)/3.14159265359;
-	return angle_in_degrees;
-}	
+    double angle_in_degrees = ((atan(arctangent_input))*180)/3.14159265359;
+    return angle_in_degrees;
+}  
 double MNCTAspectReconstruction::arctangent2(double y, double x){
-	double angle_in_degrees = ((atan2(y,x))*180)/3.14159265359;
-	return angle_in_degrees;
+    double angle_in_degrees = ((atan2(y,x))*180)/3.14159265359;
+    return angle_in_degrees;
 }
+
 
 //This is the Spherical Vincenty Formula. It is used to compute the exact great circle distance (in degrees)
 //between two points on a sphere if given the longitude and latitude of each.
-
+/*
 double MNCTAspectReconstruction::Vincenty(double old_glat, double new_glat, double old_glon, double new_glon){
 	double great_circle_distance = arctangent2(sqrt(pow(cosine(new_glat) * sine(abs(new_glon - old_glon)),2) + pow(cosine(old_glat) * sine(new_glat) - sine(old_glat) * cosine(new_glat) * cosine(abs(new_glon - old_glon)),2)),sine(old_glat)*sine(new_glat) + cosine(old_glat) * cosine(new_glat) * cosine(abs(new_glon - old_glon)));
 	return great_circle_distance;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
 bool MTimeSort( MNCTAspect* A1, MNCTAspect* A2 ){
@@ -638,3 +509,4 @@ void MNCTAspectReconstruction::SetLastAspectInDeque(deque<MNCTAspect*> CurrentDe
 
 // MNCTAspectReconstruction.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
+
