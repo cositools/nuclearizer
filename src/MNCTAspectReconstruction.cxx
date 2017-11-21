@@ -53,7 +53,6 @@ using namespace std;
 #include "MNCTAspectPacket.h"
 #include "magfld.h"
 #include "MRotation.h"
-#include "MQuaternion.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
