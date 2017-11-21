@@ -86,6 +86,8 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
 	m_FileIsDone = false;
   
   m_IsZipped = false;
+
+  m_ExpoAspectViewer = nullptr;
 }
 
 
@@ -418,7 +420,9 @@ bool MNCTModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
 			cout << "times are equal" << endl;
 		}
 		//cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
-		m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
+		if (m_ExpoAspectViewer != nullptr) {
+		  m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
+		}
 		Event->SetAnalysisProgress(MAssembly::c_Aspect);
 	} else {
 		if (m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither) {
