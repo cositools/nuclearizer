@@ -41,6 +41,7 @@ using namespace std;
 #include "MNCTStripHit.h"
 #include "MFile.h"
 #include "MNCTModuleEventSaver.h"
+#include "MQuaternion.h"
 
 //Pipeline Tools:
 #include "GCUSettingsParser.h"
@@ -78,7 +79,7 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser() : TIRecord(1000)
 	m_NumComptonDataframes = 0;
 	m_NumAspectPackets = 0;
 	m_NumSettingsPackets = 0;
-    m_NumGCUHkpPackets = 0;
+	m_NumGCUHkpPackets = 0;
 	m_NumLivetimePackets = 0;
 	m_NumOtherPackets = 0;
 	MAX_TRIGS = 80;
@@ -102,7 +103,7 @@ MNCTBinaryFlightDataParser::MNCTBinaryFlightDataParser() : TIRecord(1000)
 	m_LastAspectID = 0xffff;
 	m_AspectReconstructor = nullptr;
 	m_CoincidenceEnabled = true;
-  m_HousekeepingFileName = "Housekeeping.hkp";
+	m_HousekeepingFileName = "Housekeeping.hkp";
 }
 
 
@@ -239,6 +240,8 @@ bool MReadOutAssemblyReverseSort(MReadOutAssembly* E1, MReadOutAssembly* E2) {
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 
 bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received) 
 {
@@ -250,7 +253,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 	//unsigned int CCId = 0;
 
 	struct GCUSettingsPacket* SettingsPacket;
-    struct GCUHousekeepingPacket* GCUHkpPacket;
+ 	struct GCUHousekeepingPacket* GCUHkpPacket;
 	struct LivetimePacket CCLivetimePacket;
 	uint8_t GCUUnixTimeMSB;
 	double ShieldNumCounts;
@@ -314,6 +317,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 					m_NumRawDataBytes += NextPacket.size();
 					//cout<<"NumRawDataBytes "<<m_NumRawDataBytes<<endl;
 					m_NumRawDataframes++;
+
 				}
 				break;
 			case 0x01:
@@ -353,7 +357,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
         	                      if (m_Housekeeping.is_open() == true) {
 						if (m_AspectReconstructor->GetLastAspectInDeque() != 0) { 
 							LatestAspect = m_AspectReconstructor->GetLastAspectInDeque();
-							if (((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS) && (LatestAspect->GetGPS_or_magnetometer() == 0)) || ((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) && (LatestAspect->GetGPS_or_magnetometer() == 1))) {
+							if (((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS || m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Interpolate) && (LatestAspect->GetGPS_or_magnetometer() == 0)) || ((m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) && (LatestAspect->GetGPS_or_magnetometer() == 1))) {
 								m_Housekeeping<<"ASP\nTI "<<LatestAspect->GetUTCTime()<<"\nMD "<<LatestAspect->GetGPS_or_magnetometer()<<"\nGX "<<LatestAspect->GetGalacticPointingXAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingXAxisLatitude()<<"\nGZ "<<LatestAspect->GetGalacticPointingZAxisLongitude()<<" "<<LatestAspect->GetGalacticPointingZAxisLatitude()<<"\nCO "<<LatestAspect->GetLatitude()<<" "<<LatestAspect->GetLongitude()<<" "<<LatestAspect->GetAltitude()<<"\nGPS "<<LatestAspect->GetHeading()<<" "<<LatestAspect->GetPitch()<<" "<<LatestAspect->GetRoll()<<"\n\n";
 							}
 						}
@@ -528,14 +532,16 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 
 	CheckEventsBuf();
 
-	if( m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither ){
+	if( m_AspectMode != MNCTBinaryFlightDataParserAspectModes::c_Neither){
 		for( auto E: m_Events ){
 			if( E->GetAspect() == 0 ){
 				int gps_or_mag;
 				if( m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_GPS ){
 					gps_or_mag = 0;
-				} else {
+				} else if ( m_AspectMode == MNCTBinaryFlightDataParserAspectModes::c_Magnetometer) {
 					gps_or_mag = 1;
+				} else { //Interpolation
+					gps_or_mag = 2; 
 				}
 				MNCTAspect* A = m_AspectReconstructor->GetAspect(E->GetTime(), gps_or_mag);
 				if( A != 0 ){
@@ -544,6 +550,7 @@ bool MNCTBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 			}
 		}
 	}
+
 
 
 	//Preamp Temp Allocation
@@ -1127,6 +1134,11 @@ loop_exit:
 
 }
 
+
+
+///////////////////////////////////////////////////////////////////////
+
+
 bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn, vector<MReadOutAssembly*> * CEvents)
 {
 	bool PosSide;
@@ -1256,6 +1268,8 @@ bool MNCTBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn,
 
 }
 
+//////////////////////////////////////////////////////////////////
+
 void MNCTBinaryFlightDataParser::LoadCCMap(void){
 
 	//takes you from CC Id to det ID
@@ -1286,6 +1300,8 @@ void MNCTBinaryFlightDataParser::LoadCCMap(void){
 		m_CCMap[11] = 9;
 	 */
 }
+
+//////////////////////////////////////////////////////////////////////
 
 void MNCTBinaryFlightDataParser::LoadStripMap(void){
 
@@ -1335,12 +1351,16 @@ void MNCTBinaryFlightDataParser::LoadStripMap(void){
 	return;
 }
 
+///////////////////////////////////////////////////////////////////
+
 bool MNCTBinaryFlightDataParser::SortEventsBuf(void){
 
 	std::sort(m_EventsBuf.begin(), m_EventsBuf.end(), MReadOutAssemblyTimeCompare);
 	return true;
 
 }
+
+///////////////////////////////////////////////////////////////////
 
 bool MReadOutAssemblyTimeCompare(MReadOutAssembly * E1, MReadOutAssembly * E2){
 
@@ -1349,6 +1369,7 @@ bool MReadOutAssemblyTimeCompare(MReadOutAssembly * E1, MReadOutAssembly * E2){
 
 }
 
+///////////////////////////////////////////////////////////////////
 
 bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 
@@ -1490,6 +1511,9 @@ bool MNCTBinaryFlightDataParser::ProcessAspect( vector<uint8_t> & NextPacket ){
 	return true;
 
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
 
 /*
 bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPacket ){
@@ -1649,6 +1673,8 @@ bool MNCTBinaryFlightDataParser::ProcessAspect_works( vector<uint8_t> & NextPack
 }
 
 */
+
+////////////////////////////////////////////////////////////////////////////////
 
 bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspectPacket& GPS_Packet){
 
@@ -1835,6 +1861,9 @@ bool MNCTBinaryFlightDataParser::DecodeDSO(vector<uint8_t> & DSOString, MNCTAspe
 
 }
 
+/////////////////////////////////////////////////////////////////////
+
+
 bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspectPacket& M_Packet){
 
 	//  printf(" %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x \n", MagString[0] & 0xFF, MagString[1] & 0xFF, MagString[2] & 0xFF, MagString[3] & 0xFF, MagString[4] & 0xFF, MagString[5] & 0xFF, MagString[6] & 0xFF, MagString[7] & 0xFF, MagString[8] & 0xFF, MagString[9] & 0xFF, MagString[10] & 0xFF, MagString[11] & 0xFF, MagString[12] & 0xFF, MagString[13] & 0xFF, MagString[14] & 0xFF, MagString[15] & 0xFF, MagString[16] & 0xFF, MagString[17] & 0xFF, MagString[18] & 0xFF, MagString[19] & 0xFF, MagString[20] & 0xFF, MagString[21] & 0xFF, MagString[22] & 0xFF, MagString[23] & 0xFF);
@@ -1951,6 +1980,9 @@ bool MNCTBinaryFlightDataParser::DecodeMag(vector<uint8_t>& MagString, MNCTAspec
 	return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
 bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, dataframe * DataOut ){
 
 	size_t wx = 0;
@@ -2032,6 +2064,9 @@ bool MNCTBinaryFlightDataParser::ComptonDataframe2Struct( vector<uint8_t>& Buf, 
 	if( wx != BufSize ) return false; else return true;
 
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 void MNCTBinaryFlightDataParser::SetIsDone(bool IsDone)
 {

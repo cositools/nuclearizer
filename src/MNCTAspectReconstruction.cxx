@@ -48,11 +48,13 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MParser.h"
 #include "MString.h"
 #include "MFile.h"
 #include "MNCTAspectPacket.h"
 #include "magfld.h"
 #include "MRotation.h"
+#include "MQuaternion.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -349,7 +351,7 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 	Aspect->SetAttFlag(AttFlag);
 	Aspect->SetGPS_or_magnetometer(GPS_or_magnetometer);
 
-	if (GPS_or_magnetometer == 0){
+	if (GPS_or_magnetometer == 0) {
 
 		m_Aspects_GPS.push_back(Aspect);
 		sort(m_Aspects_GPS.begin(), m_Aspects_GPS.end(), MTimeSort);
@@ -387,7 +389,8 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 
 	MNCTAspect* ReqAspect = 0;
 
-	if(GPS_Or_Magnetometer == 0){
+	//Get Correct GPS packet for GPS and Interpolation
+	if(GPS_Or_Magnetometer == 0 || GPS_Or_Magnetometer == 2){
 		//check that there are aspect packets 
 		if( m_Aspects_GPS.size() == 0 ){
 			return 0;
@@ -402,12 +405,18 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 		} else {
 			for( int i = m_Aspects_GPS.size()-2; i > -1; --i ){//this loop will only go if there are at least 2 aspects 
 				if( ReqTime > m_Aspects_GPS[i]->GetTime() ){ //found the lower bracketing value
+					//If Interpolation...
+					if (GPS_Or_Magnetometer == 2) {
+						ReqAspect = InterpolateAspect(ReqTime, m_Aspects_GPS[i], m_Aspects_GPS[i+1]);
+						break;
+					} else {
 					if( (ReqTime - m_Aspects_GPS[i]->GetTime()) <= (m_Aspects_GPS[i+1]->GetTime() - ReqTime) ){ //check which bracketing value is closer
 						ReqAspect = m_Aspects_GPS[i];
 						break;
 					} else {
 						ReqAspect = m_Aspects_GPS[i+1];
 						break;
+					}
 					}
 				}
 			}
@@ -444,6 +453,127 @@ MNCTAspect* MNCTAspectReconstruction::GetAspect(MTime ReqTime, int GPS_Or_Magnet
 	return ReqAspect;
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+
+MNCTAspect * MNCTAspectReconstruction::InterpolateAspect(MTime ReqTime, MNCTAspect * BeforeAspect, MNCTAspect * AfterAspect)
+{
+
+		//BeforeAspect and AfterAspect are the two aspect packets that surround the time of the event
+
+		//Get Absolute Time:
+		double time_asdouble = BeforeAspect->GetUTCTime().GetAsDouble() + ( ReqTime.GetAsDouble() - BeforeAspect->GetTime().GetAsDouble());
+		
+		//Copy the BeforeAspect information. We'll use the same longitude, latitude, and PPS etc. for this event.
+		MNCTAspect* ReqAspect = BeforeAspect;
+
+		//Initilize varibles
+		map<int, double[3]> GPSPointing; //Heading, Pitch, Roll
+		MNCTTimeAndCoordinate m_TCCalculator;
+		
+		GPSPointing[0][0] = BeforeAspect->GetHeading();
+		GPSPointing[0][1] = BeforeAspect->GetPitch();
+		GPSPointing[0][2] = BeforeAspect->GetRoll();
+
+                GPSPointing[1][0] = AfterAspect->GetHeading();
+                GPSPointing[1][1] = AfterAspect->GetPitch();
+                GPSPointing[1][2] = AfterAspect->GetRoll();
+
+		//Define GPS Rotation Matrices
+		MRotation RotGPSCryo(cos( (-90)*c_Rad), sin( (-90)*c_Rad), 0.0, -sin( (-90)*c_Rad), cos( (-90)*c_Rad), 0.0, 0.0, 0.0, 1.0);
+
+		MRotation beforeRot_z(cos(GPSPointing[0][0]*c_Rad), sin(GPSPointing[0][0]*c_Rad), 0.0, -sin(GPSPointing[0][0]*c_Rad), cos(GPSPointing[0][0]*c_Rad), 0.0, 0.0, 0.0, 1.0);
+		MRotation beforeRot_y(cos(GPSPointing[0][2]*c_Rad), 0.0, -sin(GPSPointing[0][2]*c_Rad), 0.0, 1.0, 0.0, sin(GPSPointing[0][2]*c_Rad),  0.0, cos(GPSPointing[0][2]*c_Rad));
+		MRotation beforeRot_x(1.0, 0.0, 0.0, 0.0, cos(GPSPointing[0][1]*c_Rad), sin(GPSPointing[0][1]*c_Rad), 0.0, -sin(GPSPointing[0][1]*c_Rad), cos(GPSPointing[0][1]*c_Rad));
+		MRotation beforeRot_xy = beforeRot_x*beforeRot_y;
+		MRotation beforeRot = beforeRot_z*beforeRot_xy;
+		beforeRot = RotGPSCryo*beforeRot;
+
+		MRotation afterRot_z(cos(GPSPointing[1][0]*c_Rad), sin(GPSPointing[1][0]*c_Rad), 0.0, -sin(GPSPointing[1][0]*c_Rad), cos(GPSPointing[1][0]*c_Rad), 0.0, 0.0, 0.0, 1.0);
+		MRotation afterRot_y(cos(GPSPointing[1][2]*c_Rad), 0.0, -sin(GPSPointing[1][2]*c_Rad), 0.0, 1.0, 0.0, sin(GPSPointing[1][2]*c_Rad),  0.0, cos(GPSPointing[1][2]*c_Rad));
+		MRotation afterRot_x(1.0, 0.0, 0.0, 0.0, cos(GPSPointing[1][1]*c_Rad), sin(GPSPointing[1][1]*c_Rad), 0.0, -sin(GPSPointing[1][1]*c_Rad), cos(GPSPointing[1][1]*c_Rad));
+		MRotation afterRot_xy = afterRot_x*afterRot_y;
+		MRotation afterRot = afterRot_z*afterRot_xy;
+		afterRot = RotGPSCryo*afterRot;
+
+		//Convert to Quaternion for interpolation, then assign new rotation matrix to event
+		MQuaternion qbefore;
+		qbefore.CalculateQuaternionFromMatrix(beforeRot);
+		qbefore = qbefore.UnitQuaternion();
+
+		MQuaternion qafter;
+		qafter.CalculateQuaternionFromMatrix(afterRot);
+		qafter = qafter.UnitQuaternion();
+
+
+
+		//Interpolate between Quaternions:
+		//Caluclate the fraction of time between the two aspect packets for interpolation. Should be between 0 and 1.
+		double fact = (ReqTime.GetAsDouble() - BeforeAspect->GetTime().GetAsDouble())/(AfterAspect->GetTime().GetAsDouble() - BeforeAspect->GetTime().GetAsDouble());
+		MQuaternion qinter;
+		qinter = qinter.Slerp(qbefore,qafter,fact);
+
+		//Convert back to Rotation Matrix
+		MRotation interRot = qinter.QuaternionToMatrix();
+
+
+		//Define new Elevation angles
+		double Z_Elevation = 90.0 - acos(interRot.GetZZ())*c_Deg;
+		double Y_Elevation = 90.0 - acos(interRot.GetZY())*c_Deg;
+		double X_Elevation = 90.0 - acos(interRot.GetZX())*c_Deg;
+
+		//Define new Azimuth angles
+		double Z_Azimuth,X_Azimuth,Y_Azimuth;
+		MVector X_proj(interRot.GetXX(), interRot.GetYX(), 0);
+		X_proj = X_proj.Unitize();
+		X_Azimuth = acos(X_proj.GetY())*c_Deg;
+		if (X_proj.GetX() < 0.0) X_Azimuth = 360.0 - X_Azimuth;
+
+		MVector Y_proj(interRot.GetXY(), interRot.GetYY(), 0);
+		Y_proj = Y_proj.Unitize();
+		Y_Azimuth = acos(Y_proj.GetY())*c_Deg;
+		if (Y_proj.GetX() < 0.0) Y_Azimuth = 360.0 - Y_Azimuth;
+
+		MVector Z_proj(interRot.GetXZ(), interRot.GetYZ(), 0);
+		Z_proj = Z_proj.Unitize();
+		Z_Azimuth = acos(Z_proj.GetY())*c_Deg;
+		if (Z_proj.GetX() < 0.0) Z_Azimuth = 360.0 - Z_Azimuth;
+
+	
+		//Add the latitude and longitude and time to the TCCalculator
+		m_TCCalculator.SetLocation(ReqAspect->GetLatitude(), ReqAspect->GetLongitude());
+		m_TCCalculator.SetUnixTime(time_asdouble);
+
+
+		vector<double> ZGalactic;
+		vector<double> ZEquatorial;
+		ZEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(Z_Azimuth, Z_Elevation);
+		ZGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic2(ZEquatorial);
+		//Zra = ZEquatorial[0];
+		//Zdec = ZEquatorial[1];
+		double Zgalat = ZGalactic[1];
+		double Zgalon = ZGalactic[0];
+		//cout<<"Z gal-lon = "<<Zgalon<<" Z gal-lat = "<<Zgalat<<endl;
+
+		vector<double> XGalactic;
+		vector<double> XEquatorial;
+		XEquatorial = m_TCCalculator.MNCTTimeAndCoordinate::Horizon2Equatorial(X_Azimuth, X_Elevation);
+		XGalactic = m_TCCalculator.MNCTTimeAndCoordinate::Equatorial2Galactic2(XEquatorial);
+		//Xra = XEquatorial[0];
+		//Xdec = XEquatorial[1];
+		double Xgalat = XGalactic[1];
+		double Xgalon = XGalactic[0];
+
+		//Redefine the Galactic and Horizon Pointing with the interpolated values
+		ReqAspect->SetGalacticPointingXAxis(Xgalon, Xgalat);
+		ReqAspect->SetGalacticPointingZAxis(Zgalon, Zgalat);
+		ReqAspect->SetHorizonPointingXAxis(X_Azimuth, X_Elevation);
+		ReqAspect->SetHorizonPointingZAxis(Z_Azimuth, Z_Elevation);
+		ReqAspect->SetGPS_or_magnetometer(0);
+
+	return ReqAspect;
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

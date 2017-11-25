@@ -78,6 +78,9 @@ class MNCTAspectReconstruction
 		double Vincenty(double old_glat, double new_glat, double old_glon, double new_glon); 
 		void SetLastAspectInDeque(deque<MNCTAspect*> CurrentDeque);
 		MNCTAspect* GetLastAspectInDeque() const {return LastAspectInDeque;}
+
+		MNCTAspect * InterpolateAspect(MTime ReqTime, MNCTAspect * AspectBefore, MNCTAspect * AspectAfter);
+
 	private:
 		//! Internal lists of reconstructed aspects
 		deque<MNCTAspect*> m_Aspects_GPS;
@@ -90,6 +93,8 @@ class MNCTAspectReconstruction
 		MNCTAspect* LastAspectInDeque;  
 		MNCTTimeAndCoordinate m_TCCalculator;
 		bool m_IsDone;
+
+
 
 
 #ifdef ___CINT___

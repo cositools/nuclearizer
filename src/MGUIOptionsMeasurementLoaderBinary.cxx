@@ -84,6 +84,7 @@ void MGUIOptionsMeasurementLoaderBinary::Create()
   m_AspectMode = new MGUIERBList(m_OptionsFrame, "Choose the aspect mode");
   m_AspectMode->Add("GPS");
   m_AspectMode->Add("Magnetometer");
+  m_AspectMode->Add("Interpolated GPS");
   m_AspectMode->Add("None");
   m_AspectMode->SetSelected((int) dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetAspectMode());
   m_AspectMode->Create();
@@ -153,8 +154,10 @@ bool MGUIOptionsMeasurementLoaderBinary::OnApply()
   if (m_AspectMode->GetSelected() == 0) {
     dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_GPS);     
   } else if (m_AspectMode->GetSelected() == 1) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);     
+    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
   } else if (m_AspectMode->GetSelected() == 2) {
+    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Interpolate);
+  } else if (m_AspectMode->GetSelected() == 3) {
     dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);     
   }
 

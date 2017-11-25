@@ -45,7 +45,7 @@ using namespace std;
 enum class MNCTBinaryFlightDataParserDataModes : unsigned int { c_Raw = 0, c_Compton = 1, c_All = 2 };    
 
 //! Aspect modes... use the GPS, the magnetometer, or neither
-enum class MNCTBinaryFlightDataParserAspectModes : unsigned int {c_GPS = 0, c_Magnetometer, c_Neither};
+enum class MNCTBinaryFlightDataParserAspectModes : unsigned int {c_GPS = 0, c_Magnetometer, c_Interpolate, c_Neither};
 
   
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,7 +108,7 @@ class MNCTBinaryFlightDataParser
  protected:
   //! The data selection mode (raw, Compton, all)
   MNCTBinaryFlightDataParserDataModes m_DataSelectionMode;
-  //! The aspect mode (c_GPS, c_Magnetometer, c_Neither)
+  //! The aspect mode (c_GPS, c_Magnetometer, c_Interpolate, c_Neither)
   MNCTBinaryFlightDataParserAspectModes m_AspectMode;
   //! Controls whether or not coincident events are merged
   bool m_CoincidenceEnabled;
@@ -257,7 +257,6 @@ class MNCTBinaryFlightDataParser
   bool ProcessAspect_works( vector<uint8_t> & NextPacket );
   bool DecodeDSO( vector<uint8_t> & DSOString, MNCTAspectPacket & DSO_Packet);
   bool DecodeMag( vector<uint8_t> & MagString, MNCTAspectPacket & Mag_Packet);
-
 
 
   
