@@ -497,13 +497,11 @@ MNCTAspect * MNCTAspectReconstruction::InterpolateAspect(MTime ReqTime, MNCTAspe
 		afterRot = RotGPSCryo*afterRot;
 
 		//Convert to Quaternion for interpolation, then assign new rotation matrix to event
-		MQuaternion qbefore;
-		qbefore.CalculateQuaternionFromMatrix(beforeRot);
-		qbefore = qbefore.UnitQuaternion();
+		MQuaternion qbefore(beforeRot);
+		qbefore = qbefore.GetUnitQuaternion();
 
-		MQuaternion qafter;
-		qafter.CalculateQuaternionFromMatrix(afterRot);
-		qafter = qafter.UnitQuaternion();
+		MQuaternion qafter(afterRot);
+		qafter = qafter.GetUnitQuaternion();
 
 
 
@@ -511,10 +509,10 @@ MNCTAspect * MNCTAspectReconstruction::InterpolateAspect(MTime ReqTime, MNCTAspe
 		//Caluclate the fraction of time between the two aspect packets for interpolation. Should be between 0 and 1.
 		double fact = (ReqTime.GetAsDouble() - BeforeAspect->GetTime().GetAsDouble())/(AfterAspect->GetTime().GetAsDouble() - BeforeAspect->GetTime().GetAsDouble());
 		MQuaternion qinter;
-		qinter = qinter.Slerp(qbefore,qafter,fact);
+		qinter = qinter.GetSlerp(qbefore,qafter,fact);
 
 		//Convert back to Rotation Matrix
-		MRotation interRot = qinter.QuaternionToMatrix();
+		MRotation interRot = qinter.GetRotation();
 
 
 		//Define new Elevation angles
