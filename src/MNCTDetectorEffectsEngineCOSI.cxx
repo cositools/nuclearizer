@@ -123,7 +123,7 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   ParseThresholdFile();
 
   //load charge loss coefficients
-  InitializeChargeLoss();
+  //InitializeChargeLoss();
 
 	//initialize dead time
 	for (int i=0; i<12; i++){
@@ -193,28 +193,6 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
 
 	m_NumShieldCounts = 0;
  
-	// initialize constants for charge sharing due to diffusion
-	m_EnergyPerElectron = 0.00296; //in keV
-	double k = 1.38e-16; //Boltzmann's constant
-	double T = 84; //detector temperature in Kelvin
-	double e = 4.8e-10; //electron charge in cgs
-	double d = 1.5; //thickness in centimeters
-	double driftConstant = sqrt(2*k*T*d/e);
-	//need to divide each voltage by 299.79 to get statvolts (using cgs units)
-	m_DriftConstant[0] = driftConstant/sqrt(1000./299.79);
-	m_DriftConstant[1] = driftConstant/sqrt(1200/299.79);
-	m_DriftConstant[2] = driftConstant/sqrt(1500/299.79);
-	m_DriftConstant[3] = driftConstant/sqrt(1500/299.79);
-	m_DriftConstant[4] = driftConstant/sqrt(1000/299.79);
-	m_DriftConstant[5] = driftConstant/sqrt(1500/299.79);
-	m_DriftConstant[6] = driftConstant/sqrt(1000/299.79);
-	m_DriftConstant[7] = driftConstant/sqrt(1500/299.79);
-	m_DriftConstant[8] = driftConstant/sqrt(1500/299.79);
-	m_DriftConstant[9] = driftConstant/sqrt(1200/299.79);
-	m_DriftConstant[10] = driftConstant/sqrt(1000/299.79);
-	m_DriftConstant[11] = driftConstant/sqrt(1000/299.79);
-
-
   return true;
 }
     
@@ -327,11 +305,11 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       MNCTDEEStripHit nSide;
 
       //should be unique identifiers
-//      pSide.m_ID = h*10;
-//      nSide.m_ID = h*10+5;
+      pSide.m_ID = h*10;
+      nSide.m_ID = h*10+5;
 
- //     pSide.m_OppositeStrip = nSide.m_ID;
-//      nSide.m_OppositeStrip = pSide.m_ID;
+      pSide.m_OppositeStrip = nSide.m_ID;
+      nSide.m_OppositeStrip = pSide.m_ID;
 
       pSide.m_ROE.IsPositiveStrip(true);
       nSide.m_ROE.IsPositiveStrip(false);
@@ -378,75 +356,20 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
       StripHits.push_back(pSide);
       StripHits.push_back(nSide);
+//      int currentSize = StripHits.size();
+//      StripHits.at(currentSize-1).m_OppositeStrip = &StripHits.at(currentSize-2);
+//      StripHits.at(currentSize-2).m_OppositeStrip = &StripHits.at(currentSize-1);
+
+
+//      cout << pSide.m_Energy << '\t';
+//      cout << pSide.m_OppositeStrip->m_Energy << '\t';
+//      cout << nSide.m_Energy << endl;
+//      cout << nSide.m_OppositeStrip->m_Energy << endl;
+
+      //set the m_Opposite pointers to each other
 
       m_TotalHitsCounter++;
 
-			// (1aa): charge sharing due to diffusion
-
-			int NChargeCarriers = (int)(HT->GetEnergy()/m_EnergyPerElectron);
-
-			double DriftLength = PositionInDetector.Z() + Detector->GetStructuralSize().Z();
-			double DriftRadiusSigma = m_DriftConstant[DetectorID]*sqrt(DriftLength);
-//			cout << m_DriftConstant[DetectorID] << '\t' << DriftRadiusSigma << endl;
-
-			double DriftX = 0;
-			double DriftY = 0;
-
-			//detector values
-			// width of one wafer
-//			double WidthX = Detector->GetWidthX();
-//			double WidthY = Detector->GetWidthY();
-//			// offset after which the first strip starts
-//			double OffsetX = Detector->GetOffsetX();
-//			double OffsetY = Detector->GetOffsetY();
-
-//			set<int> xStrips;
-
-			for (int e = 0; e < NChargeCarriers; e++){
-				gRandom->Rannor(DriftX, DriftY);
-				DriftX *= DriftRadiusSigma;
-				DriftY *= DriftRadiusSigma;
-
-				MVector DriftPosition = PositionInDetector + MVector(DriftX, DriftY, 0);
-
-				// I think this checks if it drifts so far that it basically drifts off detector
-				// or at least out of strip region
-//				if (fabs(DriftPosition.X()) > WidthX/2. - OffsetX ||
-//						fabs(DriftPosition.Y()) > WidthX/2. - OffsetY) {
-//							continue;
-//				}
-
-				MDGridPoint GPDrift = Detector->GetGridPoint(DriftPosition);
-				int xStripID = 38-(GPDrift.GetXGrid()+1);
-				int yStripID = 38-(GPDrift.GetYGrid()+1);
-
-//				xStrips.insert(xStripID);
-
-			}
-
-/*			if (xStrips.size() > 1){
-				set<int>::iterator setIT;
-				for (setIT = xStrips.begin(); setIT!=xStrips.end(); ++setIT){
-					cout << *setIT << endl;
-				}
-				cout << "*********" << endl;
-			}
-*/
-/*			// (1ab): charge sharing due to diffusion without looping like crazy
-			MVector MaxX = PositionInDetector + MVector(DriftRadiusSigma,0,0);
-			MVector MinX = PositionInDetector + MVector(-DriftRadiusSigma,0,0);
-
-			MDGridPoint GPMin = Detector->GetGridPoint(MinX);
-			MDGridPoint GPMax = Detector->GetGridPoint(MaxX);
-			int xStripMin = 38-(GPMin.GetXGrid()+1);
-			int xStripMax = 38-(GPMax.GetXGrid()+1);
-
-			if (xStrips.size() > 1){
-//				cout << MinX.X() << '\t' << MaxX.X() << endl;
-				cout << 38-(GP.GetXGrid()+1) << '\t' << xStripMin << '\t' << xStripMax << endl;
-				cout << "---------------------" << endl;
-			}
-*/
     }
 
 
@@ -499,7 +422,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 //      cout << "-----------" << endl;
       MergedStripHits.push_back(Start);
     }
-
 
 
 //    bool fromSameInteraction = true;
@@ -560,82 +482,28 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 
 
-		//Step (3): Calculate and noise ADC values including charge sharing, charge loss, ADC overflow
-		//first add up energies of the subhits of each merged strip hit
-		//so that the merged strip hit has the correct energy
-    for (MNCTDEEStripHit& Hit: MergedStripHits) {
-      double Energy = 0;
+ 
+    // (3c) Noise energy deposit
+    for (MNCTDEEStripHit& Hit: MergedStripHits) { 
+     double Energy = 0;
       for (MNCTDEEStripHit SubHit: Hit.m_SubStripHits) {
         Energy += SubHit.m_Energy;
       }
+
       Hit.m_Energy = Energy;
     }
 
-		// (3a) Charge sharing
-
-		// (3b) Charge loss
-
-		list<MNCTDEEStripHit>::iterator sh1, sh2;
-		for (sh1 = MergedStripHits.begin(); sh1 != MergedStripHits.end(); ++sh1){
-			for (sh2 = sh1; sh2 != MergedStripHits.end(); ++sh2){
-				if (sh1 == sh2){ continue; }
-
-				//check if strip hits are adjacent
-				bool adjacent = false;
-				int stripID1 = (*sh1).m_ROE.GetStripID();
-				int stripID2 = (*sh2).m_ROE.GetStripID();
-				int detID1 = (*sh1).m_ROE.GetDetectorID();
-				int detID2 = (*sh2).m_ROE.GetDetectorID();
-				bool side1 = (*sh1).m_ROE.IsPositiveStrip();
-				bool side2 = (*sh2).m_ROE.IsPositiveStrip();
-				if (abs(stripID1-stripID2) == 1 && side1 == side2 && detID1 == detID2){
-					adjacent = true;
-				}
-
-				//if adjacent, check if strip hits share origins
-				bool sharedOrigin = false;
-				if (adjacent){
-					for (int o1: (*sh1).m_Origins){
-						for (int o2: (*sh2).m_Origins){
-							if (o1 == o2){
-								sharedOrigin = true;
-								break;
-							}
-						}
-					}
-				}
-				
-				//if shared origin and adjacent, apply charge loss effect -- only if on positive side
-				if (adjacent && sharedOrigin){
-//				if (adjacent){
-					double energy1 = (*sh1).m_Energy;
-					double energy2 = (*sh2).m_Energy;
-					if (side1){
-						vector<double> newEnergies = ApplyChargeLoss(energy1, energy2, detID1, 0);
-						energy1 = newEnergies.at(0);
-						energy2 = newEnergies.at(1);
-
-						(*sh1).m_Energy = energy1;
-						(*sh2).m_Energy = energy2;
-					}
-				}
-			}
-		}
-
- 
-    // (3c) Noise energy deposit and convert to ADC
 		list<MNCTDEEStripHit>::iterator A = MergedStripHits.begin();
-    while (A != MergedStripHits.end()) {
+		while (A != MergedStripHits.end()) {
 			double Energy = (*A).m_Energy;
-      (*A).m_ADC = EnergyToADC((*A),Energy);
-			//throw out strip hits with energy above the ADC overflow
+			(*A).m_ADC = EnergyToADC((*A),Energy);
 			if ((*A).m_ADC > 8192){
 				A = MergedStripHits.erase(A);
 			}
 			else {
 				++A;
 			}
-    }
+		}
 
     // (3d) Handle ADC overflow
 
@@ -1047,79 +915,17 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
 
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 //! Calculate new summed energy of two strips affected by charge loss
-vector<double> MNCTDetectorEffectsEngineCOSI::ApplyChargeLoss(double energy1, double energy2, int detID, int side){
-
-	double trueSum = energy1+energy2;
-	double diff = abs(energy1-energy2);
-
-	//B = A0 + A1*E
-	double A0 = m_ChargeLossCoefficients[detID][side][0];
-	double A1 = m_ChargeLossCoefficients[detID][side][1];
-	double B = A0 + A1*trueSum;
-
-	A0 = m_ChargeLossCoefficients[detID][1][0];
-	A1 = m_ChargeLossCoefficients[detID][1][1];
-	double B2 = A0 + A1*trueSum;
-
-	A0 = m_ChargeLossCoefficients[detID][side][0];
-	A1 = m_ChargeLossCoefficients[detID][side][1];
-
-	//get new sum
-	double newSum;
-	if (trueSum >= 300){
-		newSum = trueSum - B*(trueSum - diff);
-	}
-	else {
-		newSum = trueSum - (B/(2*trueSum))*(pow(trueSum,2) - pow(diff,2));
-	}
-
-	//get new strip hit energies: subtract same amount from energy1 and energy2
-	double sumDiff = trueSum - newSum;
-	double newE1, newE2;
-	newE1 = energy1 - sumDiff/2.;
-	newE2 = energy2 - sumDiff/2.;
-
-	vector<double> retEnergy;
-/*	if (trueSum < newSum){
-		cout << "Problem with charge loss in DEE: new energy HIGHER!" << endl;
-
-		cout << "trueSum: " << trueSum << '\t' << "newSum: " << newSum << endl;
-		cout << "A0: " << A0 << '\t' << "A1: " << A1 << endl; 
-		cout << "B: " << B << endl;
-		cout << "B other side: " << B2 << endl;
-		cout << "energy1: " << energy1 << '\t' << "energy2: " << energy2 << endl;
-		cout << "newE1: " << newE1 << '\t' << "newE2: " << newE2 << endl;
-		cout << "SIDE: " << side << endl;
-
-
-//		retEnergy.push_back(energy1);
-//		retEnergy.push_back(energy2);
-	}*/
-//	else{
-		retEnergy.push_back(newE1);
-		retEnergy.push_back(newE2);
-//	}
-
-	return retEnergy;
-
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Read in charge loss files
 void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
 { 
 
   vector<string> filenames;
-	filenames.push_back("ChargeLossStuff/ChargeLossCoeffs_Co57.log");
-  filenames.push_back("ChargeLossStuff/ChargeLossCoeffs_Ba133.log");
-  filenames.push_back("ChargeLossStuff/ChargeLossCoeffs_Cs137.log");
-	filenames.push_back("ChargeLossStuff/ChargeLossCoeffs_Co60.log");
+  filenames.push_back("./ChargeLossCorrectionScaled_Ba133.log");
+  filenames.push_back("./ChargeLossCorrectionScaled_Cs137.log");
 
   vector<vector<vector<double> > > coefficients;
 
@@ -1155,11 +961,10 @@ void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
     tempOneSource.clear();
   }
 
-  double energies[4] = {122,356,662,1333};
-  double points[4];
+  double energies[2] = {356,662};
+  double points[2];
   double A0;
   double A1;
-
 
   for (int det=0; det<12; det++){
     for (int side=0; side<2; side++){
@@ -1170,11 +975,9 @@ void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
 
       points[0] = coefficients.at(0).at(det).at(side);
       points[1] = coefficients.at(1).at(det).at(side);
-			points[2] = coefficients.at(2).at(det).at(side);
-			points[3] = coefficients.at(3).at(det).at(side);
 
-      TGraph *g = new TGraph(4,energies,points);
-      TF1 *f = new TF1("f","[0]+[1]*x",energies[0],energies[3]);
+      TGraph *g = new TGraph(2,energies,points);
+      TF1 *f = new TF1("f","[0]+[1]*x",energies[0],energies[1]);
       g->Fit("f","RQ");
 
       A0 = f->GetParameter(0);
