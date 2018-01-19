@@ -196,15 +196,16 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 
 
 
-	//definte the rotation matrices (https://en.wikipedia.org/wiki/Davenport_chained_rotations) to allow us to tranform from heading, pitch and roll, to the local GPS coordinates, and vise versa.
+	//definte the rotation matrices (https://en.wikipedia.org/wiki/Davenport_chained_rotations) to allow us to tranform from heading, pitch and roll, to the local GPS coordinates, and vise versa. The ADU5 defines the X direction to be along the vector created by Antennas 3, 2, and 4, therefore defines the pitch angle, and the Y direction is along the vector defined by antennas 1 and 2, and therefore defines the roll direction. These three rotations should be applied in order: Yaw, Pitch, Roll.
 
-	MRotation ROT_Z(cos(heading*c_Rad), sin(heading*c_Rad), 0.0, -sin(heading*c_Rad), cos(heading*c_Rad), 0.0, 0.0, 0.0, 1.0);
-	MRotation ROT_Y(cos(roll*c_Rad), 0.0, -sin(roll*c_Rad), 0.0, 1.0, 0.0, sin(roll*c_Rad),  0.0, cos(roll*c_Rad));
-	MRotation ROT_X(1.0, 0.0, 0.0, 0.0, cos(pitch*c_Rad), sin(pitch*c_Rad), 0.0, -sin(pitch*c_Rad), cos(pitch*c_Rad));
+
+	//CK made a mistake defining these matricies...
+	MRotation ROT_Z(cos(heading*c_Rad), -sin(heading*c_Rad), 0.0, sin(heading*c_Rad), cos(heading*c_Rad), 0.0, 0.0, 0.0, 1.0);
+	MRotation ROT_Y(cos(roll*c_Rad), 0.0, sin(roll*c_Rad), 0.0, 1.0, 0.0, -sin(roll*c_Rad),  0.0, cos(roll*c_Rad));
+	MRotation ROT_X(1.0, 0.0, 0.0, 0.0, cos(pitch*c_Rad), -sin(pitch*c_Rad), 0.0, sin(pitch*c_Rad), cos(pitch*c_Rad));
 	MRotation ROT_XY = ROT_X*ROT_Y;
 	MRotation ROT_ZXY = ROT_Z*ROT_XY;
 	
-
 	//Now, define the GPS pre-rotation matrix RotGPSCryo, which is the rotation matrix between the cryostat coorindates, with +x pointing towards the front of the gondola (sun side), and the GPS coordinates, with +y pointing towards the back of the gonodla. To first order, this is just a -90 degree rotation around the z-axis.
     //The magnetometer doesn't require this extra rotation matrix because its axes are already aligned with the cryostat
 	MRotation RotGPSCryo;
@@ -218,33 +219,32 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		const double dp = 0.0;
 		const double dr = 0.0;
 
-		MRotation RotGPSCryo_z(cos( (-90.0 + dh)*c_Rad), sin( (-90.0 + dh)*c_Rad), 0.0, -sin( (-90.0 + dh)*c_Rad), cos( (-90.0 + dh)*c_Rad), 0.0, 0.0, 0.0, 1.0);
-		MRotation RotGPSCryo_y(cos(dr*c_Rad), 0.0, -sin(dr*c_Rad), 0.0, 1.0, 0.0, sin(dr*c_Rad), 0.0, cos(dr*c_Rad));
-		MRotation RotGPSCryo_x(1.0, 0.0, 0.0, 0.0, cos(dp*c_Rad), sin(dp*c_Rad), 0.0, -sin(dp*c_Rad), cos(dp*c_Rad));
-		RotGPSCryo = RotGPSCryo_z;
+		MRotation RotGPSCryo_z(cos( (-90.0 + dh)*c_Rad), -sin( (-90.0 + dh)*c_Rad), 0.0, sin( (-90.0 + dh)*c_Rad), cos( (-90.0 + dh)*c_Rad), 0.0, 0.0, 0.0, 1.0);
+		MRotation RotGPSCryo_y(cos(dr*c_Rad), 0.0, sin(dr*c_Rad), 0.0, 1.0, 0.0, -sin(dr*c_Rad), 0.0, cos(dr*c_Rad));
+		MRotation RotGPSCryo_x(1.0, 0.0, 0.0, 0.0, cos(dp*c_Rad), -sin(dp*c_Rad), 0.0, sin(dp*c_Rad), cos(dp*c_Rad));
+		RotGPSCryo = RotGPSCryo_z*RotGPSCryo_x*RotGPSCryo_y;
 
 	}
 
 
+
 	//Full Rotation includes the GPS pre-rotation and the GPS Rotation matrix defined above
-	MRotation FullRot = RotGPSCryo*ROT_ZXY;
+	MRotation FullRot = ROT_ZXY*RotGPSCryo;
 
+	
 	//Calcualte the Elevation
-	double Z_Elevation = 90.0 - acos(FullRot.GetZZ())*c_Deg;
-	double Y_Elevation = 90.0 - acos(FullRot.GetZY())*c_Deg;
-	double X_Elevation = 90.0 - acos(FullRot.GetZX())*c_Deg;
+	double Z_Elevation = asin(FullRot.GetZZ())*c_Deg;
+	double Y_Elevation = asin(FullRot.GetYZ())*c_Deg;
+	double X_Elevation = asin(FullRot.GetXZ())*c_Deg;
 
 
-	//Calculate the Azimuth
-	//by projecting into X-Y plane, re-normalizing
-	//IMPORTANT since the magnetometer reference frame has the X axis pointing at true north,
-	//we need to look at the azimuth angle from the X axis rather than the y axis (from GPS)
+	//Calculate the Azimuth, as measured clockwise from North, by projecting into X-Y plane and re-normalizing
 	double Z_Azimuth, X_Azimuth, Y_Azimuth;
-	MVector X_proj(FullRot.GetXX(), FullRot.GetYX(), 0);
+	MVector X_proj(FullRot.GetXX(), FullRot.GetXY(), 0);
 	X_proj = X_proj.Unitize();
-	MVector Y_proj(FullRot.GetXY(), FullRot.GetYY(), 0);
+	MVector Y_proj(FullRot.GetYX(), FullRot.GetYY(), 0);
 	Y_proj = Y_proj.Unitize();
-	MVector Z_proj(FullRot.GetXZ(), FullRot.GetYZ(), 0);
+	MVector Z_proj(FullRot.GetZX(), FullRot.GetZY(), 0);
 	Z_proj = Z_proj.Unitize();
        
 
@@ -261,16 +261,10 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		Z_Azimuth = acos(Z_proj.GetY())*c_Deg;
 		if (Z_proj.GetX() < 0.0) Z_Azimuth = 360.0 - Z_Azimuth;
 
-
-		if (g_Verbosity >= c_Info){
-			cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
-			cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
-			cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
-		}
-	//Azimuth calculation for Magnetometer
 	} else {
+		//Azimuth calculation for Magnetometer:
 
-		//for magnetometer, the azimuth angle is the angle between the projected vector and the x axis
+		//for magnetometer, the azimuth angle is the angle between the projected vector and the x axis since the magnetometer reference frame has the X-axis pointing at true North
 		X_Azimuth = acos(X_proj.GetX())*c_Deg;
 		if (X_proj.GetY() > 0.0) X_Azimuth = 360.0 - X_Azimuth;
 
@@ -280,23 +274,19 @@ bool MNCTAspectReconstruction::AddAspectFrame(MNCTAspectPacket PacketA)
 		Z_Azimuth = acos(Z_proj.GetX())*c_Deg;
 		if (Z_proj.GetY() > 0.0) Z_Azimuth = 360.0 - Z_Azimuth;
 
-
-		if (g_Verbosity >= c_Info) {
-			cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
-			cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
-			cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
-		}
-
 	}
 
-
+	
+	if (g_Verbosity >= c_Info) {
+		cout<<"X_Azimuth = "<<X_Azimuth<<" X_Elevation = "<<X_Elevation<<endl;
+		cout<<"Y_Azimuth = "<<Y_Azimuth<<" Y_Elevation = "<<Y_Elevation<<endl;
+		cout<<"Z_Azimuth = "<<Z_Azimuth<<" Z_Elevation = "<<Z_Elevation<<endl;
+	}
 
 
 	//Define appropriate paramters for the TimeAndCoordinate Calculatr:
 	m_TCCalculator.SetLocation(geographic_latitude,geographic_longitude);
 	m_TCCalculator.SetUnixTime(UTCTime.GetAsSystemSeconds()); //AWL use the UnixTimeFromGPSTime
-
-
 
 
 	//Convert to Equatorial and Galactic
@@ -480,21 +470,22 @@ MNCTAspect * MNCTAspectReconstruction::InterpolateAspect(MTime ReqTime, MNCTAspe
                 GPSPointing[1][2] = AfterAspect->GetRoll();
 
 		//Define GPS Rotation Matrices
-		MRotation RotGPSCryo(cos( (-90)*c_Rad), sin( (-90)*c_Rad), 0.0, -sin( (-90)*c_Rad), cos( (-90)*c_Rad), 0.0, 0.0, 0.0, 1.0);
+		MRotation RotGPSCryo(cos( (-90)*c_Rad), -sin( (-90)*c_Rad), 0.0, sin( (-90)*c_Rad), cos( (-90)*c_Rad), 0.0, 0.0, 0.0, 1.0);
 
-		MRotation beforeRot_z(cos(GPSPointing[0][0]*c_Rad), sin(GPSPointing[0][0]*c_Rad), 0.0, -sin(GPSPointing[0][0]*c_Rad), cos(GPSPointing[0][0]*c_Rad), 0.0, 0.0, 0.0, 1.0);
-		MRotation beforeRot_y(cos(GPSPointing[0][2]*c_Rad), 0.0, -sin(GPSPointing[0][2]*c_Rad), 0.0, 1.0, 0.0, sin(GPSPointing[0][2]*c_Rad),  0.0, cos(GPSPointing[0][2]*c_Rad));
-		MRotation beforeRot_x(1.0, 0.0, 0.0, 0.0, cos(GPSPointing[0][1]*c_Rad), sin(GPSPointing[0][1]*c_Rad), 0.0, -sin(GPSPointing[0][1]*c_Rad), cos(GPSPointing[0][1]*c_Rad));
+		MRotation beforeRot_z(cos(GPSPointing[0][0]*c_Rad), -sin(GPSPointing[0][0]*c_Rad), 0.0, sin(GPSPointing[0][0]*c_Rad), cos(GPSPointing[0][0]*c_Rad), 0.0, 0.0, 0.0, 1.0);
+		MRotation beforeRot_y(cos(GPSPointing[0][2]*c_Rad), 0.0, sin(GPSPointing[0][2]*c_Rad), 0.0, 1.0, 0.0, -sin(GPSPointing[0][2]*c_Rad),  0.0, cos(GPSPointing[0][2]*c_Rad));
+		MRotation beforeRot_x(1.0, 0.0, 0.0, 0.0, cos(GPSPointing[0][1]*c_Rad), -sin(GPSPointing[0][1]*c_Rad), 0.0, sin(GPSPointing[0][1]*c_Rad), cos(GPSPointing[0][1]*c_Rad));
 		MRotation beforeRot_xy = beforeRot_x*beforeRot_y;
 		MRotation beforeRot = beforeRot_z*beforeRot_xy;
-		beforeRot = RotGPSCryo*beforeRot;
+		beforeRot = beforeRot*RotGPSCryo;
 
-		MRotation afterRot_z(cos(GPSPointing[1][0]*c_Rad), sin(GPSPointing[1][0]*c_Rad), 0.0, -sin(GPSPointing[1][0]*c_Rad), cos(GPSPointing[1][0]*c_Rad), 0.0, 0.0, 0.0, 1.0);
-		MRotation afterRot_y(cos(GPSPointing[1][2]*c_Rad), 0.0, -sin(GPSPointing[1][2]*c_Rad), 0.0, 1.0, 0.0, sin(GPSPointing[1][2]*c_Rad),  0.0, cos(GPSPointing[1][2]*c_Rad));
-		MRotation afterRot_x(1.0, 0.0, 0.0, 0.0, cos(GPSPointing[1][1]*c_Rad), sin(GPSPointing[1][1]*c_Rad), 0.0, -sin(GPSPointing[1][1]*c_Rad), cos(GPSPointing[1][1]*c_Rad));
+
+		MRotation afterRot_z(cos(GPSPointing[1][0]*c_Rad), -sin(GPSPointing[1][0]*c_Rad), 0.0, sin(GPSPointing[1][0]*c_Rad), cos(GPSPointing[1][0]*c_Rad), 0.0, 0.0, 0.0, 1.0);
+		MRotation afterRot_y(cos(GPSPointing[1][2]*c_Rad), 0.0, sin(GPSPointing[1][2]*c_Rad), 0.0, 1.0, 0.0, -sin(GPSPointing[1][2]*c_Rad),  0.0, cos(GPSPointing[1][2]*c_Rad));
+		MRotation afterRot_x(1.0, 0.0, 0.0, 0.0, cos(GPSPointing[1][1]*c_Rad), -sin(GPSPointing[1][1]*c_Rad), 0.0, sin(GPSPointing[1][1]*c_Rad), cos(GPSPointing[1][1]*c_Rad));
 		MRotation afterRot_xy = afterRot_x*afterRot_y;
 		MRotation afterRot = afterRot_z*afterRot_xy;
-		afterRot = RotGPSCryo*afterRot;
+		afterRot = afterRot*RotGPSCryo;
 
 		//Convert to Quaternion for interpolation, then assign new rotation matrix to event
 		MQuaternion qbefore(beforeRot);
@@ -516,23 +507,23 @@ MNCTAspect * MNCTAspectReconstruction::InterpolateAspect(MTime ReqTime, MNCTAspe
 
 
 		//Define new Elevation angles
-		double Z_Elevation = 90.0 - acos(interRot.GetZZ())*c_Deg;
-		double Y_Elevation = 90.0 - acos(interRot.GetZY())*c_Deg;
-		double X_Elevation = 90.0 - acos(interRot.GetZX())*c_Deg;
+		double Z_Elevation = asin(interRot.GetZZ())*c_Deg;
+		double Y_Elevation = asin(interRot.GetYZ())*c_Deg;
+		double X_Elevation = asin(interRot.GetXZ())*c_Deg;
 
 		//Define new Azimuth angles
 		double Z_Azimuth,X_Azimuth,Y_Azimuth;
-		MVector X_proj(interRot.GetXX(), interRot.GetYX(), 0);
+		MVector X_proj(interRot.GetXX(), interRot.GetXY(), 0);
 		X_proj = X_proj.Unitize();
 		X_Azimuth = acos(X_proj.GetY())*c_Deg;
 		if (X_proj.GetX() < 0.0) X_Azimuth = 360.0 - X_Azimuth;
 
-		MVector Y_proj(interRot.GetXY(), interRot.GetYY(), 0);
+		MVector Y_proj(interRot.GetYX(), interRot.GetYY(), 0);
 		Y_proj = Y_proj.Unitize();
 		Y_Azimuth = acos(Y_proj.GetY())*c_Deg;
 		if (Y_proj.GetX() < 0.0) Y_Azimuth = 360.0 - Y_Azimuth;
 
-		MVector Z_proj(interRot.GetXZ(), interRot.GetYZ(), 0);
+		MVector Z_proj(interRot.GetZX(), interRot.GetZY(), 0);
 		Z_proj = Z_proj.Unitize();
 		Z_Azimuth = acos(Z_proj.GetY())*c_Deg;
 		if (Z_proj.GetX() < 0.0) Z_Azimuth = 360.0 - Z_Azimuth;
@@ -574,39 +565,6 @@ MNCTAspect * MNCTAspectReconstruction::InterpolateAspect(MTime ReqTime, MNCTAspe
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-
-//Here we make trig functions that work with degrees.
-
-double MNCTAspectReconstruction::sine(double sine_input){
-    double sine_output = sin((sine_input * 3.14159265359)/180);
-    return sine_output;
-}
-double MNCTAspectReconstruction::arcsine(double arcsine_input){
-    double arcsine_output = ((asin(arcsine_input))*180)/3.14159265359;
-    return arcsine_output;
-}
-double MNCTAspectReconstruction::cosine(double cosine_input){
-    double cosine_output = cos((cosine_input * 3.14159265359)/180);
-    return cosine_output;
-}
-double MNCTAspectReconstruction::arccosine(double arccosine_input){
-    double arccosine_output = ((acos(arccosine_input))*180)/3.14159265359;
-    return arccosine_output;
-}
-double MNCTAspectReconstruction::tangent(double tangent_input){
-    double tangent_output = tan((tangent_input * 3.14159265359)/180);
-    return tangent_output;
-}
-double MNCTAspectReconstruction::arctangent(double arctangent_input){
-    double angle_in_degrees = ((atan(arctangent_input))*180)/3.14159265359;
-    return angle_in_degrees;
-}  
-double MNCTAspectReconstruction::arctangent2(double y, double x){
-    double angle_in_degrees = ((atan2(y,x))*180)/3.14159265359;
-    return angle_in_degrees;
-}
-
 
 //This is the Spherical Vincenty Formula. It is used to compute the exact great circle distance (in degrees)
 //between two points on a sphere if given the longitude and latitude of each.
