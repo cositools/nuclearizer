@@ -128,10 +128,23 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open calibration file "<<m_FileName<<endl;
     return false;
   }
-  
+
+
+
+  MParser Parser_Temp;
+  if ( m_TemperatureEnabled ) { 
+    if (Parser_Temp.Open(m_TempFileName, MFile::c_Read) == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open Temperature calibration file "<<m_TempFileName<<endl;  
+      return false;
+    }
+  }
+
   map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine; //Peak fits
   map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
-	map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
+  map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
+  map<MReadOutElementDoubleStrip, unsigned int> CT_ROEToLine; //Temperature Calibration Model
+
+
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
     if (NTokens < 2) continue;
@@ -148,8 +161,8 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
         } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
           CM_ROEToLine[R] = i;
         } else {
-					CR_ROEToLine[R] = i;
-				}
+	  CR_ROEToLine[R] = i;
+	}
       } else {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown read-out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
         return false;
@@ -157,7 +170,24 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     }
   }
   
-  
+  if (m_TemperatureEnabled) {
+    for (unsigned int i = 0; i < Parser_Temp.GetNLines(); ++i) {
+      unsigned int NTokens = Parser_Temp.GetTokenizerAt(i)->GetNTokens();
+      if (NTokens < 2) continue;
+      if (Parser_Temp.GetTokenizerAt(i)->IsTokenAt(0, "CT") == true) {
+        if (Parser_Temp.GetTokenizerAt(i)->IsTokenAt(1, "dss") == true) {
+          MReadOutElementDoubleStrip R;
+          R.SetDetectorID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
+          R.SetStripID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
+          R.IsPositiveStrip(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4) == 1);
+          CT_ROEToLine[R] = i;
+        }
+      }
+    }
+  }
+
+
+
   for (auto CM: CM_ROEToLine) {
     // If we have at least three data points, we store the calibration
     
@@ -206,24 +236,39 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     }
   }
   
-	for (auto CR: CR_ROEToLine) {
+  for (auto CR: CR_ROEToLine) {
 
-		unsigned int Pos = 5;
-		MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
-		CalibratorType.ToLower();
-		if (CalibratorType == "p1") {
-			double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-			double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-			TF1* resolutionfit = new TF1("P1","sqrt([0]+[1]*x) / 2.355",0.,2000.);
-			resolutionfit->FixParameter(0,f0);
-			resolutionfit->FixParameter(1,f1);
+    unsigned int Pos = 5;
+    MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
+    CalibratorType.ToLower();
+    if (CalibratorType == "p1") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P1","sqrt([0]+[1]*x) / 2.355",0.,2000.);
+      resolutionfit->FixParameter(0,f0);
+      resolutionfit->FixParameter(1,f1);
 
-			m_ResolutionCalibration[CR.first] = resolutionfit;
-		} else {
-			if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown resolution calibrator type ("<<CalibratorType<<") for strip"<<CR.first<<endl;
-			continue;
-		}
-	}
+      m_ResolutionCalibration[CR.first] = resolutionfit;
+    } else {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown resolution calibrator type ("<<CalibratorType<<") for strip"<<CR.first<<endl;
+      continue;
+    }
+  }
+
+
+  if (m_TemperatureEnabled) {
+    for (auto CT: CT_ROEToLine) {
+      unsigned int Pos = 5;
+      double f0 = Parser_Temp.GetTokenizerAt(CT.second)->GetTokenAtAsDouble(Pos);
+      double f1 = Parser_Temp.GetTokenizerAt(CT.second)->GetTokenAtAsDouble(++Pos);
+      TF1 * temperaturefit = new TF1("temperaturefit", "pol1", 0, 40);
+      temperaturefit->FixParameter(0, f0);
+      temperaturefit->FixParameter(1, f1);
+
+      m_TemperatureCalibration[CT.first] = temperaturefit;
+    }
+  }
+
 			
   return MModule::Initialize();
 }
@@ -240,31 +285,38 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     MNCTStripHit* SH = Event->GetStripHit(i);
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
     
-    //cout<<SH->GetPreampTemp()<<endl;
-    
     TF1* Fit = m_Calibration[R];
     TF1* FitRes = m_ResolutionCalibration[R];
+    double temp, ADCMod, newADC;
+
     if (Fit == 0) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
       Event->SetEnergyCalibrationIncomplete_BadStrip(true);
     } else {
-      double Energy = Fit->Eval(SH->GetADCUnits());
+
+      double Energy = 0;
+      if (m_TemperatureEnabled) {
+	TF1* FitTemp = m_TemperatureCalibration[R];
+	if (FitTemp == 0) {
+	  if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: temp-fit not found for read-out element "<<R<<endl;
+          Event->SetEnergyCalibrationIncomplete_BadStrip(true);
+        } else {
+          temp = SH->GetPreampTemp();
+	  ADCMod = FitTemp->Eval(temp);
+          newADC = (SH->GetADCUnits())/ADCMod;
+ 	  SH->SetADCUnits(newADC); 
+        }
+      } 
+       
+      Energy = Fit->Eval(SH->GetADCUnits());
+
       if (Energy < 0 && SH->GetADCUnits() > 100) {
         Event->SetEnergyCalibrationIncomplete(true);
         Energy = 0;
       } else if (Energy < 0) {
         Energy = 0;
       }
-      
-      //Preamp Temperature Correction
-      if ( m_TemperatureEnabled ) {
-        //cout<<"CHANGING ENERGY "<<Energy<<endl;
-        double temp = SH->GetPreampTemp();
-        //cout<<temp<<endl;
-        Energy = Energy/(-0.0075/23.*temp+1.012);
-        //cout<<Energy<<endl;
-      }
-      
+     
       
       SH->SetEnergy(Energy);
       if (FitRes == 0) {
@@ -292,34 +344,33 @@ bool MNCTModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
 
 double MNCTModuleEnergyCalibrationUniversal::GetEnergy(MReadOutElementDoubleStrip R, double ADC){
 	
-    TF1* Fit = m_Calibration[R];
-  
-		double Energy;
-		if (Fit == 0){ Energy = 0; }
-	  else {
-    	Energy = Fit->Eval(ADC);
-      if (Energy < 0 && ADC > 100) {
-        Energy = 0;
-      } else if (Energy < 0) {
-        Energy = 0;
-      }
-		}
+  TF1* Fit = m_Calibration[R];
+  double Energy;
+  if (Fit == 0){ Energy = 0; }
+  else {
+    Energy = Fit->Eval(ADC);
+    if (Energy < 0 && ADC > 100) {
+      Energy = 0;
+    } else if (Energy < 0) {
+      Energy = 0;
+    }
+  }
 
-	return Energy;
+  return Energy;
 
 }
 
 double MNCTModuleEnergyCalibrationUniversal::GetADC(MReadOutElementDoubleStrip R, double energy){
 
-	TF1* Fit = m_Calibration[R];
+  TF1* Fit = m_Calibration[R];
 
-	double ADC;
-	if (Fit == 0){ ADC = 0; }
-	else{
-		ADC = Fit->GetX(energy);
-	}
+  double ADC;
+  if (Fit == 0){ ADC = 0; }
+  else{
+    ADC = Fit->GetX(energy);
+  }
 
-	return ADC;
+  return ADC;
 
 }
 
@@ -334,7 +385,8 @@ void MNCTModuleEnergyCalibrationUniversal::Finalize()
 
   for (auto& F: m_Calibration) delete F.second;
   for (auto& F: m_ResolutionCalibration) delete F.second;
-  
+  for (auto& F: m_TemperatureCalibration) delete F.second;
+
   return;
 }
 
@@ -363,6 +415,11 @@ bool MNCTModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
   if (FileNameNode != 0) {
     m_FileName = FileNameNode->GetValue();
   }
+
+  MXmlNode* TempFileNameNode = Node->GetNode("TempFileName");
+  if (TempFileNameNode != 0) {
+    m_TempFileName = TempFileNameNode->GetValue();
+  }
   
   MXmlNode* PreampTemperatureNode = Node->GetNode("PreampTemperature");
   if( PreampTemperatureNode != NULL ){
@@ -382,10 +439,13 @@ MXmlNode* MNCTModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
+  new MXmlNode(Node, "TempFileName", m_TempFileName);
   new MXmlNode(Node, "PreampTemperature",(unsigned int) m_TemperatureEnabled);  
 
   return Node;
 }
+
+/////////////////////////////////////////////////////////////////////////////////
 
 double MNCTModuleEnergyCalibrationUniversal::LookupEnergyResolution(MNCTStripHit* SH, double Energy){
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());

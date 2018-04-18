@@ -69,9 +69,17 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
 
   // private members:
  private:
+
+
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
-  MGUIERBList* m_TemperatureMode;
+
+  int m_UseTempCal;
+  TGCheckButton* m_TempModeCB;
+  MGUIEFileSelector* m_TempFile;
+
+  enum ButtonIDs {c_TempFile};
+
 
 #ifdef ___CINT___
  public:

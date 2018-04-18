@@ -52,7 +52,12 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   void SetFileName(const MString& FileName) { m_FileName = FileName; }
   //! Get the calibration file name
   MString GetFileName() const { return m_FileName; }
-  
+ 
+  //! Set the Temperature calibration file name
+  void SetTempFileName(const MString& TempFileName) {m_TempFileName = TempFileName; }
+  //! Get the Temperature calibration file name
+  MString GetTempFileName() const {return m_TempFileName; }
+ 
   //! Create the expos
   virtual void CreateExpos();
   
@@ -92,6 +97,8 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
  protected:
   //! The calibration file name
   MString m_FileName;
+  //! The Temperature calibration file name
+  MString m_TempFileName;
   //! Preamp Temperature Correction
   bool m_TemperatureEnabled;
 
@@ -116,8 +123,10 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   //! Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
   //! Resolution Calibration map between read-out element and fitted function
-	map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
-   
+  map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
+  //! Temperature Calibration map between read-out element and fitted function
+  map<MReadOutElementDoubleStrip, TF1*> m_TemperatureCalibration;  
+ 
 #ifdef ___CINT___
  public:
   ClassDef(MNCTModuleEnergyCalibrationUniversal, 0) // no description

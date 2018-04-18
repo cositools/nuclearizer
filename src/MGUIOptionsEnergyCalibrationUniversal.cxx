@@ -73,12 +73,26 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
-  m_TemperatureMode = new MGUIERBList(m_OptionsFrame, "Enable/Disable preamp temperature correction");
-  m_TemperatureMode->Add("Disable");
-  m_TemperatureMode->Add("Enable");
-  m_TemperatureMode->SetSelected((int) dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection());
-  m_TemperatureMode->Create();
-  m_OptionsFrame->AddFrame(m_TemperatureMode, LabelLayout);
+  m_TempModeCB = new TGCheckButton(m_OptionsFrame, "Enable preamp temperature correction and read calibration from file:", c_TempFile);
+  m_TempModeCB->SetState((dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection() == 1) ?  kButtonDown : kButtonUp);
+  m_TempModeCB->Associate(this);
+  m_OptionsFrame->AddFrame(m_TempModeCB, LabelLayout);
+
+  m_UseTempCal = dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection();
+
+  TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
+
+  m_TempFile = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetTempFileName());
+  m_TempFile->SetFileType("Temperature calibration file", "*.txt");
+  m_OptionsFrame->AddFrame(m_TempFile, FileLabelLayout);
+
+  
+
+  if (m_UseTempCal) {
+    m_TempFile->SetEnabled(true);
+  } else {
+    m_TempFile->SetEnabled(false);
+  }
 
   PostCreate();
 }
@@ -98,6 +112,18 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       break;
+    case kCM_CHECKBUTTON:
+      switch (Parameter1) {
+        case c_TempFile:
+          if (m_TempModeCB->GetState() == kButtonDown) {
+            m_UseTempCal = 1;
+            m_TempFile->SetEnabled(true);
+          } else if (m_TempModeCB->GetState() == kButtonUp) {
+            m_UseTempCal = 0;
+            m_TempFile->SetEnabled(false);
+          }
+          break;
+	}
     default:
       break;
     }
@@ -123,14 +149,10 @@ bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
 	// Modify this to store the data in the module!
 
   dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->SetTempFileName(m_TempFile->GetFileName());
+
 	
-  if( m_TemperatureMode->GetSelected() == 0 ){      
-	//false -> 0     
-    dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(false);
-  } else if( m_TemperatureMode->GetSelected() == 1 ){
-    //true -> 1
-    dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(true);
-  }
+  if (dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection() != m_UseTempCal) dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(m_UseTempCal);
 
 
 
