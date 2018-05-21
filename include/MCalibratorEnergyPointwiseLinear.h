@@ -67,7 +67,7 @@ class MCalibratorEnergyPointwiseLinear : public MCalibratorEnergy
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibratorEnergyPointwiseLinear, 0) // no description
 #endif

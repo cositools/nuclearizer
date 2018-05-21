@@ -118,7 +118,7 @@ class MGUIExpoReceiver : public MGUIExpo
   TGLabel* m_OtherFramesLabel;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExpoReceiver, 1) // basic class for dialog windows
 #endif

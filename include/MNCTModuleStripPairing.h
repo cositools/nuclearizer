@@ -70,7 +70,7 @@ class MNCTModuleStripPairing : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleStripPairing, 0) // no description
 #endif

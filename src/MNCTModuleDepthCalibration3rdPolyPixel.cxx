@@ -49,7 +49,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MNCTModuleDepthCalibration3rdPolyPixel)
 #endif
 

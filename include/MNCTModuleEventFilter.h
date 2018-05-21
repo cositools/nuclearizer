@@ -127,7 +127,7 @@ class MNCTModuleEventFilter : public MModule
 
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleEventFilter, 0) // no description
 #endif

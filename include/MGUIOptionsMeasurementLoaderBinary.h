@@ -76,7 +76,7 @@ class MGUIOptionsMeasurementLoaderBinary : public MGUIOptions
   MGUIERBList* m_CoincidenceMode;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsMeasurementLoaderBinary, 1) // basic class for dialog windows
 #endif

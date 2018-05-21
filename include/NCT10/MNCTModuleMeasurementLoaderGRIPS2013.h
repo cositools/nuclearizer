@@ -88,7 +88,7 @@ class MNCTModuleMeasurementLoaderGRIPS2013 : public MNCTModuleMeasurementLoader
   unsigned long m_EndClock;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleMeasurementLoaderGRIPS2013, 0) // no description
 #endif

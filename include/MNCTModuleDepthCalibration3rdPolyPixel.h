@@ -73,6 +73,17 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MModule
  private:
 
 
+  // public members:
+ public:
+  // DetectorMap
+  struct DetectorMapping {
+    int CCNumber;
+    int DetectorNumber;
+    MString DetectorName;
+    int DisplayID;
+    MString DisplayName;
+  };
+   
 
   // protected members:
  protected:
@@ -95,21 +106,14 @@ class MNCTModuleDepthCalibration3rdPolyPixel : public MModule
   unsigned long ShareEventNumber0,ShareEventNumber1, SingleEventNumber,OtherEventNumber;
 
 
-  // DetectorMap
-  struct DetectorMapping {
-	int CCNumber;
-	int DetectorNumber;
-	MString DetectorName;
-	int DisplayID;
-	MString DisplayName;
-  };
+
 
   map<int, DetectorMapping> DetMap;
   vector<MDVolume*> m_DetectorVolumes;
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleDepthCalibration3rdPolyPixel, 0) // no description
 #endif

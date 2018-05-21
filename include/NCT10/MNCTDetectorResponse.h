@@ -139,7 +139,7 @@ class MNCTDetectorResponse
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTDetectorResponse, 0) // no description
 #endif

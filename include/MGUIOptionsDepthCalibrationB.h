@@ -73,7 +73,7 @@ class MGUIOptionsDepthCalibrationB : public MGUIOptions
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsDepthCalibrationB, 1) // basic class for dialog windows
 #endif

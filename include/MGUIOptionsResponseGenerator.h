@@ -81,7 +81,7 @@ class MGUIOptionsResponseGenerator : public MGUIOptions
   //! Select the mimrec configuration file
   MGUIEFileSelector* m_MimrecCfgFileSelector;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsResponseGenerator, 1) // basic class for dialog windows
 #endif

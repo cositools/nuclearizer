@@ -88,7 +88,7 @@ class MNCTModuleEventReconstruction : public MModule
   MRawEventAnalyzer* m_Analyzer;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleEventReconstruction, 0) // no description
 #endif

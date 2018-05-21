@@ -88,7 +88,7 @@ class MNCTModuleCrosstalkCorrection : public MModule
   bool m_IsCalibrationLoaded[12][2][3];
   double m_CrosstalkCoeffs[12][2][3][2];
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleCrosstalkCorrection, 0) // no description
 #endif

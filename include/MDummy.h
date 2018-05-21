@@ -56,7 +56,7 @@ class MDummy
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDummy, 0) // no description
 #endif

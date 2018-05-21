@@ -41,6 +41,7 @@ using namespace std;
 #include "TH2.h"
 #include "TCanvas.h"
 #include "TApplication.h"
+#include "TRandom.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -91,7 +92,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MAssembly)
 #endif
 
@@ -107,6 +108,9 @@ MAssembly::MAssembly()
   m_UseGui = true;
   
   m_Supervisor = MSupervisor::GetSupervisor();
+  
+  // Fixed seed to reproduce DEE results
+  gRandom->SetSeed(20170912);
   
   MString Cfg = "~/.nuclearizer.cfg";
   MFile::ExpandFileName(Cfg);
@@ -283,59 +287,6 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   }
   
   return true;
-}
-
-
-//////////////////////////////////////////////////////////////////////////////////
-
-
-MAssembly* g_Prg = 0;
-int g_NInterruptCatches = 1;
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Called when an interrupt signal is flagged
-//! All catched signals lead to a well defined exit of the program
-void CatchSignal(int a)
-{
-  if (g_Prg != 0 && g_NInterruptCatches-- > 0) {
-    cout<<"Catched signal Ctrl-C: sent the signal to interrupt, call Ctrl-C again for abort."<<endl;
-    g_Prg->SetInterrupt();
-  } else {
-    abort();
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! In the beginning Andreas created main and Andreas said "Let there be code!"
-//! After many years of coding and debugging, Andreas saw all that he had made, 
-//! and it was very good.
-int main(int argc, char** argv)
-{
-  // Main function... the beginning...
-
-  // Catch a user interrupt for graceful shutdown
-  signal(SIGINT, CatchSignal);
-
-  // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize();
-
-  TApplication* AppNuclearizer = new TApplication("Nuclearizer", 0, 0);
-
-  MAssembly Nuclearizer;
-  g_Prg = &Nuclearizer;
-  if (Nuclearizer.ParseCommandLine(argc, argv) == false) {
-    return 0;
-  } else {
-    AppNuclearizer->Run();
-  }  
-
-  return 0;
 }
 
 

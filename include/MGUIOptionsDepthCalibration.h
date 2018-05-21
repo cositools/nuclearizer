@@ -75,7 +75,7 @@ class MGUIOptionsDepthCalibration : public MGUIOptions
   MGUIEFileSelector* m_SplinesFileSelector;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsDepthCalibration, 1) // basic class for dialog windows
 #endif

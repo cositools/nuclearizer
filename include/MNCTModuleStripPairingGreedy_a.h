@@ -138,7 +138,7 @@ class MNCTModuleStripPairingGreedy_a : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleStripPairingGreedy_a, 0) // no description
 #endif

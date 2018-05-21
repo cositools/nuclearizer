@@ -92,7 +92,7 @@ class MNCTModuleMeasurementLoaderROA : public MNCTModuleMeasurementLoader
   MFileReadOuts m_ROAFile;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleMeasurementLoaderROA, 0) // no description
 #endif

@@ -92,7 +92,7 @@ class MNCTModuleChargeSharingCorrection : public MModule
   //unsigned long SingleHitNumber,OtherHitNumber;  
   //unsigned long ShareEventNumber0,ShareEventNumber1, SingleEventNumber,OtherEventNumber;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleChargeSharingCorrection, 0) // no description
 #endif

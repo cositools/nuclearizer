@@ -83,7 +83,7 @@ class MNCTStripEnergyDepth
   double m_Depth;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTStripEnergyDepth, 0) // no description
 #endif

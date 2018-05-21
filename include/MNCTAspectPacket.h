@@ -10,9 +10,12 @@
 
 // Standard libs:
 #include <deque>
+#include <string>
+#include <cstdint>
 using namespace std;
 
 // ROOT libs:
+#include "TROOT.h"
 
 // MEGAlib libs:
 
@@ -47,7 +50,7 @@ class MNCTAspectPacket{
       GPSWeek = 0;
 		GPSms = 0;
     }
-    
+    virtual ~MNCTAspectPacket();
     
 		int GPS_or_magnetometer; //0=GPS;1=magnetometer;2=no good data at
 		/*specified time (when the GetAspect, GetAspectGPS, and 
@@ -83,9 +86,9 @@ class MNCTAspectPacket{
 	
 	
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MNCTAspectReconstruction, 0) // no description
+   ClassDef(MNCTAspectPacket, 0) 
 #endif
 
 };

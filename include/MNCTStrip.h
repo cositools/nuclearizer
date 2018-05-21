@@ -89,7 +89,7 @@ class MNCTStrip
   int m_StripID;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTStrip, 0) // no description
 #endif

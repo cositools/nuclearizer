@@ -104,7 +104,7 @@ class MNCTPreprocessor
   // deal with the overflow problem (added by Jau-Shian Liang)
   unsigned long long m_tempCL;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTPreprocessor, 0) // no description
 #endif

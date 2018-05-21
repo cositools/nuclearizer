@@ -67,7 +67,7 @@ class MNCTInverseCrosstalkCorrection
   bool m_IsCalibrationLoaded[10][2][MAXNSKIP+1];
   double m_CrosstalkCoeffs[10][2][MAXNSKIP+1][2];
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTInverseCrosstalkCorrection, 0) // no description
 #endif

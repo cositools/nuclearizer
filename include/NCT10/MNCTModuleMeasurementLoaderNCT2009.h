@@ -90,7 +90,7 @@ class MNCTModuleMeasurementLoaderNCT2009 : public MNCTModuleMeasurementLoader
   //unsigned long m_EndClock;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleMeasurementLoaderNCT2009, 0) // no description
 #endif

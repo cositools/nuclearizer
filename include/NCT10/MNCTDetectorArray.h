@@ -223,7 +223,7 @@ class MNCTDetectorArray
   vector<MDVolume*> m_AllDetectorVolumes;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTDetectorArray, 0) // no description
 #endif

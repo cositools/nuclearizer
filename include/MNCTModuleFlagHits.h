@@ -84,7 +84,7 @@ class MNCTModuleFlagHits : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleFlagHits, 0) // no description
 #endif

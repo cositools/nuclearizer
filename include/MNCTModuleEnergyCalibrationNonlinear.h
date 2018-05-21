@@ -73,7 +73,7 @@ class MNCTModuleEnergyCalibrationNonlinear : public MModule
   double m_DefaultGain;
   double m_DefaultFwhm;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleEnergyCalibrationNonlinear, 0) // no description
 #endif

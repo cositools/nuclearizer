@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MReadOutAssembly__
-#define __MReadOutAssembly__
+#ifndef __MNuclearizerReadOutAssembly__
+#define __MNuclearizerReadOutAssembly__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -403,7 +403,7 @@ class MReadOutAssembly : public MReadOutSequence
   uint64_t m_AnalysisProgress;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutAssembly, 0) // no description
 #endif

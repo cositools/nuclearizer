@@ -22,6 +22,9 @@ using namespace std;
 class MNCTMath
 {
  public:
+  MNCTMath() {};
+  virtual ~MNCTMath() {};
+   
   static double gaussint(double x);
 //  static double interpol(const vector<double> &VectorY, const vector<double> &VectorX, double x);
 
@@ -59,7 +62,7 @@ class MNCTMath
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTMath, 0) // no description
 #endif

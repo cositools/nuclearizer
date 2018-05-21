@@ -87,7 +87,7 @@ class MNCTModuleSimulationLoader : public MModule, public MNCTDetectorEffectsEng
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleSimulationLoader, 0) // no description
 #endif

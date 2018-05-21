@@ -83,7 +83,7 @@ class MGUIOptionsSimulationLoader : public MGUIOptions
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsSimulationLoader, 1) // basic class for dialog windows
 #endif

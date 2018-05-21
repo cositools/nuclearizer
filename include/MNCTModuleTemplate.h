@@ -75,7 +75,7 @@ class MNCTModuleTemplate : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleTemplate, 0) // no description
 #endif

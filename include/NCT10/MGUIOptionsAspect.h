@@ -76,7 +76,7 @@ class MGUIOptionsAspect : public MGUIOptions
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsAspect, 1) // basic class for dialog windows
 #endif

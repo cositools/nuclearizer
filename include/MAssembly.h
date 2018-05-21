@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MAssembly__
-#define __MAssembly__
+#ifndef __MNuclearizerAssembly__
+#define __MNuclearizerAssembly__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,9 +99,9 @@ class MAssembly
   bool m_Interrupt;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MAssembly, 0) // image reconstruction management class 
+  ClassDef(MAssembly, 1) 
 #endif
 
 };

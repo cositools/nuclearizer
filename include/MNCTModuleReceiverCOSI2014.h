@@ -159,7 +159,7 @@ class MNCTModuleReceiverCOSI2014 : public MModule, public MNCTBinaryFlightDataPa
   ofstream m_Out;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleReceiverCOSI2014, 0) // no description
 #endif

@@ -89,7 +89,7 @@ class MNCTModuleDetectorCoincidence : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleDetectorCoincidence, 0) // no description
 #endif

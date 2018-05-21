@@ -134,7 +134,7 @@ class MNCTModuleSimulationLoader : public MModule, public MFileEventsSim
   int m_NMultipleDet;
   int m_NGuardring;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleSimulationLoader, 0) // no description
 #endif

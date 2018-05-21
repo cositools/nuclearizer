@@ -178,7 +178,7 @@ class MNCTModuleAspect : public MModule
   vector< vector<double> > m_GCUTimeTable_4sec;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleAspect, 0) // no description
 #endif

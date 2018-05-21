@@ -108,7 +108,7 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   double m_Max;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExpoDepthCalibration, 1) // basic class for dialog windows
 #endif

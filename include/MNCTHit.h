@@ -180,7 +180,7 @@ class MNCTHit
   
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTHit, 0) // no description
 #endif

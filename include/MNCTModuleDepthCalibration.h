@@ -124,7 +124,7 @@ class MNCTModuleDepthCalibration : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleDepthCalibration, 0) // no description
 #endif

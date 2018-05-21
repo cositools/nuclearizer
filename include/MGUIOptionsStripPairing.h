@@ -72,7 +72,7 @@ class MGUIOptionsStripPairing : public MGUIOptions
   //! Select the mode
   MGUIERBList* m_Mode;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsStripPairing, 1) // basic class for dialog windows
 #endif

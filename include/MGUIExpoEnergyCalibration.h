@@ -85,7 +85,7 @@ class MGUIExpoEnergyCalibration : public MGUIExpo
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExpoEnergyCalibration, 1) // basic class for dialog windows
 #endif

@@ -79,7 +79,7 @@ class MNCTCoincidenceVolume
   double m_Threshold;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTMNCTCoincidenceVolume, 0) // no description
 #endif

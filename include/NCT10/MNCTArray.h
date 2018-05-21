@@ -59,7 +59,7 @@ class MNCTArray
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTArray, 0) // no description
 #endif

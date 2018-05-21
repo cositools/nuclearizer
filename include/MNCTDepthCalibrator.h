@@ -38,8 +38,10 @@
 class MNCTDepthCalibrator
 {
 	public:
-		//! Default constructor
-		MNCTDepthCalibrator();
+    //! Default constructor
+    MNCTDepthCalibrator();
+    //! Default destructor
+    virtual ~MNCTDepthCalibrator() {};
 		//! Load the coefficients file (i.e. fit parameters for each pixel)
 		bool LoadCoeffsFile(MString FName);
 		//! Return the coefficients for a pixel
@@ -73,7 +75,7 @@ class MNCTDepthCalibrator
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTDepthCalibrator, 0) // no description
 #endif

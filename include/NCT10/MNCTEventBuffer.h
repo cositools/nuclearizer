@@ -74,7 +74,7 @@ class MNCTEventBuffer
   // internal iterator
   deque<MReadOutAssembly*>::iterator Event_i;
  
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTEventBuffer, 0) // no description
 #endif

@@ -127,7 +127,7 @@ class MNCTModuleEnergyCalibrationUniversal : public MModule
   //! Temperature Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, TF1*> m_TemperatureCalibration;  
  
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleEnergyCalibrationUniversal, 0) // no description
 #endif

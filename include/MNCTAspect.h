@@ -248,7 +248,7 @@ class MNCTAspect
 
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTAspect, 0) // no description
 #endif

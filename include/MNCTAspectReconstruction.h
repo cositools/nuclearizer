@@ -97,7 +97,7 @@ class MNCTAspectReconstruction
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 	public:
 		ClassDef(MNCTAspectReconstruction, 0) // no description
 #endif

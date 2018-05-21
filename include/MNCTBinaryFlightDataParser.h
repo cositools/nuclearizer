@@ -179,6 +179,7 @@ class MNCTBinaryFlightDataParser
   int m_StripMap[8][10];
   int m_CCMap[12];
 
+public:
   class trigger{
 
 	  public:
@@ -261,7 +262,7 @@ class MNCTBinaryFlightDataParser
 
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTBinaryFlightDataParser, 0) // no description
 #endif

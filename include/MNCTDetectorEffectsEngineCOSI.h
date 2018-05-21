@@ -45,7 +45,7 @@ public:
   //! Default constructor
   MNCTDetectorEffectsEngineCOSI();
   //! Default destructor
-  ~MNCTDetectorEffectsEngineCOSI();
+  virtual ~MNCTDetectorEffectsEngineCOSI();
   
   //! Set the simulation file name 
   void SetSimulationFileName(const MString& FileName) { m_SimulationFileName = FileName; }
@@ -112,8 +112,10 @@ protected:
   double NoiseShieldEnergy(double energy, MString ShieldName);
   //! Read and initialize charge loss coefficients
   void InitializeChargeLoss();
+
   
-  
+
+public:
   //! Tiny helper class for MNCTDetectorEffectsEngineCOSI describing a special strip hit
   class MNCTDEEStripHit
   {
@@ -151,8 +153,10 @@ protected:
     int m_OppositeStrip;
   };
   
+protected:
   //! Convert Energy to ADC value
   int EnergyToADC(MNCTDEEStripHit& Hit, double energy);
+  
   
 protected:  
   
@@ -244,7 +248,7 @@ private:
   long m_NumShieldCounts;
   
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MNCTDetectorEffectsEngineCOSI, 0) // no description
   #endif

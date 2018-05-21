@@ -118,7 +118,7 @@ class MNCTModuleMeasurementLoaderBinary : public MModule, public MNCTBinaryFligh
   bool m_FileIsDone;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleMeasurementLoaderBinary, 0) // no description
 #endif

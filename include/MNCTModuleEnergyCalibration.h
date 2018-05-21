@@ -70,7 +70,7 @@ class MNCTModuleEnergyCalibration : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleEnergyCalibration, 0) // no description
 #endif

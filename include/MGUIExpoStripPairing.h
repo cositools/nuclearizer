@@ -85,7 +85,7 @@ class MGUIExpoStripPairing : public MGUIExpo
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExpoStripPairing, 1) // basic class for dialog windows
 #endif

@@ -49,15 +49,17 @@ CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
 
 # Names of the program
 NUCLEARIZER_PRG = $(BN)/nuclearizer
-NUCLEARIZER_CXX_MAIN = src/MAssembly.cxx
+NUCLEARIZER_CXX_MAIN = src/MNuclearizerMain.cxx
 
 # The nuclearizer library
 NUCLEARIZER_LIBS = \
 $(LB)/magfld.o \
+$(LB)/MAssembly.o \
 $(LB)/MReadOutAssembly.o \
 $(LB)/MNCTDetectorEffectsEngineCOSI.o \
 $(LB)/MNCTMath.o \
 $(LB)/MNCTAspect.o \
+$(LB)/MNCTAspectPacket.o \
 $(LB)/MNCTAspectReconstruction.o \
 $(LB)/MNCTHit.o \
 $(LB)/MNCTTimeAndCoordinate.o \
@@ -118,7 +120,8 @@ $(LB)/MNCTModuleResponseGenerator.o\
 
 
 NUCLEARIZER_DEP_FILES := $(NUCLEARIZER_LIBS:.o=.d)
-NUCLEARIZER_H_FILES := $(addprefix inc/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
+NUCLEARIZER_H_FILES := $(addprefix $(NUCLEARIZER)/include/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
+
 
 FRETALON_DIR          := $(MEGALIB)/src/fretalon/framework
 FRETALON_CXX_MAIN     := $(FRETALON_DIR)/src/MAssembly.cxx $(FRETALON_DIR)/src/MReadOutAssembly.cxx
@@ -132,13 +135,23 @@ FRETALON_DEP_FILES    := $(FRETALON_LIBS:.o=.d)
 # The shared library
 NUCLEARIZER_SHARED_LIB = $(LB)/libNuclearizer.$(DLL)
 
+# The main program
+NUCLEARIZER_CXX_MAIN := $(NUCLEARIZER)/src/MNuclearizerMain.cxx
+
 # External libraries
 # MEGAlib
-#ALLLIBS = -lCommonMisc -lCommonGui -lGeomega -lSivan -lRevan -lRevanGui -lSpectralyzeGui -lSpectralyze  -L$(MEGALIB)/lib -L$(LB) 
-ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lNeuralNet -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
+ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
 # ROOT
 ALLLIBS += -lMathCore
 
+
+
+NUCLEARIZER_DICT_NAME=Nuclearizer_Dictionary
+NUCLEARIZER_DICT=$(LB)/$(NUCLEARIZER_DICT_NAME).cxx
+NUCLEARIZER_DICT_LIB=$(LB)/$(NUCLEARIZER_DICT_NAME).o
+NUCLEARIZER_LINKDEF=$(LB)/$(NUCLEARIZER_DICT_NAME)_LinkDef.h
+NUCLEARIZER_ROOTMAP=$(LB)/libNuclearizer.rootmap
+NUCLEARIZER_ROOTPCM=libNuclearizer_rdict.pcm
 
 #----------------------------------------------------------------
 # Command rules
@@ -162,6 +175,7 @@ clean:
 	@-rm -f $(FRETALON_LIBS) $(FRETALON_DEP_FILES)
 	@-rm -f $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DEP_FILES)
 	@-rm -f $(NUCLEARIZER_PRG)
+	@-rm -f $(NUCLEARIZER_DICT) $(NUCLEARIZER_LINKDEF) $(NUCLEARIZER_ROOTMAP) $(NUCLEARIZER_ROOTPCM)
 	@-rm -f *~ include/*~ src/*~
 	@$(MAKE) clean -C apps
 
@@ -185,9 +199,20 @@ $(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(NUCLEARIZER_SHARED_LIB): $(FRETALON_LIBS) $(NUCLEARIZER_LIBS)
+$(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
+	@echo "Generating LinkDef ..."
+	@$(BN)/generatelinkdef -o $(NUCLEARIZER_LINKDEF) -i $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES)
+	@echo "Generating dictionary ..."
+	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
+	@mv $(NUCLEARIZER_ROOTPCM) $(LB)
+
+$(NUCLEARIZER_DICT_LIB): $(NUCLEARIZER_DICT)
+	@echo "Compiling dictionary ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(NUCLEARIZER_SHARED_LIB): $(FRETALON_LIBS) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DICT_LIB)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_DICT_LIB) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
 
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "

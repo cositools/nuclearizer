@@ -83,7 +83,7 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
   //! Select if we save the file to roa
   MGUIEFileSelector* m_FileSelector;
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsReceiverCOSI2014, 1) // basic class for dialog windows
 #endif

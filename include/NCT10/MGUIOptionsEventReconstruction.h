@@ -70,7 +70,7 @@ class MGUIOptionsEventReconstruction : public MGUIOptions
   MGUIEFileSelector* m_FileSelector;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsEventReconstruction, 1) // basic class for dialog windows
 #endif

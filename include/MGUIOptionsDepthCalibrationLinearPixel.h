@@ -72,7 +72,7 @@ class MGUIOptionsDepthCalibrationLinearPixel : public MGUIOptions
   MGUIEFileSelector* m_FileSelector;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsDepthCalibrationLinearPixel, 1) // basic class for dialog windows
 #endif

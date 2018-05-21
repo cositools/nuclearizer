@@ -83,7 +83,7 @@ class MNCTModuleMeasurementLoader : public MModule, public MFileEvents
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleMeasurementLoader, 0) // no description
 #endif

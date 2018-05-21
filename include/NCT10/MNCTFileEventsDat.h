@@ -108,7 +108,7 @@ class MNCTFileEventsDat : public MFileEvents
   vector< vector<double> > m_SegmentCorrectionTable;
   int m_Segment;
  
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTFileEventsDat, 0) // no description
 #endif

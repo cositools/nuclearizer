@@ -171,7 +171,7 @@ class MNCTModuleEventSaver : public MModule
   //! The numebr of simulated events
   long m_NumberOfSimulatedEvents;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleEventSaver, 0) // no description
 #endif

@@ -146,7 +146,7 @@ private:
   static const int c_Options    = 500;
   static const int c_Change     = 600;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 public:
   ClassDef(MGUINuclearizerMain, 0) // main window of the Nuclearizer GUI
 #endif

@@ -75,7 +75,7 @@ class MGUIOptionsEventFilter : public MGUIOptions
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsEventFilter, 1) // basic class for dialog windows
 #endif

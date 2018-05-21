@@ -100,7 +100,7 @@ class MNCTFile : public MFileEvents
 
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTFile, 0) // no description
 #endif

@@ -119,7 +119,7 @@ class MNCTModuleResponseGenerator : public MModule
   //! The response
   MResponseBuilder* m_Response;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleResponseGenerator, 0) // no description
 #endif

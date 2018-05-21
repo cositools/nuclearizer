@@ -79,7 +79,7 @@ class MNCTModuleDepthCalibrationLinearStrip : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleDepthCalibrationLinearStrip, 0) // no description
 #endif

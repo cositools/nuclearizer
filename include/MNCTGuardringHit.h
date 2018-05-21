@@ -81,7 +81,7 @@ class MNCTGuardringHit
   MVector m_Position;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTGuardringHit, 0) // no description
 #endif

@@ -87,7 +87,7 @@ class MNCTModuleDumpEvent : public MModule
   //!
   ofstream m_OutFile;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTModuleDumpEvent, 0) // no description
 #endif

@@ -86,7 +86,7 @@ class MGUIOptionsEventSaver : public MGUIOptions
   //! Entry field for the time after which to split the file
   MGUIEEntry* m_SplitFileTime;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsEventSaver, 1) // basic class for dialog windows
 #endif

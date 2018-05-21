@@ -72,7 +72,7 @@ class MNCTTimeAndCoordinate
   MNCTTimeAndCoordinate(double time, double MJDZero = c_UnixTimeMJD, double longitude = 0, double latitude = 0);
 
   //!
-  ~MNCTTimeAndCoordinate();
+  virtual ~MNCTTimeAndCoordinate();
 
   //! set or get time zero as MJD
   void SetMJDZero(double MJDZero){m_MJDZero = MJDZero;}
@@ -173,7 +173,7 @@ class MNCTTimeAndCoordinate
   // Rotation matrix for converting a vector in cryostat coordinates to dGPS coordinates
   TMatrixD m_Cryo_to_dGPS_Rotation;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTTimeAndCoordinate, 0) // no description
 #endif

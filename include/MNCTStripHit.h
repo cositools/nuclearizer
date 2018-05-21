@@ -152,7 +152,7 @@ class MNCTStripHit
   //! Origin IAs from simulations
   vector<int> m_Origins;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTStripHit, 0) // no description
 #endif

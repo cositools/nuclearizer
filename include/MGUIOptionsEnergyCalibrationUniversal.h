@@ -74,6 +74,7 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
 
+
   int m_UseTempCal;
   TGCheckButton* m_TempModeCB;
   MGUIEFileSelector* m_TempFile;
@@ -81,7 +82,8 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
   enum ButtonIDs {c_TempFile};
 
 
-#ifdef ___CINT___
+
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsEnergyCalibrationUniversal, 1) // basic class for dialog windows
 #endif

@@ -39,6 +39,8 @@ class MNCTDepthCalibratorB
 	public:
 		//! Default constructor
 		MNCTDepthCalibratorB();
+    //! Default destructor
+    virtual ~MNCTDepthCalibratorB() {};
 		//! Load calibration data
 		bool LoadLookupTables(MString Fname);
 		//! Check if lookup table exists for a pixel
@@ -53,7 +55,7 @@ class MNCTDepthCalibratorB
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MNCTDepthCalibratorB, 0) // no description
 #endif
