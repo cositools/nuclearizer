@@ -213,15 +213,15 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
     CalibratorType.ToLower();
     
-    //Eventually, I'll be including other possible fits, but for now, let's just get this working with poly3...
+    //Eventually, I'll be including other possible fits, but for now, we've just include poly3 and poly4
     if (CalibratorType == "poly3") {
       double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       
-			//From the fit parameters I just extracted from the .ecal file, I can define a function
-      TF1* melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8000.);
+      //From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly3","[0] + [1]*x + [2]*x^2 + [3]*x^3", 0., 8191.);
       melinatorfit->FixParameter(0, a0);
       melinatorfit->FixParameter(1, a1);
       melinatorfit->FixParameter(2, a2);
@@ -230,6 +230,24 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
       //Define the map by saving the fit function I just created as a map to the current ReadOutElement
       m_Calibration[CM.first] = melinatorfit;
       
+    } else if (CalibratorType == "poly4") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a4 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+
+      //From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1 * melinatorfit = new TF1("poly4","[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 0., 8191.);
+      melinatorfit->FixParameter(0, a0);
+      melinatorfit->FixParameter(1, a1);
+      melinatorfit->FixParameter(2, a2);
+      melinatorfit->FixParameter(3, a3);
+      melinatorfit->FixParameter(4, a4);
+
+      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown calibrator type ("<<CalibratorType<<") for strip"<<CM.first<<endl;
       continue;
@@ -244,7 +262,7 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     if (CalibratorType == "p1") {
       double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
       double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-      TF1* resolutionfit = new TF1("P1","sqrt([0]+[1]*x) / 2.355",0.,2000.);
+      TF1* resolutionfit = new TF1("P1","([0]+[1]*x) / 2.355",0.,2000.);
       resolutionfit->FixParameter(0,f0);
       resolutionfit->FixParameter(1,f1);
 
