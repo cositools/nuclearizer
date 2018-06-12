@@ -525,13 +525,13 @@ void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> Strip
         Constant[j] += a1/2.;
       }
       // Skip-2 neighbor contributions
-      if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+3))
-      {
-        Matrix[i][j] += b2;
-        Matrix[j][i] += b2;
-        Constant[i] += a2/2.;
-        Constant[j] += a2/2.;
-      }
+     // if (StripHits[j]->GetStripID()==(StripHits[i]->GetStripID()+3))
+     // {
+     //   Matrix[i][j] += b2;
+     //   Matrix[j][i] += b2;
+     //   Constant[i] += a2/2.;
+     //   Constant[j] += a2/2.;
+     // }
     }
   }
   if (debug_matrices && N>=2) Constant.Print();
