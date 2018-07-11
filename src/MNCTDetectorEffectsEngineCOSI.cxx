@@ -489,9 +489,9 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
     }
 
+		// Step (3): Calculate and noise ADC values including cross talk, charge loss, charge sharing, ADC overflow!
 
- 
-    // (3c) Noise energy deposit
+    // (3a) Add energy of all subhits to get energy of each striphit
     for (MNCTDEEStripHit& Hit: MergedStripHits) { 
      double Energy = 0;
       for (MNCTDEEStripHit SubHit: Hit.m_SubStripHits) {
@@ -501,6 +501,17 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       Hit.m_Energy = Energy;
     }
 
+		// (3b) Charge sharing
+		// (3c) Charge loss
+ 
+
+		// (3d) Cross talk
+
+		//Group striphits by detector and side
+
+		//Apply crosstalk correction
+
+		// (3e) Give each striphit an noised ADC value; handle ADC overflow
 		list<MNCTDEEStripHit>::iterator A = MergedStripHits.begin();
 		while (A != MergedStripHits.end()) {
 			double Energy = (*A).m_Energy;
@@ -513,7 +524,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			}
 		}
 
-    // (3d) Handle ADC overflow
 
 
     // Step (4): Apply thresholds and triggers including guard ring hits
