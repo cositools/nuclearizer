@@ -1107,7 +1107,7 @@ void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
     MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
     CalibratorType.ToLower();
 
-    //for now Carolyn just does poly3, so I am only doing that one
+    //for now Carolyn just does poly3 and poly4, so I am only doing those one
     if (CalibratorType == "poly3"){
       double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
@@ -1115,11 +1115,29 @@ void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
       double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
 
       //from fit parameters, define function
-      TF1* melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8000.);
+      TF1* melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8162.);
       melinatorfit->FixParameter(0,a0);
       melinatorfit->FixParameter(1,a1);
       melinatorfit->FixParameter(2,a2);
       melinatorfit->FixParameter(3,a3);
+
+      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_EnergyCalibration[CM.first] = melinatorfit;
+
+    } else if (CalibratorType == "poly4"){
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a4 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+    	
+      //from fit parameters, define function
+      TF1* melinatorfit = new TF1("poly4","[0]+[1]*x+[2]*x^2+[3]*x^3+[4]*x^4",0.,8162.);
+      melinatorfit->FixParameter(0,a0);
+      melinatorfit->FixParameter(1,a1);
+      melinatorfit->FixParameter(2,a2);
+      melinatorfit->FixParameter(3,a3);	
+      melinatorfit->FixParameter(4,a4);
 
       //Define the map by saving the fit function I just created as a map to the current ReadOutElement
       m_EnergyCalibration[CM.first] = melinatorfit;
@@ -1134,7 +1152,7 @@ void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
     if (CalibratorType == "p1"){
       double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
       double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-      TF1* resolutionfit = new TF1("P1","sqrt([0]+[1]*x)",0.,2000.);
+      TF1* resolutionfit = new TF1("P1","[0]+[1]*x",0.,2000.);
       resolutionfit->SetParameter(0,f0);
       resolutionfit->SetParameter(1,f1);
       
