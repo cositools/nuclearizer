@@ -196,12 +196,14 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
   # Copy the nuclearizer file
   scp -P ${REMOTEPORT[$m]} /tmp/${NUCFILE} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:
-  rm /tmp/${NUCFILE}
   
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dnuclearizer-${REMOTENAME[$m]}.log 2>&1 &
   sleep 5 # Sleep a bit in case the machines share storage
   
 done
+
+# Remove the temporary nuclearizer file
+rm /tmp/${NUCFILE}
 
 echo " "
 echo "Waiting for all remote processes to finish..."
