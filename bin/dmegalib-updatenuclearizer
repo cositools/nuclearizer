@@ -133,22 +133,22 @@ tar xvfz ~/${NUCFILE}
 rm ~/${NUCFILE}
 
 # Check if MEGAlib is installed
+. ~/.bash_local
 type cosima >/dev/null 2>&1
-if [ $? -ne 0 ]; then
+if [ \$? -ne 0 ]; then
   echo "DMEGALIBERROR 3"
   exit 3
 fi 
 
 
 # Compile
-. ~/.bash_local
 export NUCLEARIZER=${MEGALIBPATH}/Nuclearizer
-export
 make -j8
 if [ "\$?" != "0" ]; then
   echo "DMEGALIBERROR 4"
   exit 4
 fi
+echo "Compiled"
 
 # Setup environment
 SOURCE="export NUCLEARIZER=${MEGALIBPATH}/Nuclearizer"; 
@@ -157,24 +157,25 @@ if [[ -f ~/.bash_local ]]; then
   HASIT=\$(grep "\${SOURCE}" ~/.bash_local); 
 fi; 
 if [ "\${HASIT}" == "" ]; then 
-  echo \${SOURCE} >> ~/.bash_local; 
+  echo "\${SOURCE}" >> ~/.bash_local; 
 fi
-SOURCE='export PATH=${NUCLEARIZER}/bin:${PATH}'; 
+SOURCE="export PATH=\${NUCLEARIZER}/bin:\${PATH}"; 
 HASIT=""; 
 if [[ -f ~/.bash_local ]]; then 
   HASIT=\$(grep "\${SOURCE}" ~/.bash_local); 
 fi; 
 if [ "\${HASIT}" == "" ]; then 
-  echo \${SOURCE} >> ~/.bash_local; 
+  echo 'export PATH=\${NUCLEARIZER}/bin:\${PATH}' >> ~/.bash_local; 
 fi
 
 # Check if nuclearizer exists
 . ~/.bash_local
 type nuclearizer >/dev/null 2>&1
-if [ $? -ne 0 ]; then
+if [ \$? -ne 0 ]; then
   echo "DMEGALIBERROR 5"
   exit 5
 fi 
+echo "Nuclearizer exists"
 
 
 exit 0
@@ -244,7 +245,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
   
   # Only keep the ones with error messages
-  rm -rf /tmp/dnuclearizer-${REMOTENAME[$m]}.log
+  #rm -rf /tmp/dnuclearizer-${REMOTENAME[$m]}.log
   
   echo " * ${REMOTENAME[$m]} - SUCCESS"
   
