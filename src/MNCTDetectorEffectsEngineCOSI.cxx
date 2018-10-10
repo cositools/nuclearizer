@@ -1185,12 +1185,15 @@ bool MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
       }
     }
   }
+  
+  MString Name = m_DeadStripFileName;
+  MFile::ExpandFileName(Name);
 
   ifstream deadStripFile;
-  deadStripFile.open(m_DeadStripFileName);
+  deadStripFile.open(Name);
 
   if (!deadStripFile.is_open()) {
-    cout << "Error opening dead strip file" << endl;
+    cout << "Error opening dead strip file: " << Name << endl;
     return false;
   }
 
