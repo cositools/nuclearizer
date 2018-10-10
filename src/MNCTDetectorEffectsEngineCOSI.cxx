@@ -124,14 +124,14 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   }
   
   //load energy calibration information
-  ParseEnergyCalibrationFile();
+  if (ParseEnergyCalibrationFile() == false) return false;
   //load dead strip information
-  ParseDeadStripFile();
+  if (ParseDeadStripFile() == false) return false;
   //load threshold information
-  ParseThresholdFile();
+  if (ParseThresholdFile() == false) return false;
 
   //load charge loss coefficients
-  //InitializeChargeLoss();
+  //if (InitializeChargeLoss() == false) return false;;
 
 	//initialize dead time
 	for (int i=0; i<12; i++){
@@ -938,7 +938,7 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
 
 
 //! Calculate new summed energy of two strips affected by charge loss
-void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
+bool MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
 { 
 
   vector<string> filenames;
@@ -972,6 +972,9 @@ void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
           }
         }
       }
+    } else {
+      cout << "Unable to open charge-loss file " << filenames.at(f) << endl;
+      return false;
     }
 
     clFile.close();
@@ -1008,6 +1011,8 @@ void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
       delete f;
     }
   }
+  
+  return true;
 }
 
 
@@ -1015,12 +1020,12 @@ void MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
 
 
 //! Read in thresholds
-void MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
+bool MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 {
   MParser Parser;
   if (Parser.Open(m_ThresholdFileName, MFile::c_Read) == false) {
     cout << "Unable to open threshold file " << m_ThresholdFileName << endl;
-    return;
+    return false;
   }
 
   for (unsigned int i=0; i<Parser.GetNLines(); i++) {
@@ -1043,6 +1048,8 @@ void MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 		m_FSTNoise[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
 
   }
+  
+  return true;
 }
 
 
@@ -1050,12 +1057,12 @@ void MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 
 
 //! Parse ecal file: should be done once at the beginning to save all the poly3 coefficients
-void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
+bool MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
 {
   MParser Parser;
   if (Parser.Open(m_EnergyCalibrationFileName, MFile::c_Read) == false){
     cout << "Unable to open calibration file " << m_EnergyCalibrationFileName << endl;
-    return;
+    return false;
   }
 
   map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
@@ -1159,6 +1166,8 @@ void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
       m_ResolutionCalibration[CR.first] = resolutionfit;
     }
   }
+  
+  return true;
 }
 
 
@@ -1166,7 +1175,7 @@ void MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
 
 
 //! Parse the dead strip file
-void MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
+bool MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
 {  
   //initialize m_DeadStrips: set all values to 0
   for (int i=0; i<12; i++) {
@@ -1182,7 +1191,7 @@ void MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
 
   if (!deadStripFile.is_open()) {
     cout << "Error opening dead strip file" << endl;
-    return;
+    return false;
   }
 
   string line;
@@ -1210,6 +1219,8 @@ void MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
     //any dead strips have their value in m_DeadStrips set to 1 
     m_DeadStrips[det][side][strip] = 1;
   }
+  
+  return true;
 }
 
 

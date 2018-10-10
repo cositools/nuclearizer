@@ -103,15 +103,15 @@ public:
   
 protected:
   //! Read in and parse energy calibration file
-  void ParseEnergyCalibrationFile();
+  bool ParseEnergyCalibrationFile();
   //! Read in and parse thresholds file
-  void ParseThresholdFile();
+  bool ParseThresholdFile();
   //! Read in and parse dead strip file
-  void ParseDeadStripFile();
+  bool ParseDeadStripFile();
   //! noise shield energy
   double NoiseShieldEnergy(double energy, MString ShieldName);
   //! Read and initialize charge loss coefficients
-  void InitializeChargeLoss();
+  bool InitializeChargeLoss();
 
   
 
