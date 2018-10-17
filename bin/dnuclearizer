@@ -10,7 +10,7 @@ trap CleanUp SIGTERM SIGINT
 CleanUp() {
   echo " "
   echo " "
-  echo "Received command to shut down gracefully..."
+  echo "Received command to shut down... Please wait until all remote jobs have finished..."
   echo " "
   exit 1
 }
@@ -195,12 +195,18 @@ cd ${HERE}
 
 # Check if we can continue:
 if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
-  TARGETFILES=$( ls -1 ${TARGETDIR}/*.rsp )
+  TARGETFILES=$( ls -1 ${TARGETDIR}/*.evta* )
   NOTDONE=()
   
   for (( d=0; d<${#DATAFILES[*]}; d++ )); do
     if [[ $(( d % 100 )) == 0 ]]; then echo "Analyzing $d/${#DATAFILES[*]}..."; fi
-
+            
+    OUTFILE=${DATAFILES[$d]}
+    OUTFILE=${OUTFILE/.sim.gz/}
+    OUTFILE=${OUTFILE/.sim/}
+    OUTFILE=${OUTFILE/.dat.gz/}
+    OUTFILE=${OUTFILE/.dat/}
+            
     if [[ ! ${TARGETFILES} =~ ${OUTFILE} ]]; then
       NOTDONE+=( "${DATAFILES[$d]}" )
     fi
@@ -294,16 +300,21 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     COMMAND=""
     COMMAND+=". ~/.bash_local;"
     COMMAND+="if [[ ! -x \${MEGALIB}/bin/nuclearizer ]]; then echo \"ERROR: Nuclearizer not fully installed\"; exit 1; fi; "
-    COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
-    COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
-    COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
-    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
-    COMMAND+="if [[ ! -f ${NUCLEARIZERCFG} ]] || [[ ! -r ${NUCLEARIZERCFG} ]]; then echo \"Nuclearizer configuration file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \"ERROR: .dcosima.cfg configuration file not found.\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"ERROR: Failed to access remote data directory!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"ERROR: Failed to create target directory\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"ERROR: Data file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${NUCLEARIZERCFG} ]] || [[ ! -r ${NUCLEARIZERCFG} ]]; then echo \"ERROR: Nuclearizer configuration file not found or not readable!\"; exit 1; fi; "
     COMMAND+="echo \"Available\"; exit 0; "
     
-    # Now run everything on the remote machine
-    ANSWER=$(ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
-    if [[ ${ANSWER} == "" ]]; then ANSWER="Check failed with unknown error!"; fi
+    # Now check the remote machine
+    ANSWER=$(timeout 6 ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    if [[ $? == "124" ]]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ERROR: Slow conection"
+      MACHINES[$m]=""
+      continue
+    fi      
+    if [[ ${ANSWER} == "" ]]; then ANSWER="ERROR: Check failed with the above error!"; fi
     if [[ ${ANSWER} != "Available" ]]; then     
       echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
       MACHINES[$m]=""
@@ -367,9 +378,11 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
        
           REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
-            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch nuclearizer!"
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch nuclearizer!" | ${LOGGING}
             MACHINES[$m]=""
             continue
+          else
+            echo " * Instance ${LAUNCHED} launched on ${MACHINES[$m]}" | ${LOGGING}
           fi        
         
           STARTED=1

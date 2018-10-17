@@ -143,6 +143,7 @@ fi
 
 # Compile
 export NUCLEARIZER=${MEGALIBPATH}/Nuclearizer
+make clean
 make -j8
 if [ "\$?" != "0" ]; then
   echo "DMEGALIBERROR 4"
