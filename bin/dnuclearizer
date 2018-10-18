@@ -290,11 +290,13 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
     
     # Do a quick test if the machine is availble:
-    REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    REMOTENAME=`ssh -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
+      echo " * Remote machine: ${MACHINES[$m]}: NOT ACCESSIBLE OR TOO SLOW TO ANSWER"
       MACHINES[$m]=""
       continue
+    else
+      echo " * Remote machine: ${MACHINES[$m]}: Accessible"    
     fi  
     
     COMMAND=""
@@ -308,20 +310,20 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     COMMAND+="echo \"Available\"; exit 0; "
     
     # Now check the remote machine
-    ANSWER=$(timeout 6 ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    ANSWER=$(timeout 6 ssh -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
     if [[ $? == "124" ]]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ERROR: Slow conection"
+      echo " * Remote machine: ${MACHINES[$m]}: WARNING: Slow connection - skipping this machine for this round of launches."
       MACHINES[$m]=""
       continue
     fi      
     if [[ ${ANSWER} == "" ]]; then ANSWER="ERROR: Check failed with the above error!"; fi
     if [[ ${ANSWER} != "Available" ]]; then     
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
+      echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}"
       MACHINES[$m]=""
       continue
     fi
  
-    echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
+    echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}"
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
     
   done
@@ -376,21 +378,30 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
             REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
           fi
        
-          REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          STARTTIME=$(date +%s)
+          REMOTEDATADIR=$(ssh -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
             echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch nuclearizer!" | ${LOGGING}
             MACHINES[$m]=""
             continue
           else
             echo " * Instance ${LAUNCHED} launched on ${MACHINES[$m]}" | ${LOGGING}
-          fi        
+          fi
+          ENDTIME=$(date +%s)
+          
+          if [[ $(($ENDTIME - $STARTTIME)) -gt 5 ]]; then
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Very slow to launch nuclearizer, removing it from the list for this round." | ${LOGGING}
+            MACHINES[$m]=""          
+          fi
         
           STARTED=1
           STARTEDALLPRIORITIES=1
           
           # Swich to next data file!
           d=$(( d + 1 ))
-        
+        else
+          echo " * Skipping machine for further launches in this round"
+          MACHINES[$m]=""
         fi
       
         if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
