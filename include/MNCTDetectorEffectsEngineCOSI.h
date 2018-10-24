@@ -201,10 +201,12 @@ private:
   
   //! Calibration map between read-out element and LLD thresholds
   map<MReadOutElementDoubleStrip, double> m_LLDThresholds;
+	//! Calibration map between read-out element and FST threshold functions
+	map<MReadOutElementDoubleStrip, TF1*> m_FSTThresholds;
   //! Calibration map between read-out element and fast thresholds
-  map<MReadOutElementDoubleStrip, double> m_FSTThresholds;
+//  map<MReadOutElementDoubleStrip, double> m_FSTThresholds;
   //! Calibration map between read-out element and fast threshold noise
-  map<MReadOutElementDoubleStrip, double> m_FSTNoise;
+//  map<MReadOutElementDoubleStrip, double> m_FSTNoise;
   
   //! Calibration map between read-out element and fitted function for energy calibration
   map<MReadOutElementDoubleStrip, TF1*> m_EnergyCalibration;
@@ -219,8 +221,14 @@ private:
 	double m_LastHitTime;
   //! Stores last time detector was hit to check if detector still dead
   double m_LastHitTimeByDet[12];
+	//! Stores total dead time by detector
   double m_TotalDeadTime[12];
+	//! Stores trigger rates (number of events) for each detector
   int m_TriggerRates[12];
+	//! Stores time of first event; used to get number of events per second
+	double m_FirstTime;
+	//! Stores time of last event; used to get number of events per second
+	double m_LastTime;
   
 	int m_MaxBufferFullIndex;
 	int m_MaxBufferDetector;
@@ -242,7 +250,9 @@ private:
   
   double m_ShieldPulseDuration;
   double m_CCDelay;
-  double m_ShieldTime;  
+  double m_ShieldTime;
+	double m_ShieldDelay;
+	double m_ShieldVetoWindowSize;
   bool m_IsShieldDead;
   
   long m_NumShieldCounts;

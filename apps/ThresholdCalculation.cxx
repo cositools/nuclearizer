@@ -49,6 +49,7 @@ using namespace std;
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTBinaryFlightDataParser.h"
 #include "MNCTModuleMeasurementLoaderBinary.h"
+#include "MNCTModuleSimulationLoader.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
 #include "MNCTModuleStripPairingGreedy_b.h"
 #include "MNCTModuleCrosstalkCorrection.h"
@@ -80,6 +81,11 @@ public:
 	void FSTThresholdsLine(map<int,TH1D*> FSTSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink,MNCTModuleEnergyCalibrationUniversal* Calibrator);
 	//! Calculate fast thresholds
 	void FSTThresholdsErf(map<int,TH1D*> FSTSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator);
+	//! Calculate fast thresholds
+	void FSTThresholdsErfFixedMean(map<int,TH1D*> FSTSpec, map<int,TH1D*> LLDSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator);
+	//! Calculate fast thresholds
+	void FSTThresholdsFastOverTotal(map<int,TH1D*> FSTSpec, map<int,TH1D*> LLDSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator);
+
 
 
 private:
@@ -187,17 +193,35 @@ bool ThresholdCalculation::Analyze()
 	if (m_Interrupt == true) return false;
 
   MSupervisor* S = MSupervisor::GetSupervisor();
-  
-//  MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
-	MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
+
+  MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
   Loader->SetFileName(m_FileName);
-//	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-//	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
-//	Loader->EnableCoincidenceMerging(true);
+	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
+	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
+	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
-  
+
+/*
+	MNCTModuleSimulationLoader* Loader = new MNCTModuleSimulationLoader();
+	Loader->SetSimulationFileName(m_FileName);
+	MDGeometryQuest* G = new MDGeometryQuest();
+	if (G->ScanSetupFile("~/Software/MassModel/COSI.DetectorHead.geo.setup") == true){
+		G->ActivateNoising(false);
+		G->SetGlobalFailureRate(0.0);
+		Loader->SetGeometry(G);
+	}
+	Loader->SetEnergyCalibrationFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
+	Loader->SetThresholdFileName("/volumes/cronus/users/clio/DetectorEffectsEngineTests/Thresholds/thresholds_erf_Run194_FstOverTotal.txt");
+//	Loader->SetThresholdFileName("/volumes/cronus/users/clio/DetectorEffectsEngineTests/Thresholds/thresholds_erf_Run194_ADC_AboveZero.txt");
+	Loader->SetDeadStripFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/DeadStripList.txt");
+	Loader->SetDepthCalibrationCoeffsFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Berkeley/depth_calibration_coeffs_v2.txt");
+	Loader->SetDepthCalibrationSplinesFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Berkeley/depth_calibration_curves.ctd");
+	S->SetModule(Loader,0);
+*/
+ 
   MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
-  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_060719.ecal");
+  Calibrator->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
+	Calibrator->EnablePreampTempCorrection(false);
   S->SetModule(Calibrator, 1);
 
   if (Loader->Initialize() == false) return false;
@@ -205,6 +229,7 @@ bool ThresholdCalculation::Analyze()
 
   map<int, TH1D*> LLDSpec;
 	map<int, TH1D*> FSTSpec;
+	map<int, TH1D*> LLDSpec2;
 
   bool IsFinished = false;
   MReadOutAssembly* Event = new MReadOutAssembly();
@@ -233,9 +258,12 @@ bool ThresholdCalculation::Analyze()
 						if (LLDSpec[identifier] == 0){
 							//make histogram if it doesn't exist yet
 							TH1D* Hist = new TH1D("LLD"+MString(identifier),"LLD "+MString(identifier),8192,0,8192);
+							TH1D* Hist2 = new TH1D("LLD2_"+MString(identifier),"LLD "+MString(identifier),8192,0,8192);
 							LLDSpec[identifier] = Hist;
+							LLDSpec2[identifier] = Hist2;
 						}
 						LLDSpec[identifier]->Fill(adc);
+						LLDSpec2[identifier]->Fill(adc);
 					}
 					//fast
 					else{
@@ -254,7 +282,7 @@ bool ThresholdCalculation::Analyze()
 
 
 	//save spectra
-	for (auto H: LLDSpec){
+/*	for (auto H: LLDSpec){
 //	for (auto H: FSTSpec){
 		char name[16];
 		sprintf(name,"lld_%05d.root",H.first);
@@ -268,7 +296,7 @@ bool ThresholdCalculation::Analyze()
 		}
 		f.Close();
 	}
-
+*/
 
 /*
 	for (auto H: FSTSpec){
@@ -280,13 +308,15 @@ bool ThresholdCalculation::Analyze()
 	}
 */
 
-/*
+
 	map<int, float> lld_thresholds;
 	map<int, float> spectrum_kink;
 	LLDThresholds(LLDSpec,lld_thresholds,spectrum_kink);
 //	FSTThresholdsLine(FSTSpec,lld_thresholds,spectrum_kink,Calibrator);
-	FSTThresholdsErf(FSTSpec,lld_thresholds,spectrum_kink,Calibrator);
-*/
+//	FSTThresholdsErf(FSTSpec,lld_thresholds,spectrum_kink,Calibrator);
+//	FSTThresholdsErfFixedMean(FSTSpec,LLDSpec2,lld_thresholds,spectrum_kink,Calibrator);
+	FSTThresholdsFastOverTotal(FSTSpec,LLDSpec2,lld_thresholds,spectrum_kink,Calibrator);
+
 
 	cout << "all spectra analyzed and saved" << endl;
 
@@ -305,7 +335,7 @@ void ThresholdCalculation::LLDThresholds(map<int, TH1D*> LLDSpec, map<int, float
 	for (auto H: LLDSpec){
 		for (int b=0; b<H.second->GetNbinsX(); b++){
 			if (H.second->GetBinContent(b) != 0){
-				thresh = H.second->GetBinCenter(b);
+				thresh = H.second->GetBinLowEdge(b);
 				break;
 			}
 		}
@@ -417,7 +447,164 @@ void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, fl
 
 	//save results in file
 	FILE * fp;
-	fp = fopen("thresholds_erf_sim.txt","w+");
+	fp = fopen("thresholds_erf.txt","w+");
+	for (auto H: FSTSpec){
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(H.first / 1000);
+		R.SetStripID((H.first % 1000) / 10);
+		R.IsPositiveStrip(H.first % 10);
+
+		//put everything back in energy
+/*		double lld_thresh = Calibrator->GetEnergy(R,lld_thresholds[H.first]);
+//		double rollover = Calibrator->GetEnergy(R,spectrum_kink[H.first]);
+		double meanEn = Calibrator->GetEnergy(R,mean[H.first]);
+		double sigEn = Calibrator->GetEnergy(R,sigma[H.first]);
+*/
+
+		//or leave everything in ADC for the DEE
+		double lld_thresh = lld_thresholds[H.first];
+		double meanEn = mean[H.first];
+		double sigEn = sigma[H.first];
+
+		fprintf(fp,"%05d\t%f\t%f\t%f\n",H.first,lld_thresh,meanEn,sigEn);
+//		fprintf(fp,"%05d\t%f\t%f\t%f\t%f\n",H.first,lld_thresholds[H.first],spectrum_kink[H.first],mean[H.first],sigma[H.first]);
+	}
+
+	fclose(fp);
+
+}
+
+
+void ThresholdCalculation::FSTThresholdsErfFixedMean(map<int, TH1D*> FSTSpec, map<int, TH1D*> LLDSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator){
+
+	map<int, float> mean;
+	map<int, float> sigma;
+	map<int, float> offset;
+	map<int, float> amplitude;
+
+	FILE * fp2;
+	fp2 = fopen("overlap_start_stop.txt","w+");
+
+	for (auto H: FSTSpec){
+		if (LLDSpec[H.first] == 0){
+			mean[H.first] = -1;
+			continue;
+		}
+		int start_bin, stop_bin;
+		//go between lld threshold and spectrum kink to find first bin where LLD <= FST
+		for (int bin=LLDSpec[H.first]->FindBin(lld_thresholds[H.first]); bin<LLDSpec[H.first]->FindBin(spectrum_kink[H.first]); bin++){
+			if (H.second->GetBinContent(bin) >= LLDSpec[H.first]->GetBinContent(bin)){
+				start_bin = bin;
+				break;
+			}
+		}
+		//go the other way to find first bin where LLD >= FST
+		for (int bin=LLDSpec[H.first]->FindBin(spectrum_kink[H.first]); bin>LLDSpec[H.first]->FindBin(lld_thresholds[H.first]); bin--){
+			if (H.second->GetBinContent(bin) <= LLDSpec[H.first]->GetBinContent(bin)){
+				stop_bin = bin;
+				break;
+			}
+		}
+
+		fprintf(fp2,"%05d\t%d\t%d\n",H.first,start_bin,stop_bin);
+
+		if (start_bin == stop_bin){
+			mean[H.first] = start_bin;
+		}
+		else if (start_bin < stop_bin){
+			mean[H.first] = start_bin + (stop_bin-start_bin)/2.;
+		}
+		else {
+			cout << "start bin > stop bin: " << H.first << endl;
+			mean[H.first] = start_bin;
+		}
+
+	}
+
+	fclose(fp2);
+
+	FILE* fp3;
+	fp3 = fopen("erf_at_0.txt","w");
+
+	gROOT->SetBatch(kTRUE);
+	for (auto H: FSTSpec){
+		//set this up for energy / ADC conversions
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(H.first / 1000);
+		R.SetStripID((H.first % 1000) / 10);
+		R.IsPositiveStrip(H.first % 10);
+
+		TF1* erf = new TF1("erf","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lld_thresholds[H.first],spectrum_kink[H.first]+180);
+		erf->SetParameters(40,200,90,10);
+		erf->SetParLimits(0,0,1000000);
+		erf->SetParLimits(1,lld_thresholds[H.first],spectrum_kink[H.first]);
+		erf->SetParLimits(2,0,1000000);
+		erf->SetParLimits(3,0,1000000);
+/*		if (mean[H.first] != -1){
+			erf->FixParameter(1,mean[H.first]);
+			erf->FixParameter(2,(spectrum_kink[H.first]-mean[H.first])/sqrt(2));
+		}
+		else {
+			erf->SetParLimits(1,0,spectrum_kink[H.first]);
+		}
+*/
+//		erf->FixParameter(2,Calibrator->GetADC(R,20));
+		H.second->Fit("erf","R");
+		mean[H.first] = erf->GetParameter(1);
+		sigma[H.first] = erf->GetParameter(2);
+		offset[H.first] = erf->GetParameter(3);
+		amplitude[H.first] = erf->GetParameter(0);
+
+		fprintf(fp3,"%f\n",erf->Eval(0));
+
+		//add TF1 to spectrum file
+		char name[20];
+		sprintf(name,"lld_fst_%05d.root",H.first);
+		TCanvas *c1 = new TCanvas("c1"+MString(H.first));
+
+		H.second->GetXaxis()->SetTitle("ADC");
+		H.second->GetYaxis()->SetTitle("Counts");
+		H.second->GetXaxis()->SetRangeUser(0,500);
+		H.second->Draw();
+
+		if (LLDSpec[H.first] != 0){
+			LLDSpec[H.first]->SetLineColor(kGreen);
+			LLDSpec[H.first]->GetXaxis()->SetRangeUser(0,500);
+			LLDSpec[H.first]->Draw("same");
+		}
+
+//		erf->Write();
+//		TFile f(name,"new");
+		c1->Print(name);
+//		f.Close();
+
+		delete erf;
+	}
+	fclose(fp3);
+
+	//save results in file
+	FILE * fp;
+	fp = fopen("thresholds_erf.txt","w+");
+	for (auto H: FSTSpec){
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(H.first / 1000);
+		R.SetStripID((H.first % 1000) / 10);
+		R.IsPositiveStrip(H.first % 10);
+
+		//or leave everything in ADC for the DEE
+		double lld_thresh = lld_thresholds[H.first];
+		double meanEn = mean[H.first];
+		double sigEn = sigma[H.first];
+
+		fprintf(fp,"%05d\t%f\t%f\t%f\t%f\t%f\t%f\n",H.first,lld_thresh,meanEn,sigEn,offset[H.first],amplitude[H.first],spectrum_kink[H.first]+180);
+//		fprintf(fp,"%05d\t%f\t%f\t%f\t%f\n",H.first,lld_thresholds[H.first],spectrum_kink[H.first],mean[H.first],sigma[H.first]);
+	}
+
+	fclose(fp);
+
+	//make file in keV just to compare data to simulations
+	FILE * fpkeV;
+	fpkeV = fopen("thresholds_erf_keV.txt","w+");
 	for (auto H: FSTSpec){
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
@@ -430,13 +617,150 @@ void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, fl
 		double meanEn = Calibrator->GetEnergy(R,mean[H.first]);
 		double sigEn = Calibrator->GetEnergy(R,sigma[H.first]);
 
-		fprintf(fp,"%05d\t%f\t%f\t%f\n",H.first,lld_thresh,meanEn,sigEn);
+		fprintf(fpkeV,"%05d\t%f\t%f\t%f\n",H.first,lld_thresh,meanEn,sigEn);
+//		fprintf(fp,"%05d\t%f\t%f\t%f\t%f\n",H.first,lld_thresholds[H.first],spectrum_kink[H.first],mean[H.first],sigma[H.first]);
+	}
+
+	fclose(fpkeV);
+
+}
+
+void ThresholdCalculation::FSTThresholdsFastOverTotal(map<int, TH1D*> FSTSpec, map<int, TH1D*> LLDSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator){
+
+	map<int, float> mean;
+	map<int, float> sigma;
+	map<int, float> offset;
+	map<int, float> amplitude;
+
+	map<int, TH1D*> FastOverTotal;
+
+	gROOT->SetBatch(kTRUE);
+	for (auto H: FSTSpec){
+		if (LLDSpec[H.first] != 0){
+			TH1D* Hist = new TH1D("FOT_"+MString(H.first),"fast over total "+MString(H.first),8192,0,8192);
+			FastOverTotal[H.first] = Hist;
+			for (int b=1; b<H.second->GetNbinsX()+1; b++){
+				double denom = H.second->GetBinContent(b)+LLDSpec[H.first]->GetBinContent(b);
+				double binContent = 0;
+				if (denom != 0){
+					binContent = H.second->GetBinContent(b)/denom;
+				}
+				FastOverTotal[H.first]->SetBinContent(b,binContent);
+			}
+		}
+
+		//set this up for energy / ADC conversions
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(H.first / 1000);
+		R.SetStripID((H.first % 1000) / 10);
+		R.IsPositiveStrip(H.first % 10);
+
+		TF1* erf = new TF1("erf","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lld_thresholds[H.first],spectrum_kink[H.first]+180);
+		erf->SetParameters(1,200,90,0);
+		erf->SetParLimits(0,0,1000000);
+//		erf->SetParLimits(1,lld_thresholds[H.first],spectrum_kink[H.first]);
+		erf->SetParLimits(1,0,1000000);
+		erf->SetParLimits(2,0,1000000);
+		erf->SetParLimits(3,0,1000000);
+/*		if (mean[H.first] != -1){
+			erf->FixParameter(1,mean[H.first]);
+			erf->FixParameter(2,(spectrum_kink[H.first]-mean[H.first])/sqrt(2));
+		}
+		else {
+			erf->SetParLimits(1,0,spectrum_kink[H.first]);
+		}
+*/
+//		erf->FixParameter(2,Calibrator->GetADC(R,20));
+
+		if (FastOverTotal[H.first] != 0){
+			FastOverTotal[H.first]->Fit("erf","R");
+
+			mean[H.first] = erf->GetParameter(1);
+			sigma[H.first] = erf->GetParameter(2);
+			offset[H.first] = erf->GetParameter(3);
+			amplitude[H.first] = erf->GetParameter(0);
+		}
+
+		//add TF1 to spectrum file
+		char name[20];
+		sprintf(name,"lld_fst_%05d.root",H.first);
+		TCanvas *c1 = new TCanvas("c1"+MString(H.first));
+
+		H.second->GetXaxis()->SetTitle("ADC");
+		H.second->GetYaxis()->SetTitle("Counts");
+		H.second->GetXaxis()->SetRangeUser(0,500);
+		H.second->Draw();
+
+		if (LLDSpec[H.first] != 0){
+			LLDSpec[H.first]->SetLineColor(kGreen);
+			LLDSpec[H.first]->GetXaxis()->SetRangeUser(0,500);
+			LLDSpec[H.first]->Draw("same");
+		}
+
+//		erf->Write();
+//		TFile f(name,"new");
+		c1->Print(name);
+//		f.Close();
+
+		if (FastOverTotal[H.first] != 0){
+			TCanvas *c2 = new TCanvas("c2"+MString(H.first));
+
+			FastOverTotal[H.first]->GetXaxis()->SetRangeUser(0,500);
+			FastOverTotal[H.first]->GetXaxis()->SetTitle("ADC");
+			FastOverTotal[H.first]->GetYaxis()->SetTitle("Counts");
+			FastOverTotal[H.first]->Draw();
+
+			char name2[25];
+			sprintf(name2,"fastOverTotal_%05d.root",H.first);
+			c2->Print(name2);
+		}
+
+		delete erf;
+	}
+
+	//save results in file
+	FILE * fp;
+	fp = fopen("thresholds_erf.txt","w+");
+	for (auto H: FSTSpec){
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(H.first / 1000);
+		R.SetStripID((H.first % 1000) / 10);
+		R.IsPositiveStrip(H.first % 10);
+
+		//or leave everything in ADC for the DEE
+		double lld_thresh = lld_thresholds[H.first];
+		double meanEn = mean[H.first];
+		double sigEn = sigma[H.first];
+
+		fprintf(fp,"%05d\t%f\t%f\t%f\t%f\t%f\t%f\n",H.first,lld_thresh,meanEn,sigEn,offset[H.first],amplitude[H.first],spectrum_kink[H.first]+180);
 //		fprintf(fp,"%05d\t%f\t%f\t%f\t%f\n",H.first,lld_thresholds[H.first],spectrum_kink[H.first],mean[H.first],sigma[H.first]);
 	}
 
 	fclose(fp);
 
+	//make file in keV just to compare data to simulations
+	FILE * fpkeV;
+	fpkeV = fopen("thresholds_erf_keV.txt","w+");
+	for (auto H: FSTSpec){
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(H.first / 1000);
+		R.SetStripID((H.first % 1000) / 10);
+		R.IsPositiveStrip(H.first % 10);
+
+		//put everything back in energy
+		double lld_thresh = Calibrator->GetEnergy(R,lld_thresholds[H.first]);
+//		double rollover = Calibrator->GetEnergy(R,spectrum_kink[H.first]);
+		double meanEn = Calibrator->GetEnergy(R,mean[H.first]);
+		double sigEn = Calibrator->GetEnergy(R,sigma[H.first]);
+
+		fprintf(fpkeV,"%05d\t%f\t%f\t%f\n",H.first,lld_thresh,meanEn,sigEn);
+//		fprintf(fp,"%05d\t%f\t%f\t%f\t%f\n",H.first,lld_thresholds[H.first],spectrum_kink[H.first],mean[H.first],sigma[H.first]);
+	}
+
+	fclose(fpkeV);
+
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

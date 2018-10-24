@@ -86,6 +86,7 @@ MNCTModuleMeasurementLoaderBinary::MNCTModuleMeasurementLoaderBinary() : MModule
 	m_FileIsDone = false;
   
   m_IsZipped = false;
+	m_ZipFile = NULL;
 
   m_ExpoAspectViewer = nullptr;
 }
@@ -125,7 +126,7 @@ bool MNCTModuleMeasurementLoaderBinary::OpenNextFile()
 
   ++m_OpenFileID;
   if (m_OpenFileID >= (int) m_BinaryFileNames.size()) return false;
-  
+
   m_IsZipped = m_BinaryFileNames[m_OpenFileID].EndsWith(".gz");
   
   if (m_IsZipped == false) {

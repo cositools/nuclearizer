@@ -104,6 +104,8 @@ MNCTDetectorEffectsEngineCOSI::~MNCTDetectorEffectsEngineCOSI()
 //! Initialize the module
 bool MNCTDetectorEffectsEngineCOSI::Initialize()
 {
+	gRandom->SetSeed(0);
+
   // Load geometry:
   if (m_Geometry == nullptr) {
     if (m_GeometryFileName == "") {
@@ -133,7 +135,7 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   //load charge loss coefficients
   //if (InitializeChargeLoss() == false) return false;;
 
-	//initialize dead time
+	//initialize dead time and trigger rates
 	for (int i=0; i<12; i++){
 		m_CCDeadTime[i] = 1e-5; m_TotalDeadTime[i] = 0.; m_TriggerRates[i]=0;
 		for (int j=0; j<16; j++){
@@ -146,6 +148,10 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
 	for (int i=0; i<12; i++){
 		m_LastHitTimeByDet[i] = 0;
 	}
+
+	//initialize m_FirstTime to max double and m_LastTime to 0
+	m_FirstTime = std::numeric_limits<double>::max();
+	m_LastTime = 0;
 
 	m_MaxBufferFullIndex = 0;
 
@@ -193,6 +199,8 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   // for shield veto: shield pulse duration and card cage delay: constant for now
   m_ShieldPulseDuration = 1.7e-6;
   m_CCDelay = 700.e-9;
+	m_ShieldDelay = 900.e-9; //this is just a guess based on when veto window occurs!
+	m_ShieldVetoWindowSize = 0.4e-6;
   // for shield veto: gets updated with shield event times
   // start at -10s so that it doesn't veto beginning events by accident
   m_ShieldTime = -10;  
@@ -251,6 +259,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         if (energy > 80.) {
 					if (m_ShieldTime + m_ShieldPulseDuration < evt_time){ hasShieldHits = true; }
 					increaseShieldDeadTime = true;
+					//this is handling paralyzable dead time
          	m_ShieldTime = evt_time;
         }
 	    }
@@ -260,12 +269,16 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		if (hasShieldHits == true){ m_NumShieldCounts++; }
 		if (increaseShieldDeadTime == true){ m_ShieldDeadTime += m_ShieldPulseDuration; }
 
-		if (evt_time + m_CCDelay < m_ShieldTime + m_ShieldPulseDuration){
-//		if (evt_time == m_ShieldTime){// && hasDetHits == true){
-//		if (abs(evt_time-m_ShieldTime) < 400e-9){
-//			if (hasDetHits == true){ m_NumShieldCounts++; }
+		//3 cases to veto events:
+		//(1) shield active starts in veto window
+		//(2) shield active ends in veto window
+		//(3) shield active during the entire veto window
+		//this if statement could perhaps be condensed but I'm less confused this way
+		if ((m_ShieldTime + m_ShieldDelay > evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay < evt_time + m_CCDelay + m_ShieldVetoWindowSize) || 
+			(m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay + m_ShieldVetoWindowSize) || 
+			(m_ShieldTime + m_ShieldDelay < evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay + m_ShieldVetoWindowSize)){
+//		if (evt_time + m_CCDelay < m_ShieldTime + m_ShieldPulseDuration){
  		  delete SimEvent;
-      //cout<<SimEvent->GetID()<<": Vetoed"<<endl;
       continue;
     }
 
@@ -554,19 +567,18 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     list<MNCTDEEStripHit>::iterator k = MergedStripHits.begin();
     while (k != MergedStripHits.end()) {
 
-      if ((*k).m_Energy < m_LLDThresholds[(*k).m_ROE]) { // Dummy threshold of 0 keV sharp
+      if ((*k).m_ADC < m_LLDThresholds[(*k).m_ROE]) {
         k = MergedStripHits.erase(k);
       } else {
-//        if(gRandom->Gaus((*k).m_Energy,m_FSTNoise[(*k).m_ROE]) < m_FSTThresholds[(*k).m_ROE]){
-				if ((*k).m_Energy < gRandom->Gaus(m_FSTThresholds[(*k).m_ROE],m_FSTNoise[(*k).m_ROE])){
-//				if ((*k).m_Energy < m_FSTThresholds[(*k).m_ROE]){
+				double prob = gRandom->Rndm();
+				if (prob > m_FSTThresholds[(*k).m_ROE]->Eval((*k).m_ADC)){
           (*k).m_Timing = 0.0;
         }
         ++k;
       }
     }
 
-/*    // (4c) Take care of guard ring vetoes
+    // (4c) Take care of guard ring vetoes
 		list<MNCTDEEStripHit>::iterator gr = GuardRingHits.begin();
 		int grHit[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 		while (gr != GuardRingHits.end()) {
@@ -584,7 +596,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			}
 			else{ ++grVeto; }
 		}
-*/
+
 		// (4d) Make sure there is at least one strip left on each side of each detector
 		//  If not, remove remaining strip(s) from detector because they won't trigger detector
 		int xExists[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
@@ -772,6 +784,13 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			int detID = *s;
 			m_TriggerRates[detID] += 1;
 		}
+
+		//update last time (and first time for first event)
+		if (SimEvent->GetTime().GetAsSeconds() < m_FirstTime){
+			m_FirstTime = SimEvent->GetTime().GetAsSeconds();
+		}
+		m_LastTime = SimEvent->GetTime().GetAsSeconds();
+		
  
     // (1) Move the information to the read-out-assembly
     Event->SetID(SimEvent->GetID());
@@ -837,14 +856,15 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
   cout << "total hits: " << m_TotalHitsCounter << endl;
   cout << "number of events with multiple hits per strip: " << m_MultipleHitsCounter << endl;
   cout << "charge loss applies counter: " << m_ChargeLossCounter << endl;
-	cout << "Num shield counts: " << m_NumShieldCounts << endl;
+//	cout << "Num shield counts: " << m_NumShieldCounts << endl;
+	cout << "Shield rate (cps): " << m_NumShieldCounts/(m_LastTime-m_FirstTime) << endl;
 	cout << "Dead time " << endl;
 	for (int i=0; i<12; i++){
 		cout << i << ":\t" << m_TotalDeadTime[i] << endl;
 	}
-	cout << "Trigger rates" << endl;
+	cout << "Trigger rates (events per second)" << endl;
 	for (int i=0; i<12; i++){
-		cout << i << ":\t" << m_TriggerRates[i] << endl;
+		cout << i << ":\t" << m_TriggerRates[i]/(m_LastTime-m_FirstTime) << endl;
 	}
 	cout << "Shield dead time: " << m_ShieldDeadTime << endl;
 
@@ -1030,7 +1050,7 @@ bool MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 
   for (unsigned int i=0; i<Parser.GetNLines(); i++) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
-		if (NTokens != 4){ continue; } //this shouldn't happen but just in case
+		if (NTokens != 7){ continue; } //this shouldn't happen but just in case
 
 		//decode identifier
 		int identifier = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
@@ -1043,9 +1063,18 @@ bool MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 		R.SetStripID(strip);
 		R.IsPositiveStrip(isPos);
 
-		m_LLDThresholds[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
-		m_FSTThresholds[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
-		m_FSTNoise[R] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
+		double lldThresh = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
+		double functionMax = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+
+		m_LLDThresholds[R] = lldThresh;
+
+		TF1* erf = new TF1("erf"+MString(identifier),"[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldThresh,functionMax-180);
+		erf->SetParameter(1,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
+		erf->SetParameter(2,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+		erf->SetParameter(3,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
+		erf->SetParameter(0,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
+
+		m_FSTThresholds[R] = erf;
 
   }
   
