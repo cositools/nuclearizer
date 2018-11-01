@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
+#include <numeric>
 using namespace std;
 
 // ROOT
@@ -567,11 +568,19 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     list<MNCTDEEStripHit>::iterator k = MergedStripHits.begin();
     while (k != MergedStripHits.end()) {
 
-      if ((*k).m_ADC < m_LLDThresholds[(*k).m_ROE]) {
+			//so that we can use default value if necessary
+			MReadOutElementDoubleStrip ROE_map_key = (*k).m_ROE;
+			if (m_LLDThresholds.count((*k).m_ROE) == 0){
+				ROE_map_key.SetDetectorID(12);
+				ROE_map_key.SetStripID(0);
+				ROE_map_key.IsPositiveStrip(0);
+			}
+
+      if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
         k = MergedStripHits.erase(k);
       } else {
 				double prob = gRandom->Rndm();
-				if (prob > m_FSTThresholds[(*k).m_ROE]->Eval((*k).m_ADC)){
+				if (prob > m_FSTThresholds[ROE_map_key]->Eval((*k).m_ADC)){
           (*k).m_Timing = 0.0;
         }
         ++k;
@@ -1048,6 +1057,14 @@ bool MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
     return false;
   }
 
+	//vectors for averaging, for strips where there isn't threshold info for some reason
+	vector<double> lldVals;
+	vector<double> functionMaxVals;
+	vector<double> par0Vals;
+	vector<double> par1Vals;
+	vector<double> par2Vals;
+	vector<double> par3Vals;
+
   for (unsigned int i=0; i<Parser.GetNLines(); i++) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
 		if (NTokens != 7){ continue; } //this shouldn't happen but just in case
@@ -1068,7 +1085,7 @@ bool MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 
 		m_LLDThresholds[R] = lldThresh;
 
-		TF1* erf = new TF1("erf"+MString(identifier),"[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldThresh,functionMax-180);
+		TF1* erf = new TF1("erf"+MString(identifier),"[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldThresh,functionMax);
 		erf->SetParameter(1,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
 		erf->SetParameter(2,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
 		erf->SetParameter(3,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
@@ -1076,8 +1093,38 @@ bool MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
 
 		m_FSTThresholds[R] = erf;
 
+		lldVals.push_back(lldThresh);
+		functionMaxVals.push_back(functionMax);
+		par0Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
+		par1Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
+		par2Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+		par3Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
+
   }
-  
+ 
+	//add average value as a default
+	double lldAvg = accumulate(lldVals.begin(),lldVals.end(),0.0)/lldVals.size();
+	double funcMaxAvg = accumulate(functionMaxVals.begin(),functionMaxVals.end(),0.0)/functionMaxVals.size();
+	double par0Avg = accumulate(par0Vals.begin(),par0Vals.end(),0.0)/par0Vals.size();
+ 	double par1Avg = accumulate(par1Vals.begin(),par1Vals.end(),0.0)/par1Vals.size();
+	double par2Avg = accumulate(par2Vals.begin(),par2Vals.end(),0.0)/par2Vals.size();
+	double par3Avg = accumulate(par3Vals.begin(),par3Vals.end(),0.0)/par3Vals.size();
+
+	MReadOutElementDoubleStrip R;
+	R.SetDetectorID(12);
+	R.SetStripID(0);
+	R.IsPositiveStrip(0);
+
+	m_LLDThresholds[R] = lldAvg;
+
+	TF1* erf = new TF1("erf12000","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldAvg,funcMaxAvg);
+	erf->SetParameter(0,par0Avg);
+	erf->SetParameter(1,par1Avg);
+	erf->SetParameter(2,par2Avg);
+	erf->SetParameter(3,par3Avg);
+
+	m_FSTThresholds[R] = erf;
+
   return true;
 }
 
