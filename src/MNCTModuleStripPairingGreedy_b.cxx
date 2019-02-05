@@ -135,7 +135,6 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 
 //	usleep(100);
 
-	 
   const int nDetectors = 12;
 
 	//bool newAlg;
@@ -239,19 +238,19 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 						chi_sq[detector] = fourthChiSq;
 
 						//find min chi_sq
-						if (firstChiSq<secondChiSq && firstChiSq<thirdChiSq && firstChiSq<fourthChiSq){
+						if (firstChiSq<=secondChiSq && firstChiSq<=thirdChiSq && firstChiSq<=fourthChiSq){
 							finalPairs = pairs_temp1;
 							xStripHitMultipleTimes = xmult_temp1;
 							yStripHitMultipleTimes = ymult_temp1;
 							chargeSharing = share_temp1;
 						}
-						else if (secondChiSq<firstChiSq && secondChiSq<thirdChiSq && secondChiSq<fourthChiSq){
+						else if (secondChiSq<=firstChiSq && secondChiSq<=thirdChiSq && secondChiSq<=fourthChiSq){
 							finalPairs = pairs_temp2;
 							xStripHitMultipleTimes = xmult_temp2;
 							yStripHitMultipleTimes = ymult_temp2;
 							chargeSharing = share_temp2;
 						}
-						else if (thirdChiSq<firstChiSq && thirdChiSq<secondChiSq && thirdChiSq<fourthChiSq){
+						else if (thirdChiSq<=firstChiSq && thirdChiSq<=secondChiSq && thirdChiSq<=fourthChiSq){
 							finalPairs = pairs_temp3;
 							xStripHitMultipleTimes = xmult_temp3;
 							yStripHitMultipleTimes = ymult_temp3;
@@ -270,13 +269,13 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 
 					}
 
-					if (firstChiSq<secondChiSq && firstChiSq<thirdChiSq){
+					if (firstChiSq<=secondChiSq && firstChiSq<=thirdChiSq){
 						finalPairs = pairs_temp1;
 						xStripHitMultipleTimes = xmult_temp1;
 						yStripHitMultipleTimes = ymult_temp1;
 						chargeSharing = share_temp1;
 					}
-					else if (secondChiSq<firstChiSq && secondChiSq<thirdChiSq){
+					else if (secondChiSq<=firstChiSq && secondChiSq<=thirdChiSq){
 						finalPairs = pairs_temp2;
 						xStripHitMultipleTimes = xmult_temp2;
 						yStripHitMultipleTimes = ymult_temp2;
@@ -284,7 +283,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 					}
 				}
 
-				if (firstChiSq<secondChiSq){
+				if (firstChiSq<=secondChiSq){
 					finalPairs = pairs_temp1;
 					xStripHitMultipleTimes = xmult_temp1;
 					yStripHitMultipleTimes = ymult_temp1;

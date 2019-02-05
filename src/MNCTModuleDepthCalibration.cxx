@@ -216,6 +216,7 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			PosError = CalculateLocalPosition(XSH, YSH, LocalPosition, PositionResolution, BadDepth);
 //			GlobalPosition = m_Geometry->GetGlobalPosition( LocalPosition, m_DetectorNames[DetID]);
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
+	
 			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
 			if( PosError != 0 ) {
 				Error = PosError; //record the positioning error 
@@ -250,8 +251,6 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				Error = PosError; //record the positioning error 
 				H->SetNoDepth();
 			} else {
-				H->SetEnergy( DominantStrip->GetEnergy() ); //reset energy to dominant strip energy
-        H->RemoveStripHit(NonDominantStrip);
 				MVector Local2Position, Position2Resolution;
 				int Pos2Error = 0;
 				if( IsNeighborSideX ) {
@@ -261,6 +260,13 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				}
 				Local2Position.SetZ( LocalPosition.GetZ() ); Position2Resolution.SetZ( PositionResolution.GetZ() );
 				GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(Local2Position);
+
+				//CCS (on 190131):
+				// depth calibration only splits up these hits if there's no evidence of charge loss
+				// this way we are not inadvertently including charge loss in the pipeline
+				// commenting that out				
+/*				H->SetEnergy( DominantStrip->GetEnergy() ); //reset energy to dominant strip energy
+	      H->RemoveStripHit(NonDominantStrip);
 				MNCTHit* NH = new MNCTHit();
 				NH->SetEnergy(NonDominantStrip->GetEnergy());
 				double Eres = m_EnergyCalibration->LookupEnergyResolution(NonDominantStrip, NonDominantStrip->GetEnergy()); NH->SetEnergyResolution(Eres);
@@ -268,6 +274,7 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				NH->SetIsNondominantNeighborStrip();
 				NH->AddStripHit(NonDominantStrip); NH->AddStripHit(OtherSideStrip);
 				NewHits.push_back(NH);
+*/
 			}
 
 			//Event->SetDepthCalibrationIncomplete(); //AWL1x1
