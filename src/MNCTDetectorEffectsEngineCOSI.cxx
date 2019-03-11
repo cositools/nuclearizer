@@ -83,6 +83,7 @@ MNCTDetectorEffectsEngineCOSI::MNCTDetectorEffectsEngineCOSI()
   m_OwnGeometry = false;
   m_ShowProgressBar = false;
   m_SaveToFile = false;
+	m_ApplyFudgeFactor = true;
 }
 
 
@@ -133,20 +134,24 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   //load threshold information
   if (ParseThresholdFile() == false) return false;
 
+	//load charge sharing factors
+	if (ParseChargeSharingFile() == false) return false;
   //load charge loss coefficients
-  //if (InitializeChargeLoss() == false) return false;;
+  if (InitializeChargeLoss() == false) return false;
+	//load crosstalk coefficients
+	if (ParseCrosstalkFile() == false) return false;
 
 	//initialize dead time and trigger rates
-	for (int i=0; i<12; i++){
-		m_CCDeadTime[i] = 1e-5; m_TotalDeadTime[i] = 0.; m_TriggerRates[i]=0;
-		for (int j=0; j<16; j++){
+	for (int i=0; i<nDets; i++){
+		m_CCDeadTime[i] = 0; m_TotalDeadTime[i] = 0.; m_TriggerRates[i]=0;
+		for (int j=0; j<nDTBuffSlots; j++){
 			m_DeadTimeBuffer[i][j] = -1;
 		}
 	}
 
 	//initialize last time to 0 (will this exclude first event?)
 	m_LastHitTime = 0;
-	for (int i=0; i<12; i++){
+	for (int i=0; i<nDets; i++){
 		m_LastHitTimeByDet[i] = 0;
 	}
 
@@ -210,6 +215,30 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
 
 	m_NumShieldCounts = 0;
  
+	// initialize constants for charge sharing due to diffusion
+	double k = 1.38e-16; //Boltzmann's constant
+	double T = 84; //detector temperature in Kelvin
+	double e = 4.8e-10; //electron charge in cgs
+	double d = 1.5; //thickness in centimeters
+	double driftConstant = sqrt(2*k*T*d/e);
+	//need to divide each voltage by 299.79 to get statvolts (using cgs units for some reason)
+	m_DriftConstant.reserve(nDets);
+	m_DriftConstant[0] = driftConstant/sqrt(1000./299.79);
+	m_DriftConstant[1] = driftConstant/sqrt(1200/299.79);
+	m_DriftConstant[2] = driftConstant/sqrt(1500/299.79);
+	m_DriftConstant[3] = driftConstant/sqrt(1500/299.79);
+	m_DriftConstant[4] = driftConstant/sqrt(1000/299.79);
+	m_DriftConstant[5] = driftConstant/sqrt(1500/299.79);
+	m_DriftConstant[6] = driftConstant/sqrt(1000/299.79);
+	m_DriftConstant[7] = driftConstant/sqrt(1500/299.79);
+	m_DriftConstant[8] = driftConstant/sqrt(1500/299.79);
+	m_DriftConstant[9] = driftConstant/sqrt(1200/299.79);
+	m_DriftConstant[10] = driftConstant/sqrt(1000/299.79);
+	m_DriftConstant[11] = driftConstant/sqrt(1000/299.79);
+
+	//for debugging charge loss
+	m_ChargeLossHist = new TH2D("CL","",100,632,667,100,0,50);
+
   return true;
 }
     
@@ -232,9 +261,10 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 
 
-/*		for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+/*		double initialEnergy = 0.;
+		for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
       MSimHT* HT = SimEvent->GetHTAt(h);
-      if (HT->GetDetectorType() == 4) { m_NumShieldCounts++; }
+			initialEnergy += HT->GetEnergy();
 		}
 */
     
@@ -278,11 +308,12 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		if ((m_ShieldTime + m_ShieldDelay > evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay < evt_time + m_CCDelay + m_ShieldVetoWindowSize) || 
 			(m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay + m_ShieldVetoWindowSize) || 
 			(m_ShieldTime + m_ShieldDelay < evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay + m_ShieldVetoWindowSize)){
-//		if (evt_time + m_CCDelay < m_ShieldTime + m_ShieldPulseDuration){
- 		  delete SimEvent;
-      continue;
+// 		  delete SimEvent;
+//      continue;
+			//don't delete the event yet: need to apply dead time to the card cage first!
+			m_ShieldVeto = true;
     }
-
+		else { m_ShieldVeto = false; }
 
     //get interactions to look for ionization in hits
     vector<MSimIA*> IAs;
@@ -308,6 +339,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
     // Step (1): Convert positions into strip hits
     list<MNCTDEEStripHit> StripHits;
+		vector<MNCTDEEStripHit> GuardRingHitsFromChargeSharing;
+		vector<int> detectorsHitForShieldVeto(nDets,0);
 
     // (1a) The real strips
     for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
@@ -339,18 +372,21 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       // Convert detector name in detector ID
       pSide.m_ROE.SetDetectorID(DetectorID);
       nSide.m_ROE.SetDetectorID(DetectorID);
+			detectorsHitForShieldVeto[DetectorID] = 1;
 
       // Convert position into
       MVector PositionInDetector = VS->GetPositionInSensitiveVolume();
       MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
       double Depth_ = PositionInDetector.GetZ();
       double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
+			pSide.m_Depth = Depth;
+			nSide.m_Depth = Depth;
 
       // Not sure about if p or n-side is up, but we can debug this later
+			// Confirmed by Clio on 11/14/18: this is right
       pSide.m_ROE.SetStripID(38-(GP.GetYGrid()+1));
       nSide.m_ROE.SetStripID(38-(GP.GetXGrid()+1));
 
-//      cout << pSide.m_ROE.GetStripID() << '\t' << nSide.m_ROE.GetStripID() << endl;
 
       //SetStripID needs to be called before we can look up the depth calibration coefficients
       int PixelCode = DetectorID*10000 + pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID();
@@ -368,35 +404,276 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       pSide.m_Energy = HT->GetEnergy();
       nSide.m_Energy = HT->GetEnergy();
 
+			//m_EnergyOrig will be unchanged: to see if event is incompletely absorbed or not
+			//(m_Energy is changed due to crosstalk and charge loss, etc)
+      pSide.m_EnergyOrig = HT->GetEnergy();
+      nSide.m_EnergyOrig = HT->GetEnergy();
+			//hit index to keep track of which SimHT this strip hit came from
+			pSide.m_HitIndex = h;
+			nSide.m_HitIndex = h;
+
+			MVector PosFromGP = GP.GetPosition();
+
       pSide.m_Position = PositionInDetector;
       nSide.m_Position = PositionInDetector;
 
-      //check for ionization if it's in the sim file
-      vector<int> origin = HT->GetOrigins();
-      pSide.m_Origins = list<int>(origin.begin(), origin.end());
-      nSide.m_Origins = list<int>(origin.begin(), origin.end());
+
+			// (1aa): charge sharing due to diffusion
+
+			//get origins: these are the IA indices
+	    vector<int> Origins = HT->GetOrigins();
+      pSide.m_Origins = list<int>(Origins.begin(), Origins.end());
+      nSide.m_Origins = list<int>(Origins.begin(), Origins.end());
+
+			//group origins for this HT by position
+			//  and figure out each energy is deposited at each position
+			MVector PrevPos(0,0,0);
+			vector<vector<int> > OriginsGroupedByPosition;
+			vector<MVector> IAPositions;
+			vector<double> EnergyDepositedByPosition;
+			vector<int> temp_vec;
+			double energyDeposited = 0.;
+			double totalEnergyFromIAs = 0.;
+
+			for (unsigned int o=0; o<Origins.size(); o++){
+				MSimIA* ia = SimEvent->GetIAById(Origins[o]);
+				MVector iaPosition = ia->GetPosition();
+				if (PrevPos == iaPosition){
+					temp_vec.push_back(Origins[o]);
+					energyDeposited += ia->GetSecondaryEnergy();
+				}
+				else {
+					if (temp_vec.size() != 0){
+						OriginsGroupedByPosition.push_back(temp_vec);
+						EnergyDepositedByPosition.push_back(energyDeposited);
+						totalEnergyFromIAs += energyDeposited;
+					}
+					temp_vec.clear();
+					temp_vec.push_back(Origins[o]);
+					IAPositions.push_back(iaPosition);
+					energyDeposited = ia->GetSecondaryEnergy();
+				}
+				PrevPos = iaPosition;
+			}
+			if (temp_vec.size() != 0){
+				OriginsGroupedByPosition.push_back(temp_vec);
+				EnergyDepositedByPosition.push_back(energyDeposited);
+				totalEnergyFromIAs += energyDeposited;
+			}
+
+			//scale energy deposited so that the sum of the energy deposits equals the HT energy
+			if (totalEnergyFromIAs != 0){
+				for (unsigned int pos=0; pos<EnergyDepositedByPosition.size(); pos++){
+					EnergyDepositedByPosition[pos] = EnergyDepositedByPosition[pos]*(HT->GetEnergy()/totalEnergyFromIAs);
+				}
+			}
+
+			//initialize these variables before the for loop
+			map<unsigned int,double> pStripsEnergies;
+			map<unsigned int,double> nStripsEnergies;
+
+			double totalEnergyDeposited = 0.;
+
+			//then apply charge sharing for each POSITION
+			//the position could have one or more IAs
+			for (unsigned int pos=0; pos<OriginsGroupedByPosition.size(); pos++){
+				//figure out the energy deposited for all the IAs
+				double energyDeposited = EnergyDepositedByPosition[pos];
+
+				totalEnergyDeposited += energyDeposited;
+
+				//get IA position in detector
+				MVector IAPosition = IAPositions[pos];
+				MDVolumeSequence* IAVolSeq = m_Geometry->GetVolumeSequencePointer(IAPosition, true, true);
+				MVector IAPositionInDetector = IAVolSeq->GetPositionInSensitiveVolume();
+				if (IAVolSeq->GetDetector() == 0 || IAVolSeq->GetSensitiveVolume() == 0){
+					//if IA not in the detector, just use the HT position
+					IAPositionInDetector = PositionInDetector;
+				}
+
+				//now we have the energy deposited at this position
+				//that is enough information to do the diffusion
+				//do half-keV steps to avoid iterating over hundreds of thousands of charge carriers
+				// so this isn't really the number of charge carriers, but the number of steps
+				double EnergyPerChargeCarrier = 0.5;
+				int NChargeCarriers = (int)(energyDeposited/EnergyPerChargeCarrier);
+				//unless the deposited energy is perfectly divisible by 0.5, there will be some extra energy
+				// need to account for it or else there is extra charge loss
+				double ExtraEnergy = energyDeposited - NChargeCarriers*EnergyPerChargeCarrier;
+
+				//figured out by printing out IAPositionInDetector.Z() for Am241 source:
+				// IAPositionInDetector.Z() < 0: closer to n side for *all* detector stacks
+				double DriftLengthN = IAPositionInDetector.Z() + Detector->GetStructuralSize().Z();
+				double DriftLengthP = Detector->GetStructuralSize().Z()*2 - DriftLengthN;
+				if (DriftLengthN < 0){ DriftLengthN = 0; }
+				if (DriftLengthP < 0){ DriftLengthP = 0; }
+
+				double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
+				double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
+//				double factorN = 1;
+//				double factorP = 1;
+
+				double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN;
+				double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP;
+
+				double DriftX = 0;
+				double DriftY = 0;
+
+				for (int i=0; i<NChargeCarriers+1; i++){
+					//last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
+					if (i == NChargeCarriers){ EnergyPerChargeCarrier = ExtraEnergy; }
+
+					//first n side
+					//Rannor draws random x and y from 2D gaussian with mean = 0, sigma = 1
+					gRandom->Rannor(DriftX,DriftY);
+					DriftX *= DriftRadiusSigmaN;
+					DriftY *= DriftRadiusSigmaN;
+
+					MVector DriftPositionN = IAPositionInDetector + MVector(DriftX, DriftY, 0);
+
+					MDGridPoint GPDriftN = Detector->GetGridPoint(DriftPositionN);
+					int nStripID;
+					//if position isn't in detector (0) or is guard ring (7) assign as guard ring
+					if (GPDriftN.GetType() == 7 || GPDriftN.GetType() == 0){
+						nStripID = 38;
+					}
+					else { nStripID = 38-(GPDriftN.GetXGrid()+1); }
+
+					//then p side
+					gRandom->Rannor(DriftX,DriftY);
+					DriftX *= DriftRadiusSigmaP;
+					DriftY *= DriftRadiusSigmaP;
+
+					MVector DriftPositionP = IAPositionInDetector + MVector(DriftX, DriftY, 0);
+
+					MDGridPoint GPDriftP = Detector->GetGridPoint(DriftPositionP);
+					int pStripID;
+					if (GPDriftP.GetType() == 7 || GPDriftP.GetType() == 0){
+						pStripID = 38;
+					}
+					else { pStripID = 38-(GPDriftP.GetYGrid()+1); }
+
+					//save which strips have been hit
+					if (pStripsEnergies.count(pStripID) == 0){
+						pStripsEnergies[pStripID] = 0.;
+					}
+					pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+
+					if (nStripsEnergies.count(nStripID) == 0){
+						nStripsEnergies[nStripID] = 0.;
+					}
+					nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
+				}
+
+			}
+
+
+			//for debugging
+			double pEnergySum = 0.;
+			double nEnergySum = 0.;
+
+			//lists of strips that charge cloud hit: at least one must be original strip
+			double energyAddToOrigP = 0;
+			for (auto P: pStripsEnergies){
+				pEnergySum += P.second;
+				//change the energy of original strip
+				if (pSide.m_ROE.GetStripID() == P.first){
+					pSide.m_Energy = P.second;
+					pSide.m_EnergyOrig = P.second;
+				}
+				//make new strip hit if needed
+				//guard ring hit
+				else if (P.first == 38){
+					MNCTDEEStripHit chargeShareGRHit;
+					chargeShareGRHit.m_ROE.IsPositiveStrip(true);
+					chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
+					chargeShareGRHit.m_ROE.SetStripID(38);
+					chargeShareGRHit.m_Energy = P.second;
+					chargeShareGRHit.m_Position = MVector(0,0,0); // apparently not important
+					GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
+				}
+				//normal strip hit
+				else {
+					MNCTDEEStripHit chargeShareStrip;
+					chargeShareStrip.m_ROE.IsPositiveStrip(true);
+					chargeShareStrip.m_ROE.SetStripID(P.first);
+					chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
+					chargeShareStrip.m_Timing = pSide.m_Timing;
+					chargeShareStrip.m_Energy = P.second;
+					chargeShareStrip.m_EnergyOrig = P.second;
+					chargeShareStrip.m_Depth = pSide.m_Depth;
+					chargeShareStrip.m_Position = pSide.m_Position;
+					chargeShareStrip.m_Origins = pSide.m_Origins;
+					chargeShareStrip.m_HitIndex = pSide.m_HitIndex;
+					StripHits.push_back(chargeShareStrip);
+				}
+			}
+
+			double energyAddToOrigN = 0;
+			for (auto N: nStripsEnergies){
+				nEnergySum += N.second;
+				if (nSide.m_ROE.GetStripID() == N.first){
+					nSide.m_Energy = N.second;
+					nSide.m_EnergyOrig = N.second;
+				}
+				else if (N.first == 38){
+					MNCTDEEStripHit chargeShareGRHit;
+					chargeShareGRHit.m_ROE.IsPositiveStrip(true);
+					chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
+					chargeShareGRHit.m_ROE.SetStripID(38);
+					chargeShareGRHit.m_Energy = N.second;
+					chargeShareGRHit.m_Position = MVector(0,0,0);
+					GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
+				}
+				else {
+					MNCTDEEStripHit chargeShareStrip;
+					chargeShareStrip.m_ROE.IsPositiveStrip(false);
+					chargeShareStrip.m_ROE.SetStripID(N.first);
+					chargeShareStrip.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
+					chargeShareStrip.m_Timing = nSide.m_Timing;
+					chargeShareStrip.m_Energy = N.second;
+					chargeShareStrip.m_EnergyOrig = N.second;
+					chargeShareStrip.m_Depth = nSide.m_Depth;
+					chargeShareStrip.m_Position = nSide.m_Position;
+					chargeShareStrip.m_Origins = nSide.m_Origins;
+					chargeShareStrip.m_HitIndex = nSide.m_HitIndex;
+					StripHits.push_back(chargeShareStrip);
+				}
+			}
+
+			pSide.m_Energy += energyAddToOrigP;
+			nSide.m_Energy += energyAddToOrigN;
+			pSide.m_EnergyOrig += energyAddToOrigP;
+			nSide.m_EnergyOrig += energyAddToOrigN;
 
       StripHits.push_back(pSide);
       StripHits.push_back(nSide);
-//      int currentSize = StripHits.size();
-//      StripHits.at(currentSize-1).m_OppositeStrip = &StripHits.at(currentSize-2);
-//      StripHits.at(currentSize-2).m_OppositeStrip = &StripHits.at(currentSize-1);
-
-
-//      cout << pSide.m_Energy << '\t';
-//      cout << pSide.m_OppositeStrip->m_Energy << '\t';
-//      cout << nSide.m_Energy << endl;
-//      cout << nSide.m_OppositeStrip->m_Energy << endl;
-
-      //set the m_Opposite pointers to each other
 
       m_TotalHitsCounter++;
 
     }
 
+		//delete event and update deadtime if the event was vetoed by the shields
+		//can't do this earlier because need to know which detectors got hit
+		if (m_ShieldVeto){
+			for (int det=0; det<nDets; det++){
+				if (detectorsHitForShieldVeto[det] == 1){
+					//make sure CC not already dead
+					if (evt_time > m_LastHitTimeByDet[det] + m_CCDeadTime[det]){
+						m_CCDeadTime[det] = 1e-5;
+						m_LastHitTimeByDet[det] = evt_time;
+						m_TotalDeadTime[det] += m_CCDeadTime[det];
+					}
+				}
+			}
+			delete SimEvent;
+			continue;
+		}
+
 
     list<MNCTDEEStripHit> GuardRingHits;
     // (1b) The guard ring hits
+		vector<int> GRIndices;
     for (unsigned int h = 0; h < SimEvent->GetNGRs(); ++h) {
       MSimGR* GR = SimEvent->GetGRAt(h);
       MDVolumeSequence* VS = GR->GetVolumeSequence();
@@ -413,9 +690,24 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       GuardRingHit.m_Energy = GR->GetEnergy();
       GuardRingHit.m_Position = MVector(0, 0, 0); // <-- not important
 
+			//add extra energy from charge sharing to guard ring hits already present
+			for (unsigned int gr=0; gr<GuardRingHitsFromChargeSharing.size(); gr++){
+				if (GuardRingHit.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
+					GuardRingHit.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
+					GRIndices.push_back(gr);
+				}
+			}
+
 			GuardRingHits.push_back(GuardRingHit);
     }
 
+		//add guard ring hits from charge sharing that aren't already present
+		for (unsigned int h=0; h<GuardRingHitsFromChargeSharing.size(); h++){
+			//did we already count this hit?
+			if (find(GRIndices.begin(), GRIndices.end(), h) == GRIndices.end()){
+				GuardRingHits.push_back(GuardRingHitsFromChargeSharing[h]);
+			}
+		}
 
 
     // (1c): Merge strip hits
@@ -507,25 +799,152 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
     // (3a) Add energy of all subhits to get energy of each striphit
     for (MNCTDEEStripHit& Hit: MergedStripHits) { 
-     double Energy = 0;
+     	double Energy = 0;
+			double EnergyOrig = 0;
       for (MNCTDEEStripHit SubHit: Hit.m_SubStripHits) {
         Energy += SubHit.m_Energy;
+				EnergyOrig += SubHit.m_EnergyOrig;
       }
 
       Hit.m_Energy = Energy;
+			Hit.m_EnergyOrig = EnergyOrig;
     }
 
-		// (3b) Charge sharing
-		// (3c) Charge loss
+		// (3b) Charge loss
+		list<MNCTDEEStripHit>::iterator sh1, sh2;
+		for (sh1 = MergedStripHits.begin(); sh1 != MergedStripHits.end(); ++sh1){
+			for (sh2 = sh1; sh2 != MergedStripHits.end(); ++sh2){
+				if (sh1 == sh2){ continue; }
+
+				//check if strip hits are adjacent
+				bool adjacent = false;
+				int stripID1 = (*sh1).m_ROE.GetStripID();
+				int stripID2 = (*sh2).m_ROE.GetStripID();
+				int detID1 = (*sh1).m_ROE.GetDetectorID();
+				int detID2 = (*sh2).m_ROE.GetDetectorID();
+				bool side1 = (*sh1).m_ROE.IsPositiveStrip();
+				bool side2 = (*sh2).m_ROE.IsPositiveStrip();
+				if (abs(stripID1-stripID2) == 1 && side1 == side2 && detID1 == detID2){
+					adjacent = true;
+				}
+
+				//if adjacent, check if strip hits share origins
+				bool sharedOrigin = false;
+				if (adjacent){
+					for (int o1: (*sh1).m_Origins){
+						for (int o2: (*sh2).m_Origins){
+							if (o1 == o2){
+								sharedOrigin = true;
+								break;
+							}
+						}
+					}
+				}
+
+				//if shared origin and adjacent, apply charge loss effect -- only on p side
+				if (adjacent && sharedOrigin){
+					double energy1 = (*sh1).m_Energy;
+					double energy2 = (*sh2).m_Energy;
+					double depth1 = (*sh1).m_Depth;
+					double depth2 = (*sh2).m_Depth;
+					if (side1 && depth1 == depth2){
+						vector<double> newEnergies = ApplyChargeLoss(energy1,energy2,detID1,0,depth1,depth2);
+						(*sh1).m_Energy = newEnergies.at(0);
+						(*sh2).m_Energy = newEnergies.at(1);
+					}
+				}
+
+			}
+		}
  
 
-		// (3d) Cross talk
+		// (3c) Cross talk
 
-		//Group striphits by detector and side
+    //Identify hits that need crosstalk
+    double sim_arr[MergedStripHits.size()][5];
+    list<MNCTDEEStripHit>::iterator i = MergedStripHits.begin();
+    int i2 = 0;
+    while (i != MergedStripHits.end()) {
+      int sdet = (*i).m_ROE.GetDetectorID();
+      bool bside = (*i).m_ROE.IsPositiveStrip();
+      int sside = 0;
+      if (bside == true) {sside = 1;}
+      int sstrip = (*i).m_ROE.GetStripID();
+      double senergy = (*i).m_Energy;
 
-		//Apply crosstalk correction
+      sim_arr[i2][0] = i2;
+      sim_arr[i2][1] = sdet;
+      sim_arr[i2][2] = sside;
+      sim_arr[i2][3] = sstrip;
+      sim_arr[i2][4] = senergy;
 
-		// (3e) Give each striphit an noised ADC value; handle ADC overflow
+      ++i;
+      ++i2;
+    }
+
+    //Add cross talk energy to chosen strips
+    //E_sim = M^-1(E_real+C) <- cross talk correction
+    //E_real = (E_sim*M)-C <- adding cross talk
+    double sim_energies[MergedStripHits.size()] = {};
+    double matrix[MergedStripHits.size()][MergedStripHits.size()] = {};
+    double constant[MergedStripHits.size()] = {};
+
+    for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+      sim_energies[i] = sim_arr[i][4];
+    }
+    
+    for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+      for (unsigned int j=0; j<MergedStripHits.size(); j++) {
+        int mdet = sim_arr[i][1];
+        int mside = sim_arr[i][2];
+        int mstrip = sim_arr[i][3];
+
+        double a0 = m_CrosstalkCoefficients[mdet][mside][0][0];
+        double b0 = m_CrosstalkCoefficients[mdet][mside][0][1];
+        double a1 = m_CrosstalkCoefficients[mdet][mside][1][0];
+        double b1 = m_CrosstalkCoefficients[mdet][mside][1][1];
+
+        if (i == j) {
+          matrix[i][j] += 1.0;
+        }
+        if (sim_arr[j][1] == mdet && sim_arr[j][2] == mside && sim_arr[j][3] == mstrip+1) {
+          constant[i] += a0/2.;
+          constant[j] += a0/2.;
+          matrix[i][j] += b0;
+          matrix[j][i] += b0;
+        }
+        if (sim_arr[j][1] == mdet && sim_arr[j][2] == mside && sim_arr[j][3] == mstrip+2) {
+          constant[i] += a1/2.;
+          constant[j] += a1/2.;
+          matrix[i][j] += b1;
+          matrix[j][i] += b1;
+        }
+      }
+    }
+    
+    double real_energies[MergedStripHits.size()] = {};
+    for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+      for (unsigned int j=0; j<MergedStripHits.size(); j++) {
+        real_energies[i] += matrix[j][i]*sim_energies[j];
+      }
+    }
+    for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+      real_energies[i] -= constant[i];
+    }
+
+    list<MNCTDEEStripHit>::iterator l = MergedStripHits.begin();
+    int l2 = 0;
+    while (l != MergedStripHits.end()) {
+      (*l).m_Energy = real_energies[l2];
+
+      ++l;
+      ++l2;
+    }
+
+
+
+
+		// (3d) Give each striphit an noised ADC value; handle ADC overflow
 		list<MNCTDEEStripHit>::iterator A = MergedStripHits.begin();
 		while (A != MergedStripHits.end()) {
 			double Energy = (*A).m_Energy;
@@ -589,7 +1008,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
     // (4c) Take care of guard ring vetoes
 		list<MNCTDEEStripHit>::iterator gr = GuardRingHits.begin();
-		int grHit[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+		vector<int> grHit = vector<int>(nDets,0);
 		while (gr != GuardRingHits.end()) {
 			if ((*gr).m_Energy > 25){
 				int detID = (*gr).m_ROE.GetDetectorID();
@@ -605,17 +1024,29 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			}
 			else{ ++grVeto; }
 		}
+		//update dead time stuff if the hit is vetoed by the guard ring
+		for (int det=0; det<nDets; det++){
+			if (grHit[det] == 1){
+				//make sure CC not already dead
+				if (evt_time > m_LastHitTimeByDet[det] + m_CCDeadTime[det]){
+					m_CCDeadTime[det] = 1e-5;
+					m_LastHitTimeByDet[det] = evt_time;
+					m_TotalDeadTime[det] += m_CCDeadTime[det];
+				}
+			}
+		}
+
 
 		// (4d) Make sure there is at least one strip left on each side of each detector
 		//  If not, remove remaining strip(s) from detector because they won't trigger detector
-		int xExists[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
-		int yExists[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+		vector<int> xExists = vector<int>(nDets,0);
+		vector<int> yExists = vector<int>(nDets,0);
 
 		//look for (at least) one strip on each side
 		list<MNCTDEEStripHit>::iterator tr = MergedStripHits.begin();
 		while (tr != MergedStripHits.end()) {
 			int DetID = (*tr).m_ROE.GetDetectorID();
-			if ((*tr).m_Timing != 0 && (*tr).m_Energy != 0){
+			if ((*tr).m_Timing != 0){
 				if ((*tr).m_ROE.IsPositiveStrip()){ xExists[DetID] = 1; }
 				else{ yExists[DetID] = 1; }
 			}
@@ -632,6 +1063,18 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			else{ ++tr;}
 		}
 
+		//apply dead time for hits that don't have coincidence
+		//i.e. hits with strip hits on only x OR y, not both
+		for (int det=0; det<nDets; det++){
+			if ((xExists[det] == 0 && yExists[det] == 1) || (xExists[det] == 1 && yExists[det] == 0)){
+				//make sure CC not already dead
+				if (evt_time > m_LastHitTimeByDet[det] + m_CCDeadTime[det]){
+					m_CCDeadTime[det] = 1e-5;
+					m_LastHitTimeByDet[det] = evt_time;
+					m_TotalDeadTime[det] += m_CCDeadTime[det];
+				}
+			}
+		}
 
     // Step (5): Split into card cage events - i.e. split by detector
 /*    vector<vector<MNCTDEEStripHit>> CardCagedStripHits;
@@ -660,13 +1103,12 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
 		//Step (6.5): Dead time
 		//figure out which detectors are currently dead -- 10us dead time per event
-		int updateLastHitTime[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
-		int detIsDead[12];
+		vector<int> updateLastHitTime = vector<int>(nDets,0);
+		vector<int> detIsDead = vector<int>(nDets,0);
 
-		for (int d=0; d<12; d++){
+		for (int d=0; d<nDets; d++){
 			//second conditional for running multiple sim files when t starts at 0
 			if (m_LastHitTimeByDet[d] + m_CCDeadTime[d] > evt_time && m_LastHitTimeByDet[d]<evt_time){ detIsDead[d] = 1; }
-			else { detIsDead[d] = 0; }
 		}
 
 		//erase strip hits in dead detectors
@@ -684,9 +1126,10 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     }
 
 		//update last hit time for live detectors that were hit
-		for (int d=0; d<12; d++){
+		for (int d=0; d<nDets; d++){
 			if (updateLastHitTime[d] == 1){
 				m_LastHitTimeByDet[d] = evt_time;
+				m_CCDeadTime[d] = 1e-5;
 				m_TotalDeadTime[d] += m_CCDeadTime[d];
 			}
 		}
@@ -695,13 +1138,12 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		//figure out if dead time buffers are full, and update them accordingly
 		double empty_buffer_val = -1;
 		double time_buffer_empty = .000625;
-		int nBuffSlots = 16;
 
 		//increase buffer times if necessary
-		for (int d=0; d<12; d++){
+		for (int d=0; d<nDets; d++){
 			int indexOfLargest = -1;
 			double maxTime = -1;
-			for (int s=0; s<nBuffSlots; s++){
+			for (int s=0; s<nDTBuffSlots; s++){
 				//if buffer slot not empty
 				if (m_DeadTimeBuffer[d][s] != -1){
 					//if buffer slot has exceeded time to empty, set it to empty
@@ -722,12 +1164,12 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
 
 		//figure out which detectors were hit
-		int bufferFull[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+		vector<int> bufferFull = vector<int>(nDets,0);
  
 		//check if buffer is full for each detector
-		for (int d=0; d<12; d++){
+		for (int d=0; d<nDets; d++){
 			int nextEmptySlot = 16;
-			for (int s=0; s<nBuffSlots; s++){
+			for (int s=0; s<nDTBuffSlots; s++){
 				if (m_DeadTimeBuffer[d][s] == empty_buffer_val){
 					nextEmptySlot = s;
 					break;
@@ -736,7 +1178,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			bufferFull[d] = nextEmptySlot;
 		}
 
-		for (int i=0; i<12; i++){
+		for (int i=0; i<nDets; i++){
 			if (bufferFull[i] > m_MaxBufferFullIndex){ m_MaxBufferFullIndex = bufferFull[i]; m_MaxBufferDetector = i; }
 		}
 
@@ -800,7 +1242,87 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		}
 		m_LastTime = SimEvent->GetTime().GetAsSeconds();
 		
- 
+
+		// Step (8): Apply fudge factor to completely absorbed events (photopeak)
+		//to deal with successor stuff, need to do this for each SimHT
+		//but same origin can make multiple SimHTs, so have to add them back together
+		if (m_ApplyFudgeFactor){
+			map<int,double> initialEnergyByIA;
+			map<int,double> finalEnergyByIA;
+			map<int,vector<unsigned int> > HitIndexByIA;
+
+			for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+				MSimHT* Hit = SimEvent->GetHTAt(h);
+				int initIA = Hit->GetSmallestOrigin();
+				MString IAprocess = SimEvent->GetIAById(initIA)->GetProcess();
+				while (IAprocess != "INIT"){
+					initIA = SimEvent->GetIAById(initIA)->GetOriginID();
+					IAprocess = SimEvent->GetIAById(initIA)->GetProcess();
+				}
+
+				double initialEnergy = SimEvent->GetIAById(initIA)->GetSecondaryEnergy();
+				double finalEnergy = 0.0;
+				for (list<MNCTDEEStripHit>::iterator p=MergedStripHits.begin(); p!=MergedStripHits.end(); ++p){
+					if ((*p).m_ROE.IsPositiveStrip() == false && (*p).m_HitIndex == h){
+						finalEnergy += (*p).m_EnergyOrig;
+					}
+				}
+
+				initialEnergyByIA[initIA] = initialEnergy;
+				finalEnergyByIA[initIA] += finalEnergy;
+				HitIndexByIA[initIA].push_back(h);
+			}
+
+			//now that we have initial and final energy for each INIT IA,
+			// figure out if IA was completely absorbed or not
+			map<int,bool> eraseHit;
+			for (auto i: initialEnergyByIA){
+				double initialEnergy = i.second;
+				double finalEnergy = finalEnergyByIA[i.first];
+
+				double sigma = 8.35e-4*initialEnergy+1.69;
+				double windowSize = 1.5*sigma;
+				double threshold = 7.04e-5*initialEnergy+0.79;
+
+				if (finalEnergy > initialEnergy-windowSize && finalEnergy < initialEnergy+windowSize){
+					double prob = gRandom->Rndm();
+					if (prob > threshold){
+						eraseHit[i.first] = true;
+					}
+					else { eraseHit[i.first] = false; }
+				}
+			}
+			//erase strip hits from IAs where probability was above the threshold
+			for (auto i: eraseHit){
+				if (i.second == true){
+					list<MNCTDEEStripHit>::iterator p = MergedStripHits.begin();
+					while (p != MergedStripHits.end()){
+						bool eraseP = false;
+						for (unsigned int j=0; j<HitIndexByIA[i.first].size(); j++){
+							if ((*p).m_HitIndex == HitIndexByIA[i.first][j]){
+								eraseP = true;
+								break;
+							}
+						}
+						if (eraseP){
+							p = MergedStripHits.erase(p);
+						}
+						else { ++p; }
+					}
+				}
+			}
+		}
+		//check if there are any strip hits left...
+ 		HitCounter = 0;
+		for (MNCTDEEStripHit Hit: MergedStripHits){
+			HitCounter++;
+		}
+		if (HitCounter == 0){
+			delete SimEvent;
+			continue;
+		}
+
+
     // (1) Move the information to the read-out-assembly
     Event->SetID(SimEvent->GetID());
     Event->SetTimeUTC(SimEvent->GetTime());
@@ -868,11 +1390,11 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
 //	cout << "Num shield counts: " << m_NumShieldCounts << endl;
 	cout << "Shield rate (cps): " << m_NumShieldCounts/(m_LastTime-m_FirstTime) << endl;
 	cout << "Dead time " << endl;
-	for (int i=0; i<12; i++){
+	for (int i=0; i<nDets; i++){
 		cout << i << ":\t" << m_TotalDeadTime[i] << endl;
 	}
 	cout << "Trigger rates (events per second)" << endl;
-	for (int i=0; i<12; i++){
+	for (int i=0; i<nDets; i++){
 		cout << i << ":\t" << m_TriggerRates[i]/(m_LastTime-m_FirstTime) << endl;
 	}
 	cout << "Shield dead time: " << m_ShieldDeadTime << endl;
@@ -883,7 +1405,7 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
     m_Roa<<"EN"<<endl<<endl;
     m_Roa.close();
   }
-  
+
   delete m_Reader;
 
   return true;
@@ -943,7 +1465,7 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
 double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString shield_name)
 { 
 
-  double resolution_consts[6] = {3.75,3.74,18.47,4.23,3.07,3.98};
+  vector<double> resolution_consts{3.75,3.74,18.47,4.23,3.07,3.98};
 
   shield_name.RemoveAllInPlace("Shield");
   int shield_num = shield_name.ToInt();
@@ -962,91 +1484,189 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
 
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
+//! Calculate new summed energy of two strips affected by charge loss
+vector<double> MNCTDetectorEffectsEngineCOSI::ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2){
+
+	double trueSum = energy1+energy2;
+	double diff = abs(energy1-energy2);
+
+	//deal with depth
+	//use average depth? or don't do charge loss if hits dont have the same depth?
+//	double Depth = (depth1+depth2)/2.;
+	TH1D DepthBins("DB","",3,0,1.5);
+	int depthBin = DepthBins.GetXaxis()->FindBin(depth1)-1;
+
+	//B = A0 + A1*E
+	double A0 = m_ChargeLossCoefficients[detID][side][depthBin][0];
+	double A1 = m_ChargeLossCoefficients[detID][side][depthBin][1];
+	double B = A0 + A1*trueSum;
+
+	//try the Dmax thing
+//	double Dmax = trueSum*(trueSum-511./2)/(trueSum+511./2);
+//	if (diff < Dmax){ B = 0; }
+	if (B < 0){ B = 0; }
+
+	//get new sum
+	double newSum;
+	if (trueSum >= 300){
+		newSum = trueSum - B*(trueSum - diff);
+	}
+	else {
+		newSum = trueSum - (B/(2*trueSum))*(pow(trueSum,2) - pow(diff,2));
+	}
+
+	//get new strip hit energies: subtract same amount from energy1 and energy2
+	double sumDiff = trueSum - newSum;
+	double newE1, newE2;
+	newE1 = energy1 - sumDiff/2.;
+	newE2 = energy2 - sumDiff/2.;
+
+	m_ChargeLossHist->Fill(trueSum,sumDiff);
+
+	vector<double> retEnergy;
+
+	retEnergy.push_back(newE1);
+	retEnergy.push_back(newE2);
+
+	return retEnergy;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 //! Calculate new summed energy of two strips affected by charge loss
 bool MNCTDetectorEffectsEngineCOSI::InitializeChargeLoss()
 { 
 
-  vector<string> filenames;
-  filenames.push_back("./ChargeLossCorrectionScaled_Ba133.log");
-  filenames.push_back("./ChargeLossCorrectionScaled_Cs137.log");
+	//coefficients[energy][detector][side][depth]
+	vector<vector<vector<vector<double> > > > coefficients(4, vector<vector<vector<double> > > (nDets, vector<vector<double> > (nSides, vector<double> (3))));
 
-  vector<vector<vector<double> > > coefficients;
+	MFile File;
+	if (File.Open(m_ChargeLossFileName) == false){
+		cout << "Unable to open file: " << m_ChargeLossFileName << endl;
+		return false;
+	}
 
-  for (unsigned int f=0; f<filenames.size(); f++){
-    vector<double> tempOneDet;
-    vector<vector<double> > tempOneSource;
-    string line;
-    int c=0;
-    double B;
+	MTokenizer Tokenizer;
+	MString Line;
 
-    ifstream clFile;
-    clFile.open(filenames.at(f));
+	vector<double> energies{122,356,662,1333};
 
-    if (clFile.is_open()){
-      while (!clFile.eof()){
-        c++;
-        getline(clFile,line);
+	while (File.ReadLine(Line) == true){
+		Tokenizer.Analyze(Line);
+		//sometimes somehow I read an empty string
+		if (Line.AreIdentical("")){ continue; }
 
-        if (c <= 24){
-          B = stod(line);
-          if (c%2 != 0){ tempOneDet.push_back(B);}
-          else {
-            tempOneDet.push_back(B);
-            tempOneSource.push_back(tempOneDet);
-            tempOneDet.clear();
-          }
-        }
-      }
-    } else {
-      cout << "Unable to open charge-loss file " << filenames.at(f) << endl;
-      return false;
-    }
+		double energy = Tokenizer.GetTokenAtAsDouble(0);
+		int det = Tokenizer.GetTokenAtAsInt(1);
+		int side = Tokenizer.GetTokenAtAsInt(2);
+		int depthBin = Tokenizer.GetTokenAtAsInt(3)-1;
+		double B = Tokenizer.GetTokenAtAsDouble(5);
 
-    clFile.close();
-    coefficients.push_back(tempOneSource);
-    tempOneSource.clear();
-  }
+		int energyIndex = 0;
+		for (unsigned int i=0; i<energies.size(); i++){
+			if (energies[i] == energy){
+				energyIndex = i;
+				break;
+			}
+		}
 
-  double energies[2] = {356,662};
-  double points[2];
+		coefficients[energyIndex][det][side][depthBin] = B;
+	}
+
+  double *energyArr = &energies[0];
+  double points[4];
   double A0;
   double A1;
 
-  for (int det=0; det<12; det++){
-    for (int side=0; side<2; side++){
-      if (coefficients.at(0).size() < 12 || coefficients.at(1).size() < 12) {
-        cout<<"Error: The charge loss coefficients do not cover all 12 detectors..."<<endl;
-        continue;
-      }
+  for (int det=0; det<nDets; det++){
+    for (int side=0; side<nSides; side++){
+			for (int depthBin=0; depthBin<3; depthBin++){
 
-      points[0] = coefficients.at(0).at(det).at(side);
-      points[1] = coefficients.at(1).at(det).at(side);
+ 	    	points[0] = coefficients[0][det][side][depthBin];
+ 	    	points[1] = coefficients[1][det][side][depthBin];
+				points[2] = coefficients[2][det][side][depthBin];
+				points[3] = coefficients[3][det][side][depthBin];
 
-      TGraph *g = new TGraph(2,energies,points);
-      TF1 *f = new TF1("f","[0]+[1]*x",energies[0],energies[1]);
-      g->Fit("f","RQ");
+	      TGraph *g = new TGraph(4,energyArr,points);
+	      TF1 *f = new TF1("f","[0]+[1]*x",energyArr[0],energyArr[3]);
+//	      TF1 *f = new TF1("f","[0]+[1]*x",energies[0],energies[2]);
+	      g->Fit("f","RQ");
 
-      A0 = f->GetParameter(0);
-      A1 = f->GetParameter(1);
+	      A0 = f->GetParameter(0);
+	      A1 = f->GetParameter(1);
 
-      m_ChargeLossCoefficients[det][side][0] = A0;
-      m_ChargeLossCoefficients[det][side][1] = A1;
+	      m_ChargeLossCoefficients[det][side][depthBin][0] = A0;
+	      m_ChargeLossCoefficients[det][side][depthBin][1] = A1;
 
-      delete g;
-      delete f;
-    }
-  }
+	      delete g;
+	      delete f;
+	    }
+	  }
+	}
   
   return true;
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+//! Read in charge sharing factors
+bool MNCTDetectorEffectsEngineCOSI::ParseChargeSharingFile()
+{
 
+	MParser Parser;
+	if (Parser.Open("/volumes/cronus/users/clio/DetectorEffectsEngineTests/Analysis190131+/ChargeSharingFactors/chargeSharingFactors.txt") == false){
+		cout << "Unable to open charge sharing file" << endl;
+		return false;
+	}
+
+	for (unsigned int i=0; i<nDets*nSides; i++){
+		int det = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+		int side = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
+		double slope = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
+		double yInt = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
+
+		TF1 *f = new TF1(MString(det)+"_"+MString(side),"[0]*x+[1]",0,2000);
+		f->SetParameter(0,slope);
+		f->SetParameter(1,yInt);
+
+		m_ChargeSharingFactors[det][side] = f;
+
+	}
+
+	return true;
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+//! Read in crosstalk coefficients
+bool MNCTDetectorEffectsEngineCOSI::ParseCrosstalkFile()
+{
+
+	MParser Parser;
+	if (Parser.Open(m_CrosstalkFileName, MFile::c_Read) == false) {
+		cout << "Unable to open crosstalk file " << m_CrosstalkFileName << endl;
+		return false;
+	}
+
+	for (unsigned int i=2; i<50; i++){
+		int cdet = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(0);
+		int cside = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
+		int cskip = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
+		double ca = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
+		double cb = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4);
+		m_CrosstalkCoefficients[cdet][cside][cskip][0] = ca;
+		m_CrosstalkCoefficients[cdet][cside][cskip][1] = cb;
+	}
+
+	return true;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 //! Read in thresholds
 bool MNCTDetectorEffectsEngineCOSI::ParseThresholdFile()
@@ -1254,9 +1874,9 @@ bool MNCTDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
 bool MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
 {  
   //initialize m_DeadStrips: set all values to 0
-  for (int i=0; i<12; i++) {
-    for (int j=0; j<2; j++) {
-      for (int k=0; k<37; k++) {
+  for (int i=0; i<nDets; i++) {
+    for (int j=0; j<nSides; j++) {
+      for (int k=0; k<nStrips; k++) {
         m_DeadStrips[i][j][k] = 0;
       }
     }
@@ -1302,6 +1922,10 @@ bool MNCTDetectorEffectsEngineCOSI::ParseDeadStripFile()
   return true;
 }
 
+
+void MNCTDetectorEffectsEngineCOSI::dummy_func(){
+	//empty function to make break points for debugger
+}
 
 // MDummy.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

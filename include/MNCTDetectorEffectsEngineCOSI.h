@@ -23,6 +23,7 @@
 using namespace std;
 
 // ROOT libs:
+#include "TH2D.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -82,7 +83,17 @@ public:
   void SetDeadStripFileName(const MString& FileName) { m_DeadStripFileName = FileName; } 
   //! Set the dead strips file name
   MString GetDeadStripFileName() const { return m_DeadStripFileName; } 
-  
+ 
+	//! Set the crosstalk coefficients file name
+	void SetCrosstalkFileName(const MString& FileName) { m_CrosstalkFileName = FileName; }
+	//! Get the crosstalk coefficients file name
+	MString GetCrosstalkFileName() const { return m_CrosstalkFileName; }
+
+	//! Set the charge loss coefficients file name
+	void SetChargeLossFileName(const MString& FileName) { m_ChargeLossFileName = FileName; }
+	//! Get the charge loss coefficients file name
+	MString GetChargeLossFileName() const { return m_ChargeLossFileName; }
+
   //! Set the depth calibration coefficients file name
   void SetDepthCalibrationCoeffsFileName(const MString& FileName) { m_DepthCalibrationCoeffsFileName = FileName; } 
   //! Set the depth calibration coefficients file name
@@ -92,13 +103,21 @@ public:
   void SetDepthCalibrationSplinesFileName(const MString& FileName) { m_DepthCalibrationSplinesFileName = FileName; }
   //!  Set the depth calibration splines file name
   MString GetDepthCalibrationSplinesFileName() const { return m_DepthCalibrationSplinesFileName; }
-  
+ 
+	//! Get include fudge factor
+	bool GetApplyFudgeFactor() const { return m_ApplyFudgeFactor; }
+	//! Set whether to include the fudge factor
+	void SetApplyFudgeFactor(bool ApplyFudgeFactor){ m_ApplyFudgeFactor = ApplyFudgeFactor; }
+ 
   //! Initialize the module
   bool Initialize();
   //! Analyze whatever needs to be analyzed...
   bool GetNextEvent(MReadOutAssembly* Event);
   //! Finalize the module
   bool Finalize();
+
+	//! empty function used to make breakpoints for debugger
+	void dummy_func();
   
   
 protected:
@@ -110,10 +129,15 @@ protected:
   bool ParseDeadStripFile();
   //! noise shield energy
   double NoiseShieldEnergy(double energy, MString ShieldName);
+	//! Read charge sharing factor file
+	bool ParseChargeSharingFile();
   //! Read and initialize charge loss coefficients
   bool InitializeChargeLoss();
-
-  
+	//! Parse crosstalk coefficients file
+	bool ParseCrosstalkFile();
+	//! Apply charge loss correction
+	vector<double> ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2);
+ 
 
 public:
   //! Tiny helper class for MNCTDetectorEffectsEngineCOSI describing a special strip hit
@@ -131,6 +155,11 @@ public:
     MVector m_Position;
     //! The simulated energy deposit
     double m_Energy;
+		//! The simulated energy deposit -- not changed by crosstalk and charge loss
+		double m_EnergyOrig;
+
+		//! SimHT index that the strip hit came from to check if hit was completely absorbed
+		unsigned int m_HitIndex;
     
     //! True if this is a guard ring
     bool m_IsGuardRing;
@@ -151,6 +180,8 @@ public:
     
     //! for charge loss
     int m_OppositeStrip;
+		//! save depth information for charge loss, and maybe other things
+		double m_Depth;
   };
   
 protected:
@@ -177,18 +208,33 @@ protected:
   MString m_DeadStripFileName;
   //! Thresholds file name
   MString m_ThresholdFileName;
+	//! Crosstalk file name
+	MString m_CrosstalkFileName;
+	//! Charge loss file name
+	MString m_ChargeLossFileName;
   //! Depth calibration coefficients file name
   MString m_DepthCalibrationCoeffsFileName;
   //! Depth calibration splines file name
   MString m_DepthCalibrationSplinesFileName;
-  
+	//! whether fudge factor is applied
+	bool m_ApplyFudgeFactor;
   
   //! The far field start area
   double m_StartAreaFarField;
   
   
 private:
-  
+ 
+	//COSI constants
+	//! number of detectors
+	static const int nDets = 12;
+	//! number of sides
+	static const int nSides = 2;
+	//! number of strips
+	static const int nStrips = 37;
+	//! slots in DSP dead time buffer
+	static const int nDTBuffSlots = 16;
+ 
   //! The geometry
   MDGeometryQuest* m_Geometry;
   //! True if this class owns the geometry
@@ -214,17 +260,17 @@ private:
   map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
   
 	//! Dead time buffer with 16 slots
-	double m_DeadTimeBuffer[12][16];
+	vector<vector<double> > m_DeadTimeBuffer = vector<vector<double> >(nDets, vector<double> (nDTBuffSlots));
   //! Stores dead time for each detector
-  double m_CCDeadTime[12];
+  vector<double> m_CCDeadTime = vector<double>(nDets);
 	//! Stores last hit time for any detector
 	double m_LastHitTime;
   //! Stores last time detector was hit to check if detector still dead
-  double m_LastHitTimeByDet[12];
+  vector<double> m_LastHitTimeByDet = vector<double>(nDets);
 	//! Stores total dead time by detector
-  double m_TotalDeadTime[12];
+  vector<double> m_TotalDeadTime = vector<double>(nDets);
 	//! Stores trigger rates (number of events) for each detector
-  int m_TriggerRates[12];
+  vector<int> m_TriggerRates = vector<int>(nDets);
 	//! Stores time of first event; used to get number of events per second
 	double m_FirstTime;
 	//! Stores time of last event; used to get number of events per second
@@ -233,17 +279,27 @@ private:
 	int m_MaxBufferFullIndex;
 	int m_MaxBufferDetector;
 
+	//! dead time on the shields
   double m_ShieldDeadTime;
+	//! whether or not the event is vetoed by the shields
+	bool m_ShieldVeto;
   
   //! List of dead strips
-  int m_DeadStrips[12][2][37];
+  vector<vector<vector<int> > > m_DeadStrips = vector<vector<vector<int> > >(nDets, vector<vector<int> >(nSides, vector<int>(nStrips)));
   
   //! Depth calibrator class
   MNCTDepthCalibrator* m_DepthCalibrator;
-  
+
+	//! charge sharing factors
+	vector<vector<TF1*> > m_ChargeSharingFactors = vector<vector<TF1*> >(nDets, vector<TF1*>(nSides));
+ 
   //! Charge loss fit coefficients
-  double m_ChargeLossCoefficients[12][2][2];
-  
+	double m_ChargeLossCoefficients[nDets][nSides][3][2];
+	//for some reason when I turn this into a vector I get a seg fault, too lazy to debug now
+
+	//! Crosstalk coefficients
+	vector<vector<vector<vector<double> > > > m_CrosstalkCoefficients = vector<vector<vector<vector<double> > > >(12, vector<vector<vector<double> > > (2, vector<vector<double> > (2, vector<double> (2))));
+
   unsigned long m_MultipleHitsCounter;
   unsigned long m_TotalHitsCounter;
   unsigned long m_ChargeLossCounter;
@@ -257,7 +313,11 @@ private:
   
   long m_NumShieldCounts;
   
-  
+	//! drift constant: used for charge sharing due to diffusion; one for each detector
+	vector<double> m_DriftConstant;
+
+	TH2D* m_ChargeLossHist;
+
   #ifdef ___CLING___
 public:
   ClassDef(MNCTDetectorEffectsEngineCOSI, 0) // no description

@@ -181,6 +181,14 @@ bool MNCTModuleSimulationLoader::ReadXmlConfiguration(MXmlNode* Node)
   if (ThresholdFileNameNode != 0) {
     SetThresholdFileName(ThresholdFileNameNode->GetValue());
   }
+  MXmlNode* CrosstalkFileNameNode = Node->GetNode("CrosstalkFileName");
+  if (CrosstalkFileNameNode != 0) {
+    SetCrosstalkFileName(CrosstalkFileNameNode->GetValue());
+  }
+	MXmlNode* ChargeLossFileNameNode = Node->GetNode("ChargeLossFileName");
+	if (ChargeLossFileNameNode != 0) {
+		SetChargeLossFileName(ChargeLossFileNameNode->GetValue());
+	}
   MXmlNode* DepthCalibrationCoeffsFileNameNode = Node->GetNode("DepthCalibrationCoeffsFileName");
   if (DepthCalibrationCoeffsFileNameNode != 0) {
     SetDepthCalibrationCoeffsFileName(DepthCalibrationCoeffsFileNameNode->GetValue());
@@ -189,6 +197,10 @@ bool MNCTModuleSimulationLoader::ReadXmlConfiguration(MXmlNode* Node)
   if (DepthCalibrationSplinesFileNameNode != 0) {
     SetDepthCalibrationSplinesFileName(DepthCalibrationSplinesFileNameNode->GetValue());
   }
+	MXmlNode* ApplyFudgeFactorNode = Node->GetNode("ApplyFudgeFactor");
+	if (ApplyFudgeFactorNode != 0) {
+		m_ApplyFudgeFactor = ApplyFudgeFactorNode->GetValueAsBoolean();
+	}
  
   return true;
 }
@@ -206,9 +218,12 @@ MXmlNode* MNCTModuleSimulationLoader::CreateXmlConfiguration()
   new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
   new MXmlNode(Node, "DeadStripFileName", m_DeadStripFileName);
   new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
+	new MXmlNode(Node, "CrosstalkFileName", m_CrosstalkFileName);
+	new MXmlNode(Node, "ChargeLossFileName", m_ChargeLossFileName);
   new MXmlNode(Node, "DepthCalibrationCoeffsFileName", m_DepthCalibrationCoeffsFileName);
   new MXmlNode(Node, "DepthCalibrationSplinesFileName", m_DepthCalibrationSplinesFileName);
-  
+  new MXmlNode(Node, "ApplyFudgeFactor", m_ApplyFudgeFactor);
+
   return Node;
 }
 

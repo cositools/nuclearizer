@@ -76,11 +76,16 @@ class MGUIOptionsSimulationLoader : public MGUIOptions
   MGUIEFileSelector* m_DeadStripFileSelector;
   //! Thresholds file name
   MGUIEFileSelector* m_ThresholdFileSelector;
+	//! Crosstalk file name
+	MGUIEFileSelector* m_CrosstalkFileSelector;
+	//! Charge loss file name
+	MGUIEFileSelector* m_ChargeLossFileSelector;
   //! Depth calibration coefficients file name
   MGUIEFileSelector* m_DepthCalibrationCoeffsFileSelector;
   //! Depth calibration splines file name
   MGUIEFileSelector* m_DepthCalibrationSplinesFileSelector;
-
+	//! Apply fudge factor
+	TGCheckButton* m_ApplyFudgeFactorSelector;
   
 #ifdef ___CLING___
  public:

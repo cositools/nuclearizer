@@ -89,6 +89,16 @@ void MGUIOptionsSimulationLoader::Create()
   m_ThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
   m_OptionsFrame->AddFrame(m_ThresholdFileSelector, LabelLayout);
 
+	m_CrosstalkFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a crosstalk coefficients file:",
+		dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetCrosstalkFileName());
+	m_CrosstalkFileSelector->SetFileType("Crosstalk file", "*.txt");
+	m_OptionsFrame->AddFrame(m_CrosstalkFileSelector, LabelLayout);
+
+	m_ChargeLossFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge loss coefficients file:",
+		dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetChargeLossFileName());
+	m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.log");
+	m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
+
   m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
     dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetDepthCalibrationCoeffsFileName());
   m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.txt");
@@ -99,7 +109,10 @@ void MGUIOptionsSimulationLoader::Create()
   m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.ctd");
   m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
   
-  
+  m_ApplyFudgeFactorSelector = new TGCheckButton(m_OptionsFrame, "Apply fudge factor to better match fluxes", 1);
+	m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetApplyFudgeFactor());
+	m_OptionsFrame->AddFrame(m_ApplyFudgeFactorSelector, LabelLayout);
+
   PostCreate();
 }
 
@@ -145,10 +158,13 @@ bool MGUIOptionsSimulationLoader::OnApply()
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetSimulationFileName(m_SimulationFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
+	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());
+	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetDeadStripFileName(m_DeadStripFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetDepthCalibrationCoeffsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetDepthCalibrationSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
-  
+	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetApplyFudgeFactor(m_ApplyFudgeFactorSelector->IsOn());
+ 
   return true;
 }
 
