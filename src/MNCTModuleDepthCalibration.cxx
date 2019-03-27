@@ -243,6 +243,14 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				PosError = CalculateLocalPosition(OtherSideStrip, DominantStrip, LocalPosition, PositionResolution, BadDepth);
 			}
 
+			//CCS (on 190322)
+			//determine the weighted position on the side with 2 adjacent strips
+			double pos1 = ((double)DominantStrip->GetStripID() - 19.0)*(-0.2);
+			double pos2 = ((double)NonDominantStrip->GetStripID() - 19.0)*(-0.2);
+			double pos_avg = ((pos1)*DominantStrip->GetEnergy() + (pos2)*NonDominantStrip->GetEnergy())/(DominantStrip->GetEnergy() + NonDominantStrip->GetEnergy());
+			if ( IsNeighborSideX ){ LocalPosition.SetX(pos_avg); }
+			else { LocalPosition.SetY(pos_avg); }
+
 			//calculate the global position and set the hit's position and position resolution
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
 			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
@@ -250,7 +258,9 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			if( PosError != 0 ) {
 				Error = PosError; //record the positioning error 
 				H->SetNoDepth();
-			} else {
+			}
+			//if we're doing average positions, this part is unnecessary
+/*			else {
 				MVector Local2Position, Position2Resolution;
 				int Pos2Error = 0;
 				if( IsNeighborSideX ) {
@@ -265,7 +275,7 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				// depth calibration only splits up these hits if there's no evidence of charge loss
 				// this way we are not inadvertently including charge loss in the pipeline
 				// commenting that out				
-/*				H->SetEnergy( DominantStrip->GetEnergy() ); //reset energy to dominant strip energy
+				H->SetEnergy( DominantStrip->GetEnergy() ); //reset energy to dominant strip energy
 	      H->RemoveStripHit(NonDominantStrip);
 				MNCTHit* NH = new MNCTHit();
 				NH->SetEnergy(NonDominantStrip->GetEnergy());
@@ -274,9 +284,9 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 				NH->SetIsNondominantNeighborStrip();
 				NH->AddStripHit(NonDominantStrip); NH->AddStripHit(OtherSideStrip);
 				NewHits.push_back(NH);
-*/
-			}
 
+			}
+*/
 			//Event->SetDepthCalibrationIncomplete(); //AWL1x1
 		
 		} else if( (XStrips.size() == 2) && (YStrips.size() == 2) ){
