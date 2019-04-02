@@ -248,8 +248,8 @@ bool MNCTModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			double pos1 = ((double)DominantStrip->GetStripID() - 19.0)*(-0.2);
 			double pos2 = ((double)NonDominantStrip->GetStripID() - 19.0)*(-0.2);
 			double pos_avg = ((pos1)*DominantStrip->GetEnergy() + (pos2)*NonDominantStrip->GetEnergy())/(DominantStrip->GetEnergy() + NonDominantStrip->GetEnergy());
-			if ( IsNeighborSideX ){ LocalPosition.SetX(pos_avg); }
-			else { LocalPosition.SetY(pos_avg); }
+			if ( IsNeighborSideX ){ LocalPosition.SetY(pos_avg); }
+			else { LocalPosition.SetX(pos_avg); }
 
 			//calculate the global position and set the hit's position and position resolution
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
