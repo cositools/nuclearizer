@@ -924,7 +924,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
     }
     
-    vector<double> real_energies = vector<double>(MergedStripHits.size()) = {};
+    vector<double> real_energies = vector<double>(MergedStripHits.size());
     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
       for (unsigned int j=0; j<MergedStripHits.size(); j++) {
         real_energies[i] += matrix[j][i]*sim_energies[j];
