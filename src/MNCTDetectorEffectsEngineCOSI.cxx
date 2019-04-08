@@ -885,9 +885,11 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     //Add cross talk energy to chosen strips
     //E_sim = M^-1(E_real+C) <- cross talk correction
     //E_real = (E_sim*M)-C <- adding cross talk
-    double sim_energies[MergedStripHits.size()] = {};
-    double matrix[MergedStripHits.size()][MergedStripHits.size()] = {};
-    double constant[MergedStripHits.size()] = {};
+		//CCS 190408: changing sim_energies, matrix, and constant from arrays to vectors
+		//  old way didn't compile on mac os
+    vector<double> sim_energies = vector<double>(MergedStripHits.size());
+		vector<vector<double> > matrix = vector<vector<double> >(MergedStripHits.size(), vector<double> (MergedStripHits.size()));
+    vector<double> constant = vector<double>(MergedStripHits.size());
 
     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
       sim_energies[i] = sim_arr[i][4];
@@ -922,7 +924,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
     }
     
-    double real_energies[MergedStripHits.size()] = {};
+    vector<double> real_energies = vector<double>(MergedStripHits.size()) = {};
     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
       for (unsigned int j=0; j<MergedStripHits.size(); j++) {
         real_energies[i] += matrix[j][i]*sim_energies[j];
