@@ -181,6 +181,10 @@ bool MNCTModuleSimulationLoader::ReadXmlConfiguration(MXmlNode* Node)
   if (ThresholdFileNameNode != 0) {
     SetThresholdFileName(ThresholdFileNameNode->GetValue());
   }
+	MXmlNode* ChargeSharingFileNameNode = Node->GetNode("ChargeSharingFileNmae");
+	if (ChargeSharingFileNameNode != 0) {
+		SetChargeSharingFileName(ChargeSharingFileNameNode->GetValue());
+	}
   MXmlNode* CrosstalkFileNameNode = Node->GetNode("CrosstalkFileName");
   if (CrosstalkFileNameNode != 0) {
     SetCrosstalkFileName(CrosstalkFileNameNode->GetValue());
@@ -218,6 +222,7 @@ MXmlNode* MNCTModuleSimulationLoader::CreateXmlConfiguration()
   new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
   new MXmlNode(Node, "DeadStripFileName", m_DeadStripFileName);
   new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
+	new MXmlNode(Node, "ChargeSharingFileNmae", m_ChargeSharingFileName);
 	new MXmlNode(Node, "CrosstalkFileName", m_CrosstalkFileName);
 	new MXmlNode(Node, "ChargeLossFileName", m_ChargeLossFileName);
   new MXmlNode(Node, "DepthCalibrationCoeffsFileName", m_DepthCalibrationCoeffsFileName);

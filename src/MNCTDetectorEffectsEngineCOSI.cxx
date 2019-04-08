@@ -1619,7 +1619,7 @@ bool MNCTDetectorEffectsEngineCOSI::ParseChargeSharingFile()
 {
 
 	MParser Parser;
-	if (Parser.Open("/volumes/cronus/users/clio/DetectorEffectsEngineTests/Analysis190131+/ChargeSharingFactors/chargeSharingFactors.txt") == false){
+	if (Parser.Open(m_ChargeSharingFileName) == false){
 		cout << "Unable to open charge sharing file" << endl;
 		return false;
 	}

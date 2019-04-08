@@ -89,6 +89,11 @@ void MGUIOptionsSimulationLoader::Create()
   m_ThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
   m_OptionsFrame->AddFrame(m_ThresholdFileSelector, LabelLayout);
 
+	m_ChargeSharingFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge sharing factor file:",
+		dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetChargeSharingFileName());
+	m_ChargeSharingFileSelector->SetFileType("Charge sharing file", "*.txt");
+	m_OptionsFrame->AddFrame(m_ChargeSharingFileSelector, LabelLayout);
+
 	m_CrosstalkFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a crosstalk coefficients file:",
 		dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetCrosstalkFileName());
 	m_CrosstalkFileSelector->SetFileType("Crosstalk file", "*.txt");
@@ -158,6 +163,7 @@ bool MGUIOptionsSimulationLoader::OnApply()
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetSimulationFileName(m_SimulationFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
+	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
 	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());
 	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetDeadStripFileName(m_DeadStripFileSelector->GetFileName());

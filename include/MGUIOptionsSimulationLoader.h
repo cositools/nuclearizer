@@ -76,6 +76,8 @@ class MGUIOptionsSimulationLoader : public MGUIOptions
   MGUIEFileSelector* m_DeadStripFileSelector;
   //! Thresholds file name
   MGUIEFileSelector* m_ThresholdFileSelector;
+	//! Charge sharing file name
+	MGUIEFileSelector* m_ChargeSharingFileSelector;
 	//! Crosstalk file name
 	MGUIEFileSelector* m_CrosstalkFileSelector;
 	//! Charge loss file name

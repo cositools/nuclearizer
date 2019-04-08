@@ -83,6 +83,11 @@ public:
   void SetDeadStripFileName(const MString& FileName) { m_DeadStripFileName = FileName; } 
   //! Set the dead strips file name
   MString GetDeadStripFileName() const { return m_DeadStripFileName; } 
+
+	//! Set the charge sharing factors file name
+	void SetChargeSharingFileName(const MString& FileName){ m_ChargeSharingFileName = FileName; }
+	//! Get the charge sharing factors file name
+	MString GetChargeSharingFileName() const { return m_ChargeSharingFileName; }
  
 	//! Set the crosstalk coefficients file name
 	void SetCrosstalkFileName(const MString& FileName) { m_CrosstalkFileName = FileName; }
@@ -208,6 +213,8 @@ protected:
   MString m_DeadStripFileName;
   //! Thresholds file name
   MString m_ThresholdFileName;
+	//! Charge sharing file name
+	MString m_ChargeSharingFileName;
 	//! Crosstalk file name
 	MString m_CrosstalkFileName;
 	//! Charge loss file name
