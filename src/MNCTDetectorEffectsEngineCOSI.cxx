@@ -239,6 +239,12 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
 	//for debugging charge loss
 	m_ChargeLossHist = new TH2D("CL","",100,632,667,100,0,50);
 
+  // The statistics:
+  m_NumberOfEventsWithADCOverflows = 0;
+  m_NumberOfEventsWithNoADCOverflows = 0;
+  m_NumberOfFailedIASearches = 0;
+  m_NumberOfSuccessfulIASearches = 0;
+
   return true;
 }
     
@@ -260,6 +266,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       continue;
     }
 
+
+    bool HasOverflow = false;
 
 /*		double initialEnergy = 0.;
 		for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
@@ -484,11 +492,15 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
 				//get IA position in detector
 				MVector IAPosition = IAPositions[pos];
-				MDVolumeSequence* IAVolSeq = m_Geometry->GetVolumeSequencePointer(IAPosition, true, true);
+
+				MDVolumeSequence* IAVolSeq = m_Geometry->GetVolumeSequencePointer(IAPosition, false, false);
 				MVector IAPositionInDetector = IAVolSeq->GetPositionInSensitiveVolume();
 				if (IAVolSeq->GetDetector() == 0 || IAVolSeq->GetSensitiveVolume() == 0){
 					//if IA not in the detector, just use the HT position
 					IAPositionInDetector = PositionInDetector;
+					m_NumberOfFailedIASearches += 1;
+				} else {
+					m_NumberOfSuccessfulIASearches += 1;
 				}
 
 				//now we have the energy deposited at this position
@@ -953,6 +965,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			(*A).m_ADC = EnergyToADC((*A),Energy);
 			if ((*A).m_ADC > 8192){
 				A = MergedStripHits.erase(A);
+				HasOverflow = true;
 			}
 			else {
 				++A;
@@ -1367,6 +1380,12 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
     }
 
+    // (3) Take care of some final statistics
+    if (HasOverflow == true) {
+      m_NumberOfEventsWithADCOverflows += 1;
+    } else {
+      m_NumberOfEventsWithNoADCOverflows += 1;
+    }
 
     // Never forget to delete the event
     delete SimEvent;
@@ -1402,6 +1421,10 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
 	cout << "Shield dead time: " << m_ShieldDeadTime << endl;
 
 	cout << "Max buffer full index: " << m_MaxBufferFullIndex << '\t' << "Detector " << m_MaxBufferDetector << endl;
+
+  cout<<endl;
+  cout<<"Ratio of events with ADC overflows: "<<(m_NumberOfEventsWithADCOverflows > 0 ? double(m_NumberOfEventsWithADCOverflows) / (m_NumberOfEventsWithADCOverflows + m_NumberOfEventsWithNoADCOverflows): 0)<<endl;
+  cout<<"Ratio of failed IA searches for charge sharing: "<<(m_NumberOfFailedIASearches > 0 ? double(m_NumberOfFailedIASearches) / (m_NumberOfFailedIASearches + m_NumberOfSuccessfulIASearches): 0)<<endl;
 
   if (m_SaveToFile == true) {
     m_Roa<<"EN"<<endl<<endl;

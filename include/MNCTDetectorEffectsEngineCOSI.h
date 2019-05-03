@@ -325,6 +325,19 @@ private:
 
 	TH2D* m_ChargeLossHist;
 
+
+  // Some housekeeping
+  
+  //! Counter for events with strips in overflow
+  unsigned long m_NumberOfEventsWithADCOverflows;
+  //! Counter for events with no strips in overflow
+  unsigned long m_NumberOfEventsWithNoADCOverflows;
+  
+  //! Counter for the number of times the IA was not in the detector for the charge sharing determination
+  unsigned long m_NumberOfFailedIASearches;
+  //! Counter for the number of times the IA was in the detector for the charge sharing determination
+  unsigned long m_NumberOfSuccessfulIASearches;
+
   #ifdef ___CLING___
 public:
   ClassDef(MNCTDetectorEffectsEngineCOSI, 0) // no description
