@@ -963,7 +963,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		while (A != MergedStripHits.end()) {
 			double Energy = (*A).m_Energy;
 			(*A).m_ADC = EnergyToADC((*A),Energy);
-			if ((*A).m_ADC > 8192){
+			if ((*A).m_ADC > 8029){  // number for McBride
 				A = MergedStripHits.erase(A);
 				HasOverflow = true;
 			}
