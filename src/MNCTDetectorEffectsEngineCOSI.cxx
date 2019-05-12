@@ -269,12 +269,12 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
     bool HasOverflow = false;
 
-/*		double initialEnergy = 0.;
+		double eventInitialEnergy = 0.;
 		for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
       MSimHT* HT = SimEvent->GetHTAt(h);
-			initialEnergy += HT->GetEnergy();
+			eventInitialEnergy += HT->GetEnergy();
 		}
-*/
+
     
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
@@ -580,18 +580,17 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			}
 
 
-			//for debugging
-			double pEnergySum = 0.;
-			double nEnergySum = 0.;
-
 			//lists of strips that charge cloud hit: at least one must be original strip
-			double energyAddToOrigP = 0;
+			//what if no charge is on the original strip? this happens occasionally
+			bool pOrigHit = false;
+			bool nOrigHit = false;
+
 			for (auto P: pStripsEnergies){
-				pEnergySum += P.second;
 				//change the energy of original strip
 				if (pSide.m_ROE.GetStripID() == P.first){
 					pSide.m_Energy = P.second;
 					pSide.m_EnergyOrig = P.second;
+					pOrigHit = true;
 				}
 				//make new strip hit if needed
 				//guard ring hit
@@ -621,12 +620,11 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 				}
 			}
 
-			double energyAddToOrigN = 0;
 			for (auto N: nStripsEnergies){
-				nEnergySum += N.second;
 				if (nSide.m_ROE.GetStripID() == N.first){
 					nSide.m_Energy = N.second;
 					nSide.m_EnergyOrig = N.second;
+					nOrigHit = true;
 				}
 				else if (N.first == 38){
 					MNCTDEEStripHit chargeShareGRHit;
@@ -653,13 +651,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 				}
 			}
 
-			pSide.m_Energy += energyAddToOrigP;
-			nSide.m_Energy += energyAddToOrigN;
-			pSide.m_EnergyOrig += energyAddToOrigP;
-			nSide.m_EnergyOrig += energyAddToOrigN;
-
-      StripHits.push_back(pSide);
-      StripHits.push_back(nSide);
+			if (pOrigHit){ StripHits.push_back(pSide); }
+      if (nOrigHit){ StripHits.push_back(nSide); }
 
       m_TotalHitsCounter++;
 
@@ -804,8 +797,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
       LowestNoisedTiming -= fmod(LowestNoisedTiming,5.0); //round down to nearest multiple of 5
       Hit.m_Timing = LowestNoisedTiming;
-
-    }
+		}
 
 		// Step (3): Calculate and noise ADC values including cross talk, charge loss, charge sharing, ADC overflow!
 
@@ -1335,6 +1327,29 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		if (HitCounter == 0){
 			delete SimEvent;
 			continue;
+		}
+
+		double finalEventEnergy = 0;
+		int nNStripHits = 0;
+		for (MNCTDEEStripHit Hit: MergedStripHits){
+			if (!Hit.m_ROE.IsPositiveStrip()){
+				finalEventEnergy += Hit.m_Energy;
+				nNStripHits++;
+			}
+		}
+		if (finalEventEnergy > eventInitialEnergy+100){
+			cout << eventInitialEnergy << '\t' << finalEventEnergy << endl;
+			cout << "SIM HITS: " << endl;
+			for (int h=0; h<SimEvent->GetNHTs(); h++){
+				cout << SimEvent->GetHTAt(h)->GetEnergy() << endl;
+			}
+			cout << "DEE STRIP HITS: " << endl;
+			for (MNCTDEEStripHit Hit: MergedStripHits){
+				if (!Hit.m_ROE.IsPositiveStrip()){
+					cout << Hit.m_Energy << endl;
+				}
+			}
+			cout << endl << endl;
 		}
 
 
