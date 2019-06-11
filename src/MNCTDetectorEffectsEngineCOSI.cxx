@@ -266,6 +266,9 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       continue;
     }
 
+		// Step (-1): Include aspect information
+//		cout << SimEvent->GetGalacticPointingXAxis() << endl;
+//		cout << SimEvent->GetGalacticPointingZAxis() << endl;
 
     bool HasOverflow = false;
 
@@ -444,7 +447,13 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			double totalEnergyFromIAs = 0.;
 
 			for (unsigned int o=0; o<Origins.size(); o++){
-				MSimIA* ia = SimEvent->GetIAById(Origins[o]);
+				int iaID = Origins[o];
+				//for some reason Origin[o] is 0 when the IAs aren't saved,
+				//which makes the code crash unless I do this
+				if (iaID == 0){
+					iaID++;
+				}
+				MSimIA* ia = SimEvent->GetIAById(iaID);
 				MVector iaPosition = ia->GetPosition();
 				if (PrevPos == iaPosition){
 					temp_vec.push_back(Origins[o]);
@@ -579,7 +588,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
 			}
 
-
 			//lists of strips that charge cloud hit: at least one must be original strip
 			//what if no charge is on the original strip? this happens occasionally
 			bool pOrigHit = false;
@@ -684,7 +692,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       MDVolumeSequence* VS = GR->GetVolumeSequence();
       MDDetector* Detector = VS->GetDetector();
       MString DetectorName = Detector->GetName();
-      DetectorName.RemoveAllInPlace("Detector");
+      DetectorName.RemoveAllInPlace("Detector_");
       int DetectorID = DetectorName.ToInt();
 
       MNCTDEEStripHit GuardRingHit;
@@ -741,7 +749,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 //      cout << "-----------" << endl;
       MergedStripHits.push_back(Start);
     }
-
 
 //    bool fromSameInteraction = true;
     for (MNCTDEEStripHit& Hit: MergedStripHits){
@@ -1219,15 +1226,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		m_LastHitTime = evt_time;
  
  	  // Step (7): 
-		//check if there are any hits left in the event
-		int HitCounter = 0;
-		for (MNCTDEEStripHit Hit: MergedStripHits){
-			HitCounter++;
-		}
-		if (HitCounter == 0){
-			delete SimEvent;
-			continue;
-		}
    
 		//update trigger rates
 		set<int> detectorsHit;
@@ -1261,6 +1259,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
 				MSimHT* Hit = SimEvent->GetHTAt(h);
 				int initIA = Hit->GetSmallestOrigin();
+				//again I have this problem if the IAs aren't in the sim
+				if (initIA == 0){ initIA++; }
 				MString IAprocess = SimEvent->GetIAById(initIA)->GetProcess();
 				while (IAprocess != "INIT"){
 					initIA = SimEvent->GetIAById(initIA)->GetOriginID();
@@ -1320,7 +1320,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 			}
 		}
 		//check if there are any strip hits left...
- 		HitCounter = 0;
+ 		int HitCounter = 0;
 		for (MNCTDEEStripHit Hit: MergedStripHits){
 			HitCounter++;
 		}
