@@ -9,6 +9,7 @@ help() {
   echo "    -n <nice>:      The nice level as an integer (default: 0)"
   echo "    -c <file name>: Nuclearizer configuration file name"
   echo "    -f <file name>: Long list of sim or dat files"
+  echo "    -t <int>:       Number if threads to use"
   echo "";
   echo "Example:";
   echo "    mnuclearizer -c Nuclearizer.cfg -n 19 -f RunTest*.sim";
@@ -144,7 +145,7 @@ fi
 echo " "
 echo "Launching mnuclearizer"
 echo " "
-echo "Number of threads to use:  Number of cores"
+echo "Number of threads to use:  ${THREADS}"
 echo "Nice level:                ${NICELEVEL}"
 echo "Configuration file:        ${CFG}"
 echo "Input files:               ${FILES}"
@@ -152,7 +153,7 @@ echo "Input files:               ${FILES}"
 
 # Now run, nuclearizer RUN!
 for SIMFILE in ${FILES}; do
-  mwait --p=nuclearizer --i=cores --l=threads
+  mwait --p=nuclearizer --i=${THREADS} --l=threads
   echo "Launching nuclearizer for file ${SIMFILE}"
   if [[ ${SIMFILE} == *.sim ]] || [[ ${SIMFILE} == *.sim.gz ]]; then
     #nuclearizer -m 0 -c ${CFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g)
