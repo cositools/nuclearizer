@@ -290,6 +290,8 @@ private:
   double m_ShieldDeadTime;
 	//! whether or not the event is vetoed by the shields
 	bool m_ShieldVeto;
+	//! shield threshold
+	double m_ShieldThreshold;
   
   //! List of dead strips
   vector<vector<vector<int> > > m_DeadStrips = vector<vector<vector<int> > >(nDets, vector<vector<int> >(nSides, vector<int>(nStrips)));

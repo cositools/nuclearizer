@@ -203,6 +203,7 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   m_ChargeLossCounter = 0;
 
   // for shield veto: shield pulse duration and card cage delay: constant for now
+	m_ShieldThreshold = 80.;
   m_ShieldPulseDuration = 1.7e-6;
   m_CCDelay = 700.e-9;
 	m_ShieldDelay = 900.e-9; //this is just a guess based on when veto window occurs!
@@ -294,19 +295,23 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         MDDetector* Detector = VS->GetDetector();
         MString DetName = Detector->GetName();
 
-        double energy = HT->GetEnergy();
-        energy = NoiseShieldEnergy(energy,DetName);
-        HT->SetEnergy(energy);
+				//ONLY veto CsI shields, NOT NaI for polarization calibration
+				if (DetName.GetSubString(0,6) == "Shield"){
 
-        if (energy > 80.) {
-					if (m_ShieldTime + m_ShieldPulseDuration < evt_time){ hasShieldHits = true; }
-					increaseShieldDeadTime = true;
-					//this is handling paralyzable dead time
-         	m_ShieldTime = evt_time;
-        }
+	        double energy = HT->GetEnergy();
+	        energy = NoiseShieldEnergy(energy,DetName);
+	        HT->SetEnergy(energy);
+
+	        if (energy > m_ShieldThreshold) {
+						if (m_ShieldTime + m_ShieldPulseDuration < evt_time){ hasShieldHits = true; }
+						increaseShieldDeadTime = true;
+						//this is handling paralyzable dead time
+	         	m_ShieldTime = evt_time;
+	        }
+		    }
+				else if (HT->GetDetectorType() == 3){ hasDetHits = true; }
 	    }
-			else if (HT->GetDetectorType() == 3){ hasDetHits = true; }
-    }
+		}
 
 		if (hasShieldHits == true){ m_NumShieldCounts++; }
 		if (increaseShieldDeadTime == true){ m_ShieldDeadTime += m_ShieldPulseDuration; }
