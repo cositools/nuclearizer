@@ -2,20 +2,23 @@
 
 help() {
   echo ""
-  echo "mnuclearizer - run multiple parallel instances of nuclearizer using sim or dat files";
+  echo "mnuclearizer - run multiple parallel instances of nuclearizer using sim or dat files"
   echo "(C) by Andreas Zoglauer"
-  echo "";
-  echo "Options:";
+  echo ""
+  echo "Options:"
   echo "    -n <nice>:      The nice level as an integer (default: 0)"
   echo "    -c <file name>: Nuclearizer configuration file name"
-  echo "    -f <file name>: Long list of sim or dat files"
   echo "    -t <int>:       Number if threads to use"
-  echo "";
-  echo "Example:";
-  echo "    mnuclearizer -c Nuclearizer.cfg -n 19 -f RunTest*.sim";
-  echo "";
+  echo "    -f <file name>: Long list of sim or dat files"
+  echo ""
+  echo "Attention:"
+  echo "    -f must be the last given option"
+  echo ""
+  echo "Example:"
+  echo "    mnuclearizer -c Nuclearizer.cfg -n 19 -f RunTest*.sim"
+  echo ""
   echo "This script runs multiple nuclearizer sessions in parallel. By default as many instances as the system has cores are started. But each nuclearizer run is in itself multi-threaded."
-  echo "";
+  echo ""
 }
 
 if [ $# -eq 0 ]; then
@@ -45,7 +48,7 @@ if (`test -f ${MEGAlib}/bin/nulcearizer`); then
   exit 1;
 fi
 
-
+LAST=0
 while [ $# -gt 0 ] ; do
   case $1 in
   -h|--help)
@@ -97,6 +100,16 @@ while [ $# -gt 0 ] ; do
       exit 0;
     fi
     while [ $# -ne 0 ]; do
+      if [[ $1 == *-h* ]]; then
+        help
+        exit 0;
+      fi
+      if [[ $1 == -* ]]; then
+        echo "Error: Option -f must be the last option."
+        echo "       For details see mnuclearizer --help"
+        echo " "
+        exit 0;
+      fi
       FILES+=" "$1;
       shift;
     done
