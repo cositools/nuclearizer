@@ -4,7 +4,7 @@ Nuclearizer installation
     Especially on Mac, do:
     + Download the latest version from boost.org
     + Unpack it
-    + Switch to the bost directory
+    + Switch to the boost directory
     + ./bootstrap.sh
     + ./b2 (or whatever it recommends)
     + sudo ./b2 install
