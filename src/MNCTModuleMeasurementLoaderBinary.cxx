@@ -183,7 +183,9 @@ bool MNCTModuleMeasurementLoaderBinary::Initialize()
     --Counter;
     if (Line.BeginsWith("DIR") == true) {
       Line.RemoveInPlace(0, 4);
-      Directory = Line + "/";
+      Directory = Line;
+      MFile::ExpandFileName(Directory);
+      Directory += "/";
       Counter++;
     } else if (Line.BeginsWith("IN") == true) {
       Line.RemoveInPlace(0, 2);
