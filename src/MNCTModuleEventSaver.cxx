@@ -7,7 +7,7 @@
  *
  *
  * This code implementation is the intellectual property of
- * Jau-Shian Liang.
+ * Andreas Zoglauer.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -148,6 +148,7 @@ bool MNCTModuleEventSaver::Initialize()
     m_InternalFileName += ".gz";
   }
   
+  
   m_Out.Open(m_InternalFileName, MFile::c_Write);
   if (m_Out.IsOpen() == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_InternalFileName<<endl;
@@ -202,7 +203,11 @@ bool MNCTModuleEventSaver::StartSubFile()
     m_SubFileOut.Close();
   }
   
-  MString SubName = m_InternalFileName;  
+  MString SubName = m_InternalFileName;
+  if (SubName.EndsWith(".gz") == true) {
+    SubName.RemoveInPlace(SubName.Length() - 3);
+  }
+  
   if (m_Mode == c_DatFile) {
     SubName.ReplaceAllInPlace(".dat", "");
     SubName += ".";
@@ -224,9 +229,9 @@ bool MNCTModuleEventSaver::StartSubFile()
   }
   
   if (m_Zip == true) {
-    m_InternalFileName += ".gz";
+    SubName += ".gz";
   }
-
+  
   m_SubFileOut.Open(SubName, MFile::c_Write);
   if (m_SubFileOut.IsOpen() == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<SubName<<endl;
