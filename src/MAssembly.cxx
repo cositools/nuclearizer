@@ -107,6 +107,8 @@ MAssembly::MAssembly()
   m_Interrupt = false;
   m_UseGui = true;
   
+  g_Verbosity = c_Error;
+  
   m_Supervisor = MSupervisor::GetSupervisor();
   
   // Fixed seed to reproduce DEE results

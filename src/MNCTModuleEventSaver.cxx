@@ -170,7 +170,7 @@ bool MNCTModuleEventSaver::Initialize()
   } else if (m_Mode == c_RoaFile) {
     Header<<endl;
     Header<<"TYPE ROA"<<endl;
-    Header<<"UF doublesidedstrip adcwithtiming"<<endl;
+    Header<<"UF doublesidedstrip adc_timing_temperature"<<endl;
     Header<<endl;
   } else {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;

@@ -1345,7 +1345,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		if (finalEventEnergy > eventInitialEnergy+100){
 			cout << eventInitialEnergy << '\t' << finalEventEnergy << endl;
 			cout << "SIM HITS: " << endl;
-			for (int h=0; h<SimEvent->GetNHTs(); h++){
+			for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
 				cout << SimEvent->GetHTAt(h)->GetEnergy() << endl;
 			}
 			cout << "DEE STRIP HITS: " << endl;
@@ -1372,6 +1372,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       SH->IsXStrip(Hit.m_ROE.IsPositiveStrip());
       SH->SetADCUnits(Hit.m_ADC);
       SH->SetTiming(Hit.m_Timing);
+      SH->SetPreampTemp(20);
       vector<int> O;
       for (int i: Hit.m_Origins) O.push_back(i);
       SH->AddOrigins(O); 
@@ -1388,7 +1389,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         m_Roa<<IAs[i]->ToSimString()<<endl;
       }
       for (MNCTDEEStripHit Hit: MergedStripHits){
-        m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing;
+        m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
       
         MString Origins;
         for (int Origin: Hit.m_Origins) {

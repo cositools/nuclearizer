@@ -155,6 +155,8 @@ public:
     double m_ADC;
     //! The timing value;
     double m_Timing;
+    //! The pre-amp temperature value;
+    double m_PreampTemp;
     
     //! The simulated position
     MVector m_Position;

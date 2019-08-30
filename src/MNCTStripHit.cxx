@@ -190,7 +190,8 @@ void MNCTStripHit::StreamRoa(ostream& S)
    <<m_ReadOutElement->GetStripID()<<" "
    <<((m_ReadOutElement->IsPositiveStrip() == true) ? "p" : "n")<<" "
    <<m_ADCUnits<<" "
-   <<m_Timing<<" ";
+   <<m_Timing<<" "
+   <<m_PreampTemp<<" ";
   for (unsigned int i = 0; i < m_Origins.size(); ++i) {
     if (i != 0) S<<";";
     S<<m_Origins[i]; 
