@@ -57,6 +57,7 @@ $(LB)/magfld.o \
 $(LB)/MAssembly.o \
 $(LB)/MReadOutAssembly.o \
 $(LB)/MNCTDetectorEffectsEngineCOSI.o \
+$(LB)/MNCTDetectorEffectsEngineCOSI2020.o \
 $(LB)/MNCTMath.o \
 $(LB)/MNCTAspect.o \
 $(LB)/MNCTAspectPacket.o \
@@ -68,6 +69,8 @@ $(LB)/MNCTStripHit.o \
 $(LB)/MNCTGuardringHit.o \
 $(LB)/MNCTModuleSimulationLoader.o \
 $(LB)/MGUIOptionsSimulationLoader.o \
+$(LB)/MNCTModuleSimulationLoader2020.o \
+$(LB)/MGUIOptionsSimulationLoader2020.o \
 $(LB)/MNCTModuleMeasurementLoader.o \
 $(LB)/MNCTModuleMeasurementLoaderROA.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
