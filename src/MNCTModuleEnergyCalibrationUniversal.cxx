@@ -213,8 +213,37 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
     CalibratorType.ToLower();
     
-    //Eventually, I'll be including other possible fits, but for now, we've just include poly3 and poly4
-    if (CalibratorType == "poly3") {
+       
+    // Below inclusion of poly1 and poly2 written by J. Beechert on 2019/10/24
+    if (CalibratorType == "poly1") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      
+      //From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly1","[0] + [1]*x", 0., 8191.);
+      melinatorfit->FixParameter(0, a0);
+      melinatorfit->FixParameter(1, a1);
+      
+      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+      
+    } else if (CalibratorType == "poly2") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      
+      //From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly2","[0] + [1]*x + [2]*x^2", 0., 8191.);
+      melinatorfit->FixParameter(0, a0);
+      melinatorfit->FixParameter(1, a1);
+      melinatorfit->FixParameter(2, a2);
+      
+      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+      
+    } 
+     //Eventually, I'll be including other possible fits, but for now, we've just include poly3 and poly4
+      else if (CalibratorType == "poly3") {
       double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
