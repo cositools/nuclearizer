@@ -133,6 +133,8 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   if (ParseDeadStripFile() == false) return false;
   //load threshold information
   if (ParseThresholdFile() == false) return false;
+	//load guard ring threshold information
+	if (ParseGuardRingThresholdFile() == false) return false;
 
 	//load charge sharing factors
 	if (ParseChargeSharingFile() == false) return false;
@@ -641,7 +643,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 				}
 				else if (N.first == 38){
 					MNCTDEEStripHit chargeShareGRHit;
-					chargeShareGRHit.m_ROE.IsPositiveStrip(true);
+					chargeShareGRHit.m_ROE.IsPositiveStrip(false);
 					chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
 					chargeShareGRHit.m_ROE.SetStripID(38);
 					chargeShareGRHit.m_Energy = N.second;
@@ -700,23 +702,34 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       DetectorName.RemoveAllInPlace("Detector_");
       int DetectorID = DetectorName.ToInt();
 
-      MNCTDEEStripHit GuardRingHit;
-      GuardRingHit.m_ROE.IsPositiveStrip(true); // <-- not important
-      GuardRingHit.m_ROE.SetDetectorID(DetectorID);
-      GuardRingHit.m_ROE.SetStripID(38); // ?
+      MNCTDEEStripHit GuardRingHitP;
+      GuardRingHitP.m_ROE.IsPositiveStrip(true);
+      GuardRingHitP.m_ROE.SetDetectorID(DetectorID);
+      GuardRingHitP.m_ROE.SetStripID(38); // ?
+      GuardRingHitP.m_Energy = GR->GetEnergy();
+      GuardRingHitP.m_Position = MVector(0, 0, 0); // <-- not important
 
-      GuardRingHit.m_Energy = GR->GetEnergy();
-      GuardRingHit.m_Position = MVector(0, 0, 0); // <-- not important
+      MNCTDEEStripHit GuardRingHitN;
+      GuardRingHitN.m_ROE.IsPositiveStrip(false);
+      GuardRingHitN.m_ROE.SetDetectorID(DetectorID);
+      GuardRingHitN.m_ROE.SetStripID(38); // ?
+      GuardRingHitN.m_Energy = GR->GetEnergy();
+      GuardRingHitN.m_Position = MVector(0, 0, 0); // <-- not important
 
 			//add extra energy from charge sharing to guard ring hits already present
 			for (unsigned int gr=0; gr<GuardRingHitsFromChargeSharing.size(); gr++){
-				if (GuardRingHit.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
-					GuardRingHit.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
+				if (GuardRingHitP.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
+					GuardRingHitP.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
+					GRIndices.push_back(gr);
+				}
+				if (GuardRingHitN.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
+					GuardRingHitN.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
 					GRIndices.push_back(gr);
 				}
 			}
 
-			GuardRingHits.push_back(GuardRingHit);
+			GuardRingHits.push_back(GuardRingHitP);
+			GuardRingHits.push_back(GuardRingHitN);
     }
 
 		//add guard ring hits from charge sharing that aren't already present
@@ -1029,7 +1042,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 		list<MNCTDEEStripHit>::iterator gr = GuardRingHits.begin();
 		vector<int> grHit = vector<int>(nDets,0);
 		while (gr != GuardRingHits.end()) {
-			if ((*gr).m_Energy > 25){
+			if ((*gr).m_Energy > m_GuardRingThresholds[(*gr).m_ROE]){
 				int detID = (*gr).m_ROE.GetDetectorID();
 				grHit[detID] = 1;
 			}
@@ -1706,6 +1719,35 @@ bool MNCTDetectorEffectsEngineCOSI::ParseCrosstalkFile()
 		double cb = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4);
 		m_CrosstalkCoefficients[cdet][cside][cskip][0] = ca;
 		m_CrosstalkCoefficients[cdet][cside][cskip][1] = cb;
+	}
+
+	return true;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//! Read in guard ring thresholds
+bool MNCTDetectorEffectsEngineCOSI::ParseGuardRingThresholdFile()
+{
+
+	MParser Parser;
+	if (Parser.Open(m_GuardRingThresholdFileName, MFile::c_Read) == false) {
+		cout << "Unable to open guard ring threshold file " << m_GuardRingThresholdFileName << endl;
+		return false;
+	}
+
+	for (unsigned int i=2; i<26; i++){
+		int detector = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+		int side = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
+		double threshold = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
+
+		MReadOutElementDoubleStrip R;
+		R.SetDetectorID(detector);
+		R.SetStripID(38);
+		R.IsPositiveStrip(side);
+
+		m_GuardRingThresholds[R] = threshold;
 	}
 
 	return true;

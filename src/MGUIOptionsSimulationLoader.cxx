@@ -89,6 +89,11 @@ void MGUIOptionsSimulationLoader::Create()
   m_ThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
   m_OptionsFrame->AddFrame(m_ThresholdFileSelector, LabelLayout);
 
+	m_GuardRingThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a guard ring thresholds file:",
+		dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetGuardRingThresholdFileName());
+	m_GuardRingThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
+	m_OptionsFrame->AddFrame(m_GuardRingThresholdFileSelector, LabelLayout);
+
 	m_ChargeSharingFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge sharing factor file:",
 		dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetChargeSharingFileName());
 	m_ChargeSharingFileSelector->SetFileType("Charge sharing file", "*.txt");
@@ -163,6 +168,7 @@ bool MGUIOptionsSimulationLoader::OnApply()
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetSimulationFileName(m_SimulationFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
+	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
 	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
 	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());
 	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());

@@ -181,6 +181,10 @@ bool MNCTModuleSimulationLoader::ReadXmlConfiguration(MXmlNode* Node)
   if (ThresholdFileNameNode != 0) {
     SetThresholdFileName(ThresholdFileNameNode->GetValue());
   }
+	MXmlNode* GuardRingThresholdFileNameNode = Node->GetNode("GuardRingThresholdFileName");
+	if (GuardRingThresholdFileNameNode != 0) {
+		SetGuardRingThresholdFileName(GuardRingThresholdFileNameNode->GetValue());
+	}
 	MXmlNode* ChargeSharingFileNameNode = Node->GetNode("ChargeSharingFileNmae");
 	if (ChargeSharingFileNameNode != 0) {
 		SetChargeSharingFileName(ChargeSharingFileNameNode->GetValue());
@@ -222,6 +226,7 @@ MXmlNode* MNCTModuleSimulationLoader::CreateXmlConfiguration()
   new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
   new MXmlNode(Node, "DeadStripFileName", m_DeadStripFileName);
   new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
+	new MXmlNode(Node, "GuardRingThresholdFileName", m_GuardRingThresholdFileName);
 	new MXmlNode(Node, "ChargeSharingFileNmae", m_ChargeSharingFileName);
 	new MXmlNode(Node, "CrosstalkFileName", m_CrosstalkFileName);
 	new MXmlNode(Node, "ChargeLossFileName", m_ChargeLossFileName);

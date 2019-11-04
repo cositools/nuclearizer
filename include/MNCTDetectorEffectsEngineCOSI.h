@@ -78,7 +78,12 @@ public:
   void SetThresholdFileName(const MString& FileName) { m_ThresholdFileName = FileName; } 
   //! Set threshold file name
   MString GetThresholdFileName() const { return m_ThresholdFileName; } 
-  
+
+	//! Set guard ring threshold file name
+	void SetGuardRingThresholdFileName(const MString& FileName) { m_GuardRingThresholdFileName = FileName; }
+	//! Get guard ring threshold file name
+	MString GetGuardRingThresholdFileName() const { return m_GuardRingThresholdFileName; }
+ 
   //! Set the dead strips file name
   void SetDeadStripFileName(const MString& FileName) { m_DeadStripFileName = FileName; } 
   //! Set the dead strips file name
@@ -130,6 +135,8 @@ protected:
   bool ParseEnergyCalibrationFile();
   //! Read in and parse thresholds file
   bool ParseThresholdFile();
+	//! Read in and parse the guard ring thresholds file
+	bool ParseGuardRingThresholdFile();
   //! Read in and parse dead strip file
   bool ParseDeadStripFile();
   //! noise shield energy
@@ -215,6 +222,8 @@ protected:
   MString m_DeadStripFileName;
   //! Thresholds file name
   MString m_ThresholdFileName;
+	//! Guard ring threshold file name
+	MString m_GuardRingThresholdFileName;
 	//! Charge sharing file name
 	MString m_ChargeSharingFileName;
 	//! Crosstalk file name
@@ -262,7 +271,10 @@ private:
 //  map<MReadOutElementDoubleStrip, double> m_FSTThresholds;
   //! Calibration map between read-out element and fast threshold noise
 //  map<MReadOutElementDoubleStrip, double> m_FSTNoise;
-  
+ 
+	//! Calibration map between read-out element and guard ring thresholds
+	map<MReadOutElementDoubleStrip, double> m_GuardRingThresholds;
+ 
   //! Calibration map between read-out element and fitted function for energy calibration
   map<MReadOutElementDoubleStrip, TF1*> m_EnergyCalibration;
   //! Calibration map between read-out element and fitted function for energy resolution calibration
