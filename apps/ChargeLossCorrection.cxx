@@ -234,19 +234,20 @@ bool ChargeLossCorrection::Analyze()
 //	MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
   Loader->SetFileName(m_FileName);
 	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
+	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
 	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
-  
+ 
   MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
-  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_051016.ecal");
+  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
+	Calibrator->EnablePreampTempCorrection(false);
   S->SetModule(Calibrator, 1);
   
   MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
   S->SetModule(Pairing, 2);
 
 	MNCTModuleCrosstalkCorrection* CrossTalk = new MNCTModuleCrosstalkCorrection();
-	CrossTalk->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Berkeley/CrossTalkCorrection_Results.txt");
+	CrossTalk->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/CrossTalkCorrection_Results_060518.txt");
 	S->SetModule(CrossTalk,3);
 
 	MNCTModuleChargeSharingCorrection* ChargeLoss = new MNCTModuleChargeSharingCorrection();
@@ -277,8 +278,7 @@ bool ChargeLossCorrection::Analyze()
 			CrossTalk->AnalyzeEvent(Event);
 			if (m_CorrectCL) {ChargeLoss->AnalyzeEvent(Event);}
 
-			if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
-//		  if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
+			if (Event->HasAnalysisProgress(MAssembly::c_CrosstalkCorrection) == true) {
 				vector<int> xStripIDs, yStripIDs;
 				vector<float> xEnergy, yEnergy;
 				for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
@@ -333,10 +333,10 @@ bool ChargeLossCorrection::Analyze()
 		      	if (histID != -1) {
 							int nxbins = m_E0*2;
 							int nybins = 35;
-							int xlowlim = -1;
-							int xhighlim = 1;
-							float ylowlim = (m_E0-30)/m_E0;  //30.0/m_E0;
-							float yhighlim = (m_E0+5)/m_E0; //5.0/m_E0;
+							int xlowlim = -m_E0;
+							int xhighlim = m_E0;
+							float ylowlim = (m_E0-30);  //30.0/m_E0;
+							float yhighlim = (m_E0+5); //5.0/m_E0;
 
 							if (m_CorrectCL){ yhighlim = (m_E0+30)/m_E0; nybins = 60; }
 
@@ -350,13 +350,14 @@ bool ChargeLossCorrection::Analyze()
 									Hist->SetTitle(MString("Detector ")+detectorID+MString(" n Side"));
 									Hist->SetName(MString("Det")+detectorID+MString("Nside"));
 								}
-		      	    Hist->SetXTitle("Fraction");
+		      	    Hist->SetXTitle("Difference");
 		      	    Hist->SetYTitle("Sum [keV]");
 		      	    Histograms[histID] = Hist;
 		      	  }
 //							cout << "frac: " << frac << "    scaled_sum: " << scaled_sum << endl;
-		      	  Histograms[histID]->Fill(frac,scaled_sum);
-							Histograms[histID]->Fill(-frac,scaled_sum);
+							//used to fill these with frac, scaled_sum: switched 190115
+		      	  Histograms[histID]->Fill(diff,sum);
+							Histograms[histID]->Fill(-diff,sum);
 		      	}
 		  	  }
 	//				cout << "----------" << endl;
@@ -376,16 +377,16 @@ bool ChargeLossCorrection::Analyze()
 
 	float DMax = m_E0*((m_E0-511./2)/(m_E0+511./2));
 
-//	TF1* highE_fitFunc = new TF1("highE","[1]-[0]*([1]-x)",DMax+0.15*m_E0,m_E0);
-	TF1* highE_fitFunc = new TF1("highE","([1]-[0]*([1]-x))/[1]",(DMax+0.15*m_E0)/m_E0,m_E0);
+	TF1* highE_fitFunc = new TF1("highE","[1]-[0]*([1]-x)",DMax+0.15*m_E0,m_E0);
+//	TF1* highE_fitFunc = new TF1("highE","([1]-[0]*([1]-x))/[1]",(DMax+0.15*m_E0)/m_E0,m_E0);
 	highE_fitFunc->FixParameter(1,m_E0);
-//	TF1* lowE_fitFunc = new TF1("lowE","[1]-([0]/(2*[1]))*([1]*[1]-x*x)",0,m_E0);
-	TF1* lowE_fitFunc = new TF1("lowE","1-([0]/(2*[1]*[1]))*([1]*[1]-x*x)",0,1);
+	TF1* lowE_fitFunc = new TF1("lowE","[1]-([0]/(2*[1]))*([1]*[1]-x*x)",0,m_E0);
+//	TF1* lowE_fitFunc = new TF1("lowE","1-([0]/(2*[1]*[1]))*([1]*[1]-x*x)",0,1);
 	lowE_fitFunc->FixParameter(1,m_E0);
 
 	//setup output file
 	ofstream logFitStats;
-	logFitStats.open("ChargeLossCorrection.log");
+	logFitStats.open("ChargeLossCorrection_"+MString(m_E0)+"keV.log");
 	logFitStats << "Det" << '\t' << "side" << '\t' << "B" << endl << endl;
 
 
@@ -395,7 +396,7 @@ bool ChargeLossCorrection::Analyze()
 	map<int, TH1D*> Projections;
 
 	for (auto H: Histograms){
-		if (H.first == 0){
+//		if (H.first == 0){
 		TCanvas* C = new TCanvas();
 //		C->SetLogz();
 		C->cd();
@@ -419,7 +420,7 @@ bool ChargeLossCorrection::Analyze()
 				}
 			}
 		}
-
+/*
 		int nBins = H.second->GetNbinsX();
 		for (int b=m_E0+0.05*nBins/2.+1; b<nBins; b+=0.05*nBins/2.){
 			float f = H.second->GetXaxis()->GetBinCenter(b);
@@ -434,14 +435,14 @@ bool ChargeLossCorrection::Analyze()
 			C2->cd();
 			P.second->Draw();
 		}
-		}
 
 		}
-/*
+*/
+//		}
+
 		TProfile* P = tempHist->ProfileX();
 //		TProfile* P = H.second->ProfileX();
 		Profiles[H.first] = P;
-	}
 	}
 
 	//fit Profiles and log fit statistics
@@ -473,7 +474,7 @@ bool ChargeLossCorrection::Analyze()
 
 //		C->Print(m_OutFile+MString("_Det")+det+MString("_Side")+side+MString(".pdf"));
 	}
-*/
+
 	watch.Stop();
 	cout << "total time (s): " << watch.CpuTime() << endl;
  
