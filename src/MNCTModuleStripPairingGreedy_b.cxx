@@ -61,6 +61,7 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
+  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection);
   
   // Set all types this modules handles
   AddModuleType(MAssembly::c_StripPairing);
@@ -769,6 +770,101 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
 		 */
 
 	}
+
+	//CCS (8/8/19): choosing the hit energy -- taken from the crosstalk correction module
+  for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
+    double Energy = 0;
+    double Resolution = 0.0;
+    
+    // Handle what happens if strips have been hit multiple times:
+    
+    // If both have been hit multiple times, we don't do anything - we keep the result from the strip pairing
+    if (Event->GetHit(sh)->GetStripHitMultipleTimesX() == true && 
+        Event->GetHit(sh)->GetStripHitMultipleTimesY() == true) {
+      continue;
+    }
+    // If y strip was hit multiple times, need to use the x energy
+    else if (Event->GetHit(sh)->GetStripHitMultipleTimesY() == true) {
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+          Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        }
+      }
+      Resolution = sqrt(Resolution);
+      //cout<<"Using X (my): "<<Energy<<endl;
+    
+    } 
+    // If x strip was hit multiple times, need to use the y energy
+    else if (Event->GetHit(sh)->GetStripHitMultipleTimesX() == true) {
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false){
+          Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        }
+      }
+      Resolution = sqrt(Resolution);
+      //cout<<"Using Y (mx): "<<Energy<<endl;
+    } 
+    // Best case: Can do all corrections:
+    else {
+      double EnergyX = 0.0;
+      double SigmaXSquared = 0.0;
+      double EnergyY = 0.0;
+      double SigmaYSquared = 0.0;
+      for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {  
+        //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
+        
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+          EnergyY += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          SigmaYSquared += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        } else {
+          EnergyX += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
+          SigmaXSquared += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
+        }
+      }
+      
+      if (SigmaXSquared > 0 && SigmaYSquared > 0) {
+        //
+        double EnergyDiff = fabs(EnergyX - EnergyY);
+        double MinSigmaSquared = min(SigmaXSquared, SigmaYSquared);
+        
+        const double DecisionUsingHigherMeasurement = 4.0;
+        
+        if (EnergyDiff > DecisionUsingHigherMeasurement*sqrt(MinSigmaSquared)) {
+          if (EnergyX > EnergyY) {
+            Energy = EnergyX;
+            Resolution = sqrt(SigmaXSquared);
+            //cout<<"Using X (Y too small): "<<EnergyX<<endl;
+          } else {
+            Energy = EnergyY;
+            Resolution = sqrt(SigmaYSquared);
+            //cout<<"Using Y (X too small): "<<EnergyY<<endl;            
+          }
+        } else {
+          Energy = (EnergyX/SigmaXSquared + EnergyY/SigmaYSquared) / (1.0/SigmaXSquared + 1.0/SigmaYSquared);
+          Resolution = sqrt( 1.0 / (1.0/SigmaXSquared + 1.0/SigmaYSquared) );
+          //cout<<"Corrected: "<<Energy<<" vs. "<<EnergyX<<":"<<EnergyY<<endl;
+        }
+      } else if (SigmaXSquared > 0) {
+        Energy = EnergyX;
+        Resolution = sqrt(SigmaXSquared);
+        //cout<<"Using X: "<<EnergyX<<endl;
+      } else if (SigmaYSquared > 0) {
+        Energy = EnergyY;
+        Resolution = sqrt(SigmaYSquared);
+        //cout<<"Using Y: "<<EnergyY<<endl;
+      }
+      /*
+      ofstream out;
+      out.open("energy.txt", ios::app);
+      out<<EnergyX<<" "<<EnergyY<<endl;
+      out.close();
+      */
+    }
+    Event->GetHit(sh)->SetEnergy(Energy);
+    Event->GetHit(sh)->SetEnergyResolution(Resolution);
+  }
 
 };
 

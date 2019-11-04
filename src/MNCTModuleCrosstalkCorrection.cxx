@@ -274,7 +274,7 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   
   // Remove any strips that have negative energy after the correction FROM the Hits -- we still keep them around
   // in the strip hits
-  const double RemovalEneryLimit = 5.0;
+/*  const double RemovalEneryLimit = 5.0;
   for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
     unsigned int i = 0;
     while (i < Event->GetHit(h)->GetNStripHits()) {
@@ -298,7 +298,7 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       ++hit;
     }
   }
-  
+ */ 
   /*
   // Recalculate the total hit energy now the the individual strips have been corrected.
   for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
@@ -351,7 +351,7 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   
   
   // Recalculate the total hit energy now that the individual strips have been corrected.
-  for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
+/*  for (unsigned int sh = 0; sh < Event->GetNHits(); sh++) {
     double Energy = 0;
     double Resolution = 0.0;
     
@@ -433,18 +433,18 @@ bool MNCTModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         Energy = EnergyY;
         Resolution = sqrt(SigmaYSquared);
         //cout<<"Using Y: "<<EnergyY<<endl;
-      }
+      }*/
       /*
       ofstream out;
       out.open("energy.txt", ios::app);
       out<<EnergyX<<" "<<EnergyY<<endl;
       out.close();
       */
-    }
+/*    }
     Event->GetHit(sh)->SetEnergy(Energy);
     Event->GetHit(sh)->SetEnergyResolution(Resolution);
   }
-  
+*/ 
 
   Event->SetAnalysisProgress(MAssembly::c_CrosstalkCorrection);
   
@@ -546,7 +546,6 @@ void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> Strip
     StripHits[j]->SetEnergy(FinalEnergies[j][0]);
   }
   
-  
   // Print out the strips again, check their order and energies
   if (debug && StripHits.size()>0)
   {
@@ -560,6 +559,15 @@ void MNCTModuleCrosstalkCorrection::CorrectCrosstalk(vector<MNCTStripHit*> Strip
     }
     mout << "++++++++++++++++++++++" << endl;
   }
+
+	//CCS: I'm getting a strip hit with negative energy in the depth calibration,
+	// so just check that energies are still positive here
+	for (auto SH: StripHits){
+		if (SH->GetEnergy() < 0){
+			SH->SetEnergy(0);
+		}
+	}
+
 }
 
 
