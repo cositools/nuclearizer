@@ -51,8 +51,16 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////
 
-int main()
+//int main()
+int main(int argc, char* argv[])
 {
+
+	// Added by Jackie on 19/12/03 to take arguments
+        if (argc < 3) {
+             // We expect two arguments: the energy calibration .ecal file and the desired output .txt file name
+             cout << "Please pass an .ecal file and output .txt file name as arguments." << endl;
+             return 1;  
+        }
 
 
 	//TApplication Plots("Plots", 0, 0);
@@ -75,7 +83,13 @@ int main()
 //	P2->SetParameter(2,0.00001);
 
 	ofstream energyresolution_calibration;
-	energyresolution_calibration.open("EnergyResolution_Calibration.txt");
+
+	// Added below on 19/12/03 by Jackie to take output .txt file name as an argument
+        std::string energyres_calib_file;
+        energyres_calib_file = argv[2];
+        energyresolution_calibration.open(energyres_calib_file);
+
+	//energyresolution_calibration.open("EnergyResolution_Calibration.txt");
 	//energyresolution_calibration<<"Detector | Strip | Side | F_0 | F_1"<<"\n \n"; 
 	energyresolution_calibration.close();
 
@@ -113,7 +127,14 @@ int main()
 
 
 	MParser Parser;
-	if (Parser.Open("~/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal") == false) {
+
+	// Added below on 19/12/03 by Jackie to take path to energy calibration .ecal file as an argument
+        std::string energy_calib_file;
+        energy_calib_file = argv[1];
+        if (Parser.Open(energy_calib_file) == false) {
+
+
+	//if (Parser.Open("/home/jacqueline/MEGAlib/nuclearizer/resource/calibration/COSI19/Berkeley/EnergyCalibration.ecal") == false) {
 	cout<<"Unable to open calibration file "<<endl;
 		return false;
 	}
@@ -139,12 +160,19 @@ int main()
 	for (auto CP: CP_ROEToLine) {
 		//cout<<CP.first<<endl;
 		if (CP_ROEToLine.find(CP.first) != CP_ROEToLine.end()) {
-			unsigned int i = CP_ROEToLine[CP.first];
+			unsigned int i = CP_ROEToLine[CP.first];			
+			
+			
 			if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == true) {
-				if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
+			
+			// Below check of 3 calibration points commented out by J. Beechert on 19/11/15.
+			// Melinator now offers polynomial fits of order < 3, so we no longer want to throw an error if we see only 1 or 2 calibration points.	
+			/*
+			if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
 					cout<<"Not enough calibartion points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CP.first<<endl;
 					continue;
 				}
+			*/
 			} else {
 				cout<<"Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
 				continue;
@@ -242,7 +270,10 @@ int main()
 		double f1 = fit->GetParameter(1);
 //		double f2 = fit->GetParameter(2);
 
-		energyresolution_calibration.open("EnergyResolution_Calibration.txt", ios::out | ios::app);
+		// Edited the below to use the output .txt file name passed as an argument
+		energyresolution_calibration.open(energyres_calib_file, ios::out | ios::app);
+		//energyresolution_calibration.open("EnergyResolution_Calibration.txt", ios::out | ios::app);
+		
 		if (CP.first.IsPositiveStrip() == 0) {
 //			energyresolution_calibration<<"CR dss "<<CP.first.GetDetectorID()<<" "<<CP.first.GetStripID()<<" n P0 "<<f0<<"\n";
 			energyresolution_calibration<<"CR dss "<<CP.first.GetDetectorID()<<" "<<CP.first.GetStripID()<<" n P1 "<<f0<<" "<<f1<<"\n";
