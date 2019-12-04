@@ -194,10 +194,15 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     if (CP_ROEToLine.find(CM.first) != CP_ROEToLine.end()) {
       unsigned int i = CP_ROEToLine[CM.first];
       if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == true) {
-        if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
+        
+	// Below check of 3 calibration points commented out by J. Beechert on 19/11/15.
+	// Melinator now offers polynomial fits of order < 3, so we no longer want to throw an error if we only see 1 or 2 calibration points.
+	/*
+	if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
           if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Not enough calibration points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CM.first<<endl;
           continue;
         }
+	*/
       } else {
         if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
         continue;
@@ -213,9 +218,21 @@ bool MNCTModuleEnergyCalibrationUniversal::Initialize()
     MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
     CalibratorType.ToLower();
     
-       
+    // Below inclusion of poly1zero written by J. Beechert on 2019/11/15
+    if (CalibratorType == "poly1zero") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+     
+      //From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly1zero","0. + [0]*x", 0., 8191.);
+      melinatorfit->FixParameter(0, a0);
+     
+      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+     
+    }     
+        
     // Below inclusion of poly1 and poly2 written by J. Beechert on 2019/10/24
-    if (CalibratorType == "poly1") {
+    else if (CalibratorType == "poly1") {
       double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       
