@@ -229,6 +229,7 @@ done
 echo "--> ${#DATAFILES[*]} data files total."
 
 
+
 echo " "
 echo "Starting analysis..." | ${LOGGING}
 AVAILABLE=0
@@ -305,6 +306,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \"ERROR: .dcosima.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"ERROR: Failed to access remote data directory!\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"ERROR: Failed to create target directory\"; exit 1; fi; "
+    COMMAND+="if [[ ! -w ${TARGETDIR} ]]; then echo \"ERROR: Target directory is not writable\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"ERROR: Data file not found or not readable!\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${NUCLEARIZERCFG} ]] || [[ ! -r ${NUCLEARIZERCFG} ]]; then echo \"ERROR: Nuclearizer configuration file not found or not readable!\"; exit 1; fi; "
     COMMAND+="echo \"Available\"; exit 0; "
@@ -379,7 +381,8 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           fi
        
           STARTTIME=$(date +%s)
-          REMOTEDATADIR=$(ssh -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          #echo "ssh -o \"PreferredAuthentications=publickey\" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} \'bash -s \' <<< ${REMOTECOMMAND}"
+          REMOTELAUNCH=$(ssh -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
             echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch nuclearizer!" | ${LOGGING}
             MACHINES[$m]=""
