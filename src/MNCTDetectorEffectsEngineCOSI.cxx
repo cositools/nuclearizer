@@ -1471,7 +1471,7 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
 }
     
 
-
+// 
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1508,12 +1508,15 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
   if (Fit != 0) {
     // find roots - while considering the limits of the fit function
     double MaxEnergy = 10000.0;
-    if (energy >= MaxEnergy) {
+    if (energy >= MaxEnergy || energy > Fit->GetMaximum(0, 8191)) {
+      //cout<<"Info: Setting AD units to max (8191): E="<<energy<<" vs. E_max="<<Fit->GetMaximum(0, 8191)<<endl;
       ADC_double = 8191; 
-    } else if (energy <= 0) {
+    } else if (energy <= 0 || energy < Fit->GetMinimum(0, 8191)) {
+      //cout<<"Info: Setting AD units to min (0): E="<<energy<<" vs. E_min"<<Fit->GetMinimum(0, 8191)<<endl;
       ADC_double = 0.0;
     } else {
       ADC_double = Fit->GetX(energy, 0., MaxEnergy);
+      //cout<<"energy:"<<energy<<"(ad: "<<ADC_double<<") vs. E_min="<<Fit->GetMinimum()<<"   E_max="<<Fit->GetMaximum()<<endl;
     }
   }
 
