@@ -1506,14 +1506,20 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
   TF1* Fit = m_EnergyCalibration[Hit.m_ROE];
 
   if (Fit != 0) {
-    //find roots
-    ADC_double = Fit->GetX(energy,0.,10000.);
+    // find roots - while considering the limits of the fit function
+    double MaxEnergy = 10000.0;
+    if (energy >= MaxEnergy) {
+      ADC_double = 8191; 
+    } else if (energy <= 0) {
+      ADC_double = 0.0;
+    } else {
+      ADC_double = Fit->GetX(energy, 0., MaxEnergy);
+    }
   }
 
 
   int ADC = int(ADC_double);
   return ADC;
-
 }
 
 
