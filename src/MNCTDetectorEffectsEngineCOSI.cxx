@@ -509,9 +509,9 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 				//get IA position in detector
 				MVector IAPosition = IAPositions[pos];
 
-				MDVolumeSequence* IAVolSeq = m_Geometry->GetVolumeSequencePointer(IAPosition, false, false);
-				MVector IAPositionInDetector = IAVolSeq->GetPositionInSensitiveVolume();
-				if (IAVolSeq->GetDetector() == 0 || IAVolSeq->GetSensitiveVolume() == 0){
+				MDVolumeSequence IAVolSeq = m_Geometry->GetVolumeSequence(IAPosition, false, false);
+				MVector IAPositionInDetector = IAVolSeq.GetPositionInSensitiveVolume();
+				if (IAVolSeq.GetDetector() == 0 || IAVolSeq.GetSensitiveVolume() == 0){
 					//if IA not in the detector, just use the HT position
 					IAPositionInDetector = PositionInDetector;
 					m_NumberOfFailedIASearches += 1;
