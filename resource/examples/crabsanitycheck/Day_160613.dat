@@ -1,6 +1,6 @@
 TYPE DAT
 
-DIR=/volumes/mobius/COSI2016/FlightData/FlightData_SanDiskA/
+DIR=.
 
 IN COSIa160613__000122.dat
 IN COSIa160613__000803.dat

@@ -19,4 +19,6 @@ revan -a -f Day_160613.evta.gz -c Crab.revan.cfg -g ${GEO} &
 
 wait
 
-mimrec -c Crab.mimrec.cfg -f Crab.tra -i -o Crab.png
+mimrec -c Crab.mimrec.cfg -g ${GEO} -f Crab.tra -i -o Crab.png
+mimrec -c Crab.mimrec.cfg -g ${GEO} -f Crab.tra -i -o Crab.C
+
