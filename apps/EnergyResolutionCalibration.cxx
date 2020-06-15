@@ -157,6 +157,7 @@ int main(int argc, char* argv[])
 
 	int numamstrips = 0;
 
+
 	for (auto CP: CP_ROEToLine) {
 		//cout<<CP.first<<endl;
 		if (CP_ROEToLine.find(CP.first) != CP_ROEToLine.end()) {
@@ -167,12 +168,13 @@ int main(int argc, char* argv[])
 			
 			// Below check of 3 calibration points commented out by J. Beechert on 19/11/15.
 			// Melinator now offers polynomial fits of order < 3, so we no longer want to throw an error if we see only 1 or 2 calibration points.	
-			/*
-			if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
-					cout<<"Not enough calibartion points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CP.first<<endl;
+			// J.Beechert on 20/06/11: instead of commenting out the error, change it to give an error if the order is 0 
+			//if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
+			  if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) == 0) {
+					cout<<"Not enough calibration points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CP.first<<endl;
 					continue;
 				}
-			*/
+			
 			} else {
 				cout<<"Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
 				continue;
