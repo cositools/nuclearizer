@@ -290,8 +290,8 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     # Reset it in case it was deleted before:
     MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
     
-    # Do a quick test if the machine is availble:
-    REMOTENAME=`ssh -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    # Do a quick test if the machine is available:
+    REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
       echo " * Remote machine: ${MACHINES[$m]}: NOT ACCESSIBLE OR TOO SLOW TO ANSWER"
       MACHINES[$m]=""
@@ -312,7 +312,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     COMMAND+="echo \"Available\"; exit 0; "
     
     # Now check the remote machine
-    ANSWER=$(timeout 6 ssh -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    ANSWER=$(timeout 6 ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
     if [[ $? == "124" ]]; then
       echo " * Remote machine: ${MACHINES[$m]}: WARNING: Slow connection - skipping this machine for this round of launches."
       MACHINES[$m]=""
@@ -381,8 +381,8 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           fi
        
           STARTTIME=$(date +%s)
-          #echo "ssh -o \"PreferredAuthentications=publickey\" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} \'bash -s \' <<< ${REMOTECOMMAND}"
-          REMOTELAUNCH=$(ssh -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          #echo "ssh -i ${HOME}/.ssh/dmegalib_rsa -o \"PreferredAuthentications=publickey\" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} \'bash -s \' <<< ${REMOTECOMMAND}"
+          REMOTELAUNCH=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
             echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch nuclearizer!" | ${LOGGING}
             MACHINES[$m]=""
