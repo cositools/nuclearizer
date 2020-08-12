@@ -363,7 +363,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
     
           
-          REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; nuclearizer -m 2 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[$d]}"
+          REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; nuclearizer -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[$d]}"
           if [[ ${DATAFILES[$d]} == *.sim ]] || [[ ${DATAFILES[$d]} == *.sim.gz ]]; then 
             REMOTECOMMAND+=" -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${DATAFILES[$d]} | sed s/.sim/.evta/g)"; 
           elif [[ ${DATAFILES[$d]} == *.dat ]] || [[ ${DATAFILES[$d]} == *.dat.gz ]]; then
