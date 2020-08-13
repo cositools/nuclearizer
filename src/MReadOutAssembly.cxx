@@ -248,11 +248,10 @@ void MReadOutAssembly::AddStripHit(MNCTStripHit* StripHit)
 {
   //! Add a strip hit
   int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) )
-    {
-      m_InDetector[DetectorID]=true;
-    }
-  return m_StripHits.push_back(StripHit);
+  if ( (DetectorID>=0) && (DetectorID<=11) ) {
+    m_InDetector[DetectorID]=true;
+  }
+  m_StripHits.push_back(StripHit);
 }
 
 
@@ -298,7 +297,7 @@ void MReadOutAssembly::AddStripHitTOnly(MNCTStripHit* StripHit)
     {
       m_InDetector[DetectorID]=true;
     }*/
-  return m_StripHitsTOnly.push_back(StripHit);
+  m_StripHitsTOnly.push_back(StripHit);
 }
 
 
