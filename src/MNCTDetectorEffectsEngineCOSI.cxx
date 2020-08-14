@@ -54,6 +54,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MDGeometryQuest.h"
 #include "MDDetector.h"
+#include "MDStrip2D.h"
 #include "MFileEventsSim.h"
 #include "MDVolumeSequence.h"
 #include "MSimEvent.h"
@@ -547,6 +548,82 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
           double DriftX = 0;
           double DriftY = 0;
           
+          double xDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthX();
+          double xDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetX();
+          double xInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchX();
+          
+          double yDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthY();
+          double yDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetY();
+          double yInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchY();
+          
+          double xInDet = IAPositionInDetector.X() + xDetectorHalfWidth - xDetectorOffset;
+          double yInDet = IAPositionInDetector.Y() + yDetectorHalfWidth - yDetectorOffset;
+          
+          int nStripID = 0;
+          int pStripID = 0;
+          
+          // ---> Time critical
+          for (int i = 0; i < NChargeCarriers + 1; ++i) {
+            //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
+            if (i == NChargeCarriers) { 
+              EnergyPerChargeCarrier = ExtraEnergy; 
+            }
+            
+            
+            // First n side
+            // Draw random x and y from 2D gaussian with mean = 0, sigma = 1
+            double y = gRandom->Rndm();
+            double z = gRandom->Rndm();
+            double x = z * 6.28318530717958623;
+            double r = sqrt(-2*log(y));
+            DriftX = r * sin(x) * DriftRadiusSigmaN;
+            DriftY = r * cos(x) * DriftRadiusSigmaN;
+            
+            // We need both to know when we are in the guard ring
+            int nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
+            int pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
+            if (nStripIDinterim < 0 || nStripIDinterim > 36 || pStripIDinterim < 0 || pStripIDinterim > 36) {
+              nStripID = 38;
+            } else {
+              nStripID = 37 - nStripIDinterim; 
+            }
+
+            
+            
+            // Then p side
+            
+            y = gRandom->Rndm();
+            z = gRandom->Rndm();
+            x = z * 6.28318530717958623;
+            r = sqrt(-2*log(y));
+            DriftX = r * sin(x) * DriftRadiusSigmaP;
+            DriftY = r * cos(x) * DriftRadiusSigmaP;
+            
+            nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
+            pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
+            if (nStripIDinterim < 0 || nStripIDinterim > 36 || pStripIDinterim < 0 || pStripIDinterim > 36) {
+              pStripID = 38;
+            } else {
+              pStripID = 37 - pStripIDinterim; 
+            }
+            
+            
+            
+            // Save which strips have been hit
+            if (pStripsEnergies.count(pStripID) == 0){
+              pStripsEnergies[pStripID] = 0.;
+            }
+            pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+            
+            if (nStripsEnergies.count(nStripID) == 0){
+              nStripsEnergies[nStripID] = 0.;
+            }
+            nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
+          }
+          // <--- Time critical
+          
+          /*
+          // Clio's original
           for (int i=0; i<NChargeCarriers+1; i++){
             //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
             if (i == NChargeCarriers){ EnergyPerChargeCarrier = ExtraEnergy; }
@@ -562,7 +639,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             MDGridPoint GPDriftN = Detector->GetGridPoint(DriftPositionN);
             int nStripID;
             //if position isn't in detector (0) or is guard ring (7) assign as guard ring
-            if (GPDriftN.GetType() == 7 || GPDriftN.GetType() == 0){
+            if (GPDriftN.GetType() == MDGridPoint::c_GuardRing || GPDriftN.GetType() == MDGridPoint::c_Unknown){
               nStripID = 38;
             }
             else { nStripID = 38-(GPDriftN.GetXGrid()+1); }
@@ -576,7 +653,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             
             MDGridPoint GPDriftP = Detector->GetGridPoint(DriftPositionP);
             int pStripID;
-            if (GPDriftP.GetType() == 7 || GPDriftP.GetType() == 0){
+            if (GPDriftP.GetType() == MDGridPoint::c_GuardRing || GPDriftP.GetType() == MDGridPoint::c_Unknown){
               pStripID = 38;
             }
             else { pStripID = 38-(GPDriftP.GetYGrid()+1); }
@@ -592,7 +669,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             }
             nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
           }
-          
+          */
         }
         
         //lists of strips that charge cloud hit: at least one must be original strip
