@@ -186,6 +186,7 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   }
   m_StartAreaFarField = m_Reader->GetSimulationStartAreaFarField();
   
+  m_NumberOfSimulatedEvents = 0;
   
   if (m_SaveToFile == true) {
     cout << "Output File: " << m_RoaFileName << endl;
@@ -259,11 +260,17 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
 //! Analyze whatever needs to be analyzed...
 bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 {
-  MSimEvent* SimEvent = 0;
+  MSimEvent* SimEvent = nullptr;
   //int RunningID = 0;
   
   while ((SimEvent = m_Reader->GetNextEvent(false)) != nullptr) {
+    
     //cout<<"ID: "<<SimEvent->GetID()<<endl;
+    
+    // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
+    m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
+    
+    
     if (SimEvent->GetNHTs() == 0) {
       //cout<<SimEvent->GetID()<<": No hits"<<endl;
       delete SimEvent;

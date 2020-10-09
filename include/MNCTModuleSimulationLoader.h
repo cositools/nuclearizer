@@ -51,6 +51,17 @@ class MNCTModuleSimulationLoader : public MModule, public MNCTDetectorEffectsEng
   //! Set geometry file name
   void SetGeometryFileName(const MString& FileName) { cout<<"Use SetGeometry instead"<<endl; abort(); }
  
+  //! Set if the stop after X accepted events flag is used
+  void SetUseStopAfter(bool Flag) { m_UseStopAfter = Flag; }
+  //! Return if the stop after X accepted events option is used
+  bool UseStopAfter() const { return m_UseStopAfter; }
+ 
+  //! Set the maximum number of accepted events
+  void SetMaximumAcceptedEvents(unsigned long MaximumAcceptedEvents) { m_MaximumAcceptedEvents = MaximumAcceptedEvents; }
+  //! Return the maximum number of accepted events
+  unsigned long GetMaximumAcceptedEvents() const { return m_MaximumAcceptedEvents; }
+     
+ 
   //! Initialize the module
   virtual bool Initialize();
 
@@ -84,8 +95,13 @@ class MNCTModuleSimulationLoader : public MModule, public MNCTDetectorEffectsEng
 
   // private members:
  private:
+  unsigned long m_AcceptedEvents;
 
-
+  //! Stop after a certain amount of accpetd events
+  bool m_UseStopAfter;
+  //! Stop after this amount of accepted events
+  unsigned long m_MaximumAcceptedEvents;
+  
 
 #ifdef ___CLING___
  public:

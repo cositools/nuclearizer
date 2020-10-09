@@ -29,6 +29,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIEFileSelector.h"
+#include "MGUIEEntry.h"
 #include "MGUIOptions.h"
 
 // Nuclearizer libs:
@@ -90,6 +91,12 @@ class MGUIOptionsSimulationLoader : public MGUIOptions
   MGUIEFileSelector* m_DepthCalibrationSplinesFileSelector;
 	//! Apply fudge factor
 	TGCheckButton* m_ApplyFudgeFactorSelector;
+  //! Use stop after a maximum number of events
+  TGCheckButton* m_StopAfter;
+  //! Entry field for the maximum number of accepted events
+  MGUIEEntry* m_MaximumAcceptedEvents;
+  
+  
   
 #ifdef ___CLING___
  public:

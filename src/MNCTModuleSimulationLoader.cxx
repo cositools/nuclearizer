@@ -76,6 +76,9 @@ MNCTModuleSimulationLoader::MNCTModuleSimulationLoader() : MModule()
   AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   m_HasOptionsGUI = true;
+  
+  m_UseStopAfter = false;
+  m_MaximumAcceptedEvents = 10000000;
 }
 
 
@@ -106,7 +109,9 @@ bool MNCTModuleSimulationLoader::Initialize()
     Saver->SetStartAreaFarField(m_StartAreaFarField);
   }
   
-  return true;
+  m_AcceptedEvents = 0;
+  
+  return MModule::Initialize();
 }
 
 
@@ -117,13 +122,22 @@ bool MNCTModuleSimulationLoader::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level 
 
+  if (m_UseStopAfter == true) {
+    if (m_AcceptedEvents >= m_MaximumAcceptedEvents) {
+      m_IsFinished = true;
+      return false;
+    }
+  }
+  
   if (MNCTDetectorEffectsEngineCOSI::GetNextEvent(Event) == false) {
     m_IsFinished = true;
     return false;
   }
     
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderSimulation | MAssembly::c_DetectorEffectsEngine);
-    
+  
+  m_AcceptedEvents++;
+  
   return true;
 }
 
@@ -138,7 +152,8 @@ void MNCTModuleSimulationLoader::Finalize()
   MSupervisor* S = MSupervisor::GetSupervisor();
   MNCTModuleEventSaver* Saver = dynamic_cast<MNCTModuleEventSaver*>(S->GetAvailableModuleByXmlTag("XmlTagEventSaver"));
   if (Saver != nullptr) {
-    Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
+    // Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
+    Saver->SetSimulatedEvents(m_NumberOfSimulatedEvents);
   }    
   
   MNCTDetectorEffectsEngineCOSI::Finalize();
@@ -205,11 +220,19 @@ bool MNCTModuleSimulationLoader::ReadXmlConfiguration(MXmlNode* Node)
   if (DepthCalibrationSplinesFileNameNode != 0) {
     SetDepthCalibrationSplinesFileName(DepthCalibrationSplinesFileNameNode->GetValue());
   }
-	MXmlNode* ApplyFudgeFactorNode = Node->GetNode("ApplyFudgeFactor");
-	if (ApplyFudgeFactorNode != 0) {
-		m_ApplyFudgeFactor = ApplyFudgeFactorNode->GetValueAsBoolean();
-	}
- 
+  MXmlNode* ApplyFudgeFactorNode = Node->GetNode("ApplyFudgeFactor");
+  if (ApplyFudgeFactorNode != 0) {
+    m_ApplyFudgeFactor = ApplyFudgeFactorNode->GetValueAsBoolean();
+  }
+  MXmlNode* UseStopAfterNode = Node->GetNode("UseStopAfter");
+  if (UseStopAfterNode != 0) {
+    m_UseStopAfter = UseStopAfterNode->GetValueAsBoolean();
+  }
+  MXmlNode* MaximumAcceptedEventsNode = Node->GetNode("MaximumAcceptedEvents");
+  if (MaximumAcceptedEventsNode != 0) {
+    m_MaximumAcceptedEvents = MaximumAcceptedEventsNode->GetValueAsLong();
+  }
+  
   return true;
 }
 
@@ -233,7 +256,9 @@ MXmlNode* MNCTModuleSimulationLoader::CreateXmlConfiguration()
   new MXmlNode(Node, "DepthCalibrationCoeffsFileName", m_DepthCalibrationCoeffsFileName);
   new MXmlNode(Node, "DepthCalibrationSplinesFileName", m_DepthCalibrationSplinesFileName);
   new MXmlNode(Node, "ApplyFudgeFactor", m_ApplyFudgeFactor);
-
+  new MXmlNode(Node, "UseStopAfter", m_UseStopAfter);
+  new MXmlNode(Node, "MaximumAcceptedEvents", m_MaximumAcceptedEvents);
+  
   return Node;
 }
 

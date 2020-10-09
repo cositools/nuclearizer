@@ -240,6 +240,9 @@ protected:
   //! The far field start area
   double m_StartAreaFarField;
   
+  //! The number of simulated events
+  unsigned long m_NumberOfSimulatedEvents;
+  
   
 private:
  

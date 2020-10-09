@@ -120,9 +120,25 @@ void MGUIOptionsSimulationLoader::Create()
   m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
   
   m_ApplyFudgeFactorSelector = new TGCheckButton(m_OptionsFrame, "Apply fudge factor to better match fluxes", 1);
-	m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetApplyFudgeFactor());
-	m_OptionsFrame->AddFrame(m_ApplyFudgeFactorSelector, LabelLayout);
+  m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetApplyFudgeFactor());
+  m_OptionsFrame->AddFrame(m_ApplyFudgeFactorSelector, LabelLayout);
 
+  TGHorizontalFrame* PassedFrame = new TGHorizontalFrame(m_OptionsFrame);
+  TGLayoutHints* PassedFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);  
+  m_OptionsFrame->AddFrame(PassedFrame, PassedFrameLayout);
+  
+  m_StopAfter = new TGCheckButton(PassedFrame, "Stop after this number of PASSED events: ", 1);
+  m_StopAfter->Associate(this);
+  m_StopAfter->SetOn(dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->UseStopAfter());
+  TGLayoutHints* StopAfterLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 10, 10);
+  PassedFrame->AddFrame(m_StopAfter, StopAfterLayout);
+  
+  m_MaximumAcceptedEvents = new MGUIEEntry(PassedFrame, " ", false, 
+                                           dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->GetMaximumAcceptedEvents(), true, 0l);
+  if (m_StopAfter->IsOn() == false) m_MaximumAcceptedEvents->SetEnabled(false);
+  PassedFrame->AddFrame(m_MaximumAcceptedEvents, StopAfterLayout);
+  
+  
   PostCreate();
 }
 
@@ -140,6 +156,11 @@ bool MGUIOptionsSimulationLoader::ProcessMessage(long Message, long Parameter1, 
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
+      break;
+    case kCM_CHECKBUTTON:
+      if (Parameter1 == 1) {
+        m_MaximumAcceptedEvents->SetEnabled(m_StopAfter->IsOn());
+      }
       break;
     default:
       break;
@@ -175,8 +196,10 @@ bool MGUIOptionsSimulationLoader::OnApply()
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetDeadStripFileName(m_DeadStripFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetDepthCalibrationCoeffsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetDepthCalibrationSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
-	dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetApplyFudgeFactor(m_ApplyFudgeFactorSelector->IsOn());
- 
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetApplyFudgeFactor(m_ApplyFudgeFactorSelector->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetUseStopAfter(m_StopAfter->IsOn());
+  dynamic_cast<MNCTModuleSimulationLoader*>(m_Module)->SetMaximumAcceptedEvents(m_MaximumAcceptedEvents->GetAsInt());
+  
   return true;
 }
 
