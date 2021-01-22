@@ -24,6 +24,7 @@ using namespace std;
 
 // ROOT libs:
 #include "TH2D.h"
+#include "TRandom.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -255,6 +256,10 @@ private:
 	static const int nStrips = 37;
 	//! slots in DSP dead time buffer
 	static const int nDTBuffSlots = 16;
+ 
+  //! The DEE internal random number generator
+  TRandom m_Random;
+ 
  
   //! The geometry
   MDGeometryQuest* m_Geometry;

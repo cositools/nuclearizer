@@ -47,7 +47,6 @@ using namespace std;
 #include <TH1.h>
 #include <TCanvas.h>
 #include <MString.h>
-#include <TRandom3.h>
 
 // MEGAlib
 #include "MGlobal.h"
@@ -107,7 +106,7 @@ MNCTDetectorEffectsEngineCOSI::~MNCTDetectorEffectsEngineCOSI()
 //! Initialize the module
 bool MNCTDetectorEffectsEngineCOSI::Initialize()
 {
-  gRandom->SetSeed(0);
+  m_Random.SetSeed(12345);
   
   // Load geometry:
   if (m_Geometry == nullptr) {
@@ -265,7 +264,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
   
   while ((SimEvent = m_Reader->GetNextEvent(false)) != nullptr) {
     
-    //cout<<"ID: "<<SimEvent->GetID()<<endl;
+    //cout<<endl<<endl<<"ID: "<<SimEvent->GetID()<<endl;
     
     // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
     m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
@@ -568,7 +567,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
           
           int nStripID = 0;
           int pStripID = 0;
-          
+
           // ---> Time critical
           for (int i = 0; i < NChargeCarriers + 1; ++i) {
             //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
@@ -579,8 +578,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             
             // First n side
             // Draw random x and y from 2D gaussian with mean = 0, sigma = 1
-            double y = gRandom->Rndm();
-            double z = gRandom->Rndm();
+            double y = m_Random.Rndm();
+            double z = m_Random.Rndm();
             double x = z * 6.28318530717958623;
             double r = sqrt(-2*log(y));
             DriftX = r * sin(x) * DriftRadiusSigmaN;
@@ -599,8 +598,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             
             // Then p side
             
-            y = gRandom->Rndm();
-            z = gRandom->Rndm();
+            y = m_Random.Rndm();
+            z = m_Random.Rndm();
             x = z * 6.28318530717958623;
             r = sqrt(-2*log(y));
             DriftX = r * sin(x) * DriftRadiusSigmaP;
@@ -637,7 +636,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             
             //first n side
             //Rannor draws random x and y from 2D gaussian with mean = 0, sigma = 1
-            gRandom->Rannor(DriftX,DriftY);
+            m_Random.Rannor(DriftX,DriftY);
             DriftX *= DriftRadiusSigmaN;
             DriftY *= DriftRadiusSigmaN;
             
@@ -652,7 +651,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             else { nStripID = 38-(GPDriftN.GetXGrid()+1); }
             
             //then p side
-            gRandom->Rannor(DriftX,DriftY);
+            m_Random.Rannor(DriftX,DriftY);
             DriftX *= DriftRadiusSigmaP;
             DriftY *= DriftRadiusSigmaP;
             
@@ -773,7 +772,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         delete SimEvent;
         continue;
       }
-      
+
       
       list<MNCTDEEStripHit> GuardRingHits;
       // (1b) The guard ring hits
@@ -823,7 +822,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
           GuardRingHits.push_back(GuardRingHitsFromChargeSharing[h]);
         }
       }
-      
+
       
       // (1c): Merge strip hits
       list<MNCTDEEStripHit> MergedStripHits;
@@ -851,6 +850,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         //      cout << "-----------" << endl;
         MergedStripHits.push_back(Start);
       }
+      
       
       //    bool fromSameInteraction = true;
       for (MNCTDEEStripHit& Hit: MergedStripHits){
@@ -893,15 +893,17 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         Hit.m_Origins.unique();      
       }
       
+
+      
       // Step (2): Calculate and noise timing
       const double TimingNoise = 3.76; //ns//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be (12.5/2.35)/sqrt(2)
       for (MNCTDEEStripHit& Hit: MergedStripHits) {
         
         //find lowest timing value 
-        double LowestNoisedTiming = Hit.m_SubStripHits.front().m_Timing + gRandom->Gaus(0,TimingNoise);
+        double LowestNoisedTiming = Hit.m_SubStripHits.front().m_Timing + m_Random.Gaus(0,TimingNoise);
         for(size_t i = 1; i < Hit.m_SubStripHits.size(); ++i){
-          double Timing = Hit.m_SubStripHits.at(i).m_Timing + gRandom->Gaus(0,TimingNoise);
-          //SubHit.m_Timing += gRandom->Gaus(0,TimingNoise);
+          double Timing = Hit.m_SubStripHits.at(i).m_Timing + m_Random.Gaus(0,TimingNoise);
+          //SubHit.m_Timing += m_Random.Gaus(0,TimingNoise);
           if( Timing < LowestNoisedTiming ) LowestNoisedTiming = Timing;
         }
         LowestNoisedTiming -= fmod(LowestNoisedTiming,5.0); //round down to nearest multiple of 5
@@ -922,6 +924,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         Hit.m_Energy = Energy;
         Hit.m_EnergyOrig = EnergyOrig;
       }
+      
       
       // (3b) Charge loss
       list<MNCTDEEStripHit>::iterator sh1, sh2;
@@ -1058,7 +1061,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       
       
       
-      
       // (3d) Give each striphit an noised ADC value; handle ADC overflow
       list<MNCTDEEStripHit>::iterator A = MergedStripHits.begin();
       while (A != MergedStripHits.end()) {
@@ -1099,6 +1101,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         }
       }
       
+      
       // (4b) Handle trigger thresholds make sure we throw out timing too!
       list<MNCTDEEStripHit>::iterator k = MergedStripHits.begin();
       while (k != MergedStripHits.end()) {
@@ -1114,13 +1117,14 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
           k = MergedStripHits.erase(k);
         } else {
-          double prob = gRandom->Rndm();
+          double prob = m_Random.Rndm();
           if (prob > m_FSTThresholds[ROE_map_key]->Eval((*k).m_ADC)){
             (*k).m_Timing = 0.0;
           }
           ++k;
         }
       }
+      
       
       // (4c) Take care of guard ring vetoes
       list<MNCTDEEStripHit>::iterator gr = GuardRingHits.begin();
@@ -1216,6 +1220,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
     T = SimEvent->GetTime().GetAsSeconds();
   }
   */
+      
       
       //Step (6.5): Dead time
       //figure out which detectors are currently dead -- 10us dead time per event
@@ -1327,6 +1332,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       //update LastHitTime
       m_LastHitTime = evt_time;
       
+
+      
       // Step (7): 
       
       //update trigger rates
@@ -1349,11 +1356,14 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
       m_LastTime = SimEvent->GetTime().GetAsSeconds();
       
+
       
       // Step (8): Apply fudge factor to completely absorbed events (photopeak)
       //to deal with successor stuff, need to do this for each SimHT
       //but same origin can make multiple SimHTs, so have to add them back together
       if (m_ApplyFudgeFactor){
+        /*
+        // Clio's version
         map<int,double> initialEnergyByIA;
         map<int,double> finalEnergyByIA;
         map<int,vector<unsigned int> > HitIndexByIA;
@@ -1394,7 +1404,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
           double threshold = 7.04e-5*initialEnergy+0.79;
           
           if (finalEnergy > initialEnergy-windowSize && finalEnergy < initialEnergy+windowSize){
-            double prob = gRandom->Rndm();
+            double prob = m_Random.Rndm();
             if (prob > threshold){
               eraseHit[i.first] = true;
             }
@@ -1420,13 +1430,49 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
             }
           }
         }
-      }
-      //check if there are any strip hits left...
-      int HitCounter = 0;
-      for (MNCTDEEStripHit Hit: MergedStripHits){
-        HitCounter++;
-      }
-      if (HitCounter == 0){
+        */ 
+        
+        // Normally we just have the INIT's in the simulations, thus we have to simplify this:
+        // If the total measured energy is in any of the INIT windows, test for erasing
+        
+        // Sum up all energies:
+        double TotalMeasuredEnergy = 0.0;
+        for (list<MNCTDEEStripHit>::iterator p = MergedStripHits.begin(); p != MergedStripHits.end(); ++p){
+          if ((*p).m_ROE.IsPositiveStrip() == false) {
+            TotalMeasuredEnergy += (*p).m_EnergyOrig;
+          }
+        }
+        
+        // Now check every INIT if the energy is withing the window:
+        for (unsigned int ia = 0; ia < SimEvent->GetNIAs(); ++ia) {
+          
+          double initialEnergy = SimEvent->GetIAAt(0)->GetSecondaryEnergy();
+          
+          // Clio's 
+          double sigma = 8.35e-4*initialEnergy+1.69;
+          double windowSize = 1.5*sigma;
+          double threshold = 7.04e-5*initialEnergy+0.79;
+          
+          //cout<<"Measued: "<<TotalMeasuredEnergy<<": init: "<<initialEnergy<<endl;
+          if (TotalMeasuredEnergy > initialEnergy-windowSize && TotalMeasuredEnergy < initialEnergy+windowSize) {
+            //cout<<" In photo peak "<<endl;
+            // In window, test for erasal
+            double prob = m_Random.Rndm();
+            if (prob > threshold){
+              MergedStripHits.clear();
+            }
+
+            break;
+          //} else {
+            //cout<<"Not in photo peak"<<endl;
+          }
+        }
+
+      } // End photo peak fudge factor
+      
+      
+      // Check if there are any strips left
+      if (MergedStripHits.size() == 0){
         delete SimEvent;
         continue;
       }
@@ -1564,7 +1610,7 @@ bool MNCTDetectorEffectsEngineCOSI::Finalize()
 int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean_energy)
 {  
   //first, need to simulate energy spread
-  static TRandom3 r(0);
+  //static TRandom3 r(0);
   TF1* FitRes = m_ResolutionCalibration[Hit.m_ROE];
   //resolution is a function of energy
   double EnergyResolutionFWHM = 3; //default to 3keV...does this make sense?
@@ -1575,7 +1621,7 @@ int MNCTDetectorEffectsEngineCOSI::EnergyToADC(MNCTDEEStripHit& Hit, double mean
   
   //get energy from gaussian around mean_energy with sigma=EnergyResolution
   //TRandom3 r(0);
-  double energy = r.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
+  double energy = m_Random.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
   //	double energy = mean_energy; 
   //  spectrum->Fill(energy);
   
@@ -1630,7 +1676,7 @@ double MNCTDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString s
   //  double sigma = ShieldRes->Eval(energy);
   double sigma = res_constant*pow(energy,1./2);
   
-  double noised_energy = gRandom->Gaus(energy,sigma);
+  double noised_energy = m_Random.Gaus(energy,sigma);
   
   return noised_energy;
   
