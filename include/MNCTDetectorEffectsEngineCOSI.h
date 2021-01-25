@@ -157,6 +157,9 @@ public:
   class MNCTDEEStripHit
   {
   public:
+    //! Default constructor
+    MNCTDEEStripHit() : m_ADC(0), m_Timing(0), m_PreampTemp(0), m_Energy(0), m_EnergyOrig(0), m_HitIndex(0), m_IsGuardRing(false), m_ID(0), m_OppositeStrip(0), m_Depth(-10) {}
+  
     //! The read-out element
     MReadOutElementDoubleStrip m_ROE;
     //! The ADC value
@@ -170,11 +173,11 @@ public:
     MVector m_Position;
     //! The simulated energy deposit
     double m_Energy;
-		//! The simulated energy deposit -- not changed by crosstalk and charge loss
-		double m_EnergyOrig;
+    //! The simulated energy deposit -- not changed by crosstalk and charge loss
+    double m_EnergyOrig;
 
-		//! SimHT index that the strip hit came from to check if hit was completely absorbed
-		unsigned int m_HitIndex;
+     //! SimHT index that the strip hit came from to check if hit was completely absorbed
+     unsigned int m_HitIndex;
     
     //! True if this is a guard ring
     bool m_IsGuardRing;
@@ -195,8 +198,8 @@ public:
     
     //! for charge loss
     int m_OppositeStrip;
-		//! save depth information for charge loss, and maybe other things
-		double m_Depth;
+    //! save depth information for charge loss, and maybe other things
+    double m_Depth;
   };
   
 protected:

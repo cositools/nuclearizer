@@ -1,5 +1,5 @@
 /*
- * MDummy.cxx
+ * MNCTDetectorEffectEngine.cxx
  *
  *
  * Copyright (C) by Clio Sleator, Carolyn Kierans, Andreas Zoglauer.
@@ -18,7 +18,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MDummy
+// MNCTDetectorEffectEngine
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -213,7 +213,8 @@ bool MNCTDetectorEffectsEngineCOSI::Initialize()
   m_ShieldVetoWindowSize = 0.4e-6;
   // for shield veto: gets updated with shield event times
   // start at -10s so that it doesn't veto beginning events by accident
-  m_ShieldTime = -10;  
+  m_ShieldTime = -10;
+  m_ShieldDeadTime = 0;
   
   m_IsShieldDead = false;
   
@@ -683,7 +684,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         bool pOrigHit = false;
         bool nOrigHit = false;
         
-        for (auto P: pStripsEnergies){
+        for (auto P: pStripsEnergies) {
           //change the energy of original strip
           if (pSide.m_ROE.GetStripID() == P.first){
             pSide.m_Energy = P.second;
@@ -925,7 +926,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         Hit.m_EnergyOrig = EnergyOrig;
       }
       
-      
+
       // (3b) Charge loss
       list<MNCTDEEStripHit>::iterator sh1, sh2;
       for (sh1 = MergedStripHits.begin(); sh1 != MergedStripHits.end(); ++sh1){
@@ -1060,7 +1061,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
       }
       
       
-      
       // (3d) Give each striphit an noised ADC value; handle ADC overflow
       list<MNCTDEEStripHit>::iterator A = MergedStripHits.begin();
       while (A != MergedStripHits.end()) {
@@ -1074,7 +1074,6 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
           ++A;
         }
       }
-      
       
       
       // Step (4): Apply thresholds and triggers including guard ring hits
