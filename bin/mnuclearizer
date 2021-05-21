@@ -232,6 +232,7 @@ JOBS=$( jobs -p -r )
 until [[ ${JOBS} == "" ]]; do
   echo "Currently $(echo ${JOBS} | wc -w) jobs are running. Waiting till all have finished."
   sleep 10
+  JOBS=$( jobs -p -r )
 done
 echo "All jobs have finished"
 
