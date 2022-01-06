@@ -1,6 +1,6 @@
 #include "MNCTDepthCalibrator.h"
 
-TFile* RootF;
+//TFile* RootF;
 
 MNCTDepthCalibrator::MNCTDepthCalibrator()
 {
@@ -47,7 +47,7 @@ MNCTDepthCalibrator::MNCTDepthCalibrator()
 
 
 
-	RootF = new TFile("$NUCLEARIZER/resource/rootfiles/timing_splines.root","recreate");
+	//RootF = new TFile("$NUCLEARIZER/resource/rootfiles/timing_splines.root","recreate");
 
 }
 
@@ -238,6 +238,7 @@ void MNCTDepthCalibrator::AddSpline(vector<double> xvec, vector<double> yvec, in
 		double sy_ = Sp->Eval(sx_);
 		sy.push_back(sy_);
 	}
+	/*
 	TGraph* Gsp = new TGraph(sx.size(), (double*) &sx[0], (double*) &sy[0]);
 	Gsp->SetLineColor(2);
 	Gsp->SetLineWidth(3);
@@ -249,7 +250,7 @@ void MNCTDepthCalibrator::AddSpline(vector<double> xvec, vector<double> yvec, in
 	MG->Add(Gd);
 	MG->Add(Gsp);
 	RootF->WriteTObject(MG);
-
+  */
 	return;
 }
 
