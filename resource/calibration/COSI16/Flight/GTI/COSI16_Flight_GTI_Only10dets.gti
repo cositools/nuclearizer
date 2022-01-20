@@ -1,0 +1,21 @@
+
+TYPE GTI
+
+# Launch Time: 2016/05/16_23:35:00  
+# System Off : 2016/07/02_16:51:00  
+GT 1463441700.0000000000 1467478260.0000000000
+
+# Include the preferred GTI files (Inclusion)  
+#IN COSI16_ShieldRate_Lv-All.gti	# inclusion of all levels of shield rates (check individuals)  
+
+# Include the preferred BTI files (exclusion)  
+IN COSI16_BeforeFloatAlt_v1.bti 
+IN COSI16_SystemProblems_v1.bti
+IN COSI16_HighShieldRates_v1.bti 
+IN COSI16_Only12dets.bti
+IN COSI16_Only11dets.bti
+IN COSI16_Only9dets.bti
+#IN COSI16_ShieldRate_Lv-All.bti	# exclusion of all levels of shield rates (check individuals)  
+
+ 
+

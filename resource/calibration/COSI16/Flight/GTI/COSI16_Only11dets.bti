@@ -1,0 +1,10 @@
+
+TYPE GTI
+
+# Use this file to exclude times when COSI had 11 detectors 
+#  (i.e. after det 8 HV failure and before det 5 HV failure)
+# Detector 8 HV failure: 2016/05/17_23:03:20 UTC
+# Detector 5 HV failure: 2016/05/18_18:35:46 UTC
+# UNIX times below: 
+BT 1463551400.0000000000 1463621746.0000000000
+

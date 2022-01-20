@@ -1,0 +1,10 @@
+
+TYPE GTI
+
+# Use this to exclude times when COSI had 12 detectors
+#  i.e. after launch and before det 8 HV failure
+# Launch Time: 2016/05/16_23:35:00 UTC
+# Detector 8 HV failure: 2016/05/17_23:03:20 UTC
+# UNIX times below: 
+BT 1463441700.0000000000 1463551400.0000000000
+
