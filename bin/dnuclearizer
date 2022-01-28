@@ -149,7 +149,7 @@ if [[ ${TARGETDIR} == "" ]]; then
   exit 1
 fi
 # Check if we have read and write access
-if [ ! -r ${TARGETDIR} ] or [ ! -w ${TARGETDIR} ]; then
+if [ ! -r ${TARGETDIR} ] || [ ! -w ${TARGETDIR} ]; then
   echo " "
   echo "ERROR: You need to have read and write access to the target directory"
   exit 1
@@ -231,18 +231,18 @@ if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
   DATAFILES=("${NOTDONE[@]}")  
   
   if [[ ${#DATAFILES[@]} -eq 0 ]]; then
-    echo " "
-    echo "Everything already done!"
+    echo " " | ${LOGGING}
+    echo "Everything already done!" | ${LOGGING}
     exit 0
   fi
 fi
 
 
-echo "Data files:"
+echo "Data files:" | ${LOGGING}
 for (( d=0; d<=$(( ${#DATAFILES[*]} -1 )); d++ )); do
-  echo " * ${DATAFILES[$d]}"
+  echo " * ${DATAFILES[$d]}" | ${LOGGING}
 done
-echo "--> ${#DATAFILES[*]} data files total."
+echo "--> ${#DATAFILES[*]} data files total." | ${LOGGING}
 
 
 
@@ -256,8 +256,8 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
 
   # (Re-) Read configuration file and extract machines
   if [[ `md5sum ${CFG}` != ${CFGMD5} ]]; then
-    echo " "
-    echo "Configuration file changed -- re-reading:"
+    echo " " | ${LOGGING}
+    echo "Configuration file changed -- re-reading:" | ${LOGGING}
     MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
     PRIORITIES=( `cat ${CFG} | grep "^machine" | gawk '{ print $3 }'` )
    
@@ -270,15 +270,15 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     
     for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
       if (( ${PRIORITIES[$m]} < 1 )); then
-        echo "Warning: The highest (= smallest number) allowed machine priority is 1"
-        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        echo "         Setting it to 1."
+        echo "Warning: The highest (= smallest number) allowed machine priority is 1" | ${LOGGING}
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}" | ${LOGGING}
+        echo "         Setting it to 1." | ${LOGGING}
         PRIORITIES[$m]=1;
       fi
       if (( ${PRIORITIES[$m]} > 5 )); then
-        echo "Warning: The lowest (= highest number) allowed machine priority is 5"
-        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        echo "         Setting it to 5."
+        echo "Warning: The lowest (= highest number) allowed machine priority is 5" | ${LOGGING}
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}" | ${LOGGING}
+        echo "         Setting it to 5." | ${LOGGING}
         PRIORITIES[$m]=5;
       fi
     done
@@ -294,15 +294,15 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     CFGMD5=`md5sum ${CFG}`
     
     for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )"
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )" | ${LOGGING}
     done
   fi
 
   
   # Verify the machines:
   AVAILABLEMACHINES=0
-  echo " " 
-  echo "Verifying available machines: "
+  echo " " | ${LOGGING}
+  echo "Verifying available machines: " | ${LOGGING}
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     # Reset it in case it was deleted before:
     MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
@@ -310,11 +310,11 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     # Do a quick test if the machine is available:
     REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
-      echo " * Remote machine: ${MACHINES[$m]}: NOT ACCESSIBLE OR TOO SLOW TO ANSWER"
+      echo " * Remote machine: ${MACHINES[$m]}: NOT ACCESSIBLE OR TOO SLOW TO ANSWER" | ${LOGGING}
       MACHINES[$m]=""
       continue
     else
-      echo " * Remote machine: ${MACHINES[$m]}: Accessible"    
+      echo " * Remote machine: ${MACHINES[$m]}: Accessible" | ${LOGGING}
     fi  
     
     COMMAND=""
@@ -331,34 +331,41 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     # Now check the remote machine
     ANSWER=$(timeout 6 ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
     if [[ $? == "124" ]]; then
-      echo " * Remote machine: ${MACHINES[$m]}: WARNING: Slow connection - skipping this machine for this round of launches."
+      echo " * Remote machine: ${MACHINES[$m]}: WARNING: Slow connection - skipping this machine for this round of launches." | ${LOGGING}
       MACHINES[$m]=""
       continue
     fi      
     if [[ ${ANSWER} == "" ]]; then ANSWER="ERROR: Check failed with the above error!"; fi
     if [[ ${ANSWER} != "Available" ]]; then     
-      echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}"
+      echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}" | ${LOGGING}
       MACHINES[$m]=""
       continue
     fi
  
-    echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}"
+    echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}" | ${LOGGING}
     
     if [[ ${FIRSTTEST} == "TRUE" ]]; then
       COMMAND=""
       COMMAND+=". .bash_local;"
       COMMAND+="cd ${TARGETDIR};"
-      COMMAND+="nuclearizer -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[0]} -C ModuleOptions.XmlTagEventSaver.FileName=Test.evta"; 
+      COMMAND+="nuclearizer --test -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[0]} -C ModuleOptions.XmlTagEventSaver.FileName=Test.evta"; 
       ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
       if [[ "$?" != "0" ]]; then
-        echo " * Remote machine: ${MACHINES[$m]}: Failed to launch nuclearizer!"
+        echo " * Remote machine: ${MACHINES[$m]}: Failed to launch nuclearizer!" | ${LOGGING}
         MACHINES[$m]=""
         continue
       fi
-      if [[ ${ANSWER} != *TEST RUN SUCCESSFUL* ]]; then     
-        echo " * Remote machine: ${MACHINES[$m]}: nuclearizer run failed"
-        MACHINES[$m]=""
+      if [[ ${ANSWER} != *TEST*RUN*SUCCESSFUL* ]]; then     
+        echo " * Remote machine: ${MACHINES[$m]}: nuclearizer run failed" | ${LOGGING}
+        echo "" | ${LOGGING}
+	echo "---- ERROR MESSAGE ----" | ${LOGGING}
+        echo "${ANSWER}" | ${LOGGING}
+	echo "-----------------------" | ${LOGGING}
+	echo "" | ${LOGGING}
+	MACHINES[$m]=""
         continue
+      else
+        echo " * Remote machine: ${MACHINES[$m]}: nuclearizer OK" | ${LOGGING}
       fi    
     fi
     
@@ -370,7 +377,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
   
   # If we have NO machines available, we quit...
   if [ ${AVAILABLEMACHINES} -eq 0 ]; then
-    echo " "
+    echo " " | ${LOGGING}
     echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..." | ${LOGGING}
     exit 0;
   fi
@@ -392,9 +399,9 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     
         # Prepare the launch
         ALLOWED=$( dmegalib-allowedinstances --remote=${MACHINES[$m]} )
-        echo " "
-        echo "Preparing for next launch with priority ${P}:"
-        echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
+        echo " " | ${LOGGING}
+        echo "Preparing for next launch with priority ${P}:" | ${LOGGING}
+        echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}" | ${LOGGING}
         if [[ ${ALLOWED} -gt 0 ]]; then
           LAUNCHED=$(( ${LAUNCHED} + 1 ))
           echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
@@ -440,7 +447,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           # Swich to next data file!
           d=$(( d + 1 ))
         else
-          echo " * Skipping machine for further launches in this round"
+          echo " * Skipping machine for further launches in this round" | ${LOGGING}
           MACHINES[$m]=""
         fi
       
@@ -460,7 +467,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
   
   if [[ ${STARTEDALLPRIORITIES} -eq 0 ]]; then
     echo ""
-    echo " --> No analysis slots available at the moment... Sleeping for a while..."
+    echo " --> No analysis slots available at the moment... Sleeping for a while..." | ${LOGGING}
     sleep ${DELAY}
   else 
     # Sleep a tiny bit to give the last instance a chance to start before we revisit the node   
@@ -468,9 +475,9 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
   fi
 done
 
-echo ""
-echo ""
+echo "" | ${LOGGING}
+echo "" | ${LOGGING}
 echo "All processes have been lauched, but it might take a while until all have finish..." | ${LOGGING}
-echo ""
+echo "" | ${LOGGING}
 
 exit 0;
