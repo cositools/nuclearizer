@@ -134,15 +134,26 @@ else
   echo "ERROR: You need to give a data directory"
   exit 1
 fi
+# Check if we have read access
+if [ ! -r ${DATADIR} ]; then
+  echo " "
+  echo "ERROR: You need to have read access to the data directory"
+  exit 1
+fi
 echo " * Data directory: ${DATADIR}"
 
-  
+# Check if we have a target directory
 if [[ ${TARGETDIR} == "" ]]; then
   echo " "
   echo "ERROR: You need to give a target directory where we create the response files"
   exit 1
 fi
-
+# Check if we have read and write access
+if [ ! -r ${TARGETDIR} ] or [ ! -w ${TARGETDIR} ]; then
+  echo " "
+  echo "ERROR: You need to have read and write access to the target directory"
+  exit 1
+fi
 
 if [[ ${LOG} == "TRUE" ]]; then
   LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
@@ -150,13 +161,18 @@ if [[ ${LOG} == "TRUE" ]]; then
   echo " * Logging output to file: ${LOGFILE}"
 fi
 
-if [[ -f "${CFG}" ]]; then
-  echo " * Configuration file: ${CFG}"
-else 
+if [ ! -f "${CFG}" ]; then
   echo " "
   echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
   exit 1  
 fi
+if [ ! -r "${CFG}" ]; then
+  echo " "
+  echo "ERROR: You need to have read access to the configuration file!"
+  exit 1  
+fi
+echo " * Configuration file: ${CFG}"
+
 
 if [[ ${DELAY} -ge 10 ]]; then
   echo " * Delay between checks for free slots: ${DELAY}"
@@ -233,6 +249,7 @@ echo "--> ${#DATAFILES[*]} data files total."
 echo " "
 echo "Starting analysis..." | ${LOGGING}
 AVAILABLE=0
+FIRSTTEST="TRUE"
 
 d=0
 while [[ $d -lt ${#DATAFILES[*]} ]]; do 
@@ -326,10 +343,30 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     fi
  
     echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}"
+    
+    if [[ ${FIRSTTEST} == "TRUE" ]]; then
+      COMMAND=""
+      COMMAND+=". .bash_local;"
+      COMMAND+="cd ${TARGETDIR};"
+      COMMAND+="nuclearizer -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[0]} -C ModuleOptions.XmlTagEventSaver.FileName=Test.evta"; 
+      ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+      if [[ "$?" != "0" ]]; then
+        echo " * Remote machine: ${MACHINES[$m]}: Failed to launch nuclearizer!"
+        MACHINES[$m]=""
+        continue
+      fi
+      if [[ ${ANSWER} != *TEST RUN SUCCESSFUL* ]]; then     
+        echo " * Remote machine: ${MACHINES[$m]}: nuclearizer run failed"
+        MACHINES[$m]=""
+        continue
+      fi    
+    fi
+    
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
     
   done
   
+  FIRSTTEST="FALSE"
   
   # If we have NO machines available, we quit...
   if [ ${AVAILABLEMACHINES} -eq 0 ]; then

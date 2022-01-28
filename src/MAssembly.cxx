@@ -200,6 +200,8 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   Usage<<"             0: false (default), else: true"<<endl;
   Usage<<"      -g --geometry:"<<endl;
   Usage<<"             Use this geometry file"<<endl;
+  Usage<<"      -t --test:"<<endl;
+  Usage<<"             Perform a test run to see if nuclearizer can be started up correctly."<<endl;
   Usage<<"      -v --verbosity:"<<endl;
   Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info"<<endl;
   Usage<<"      -h --help:"<<endl;
@@ -246,6 +248,8 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--multithreading" || Option == "-m") {
       m_Supervisor->UseMultiThreading((atoi(argv[++i]) != 0 ? true : false));
       cout<<"Command-line parser: Using multithreading: "<<(atoi(argv[i]) != 0 ? "yes" : "no")<<endl;
+    } else if (Option == "--test" || Option == "-t") {
+      // Parse later
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
     }
@@ -281,7 +285,14 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
       m_Supervisor->Analyze();
       m_Supervisor->Exit();
       return false;
-    }
+    } else if (Option == "--test" || Option == "-t") {
+        m_UseGui = false;
+        gROOT->SetBatch(true);
+        m_Supervisor->UseUI(false);
+        m_Supervisor->Analyze(true);
+        m_Supervisor->Exit();
+        return false;
+      }
   }
   
   if (m_UseGui == true) {
