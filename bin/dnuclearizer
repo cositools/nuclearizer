@@ -324,7 +324,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     fi  
     
     COMMAND=""
-    COMMAND+=". ~/.bash_local;"
+    COMMAND+=". ~/.dmegalib.bashrc;"
     COMMAND+="if [[ ! -x \${MEGALIB}/bin/nuclearizer ]]; then echo \"ERROR: Nuclearizer not fully installed\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \"ERROR: .dcosima.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"ERROR: Failed to access remote data directory!\"; exit 1; fi; "
@@ -353,7 +353,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}" | ${LOGGING}
     
     COMMAND=""
-    COMMAND+=". .bash_local;"
+    COMMAND+=". .dmegalib.bashrc;"
     COMMAND+="cd ${TARGETDIR};"
     COMMAND+="nuclearizer --test -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[0]} -C ModuleOptions.XmlTagEventSaver.FileName=Test.evta"; 
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
@@ -426,7 +426,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
     
           
-          REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; nuclearizer -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[$d]}"
+          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nuclearizer -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[$d]}"
           if [[ ${DATAFILES[$d]} == *.sim ]] || [[ ${DATAFILES[$d]} == *.sim.gz ]]; then 
             REMOTECOMMAND+=" -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${DATAFILES[$d]} | sed s/.sim/.evta/g)"; 
           elif [[ ${DATAFILES[$d]} == *.dat ]] || [[ ${DATAFILES[$d]} == *.dat.gz ]]; then

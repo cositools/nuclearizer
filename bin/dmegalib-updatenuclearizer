@@ -133,7 +133,7 @@ tar xvfz ~/${NUCFILE}
 rm ~/${NUCFILE}
 
 # Check if MEGAlib is installed
-. ~/.bash_local
+. ~/.dmegalib.bashrc
 type cosima >/dev/null 2>&1
 if [ \$? -ne 0 ]; then
   echo "DMEGALIBERROR 3"
@@ -154,23 +154,23 @@ echo "Compiled"
 # Setup environment
 SOURCE="export NUCLEARIZER=${MEGALIBPATH}/Nuclearizer"; 
 HASIT=""; 
-if [[ -f ~/.bash_local ]]; then 
-  HASIT=\$(grep "\${SOURCE}" ~/.bash_local); 
+if [[ -f ~/.dmegalib.bashrc ]]; then
+  HASIT=\$(grep "\${SOURCE}" ~/.dmegalib.bashrc);
 fi; 
 if [ "\${HASIT}" == "" ]; then 
-  echo "\${SOURCE}" >> ~/.bash_local; 
+  echo "\${SOURCE}" >> ~/.dmegalib.bashrc;
 fi
 SOURCE="export PATH=\${NUCLEARIZER}/bin:\${PATH}"; 
 HASIT=""; 
-if [[ -f ~/.bash_local ]]; then 
-  HASIT=\$(grep "\${SOURCE}" ~/.bash_local); 
+if [[ -f ~/.dmegalib.bashrc ]]; then
+  HASIT=\$(grep "\${SOURCE}" ~/.dmegalib.bashrc);
 fi; 
 if [ "\${HASIT}" == "" ]; then 
-  echo 'export PATH=\${NUCLEARIZER}/bin:\${PATH}' >> ~/.bash_local; 
+  echo 'export PATH=\${NUCLEARIZER}/bin:\${PATH}' >> ~/.dmegalib.bashrc;
 fi
 
 # Check if nuclearizer exists
-. ~/.bash_local
+. ~/.dmegalib.bashrc
 type nuclearizer >/dev/null 2>&1
 if [ \$? -ne 0 ]; then
   echo "DMEGALIBERROR 5"
