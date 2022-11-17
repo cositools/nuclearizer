@@ -1,0 +1,502 @@
+#!/bin/bash
+
+# Part of the megalib analysis cluster
+# Run remote instances of nuclearizer
+
+
+# On exit, or if we hit ctrl-C, kill all your children
+trap CleanUp SIGTERM SIGINT 
+
+CleanUp() {
+  echo " "
+  echo " "
+  echo "Received command to shut down... Please wait until all remote jobs have finished..."
+  echo " "
+  exit 1
+}
+
+commandhelp() {
+  echo ""
+  echo "dnuclearizer - remotely create responses";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dnuclearizer [options]";
+  echo ""
+  echo "Options:"
+  echo "  --datadir=[path]: The data diretcory"
+  echo "  --targetdir=[path]: The target directory"
+  echo "  --cfg=[file name]: Nuclearizer configuration file name"
+  echo "  --continue: Check for not yet created response files and just create the new ones"
+  echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
+  echo "  --zip: Compress the output files."
+  echo "  --log: Create a log file of what is started where"
+  echo "  --test: Perform a test run up until actually starting the instances"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Attention:";
+  echo "(1)"
+  echo "All file names need to be absolute and the files available on the remote machine"
+  echo "(2)"
+  echo "All the data files must be accessible on the target machine and have a full path - even within the nuclearizer configuration file"
+  echo "(3)"
+  echo "The target directory must be writeable by the user on the remote host"
+  echo "";
+  echo "Example: "
+  echo "  dnuclearizer -d=/nfsshare/Data -t=/nfsshare/Target -cfg=/nfsshare/Nuclearizer.cfg --log";
+  echo "";
+}
+
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+DATADIR=""
+TARGETDIR=""
+ZIP="FALSE"
+CONTINUE="FALSE"
+LOG="FALSE"
+LOGFILE=""
+LOGGING="tee"
+DELAY="10"
+CFG=~/.dcosima.cfg
+TESTRUN="FALSE"
+
+# Response creator specific options
+NUCLEARIZERCFG=""
+
+
+# The number of already launched runs
+LAUNCHED=0
+# The run ID
+RUNID=${RANDOM}${RANDOM}${RANDOM}
+# Here we are
+HERE=$(pwd)
+
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-d*=* ]]; then
+    DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-ta*=* ]]; then
+    TARGETDIR=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-cont* ]]; then
+    CONTINUE="TRUE"
+  elif [[ ${C} == *-z* ]]; then
+    ZIP="TRUE"
+  elif [[ ${C} == *-d*=* ]]; then
+    DELAY=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
+  elif [[ ${C} == *-te* ]]; then
+    TESTRUN="TRUE"
+  elif [[ ${C} == *-cfg*=* ]]; then
+    NUCLEARIZERCFG=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"dnuclearizer --help\" for a list of options"
+    exit 1
+  fi
+done
+
+
+# Provide feed back and perform error checks:
+echo ""
+echo "Chosen options:"
+
+  
+if [[ ${DATADIR} != "" ]]; then
+  if [[ ! -d ${DATADIR} ]]; then
+    echo " "
+    echo "ERROR: Data directory not found: ${DATADIR}"
+    exit 1
+  fi
+  if [[ ${DATADIR} != /* ]]; then
+    echo " "
+    echo "ERROR: Data directory must have an absolute path: ${DATADIR}"
+    exit 1
+  fi
+else
+  echo " "
+  echo "ERROR: You need to give a data directory"
+  exit 1
+fi
+# Check if we have read access
+if [ ! -r ${DATADIR} ]; then
+  echo " "
+  echo "ERROR: You need to have read access to the data directory: ${DATADIR}"
+  exit 1
+fi
+echo " * Data directory: ${DATADIR}"
+
+# Check if we have a target directory
+if [[ ${TARGETDIR} == "" ]]; then
+  echo " "
+  echo "ERROR: You need to give a target directory where we create the response files"
+  exit 1
+fi
+# Check if we have read and write access
+if [ ! -r ${TARGETDIR} ] || [ ! -w ${TARGETDIR} ]; then
+  echo " "
+  echo "ERROR: You need to have read and write access to the target directory: ${TARGETDIR}"
+  exit 1
+fi
+
+if [[ ${LOG} == "TRUE" ]]; then
+  LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
+  LOGGING="tee -a ${LOGFILE}"
+  echo " * Logging output to file: ${LOGFILE}"
+fi
+
+if [ ! -f "${CFG}" ]; then
+  echo " "
+  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
+  exit 1  
+fi
+if [ ! -r "${CFG}" ]; then
+  echo " "
+  echo "ERROR: You need to have read access to the configuration file!"
+  exit 1  
+fi
+echo " * Configuration file: ${CFG}"
+
+
+if [[ ${DELAY} -ge 10 ]]; then
+  echo " * Delay between checks for free slots: ${DELAY}"
+else 
+  DELAY="10"
+  echo " * Using minimum allowed delay between checks for free slots: ${DELAY}"
+fi
+
+
+
+# Now start the all the simulations runs
+echo " " | ${LOGGING}
+echo "Creating a list of all data files to use" | ${LOGGING}
+
+cd ${DATADIR}
+
+# Find all sim and evta files except concatenation files (that's what the *inc*id* is for)
+DATAFILES=()
+for F in `ls -U *inc*id*.sim.gz 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
+done
+for F in `ls -U *inc*id*.sim 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
+done
+for F in `ls -U *.dat.gz 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
+done
+for F in `ls -U *.dat 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
+done
+
+
+# Done
+cd ${HERE}
+
+
+# Check if we can continue:
+if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
+  TARGETFILES=$( ls -1 ${TARGETDIR}/*.evta* )
+  NOTDONE=()
+  
+  for (( d=0; d<${#DATAFILES[*]}; d++ )); do
+    if [[ $(( d % 100 )) == 0 ]]; then echo "Analyzing $d/${#DATAFILES[*]}..."; fi
+            
+    OUTFILE=${DATAFILES[$d]}
+    OUTFILE=${OUTFILE/.sim.gz/}
+    OUTFILE=${OUTFILE/.sim/}
+    OUTFILE=${OUTFILE/.dat.gz/}
+    OUTFILE=${OUTFILE/.dat/}
+            
+    if [[ ! ${TARGETFILES} =~ ${OUTFILE} ]]; then
+      NOTDONE+=( "${DATAFILES[$d]}" )
+    fi
+  done
+  
+  DATAFILES=("${NOTDONE[@]}")  
+  
+  if [[ ${#DATAFILES[@]} -eq 0 ]]; then
+    echo " " | ${LOGGING}
+    echo "Everything already done!" | ${LOGGING}
+    exit 0
+  fi
+fi
+
+
+echo "Data files:" | ${LOGGING}
+for (( d=0; d<=$(( ${#DATAFILES[*]} -1 )); d++ )); do
+  echo " * ${DATAFILES[$d]}" | ${LOGGING}
+done
+echo "--> ${#DATAFILES[*]} data files total." | ${LOGGING}
+
+
+
+echo " "
+echo "Starting analysis..." | ${LOGGING}
+AVAILABLE=0
+FIRSTTEST="TRUE"
+
+d=0
+while [[ $d -lt ${#DATAFILES[*]} ]]; do 
+
+  # (Re-) Read configuration file and extract machines
+  if [[ `md5sum ${CFG}` != ${CFGMD5} ]]; then
+    echo " " | ${LOGGING}
+    echo "Configuration file changed -- re-reading:" | ${LOGGING}
+    MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+    PRIORITIES=( `cat ${CFG} | grep "^machine" | gawk '{ print $3 }'` )
+   
+    if [[ ${#PRIORITIES[*]} < ${#MACHINES[*]} ]]; then
+      PRIORITIES=( )
+      for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+        PRIORITIES=( ${PRIORITIES[@]} "1" )
+      done
+    fi
+    
+    for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
+      if (( ${PRIORITIES[$m]} < 1 )); then
+        echo "Warning: The highest (= smallest number) allowed machine priority is 1" | ${LOGGING}
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}" | ${LOGGING}
+        echo "         Setting it to 1." | ${LOGGING}
+        PRIORITIES[$m]=1;
+      fi
+      if (( ${PRIORITIES[$m]} > 5 )); then
+        echo "Warning: The lowest (= highest number) allowed machine priority is 5" | ${LOGGING}
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}" | ${LOGGING}
+        echo "         Setting it to 5." | ${LOGGING}
+        PRIORITIES[$m]=5;
+      fi
+    done
+
+    REMOTEUSER=( )
+    REMOTEHOST=( )
+    REMOTEPORT=( )
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+      REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+      REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+    done
+    CFGMD5=`md5sum ${CFG}`
+    
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )" | ${LOGGING}
+    done
+  fi
+
+  
+  # Verify the machines:
+  AVAILABLEMACHINES=0
+  MACHINEERRORS="FALSE"
+  echo " " | ${LOGGING}
+  echo "Verifying available machines: " | ${LOGGING}
+  for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+    # Reset it in case it was deleted before:
+    MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
+    
+    # Do a quick test if the machine is available:
+    REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]}: NOT ACCESSIBLE OR TOO SLOW TO ANSWER" | ${LOGGING}
+      MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
+      continue
+    else
+      echo " * Remote machine: ${MACHINES[$m]}: Accessible" | ${LOGGING}
+    fi  
+    
+    COMMAND=""
+    COMMAND+=". ~/.dmegalib.bashrc;"
+    COMMAND+="if [[ ! -x \${MEGALIB}/bin/nuclearizer ]]; then echo \"ERROR: Nuclearizer not fully installed\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \"ERROR: .dcosima.cfg configuration file not found.\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"ERROR: Failed to access remote data directory!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"ERROR: Failed to create target directory\"; exit 1; fi; "
+    COMMAND+="if [[ ! -w ${TARGETDIR} ]]; then echo \"ERROR: Target directory is not writable\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"ERROR: Data file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${NUCLEARIZERCFG} ]] || [[ ! -r ${NUCLEARIZERCFG} ]]; then echo \"ERROR: Nuclearizer configuration file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="echo \"Available\"; exit 0; "
+    
+    # Now check the remote machine
+    ANSWER=$(timeout 6 ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    if [[ $? == "124" ]]; then
+      echo " * Remote machine: ${MACHINES[$m]}: WARNING: Slow connection - skipping this machine for this round of launches." | ${LOGGING}
+      MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
+      continue
+    fi      
+    if [[ ${ANSWER} == "" ]]; then ANSWER="ERROR: Check failed with the above error!"; fi
+    if [[ ${ANSWER} != "Available" ]]; then     
+      echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}" | ${LOGGING}
+      MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
+      continue
+    fi
+ 
+    echo " * Remote machine: ${MACHINES[$m]}: ${ANSWER}" | ${LOGGING}
+    
+    COMMAND=""
+    COMMAND+=". .dmegalib.bashrc;"
+    COMMAND+="cd ${TARGETDIR};"
+    COMMAND+="nuclearizer --test -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[0]} -C ModuleOptions.XmlTagEventSaver.FileName=Test.evta"; 
+    ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=2 -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    if [[ "$?" != "0" ]]; then
+      echo " * Remote machine: ${MACHINES[$m]}: Failed to launch nuclearizer!" | ${LOGGING}
+      MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
+      continue
+    fi
+    if [[ ${ANSWER} != *TEST*RUN*SUCCESSFUL* ]]; then     
+      echo " * Remote machine: ${MACHINES[$m]}: nuclearizer run failed" | ${LOGGING}
+      echo "" | ${LOGGING}
+      echo "---- ERROR MESSAGE ----" | ${LOGGING}
+      echo "${ANSWER}" | ${LOGGING}
+      echo "-----------------------" | ${LOGGING}
+      echo "" | ${LOGGING}
+      MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
+      continue
+    else
+      echo " * Remote machine: ${MACHINES[$m]}: nuclearizer OK" | ${LOGGING}
+    fi    
+    
+    AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+    
+  done
+  
+  if [[ ${TESTRUN} == "TRUE" ]]; then
+    if [[ ${MACHINEERRORS} == "FALSE" ]]; then
+      echo ">>> TEST RUN SUCCESSFUL <<<"
+      exit 0
+    else
+      echo ">>> TEST RUN FAILED <<<"
+      exit 1
+    fi
+  fi
+
+
+  FIRSTTEST="FALSE"
+  
+  # If we have NO machines available, we quit...
+  if [ ${AVAILABLEMACHINES} -eq 0 ]; then
+    echo " " | ${LOGGING}
+    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..." | ${LOGGING}
+    exit 0;
+  fi
+  
+  
+  STARTEDALLPRIORITIES=0
+  # Loop over the machines by priority & start processes on machines with high priority first 
+  for P in `seq 1 5`; do
+    # loop over all the machines at this prioritry and start as many machine as we can
+    while true; do
+      STARTED=0
+      for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+        if [[ ${PRIORITIES[$m]} != ${P} ]]; then continue; fi
+    
+        # Exclude failed machines
+        if [[ ${MACHINES[$m]} == "" ]]; then
+          continue
+        fi
+    
+        # Prepare the launch
+        ALLOWED=$( dmegalib-allowedinstances --remote=${MACHINES[$m]} )
+        echo " " | ${LOGGING}
+        echo "Preparing for next launch with priority ${P}:" | ${LOGGING}
+        echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}" | ${LOGGING}
+        if [[ ${ALLOWED} -gt 0 ]]; then
+          LAUNCHED=$(( ${LAUNCHED} + 1 ))
+          echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
+    
+          
+          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nuclearizer -m 0 -c ${NUCLEARIZERCFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${DATADIR}/${DATAFILES[$d]}"
+          if [[ ${DATAFILES[$d]} == *.sim ]] || [[ ${DATAFILES[$d]} == *.sim.gz ]]; then 
+            REMOTECOMMAND+=" -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${DATAFILES[$d]} | sed s/.sim/.evta/g)"; 
+          elif [[ ${DATAFILES[$d]} == *.dat ]] || [[ ${DATAFILES[$d]} == *.dat.gz ]]; then
+            REMOTECOMMAND+=" -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${DATAFILES[$d]} | sed s/.dat/.evta/g)";          
+          fi
+          if [[ ${LOG} == TRUE ]]; then
+            OUTFILE=${DATAFILES[$d]}
+            OUTFILE=${OUTFILE/.sim.gz/}
+            OUTFILE=${OUTFILE/.sim/}
+            OUTFILE=${OUTFILE/.dat.gz/}
+            OUTFILE=${OUTFILE/.dat/}
+            REMOTECOMMAND+=" </dev/null >${OUTFILE}.log 2>&1 &"
+          else
+            REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
+          fi
+       
+          STARTTIME=$(date +%s)
+          #echo "ssh -i ${HOME}/.ssh/dmegalib_rsa -o \"PreferredAuthentications=publickey\" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} \'bash -s \' <<< ${REMOTECOMMAND}"
+          REMOTELAUNCH=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -o "PreferredAuthentications=publickey" -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          if [[ "$?" != "0" ]]; then
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch nuclearizer!" | ${LOGGING}
+            MACHINES[$m]=""
+            continue
+          else
+            echo " * Instance ${LAUNCHED} launched on ${MACHINES[$m]}" | ${LOGGING}
+          fi
+          ENDTIME=$(date +%s)
+          
+          if [[ $(($ENDTIME - $STARTTIME)) -gt 5 ]]; then
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Very slow to launch nuclearizer, removing it from the list for this round." | ${LOGGING}
+            MACHINES[$m]=""          
+          fi
+        
+          STARTED=1
+          STARTEDALLPRIORITIES=1
+          
+          # Swich to next data file!
+          d=$(( d + 1 ))
+        else
+          echo " * Skipping machine for further launches in this round" | ${LOGGING}
+          MACHINES[$m]=""
+        fi
+      
+        if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+      
+      done # loop over all machines at this priority once
+      
+      if [[ ${STARTED} == 0 ]]; then break; fi
+      if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+    
+    done # loop over all machines at this priority until no more available machines are found
+    
+    if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+    
+  done # loopover all priorities
+  
+  
+  if [[ ${STARTEDALLPRIORITIES} -eq 0 ]]; then
+    echo ""
+    echo " --> No analysis slots available at the moment... Sleeping for a while..." | ${LOGGING}
+    sleep ${DELAY}
+  else 
+    # Sleep a tiny bit to give the last instance a chance to start before we revisit the node   
+    sleep 1
+  fi
+done
+
+echo "" | ${LOGGING}
+echo "" | ${LOGGING}
+echo "All processes have been lauched, but it might take a while until all have finish..." | ${LOGGING}
+echo "" | ${LOGGING}
+
+exit 0;

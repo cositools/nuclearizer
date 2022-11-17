@@ -1,0 +1,28 @@
+#Global parameters
+Version					1
+Geometry				$(NUCLEARIZER)/MassModel/COSI.DetectorHead.geo.setup
+
+#Physics list
+PhysicsListEM										Livermore
+PhysicsListEMActiveFluorescence 					false
+
+#Output formats
+StoreCalibrated										true
+StoreSimulationInfo									all
+StoreSimulationInfoIonization						false
+DiscretizeHits										true
+
+
+
+#Run 1: Cs137 source
+
+Run Cs137_NearField
+Cs137_NearField.FileName		Cs137_Run
+Cs137_NearField.Time			60	
+
+Cs137_NearField.Source Cs137_DiskSource
+Cs137_DiskSource.ParticleType							1
+Cs137_DiskSource.Beam									DiskSource 1.47 0.31 64.02  	0 0 1 	0 {0.318/2} 0.5 0 360
+Cs137_DiskSource.Spectrum								Mono 661.66
+Cs137_DiskSource.Flux									2853731.0
+

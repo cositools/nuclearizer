@@ -1,0 +1,10 @@
+
+TYPE GTI
+
+# Use this file to exclude times when COSI had 9 detectors 
+#  (i.e. after det 8, 5, and 0 HV failures through remainder of the flight)
+# Detector 0 HV failure: 2016/06/06_16:45:10 UTC
+# System Off : 2016/07/02_16:51:00
+# UNIX times below: 
+BT 1465256710.0000000000 1467478260.0000000000
+

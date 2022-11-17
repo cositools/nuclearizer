@@ -1,0 +1,10 @@
+
+Ver.1 2016/09/12  
+ - Generating corresponding BTI files (.bti) to those 'COSI16_ShieldRate_Lv*.gti'.  
+ - Renaming the GTI filenames with version number (e.g. _v1, _v2)  
+
+Ver.0 2016/09/06  
+ - The first version of GTI files  
+
+ 
+

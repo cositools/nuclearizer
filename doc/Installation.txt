@@ -1,0 +1,27 @@
+Nuclearizer installation
+
+(0) Make sure boost is installed
+    Especially on Mac, do:
+    + Download the latest version from boost.org
+    + Unpack it
+    + Switch to the boost directory
+    + ./bootstrap.sh
+    + ./b2 (or whatever it recommends)
+    + sudo ./b2 install
+    + sudo chmod -R o+rX /usr/local
+
+(1) Install MEGAlib
+
+(2) Set up Nuclearizer environment
+export NUCLEARIZER=${SOFTWARE}/Nuclearizer
+export NUCLEARIZER_CAL=${SOFTWARE}/Nuclearizer/cal
+alias nuc='cd ${NUCLEARIZER}'
+
+(3) Check out nuclearizer:
+svn co https://svn.ssl.berkeley.edu/nct/nuclearizer/trunk Nuclearizer
+
+(4) Switch to the Nuclearizer directory and compile:
+cd ${NUCLEARIZER}
+make
+
+(5) Done

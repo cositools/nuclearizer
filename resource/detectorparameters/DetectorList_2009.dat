@@ -1,0 +1,41 @@
+#-----------------------------------------------------------------------------
+# This file describes the detail information of each NCT detector and is
+# loaded by MNCTDetectorArray class. The main purpose is to link the detector
+# ID with volume and to provide additional information needed by Nuclearizer.
+#
+# NOTE:
+#   1. Put '#' at begining of line for comments.
+#   2. Use one line for one detecotr. Order of lines does not matter.
+#   3. Empty line may cause unpredictable error.
+#   4. Detecor ID must start from 0 to number-1 without any gap.
+#   5. Make sure the detector's ID and volume name are consistant
+#      with geometry, calibration, and data files.
+#----------------------------------------------------------------------------- 
+#
+# Geometry: NCT mass model(2009, 10 detectors)
+# Parameters:
+#   ID: detector ID
+#   Volume: detector's volume name in geometry file
+#   IsXInv: Is X-strip order inverse?
+#   IsYInv: Is Y-strip order inverse?
+#   XYSwap: Is X-Y strip swap?
+#   IsXUp: Is X-strip at z+ side?
+#   ON: Is detector turned ON?
+#   IsXHV: Is X-strip at high voltage side?
+#   Voltage: the voltage of high voltage side
+#   Imp: Impurity concentration (X 10^9 cm^-3)
+#   DeadRegion: used by charge losing modeling
+#
+# Format:
+# <ID> <Volume> <IsXInv> <IsYInv> <XYSwap> <IsXUp> <ON> <IsXHV> <Voltage> <Imp> <DeadRegion> 
+# [int] [string] [bool] [bool] [bool] [bool] [bool] [bool] [double] [double] [double]
+0 GeD_Mother_Copy00_GEWA[GEWA_Copy1] 1 1 0 0 0 0 -1000 4.5 0
+1 GeD_Mother_Copy01_GEWA[GEWA_Copy1] 1 1 0 0 1 0  600 2.0 0
+2 GeD_Mother_Copy02_GEWA[GEWA_Copy1] 1 1 0 0 1 0 -1000 4.5 0
+3 GeD_Mother_Copy03_GEWA[GEWA_Copy1] 1 1 0 0 1 0  1000 5.5 0
+4 GeD_Mother_Copy04_GEWA[GEWA_Copy1] 1 1 0 0 1 0 -1500 7.0 0
+5 GeD_Mother_Copy05_GEWA[GEWA_Copy1] 1 1 0 0 1 0  1000 5.0 0
+6 GeD_Mother_Copy06_GEWA[GEWA_Copy1] 1 1 0 0 1 0 -1500 7.0 0
+7 GeD_Mother_Copy07_GEWA[GEWA_Copy1] 1 1 0 0 1 0  -600 2.0 0
+8 GeD_Mother_Copy08_GEWA[GEWA_Copy1] 1 1 0 0 1 0 -1000 6.0 0
+9 GeD_Mother_Copy09_GEWA[GEWA_Copy1] 1 1 0 0 1 0 -1600 9.0 0

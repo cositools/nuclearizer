@@ -1,0 +1,15 @@
+## File contains the mapping between the Nuclearizer DetectorNumber, the Geomega DetectorName, and the Nuclearizer Expo DisplayID and DisplayName
+
+## CCNumber DetectorNumber DetectorName DisplayID DisplayName
+0	0	Detector0	2	Detector0: -x, -y, top
+1	1	Detector1	1	Detector1: -x, -y, middle
+2	2	Detector2	0	Detector2: -x, -y, bottom
+3	3	Detector3	3	Detector3: +x, -y, bottom
+4	4	Detector4	4	Detector4: +x, -y, middle
+5	5	Detector5	5	Detector5: +x, -y, top
+6	6	Detector6	8	Detector6: +x, +y, top
+7	7	Detector7	7	Detector7: +x, +y, middle
+8	8	Detector8	6	Detector8: +x, +y, bottom
+9	9	Detector9	9	Detector9: -x, +y, bottom
+10	10	Detector10	10	Detector10: -x, +y, middle
+11	11	Detector11	11	Detector11: -x, +y, top

@@ -1,0 +1,20 @@
+#-----------------------------------------------------------------------------
+# This file lists dead strips.
+#
+# NOTE:
+#   1. Put '#' at begining of line for comments.
+#   2. Use one line for one strip. Order of lines does not matter.
+#   3. Empty line may cause unpredictable error.
+#   4. Both of detector ID and strip ID are supposed beginning from 0.
+#-----------------------------------------------------------------------------
+#
+# Geometry: NCT mass model(2009, 10 detectors)
+# Parameters:
+#   DetectorID: detecotr ID
+#   IsPositive: Is + strip or -?
+#   Strip ID: strip ID
+#
+# Format:
+# <DetectorID> <IsPositive> <StripID>
+# [int] [bool] [int]
+1 0 24
