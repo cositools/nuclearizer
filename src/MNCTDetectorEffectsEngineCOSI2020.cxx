@@ -436,8 +436,11 @@ bool MNCTDetectorEffectsEngineCOSI2020::GetNextEvent(MReadOutAssembly* Event)
 
 			// (1aa): charge sharing due to diffusion
 
-			//get origins: these are the IA indices
-	    vector<int> Origins = HT->GetOrigins();
+      // Get the origins: these are the IA indices
+      // We have to do a bit of a convoluted assignment since different version of MEGAlib have different types (int vs. unsigned int)
+      // vector<int> Origins = HT->GetOrigins();
+      vector<int> Origins(HT->GetOrigins().begin(), HT->GetOrigins().end());
+
       pSide.m_Origins = list<int>(Origins.begin(), Origins.end());
       nSide.m_Origins = list<int>(Origins.begin(), Origins.end());
 
