@@ -29,7 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModuleCrosstalkCorrection.h"
+#include "MModuleCrosstalkCorrection.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ void MGUIOptionsCrosstalkCorrection::Create()
   PreCreate();
 
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a cross talk calibration file:",
-    dynamic_cast<MNCTModuleCrosstalkCorrection*>(m_Module)->GetFileName());
+    dynamic_cast<MModuleCrosstalkCorrection*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Crosstalk calibration file", "*.txt");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
@@ -115,7 +115,7 @@ bool MGUIOptionsCrosstalkCorrection::OnApply()
 {
 	// Modify this to store the data in the module!
 
-  dynamic_cast<MNCTModuleCrosstalkCorrection*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MModuleCrosstalkCorrection*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 	
 	return true;
 }

@@ -52,17 +52,17 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 //#include "MReadOutDataADCValueWithTiming.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTBinaryFlightDataParser.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy.h"
-#include "MNCTModuleCrosstalkCorrection.h"
-#include "MNCTModuleChargeSharingCorrection.h"
+#include "MModuleMeasurementLoaderROA.h"
+#include "MBinaryFlightDataParser.h"
+#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
+#include "MModuleCrosstalkCorrection.h"
+#include "MModuleChargeSharingCorrection.h"
 #include "MAssembly.h"
 
 
@@ -245,28 +245,28 @@ bool ChargeLossOffsets::Analyze()
 
   MSupervisor *S = MSupervisor::GetSupervisor();
   
-  MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
-//	MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
+  MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
+//	MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
   Loader->SetFileName(m_FileName);
-//	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-//	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
+//	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
+//	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Magnetometer);
 //	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
  
-  MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
+  MModuleEnergyCalibrationUniversal* Calibrator = new MModuleEnergyCalibrationUniversal();
 //  Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/EnergyCalibration.ecal");
 	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/EnergyCalibration.ecal");
   S->SetModule(Calibrator, 1);
   
-  MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
+  MModuleStripPairingGreedy* Pairing = new MModuleStripPairingGreedy();
 	//Pairing->SetMode(0);
   S->SetModule(Pairing, 2);
 
-	MNCTModuleCrosstalkCorrection* CrossTalk = new MNCTModuleCrosstalkCorrection();
+	MModuleCrosstalkCorrection* CrossTalk = new MModuleCrosstalkCorrection();
 	CrossTalk->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/CrossTalkCorrection_Results_060716.txt");
 	S->SetModule(CrossTalk,3);
 
-	MNCTModuleChargeSharingCorrection* ChargeLoss = new MNCTModuleChargeSharingCorrection();
+	MModuleChargeSharingCorrection* ChargeLoss = new MModuleChargeSharingCorrection();
 	S->SetModule(ChargeLoss,4);
 
   if (Loader->Initialize() == false) return false;
@@ -296,7 +296,7 @@ bool ChargeLossOffsets::Analyze()
 			if (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) {
 				int nHits = Event->GetNHits();
 				for (int h=0; h<nHits; h++){
-					MNCTHit *Hit = Event->GetHit(h);
+					MHit *Hit = Event->GetHit(h);
 					//exclude anything w multiple hits per strip
 					if (Hit->GetStripHitMultipleTimesX() == false && Hit->GetStripHitMultipleTimesY() == false){
 					int nStripHits = Hit->GetNStripHits();
@@ -313,7 +313,7 @@ bool ChargeLossOffsets::Analyze()
 					vector<int> yStripIDs;
 	
 					for (int sh=0; sh<nStripHits; sh++){
-						MNCTStripHit *StripHit = Hit->GetStripHit(sh);
+						MStripHit *StripHit = Hit->GetStripHit(sh);
 						detector = StripHit->GetDetectorID();
 	
 						if (StripHit->IsXStrip() == true){

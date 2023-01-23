@@ -29,7 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModuleDepthCalibrationLinearPixel.h"
+#include "MModuleDepthCalibrationLinearPixel.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ void MGUIOptionsDepthCalibrationLinearPixel::Create()
   PreCreate();
 
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a detector map:",
-    dynamic_cast<MNCTModuleDepthCalibrationLinearPixel*>(m_Module)->GetFileName());
+    dynamic_cast<MModuleDepthCalibrationLinearPixel*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Detector map", "*.txt");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
@@ -115,7 +115,7 @@ bool MGUIOptionsDepthCalibrationLinearPixel::OnApply()
 {
 	// Modify this to store the data in the module!
 
-  dynamic_cast<MNCTModuleDepthCalibrationLinearPixel*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibrationLinearPixel*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 
 	return true;
 }

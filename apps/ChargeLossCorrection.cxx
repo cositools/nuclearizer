@@ -43,16 +43,16 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTBinaryFlightDataParser.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy.h"
-#include "MNCTModuleCrosstalkCorrection.h"
-#include "MNCTModuleChargeSharingCorrection.h"
+#include "MModuleMeasurementLoaderROA.h"
+#include "MBinaryFlightDataParser.h"
+#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
+#include "MModuleCrosstalkCorrection.h"
+#include "MModuleChargeSharingCorrection.h"
 #include "MAssembly.h"
 
 
@@ -230,27 +230,27 @@ bool ChargeLossCorrection::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
-//	MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
+  MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
+//	MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
   Loader->SetFileName(m_FileName);
-	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
+	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
+	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);
 	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
  
-  MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
+  MModuleEnergyCalibrationUniversal* Calibrator = new MModuleEnergyCalibrationUniversal();
   Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
 	Calibrator->EnablePreampTempCorrection(false);
   S->SetModule(Calibrator, 1);
   
-  MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
+  MModuleStripPairingGreedy* Pairing = new MModuleStripPairingGreedy();
   S->SetModule(Pairing, 2);
 
-	MNCTModuleCrosstalkCorrection* CrossTalk = new MNCTModuleCrosstalkCorrection();
+	MModuleCrosstalkCorrection* CrossTalk = new MModuleCrosstalkCorrection();
 	CrossTalk->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/CrossTalkCorrection_Results_060518.txt");
 	S->SetModule(CrossTalk,3);
 
-	MNCTModuleChargeSharingCorrection* ChargeLoss = new MNCTModuleChargeSharingCorrection();
+	MModuleChargeSharingCorrection* ChargeLoss = new MModuleChargeSharingCorrection();
 	S->SetModule(ChargeLoss,4);
 
 

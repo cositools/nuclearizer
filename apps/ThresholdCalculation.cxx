@@ -43,17 +43,17 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTBinaryFlightDataParser.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTModuleSimulationLoader.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy.h"
-#include "MNCTModuleCrosstalkCorrection.h"
-#include "MNCTModuleChargeSharingCorrection.h"
+#include "MModuleMeasurementLoaderROA.h"
+#include "MBinaryFlightDataParser.h"
+#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleSimulationLoader.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
+#include "MModuleCrosstalkCorrection.h"
+#include "MModuleChargeSharingCorrection.h"
 #include "MAssembly.h"
 
 
@@ -78,13 +78,13 @@ public:
 	//! Calculate LLD Thresholds
 	void LLDThresholds(map<int,TH1D*> LLDSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink);
 	//! Calculate fast thresholds
-	void FSTThresholdsLine(map<int,TH1D*> FSTSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink,MNCTModuleEnergyCalibrationUniversal* Calibrator);
+	void FSTThresholdsLine(map<int,TH1D*> FSTSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink,MModuleEnergyCalibrationUniversal* Calibrator);
 	//! Calculate fast thresholds
-	void FSTThresholdsErf(map<int,TH1D*> FSTSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator);
+	void FSTThresholdsErf(map<int,TH1D*> FSTSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MModuleEnergyCalibrationUniversal* Calibrator);
 	//! Calculate fast thresholds
-	void FSTThresholdsErfFixedMean(map<int,TH1D*> FSTSpec, map<int,TH1D*> LLDSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator);
+	void FSTThresholdsErfFixedMean(map<int,TH1D*> FSTSpec, map<int,TH1D*> LLDSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MModuleEnergyCalibrationUniversal* Calibrator);
 	//! Calculate fast thresholds
-	void FSTThresholdsFastOverTotal(map<int,TH1D*> FSTSpec, map<int,TH1D*> LLDSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator);
+	void FSTThresholdsFastOverTotal(map<int,TH1D*> FSTSpec, map<int,TH1D*> LLDSpec, map<int,float> &lld_thresholds, map<int,float> &spectrum_kink, MModuleEnergyCalibrationUniversal* Calibrator);
 
 
 
@@ -194,15 +194,15 @@ bool ThresholdCalculation::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
 
-  MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
+  MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
   Loader->SetFileName(m_FileName);
-	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
+	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
+	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);
 	Loader->EnableCoincidenceMerging(true);
   S->SetModule(Loader, 0);
 
 /*
-	MNCTModuleSimulationLoader* Loader = new MNCTModuleSimulationLoader();
+	MModuleSimulationLoader* Loader = new MModuleSimulationLoader();
 	Loader->SetSimulationFileName(m_FileName);
 	MDGeometryQuest* G = new MDGeometryQuest();
 	if (G->ScanSetupFile("~/Software/MassModel/COSI.DetectorHead.geo.setup") == true){
@@ -219,7 +219,7 @@ bool ThresholdCalculation::Analyze()
 	S->SetModule(Loader,0);
 */
  
-  MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
+  MModuleEnergyCalibrationUniversal* Calibrator = new MModuleEnergyCalibrationUniversal();
   Calibrator->SetFileName("/home/clio/Software/Nuclearizer/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
 	Calibrator->EnablePreampTempCorrection(false);
   S->SetModule(Calibrator, 1);
@@ -365,7 +365,7 @@ void ThresholdCalculation::LLDThresholds(map<int, TH1D*> LLDSpec, map<int, float
 
 
 
-void ThresholdCalculation::FSTThresholdsLine(map<int, TH1D*> FSTSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator){
+void ThresholdCalculation::FSTThresholdsLine(map<int, TH1D*> FSTSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MModuleEnergyCalibrationUniversal* Calibrator){
 
 	map<int, float> slope;
 	map<int, float> yInt;
@@ -411,7 +411,7 @@ void ThresholdCalculation::FSTThresholdsLine(map<int, TH1D*> FSTSpec, map<int, f
 
 }
 
-void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator){
+void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MModuleEnergyCalibrationUniversal* Calibrator){
 
 	map<int, float> mean;
 	map<int, float> sigma;
@@ -475,7 +475,7 @@ void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, fl
 }
 
 
-void ThresholdCalculation::FSTThresholdsErfFixedMean(map<int, TH1D*> FSTSpec, map<int, TH1D*> LLDSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator){
+void ThresholdCalculation::FSTThresholdsErfFixedMean(map<int, TH1D*> FSTSpec, map<int, TH1D*> LLDSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MModuleEnergyCalibrationUniversal* Calibrator){
 
 	map<int, float> mean;
 	map<int, float> sigma;
@@ -625,7 +625,7 @@ void ThresholdCalculation::FSTThresholdsErfFixedMean(map<int, TH1D*> FSTSpec, ma
 
 }
 
-void ThresholdCalculation::FSTThresholdsFastOverTotal(map<int, TH1D*> FSTSpec, map<int, TH1D*> LLDSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MNCTModuleEnergyCalibrationUniversal* Calibrator){
+void ThresholdCalculation::FSTThresholdsFastOverTotal(map<int, TH1D*> FSTSpec, map<int, TH1D*> LLDSpec, map<int, float> &lld_thresholds, map<int, float> &spectrum_kink, MModuleEnergyCalibrationUniversal* Calibrator){
 
 	map<int, float> mean;
 	map<int, float> sigma;

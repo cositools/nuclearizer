@@ -29,7 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModuleMeasurementLoader.h"
+#include "MModuleMeasurementLoader.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ void MGUIOptionsMeasurementLoader::Create()
   PreCreate();
 
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
-    dynamic_cast<MNCTModuleMeasurementLoader*>(m_Module)->GetFileName());
+    dynamic_cast<MModuleMeasurementLoader*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Roa file", "*.roa");
   m_FileSelector->SetFileType("Roa file", "*.roa.gz");
   m_FileSelector->SetFileType("Data file", "*.dat");
@@ -118,7 +118,7 @@ bool MGUIOptionsMeasurementLoader::OnApply()
 {
 	// Modify this to store the data in the module!
 
-  dynamic_cast<MNCTModuleMeasurementLoader*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MModuleMeasurementLoader*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 	
 	return true;
 }

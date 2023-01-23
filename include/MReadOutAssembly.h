@@ -24,10 +24,10 @@
 #include "MGlobal.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
-#include "MNCTAspect.h"
-#include "MNCTStripHit.h"
-#include "MNCTGuardringHit.h"
-#include "MNCTHit.h"
+#include "MAspect.h"
+#include "MStripHit.h"
+#include "MGuardringHit.h"
+#include "MHit.h"
 #include "MPhysicalEvent.h"
 #include "MSimIA.h"
 
@@ -87,9 +87,9 @@ class MReadOutAssembly : public MReadOutSequence
   MTime GetTimeUTC() const { return m_EventTimeUTC; }
   
   //! Set the aspect
-  void SetAspect(MNCTAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
+  void SetAspect(MAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
   //! Get the aspect - will be zero if the aspect has not been set!
-  MNCTAspect* GetAspect() { return m_Aspect; }
+  MAspect* GetAspect() { return m_Aspect; }
   
 	//! Set and get simulation aspect information
 	void SetGalacticPointingXAxisTheta(double theta){ m_GalacticPointingXAxisTheta = theta; }
@@ -142,18 +142,18 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the number of strip hits
   unsigned int GetNStripHits() const { return m_StripHits.size(); }
   //! Return strip hit i
-  MNCTStripHit* GetStripHit(unsigned int i);
+  MStripHit* GetStripHit(unsigned int i);
   //! Add a strip hit
-  void AddStripHit(MNCTStripHit* StripHit);
+  void AddStripHit(MStripHit* StripHit);
   //! Remove a strip hit
   void RemoveStripHit(unsigned int i);
 
   //! Return the number of T Only strip hits
   unsigned int GetNStripHitsTOnly() const { return m_StripHitsTOnly.size(); }
   //! Return strip hit i
-  MNCTStripHit* GetStripHitTOnly(unsigned int i);
+  MStripHit* GetStripHitTOnly(unsigned int i);
   //! Adda T Only strip hit
-  void AddStripHitTOnly(MNCTStripHit*);
+  void AddStripHitTOnly(MStripHit*);
   //! Remove a strip hit
   void RemoveStripHitTOnly(unsigned int i);
 
@@ -161,23 +161,23 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the number of guardring hits
   unsigned int GetNGuardringHits() const { return m_GuardringHits.size(); }
   //! Return guardring hit i
-  MNCTGuardringHit* GetGuardringHit(unsigned int i);
+  MGuardringHit* GetGuardringHit(unsigned int i);
   //! Add a guardring hit
-  void AddGuardringHit(MNCTGuardringHit* GuardringHit) { return m_GuardringHits.push_back(GuardringHit); }
+  void AddGuardringHit(MGuardringHit* GuardringHit) { return m_GuardringHits.push_back(GuardringHit); }
 
   //! Return the number of hits
   unsigned int GetNHits() const { return m_Hits.size(); }
   //! Return hit i
-  MNCTHit* GetHit(unsigned int i);
+  MHit* GetHit(unsigned int i);
   //! Add a hit
-  void AddHit(MNCTHit* Hit) { return m_Hits.push_back(Hit); }
+  void AddHit(MHit* Hit) { return m_Hits.push_back(Hit); }
   //! Remove a hit
   void RemoveHit(unsigned int i);
 
   //! Return the number of simulation hits
   unsigned int GetNHitsSim() const { return m_HitsSim.size(); }
   //! Return simulation hit i
-  MNCTHit* GetHitSim(unsigned int i);
+  MHit* GetHitSim(unsigned int i);
   //! Move hits to simulation hits list
   void MoveHitsToSim() {m_HitsSim = m_Hits; m_Hits.clear();}
 
@@ -321,7 +321,7 @@ class MReadOutAssembly : public MReadOutSequence
   MTime m_EventTimeUTC;
 
   //! The aspect information - will be zero if not set!
-  MNCTAspect* m_Aspect;
+  MAspect* m_Aspect;
 
 	//Added by Clio:
 	//! The aspect information from the simulation, only used in DEE
@@ -357,19 +357,19 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_InDetector[12];
 
   //! List of strip hits
-  vector<MNCTStripHit*> m_StripHits;
+  vector<MStripHit*> m_StripHits;
 
   //! List of strip hits with timing only
-  vector<MNCTStripHit*> m_StripHitsTOnly;
+  vector<MStripHit*> m_StripHitsTOnly;
 
   //! List of guardring hits
-  vector<MNCTGuardringHit*> m_GuardringHits;
+  vector<MGuardringHit*> m_GuardringHits;
 
   //! List of real hits
-  vector<MNCTHit*> m_Hits;
+  vector<MHit*> m_Hits;
 
   //! List of simulation hits
-  vector<MNCTHit*> m_HitsSim;
+  vector<MHit*> m_HitsSim;
 
   //! The physical event from event reconstruction
   MPhysicalEvent* m_PhysicalEvent; 

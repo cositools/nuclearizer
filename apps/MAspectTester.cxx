@@ -13,8 +13,8 @@
 #include "stdio.h"
 #include "cstdio"
 #include "cstdlib"
-#include "MNCTAspectPacket.h"
-#include "MNCTAspectReconstruction.h"
+#include "MAspectPacket.h"
+#include "MAspectReconstruction.h"
 #include "MStreams.h"
 
 #include<iostream>
@@ -110,13 +110,13 @@ struct MagStruct{
 
 
 //*******************************************************************************************************
-//*                  Functions to parse each data packet (Carolyn's packet, not an MNCTAspectPacket object) type.*
+//*                  Functions to parse each data packet (Carolyn's packet, not an MAspectPacket object) type.*
 //*******************************************************************************************************
 
-MNCTAspectReconstruction* AR = new MNCTAspectReconstruction();
-MNCTAspectPacket GPS_Packet;
-MNCTAspectPacket M_Packet;
-MNCTAspectPacket Evil_Packet;
+MAspectReconstruction* AR = new MAspectReconstruction();
+MAspectPacket GPS_Packet;
+MAspectPacket M_Packet;
+MAspectPacket Evil_Packet;
 
 //________________________________________________________________________________________________________
 int DecodeDSO(struct DSOStruct * MyDSO, uint8_t * String, size_t Len){
@@ -131,7 +131,7 @@ int DecodeDSO(struct DSOStruct * MyDSO, uint8_t * String, size_t Len){
   MySeconds = 0;
   MySeconds = (((uint32_t)String[11] & 0xFF) << 24) | (((uint32_t)String[12] & 0xFF) << 16) | (((uint32_t)String[13] & 0xFF)  << 8) | ((uint32_t)String[14] & 0xFF);  
   //printf("%02x %02x %02x %02x - ", (String[11] & 0xFF),(String[12] & 0xFF),(String[13] & 0xFF),(String[14] & 0xFF));
-  printf("DSO Packet: Milliseconds = %u, ",MySeconds);  //Again these are Carolyn's packets, not MNCTAspectPacket objects
+  printf("DSO Packet: Milliseconds = %u, ",MySeconds);  //Again these are Carolyn's packets, not MAspectPacket objects
   long intermediate_seconds = MySeconds;
   MySeconds = MyDSO->Seconds;
 
@@ -329,7 +329,7 @@ int DecodePSA(struct PSAStruct * MyPSA, uint8_t * String, size_t Len){
   MySeconds = 0;
   MySeconds = (((uint32_t)String[11] & 0xFF) << 24) | (((uint32_t)String[12] & 0xFF) << 16) | (((uint32_t)String[13] & 0xFF)  << 8) | ((uint32_t)String[14] & 0xFF);  
   //printf("%02x %02x %02x %02x - ", (String[11] & 0xFF),(String[12] & 0xFF),(String[13] & 0xFF),(String[14] & 0xFF));
-  printf("PSA Packet: Milliseconds = %u, ",MySeconds);  //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  printf("PSA Packet: Milliseconds = %u, ",MySeconds);  //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
   MySeconds = MyPSA->Seconds;
 
 
@@ -478,7 +478,7 @@ int DecodeBIT(struct BITStruct * MyBIT, uint8_t * String, size_t Len){
 
   char MyBatt_Test;
   MyBatt_Test = String[11];  
-  printf("BIT Packet: Battery Test = %c, ",MyBatt_Test);  //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  printf("BIT Packet: Battery Test = %c, ",MyBatt_Test);  //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
   MyBatt_Test = MyBIT->Batt_Test;
 
 
@@ -520,7 +520,7 @@ int DecodeTST(struct TSTStruct * MyTST, uint8_t * String, size_t Len){
 
   char MyEPROM_Test;
   MyEPROM_Test = String[11];  
-  printf("TST Packet: EPROM Test = %c, ",MyEPROM_Test);  // 'EPROM = 0' //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  printf("TST Packet: EPROM Test = %c, ",MyEPROM_Test);  // 'EPROM = 0' //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
   MyEPROM_Test = MyTST->EPROM_Test;
 
 
@@ -550,7 +550,7 @@ int DecodeMag(struct MagStruct * MyMag, uint8_t* String, size_t Len){
   float MyRoll = 0.0;
   MyRoll_int = (((int16_t)String[4] & 0xFF) << 8) | ((int16_t)String[5] & 0xFF);  
   MyRoll = MyRoll_int/10.0;
-  printf("Magnetometer Packet: Roll = %4.2f, ",MyRoll); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  printf("Magnetometer Packet: Roll = %4.2f, ",MyRoll); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
   M_Packet.roll =  MyRoll; 
   MyRoll = MyMag->Roll;
 
@@ -680,13 +680,13 @@ int main() {
   uint8_t buffer[8192];
   size_t Len;  
   unsigned int buffer_index;
-  int num_aspect_packets = 0; //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  int num_aspect_packets = 0; //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
   int num_DSO = 0;
   int num_PSA = 0;
   int num_TST = 0;
   int num_BIT = 0;
   uint16_t size;     
-  unsigned int packet_index;    //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  unsigned int packet_index;    //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
   int Len_DSO = 84;    //Carolyn is still alittle unsure about these.
   int Len_PSA = 114;
   int Len_BIT = 32;
@@ -737,100 +737,100 @@ int main() {
     if (buffer[buffer_index] == 0xeb && buffer[buffer_index+1] == 0x90 && buffer[buffer_index+2] == 0x05) {
 	size = ( (uint16_t)buffer[buffer_index+8] << 8) | ( (uint16_t)buffer[buffer_index+9]);
 
-	for(packet_index = buffer_index; packet_index < (size + buffer_index); ++packet_index) //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	for(packet_index = buffer_index; packet_index < (size + buffer_index); ++packet_index) //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	  {
-	    if (strncmp((char *) &buffer[packet_index],"$PASHR,DSO",10) == 0 ) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-	      if ( (packet_index+Len_DSO) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	    if (strncmp((char *) &buffer[packet_index],"$PASHR,DSO",10) == 0 ) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
+	      if ( (packet_index+Len_DSO) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 		break;
 	      }
 	      struct DSOStruct CarolynsDSO;
 	      int err;
-	      err = DecodeDSO(&CarolynsDSO, &buffer[packet_index], Len_DSO); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	      err = DecodeDSO(&CarolynsDSO, &buffer[packet_index], Len_DSO); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	        if (err != 0){    
 		perror("Error while filling DSOStruct");
 		exit(EXIT_FAILURE);
 	      }
 
-		if (strncmp((char *) &buffer[packet_index + 84], "$M",2) == 0) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+		if (strncmp((char *) &buffer[packet_index + 84], "$M",2) == 0) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 		  struct MagStruct CarolynsMag;
 		  int err;
-		  err = DecodeMag(&CarolynsMag, &buffer[packet_index + 84], Len_Mag); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+		  err = DecodeMag(&CarolynsMag, &buffer[packet_index + 84], Len_Mag); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 		  if (err != 0){    
 		    perror("Error while filling MagStruct");
 		    exit(EXIT_FAILURE);
 		  }
 		}
 		else {
-		  printf("\n No magnetometer packet found! \n\n"); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+		  printf("\n No magnetometer packet found! \n\n"); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 		}
 
-	      packet_index = packet_index + Len_DSO -1; //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	      packet_index = packet_index + Len_DSO -1; //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	      num_DSO = num_DSO + 1;
 	    }
 
 
-	    if (strncmp((char *) &buffer[packet_index],"$PASHR,PSA",10) == 0 ) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-	      if ( (packet_index+Len_PSA) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	    if (strncmp((char *) &buffer[packet_index],"$PASHR,PSA",10) == 0 ) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
+	      if ( (packet_index+Len_PSA) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 		break;
 	      }
 	      struct PSAStruct CarolynsPSA;
 	      int err;
-	      err = DecodePSA(&CarolynsPSA, &buffer[packet_index], Len_PSA); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	      err = DecodePSA(&CarolynsPSA, &buffer[packet_index], Len_PSA); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	        if (err != 0){    
 		perror("Error while filling PSAStruct");
 		exit(EXIT_FAILURE);
 	      }
-		packet_index = packet_index + Len_PSA -1; //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+		packet_index = packet_index + Len_PSA -1; //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	      num_PSA = num_PSA + 1;
 	    }
 
 
 	    if (strncmp((char *) &buffer[packet_index],"$PASHR,BIT",10) == 0 ) {
-	      if ( (packet_index+Len_BIT) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	      if ( (packet_index+Len_BIT) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 		break;
 	      }
 	      struct BITStruct CarolynsBIT;
 	      int err;
-	      err = DecodeBIT(&CarolynsBIT, &buffer[packet_index], Len_BIT); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	      err = DecodeBIT(&CarolynsBIT, &buffer[packet_index], Len_BIT); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	        if (err != 0){    
 		perror("Error while filling BITStruct");
 		exit(EXIT_FAILURE);
 	      }
-		packet_index = packet_index + Len_BIT -1; //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+		packet_index = packet_index + Len_BIT -1; //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	      num_BIT = num_BIT + 1;
 	    }
 
 
-	    if (strncmp((char *) &buffer[packet_index],"$PASHR,TST",10) == 0 ) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-	      if ( (packet_index+Len_TST) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	    if (strncmp((char *) &buffer[packet_index],"$PASHR,TST",10) == 0 ) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
+	      if ( (packet_index+Len_TST) > sizeof(buffer)) { //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 		break;
 	      }
 	      struct TSTStruct CarolynsTST;
 	      int err;
-	      err = DecodeTST(&CarolynsTST, &buffer[packet_index], Len_TST); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	      err = DecodeTST(&CarolynsTST, &buffer[packet_index], Len_TST); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	        if (err != 0){    
 		perror("Error while filling TSTStruct");
 		exit(EXIT_FAILURE);
 	      }
-		packet_index = packet_index + Len_TST -1; //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+		packet_index = packet_index + Len_TST -1; //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	      num_TST = num_TST + 1;
 	    }
 
 
 
 	  }
-	num_aspect_packets = num_aspect_packets+1; //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+	num_aspect_packets = num_aspect_packets+1; //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 	buffer_index = buffer_index + size;
       }
     }
   } while(Len == 8192);
 
 
-  printf("\n Total number of aspect packets found is %d\n", num_aspect_packets); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-  printf("     number of DSO packets = %d\n", num_DSO); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-  printf("     number of PSA packets = %d\n", num_PSA); //Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-  printf("     number of BIT packets = %d\n", num_BIT);//Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
-  printf("     number of TST packets = %d\n", num_TST);//Once again, let me be clear, these are Carolyn's packets, not MNCTAspectPacket objects
+  printf("\n Total number of aspect packets found is %d\n", num_aspect_packets); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
+  printf("     number of DSO packets = %d\n", num_DSO); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
+  printf("     number of PSA packets = %d\n", num_PSA); //Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
+  printf("     number of BIT packets = %d\n", num_BIT);//Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
+  printf("     number of TST packets = %d\n", num_TST);//Once again, let me be clear, these are Carolyn's packets, not MAspectPacket objects
 
   fclose(fp);	
 	
@@ -843,7 +843,7 @@ int main() {
 	
   MTime example_time;
   example_time.Set(2014,8,8,18,43,0,600000000);
-  cout << AR->MNCTAspectReconstruction::GetAspectMagnetometer(example_time)->GetAltitude() << endl;
+  cout << AR->MAspectReconstruction::GetAspectMagnetometer(example_time)->GetAltitude() << endl;
   cout << "Program finished..." << endl;	
   return 1;
   }

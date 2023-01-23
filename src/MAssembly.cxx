@@ -57,23 +57,23 @@ using namespace std;
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
 
-#include "MNCTModuleSimulationLoader.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTModuleReceiverCOSI2014.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTModuleEnergyCalibration.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleCrosstalkCorrection.h"
-#include "MNCTModuleChargeSharingCorrection.h"
-#include "MNCTModuleDepthCalibration.h"
-#include "MNCTModuleDepthCalibrationB.h"
-#include "MNCTModuleDepthCalibrationLinearStrip.h"
-#include "MNCTModuleDepthCalibrationLinearPixel.h"
-#include "MNCTModuleDepthCalibration3rdPolyPixel.h"
-#include "MNCTModuleStripPairingGreedy.h"
-#include "MNCTModuleEventFilter.h"
-#include "MNCTModuleEventSaver.h"
-#include "MNCTModuleResponseGenerator.h"
+#include "MModuleSimulationLoader.h"
+#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleReceiverCOSI2014.h"
+#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleEnergyCalibration.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleCrosstalkCorrection.h"
+#include "MModuleChargeSharingCorrection.h"
+#include "MModuleDepthCalibration.h"
+#include "MModuleDepthCalibrationB.h"
+#include "MModuleDepthCalibrationLinearStrip.h"
+#include "MModuleDepthCalibrationLinearPixel.h"
+#include "MModuleDepthCalibration3rdPolyPixel.h"
+#include "MModuleStripPairingGreedy.h"
+#include "MModuleEventFilter.h"
+#include "MModuleEventSaver.h"
+#include "MModuleResponseGenerator.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,26 +107,26 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
-  m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderROA());
-  m_Supervisor->AddAvailableModule(new MNCTModuleReceiverCOSI2014());
-  m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderBinary());
+  m_Supervisor->AddAvailableModule(new MModuleSimulationLoader());
+  m_Supervisor->AddAvailableModule(new MModuleMeasurementLoaderROA());
+  m_Supervisor->AddAvailableModule(new MModuleReceiverCOSI2014());
+  m_Supervisor->AddAvailableModule(new MModuleMeasurementLoaderBinary());
   
-  m_Supervisor->AddAvailableModule(new MNCTModuleEventFilter());
-  m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationUniversal());
+  m_Supervisor->AddAvailableModule(new MModuleEventFilter());
+  m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
 
-  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());
-  m_Supervisor->AddAvailableModule(new MNCTModuleChargeSharingCorrection());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearPixel());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration3rdPolyPixel());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationB());
+  m_Supervisor->AddAvailableModule(new MModuleStripPairingGreedy());
+  m_Supervisor->AddAvailableModule(new MModuleChargeSharingCorrection());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationLinearPixel());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibration3rdPolyPixel());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());
 
-  m_Supervisor->AddAvailableModule(new MNCTModuleCrosstalkCorrection());  
+  m_Supervisor->AddAvailableModule(new MModuleCrosstalkCorrection());  
   
-  m_Supervisor->AddAvailableModule(new MNCTModuleEventSaver());
+  m_Supervisor->AddAvailableModule(new MModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
-  m_Supervisor->AddAvailableModule(new MNCTModuleResponseGenerator());
+  m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
 
   m_Supervisor->Load();
   

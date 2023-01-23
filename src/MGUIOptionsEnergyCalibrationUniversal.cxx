@@ -30,7 +30,7 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MModule.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
+#include "MModuleEnergyCalibrationUniversal.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,21 +68,21 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   PreCreate();
 
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
-    dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetFileName());
+    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Energy calibration file", "*.ecal");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
   m_TempModeCB = new TGCheckButton(m_OptionsFrame, "Enable preamp temperature correction and read calibration from file:", c_TempFile);
-  m_TempModeCB->SetState((dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection() == 1) ?  kButtonDown : kButtonUp);
+  m_TempModeCB->SetState((dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection() == 1) ?  kButtonDown : kButtonUp);
   m_TempModeCB->Associate(this);
   m_OptionsFrame->AddFrame(m_TempModeCB, LabelLayout);
 
-  m_UseTempCal = dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection();
+  m_UseTempCal = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection();
 
   TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
 
-  m_TempFile = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetTempFileName());
+  m_TempFile = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetTempFileName());
   m_TempFile->SetFileType("Temperature calibration file", "*.txt");
   m_OptionsFrame->AddFrame(m_TempFile, FileLabelLayout);
 
@@ -148,11 +148,11 @@ bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
 {
 	// Modify this to store the data in the module!
 
-  dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
-  dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->SetTempFileName(m_TempFile->GetFileName());
+  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetTempFileName(m_TempFile->GetFileName());
 
 	
-  if (dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection() != m_UseTempCal) dynamic_cast<MNCTModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(m_UseTempCal);
+  if (dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection() != m_UseTempCal) dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(m_UseTempCal);
 
 
 

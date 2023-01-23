@@ -1,10 +1,10 @@
 /*
-	For now, use MNCTTimeAndCoordinate, but should also consider using python/pyephem as a cross check on the ephemeris
+	For now, use MTimeAndCoordinate, but should also consider using python/pyephem as a cross check on the ephemeris
  */
 #include "MGlobal.h"
 #include "MFile.h"
 #include "MString.h"
-#include "MNCTTimeAndCoordinate.h"
+#include "MTimeAndCoordinate.h"
 #include <iostream>
 #include <vector>
 #include "MTime.h"
@@ -71,7 +71,7 @@ bool ComputeRotation(Event* E, double dh, double dp, double dr){
 	double roll = E->Roll;
 	double Z[3][3], Y[3][3], X[3][3], YX[3][3], ZYX[3][3];
 	double Z_[3][3], Y_[3][3], X_[3][3], YX_[3][3], ZYX_[3][3];
-	MNCTTimeAndCoordinate TC;
+	MTimeAndCoordinate TC;
 
 	////ZYX is the rotation applied once the croystat is aligned with the GPS
 	/////////////////////////////////////////////////////////////////////////

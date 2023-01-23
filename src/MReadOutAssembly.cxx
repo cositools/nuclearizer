@@ -229,7 +229,7 @@ void MReadOutAssembly::SetPhysicalEvent(MPhysicalEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTStripHit* MReadOutAssembly::GetStripHit(unsigned int i) 
+MStripHit* MReadOutAssembly::GetStripHit(unsigned int i) 
 { 
   //! Return strip hit i
 
@@ -244,7 +244,7 @@ MNCTStripHit* MReadOutAssembly::GetStripHit(unsigned int i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MReadOutAssembly::AddStripHit(MNCTStripHit* StripHit)
+void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 {
   //! Add a strip hit
   int DetectorID = StripHit->GetDetectorID();
@@ -262,7 +262,7 @@ void MReadOutAssembly::RemoveStripHit(unsigned int i)
 {
   //! Remove a strip hit
   if (i < m_StripHits.size()) {
-    vector<MNCTStripHit*>::iterator it;
+    vector<MStripHit*>::iterator it;
     it = m_StripHits.begin()+i;
     m_StripHits.erase(it);
   }
@@ -272,7 +272,7 @@ void MReadOutAssembly::RemoveStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i) 
+MStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i) 
 { 
   //! Return strip hit i
 
@@ -287,7 +287,7 @@ MNCTStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MReadOutAssembly::AddStripHitTOnly(MNCTStripHit* StripHit)
+void MReadOutAssembly::AddStripHitTOnly(MStripHit* StripHit)
 {
   //! Add a strip hit
 	//comment this out for now since it might mess with other stuff
@@ -308,7 +308,7 @@ void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
 {
   //! Remove a strip hit
   if (i < m_StripHitsTOnly.size()) {
-    vector<MNCTStripHit*>::iterator it;
+    vector<MStripHit*>::iterator it;
     it = m_StripHitsTOnly.begin()+i;
     m_StripHitsTOnly.erase(it);
   }
@@ -318,7 +318,7 @@ void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTHit* MReadOutAssembly::GetHit(unsigned int i) 
+MHit* MReadOutAssembly::GetHit(unsigned int i) 
 { 
   //! Return hit i
   
@@ -361,7 +361,7 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
   */
   // skipping aspect for now
   if (Line.BeginsWith("HT")) {
-    MNCTHit* h = new MNCTHit();
+    MHit* h = new MHit();
     if( h->Parse(Line,1) ){
       AddHit(h);
       return true;
@@ -371,9 +371,9 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
   }
   if (Line.BeginsWith("SH")) {
     // assuming that the SHs belong to the last read hit
-    MNCTHit* h = m_Hits.back();
+    MHit* h = m_Hits.back();
     if (h != nullptr) {
-      MNCTStripHit* SH = new MNCTStripHit();
+      MStripHit* SH = new MStripHit();
       if (SH->Parse(Line, 2)) {
         h->AddStripHit(SH);
         return true;
@@ -426,16 +426,16 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 			T.Set(Line);
 			SetTime( T );
 		} else if( Line.BeginsWith("HT") ){
-			MNCTHit* h = new MNCTHit();
+			MHit* h = new MHit();
 			h->Parse(Line);
 			AddHit(h);
 		} else if( Line.BeginsWith("SH") ){
-			MNCTStripHit* sh = new MNCTStripHit();
+			MStripHit* sh = new MStripHit();
 			sh->Parse(Line);
 			AddStripHit(sh);
 			if( m_Hits.size() > 0 ){
 				//add this SH to the last read in HT
-				MNCTHit* h = m_Hits.back();
+				MHit* h = m_Hits.back();
 				h->AddStripHit(sh);
 			}
 		} else if( Line.BeginsWith("BD") ){

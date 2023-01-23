@@ -30,7 +30,7 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MModule.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
+#include "MModuleMeasurementLoaderBinary.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +68,7 @@ void MGUIOptionsMeasurementLoaderBinary::Create()
   PreCreate();
 
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetFileName());
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Bin file", "*.dat");
   m_FileSelector->SetFileType("Bin file", "*.bin");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
@@ -77,7 +77,7 @@ void MGUIOptionsMeasurementLoaderBinary::Create()
   m_DataMode = new MGUIERBList(m_OptionsFrame, "Choose the data to look at: ");
   m_DataMode->Add("Raw mode");
   m_DataMode->Add("Compton mode");
-  m_DataMode->SetSelected((int) dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetDataSelectionMode());
+  m_DataMode->SetSelected((int) dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->GetDataSelectionMode());
   m_DataMode->Create();
   m_OptionsFrame->AddFrame(m_DataMode, LabelLayout);
 
@@ -86,14 +86,14 @@ void MGUIOptionsMeasurementLoaderBinary::Create()
   m_AspectMode->Add("Magnetometer");
   m_AspectMode->Add("Interpolated GPS");
   m_AspectMode->Add("None");
-  m_AspectMode->SetSelected((int) dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetAspectMode());
+  m_AspectMode->SetSelected((int) dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->GetAspectMode());
   m_AspectMode->Create();
   m_OptionsFrame->AddFrame(m_AspectMode, LabelLayout);
 
   m_CoincidenceMode = new MGUIERBList(m_OptionsFrame, "Enable/Disable merging of coincident events");
   m_CoincidenceMode->Add("Disable");
   m_CoincidenceMode->Add("Enable");
-  m_CoincidenceMode->SetSelected((int) dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->GetCoincidenceMerging());
+  m_CoincidenceMode->SetSelected((int) dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->GetCoincidenceMerging());
   m_CoincidenceMode->Create();
   m_OptionsFrame->AddFrame(m_CoincidenceMode, LabelLayout);
 
@@ -141,32 +141,32 @@ bool MGUIOptionsMeasurementLoaderBinary::OnApply()
 {
 	// Modify this to store the data in the module!
 
-  dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 	
   if (m_DataMode->GetSelected() == 0) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);     
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);     
   } else if (m_DataMode->GetSelected() == 1) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Compton);     
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Compton);     
   } else if (m_DataMode->GetSelected() == 2) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_All);     
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_All);     
   }
 
   if (m_AspectMode->GetSelected() == 0) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_GPS);     
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_GPS);     
   } else if (m_AspectMode->GetSelected() == 1) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Magnetometer);
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Magnetometer);
   } else if (m_AspectMode->GetSelected() == 2) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Interpolate);
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Interpolate);
   } else if (m_AspectMode->GetSelected() == 3) {
-    dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);     
+    dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);     
   }
 
   if( m_CoincidenceMode->GetSelected() == 0 ){
 	  //false -> 0
-	  dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->EnableCoincidenceMerging(false);
+	  dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->EnableCoincidenceMerging(false);
   } else if( m_CoincidenceMode->GetSelected() == 1 ){
 	  //true -> 1
-	  dynamic_cast<MNCTModuleMeasurementLoaderBinary*>(m_Module)->EnableCoincidenceMerging(true);
+	  dynamic_cast<MModuleMeasurementLoaderBinary*>(m_Module)->EnableCoincidenceMerging(true);
   }
 
 

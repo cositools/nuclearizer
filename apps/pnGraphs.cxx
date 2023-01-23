@@ -41,14 +41,14 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy.h"
+#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
+#include "MModuleMeasurementLoaderBinary.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -224,18 +224,18 @@ bool pnGraphs::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
+  MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
   Loader->SetFileName(m_FileName);
   S->SetModule(Loader, 0);
   
-  MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
+  MModuleEnergyCalibrationUniversal* Calibrator = new MModuleEnergyCalibrationUniversal();
   Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/EnergyCalibration.ecal");
   S->SetModule(Calibrator, 1);
   
-  MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
+  MModuleStripPairingGreedy* Pairing = new MModuleStripPairingGreedy();
   S->SetModule(Pairing, 2);
 
-  MNCTModuleMeasurementLoaderBinary* MLB = new MNCTModuleMeasurementLoaderBinary();
+  MModuleMeasurementLoaderBinary* MLB = new MModuleMeasurementLoaderBinary();
   MLB->Initialize();
   
   if (Loader->Initialize() == false) return false;

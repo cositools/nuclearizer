@@ -30,20 +30,20 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy.h"
+#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
-#include "MNCTDepthCalibrator.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTBinaryFlightDataParser.h"
+#include "MDepthCalibrator.h"
+#include "MModuleMeasurementLoaderBinary.h"
+#include "MBinaryFlightDataParser.h"
 
-class MNCTDEEStripHit
+class MDEEStripHit
 {
 	public:
 		//! The read-out element
@@ -62,12 +62,12 @@ class MNCTDEEStripHit
 		bool m_IsGuardRing;
 
 		//! A list of original strip hits making up this strip hit
-		vector<MNCTDEEStripHit> m_SubStripHits;
+		vector<MDEEStripHit> m_SubStripHits;
 };
 
-class MNCTStripHit_s : public MNCTStripHit
+class MStripHit_s : public MStripHit
 {
-	//use this derived class instead of MNCTStripHit so that we can keep track of the depth 
+	//use this derived class instead of MStripHit so that we can keep track of the depth 
 	//from the simulation data
 
 	public:
@@ -186,7 +186,7 @@ DivisionTemplate* Gctd = NULL;
 						
 double DetectorThicknesses[12];
 bool EnergyFilter(double Energy, const vector<vector<double>>& EnergyWindows);
-MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrationUniversal* Calibrator);
+MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MModuleEnergyCalibrationUniversal* Calibrator);
 double ctd_template_fit_function(double* v, double* par);
 void FindEdgeBins(TH1D* H, int* L, int* R);
 int PixelCodeToDivision(int PixelCode, int Divisions);
@@ -254,16 +254,16 @@ int main(int argc, char** argv)
 	}  
 
 	//load splines
-	MNCTDepthCalibrator* m_DepthCalibrator = new MNCTDepthCalibrator();
+	MDepthCalibrator* m_DepthCalibrator = new MDepthCalibrator();
 	if( m_DepthCalibrator->LoadSplinesFile(options->SplineFilename) == false){
 		cout << "failed to load splines file, exiting..." << endl;
 		return false;
 	}
 
 	//setup nuclearizer modules
-	MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
+	MModuleEnergyCalibrationUniversal* Calibrator = new MModuleEnergyCalibrationUniversal();
 	Calibrator->SetFileName(options->EnergyCalibrationFilename);
-	MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
+	MModuleStripPairingGreedy* Pairing = new MModuleStripPairingGreedy();
 	if (Calibrator->Initialize() == false){
 		cout << "failed to initialize energy calibrator module, exiting..." << endl;
 		return false;
@@ -279,10 +279,10 @@ int main(int argc, char** argv)
 
 	if( options->ProcessRealData ){ //process real data
 
-		MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
+		MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
 		Loader->SetFileName(options->RawDataFilename);
-		Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-		Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
+		Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
+		Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);
 		Loader->EnableCoincidenceMerging(false);
 		if (Loader->Initialize() == false) {
 			cout << "failed to initialize Loader module, exiting..." << endl;
@@ -304,14 +304,14 @@ int main(int argc, char** argv)
 				Pairing->AnalyzeEvent(Event);
 				unsigned int NHits = Event->GetNHits();
 				for(unsigned int i = 0; i < NHits; i++){
-					MNCTHit* H = Event->GetHit(i);
+					MHit* H = Event->GetHit(i);
 					unsigned int NStripHits = H->GetNStripHits();
 					if( NStripHits == 2 ){ //using 2-strip events only
 						bool EnergyGood = EnergyFilter(H->GetEnergy(), options->EnergyWindows);
 						if( EnergyGood ){
 							int pixel_code;
 							double timing;
-							MNCTStripHit *SHx, *SHy;
+							MStripHit *SHx, *SHy;
 							if( H->GetStripHit(0)->IsXStrip() && !H->GetStripHit(1)->IsXStrip() ){
 								SHx = H->GetStripHit(0); SHy = H->GetStripHit(1);
 							} else if( H->GetStripHit(1)->IsXStrip() && !H->GetStripHit(0)->IsXStrip() ){
@@ -647,7 +647,7 @@ bool EnergyFilter(double Energy, const vector<vector<double>>& EnergyWindows){
 	return false;
 }
 
-MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrationUniversal* Calibrator){
+MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MModuleEnergyCalibrationUniversal* Calibrator){
 
 	MReadOutAssembly* Event = new MReadOutAssembly();
 
@@ -665,8 +665,8 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrati
 		DetectorName.RemoveAllInPlace("Detector");
 		int DetectorID = DetectorName.ToInt();
 
-		MNCTDEEStripHit pSide;
-		MNCTDEEStripHit nSide;
+		MDEEStripHit pSide;
+		MDEEStripHit nSide;
 
 		pSide.m_ROE.IsPositiveStrip(true);
 		nSide.m_ROE.IsPositiveStrip(false);
@@ -697,8 +697,8 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrati
 		//	nSide.m_Position = PositionInDetector;
 
 		//at this point we have enough info to generate the strip hits
-		MNCTStripHit_s* XStrip = new MNCTStripHit_s();
-		MNCTStripHit_s* YStrip = new MNCTStripHit_s();
+		MStripHit_s* XStrip = new MStripHit_s();
+		MStripHit_s* YStrip = new MStripHit_s();
 		XStrip->SetDetectorID(DetectorID); YStrip->SetDetectorID(DetectorID);
 		XStrip->SetTiming(0.0); YStrip->SetTiming(0.0);
 		XStrip->IsXStrip(true); YStrip->IsXStrip(false);
@@ -707,7 +707,7 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MNCTModuleEnergyCalibrati
 		double XEnRes = Calibrator->LookupEnergyResolution( XStrip, HTEnergy ); XStrip->SetEnergyResolution(XEnRes);
 		double YEnRes = Calibrator->LookupEnergyResolution( YStrip, HTEnergy ); YStrip->SetEnergyResolution(YEnRes);
 		XStrip->SetDepth( Depth ); YStrip->SetDepth( Depth );
-		Event->AddStripHit( (MNCTStripHit*)XStrip ); Event->AddStripHit( (MNCTStripHit*)YStrip );
+		Event->AddStripHit( (MStripHit*)XStrip ); Event->AddStripHit( (MStripHit*)YStrip );
 
 	}
 

@@ -39,9 +39,9 @@ using namespace std;
 #include "MStreams.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
+#include "MModuleMeasurementLoaderROA.h"
 
 // Nuclearizer
 #include "MReadOutElement.h"
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 	//TApplication Plots("Plots", 0, 0);
 
 //open and read and parse the .ecal file and make a plot for each detector side of all the strips with the correct fit - using P1 from Mark's thesis (a0  +a1*x)^(1/2) for now.
-//The parameters from the fit will be appended to the .ecal file and then when loading the .ecal file through Nuclearizer with MNCTModuleEnergyCalibrationUniversal.cxx, the resolution will be parsed out
+//The parameters from the fit will be appended to the .ecal file and then when loading the .ecal file through Nuclearizer with MModuleEnergyCalibrationUniversal.cxx, the resolution will be parsed out
 
 
 	TF1 *P1 = new TF1("P1","[0] + [1]*x",0,2000);

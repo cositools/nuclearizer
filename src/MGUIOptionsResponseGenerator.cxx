@@ -29,7 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModuleResponseGenerator.h"
+#include "MModuleResponseGenerator.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,21 +74,21 @@ void MGUIOptionsResponseGenerator::Create()
   m_Mode->Add("Bayesian event reconstruction");
   m_Mode->Add("Efficiency");
   m_Mode->Add("Imaging");
-  m_Mode->SetSelected(dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->GetMode());
+  m_Mode->SetSelected(dynamic_cast<MModuleResponseGenerator*>(m_Module)->GetMode());
   m_Mode->Create();
   m_OptionsFrame->AddFrame(m_Mode, LabelLayout);
 
   m_ResponseName = new MGUIEEntry(m_OptionsFrame, "Please choose a response name: ", false,
-                                  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->GetResponseName());
+                                  dynamic_cast<MModuleResponseGenerator*>(m_Module)->GetResponseName());
   m_OptionsFrame->AddFrame(m_ResponseName, LabelLayout);
   
   m_RevanCfgFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a revan configuration file:",
-  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->GetRevanConfigurationFileName());
+  dynamic_cast<MModuleResponseGenerator*>(m_Module)->GetRevanConfigurationFileName());
   m_RevanCfgFileSelector->SetFileType("revan configuration", "*.revan.cfg");
   m_OptionsFrame->AddFrame(m_RevanCfgFileSelector, LabelLayout);
   
   m_MimrecCfgFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a mimrec configuration file:",
-  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->GetMimrecConfigurationFileName());
+  dynamic_cast<MModuleResponseGenerator*>(m_Module)->GetMimrecConfigurationFileName());
   m_MimrecCfgFileSelector->SetFileType("mimrec configuration", "*.mimrec.cfg");
   m_OptionsFrame->AddFrame(m_MimrecCfgFileSelector, LabelLayout);
   
@@ -135,10 +135,10 @@ bool MGUIOptionsResponseGenerator::OnApply()
 {
   // Modify this to store the data in the module!
 
-  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetMode(m_Mode->GetSelected());
-  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetResponseName(m_ResponseName->GetAsString());
-  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetRevanConfigurationFileName(m_RevanCfgFileSelector->GetFileName());
-  dynamic_cast<MNCTModuleResponseGenerator*>(m_Module)->SetMimrecConfigurationFileName(m_MimrecCfgFileSelector->GetFileName());
+  dynamic_cast<MModuleResponseGenerator*>(m_Module)->SetMode(m_Mode->GetSelected());
+  dynamic_cast<MModuleResponseGenerator*>(m_Module)->SetResponseName(m_ResponseName->GetAsString());
+  dynamic_cast<MModuleResponseGenerator*>(m_Module)->SetRevanConfigurationFileName(m_RevanCfgFileSelector->GetFileName());
+  dynamic_cast<MModuleResponseGenerator*>(m_Module)->SetMimrecConfigurationFileName(m_MimrecCfgFileSelector->GetFileName());
   
   return true;
 }

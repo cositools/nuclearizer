@@ -39,17 +39,17 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy.h"
+#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTBinaryFlightDataParser.h"
+#include "MModuleMeasurementLoaderBinary.h"
+#include "MBinaryFlightDataParser.h"
 #include "MFitFunctions.h"
 
 class options{
@@ -134,8 +134,8 @@ int main(int argc, char * argv[]){
 
 	MFile Filenames; Filenames.Open(MString(argv[1]));
 	MString FName;
-	MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
-	MNCTModuleEnergyCalibrationUniversal* EnergyCalibrator = new MNCTModuleEnergyCalibrationUniversal();
+	MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
+	MModuleEnergyCalibrationUniversal* EnergyCalibrator = new MModuleEnergyCalibrationUniversal();
 	EnergyCalibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Berkeley/EnergyCalibration.ecal");
 
 	//define gaussian fit function and set parameter limits
@@ -166,8 +166,8 @@ int main(int argc, char * argv[]){
 	while( Filenames.ReadLine(FName) ){
 		//set up the nuclearizer modules we need
 		Loader->SetFileName(FName);
-		Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-		Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
+		Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
+		Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);
 		Loader->EnableCoincidenceMerging(false);
 
 		cout << "initializing modules for FName = " << FName.GetString() << "... ";
@@ -195,9 +195,9 @@ int main(int argc, char * argv[]){
 				EnergyCalibrator->AnalyzeEvent(Event);
 				//crosstalk
 
-				vector<MNCTStripHit*> XSH; vector<MNCTStripHit*> YSH;
+				vector<MStripHit*> XSH; vector<MStripHit*> YSH;
 				for(size_t i = 0; i < Event->GetNStripHits(); ++i){
-					MNCTStripHit* SH = Event->GetStripHit(i);
+					MStripHit* SH = Event->GetStripHit(i);
 					if(SH->IsXStrip()) XSH.push_back(SH); else YSH.push_back(SH);
 				}
 
@@ -207,8 +207,8 @@ int main(int argc, char * argv[]){
 
 				if( (XSH.size() == 1) && (YSH.size() == 1) ){
 					if( Options->Use2StripEvents ){
-						MNCTStripHit* X = XSH.at(0);
-						MNCTStripHit* Y = YSH.at(0);
+						MStripHit* X = XSH.at(0);
+						MStripHit* Y = YSH.at(0);
 						if( EnergyOK(X->GetEnergy(), Y->GetEnergy(), Options) ){
 							event_type |= 1;
 							CTD = X->GetTiming() - Y->GetTiming();
@@ -218,7 +218,7 @@ int main(int argc, char * argv[]){
 					}
 				} else if( ((XSH.size() == 2) && (YSH.size() == 1)) || ((XSH.size() == 1) && (YSH.size() == 2)) ){
 					if( Options->Use3StripEvents ){
-						vector<MNCTStripHit*> *TwoStripSide, *OneStripSide; 
+						vector<MStripHit*> *TwoStripSide, *OneStripSide; 
 						bool EnergyIsOk = false;
 
 						if(XSH.size() == 2){
@@ -232,7 +232,7 @@ int main(int argc, char * argv[]){
 						}
 
 						if( EnergyIsOk && (abs(TwoStripSide->at(0)->GetStripID() - TwoStripSide->at(1)->GetStripID()) == 1) ){
-							MNCTStripHit* DominantStrip;
+							MStripHit* DominantStrip;
 							if(TwoStripSide->at(0)->GetEnergy() >= TwoStripSide->at(1)->GetEnergy()) DominantStrip = TwoStripSide->at(0); else DominantStrip = TwoStripSide->at(1);
 							event_type |= 2;
 							if(TwoStripSide == &XSH){
@@ -251,7 +251,7 @@ int main(int argc, char * argv[]){
 						bool YNeighbors = abs(YSH.at(0)->GetStripID() - YSH.at(1)->GetStripID()) == 1;
 						bool EnergyIsOk = EnergyOK(XSH.at(0)->GetEnergy() + XSH.at(1)->GetEnergy(), YSH.at(0)->GetEnergy() + YSH.at(1)->GetEnergy(), Options);
 						if( XNeighbors && YNeighbors && EnergyIsOk ){
-							MNCTStripHit *X, *Y;
+							MStripHit *X, *Y;
 							if(XSH.at(0)->GetEnergy() >= XSH.at(1)->GetEnergy()) X = XSH.at(0); else X = XSH.at(1);
 							if(YSH.at(0)->GetEnergy() >= YSH.at(1)->GetEnergy()) Y = YSH.at(0); else Y = YSH.at(1);
 							event_type |= 4;

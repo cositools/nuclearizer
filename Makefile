@@ -56,61 +56,61 @@ NUCLEARIZER_LIBS = \
 $(LB)/magfld.o \
 $(LB)/MAssembly.o \
 $(LB)/MReadOutAssembly.o \
-$(LB)/MNCTDetectorEffectsEngineCOSI.o \
-$(LB)/MNCTAspect.o \
-$(LB)/MNCTAspectPacket.o \
-$(LB)/MNCTAspectReconstruction.o \
-$(LB)/MNCTHit.o \
-$(LB)/MNCTTimeAndCoordinate.o \
-$(LB)/MNCTStrip.o \
-$(LB)/MNCTStripHit.o \
-$(LB)/MNCTGuardringHit.o \
-$(LB)/MNCTModuleSimulationLoader.o \
+$(LB)/MDetectorEffectsEngineCOSI.o \
+$(LB)/MAspect.o \
+$(LB)/MAspectPacket.o \
+$(LB)/MAspectReconstruction.o \
+$(LB)/MHit.o \
+$(LB)/MTimeAndCoordinate.o \
+$(LB)/MStrip.o \
+$(LB)/MStripHit.o \
+$(LB)/MGuardringHit.o \
+$(LB)/MModuleSimulationLoader.o \
 $(LB)/MGUIOptionsSimulationLoader.o \
-$(LB)/MNCTModuleMeasurementLoader.o \
-$(LB)/MNCTModuleMeasurementLoaderROA.o \
+$(LB)/MModuleMeasurementLoader.o \
+$(LB)/MModuleMeasurementLoaderROA.o \
 $(LB)/MGUIOptionsMeasurementLoader.o \
-$(LB)/MNCTBinaryFlightDataParser.o \
-$(LB)/MNCTModuleReceiverCOSI2014.o \
+$(LB)/MBinaryFlightDataParser.o \
+$(LB)/MModuleReceiverCOSI2014.o \
 $(LB)/MGUIOptionsReceiverCOSI2014.o \
 $(LB)/MGUIExpoReceiver.o \
-$(LB)/MNCTModuleMeasurementLoaderBinary.o \
+$(LB)/MModuleMeasurementLoaderBinary.o \
 $(LB)/MGUIOptionsMeasurementLoaderBinary.o \
 $(LB)/MGUIExpoAspectViewer.o \
 $(LB)/MGUIExpoEnergyCalibration.o \
-$(LB)/MNCTModuleEnergyCalibration.o \
-$(LB)/MNCTModuleEnergyCalibrationUniversal.o \
+$(LB)/MModuleEnergyCalibration.o \
+$(LB)/MModuleEnergyCalibrationUniversal.o \
 $(LB)/MGUIOptionsEnergyCalibrationUniversal.o \
-$(LB)/MNCTInverseCrosstalkCorrection.o \
-$(LB)/MNCTModuleCrosstalkCorrection.o \
+$(LB)/MInverseCrosstalkCorrection.o \
+$(LB)/MModuleCrosstalkCorrection.o \
 $(LB)/MGUIOptionsCrosstalkCorrection.o \
-$(LB)/MNCTModuleChargeSharingCorrection.o \
+$(LB)/MModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
-$(LB)/MNCTModuleDepthCalibrationLinearPixel.o \
+$(LB)/MModuleDepthCalibrationLinearPixel.o \
 $(LB)/MGUIOptionsDepthCalibrationLinearPixel.o \
-$(LB)/MNCTModuleDepthCalibration3rdPolyPixel.o \
-$(LB)/MNCTModuleDepthCalibration.o \
+$(LB)/MModuleDepthCalibration3rdPolyPixel.o \
+$(LB)/MModuleDepthCalibration.o \
 $(LB)/MGUIOptionsDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MGUIExpoStripPairing.o \
-$(LB)/MNCTModuleStripPairingGreedy.o \
+$(LB)/MModuleStripPairingGreedy.o \
 $(LB)/MGUIOptionsStripPairing.o \
 $(LB)/MGUIOptionsEventSaver.o \
-$(LB)/MNCTModuleEventSaver.o \
+$(LB)/MModuleEventSaver.o \
 $(LB)/MGUIOptionsEventFilter.o \
-$(LB)/MNCTModuleEventFilter.o \
+$(LB)/MModuleEventFilter.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
-$(LB)/MNCTDepthCalibrator.o\
+$(LB)/MDepthCalibrator.o\
 $(LB)/GCUSettingsParser.o\
-$(LB)/MNCTTIRecord.o\
+$(LB)/MTIRecord.o\
 $(LB)/GCUHousekeepingParser.o\
 $(LB)/LivetimeParser.o\
-$(LB)/MNCTDepthCalibratorB.o\
-$(LB)/MNCTModuleDepthCalibrationB.o\
+$(LB)/MDepthCalibratorB.o\
+$(LB)/MModuleDepthCalibrationB.o\
 $(LB)/MGUIOptionsDepthCalibrationB.o\
 $(LB)/MGUIOptionsResponseGenerator.o\
-$(LB)/MNCTModuleResponseGenerator.o\
+$(LB)/MModuleResponseGenerator.o\
 
 
 
