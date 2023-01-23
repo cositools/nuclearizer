@@ -57,7 +57,6 @@ $(LB)/magfld.o \
 $(LB)/MAssembly.o \
 $(LB)/MReadOutAssembly.o \
 $(LB)/MNCTDetectorEffectsEngineCOSI.o \
-$(LB)/MNCTMath.o \
 $(LB)/MNCTAspect.o \
 $(LB)/MNCTAspectPacket.o \
 $(LB)/MNCTAspectReconstruction.o \
