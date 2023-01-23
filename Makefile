@@ -82,8 +82,6 @@ $(LB)/MGUIExpoEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibration.o \
 $(LB)/MNCTModuleEnergyCalibrationUniversal.o \
 $(LB)/MGUIOptionsEnergyCalibrationUniversal.o \
-$(LB)/MNCTModuleEnergyCalibrationLinear.o \
-$(LB)/MNCTModuleEnergyCalibrationNonlinear.o \
 $(LB)/MNCTInverseCrosstalkCorrection.o \
 $(LB)/MNCTModuleCrosstalkCorrection.o \
 $(LB)/MGUIOptionsCrosstalkCorrection.o \

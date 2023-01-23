@@ -63,8 +63,6 @@ using namespace std;
 #include "MNCTModuleMeasurementLoaderBinary.h"
 #include "MNCTModuleEnergyCalibration.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleEnergyCalibrationLinear.h"
-#include "MNCTModuleEnergyCalibrationNonlinear.h"
 #include "MNCTModuleCrosstalkCorrection.h"
 #include "MNCTModuleChargeSharingCorrection.h"
 #include "MNCTModuleDepthCalibration.h"
@@ -116,8 +114,6 @@ MAssembly::MAssembly()
   
   m_Supervisor->AddAvailableModule(new MNCTModuleEventFilter());
   m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationUniversal());
-  m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationLinear());
-  m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationNonlinear());
 
   m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());
   m_Supervisor->AddAvailableModule(new MNCTModuleChargeSharingCorrection());
