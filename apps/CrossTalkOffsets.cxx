@@ -56,7 +56,7 @@ using namespace std;
 #include "MSupervisor.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 
 
@@ -235,7 +235,7 @@ bool CrossTalkOffsets::Analyze()
   EnergyCalibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
   S->SetModule(EnergyCalibrator, 1);
   
-  MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
+  MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
   //Pairing->SetMode(0);
   S->SetModule(Pairing, 2);
 

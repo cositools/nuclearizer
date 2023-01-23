@@ -41,7 +41,7 @@ using namespace std;
 #include "MSupervisor.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
@@ -181,7 +181,7 @@ int main(int argc, char** argv)
 	MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
 	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Berkeley/EnergyCalibration.ecal");
 
-	MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
+	MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
 
 	if (Loader->Initialize() == false) return false;
 	if (Calibrator->Initialize() == false) return false;

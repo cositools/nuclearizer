@@ -51,7 +51,7 @@ using namespace std;
 #include "MNCTModuleMeasurementLoaderBinary.h"
 #include "MNCTModuleSimulationLoader.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MNCTModuleCrosstalkCorrection.h"
 #include "MNCTModuleChargeSharingCorrection.h"
 #include "MAssembly.h"

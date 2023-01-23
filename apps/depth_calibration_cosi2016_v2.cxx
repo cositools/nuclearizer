@@ -35,7 +35,7 @@ using namespace std;
 #include "MSupervisor.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
@@ -263,7 +263,7 @@ int main(int argc, char** argv)
 	//setup nuclearizer modules
 	MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
 	Calibrator->SetFileName(options->EnergyCalibrationFilename);
-	MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
+	MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
 	if (Calibrator->Initialize() == false){
 		cout << "failed to initialize energy calibrator module, exiting..." << endl;
 		return false;

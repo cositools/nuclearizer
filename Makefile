@@ -96,9 +96,8 @@ $(LB)/MNCTModuleDepthCalibration.o \
 $(LB)/MGUIOptionsDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MGUIExpoStripPairing.o \
-$(LB)/MNCTModuleStripPairingGreedy_a.o \
+$(LB)/MNCTModuleStripPairingGreedy.o \
 $(LB)/MGUIOptionsStripPairing.o \
-$(LB)/MNCTModuleStripPairingGreedy_b.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MNCTModuleEventSaver.o \
 $(LB)/MGUIOptionsEventFilter.o \

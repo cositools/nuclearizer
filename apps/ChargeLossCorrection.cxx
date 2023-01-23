@@ -50,7 +50,7 @@ using namespace std;
 #include "MNCTBinaryFlightDataParser.h"
 #include "MNCTModuleMeasurementLoaderBinary.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MNCTModuleCrosstalkCorrection.h"
 #include "MNCTModuleChargeSharingCorrection.h"
 #include "MAssembly.h"
@@ -243,7 +243,7 @@ bool ChargeLossCorrection::Analyze()
 	Calibrator->EnablePreampTempCorrection(false);
   S->SetModule(Calibrator, 1);
   
-  MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
+  MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
   S->SetModule(Pairing, 2);
 
 	MNCTModuleCrosstalkCorrection* CrossTalk = new MNCTModuleCrosstalkCorrection();

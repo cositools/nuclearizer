@@ -60,7 +60,7 @@ using namespace std;
 #include "MNCTBinaryFlightDataParser.h"
 #include "MNCTModuleMeasurementLoaderBinary.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MNCTModuleCrosstalkCorrection.h"
 #include "MNCTModuleChargeSharingCorrection.h"
 #include "MAssembly.h"
@@ -258,7 +258,7 @@ bool ChargeLossOffsets::Analyze()
 	Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/EnergyCalibration.ecal");
   S->SetModule(Calibrator, 1);
   
-  MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
+  MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
 	//Pairing->SetMode(0);
   S->SetModule(Pairing, 2);
 

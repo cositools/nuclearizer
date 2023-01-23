@@ -1,5 +1,5 @@
 /*
- * MNCTModuleStripPairingGreedy_b.cxx
+ * MNCTModuleStripPairingGreedy.cxx
  *
  *
  * Copyright (C) by Clio Sleator & Daniel Perez-Becker.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MNCTModuleStripPairingGreedy_b
+// MNCTModuleStripPairingGreedy
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 
 // Standard libs:
 
@@ -39,14 +39,14 @@
 
 
 #ifdef ___CLING___
-ClassImp(MNCTModuleStripPairingGreedy_b)
+ClassImp(MNCTModuleStripPairingGreedy)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
+MNCTModuleStripPairingGreedy::MNCTModuleStripPairingGreedy() : MModule()
 {
   // Construct an instance of MNCTModuleStripPairingGreedy_a
   
@@ -56,7 +56,7 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
   m_Name = "Strip pairing - Clio's \"Greedy\" version";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "StripPairingGreedy_b";
+  m_XmlTag = "StripPairingGreedy";
   
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
@@ -91,16 +91,16 @@ MNCTModuleStripPairingGreedy_b::MNCTModuleStripPairingGreedy_b() : MModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNCTModuleStripPairingGreedy_b::~MNCTModuleStripPairingGreedy_b()
+MNCTModuleStripPairingGreedy::~MNCTModuleStripPairingGreedy()
 {
-  // Delete this instance of MNCTModuleStripPairingGreedy_b
+  // Delete this instance of MNCTModuleStripPairingGreedy
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNCTModuleStripPairingGreedy_b::CreateExpos()
+void MNCTModuleStripPairingGreedy::CreateExpos()
 {
   // Create all expos
   
@@ -116,7 +116,7 @@ void MNCTModuleStripPairingGreedy_b::CreateExpos()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNCTModuleStripPairingGreedy_b::Initialize()
+bool MNCTModuleStripPairingGreedy::Initialize()
 {
   // Initialize the module 
   
@@ -132,7 +132,7 @@ bool MNCTModuleStripPairingGreedy_b::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 //main data analysis routine, which updates the event to a new level
-bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
+bool MNCTModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 
 //	usleep(100);
 
@@ -474,7 +474,7 @@ bool MNCTModuleStripPairingGreedy_b::AnalyzeEvent(MReadOutAssembly* Event){
 };
 
 //this function takes the MReadOutAssembly and get all the info from it.
-int MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int detector) {
+int MNCTModuleStripPairingGreedy::GetEventInfo(MReadOutAssembly* Event, int detector) {
   
   ClearMembers();  
   
@@ -622,7 +622,7 @@ int MNCTModuleStripPairingGreedy_b::GetEventInfo(MReadOutAssembly* Event, int de
   
 };      
 
-void MNCTModuleStripPairingGreedy_b::CalculateDetectorQuality(){
+void MNCTModuleStripPairingGreedy::CalculateDetectorQuality(){
   
   float detectorQuality = 0;
   int counter = 0;
@@ -638,7 +638,7 @@ void MNCTModuleStripPairingGreedy_b::CalculateDetectorQuality(){
   
 };
 
-void MNCTModuleStripPairingGreedy_b::CalculateEventQuality(MReadOutAssembly* Event, int nDetectors){
+void MNCTModuleStripPairingGreedy::CalculateEventQuality(MReadOutAssembly* Event, int nDetectors){
   
   float eventQuality = 0;
   int counter = 0;
@@ -654,7 +654,7 @@ void MNCTModuleStripPairingGreedy_b::CalculateEventQuality(MReadOutAssembly* Eve
 };
 
 //output stuff
-void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int detector){
+void MNCTModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector){
 
 
 	vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
@@ -869,7 +869,7 @@ void MNCTModuleStripPairingGreedy_b::WriteHits(MReadOutAssembly* Event, int dete
 };
 
 //clears members in between each detector
-void MNCTModuleStripPairingGreedy_b::ClearMembers(){
+void MNCTModuleStripPairingGreedy::ClearMembers(){
   
   stripsHit.clear();
   energy.clear();
@@ -902,7 +902,7 @@ void MNCTModuleStripPairingGreedy_b::ClearMembers(){
 //calculate average sigma (delta E)
 //avg sigma = sigma(x) + sigma(y)
 //sigma(x) = sqrt(sigma(hit 1)^2 + sigma(hit 2)^2 + ... )
-float MNCTModuleStripPairingGreedy_b::CalculateSigma(){
+float MNCTModuleStripPairingGreedy::CalculateSigma(){
   
   vector<float> sigTotalSquared, sigTotal;
   
@@ -931,7 +931,7 @@ float MNCTModuleStripPairingGreedy_b::CalculateSigma(){
 
 //checks size of energy difference between x and y by comparing to the average sigma calculated in CalculateSigma()
 //returns true if difference is smaller than 3*(avg sigma), false if difference is larger than 3*(avg sigma)
-bool MNCTModuleStripPairingGreedy_b::CheckInitialEnergyDifference(){
+bool MNCTModuleStripPairingGreedy::CheckInitialEnergyDifference(){
   
   int avgSigma = CalculateSigma();
   
@@ -960,7 +960,7 @@ bool MNCTModuleStripPairingGreedy_b::CheckInitialEnergyDifference(){
 
 //if energy difference is larger than 3sigma, tries to determine what could have caused the difference
 //options are dead strip, charge loss, noise hit, and a photon with energy very near the threshold, so it was only noticed on one side
-void MNCTModuleStripPairingGreedy_b::DetermineOption(bool adjStripsHit){
+void MNCTModuleStripPairingGreedy::DetermineOption(bool adjStripsHit){
   
   //define map of all possible options
   map<string, bool> options;
@@ -994,7 +994,7 @@ void MNCTModuleStripPairingGreedy_b::DetermineOption(bool adjStripsHit){
 //appends any hits on adjacent strips to stripsHit vector
 //if strip n and n+1 are hit, the "strip number" for the combined strips is 50+n
 //for example, if strips 3 and 4 are hit, 53 is appended to the end of stripsHit
-bool MNCTModuleStripPairingGreedy_b::CheckForAdjacentStrips(){
+bool MNCTModuleStripPairingGreedy::CheckForAdjacentStrips(){
  
   //define and initialize variables
   int adjStripLabel;
@@ -1057,7 +1057,7 @@ bool MNCTModuleStripPairingGreedy_b::CheckForAdjacentStrips(){
 
 //check if multiple hits need to be considered
 //multiple hits need to be considered when there are more hits on one side than the other
-bool MNCTModuleStripPairingGreedy_b::CheckMultipleHits(){
+bool MNCTModuleStripPairingGreedy::CheckMultipleHits(){
   
   //	DefineEventInfo();
   
@@ -1084,7 +1084,7 @@ bool MNCTModuleStripPairingGreedy_b::CheckMultipleHits(){
 
 
 //add possibilities of multiple hits to vector of hits
-void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
+void MNCTModuleStripPairingGreedy::AddMultipleHits(int axis){
   
   //initialize variables
   int x1, x2, pair;
@@ -1171,7 +1171,7 @@ void MNCTModuleStripPairingGreedy_b::AddMultipleHits(int axis){
 };
 
 //add possibility of charge sharing on 3 strips to vector of hits
-void MNCTModuleStripPairingGreedy_b::ChargeSharingThreeStrips(int axis){
+void MNCTModuleStripPairingGreedy::ChargeSharingThreeStrips(int axis){
 
 	int counter = 0;
 
@@ -1227,7 +1227,7 @@ void MNCTModuleStripPairingGreedy_b::ChargeSharingThreeStrips(int axis){
 
 
 //add possibilities of three hits to vector of hits
-void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
+void MNCTModuleStripPairingGreedy::AddThreeHits(int axis){
   
   //initialize variables
   int x1, x2, pair;
@@ -1323,7 +1323,7 @@ void MNCTModuleStripPairingGreedy_b::AddThreeHits(int axis){
 
 
 //initialize badCombinations vector and fill with 0s
-void MNCTModuleStripPairingGreedy_b::InitializeBadCombinations(){
+void MNCTModuleStripPairingGreedy::InitializeBadCombinations(){
   
   badCombinations.clear();
   badCombinations.push_back(vector<int>(nHits[0], 0));
@@ -1344,7 +1344,7 @@ void MNCTModuleStripPairingGreedy_b::InitializeBadCombinations(){
 
 //check for combinations that take a strip into account more than once
 //for example, 251 is the combination of strip 2 and charge sharing between strips 1 and 2
-void MNCTModuleStripPairingGreedy_b::CheckForBadCombinations(){
+void MNCTModuleStripPairingGreedy::CheckForBadCombinations(){
   
   InitializeBadCombinations();
   
@@ -1367,7 +1367,7 @@ void MNCTModuleStripPairingGreedy_b::CheckForBadCombinations(){
 };
 
 //calculates weight for one x-y pair
-float MNCTModuleStripPairingGreedy_b::CalculateWeight(int xIndex, int yIndex){
+float MNCTModuleStripPairingGreedy::CalculateWeight(int xIndex, int yIndex){
   
   float weight;
   float xE = energy[0][xIndex];
@@ -1382,7 +1382,7 @@ float MNCTModuleStripPairingGreedy_b::CalculateWeight(int xIndex, int yIndex){
 };
 
 //makes a matrix of the correct size and fills it with 0s
-void MNCTModuleStripPairingGreedy_b::InitializeWeightMatrix(){
+void MNCTModuleStripPairingGreedy::InitializeWeightMatrix(){
   
   weightMatrix.clear();
   weightMatrix.resize(nHits[0], vector<float>(nHits[1], 0));
@@ -1401,7 +1401,7 @@ void MNCTModuleStripPairingGreedy_b::InitializeWeightMatrix(){
 
 //initializes kill matrices
 //makes matrices the right size, fills them with 0s, stores them in killMatrix vector
-void MNCTModuleStripPairingGreedy_b::InitializeKillMatrices(){
+void MNCTModuleStripPairingGreedy::InitializeKillMatrices(){
   
   killMatrix.clear();
   killMatrix.push_back(vector<vector<int>>(nHits[0], vector<int>(nHits[0], 0)));
@@ -1437,7 +1437,7 @@ void MNCTModuleStripPairingGreedy_b::InitializeKillMatrices(){
 };
 
 //add row and column of 0s to kill matrix
-void MNCTModuleStripPairingGreedy_b::ExpandKillMatrix(int axis){
+void MNCTModuleStripPairingGreedy::ExpandKillMatrix(int axis){
   
   int size = killMatrix[axis].size();
 
@@ -1469,7 +1469,7 @@ void MNCTModuleStripPairingGreedy_b::ExpandKillMatrix(int axis){
 
 //calculates weight matrix
 //fills weight matrtix of 0s with the weights of each x-y pair
-void MNCTModuleStripPairingGreedy_b::CalculateWeightMatrix(){
+void MNCTModuleStripPairingGreedy::CalculateWeightMatrix(){
   
   int n_x = nHits[0];
   int n_y = nHits[1];
@@ -1504,7 +1504,7 @@ void MNCTModuleStripPairingGreedy_b::CalculateWeightMatrix(){
 };
 
 //go through all elements of weight matrix and find minimum weight
-vector<int> MNCTModuleStripPairingGreedy_b::FindMinWeight(){
+vector<int> MNCTModuleStripPairingGreedy::FindMinWeight(){
  
  	int n_x = nHits[0];
   int n_y = nHits[1];
@@ -1545,7 +1545,7 @@ vector<int> MNCTModuleStripPairingGreedy_b::FindMinWeight(){
 
 
 //once a pair is chosen (indexed by xIndex, yIndex), prevents program from repeating a strip
-void MNCTModuleStripPairingGreedy_b::ConflictingStrips(int xIndex, int yIndex){
+void MNCTModuleStripPairingGreedy::ConflictingStrips(int xIndex, int yIndex){
   
   vector<int> indices = { xIndex, yIndex };
   
@@ -1590,7 +1590,7 @@ void MNCTModuleStripPairingGreedy_b::ConflictingStrips(int xIndex, int yIndex){
 };
 
 //count the number of elements in the weight matrix that are set to -1
-int MNCTModuleStripPairingGreedy_b::CountNegativeElements(){
+int MNCTModuleStripPairingGreedy::CountNegativeElements(){
   
   int counter = 0;
   int i_max = nHits[0];
@@ -1608,7 +1608,7 @@ int MNCTModuleStripPairingGreedy_b::CountNegativeElements(){
 };
 
 //find the list of final pairs by finding the minimum weights
-float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
+float MNCTModuleStripPairingGreedy::FindFinalPairs(){
 
   //initialize variables
   int n_x = nHits[0];
@@ -1720,7 +1720,7 @@ float MNCTModuleStripPairingGreedy_b::FindFinalPairs(){
 //for example, if strip 51 is selected, it gets separated into strips 1 and 2
 //if 104 is selected, it gets separated into strips 1 and 4
 //if 256 is selected, it gets separated into strip 2 and charge sharing between 6 and 7
-vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs(){
+vector<vector<vector<int> > > MNCTModuleStripPairingGreedy::DecodeFinalPairs(){
 
 /*
 	for (unsigned int pair=0; pair<finalPairs.size(); pair++){
@@ -2151,7 +2151,7 @@ vector<vector<vector<int> > > MNCTModuleStripPairingGreedy_b::DecodeFinalPairs()
 };
 
 //checks whether all strips were paired, returns true if so
-bool MNCTModuleStripPairingGreedy_b::CheckAllStripsWerePaired(){
+bool MNCTModuleStripPairingGreedy::CheckAllStripsWerePaired(){
   
   vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
   int counter = 0;
@@ -2199,7 +2199,7 @@ bool MNCTModuleStripPairingGreedy_b::CheckAllStripsWerePaired(){
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MNCTModuleStripPairingGreedy_b::ShowOptionsGUI(){
+void MNCTModuleStripPairingGreedy::ShowOptionsGUI(){
   
   // Show the options GUI - or do nothing
 	MGUIOptionsStripPairing* Options = new MGUIOptionsStripPairing(this);
@@ -2209,7 +2209,7 @@ void MNCTModuleStripPairingGreedy_b::ShowOptionsGUI(){
 
 };
 
-bool MNCTModuleStripPairingGreedy_b::ReadXmlConfiguration(MXmlNode* Node){
+bool MNCTModuleStripPairingGreedy::ReadXmlConfiguration(MXmlNode* Node){
 
 	//! Read the configuration data from an XML node
 
@@ -2222,7 +2222,7 @@ bool MNCTModuleStripPairingGreedy_b::ReadXmlConfiguration(MXmlNode* Node){
 
 };
 
-MXmlNode* MNCTModuleStripPairingGreedy_b::CreateXmlConfiguration(){
+MXmlNode* MNCTModuleStripPairingGreedy::CreateXmlConfiguration(){
 
 	//! Create an XML node tree from the configuration
 
@@ -2236,7 +2236,7 @@ MXmlNode* MNCTModuleStripPairingGreedy_b::CreateXmlConfiguration(){
 /////////////////////////////////////////////////////////////////////////////////
 
 //print the stripsHit vector
-void MNCTModuleStripPairingGreedy_b::PrintXYStripsHit(){
+void MNCTModuleStripPairingGreedy::PrintXYStripsHit(){
   
 //  cout << "stripsHit.size(): " << stripsHit.size() << endl;
   
@@ -2269,7 +2269,7 @@ void MNCTModuleStripPairingGreedy_b::PrintXYStripsHit(){
 
 };
 
-void MNCTModuleStripPairingGreedy_b::PrintXYStripsHitOrig(){
+void MNCTModuleStripPairingGreedy::PrintXYStripsHitOrig(){
   
 //  cout << "stripsHit.size(): " << stripsHit.size() << endl;
  
@@ -2306,7 +2306,7 @@ void MNCTModuleStripPairingGreedy_b::PrintXYStripsHitOrig(){
 
 };
 
-void MNCTModuleStripPairingGreedy_b::PrintFinalPairs(){
+void MNCTModuleStripPairingGreedy::PrintFinalPairs(){
 
 	cout << "----------------------" << endl << "Printing final pairs" << endl;
 
@@ -2320,7 +2320,7 @@ void MNCTModuleStripPairingGreedy_b::PrintFinalPairs(){
 };
 
 //print the weight matrix
-void MNCTModuleStripPairingGreedy_b::PrintWeightMatrix(){
+void MNCTModuleStripPairingGreedy::PrintWeightMatrix(){
   
   cout << "-------------------" << endl;
   
@@ -2343,7 +2343,7 @@ void MNCTModuleStripPairingGreedy_b::PrintWeightMatrix(){
   
 };
 
-void MNCTModuleStripPairingGreedy_b::PrintKillMatrix(){
+void MNCTModuleStripPairingGreedy::PrintKillMatrix(){
 
 	for (int axis=0; axis<2; axis++){
 		cout << "axis: " << axis << endl;
@@ -2358,19 +2358,19 @@ void MNCTModuleStripPairingGreedy_b::PrintKillMatrix(){
 
 };
 
-float MNCTModuleStripPairingGreedy_b::GetEth(){
+float MNCTModuleStripPairingGreedy::GetEth(){
   
   return Eth;
   
 };
 
-vector<vector<int> > MNCTModuleStripPairingGreedy_b::GetStripsHit(){
+vector<vector<int> > MNCTModuleStripPairingGreedy::GetStripsHit(){
   
   return stripsHit;
   
 };
 
-void MNCTModuleStripPairingGreedy_b::SetStripsHit(vector<vector<int> > inputVec){
+void MNCTModuleStripPairingGreedy::SetStripsHit(vector<vector<int> > inputVec){
   
   nHits.clear();
   stripsHit.clear();
@@ -2384,33 +2384,33 @@ void MNCTModuleStripPairingGreedy_b::SetStripsHit(vector<vector<int> > inputVec)
   
 };
 
-vector<vector<float> > MNCTModuleStripPairingGreedy_b::GetEnergy(){
+vector<vector<float> > MNCTModuleStripPairingGreedy::GetEnergy(){
   
   return energy;
   
 };
 
-void MNCTModuleStripPairingGreedy_b::SetEnergy(vector<vector<float> > inputVec){
+void MNCTModuleStripPairingGreedy::SetEnergy(vector<vector<float> > inputVec){
   
   energy.clear();
   energy = inputVec;
   
 };
 
-vector<vector<float> > MNCTModuleStripPairingGreedy_b::GetSigma(){
+vector<vector<float> > MNCTModuleStripPairingGreedy::GetSigma(){
   
   return sig;
   
 };
 
-void MNCTModuleStripPairingGreedy_b::SetSigma(vector<vector<float> > inputVec){
+void MNCTModuleStripPairingGreedy::SetSigma(vector<vector<float> > inputVec){
   
   sig.clear();
   sig = inputVec;
   
 };
 
-void MNCTModuleStripPairingGreedy_b::SetFinalPairs(vector<vector<int> > inputVec){
+void MNCTModuleStripPairingGreedy::SetFinalPairs(vector<vector<int> > inputVec){
   
   finalPairs.clear();
   finalPairs = inputVec;
@@ -2425,26 +2425,26 @@ void MNCTModuleStripPairingGreedy_b::SetFinalPairs(vector<vector<int> > inputVec
   */
 };
 
-vector<vector<float> > MNCTModuleStripPairingGreedy_b::GetWeightMatrix(){
+vector<vector<float> > MNCTModuleStripPairingGreedy::GetWeightMatrix(){
   
   return weightMatrix;
   
 };
 
-vector<vector<int> > MNCTModuleStripPairingGreedy_b::GetBadCombinations(){
+vector<vector<int> > MNCTModuleStripPairingGreedy::GetBadCombinations(){
   
   return badCombinations;
   
 };
 
-void MNCTModuleStripPairingGreedy_b::SetBadCombinations(vector<vector<int> > inputVec){
+void MNCTModuleStripPairingGreedy::SetBadCombinations(vector<vector<int> > inputVec){
   
   badCombinations.clear();
   badCombinations = inputVec;
   
 };
 
-int MNCTModuleStripPairingGreedy_b::GetNBadCombinations(int axis){
+int MNCTModuleStripPairingGreedy::GetNBadCombinations(int axis){
 
 	int counter = 0;
 
@@ -2457,7 +2457,7 @@ int MNCTModuleStripPairingGreedy_b::GetNBadCombinations(int axis){
 	return counter;
 };
 
-int MNCTModuleStripPairingGreedy_b::GetStripIndex(int axis, int stripID){
+int MNCTModuleStripPairingGreedy::GetStripIndex(int axis, int stripID){
 
 	int index = -1;
 
@@ -2470,7 +2470,7 @@ int MNCTModuleStripPairingGreedy_b::GetStripIndex(int axis, int stripID){
 	return index;
 };
 
-void MNCTModuleStripPairingGreedy_b::dummy_func(void){
+void MNCTModuleStripPairingGreedy::dummy_func(void){
 
 	return;
 }

@@ -1,5 +1,5 @@
 /*
- * MNCTModuleStripPairingGreedy_b.h
+ * MNCTModuleStripPairingGreedy.h
  *
  * Copyright (C) by Clio Sleator & Daniel Perez-Becker
  * All rights reserved.
@@ -91,8 +91,8 @@ CheckInitialEnergyDifference: STILL BEING WORKED OUT!!
 Clio Sleator, 2014
  */
 
-#ifndef __MNCTModuleStripPairingGreedy_b__
-#define __MNCTModuleStripPairingGreedy_b__
+#ifndef __MNCTModuleStripPairingGreedy__
+#define __MNCTModuleStripPairingGreedy__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -124,17 +124,17 @@ Clio Sleator, 2014
 
 using namespace std;
 
-class MNCTModuleStripPairingGreedy_b : public MModule
+class MNCTModuleStripPairingGreedy : public MModule
 {
   // public interface:
  public:
   //! Default constructor
-  MNCTModuleStripPairingGreedy_b();
+  MNCTModuleStripPairingGreedy();
   //! Default destructor
-  virtual ~MNCTModuleStripPairingGreedy_b();
+  virtual ~MNCTModuleStripPairingGreedy();
 
   //! Create a new object of this class 
-  virtual MNCTModuleStripPairingGreedy_b* Clone() { return new MNCTModuleStripPairingGreedy_b(); }  
+  virtual MNCTModuleStripPairingGreedy* Clone() { return new MNCTModuleStripPairingGreedy(); }  
   
   //! Create the expos
   virtual void CreateExpos();
@@ -217,9 +217,9 @@ class MNCTModuleStripPairingGreedy_b : public MModule
   // private methods:
  private:
   //! No Copy constructor
-  MNCTModuleStripPairingGreedy_b(const MNCTModuleStripPairingGreedy_b&) = delete;
+  MNCTModuleStripPairingGreedy(const MNCTModuleStripPairingGreedy&) = delete;
   //! No copying itself
-  MNCTModuleStripPairingGreedy_b& operator=(const MNCTModuleStripPairingGreedy_b&) = delete;
+  MNCTModuleStripPairingGreedy& operator=(const MNCTModuleStripPairingGreedy&) = delete;
 
 
 
@@ -280,7 +280,7 @@ class MNCTModuleStripPairingGreedy_b : public MModule
 
 #ifdef ___CLING___
  public:
-  ClassDef(MNCTModuleStripPairingGreedy_b, 0) // no description
+  ClassDef(MNCTModuleStripPairingGreedy, 0) // no description
 #endif
 
 };

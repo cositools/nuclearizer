@@ -72,8 +72,7 @@ using namespace std;
 #include "MNCTModuleDepthCalibrationLinearStrip.h"
 #include "MNCTModuleDepthCalibrationLinearPixel.h"
 #include "MNCTModuleDepthCalibration3rdPolyPixel.h"
-#include "MNCTModuleStripPairingGreedy_a.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MNCTModuleEventFilter.h"
 #include "MNCTModuleEventSaver.h"
 #include "MNCTModuleResponseGenerator.h"
@@ -120,8 +119,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationLinear());
   m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationNonlinear());
 
-  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_a());
-  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_b());
+  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());
   m_Supervisor->AddAvailableModule(new MNCTModuleChargeSharingCorrection());
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearPixel());
   m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration3rdPolyPixel());

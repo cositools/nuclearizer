@@ -46,7 +46,7 @@ using namespace std;
 #include "MSupervisor.h"
 #include "MNCTModuleMeasurementLoaderROA.h"
 #include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MNCTModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MNCTModuleMeasurementLoaderBinary.h"
 
@@ -232,7 +232,7 @@ bool pnGraphs::Analyze()
   Calibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI14/EnergyCalibration.ecal");
   S->SetModule(Calibrator, 1);
   
-  MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
+  MNCTModuleStripPairingGreedy* Pairing = new MNCTModuleStripPairingGreedy();
   S->SetModule(Pairing, 2);
 
   MNCTModuleMeasurementLoaderBinary* MLB = new MNCTModuleMeasurementLoaderBinary();
