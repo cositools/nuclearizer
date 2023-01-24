@@ -24,7 +24,7 @@
 
 
 // Include the header:
-#include "MDummy.h"
+#include "MDetectorEffectsEngineCOSI.h"
 
 // Standard
 #include <iostream>
