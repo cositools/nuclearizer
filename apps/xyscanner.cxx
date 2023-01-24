@@ -33,14 +33,14 @@ using namespace std;
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
 #include "MDepthCalibrator.h"
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 #include "MBinaryFlightDataParser.h"
 
 
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 	}
 
 	unsigned int counter = 0;
-	MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
+	MModuleLoaderMeasurementsBinary* Loader = new MModuleLoaderMeasurementsBinary();
 	Loader->SetFileName(InputRawFile);
 	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
 	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);

@@ -1,5 +1,5 @@
 /*
- * MModuleMeasurementLoaderROA.cxx
+ * MModuleLoaderMeasurementsROA.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleMeasurementLoaderROA
+// MModuleLoaderMeasurementsROA
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 
 // Standard libs:
 
@@ -44,16 +44,16 @@
 
 
 #ifdef ___CLING___
-ClassImp(MModuleMeasurementLoaderROA)
+ClassImp(MModuleLoaderMeasurementsROA)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleMeasurementLoaderROA::MModuleMeasurementLoaderROA() : MModuleMeasurementLoader()
+MModuleLoaderMeasurementsROA::MModuleLoaderMeasurementsROA() : MModuleLoaderMeasurements()
 {
-  // Construct an instance of MModuleMeasurementLoaderROA
+  // Construct an instance of MModuleLoaderMeasurementsROA
   
   // Set all module relevant information
   
@@ -75,16 +75,16 @@ MModuleMeasurementLoaderROA::MModuleMeasurementLoaderROA() : MModuleMeasurementL
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleMeasurementLoaderROA::~MModuleMeasurementLoaderROA()
+MModuleLoaderMeasurementsROA::~MModuleLoaderMeasurementsROA()
 {
-  // Delete this instance of MModuleMeasurementLoaderROA
+  // Delete this instance of MModuleLoaderMeasurementsROA
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderROA::Initialize()
+bool MModuleLoaderMeasurementsROA::Initialize()
 {
   // Initialize the module 
   
@@ -109,13 +109,13 @@ bool MModuleMeasurementLoaderROA::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderROA::AnalyzeEvent(MReadOutAssembly* Event) 
+bool MModuleLoaderMeasurementsROA::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
     
   if (ReadNextEvent(Event) == false) {
-    cout<<"MModuleMeasurementLoaderROA: No more events!"<<endl;
+    cout<<"MModuleLoaderMeasurementsROA: No more events!"<<endl;
     m_IsFinished = true;
     return false;
   }
@@ -129,13 +129,13 @@ bool MModuleMeasurementLoaderROA::AnalyzeEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleMeasurementLoaderROA::Finalize()
+void MModuleLoaderMeasurementsROA::Finalize()
 {
   // Initialize the module 
   
   MModule::Finalize();
   
-  cout<<"MModuleMeasurementLoaderROA: "<<endl;
+  cout<<"MModuleLoaderMeasurementsROA: "<<endl;
   cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
   cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
 
@@ -146,7 +146,7 @@ void MModuleMeasurementLoaderROA::Finalize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderROA::Open(MString FileName, unsigned int Way)
+bool MModuleLoaderMeasurementsROA::Open(MString FileName, unsigned int Way)
 {
   // Open the file
   
@@ -159,7 +159,7 @@ bool MModuleMeasurementLoaderROA::Open(MString FileName, unsigned int Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
+bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
 {
   // Return next single event from file... or 0 if there are no more.
   
@@ -215,7 +215,7 @@ bool MModuleMeasurementLoaderROA::ReadNextEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderROA::ReadXmlConfiguration(MXmlNode* Node)
+bool MModuleLoaderMeasurementsROA::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
   
@@ -231,7 +231,7 @@ bool MModuleMeasurementLoaderROA::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MModuleMeasurementLoaderROA::CreateXmlConfiguration() 
+MXmlNode* MModuleLoaderMeasurementsROA::CreateXmlConfiguration() 
 {
   //! Create an XML node tree from the configuration
   
@@ -242,5 +242,5 @@ MXmlNode* MModuleMeasurementLoaderROA::CreateXmlConfiguration()
 }
 
 
-// MModuleMeasurementLoaderROA.cxx: the end...
+// MModuleLoaderMeasurementsROA.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

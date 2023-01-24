@@ -42,13 +42,13 @@ using namespace std;
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 #include "MBinaryFlightDataParser.h"
 #include "MFitFunctions.h"
 
@@ -134,7 +134,7 @@ int main(int argc, char * argv[]){
 
 	MFile Filenames; Filenames.Open(MString(argv[1]));
 	MString FName;
-	MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
+	MModuleLoaderMeasurementsBinary* Loader = new MModuleLoaderMeasurementsBinary();
 	MModuleEnergyCalibrationUniversal* EnergyCalibrator = new MModuleEnergyCalibrationUniversal();
 	EnergyCalibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Berkeley/EnergyCalibration.ecal");
 

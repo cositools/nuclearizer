@@ -1,5 +1,5 @@
 /*
- * MModuleSimulationLoader.h
+ * MModuleLoaderSimulationsBalloon.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleSimulationLoader__
-#define __MModuleSimulationLoader__
+#ifndef __MModuleLoaderSimulationsBalloon__
+#define __MModuleLoaderSimulationsBalloon__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +25,7 @@
 
 // Nuclearizer libs
 #include "MModule.h"
-#include "MDetectorEffectsEngineCOSI.h"
+#include "MDetectorEffectsEngineBalloon.h"
 
 // Forward declarations:
 
@@ -33,17 +33,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleSimulationLoader : public MModule, public MDetectorEffectsEngineCOSI
+class MModuleLoaderSimulationsBalloon : public MModule, public MDetectorEffectsEngineBalloon
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleSimulationLoader();
+  MModuleLoaderSimulationsBalloon();
   //! Default destructor
-  virtual ~MModuleSimulationLoader();
+  virtual ~MModuleLoaderSimulationsBalloon();
   
   //! Create a new object of this class 
-  virtual MModuleSimulationLoader* Clone() { return new MModuleSimulationLoader(); }
+  virtual MModuleLoaderSimulationsBalloon* Clone() { return new MModuleLoaderSimulationsBalloon(); }
  
   //! Set the geometry
   virtual void SetGeometry(MDGeometryQuest* Geometry) { MModule::SetGeometry(Geometry); }
@@ -105,7 +105,7 @@ class MModuleSimulationLoader : public MModule, public MDetectorEffectsEngineCOS
 
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleSimulationLoader, 0) // no description
+  ClassDef(MModuleLoaderSimulationsBalloon, 0) // no description
 #endif
 
 };

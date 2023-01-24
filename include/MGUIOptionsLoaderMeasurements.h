@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsMeasurementLoader.h
+ * MGUIOptionsLoaderMeasurements.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsMeasurementLoader__
-#define __MGUIOptionsMeasurementLoader__
+#ifndef __MGUIOptionsLoaderMeasurements__
+#define __MGUIOptionsLoaderMeasurements__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,14 +41,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsMeasurementLoader : public MGUIOptions
+class MGUIOptionsLoaderMeasurements : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsMeasurementLoader(MModule* Module);
+  MGUIOptionsLoaderMeasurements(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsMeasurementLoader();
+  virtual ~MGUIOptionsLoaderMeasurements();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -74,7 +74,7 @@ class MGUIOptionsMeasurementLoader : public MGUIOptions
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsMeasurementLoader, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderMeasurements, 1) // basic class for dialog windows
 #endif
 
 };

@@ -41,7 +41,7 @@ using namespace std;
 #include "MReadOutAssembly.h"
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 
 // Nuclearizer
 #include "MReadOutElement.h"

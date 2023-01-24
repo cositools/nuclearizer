@@ -1,5 +1,5 @@
 /*
- * MModuleSimulationLoader.cxx
+ * MModuleLoaderSimulationsBalloon.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleSimulationLoader
+// MModuleLoaderSimulationsBalloon
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleSimulationLoader.h"
+#include "MModuleLoaderSimulationsBalloon.h"
 
 // Standard libs:
 
@@ -32,7 +32,7 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MGUIOptionsSimulationLoader.h"
+#include "MGUIOptionsLoaderSimulations.h"
 #include "MModuleEventSaver.h"
 
 
@@ -40,16 +40,16 @@
 
 
 #ifdef ___CLING___
-ClassImp(MModuleSimulationLoader)
+ClassImp(MModuleLoaderSimulationsBalloon)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleSimulationLoader::MModuleSimulationLoader() : MModule()
+MModuleLoaderSimulationsBalloon::MModuleLoaderSimulationsBalloon() : MModule()
 {
-  // Construct an instance of MModuleSimulationLoader
+  // Construct an instance of MModuleLoaderSimulationsBalloon
 
   // Set the module name --- has to be unique
   m_Name = "Simulation loader and detector effects engine for COSI 2016";
@@ -85,21 +85,21 @@ MModuleSimulationLoader::MModuleSimulationLoader() : MModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleSimulationLoader::~MModuleSimulationLoader()
+MModuleLoaderSimulationsBalloon::~MModuleLoaderSimulationsBalloon()
 {
-  // Delete this instance of MModuleSimulationLoader
+  // Delete this instance of MModuleLoaderSimulationsBalloon
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleSimulationLoader::Initialize()
+bool MModuleLoaderSimulationsBalloon::Initialize()
 {
   // Initialize the module 
 
-  MDetectorEffectsEngineCOSI::SetGeometry(MModule::m_Geometry);
-  if (MDetectorEffectsEngineCOSI::Initialize() == false) {
+  MDetectorEffectsEngineBalloon::SetGeometry(MModule::m_Geometry);
+  if (MDetectorEffectsEngineBalloon::Initialize() == false) {
     return false;
   }
   
@@ -118,7 +118,7 @@ bool MModuleSimulationLoader::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleSimulationLoader::AnalyzeEvent(MReadOutAssembly* Event) 
+bool MModuleLoaderSimulationsBalloon::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 
@@ -129,7 +129,7 @@ bool MModuleSimulationLoader::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
   
-  if (MDetectorEffectsEngineCOSI::GetNextEvent(Event) == false) {
+  if (MDetectorEffectsEngineBalloon::GetNextEvent(Event) == false) {
     m_IsFinished = true;
     return false;
   }
@@ -145,7 +145,7 @@ bool MModuleSimulationLoader::AnalyzeEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleSimulationLoader::Finalize()
+void MModuleLoaderSimulationsBalloon::Finalize()
 {
   // Initialize the module 
 
@@ -156,18 +156,18 @@ void MModuleSimulationLoader::Finalize()
     Saver->SetSimulatedEvents(m_NumberOfSimulatedEvents);
   }    
   
-  MDetectorEffectsEngineCOSI::Finalize();
+  MDetectorEffectsEngineBalloon::Finalize();
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleSimulationLoader::ShowOptionsGUI()
+void MModuleLoaderSimulationsBalloon::ShowOptionsGUI()
 {
   //! Show the options GUI
 
-  MGUIOptionsSimulationLoader* Options = new MGUIOptionsSimulationLoader(this);
+  MGUIOptionsLoaderSimulations* Options = new MGUIOptionsLoaderSimulations(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }
@@ -176,7 +176,7 @@ void MModuleSimulationLoader::ShowOptionsGUI()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleSimulationLoader::ReadXmlConfiguration(MXmlNode* Node)
+bool MModuleLoaderSimulationsBalloon::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
   
@@ -240,7 +240,7 @@ bool MModuleSimulationLoader::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MModuleSimulationLoader::CreateXmlConfiguration() 
+MXmlNode* MModuleLoaderSimulationsBalloon::CreateXmlConfiguration() 
 {
   //! Create an XML node tree from the configuration
   
@@ -263,5 +263,5 @@ MXmlNode* MModuleSimulationLoader::CreateXmlConfiguration()
 }
 
 
-// MModuleSimulationLoader.cxx: the end...
+// MModuleLoaderSimulationsBalloon.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

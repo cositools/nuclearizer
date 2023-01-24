@@ -46,9 +46,9 @@ using namespace std;
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MBinaryFlightDataParser.h"
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MModuleCrosstalkCorrection.h"
@@ -230,8 +230,8 @@ bool ChargeLossCorrection::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
-//	MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
+  MModuleLoaderMeasurementsBinary* Loader = new MModuleLoaderMeasurementsBinary();
+//	MModuleLoaderMeasurementsROA* Loader = new MModuleLoaderMeasurementsROA();
   Loader->SetFileName(m_FileName);
 	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
 	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);

@@ -1,5 +1,5 @@
 /*
- * MModuleMeasurementLoaderBinary.cxx
+ * MModuleLoaderMeasurementsBinary.cxx
  *
  *
  * Copyright (C) by Alex Lowell & Andreas Zoglauer.
@@ -20,13 +20,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleMeasurementLoaderBinary
+// MModuleLoaderMeasurementsBinary
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 
 // Standard libs:
 #include <algorithm>
@@ -38,23 +38,23 @@ using namespace std;
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MGUIOptionsMeasurementLoaderBinary.h"
+#include "MGUIOptionsLoaderMeasurementsBinary.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MModuleMeasurementLoaderBinary)
+ClassImp(MModuleLoaderMeasurementsBinary)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleMeasurementLoaderBinary::MModuleMeasurementLoaderBinary() : MModule(), MBinaryFlightDataParser()
+MModuleLoaderMeasurementsBinary::MModuleLoaderMeasurementsBinary() : MModule(), MBinaryFlightDataParser()
 {
-	// Construct an instance of MModuleMeasurementLoaderBinary
+	// Construct an instance of MModuleLoaderMeasurementsBinary
 
 	// Set all modules, which have to be done before this module
 	// None
@@ -95,16 +95,16 @@ MModuleMeasurementLoaderBinary::MModuleMeasurementLoaderBinary() : MModule(), MB
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleMeasurementLoaderBinary::~MModuleMeasurementLoaderBinary()
+MModuleLoaderMeasurementsBinary::~MModuleLoaderMeasurementsBinary()
 {
-	// Delete this instance of MModuleMeasurementLoaderBinary
+	// Delete this instance of MModuleLoaderMeasurementsBinary
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleMeasurementLoaderBinary::CreateExpos()
+void MModuleLoaderMeasurementsBinary::CreateExpos()
 {
   // Create all expos
   
@@ -120,7 +120,7 @@ void MModuleMeasurementLoaderBinary::CreateExpos()
 
 FILE * f_TOnly;
 
-bool MModuleMeasurementLoaderBinary::OpenNextFile()
+bool MModuleLoaderMeasurementsBinary::OpenNextFile()
 {
   //! Open next file, return false on error
 
@@ -156,7 +156,7 @@ bool MModuleMeasurementLoaderBinary::OpenNextFile()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderBinary::Initialize()
+bool MModuleLoaderMeasurementsBinary::Initialize()
 {
 	// Initialize the module 
 
@@ -234,7 +234,7 @@ bool MModuleMeasurementLoaderBinary::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderBinary::IsReady() 
+bool MModuleLoaderMeasurementsBinary::IsReady() 
 {
 	if (m_Events.size() > 0) {
 		if (GetAspectMode() == MBinaryFlightDataParserAspectModes::c_Neither) {
@@ -338,14 +338,14 @@ bool MModuleMeasurementLoaderBinary::IsReady()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event) 
+bool MModuleLoaderMeasurementsBinary::AnalyzeEvent(MReadOutAssembly* Event) 
 {
 	// IsReady() ensured that the oldest event in the list has a reconstructed aspect
 	MReadOutAssembly * NewEvent;
 	//static uint64_t LastCL = 0;
 
 	if (m_Events.size() == 0) {
-		cout<<"ERROR in MModuleMeasurementLoaderBinary::AnalyzeEvent: No events"<<endl;
+		cout<<"ERROR in MModuleLoaderMeasurementsBinary::AnalyzeEvent: No events"<<endl;
 		cout<<"This function should have never been called when we have no events"<<endl;
 		return false;
 	}
@@ -449,7 +449,7 @@ bool MModuleMeasurementLoaderBinary::AnalyzeEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleMeasurementLoaderBinary::Finalize()
+void MModuleLoaderMeasurementsBinary::Finalize()
 {
 	// Close the tranceiver 
 
@@ -466,11 +466,11 @@ void MModuleMeasurementLoaderBinary::Finalize()
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleMeasurementLoaderBinary::ShowOptionsGUI()
+void MModuleLoaderMeasurementsBinary::ShowOptionsGUI()
 {
 	// Show the options GUI
 
-	MGUIOptionsMeasurementLoaderBinary* Options = new MGUIOptionsMeasurementLoaderBinary(this);
+	MGUIOptionsLoaderMeasurementsBinary* Options = new MGUIOptionsLoaderMeasurementsBinary(this);
 	Options->Create();
 	gClient->WaitForUnmap(Options);
 }
@@ -479,7 +479,7 @@ void MModuleMeasurementLoaderBinary::ShowOptionsGUI()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoaderBinary::ReadXmlConfiguration(MXmlNode* Node)
+bool MModuleLoaderMeasurementsBinary::ReadXmlConfiguration(MXmlNode* Node)
 {
 	//! Read the configuration data from an XML node
 
@@ -511,7 +511,7 @@ bool MModuleMeasurementLoaderBinary::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MModuleMeasurementLoaderBinary::CreateXmlConfiguration() 
+MXmlNode* MModuleLoaderMeasurementsBinary::CreateXmlConfiguration() 
 {
 	//! Create an XML node tree from the configuration
 
@@ -525,5 +525,5 @@ MXmlNode* MModuleMeasurementLoaderBinary::CreateXmlConfiguration()
 }
 
 
-// MModuleMeasurementLoaderBinary.cxx: the end...
+// MModuleLoaderMeasurementsBinary.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

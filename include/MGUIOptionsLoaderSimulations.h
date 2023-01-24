@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsSimulationLoader.h
+ * MGUIOptionsLoaderSimulations.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsSimulationLoader__
-#define __MGUIOptionsSimulationLoader__
+#ifndef __MGUIOptionsLoaderSimulations__
+#define __MGUIOptionsLoaderSimulations__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -42,14 +42,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsSimulationLoader : public MGUIOptions
+class MGUIOptionsLoaderSimulations : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsSimulationLoader(MModule* Module);
+  MGUIOptionsLoaderSimulations(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsSimulationLoader();
+  virtual ~MGUIOptionsLoaderSimulations();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -100,7 +100,7 @@ class MGUIOptionsSimulationLoader : public MGUIOptions
   
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsSimulationLoader, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderSimulations, 1) // basic class for dialog windows
 #endif
 
 };

@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsMeasurementLoader.cxx
+ * MGUIOptionsLoaderMeasurements.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsMeasurementLoader.h"
+#include "MGUIOptionsLoaderMeasurements.h"
 
 // Standard libs:
 
@@ -29,21 +29,21 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MModuleMeasurementLoader.h"
+#include "MModuleLoaderMeasurements.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsMeasurementLoader)
+ClassImp(MGUIOptionsLoaderMeasurements)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsMeasurementLoader::MGUIOptionsMeasurementLoader(MModule* Module) 
+MGUIOptionsLoaderMeasurements::MGUIOptionsLoaderMeasurements(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -53,7 +53,7 @@ MGUIOptionsMeasurementLoader::MGUIOptionsMeasurementLoader(MModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsMeasurementLoader::~MGUIOptionsMeasurementLoader()
+MGUIOptionsLoaderMeasurements::~MGUIOptionsLoaderMeasurements()
 {
   // kDeepCleanup is activated 
 }
@@ -62,12 +62,12 @@ MGUIOptionsMeasurementLoader::~MGUIOptionsMeasurementLoader()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsMeasurementLoader::Create()
+void MGUIOptionsLoaderMeasurements::Create()
 {
   PreCreate();
 
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
-    dynamic_cast<MModuleMeasurementLoader*>(m_Module)->GetFileName());
+    dynamic_cast<MModuleLoaderMeasurements*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Roa file", "*.roa");
   m_FileSelector->SetFileType("Roa file", "*.roa.gz");
   m_FileSelector->SetFileType("Data file", "*.dat");
@@ -83,7 +83,7 @@ void MGUIOptionsMeasurementLoader::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsMeasurementLoader::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsLoaderMeasurements::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -114,15 +114,15 @@ bool MGUIOptionsMeasurementLoader::ProcessMessage(long Message, long Parameter1,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsMeasurementLoader::OnApply()
+bool MGUIOptionsLoaderMeasurements::OnApply()
 {
 	// Modify this to store the data in the module!
 
-  dynamic_cast<MModuleMeasurementLoader*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MModuleLoaderMeasurements*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 	
 	return true;
 }
 
 
-// MGUIOptionsMeasurementLoader: the end...
+// MGUIOptionsLoaderMeasurements: the end...
 ////////////////////////////////////////////////////////////////////////////////

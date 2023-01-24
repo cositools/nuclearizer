@@ -57,10 +57,11 @@ using namespace std;
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
 
-#include "MModuleSimulationLoader.h"
-#include "MModuleMeasurementLoaderROA.h"
-#include "MModuleReceiverCOSI2014.h"
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderSimulationsBalloon.h"
+#include "MModuleLoaderSimulationsSMEX.h"
+#include "MModuleLoaderMeasurementsROA.h"
+#include "MModuleReceiverBalloon.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 #include "MModuleEnergyCalibration.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleCrosstalkCorrection.h"
@@ -107,10 +108,11 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  m_Supervisor->AddAvailableModule(new MModuleSimulationLoader());
-  m_Supervisor->AddAvailableModule(new MModuleMeasurementLoaderROA());
-  m_Supervisor->AddAvailableModule(new MModuleReceiverCOSI2014());
-  m_Supervisor->AddAvailableModule(new MModuleMeasurementLoaderBinary());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsBalloon());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSMEX());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsROA());
+  m_Supervisor->AddAvailableModule(new MModuleReceiverBalloon());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsBinary());
   
   m_Supervisor->AddAvailableModule(new MModuleEventFilter());
   m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());

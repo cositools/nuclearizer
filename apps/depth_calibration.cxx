@@ -39,7 +39,7 @@ using namespace std;
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
@@ -157,7 +157,7 @@ int main(int argc, char** argv)
 		return false;
 	}  
 
-	MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
+	MModuleLoaderMeasurementsROA* Loader = new MModuleLoaderMeasurementsROA();
 	Loader->SetFileName(RawFile);
 
 	MModuleEnergyCalibrationUniversal* Calibrator = new MModuleEnergyCalibrationUniversal();

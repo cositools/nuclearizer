@@ -1,5 +1,5 @@
 /*
- * MModuleReceiverCOSI2014.cxx
+ * MModuleReceiverBalloon.cxx
  *
  *
  * Copyright (C) by Alex Lowell & Andreas Zoglauer.
@@ -20,13 +20,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleReceiverCOSI2014
+// MModuleReceiverBalloon
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleReceiverCOSI2014.h"
+#include "MModuleReceiverBalloon.h"
 
 // Standard libs:
 #include <algorithm>
@@ -38,7 +38,7 @@ using namespace std;
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MGUIOptionsReceiverCOSI2014.h"
+#include "MGUIOptionsReceiverBalloon.h"
 #include "MGUIExpoReceiver.h"
 
 
@@ -46,16 +46,16 @@ using namespace std;
 
 
 #ifdef ___CLING___
-ClassImp(MModuleReceiverCOSI2014)
+ClassImp(MModuleReceiverBalloon)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleReceiverCOSI2014::MModuleReceiverCOSI2014() : MModule(), MBinaryFlightDataParser()
+MModuleReceiverBalloon::MModuleReceiverBalloon() : MModule(), MBinaryFlightDataParser()
 {
-  // Construct an instance of MModuleReceiverCOSI2014
+  // Construct an instance of MModuleReceiverBalloon
 
   // Set all modules, which have to be done before this module
   // None
@@ -73,7 +73,7 @@ MModuleReceiverCOSI2014::MModuleReceiverCOSI2014() : MModule(), MBinaryFlightDat
   m_Name = "Data packet receiver, sorter, and aspect reconstructor for COSI 2014/2016";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "XmlTagReceiverCOSI2014";  
+  m_XmlTag = "XmlTagReceiverBalloon";  
   
   m_HasOptionsGUI = true;
   
@@ -102,16 +102,16 @@ MModuleReceiverCOSI2014::MModuleReceiverCOSI2014() : MModule(), MBinaryFlightDat
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleReceiverCOSI2014::~MModuleReceiverCOSI2014()
+MModuleReceiverBalloon::~MModuleReceiverBalloon()
 {
-  // Delete this instance of MModuleReceiverCOSI2014
+  // Delete this instance of MModuleReceiverBalloon
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleReceiverCOSI2014::CreateExpos()
+void MModuleReceiverBalloon::CreateExpos()
 {
   // Create all expos
   
@@ -128,7 +128,7 @@ void MModuleReceiverCOSI2014::CreateExpos()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleReceiverCOSI2014::RequestConnection()
+bool MModuleReceiverBalloon::RequestConnection()
 {
   // Perform a handshake with the distributor
   
@@ -271,7 +271,7 @@ bool MModuleReceiverCOSI2014::RequestConnection()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleReceiverCOSI2014::EndConnection()
+bool MModuleReceiverBalloon::EndConnection()
 {
   // First kill the receiver
   if (m_Receiver != 0) {
@@ -355,7 +355,7 @@ bool MModuleReceiverCOSI2014::EndConnection()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleReceiverCOSI2014::Initialize()
+bool MModuleReceiverBalloon::Initialize()
 {
   // Initialize the module 
 
@@ -394,7 +394,7 @@ bool MModuleReceiverCOSI2014::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleReceiverCOSI2014::IsReady() 
+bool MModuleReceiverBalloon::IsReady() 
 {
   if (g_Verbosity >= c_Info) mout<<"Events in receiver: "<<m_Events.size()<<endl;
   
@@ -445,13 +445,13 @@ bool MModuleReceiverCOSI2014::IsReady()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event) 
+bool MModuleReceiverBalloon::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // IsReady() ensured that the oldest event in the list has a reconstructed aspect
   MReadOutAssembly * NewEvent;
   
   if (m_Events.size() == 0) {
-    cout<<"ERROR in MModuleReceiverCOSI2014::AnalyzeEvent: No events"<<endl;
+    cout<<"ERROR in MModuleReceiverBalloon::AnalyzeEvent: No events"<<endl;
     cout<<"This function should have never been called when we have no events"<<endl;
     return false;
   }
@@ -462,7 +462,7 @@ bool MModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
   //this checks if the event's aspect data was within the range of the retrieved aspect info
   if (m_AspectMode != MBinaryFlightDataParserAspectModes::c_Neither &&
       NewEvent->GetAspect() != 0 && NewEvent->GetAspect()->GetOutOfRange()) {
-    cout<<"ERROR in MModuleReceiverCOSI2014::AnalyzeEvent: Bad aspect (out of range)"<<endl;
+    cout<<"ERROR in MModuleReceiverBalloon::AnalyzeEvent: Bad aspect (out of range)"<<endl;
     Event->SetAspectIncomplete(true);
   }
 
@@ -521,7 +521,7 @@ bool MModuleReceiverCOSI2014::AnalyzeEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleReceiverCOSI2014::Finalize()
+void MModuleReceiverBalloon::Finalize()
 {
   // Close the tranceiver 
 
@@ -541,11 +541,11 @@ void MModuleReceiverCOSI2014::Finalize()
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleReceiverCOSI2014::ShowOptionsGUI()
+void MModuleReceiverBalloon::ShowOptionsGUI()
 {
   // Show the options GUI
 
-  MGUIOptionsReceiverCOSI2014* Options = new MGUIOptionsReceiverCOSI2014(this);
+  MGUIOptionsReceiverBalloon* Options = new MGUIOptionsReceiverBalloon(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }
@@ -554,7 +554,7 @@ void MModuleReceiverCOSI2014::ShowOptionsGUI()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
+bool MModuleReceiverBalloon::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
   
@@ -603,7 +603,7 @@ bool MModuleReceiverCOSI2014::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MModuleReceiverCOSI2014::CreateXmlConfiguration() 
+MXmlNode* MModuleReceiverBalloon::CreateXmlConfiguration() 
 {
   //! Create an XML node tree from the configuration
   
@@ -625,5 +625,5 @@ MXmlNode* MModuleReceiverCOSI2014::CreateXmlConfiguration()
 }
 
 
-// MModuleReceiverCOSI2014.cxx: the end...
+// MModuleReceiverBalloon.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

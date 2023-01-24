@@ -1,5 +1,5 @@
 /*
- * MModuleMeasurementLoader.cxx
+ * MModuleLoaderMeasurements.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleMeasurementLoader
+// MModuleLoaderMeasurements
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleMeasurementLoader.h"
+#include "MModuleLoaderMeasurements.h"
 
 // Standard libs:
 
@@ -32,23 +32,23 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
-#include "MGUIOptionsMeasurementLoader.h"
+#include "MGUIOptionsLoaderMeasurements.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MModuleMeasurementLoader)
+ClassImp(MModuleLoaderMeasurements)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleMeasurementLoader::MModuleMeasurementLoader() : MModule()
+MModuleLoaderMeasurements::MModuleLoaderMeasurements() : MModule()
 {
-  // Construct an instance of MModuleMeasurementLoader
+  // Construct an instance of MModuleLoaderMeasurements
 
   // Set all modules, which have to be done before this module
   // None
@@ -67,16 +67,16 @@ MModuleMeasurementLoader::MModuleMeasurementLoader() : MModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleMeasurementLoader::~MModuleMeasurementLoader()
+MModuleLoaderMeasurements::~MModuleLoaderMeasurements()
 {
-  // Delete this instance of MModuleMeasurementLoader
+  // Delete this instance of MModuleLoaderMeasurements
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoader::Initialize()
+bool MModuleLoaderMeasurements::Initialize()
 {
   // Initialize the module 
 
@@ -87,7 +87,7 @@ bool MModuleMeasurementLoader::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleMeasurementLoader::AnalyzeEvent(MReadOutAssembly* Event) 
+bool MModuleLoaderMeasurements::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
 
@@ -98,15 +98,15 @@ bool MModuleMeasurementLoader::AnalyzeEvent(MReadOutAssembly* Event)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleMeasurementLoader::ShowOptionsGUI()
+void MModuleLoaderMeasurements::ShowOptionsGUI()
 {
   //! Show the options GUI
 
-  MGUIOptionsMeasurementLoader* Options = new MGUIOptionsMeasurementLoader(this);
+  MGUIOptionsLoaderMeasurements* Options = new MGUIOptionsLoaderMeasurements(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }
 
 
-// MModuleMeasurementLoader.cxx: the end...
+// MModuleLoaderMeasurements.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

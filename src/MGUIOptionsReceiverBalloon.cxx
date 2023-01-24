@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsReceiverCOSI2014.cxx
+ * MGUIOptionsReceiverBalloon.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsReceiverCOSI2014.h"
+#include "MGUIOptionsReceiverBalloon.h"
 
 // Standard libs:
 
@@ -30,21 +30,21 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MModule.h"
-#include "MModuleReceiverCOSI2014.h"
+#include "MModuleReceiverBalloon.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsReceiverCOSI2014)
+ClassImp(MGUIOptionsReceiverBalloon)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsReceiverCOSI2014::MGUIOptionsReceiverCOSI2014(MModule* Module) 
+MGUIOptionsReceiverBalloon::MGUIOptionsReceiverBalloon(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -54,7 +54,7 @@ MGUIOptionsReceiverCOSI2014::MGUIOptionsReceiverCOSI2014(MModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsReceiverCOSI2014::~MGUIOptionsReceiverCOSI2014()
+MGUIOptionsReceiverBalloon::~MGUIOptionsReceiverBalloon()
 {
   // kDeepCleanup is activated 
 }
@@ -63,7 +63,7 @@ MGUIOptionsReceiverCOSI2014::~MGUIOptionsReceiverCOSI2014()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsReceiverCOSI2014::Create()
+void MGUIOptionsReceiverBalloon::Create()
 {
   PreCreate();
 
@@ -74,15 +74,15 @@ void MGUIOptionsReceiverCOSI2014::Create()
   m_OptionsFrame->AddFrame(HandshakerLabel, LabelLayout);
   
   m_DistributorName = new MGUIEEntry(m_OptionsFrame, "Distributor IP (e.g. 128.32.13.133): ", false,
-                              dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetDistributorName());
+                              dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetDistributorName());
   m_OptionsFrame->AddFrame(m_DistributorName, ContentLayout);
 
   m_DistributorPort = new MGUIEEntry(m_OptionsFrame, "Distributor listening port (e.g. 21526): ", false,
-                              dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetDistributorPort());
+                              dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetDistributorPort());
   m_OptionsFrame->AddFrame(m_DistributorPort, ContentLayout);
 
   m_DistributorStreamID = new MGUIEEntry(m_OptionsFrame, "Stream ID (e.g. ALL): ", false,
-                              dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetDistributorStreamID());
+                              dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetDistributorStreamID());
   m_OptionsFrame->AddFrame(m_DistributorStreamID, ContentLayout);
 
   /*
@@ -90,11 +90,11 @@ void MGUIOptionsReceiverCOSI2014::Create()
   m_OptionsFrame->AddFrame(SendToLabel, LabelLayout);
 
   m_SendToName = new MGUIEEntry(m_OptionsFrame, "Name/IP of the machine where we send the data to: ", false,
-                              dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetLocalReceivingHostName());
+                              dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetLocalReceivingHostName());
   m_OptionsFrame->AddFrame(m_SendToName, ContentLayout);
 
   m_SendToPort = new MGUIEEntry(m_OptionsFrame, "Port on the machine where we send the data to: ", false,
-                              dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetLocalReceivingPort());
+                              dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetLocalReceivingPort());
   m_OptionsFrame->AddFrame(m_SendToPort, ContentLayout);
   */
   
@@ -102,7 +102,7 @@ void MGUIOptionsReceiverCOSI2014::Create()
   m_DataMode->Add("Raw mode");
   m_DataMode->Add("Compton mode");
   m_DataMode->Add("Both");
-  m_DataMode->SetSelected((int) dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetDataSelectionMode());
+  m_DataMode->SetSelected((int) dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetDataSelectionMode());
   m_DataMode->Create();
   m_OptionsFrame->AddFrame(m_DataMode, LabelLayout);
 
@@ -110,12 +110,12 @@ void MGUIOptionsReceiverCOSI2014::Create()
   m_AspectMode->Add("GPS");
   m_AspectMode->Add("Magnetometer");
   m_AspectMode->Add("None");
-  m_AspectMode->SetSelected((int) dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetAspectMode());
+  m_AspectMode->SetSelected((int) dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetAspectMode());
   m_AspectMode->Create();
   m_OptionsFrame->AddFrame(m_AspectMode, LabelLayout);
   
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "If a file is selected, then the input stream is saved as roa :",
-  dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->GetRoaFileName());
+  dynamic_cast<MModuleReceiverBalloon*>(m_Module)->GetRoaFileName());
   m_FileSelector->SetFileType("Read-out file", "*.roa");
   m_OptionsFrame->AddFrame(m_FileSelector, ContentLayout);
 
@@ -128,7 +128,7 @@ void MGUIOptionsReceiverCOSI2014::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsReceiverCOSI2014::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsReceiverBalloon::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -159,38 +159,38 @@ bool MGUIOptionsReceiverCOSI2014::ProcessMessage(long Message, long Parameter1, 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsReceiverCOSI2014::OnApply()
+bool MGUIOptionsReceiverBalloon::OnApply()
 {
   // Modify this to store the data in the module!
 
-  dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetDistributorName(m_DistributorName->GetAsString());
-  dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetDistributorPort(m_DistributorPort->GetAsInt());
-  dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetDistributorStreamID(m_DistributorStreamID->GetAsString());
+  dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetDistributorName(m_DistributorName->GetAsString());
+  dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetDistributorPort(m_DistributorPort->GetAsInt());
+  dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetDistributorStreamID(m_DistributorStreamID->GetAsString());
 
-  //dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingHostName(m_SendToName->GetAsString());
-  //dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetLocalReceivingPort(m_SendToPort->GetAsInt());
+  //dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetLocalReceivingHostName(m_SendToName->GetAsString());
+  //dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetLocalReceivingPort(m_SendToPort->GetAsInt());
 
   if (m_DataMode->GetSelected() == 0) {
-    dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);     
+    dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);     
   } else if (m_DataMode->GetSelected() == 1) {
-    dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Compton);     
+    dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Compton);     
   } else if (m_DataMode->GetSelected() == 2) {
-    dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_All);     
+    dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_All);     
   }
 
   if (m_AspectMode->GetSelected() == 0) {
-    dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_GPS);     
+    dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_GPS);     
   } else if (m_AspectMode->GetSelected() == 1) {
-    dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Magnetometer);     
+    dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Magnetometer);     
   } else if (m_AspectMode->GetSelected() == 2) {
-    dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);     
+    dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);     
   }
   
-  dynamic_cast<MModuleReceiverCOSI2014*>(m_Module)->SetRoaFileName(m_FileSelector->GetFileName());  
+  dynamic_cast<MModuleReceiverBalloon*>(m_Module)->SetRoaFileName(m_FileSelector->GetFileName());  
   
   return true;
 }
 
 
-// MGUIOptionsReceiverCOSI2014: the end...
+// MGUIOptionsReceiverBalloon: the end...
 ////////////////////////////////////////////////////////////////////////////////

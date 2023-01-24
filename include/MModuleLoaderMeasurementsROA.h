@@ -1,5 +1,5 @@
 /*
- * MModuleMeasurementLoaderROA.h
+ * MModuleLoaderMeasurementsROA.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleMeasurementLoaderROA__
-#define __MModuleMeasurementLoaderROA__
+#ifndef __MModuleLoaderMeasurementsROA__
+#define __MModuleLoaderMeasurementsROA__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +25,7 @@
 #include "MFileReadOuts.h"
 
 // Nuclearizer libs:
-#include "MModuleMeasurementLoader.h"
+#include "MModuleLoaderMeasurements.h"
 
 // Forward declarations:
 
@@ -33,17 +33,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleMeasurementLoaderROA : public MModuleMeasurementLoader
+class MModuleLoaderMeasurementsROA : public MModuleLoaderMeasurements
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleMeasurementLoaderROA();
+  MModuleLoaderMeasurementsROA();
   //! Default destructor
-  virtual ~MModuleMeasurementLoaderROA();
+  virtual ~MModuleLoaderMeasurementsROA();
   
   //! Create a new object of this class 
-  virtual MModuleMeasurementLoaderROA* Clone() { return new MModuleMeasurementLoaderROA(); }
+  virtual MModuleLoaderMeasurementsROA* Clone() { return new MModuleLoaderMeasurementsROA(); }
 
   //! The Open method has to be derived from MFileEvents to initialize the include file:
   virtual bool Open(MString FileName, unsigned int Way);
@@ -94,7 +94,7 @@ class MModuleMeasurementLoaderROA : public MModuleMeasurementLoader
   
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleMeasurementLoaderROA, 0) // no description
+  ClassDef(MModuleLoaderMeasurementsROA, 0) // no description
 #endif
 
 };

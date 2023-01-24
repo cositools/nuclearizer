@@ -24,7 +24,7 @@
 
 
 // Include the header:
-#include "MDetectorEffectsEngineCOSI.h"
+#include "MDetectorEffectsEngineBalloon.h"
 
 // Standard
 #include <iostream>
@@ -61,7 +61,7 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 
 // Nuclearizer
-#include "MDetectorEffectsEngineCOSI.h"
+#include "MDetectorEffectsEngineBalloon.h"
 #include "MDepthCalibrator.h"
 
 
@@ -69,7 +69,7 @@ using namespace std;
 
 
 #ifdef ___CLING___
-ClassImp(MDetectorEffectsEngineCOSI)
+ClassImp(MDetectorEffectsEngineBalloon)
 #endif
 
 
@@ -77,7 +77,7 @@ ClassImp(MDetectorEffectsEngineCOSI)
 
 
 //! Default constructor
-MDetectorEffectsEngineCOSI::MDetectorEffectsEngineCOSI()
+MDetectorEffectsEngineBalloon::MDetectorEffectsEngineBalloon()
 {
   m_Geometry = nullptr;
   m_OwnGeometry = false;
@@ -91,7 +91,7 @@ MDetectorEffectsEngineCOSI::MDetectorEffectsEngineCOSI()
 
 
 //! Default destructor
-MDetectorEffectsEngineCOSI::~MDetectorEffectsEngineCOSI()
+MDetectorEffectsEngineBalloon::~MDetectorEffectsEngineBalloon()
 {
   // Intentionally left blank
   
@@ -104,7 +104,7 @@ MDetectorEffectsEngineCOSI::~MDetectorEffectsEngineCOSI()
 
 
 //! Initialize the module
-bool MDetectorEffectsEngineCOSI::Initialize()
+bool MDetectorEffectsEngineBalloon::Initialize()
 {
   m_Random.SetSeed(12345);
   
@@ -258,7 +258,7 @@ bool MDetectorEffectsEngineCOSI::Initialize()
 
 
 //! Analyze whatever needs to be analyzed...
-bool MDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
+bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
 {
   MSimEvent* SimEvent = nullptr;
   //int RunningID = 0;
@@ -1569,7 +1569,7 @@ bool MDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
 
 
 //! Finalize the module
-bool MDetectorEffectsEngineCOSI::Finalize()
+bool MDetectorEffectsEngineBalloon::Finalize()
 {
   cout << "total hits: " << m_TotalHitsCounter << endl;
   cout << "number of events with multiple hits per strip: " << m_MultipleHitsCounter << endl;
@@ -1609,7 +1609,7 @@ bool MDetectorEffectsEngineCOSI::Finalize()
 
 //! Convert energy to ADC value by reversing energy calibration done in 
 //! MModuleEnergyCalibrationUniversal.cxx
-int MDetectorEffectsEngineCOSI::EnergyToADC(MDEEStripHit& Hit, double mean_energy)
+int MDetectorEffectsEngineBalloon::EnergyToADC(MDEEStripHit& Hit, double mean_energy)
 {  
   //first, need to simulate energy spread
   //static TRandom3 r(0);
@@ -1662,7 +1662,7 @@ int MDetectorEffectsEngineCOSI::EnergyToADC(MDEEStripHit& Hit, double mean_energ
 
 
 //! Noise shield energy with measured resolution
-double MDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString shield_name)
+double MDetectorEffectsEngineBalloon::NoiseShieldEnergy(double energy, MString shield_name)
 { 
   
   vector<double> resolution_consts{3.75,3.74,18.47,4.23,3.07,3.98};
@@ -1687,7 +1687,7 @@ double MDetectorEffectsEngineCOSI::NoiseShieldEnergy(double energy, MString shie
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Calculate new summed energy of two strips affected by charge loss
-vector<double> MDetectorEffectsEngineCOSI::ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2){
+vector<double> MDetectorEffectsEngineBalloon::ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2){
   
   double trueSum = energy1+energy2;
   double diff = abs(energy1-energy2);
@@ -1737,7 +1737,7 @@ vector<double> MDetectorEffectsEngineCOSI::ApplyChargeLoss(double energy1, doubl
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Calculate new summed energy of two strips affected by charge loss
-bool MDetectorEffectsEngineCOSI::InitializeChargeLoss()
+bool MDetectorEffectsEngineBalloon::InitializeChargeLoss()
 { 
   
   //coefficients[energy][detector][side][depth]
@@ -1813,7 +1813,7 @@ bool MDetectorEffectsEngineCOSI::InitializeChargeLoss()
 
 /////////////////////////////////////////////////////////////////////////////////
 //! Read in charge sharing factors
-bool MDetectorEffectsEngineCOSI::ParseChargeSharingFile()
+bool MDetectorEffectsEngineBalloon::ParseChargeSharingFile()
 {
   
   MParser Parser;
@@ -1843,7 +1843,7 @@ bool MDetectorEffectsEngineCOSI::ParseChargeSharingFile()
 ///////////////////////////////////////////////////////////////////////////////
 
 //! Read in crosstalk coefficients
-bool MDetectorEffectsEngineCOSI::ParseCrosstalkFile()
+bool MDetectorEffectsEngineBalloon::ParseCrosstalkFile()
 {
   
   MParser Parser;
@@ -1869,7 +1869,7 @@ bool MDetectorEffectsEngineCOSI::ParseCrosstalkFile()
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Read in guard ring thresholds
-bool MDetectorEffectsEngineCOSI::ParseGuardRingThresholdFile()
+bool MDetectorEffectsEngineBalloon::ParseGuardRingThresholdFile()
 {
   
   MParser Parser;
@@ -1898,7 +1898,7 @@ bool MDetectorEffectsEngineCOSI::ParseGuardRingThresholdFile()
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Read in thresholds
-bool MDetectorEffectsEngineCOSI::ParseThresholdFile()
+bool MDetectorEffectsEngineBalloon::ParseThresholdFile()
 {
   MParser Parser;
   if (Parser.Open(m_ThresholdFileName, MFile::c_Read) == false) {
@@ -1982,7 +1982,7 @@ bool MDetectorEffectsEngineCOSI::ParseThresholdFile()
 
 
 //! Parse ecal file: should be done once at the beginning to save all the poly3 coefficients
-bool MDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
+bool MDetectorEffectsEngineBalloon::ParseEnergyCalibrationFile()
 {
   MParser Parser;
   if (Parser.Open(m_EnergyCalibrationFileName, MFile::c_Read) == false){
@@ -2100,7 +2100,7 @@ bool MDetectorEffectsEngineCOSI::ParseEnergyCalibrationFile()
 
 
 //! Parse the dead strip file
-bool MDetectorEffectsEngineCOSI::ParseDeadStripFile()
+bool MDetectorEffectsEngineBalloon::ParseDeadStripFile()
 {  
   //initialize m_DeadStrips: set all values to 0
   for (int i=0; i<nDets; i++) {
@@ -2152,7 +2152,7 @@ bool MDetectorEffectsEngineCOSI::ParseDeadStripFile()
 }
 
 
-void MDetectorEffectsEngineCOSI::dummy_func(){
+void MDetectorEffectsEngineBalloon::dummy_func(){
   //empty function to make break points for debugger
 }
 

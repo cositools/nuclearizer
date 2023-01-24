@@ -46,10 +46,10 @@ using namespace std;
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MBinaryFlightDataParser.h"
-#include "MModuleMeasurementLoaderBinary.h"
-#include "MModuleSimulationLoader.h"
+#include "MModuleLoaderMeasurementsBinary.h"
+#include "MModuleLoaderSimulationsBalloon.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MModuleCrosstalkCorrection.h"
@@ -194,7 +194,7 @@ bool ThresholdCalculation::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
 
-  MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
+  MModuleLoaderMeasurementsBinary* Loader = new MModuleLoaderMeasurementsBinary();
   Loader->SetFileName(m_FileName);
 	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
 	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);
@@ -202,7 +202,7 @@ bool ThresholdCalculation::Analyze()
   S->SetModule(Loader, 0);
 
 /*
-	MModuleSimulationLoader* Loader = new MModuleSimulationLoader();
+	MModuleLoaderSimulationsBalloon* Loader = new MModuleLoaderSimulationsBalloon();
 	Loader->SetSimulationFileName(m_FileName);
 	MDGeometryQuest* G = new MDGeometryQuest();
 	if (G->ScanSetupFile("~/Software/MassModel/COSI.DetectorHead.geo.setup") == true){

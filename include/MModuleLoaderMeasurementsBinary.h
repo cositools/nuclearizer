@@ -1,5 +1,5 @@
 /*
- * MModuleMeasurementLoaderBinary.h
+ * MModuleLoaderMeasurementsBinary.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleMeasurementLoaderBinary__
-#define __MModuleMeasurementLoaderBinary__
+#ifndef __MModuleLoaderMeasurementsBinary__
+#define __MModuleLoaderMeasurementsBinary__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,18 +38,18 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleMeasurementLoaderBinary : public MModule, public MBinaryFlightDataParser
+class MModuleLoaderMeasurementsBinary : public MModule, public MBinaryFlightDataParser
 {
   // public interface:
  public:
    
   //! Default constructor
-  MModuleMeasurementLoaderBinary();
+  MModuleLoaderMeasurementsBinary();
   //! Default destructor
-  virtual ~MModuleMeasurementLoaderBinary();
+  virtual ~MModuleLoaderMeasurementsBinary();
   
   //! Create a new object of this class 
-  virtual MModuleMeasurementLoaderBinary* Clone() { return new MModuleMeasurementLoaderBinary(); }
+  virtual MModuleLoaderMeasurementsBinary* Clone() { return new MModuleLoaderMeasurementsBinary(); }
    
   //! Get the file name
   MString GetFileName() const { return m_FileName; }
@@ -120,7 +120,7 @@ class MModuleMeasurementLoaderBinary : public MModule, public MBinaryFlightDataP
   
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleMeasurementLoaderBinary, 0) // no description
+  ClassDef(MModuleLoaderMeasurementsBinary, 0) // no description
 #endif
 
 };

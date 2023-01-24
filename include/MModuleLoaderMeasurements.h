@@ -1,5 +1,5 @@
 /*
- * MModuleMeasurementLoader.h
+ * MModuleLoaderMeasurements.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleMeasurementLoader__
-#define __MModuleMeasurementLoader__
+#ifndef __MModuleLoaderMeasurements__
+#define __MModuleLoaderMeasurements__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,17 +33,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleMeasurementLoader : public MModule, public MFileEvents
+class MModuleLoaderMeasurements : public MModule, public MFileEvents
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleMeasurementLoader();
+  MModuleLoaderMeasurements();
   //! Default destructor
-  virtual ~MModuleMeasurementLoader();
+  virtual ~MModuleLoaderMeasurements();
   
   //! Create a new object of this class 
-  virtual MModuleMeasurementLoader* Clone() = 0;
+  virtual MModuleLoaderMeasurements* Clone() = 0;
   
   //! Initialize the module
   virtual bool Initialize();
@@ -85,7 +85,7 @@ class MModuleMeasurementLoader : public MModule, public MFileEvents
 
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleMeasurementLoader, 0) // no description
+  ClassDef(MModuleLoaderMeasurements, 0) // no description
 #endif
 
 };

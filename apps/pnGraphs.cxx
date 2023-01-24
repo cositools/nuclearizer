@@ -44,11 +44,11 @@ using namespace std;
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -224,7 +224,7 @@ bool pnGraphs::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
+  MModuleLoaderMeasurementsROA* Loader = new MModuleLoaderMeasurementsROA();
   Loader->SetFileName(m_FileName);
   S->SetModule(Loader, 0);
   
@@ -235,7 +235,7 @@ bool pnGraphs::Analyze()
   MModuleStripPairingGreedy* Pairing = new MModuleStripPairingGreedy();
   S->SetModule(Pairing, 2);
 
-  MModuleMeasurementLoaderBinary* MLB = new MModuleMeasurementLoaderBinary();
+  MModuleLoaderMeasurementsBinary* MLB = new MModuleLoaderMeasurementsBinary();
   MLB->Initialize();
   
   if (Loader->Initialize() == false) return false;

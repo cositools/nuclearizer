@@ -56,7 +56,7 @@ MModuleStripPairingGreedy::MModuleStripPairingGreedy() : MModule()
   m_Name = "Strip pairing - Clio's \"Greedy\" version";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "StripPairingGreedy";
+  m_XmlTag = "StripPairingGreedy_b";
   
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);

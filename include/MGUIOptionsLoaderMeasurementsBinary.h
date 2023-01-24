@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsReceiverCOSI2014.h
+ * MGUIOptionsLoaderMeasurementsBinary.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsReceiverCOSI2014__
-#define __MGUIOptionsReceiverCOSI2014__
+#ifndef __MGUIOptionsLoaderMeasurementsBinary__
+#define __MGUIOptionsLoaderMeasurementsBinary__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +30,6 @@
 #include "MGlobal.h"
 #include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
-#include "MGUIEEntry.h"
 #include "MGUIERBList.h"
 
 // Nuclearizer libs:
@@ -43,18 +42,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
+class MGUIOptionsLoaderMeasurementsBinary : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsReceiverCOSI2014(MModule* Module);
+  MGUIOptionsLoaderMeasurementsBinary(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsReceiverCOSI2014();
+  virtual ~MGUIOptionsLoaderMeasurementsBinary();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
-  
+
   //! The creation part which gets overwritten
   virtual void Create();
 
@@ -62,7 +61,7 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-  virtual bool OnApply();
+	virtual bool OnApply();
 
 
   // protected members:
@@ -70,22 +69,16 @@ class MGUIOptionsReceiverCOSI2014 : public MGUIOptions
 
   // private members:
  private:
-  MGUIEEntry* m_DistributorName;
-  MGUIEEntry* m_DistributorPort;
-  MGUIEEntry* m_DistributorStreamID;
-
-  //MGUIEEntry* m_SendToName;
-  //MGUIEEntry* m_SendToPort;
-
+  //! Select which file to load
+  MGUIEFileSelector* m_FileSelector;
   MGUIERBList* m_DataMode;
   MGUIERBList* m_AspectMode;
+  MGUIERBList* m_CoincidenceMode;
 
-  //! Select if we save the file to roa
-  MGUIEFileSelector* m_FileSelector;
-  
-  #ifdef ___CLING___
+
+#ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsReceiverCOSI2014, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderMeasurementsBinary, 1) // basic class for dialog windows
 #endif
 
 };

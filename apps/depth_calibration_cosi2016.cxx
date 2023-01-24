@@ -39,14 +39,14 @@ using namespace std;
 #include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
 #include "MDepthCalibrator.h"
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 #include "MBinaryFlightDataParser.h"
 
 class MDEEStripHit
@@ -187,10 +187,10 @@ int main(int argc, char** argv)
 		return false;
 	}
 
-	//MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
+	//MModuleLoaderMeasurementsROA* Loader = new MModuleLoaderMeasurementsROA();
 	//Loader->SetFileName(RawFile);
 
-	MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
+	MModuleLoaderMeasurementsBinary* Loader = new MModuleLoaderMeasurementsBinary();
 	Loader->SetFileName(RawFile);
 	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
 	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);

@@ -1,5 +1,5 @@
 /*
- * MModuleReceiverCOSI2014.h
+ * MModuleReceiverBalloon.h
  *
  * Copyright (C) by Alex Lowell & Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleReceiverCOSI2014__
-#define __MModuleReceiverCOSI2014__
+#ifndef __MModuleReceiverBalloon__
+#define __MModuleReceiverBalloon__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,18 +39,18 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleReceiverCOSI2014 : public MModule, public MBinaryFlightDataParser
+class MModuleReceiverBalloon : public MModule, public MBinaryFlightDataParser
 {
   // public interface:
  public:
    
   //! Default constructor
-  MModuleReceiverCOSI2014();
+  MModuleReceiverBalloon();
   //! Default destructor
-  virtual ~MModuleReceiverCOSI2014();
+  virtual ~MModuleReceiverBalloon();
   
   //! Create a new object of this class 
-  virtual MModuleReceiverCOSI2014* Clone() { return new MModuleReceiverCOSI2014(); }
+  virtual MModuleReceiverBalloon* Clone() { return new MModuleReceiverBalloon(); }
   
   //! Return the name of the transmitting computer
   MString GetDistributorName() const { return m_DistributorName; }
@@ -161,7 +161,7 @@ class MModuleReceiverCOSI2014 : public MModule, public MBinaryFlightDataParser
   
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleReceiverCOSI2014, 0) // no description
+  ClassDef(MModuleReceiverBalloon, 0) // no description
 #endif
 
 };

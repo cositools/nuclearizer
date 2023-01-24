@@ -1,5 +1,5 @@
 /*
- * MMDetectorEffectsEngineCOSI.h
+ * MMDetectorEffectsEngineSMEX.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MMDetectorEffectsEngineCOSI__
-#define __MMDetectorEffectsEngineCOSI__
+#ifndef __MMDetectorEffectsEngineSMEX__
+#define __MMDetectorEffectsEngineSMEX__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,13 +41,13 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MDetectorEffectsEngineCOSI
+class MDetectorEffectsEngineSMEX
 {
 public:
   //! Default constructor
-  MDetectorEffectsEngineCOSI();
+  MDetectorEffectsEngineSMEX();
   //! Default destructor
-  virtual ~MDetectorEffectsEngineCOSI();
+  virtual ~MDetectorEffectsEngineSMEX();
   
   //! Set the simulation file name 
   void SetSimulationFileName(const MString& FileName) { m_SimulationFileName = FileName; }
@@ -153,7 +153,7 @@ protected:
  
 
 public:
-  //! Tiny helper class for MDetectorEffectsEngineCOSI describing a special strip hit
+  //! Tiny helper class for MDetectorEffectsEngineSMEX describing a special strip hit
   class MDEEStripHit
   {
   public:
@@ -367,7 +367,7 @@ private:
 
   #ifdef ___CLING___
 public:
-  ClassDef(MDetectorEffectsEngineCOSI, 0) // no description
+  ClassDef(MDetectorEffectsEngineSMEX, 0) // no description
   #endif
 };
 

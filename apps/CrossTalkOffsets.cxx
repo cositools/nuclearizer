@@ -54,7 +54,7 @@ using namespace std;
 #include "MReadOutSequence.h"
 //#include "MReadOutDataADCValueWithTiming.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
@@ -227,7 +227,7 @@ bool CrossTalkOffsets::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
+  MModuleLoaderMeasurementsROA* Loader = new MModuleLoaderMeasurementsROA();
   Loader->SetFileName(m_FileName);
   S->SetModule(Loader, 0);
    

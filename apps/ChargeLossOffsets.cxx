@@ -56,9 +56,9 @@ using namespace std;
 #include "MReadOutSequence.h"
 //#include "MReadOutDataADCValueWithTiming.h"
 #include "MSupervisor.h"
-#include "MModuleMeasurementLoaderROA.h"
+#include "MModuleLoaderMeasurementsROA.h"
 #include "MBinaryFlightDataParser.h"
-#include "MModuleMeasurementLoaderBinary.h"
+#include "MModuleLoaderMeasurementsBinary.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MModuleCrosstalkCorrection.h"
@@ -245,8 +245,8 @@ bool ChargeLossOffsets::Analyze()
 
   MSupervisor *S = MSupervisor::GetSupervisor();
   
-  MModuleMeasurementLoaderROA* Loader = new MModuleMeasurementLoaderROA();
-//	MModuleMeasurementLoaderBinary* Loader = new MModuleMeasurementLoaderBinary();
+  MModuleLoaderMeasurementsROA* Loader = new MModuleLoaderMeasurementsROA();
+//	MModuleLoaderMeasurementsBinary* Loader = new MModuleLoaderMeasurementsBinary();
   Loader->SetFileName(m_FileName);
 //	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
 //	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Magnetometer);
