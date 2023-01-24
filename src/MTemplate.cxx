@@ -1,0 +1,63 @@
+/*
+ * MTemplate.cxx
+ *
+ *
+ * Copyright (C) by YOUR NAME HERE.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MTemplate
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MTemplate.h"
+
+// Standard libs:
+
+// ROOT libs:
+
+// MEGAlib libs:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CLING___
+ClassImp(MTemplate)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTemplate::MTemplate()
+{
+  // Construct an instance of MTemplate
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTemplate::~MTemplate()
+{
+  // Delete this instance of MTemplate
+}
+
+
+// MTemplate.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
