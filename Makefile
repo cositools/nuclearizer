@@ -88,11 +88,7 @@ $(LB)/MModuleCrosstalkCorrection.o \
 $(LB)/MGUIOptionsCrosstalkCorrection.o \
 $(LB)/MModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
-$(LB)/MModuleDepthCalibrationLinearPixel.o \
-$(LB)/MGUIOptionsDepthCalibrationLinearPixel.o \
-$(LB)/MModuleDepthCalibration3rdPolyPixel.o \
 $(LB)/MModuleDepthCalibration.o \
-$(LB)/MGUIOptionsDepthCalibration3rdPolyPixel.o \
 $(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MGUIExpoStripPairing.o \
 $(LB)/MModuleStripPairingGreedy.o \
