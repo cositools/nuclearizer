@@ -448,8 +448,8 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         
         // Get the origins: these are the IA indices
         // We have to do a bit of a convoluted assignment since different version of MEGAlib have different types (int vs. unsigned int)
-        // vector<int> Origins = HT->GetOrigins();
-        vector<int> Origins(HT->GetOrigins().begin(), HT->GetOrigins().end());
+        auto HTOrigins = HT->GetOrigins();
+        vector<int> Origins(HTOrigins.begin(), HTOrigins.end());
 
         pSide.m_Origins = list<int>(Origins.begin(), Origins.end());
         nSide.m_Origins = list<int>(Origins.begin(), Origins.end());
@@ -464,7 +464,7 @@ bool MNCTDetectorEffectsEngineCOSI::GetNextEvent(MReadOutAssembly* Event)
         double energyDeposited = 0.;
         double totalEnergyFromIAs = 0.;
         
-        for (unsigned int o=0; o<Origins.size(); o++){
+        for (unsigned int o = 0; o < Origins.size(); o++){
           int iaID = Origins[o];
           //for some reason Origin[o] is 0 when the IAs aren't saved,
           //which makes the code crash unless I do this
