@@ -464,7 +464,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         double energyDeposited = 0.;
         double totalEnergyFromIAs = 0.;
         
-        for (unsigned int o=0; o<Origins.size(); o++){
+        for (unsigned int o = 0; o < Origins.size(); o++){
           int iaID = Origins[o];
           //for some reason Origin[o] is 0 when the IAs aren't saved,
           //which makes the code crash unless I do this
