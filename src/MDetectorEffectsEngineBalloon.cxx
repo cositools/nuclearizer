@@ -448,8 +448,8 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         
         // Get the origins: these are the IA indices
         // We have to do a bit of a convoluted assignment since different version of MEGAlib have different types (int vs. unsigned int)
-        // vector<int> Origins = HT->GetOrigins();
-        vector<int> Origins(HT->GetOrigins().begin(), HT->GetOrigins().end());
+        auto HTOrigins = HT->GetOrigins();
+        vector<int> Origins(HTOrigins.begin(), HTOrigins.end());
 
         pSide.m_Origins = list<int>(Origins.begin(), Origins.end());
         nSide.m_Origins = list<int>(Origins.begin(), Origins.end());
