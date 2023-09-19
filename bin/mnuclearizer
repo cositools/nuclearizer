@@ -8,6 +8,7 @@ help() {
   echo "Options:"
   echo "    -n <nice>:      The nice level as an integer (default: 0)"
   echo "    -c <file name>: Nuclearizer configuration file name"
+  echo "    -g <file name>: Geometry file"
   echo "    -t <int>:       Number if threads to use"
   echo "    -f <file name>: Long list of sim or dat files"
   echo "    -r              Perform a 10 second test run, to check for error messages"
@@ -33,6 +34,7 @@ CMD=( "$@" )
 THREADS=1
 NICELEVEL=0
 CFG=""
+GEO=""
 FILES=""
 TEST="FALSE"
 
@@ -82,6 +84,18 @@ while [ $# -gt 0 ] ; do
       exit 0;
     fi
     CFG=$1;
+    #echo "Using ${Threads} threads";
+    ;;
+  -g)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -g needs an argument";
+      echo "       For details see mnuclearizer --help"
+      echo " "
+      exit 0;
+    fi
+    GEO=$1;
     #echo "Using ${Threads} threads";
     ;;
   -n)
@@ -178,6 +192,7 @@ echo " "
 echo "Number of threads to use:  ${THREADS}"
 echo "Nice level:                ${NICELEVEL}"
 echo "Configuration file:        ${CFG}"
+echo "Geometry file:             ${GEO}"
 echo "Input files:               ${FILES}"
 echo " "
 echo " "
@@ -185,12 +200,18 @@ echo " "
 if [[ ${TEST} == "TRUE" ]]; then
   echo "Launching test run..."
   SIMFILE=${FILES%% *}
+  COMMAND="nuclearizer -m 1 -c ${CFG} -a -n"
   if [[ ${SIMFILE} == *.sim ]] || [[ ${SIMFILE} == *.sim.gz ]]; then
-    OUT=$( timeout 10s nuclearizer -m 0 -c ${CFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g) 2>&1 )
+    COMMAND+=" -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g)"
   elif [[ ${SIMFILE} == *.dat ]] || [[ ${SIMFILE} == *.dat.gz ]]; then
-    OUT=$( timeout 10s nuclearizer -m 1 -c ${CFG} -a -n -C ModuleOptions.XmlTagMeasurementLoaderBinary.FileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.dat/.evta/g) 2>&1 )
+    COMMAND+=" -C ModuleOptions.XmlTagMeasurementLoaderBinary.FileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.dat/.evta/g)"
   fi
-  ERROR=$(echo ${OUT} | grep -i -e "ERROR" -e "FATAL")
+  if [[ ${GEO} != "" ]]; then 
+    COMMAND+=" -g ${GEO}"
+  fi
+
+  OUT=$( timeout 10s ${COMMAND} 2>&1 )
+  ERROR=$(echo ${OUT} | grep -i -e "ERROR" -e "FATAL" -e "Error")
   if [[ ${ERROR} != "" ]]; then
     echo " "
     echo "ERROR: Unable to perform a nuclearizer test run. Error message:"
@@ -211,17 +232,23 @@ fi
 for SIMFILE in ${FILES}; do
   mwait --p=nuclearizer --i=${THREADS} --l=threads
   echo "Launching nuclearizer for file ${SIMFILE}"
+  COMMAND="source ${MEGALIB}/bin/source-megalib.sh; nuclearizer -m 1 -c ${CFG} -a -n "
   if [[ ${SIMFILE} == *.sim ]] || [[ ${SIMFILE} == *.sim.gz ]]; then
     #nuclearizer -m 0 -c ${CFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g)
-    nohup nice -n ${NICELEVEL} bash -c "source ${MEGALIB}/bin/source-megalib.sh; nuclearizer -m 1 -c ${CFG} -a -n -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g)" 2> /dev/null &
+    COMMAND+=" -C ModuleOptions.XmlTagSimulationLoader.SimulationFileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.sim/.evta/g)"
   elif [[ ${SIMFILE} == *.dat ]] || [[ ${SIMFILE} == *.dat.gz ]]; then
-    nohup nice -n ${NICELEVEL} bash -c "source ${MEGALIB}/bin/source-megalib.sh; nuclearizer -m 1 -c ${CFG} -a -n -C ModuleOptions.XmlTagMeasurementLoaderBinary.FileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.dat/.evta/g)" 2> /dev/null &  
+    COMMAND+=" -C ModuleOptions.XmlTagMeasurementLoaderBinary.FileName=${SIMFILE} -C ModuleOptions.XmlTagEventSaver.FileName=$(basename ${SIMFILE} | sed s/.dat/.evta/g)"  
   else 
     echo " "
     echo "Error: The data file must be a sim(.gz) or .dat(.gz) file";
     echo "       For details see mnuclearizer --help"
     echo " "  
   fi
+  if [[ ${GEO} != "" ]]; then
+    COMMAND+=" -g ${GEO}"
+  fi
+  nohup nice -n ${NICELEVEL} bash -c "${COMMAND}" 2> /dev/null &
+
   sleep 2
 done
 echo " "
