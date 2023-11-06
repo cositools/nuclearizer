@@ -61,7 +61,7 @@ MModuleStripPairingGreedy::MModuleStripPairingGreedy() : MModule()
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
-  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection);
+  //AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection);
   
   // Set all types this modules handles
   AddModuleType(MAssembly::c_StripPairing);
