@@ -305,7 +305,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
     unsigned int Pos = 5;
     MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
     CalibratorType.ToLower();
-    if (CalibratorType == "p1") {
+    if (CalibratorType == "p1" || CalibratorType == "poly1") {
       double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
       double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
       TF1* resolutionfit = new TF1("P1","([0]+[1]*x) / 2.355",0.,2000.);
@@ -404,7 +404,9 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
   return true;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////
+
 
 double MModuleEnergyCalibrationUniversal::GetEnergy(MReadOutElementDoubleStrip R, double ADC){
 	
