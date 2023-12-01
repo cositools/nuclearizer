@@ -109,6 +109,8 @@ $(LB)/MModuleDepthCalibrationB.o\
 $(LB)/MGUIOptionsDepthCalibrationB.o\
 $(LB)/MGUIOptionsResponseGenerator.o\
 $(LB)/MModuleResponseGenerator.o\
+$(LB)/MGUIOptionsRevan.o\
+$(LB)/MModuleRevan.o\
 
 
 

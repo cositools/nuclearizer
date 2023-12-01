@@ -53,7 +53,7 @@ MModuleEventSaver::MModuleEventSaver() : MModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Save events (roa, dat, or evta format)";
+  m_Name = "Save events (roa, dat, evta, or tra format)";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagEventSaver";
@@ -121,7 +121,7 @@ bool MModuleEventSaver::Initialize()
   MString Suffix = m_InternalFileName;
   if (Suffix.Last('.') != MString::npos) {
     Suffix.RemoveInPlace(0, Suffix.Last('.'));
-    if (Suffix == ".dat" || Suffix == ".roa" || Suffix == ".evta") {
+    if (Suffix == ".dat" || Suffix == ".roa" || Suffix == ".evta" || Suffix == ".tra") {
       m_InternalFileName.RemoveInPlace(m_InternalFileName.Last('.'));
     }
   }
@@ -139,6 +139,8 @@ bool MModuleEventSaver::Initialize()
     m_InternalFileName += ".evta";
   } else if (m_Mode == c_RoaFile) {
     m_InternalFileName += ".roa";
+  } else if (m_Mode == c_TraFile) {
+    m_InternalFileName += ".tra";
   } else {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
@@ -163,14 +165,18 @@ bool MModuleEventSaver::Initialize()
     Header<<endl;
   } else if (m_Mode == c_EvtaFile) {
     Header<<endl;
-//    Header<<"Version 21"<<endl;
- 		Header<<"Version 200"<<endl;
-	  Header<<"Type EVTA"<<endl;
+    Header<<"Version 200"<<endl;
+    Header<<"Type EVTA"<<endl;
     Header<<endl;
   } else if (m_Mode == c_RoaFile) {
     Header<<endl;
     Header<<"TYPE ROA"<<endl;
     Header<<"UF doublesidedstrip adc_timing_temperature"<<endl;
+    Header<<endl;
+  } else if (m_Mode == c_TraFile) {
+    Header<<endl;
+    Header<<"Version 1"<<endl;
+    Header<<"TYPE TRA"<<endl;
     Header<<endl;
   } else {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
@@ -223,6 +229,11 @@ bool MModuleEventSaver::StartSubFile()
     SubName += ".";
     SubName += m_SubFileStart.GetAsSystemSeconds();
     SubName += ".roa";
+  } else if (m_Mode == c_TraFile) {
+    SubName.ReplaceAllInPlace(".tra", "");
+    SubName += ".";
+    SubName += m_SubFileStart.GetAsSystemSeconds();
+    SubName += ".tra";
   } else {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
@@ -310,6 +321,8 @@ bool MModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
     Event->StreamDat(Out, 1);    
   } else if (m_Mode == c_RoaFile) {
     Event->StreamRoa(Out);
+  } else if (m_Mode == c_TraFile) {
+    Event->StreamTra(Out);
   }
   Choosen->Write(Out);
   

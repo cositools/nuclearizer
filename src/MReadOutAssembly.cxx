@@ -173,6 +173,8 @@ void MReadOutAssembly::Clear()
   m_DepthCalibrationIncompleteString = "";
   m_DepthCalibration_OutofRange = false;
   m_DepthCalibration_OutofRangeString = ""; 
+  m_EventReconstructionIncomplete = false;
+  m_EventReconstructionIncompleteString = "";
 
   
   m_FilteredOut = false;
@@ -243,6 +245,7 @@ MStripHit* MReadOutAssembly::GetStripHit(unsigned int i)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 
 void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 {
@@ -534,6 +537,11 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
     S<<endl;
   }
+  if (m_EventReconstructionIncomplete == true) {
+    S<<"BD EventReconstructionIncomplete";
+    if (m_EventReconstructionIncompleteString != "") S<<" ("<<m_EventReconstructionIncompleteString<<")";
+    S<<endl;
+  }
 
 
   
@@ -617,6 +625,100 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
     S<<endl;
   }
+  if (m_EventReconstructionIncomplete == true) {
+    S<<"BD EventReconstructionIncomplete";
+    if (m_EventReconstructionIncompleteString != "") S<<" ("<<m_EventReconstructionIncompleteString<<")";
+    S<<endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::StreamTra(ostream& S)
+{
+  //! Stream the content in MEGAlib's evta format
+
+  S<<"SE"<<endl;
+
+  /*
+  // Set some of the latest data to the physical event
+  if (m_Aspect != nullptr) {
+    m_Aspect->StreamEvta(S);
+
+    m_PhysicalEvent->SetGalacticPointingXAxis(m_Aspect->GetGalacticPointingXAxisLongitude(), m_Aspect->GetGalacticPointingXAxisLatitude());
+    m_PhysicalEvent->SetGalacticPointingZAxis(m_Aspect->GetGalacticPointingZAxisLongitude(), m_Aspect->GetGalacticPointingZAxisLatitude());
+
+    m_PhysicalEvent->SetHorizonPointingXAxis(m_Aspect->GetHorizonPointingXAxisAzimuthNorth(), m_Aspect->GetHorizonPointingXAxisElevation());
+    m_PhysicalEvent->SetHorizonPointingZAxis(m_Aspect->GetHorizonPointingZAxisAzimuthNorth(), m_Aspect->GetHorizonPointingZAxisElevation());
+  }
+
+  if (m_HasSimAspectInfo){
+    S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
+    S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
+
+    m_PhysicalEvent->SetGalacticPointingXAxis(m_GalacticPointingXAxisPhi, m_GalacticPointingXAxisTheta);
+    m_PhysicalEvent->SetGalacticPointingZAxis(m_GalacticPointingZAxisPhi, m_GalacticPointingZAxisTheta);
+  }
+  */
+
+  S<<m_PhysicalEvent->ToTraString();
+
+  /*
+  S<<"CC NStripHits "<<m_StripHits.size()<<endl;
+
+  if (m_AspectIncomplete == true) {
+    S<<"BD AspectIncomplete";
+    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
+    S<<endl;
+  }
+  if (m_TimeIncomplete == true) {
+    S<<"BD TimeIncomplete";
+    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
+    S<<endl;
+  }
+  if (m_EnergyCalibrationIncomplete_BadStrip == true) {
+    S<<"BD EnergyCalibrationIncomplete_BadStrip";
+    if (m_EnergyCalibrationIncomplete_BadStripString != "") S<<" ("<<m_EnergyCalibrationIncomplete_BadStripString<<")";
+    S<<endl;
+  }
+  if (m_EnergyCalibrationIncomplete == true) {
+    S<<"BD EnergyCalibrationIncomplete";
+    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+    S<<endl;
+  }
+  if (m_EnergyResolutionCalibrationIncomplete == true) {
+    S<<"BD EnergyResolutionCalibrationIncomplete";
+    if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
+    S<<endl;
+  }
+  if (m_StripPairingIncomplete == true) {
+    S<<"BD StripPairingIncomplete";
+    if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
+    S<<endl;
+  }
+  if (m_LLDEvent == true) {
+    S<<"BD LLDEvent";
+    if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
+    S<<endl;
+  }
+  if (m_DepthCalibrationIncomplete == true) {
+    S<<"BD DepthCalibrationIncomplete";
+    if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
+    S<<endl;
+  }
+  if (m_DepthCalibration_OutofRange == true) {
+    S<<"BD DepthCalibration_OutofRange";
+    if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
+    S<<endl;
+  }
+  if (m_EventReconstructionIncomplete == true) {
+    S<<"BD EventReconstructionIncomplete";
+    if (m_EventReconstructionIncompleteString != "") S<<" ("<<m_EventReconstructionIncompleteString<<")";
+    S<<endl;
+  }
+  */
 }
 
 
@@ -674,7 +776,7 @@ bool MReadOutAssembly::IsGood() const
   if (m_LLDEvent == true) return false;
   if (m_DepthCalibrationIncomplete == true) return false;
   if (m_DepthCalibration_OutofRange == true) return false;
-
+  if (m_EventReconstructionIncomplete == true) return false;
 
   if (m_FilteredOut == true) return false;
   
@@ -698,13 +800,18 @@ bool MReadOutAssembly::IsBad() const
   if (m_LLDEvent == true) return true;
   if (m_DepthCalibrationIncomplete == true) return true;
   if (m_DepthCalibration_OutofRange == true) return true;
+  if (m_EventReconstructionIncomplete == true) return true;
 
   return false;
 }
-  
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
 bool MReadOutAssembly::ComputeAbsoluteTime()
 {
-
 	//the following code assumes that the clock board oscillator is exactly 10 MHz.
 	//in reality there is a +/- 25 ppm tolerance on the frequency, so worst case this
 	//would give an absolute timing error of 25 us.  This can be corrected for by 

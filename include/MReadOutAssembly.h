@@ -229,7 +229,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the energy resolution calibration incomplete flag
   bool IsEnergyResolutionCalibrationIncomplete() const { return m_EnergyResolutionCalibrationIncomplete; }
 
- //! Set the strip-pairing-incomplete flag
+  //! Set the strip-pairing-incomplete flag
   void SetStripPairingIncomplete(bool Flag = true, MString Text = "") { m_StripPairingIncomplete = Flag;  m_StripPairingIncompleteString = Text; }
   //! Get the strip-pairing-incomplete flag
   bool IsStripPairingIncomplete() const { return m_StripPairingIncomplete; }
@@ -254,6 +254,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the filgtered-out flag
   bool IsFilteredOut() const { return m_FilteredOut; }
 
+  //! Set the event-reconstruction-incomplete flag
+  void SetEventReconstructionIncomplete(bool Flag = true, MString Text = "") { m_EventReconstructionIncomplete = Flag;  m_EventReconstructionIncompleteString = Text; }
+  //! Get the event-reconstruction-incomplete flag
+  bool IsEventReconstructionIncomplete() const { return m_EventReconstructionIncomplete; }
+
   //! Returns true if none of the "bad" or "incomplete" flags has been set and the event has not been filtered out or rejected
   bool IsGood() const;
   //! Returns true if any of the "bad" or "incomplete" flags has been set
@@ -273,9 +278,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool Parse(MString& Line, int Version = 1);
   //! Steam the content in a way Nuclearizer can read it in again
   bool StreamDat(ostream& S, int Version = 1);
-  //! Stream the content in MEGAlib's evta format 
+  //! Stream the content in MEGAlib's evta format
   void StreamEvta(ostream& S);
-  //! Stream the content in MEGAlib's roa format 
+  //! Stream the content in MEGAlib's evta format
+  void StreamTra(ostream& S);
+  //! Stream the content in MEGAlib's roa format
   void StreamRoa(ostream& S, bool WithDescriptor = true);
   //! Build the next MReadoutAssemply from a .dat file
   bool GetNextFromDatFile(MFile &F);
@@ -393,6 +400,8 @@ class MReadOutAssembly : public MReadOutSequence
   MString m_DepthCalibrationIncompleteString;
   bool m_DepthCalibration_OutofRange;
   MString m_DepthCalibration_OutofRangeString;  
+  bool m_EventReconstructionIncomplete;
+  MString m_EventReconstructionIncompleteString;
 
 
 
