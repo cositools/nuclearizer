@@ -60,6 +60,7 @@ using namespace std;
 #include "MModuleLoaderSimulationsBalloon.h"
 #include "MModuleLoaderSimulationsSMEX.h"
 #include "MModuleLoaderMeasurementsROA.h"
+#include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleReceiverBalloon.h"
 #include "MModuleLoaderMeasurementsBinary.h"
 #include "MModuleEnergyCalibration.h"
@@ -115,6 +116,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsBalloon());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSMEX());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsROA());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsHDF());
   m_Supervisor->AddAvailableModule(new MModuleReceiverBalloon());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsBinary());
   

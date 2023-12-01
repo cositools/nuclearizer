@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsLoaderMeasurements.cxx
+ * MGUIOptionsLoaderMeasurementsHDF.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsLoaderMeasurements.h"
+#include "MGUIOptionsLoaderMeasurementsHDF.h"
 
 // Standard libs:
 
@@ -29,22 +29,22 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MModuleLoaderMeasurements.h"
+#include "MModuleLoaderMeasurementsHDF.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsLoaderMeasurements)
+ClassImp(MGUIOptionsLoaderMeasurementsHDF)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsLoaderMeasurements::MGUIOptionsLoaderMeasurements(MModule* Module, MString FileType)
-  : MGUIOptions(Module), m_FileType(FileType)
+MGUIOptionsLoaderMeasurementsHDF::MGUIOptionsLoaderMeasurementsHDF(MModule* Module)
+  : MGUIOptions(Module)
 {
   // standard constructor
 }
@@ -53,7 +53,7 @@ MGUIOptionsLoaderMeasurements::MGUIOptionsLoaderMeasurements(MModule* Module, MS
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsLoaderMeasurements::~MGUIOptionsLoaderMeasurements()
+MGUIOptionsLoaderMeasurementsHDF::~MGUIOptionsLoaderMeasurementsHDF()
 {
   // kDeepCleanup is activated 
 }
@@ -62,20 +62,24 @@ MGUIOptionsLoaderMeasurements::~MGUIOptionsLoaderMeasurements()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsLoaderMeasurements::Create()
+void MGUIOptionsLoaderMeasurementsHDF::Create()
 {
   PreCreate();
 
-  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, MString("Please select a ") + m_FileType + " file:",
-    dynamic_cast<MModuleLoaderMeasurements*>(m_Module)->GetFileName());
-  m_FileSelector->SetFileType(m_FileType + " file", MString("*.") + m_FileType);
-  if (m_FileType == "roa") {
-    m_FileSelector->SetFileType(m_FileType + " file", MString("*.") + m_FileType + ".gz");
-  }
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
-  
+  m_FileSelectorHDF = new MGUIEFileSelector(m_OptionsFrame, "Please select a HDF5 file:",
+    dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->GetFileName());
+  m_FileSelectorHDF->SetFileType("HDF5 file", "*.hdf");
+  m_OptionsFrame->AddFrame(m_FileSelectorHDF, LabelLayout);
+
+
+  m_FileSelectorStripMap = new MGUIEFileSelector(m_OptionsFrame, "Please select a strip map file:",
+    dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->GetFileNameStripMap());
+  m_FileSelectorStripMap->SetFileType("Strip map file", "*.map");
+  m_OptionsFrame->AddFrame(m_FileSelectorStripMap, LabelLayout);
+
+
   PostCreate();
 }
 
@@ -83,7 +87,7 @@ void MGUIOptionsLoaderMeasurements::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsLoaderMeasurements::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsLoaderMeasurementsHDF::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -114,15 +118,16 @@ bool MGUIOptionsLoaderMeasurements::ProcessMessage(long Message, long Parameter1
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsLoaderMeasurements::OnApply()
+bool MGUIOptionsLoaderMeasurementsHDF::OnApply()
 {
 	// Modify this to store the data in the module!
 
-  dynamic_cast<MModuleLoaderMeasurements*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
-	
+  dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetFileName(m_FileSelectorHDF->GetFileName());
+  dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetFileNameStripMap(m_FileSelectorStripMap->GetFileName());
+
 	return true;
 }
 
 
-// MGUIOptionsLoaderMeasurements: the end...
+// MGUIOptionsLoaderMeasurementsHDF: the end...
 ////////////////////////////////////////////////////////////////////////////////
