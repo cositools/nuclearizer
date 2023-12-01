@@ -163,7 +163,7 @@ bool MStripHit::StreamDat(ostream& S, int Version)
   
   S<<"SH "
    <<m_ReadOutElement->GetDetectorID()<<" "
-   <<((m_ReadOutElement->IsPositiveStrip() == true) ? "p" : "n")<<" "
+   <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
    <<m_ReadOutElement->GetStripID()<<" "
    <<m_HasTriggered<<" "
    <<setprecision(9)<<m_Timing<<" "
@@ -188,7 +188,7 @@ void MStripHit::StreamRoa(ostream& S)
   S<<"UH " 
    <<m_ReadOutElement->GetDetectorID()<<" "
    <<m_ReadOutElement->GetStripID()<<" "
-   <<((m_ReadOutElement->IsPositiveStrip() == true) ? "p" : "n")<<" "
+   <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
    <<m_ADCUnits<<" "
    <<m_Timing<<" "
    <<m_PreampTemp<<" ";
