@@ -184,7 +184,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 		if( H == NULL ) continue;
 		if( H->GetNStripHits() == 0 ){
 			//have a hit with no strip hits... WTF?
-			cout << "HIT WITH NO STRIP HITS" << endl;
+			cout << "ERROR in MNCTModuleDepthCalibration: HIT WITH NO STRIP HITS" << endl;
 			continue;
 		}
 			
@@ -192,7 +192,8 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 		std::vector<MStripHit*> YStrips;
 		for( unsigned int j = 0; j < H->GetNStripHits(); ++j){
 			MStripHit* SH = H->GetStripHit(j);
-			if( SH == NULL ) { cout << "Depth Calibration: got NULL strip hit :( " << endl; continue;}
+			if( SH == NULL ) { cout << "ERROR in MNCTModuleDepthCalibration: Depth Calibration: got NULL strip hit :( " << endl; continue;}
+			if( SH->GetEnergy() == 0 ) { cout << "ERROR in MNCTModuleDepthCalibration: Depth Calibration: got strip without energy :( " << endl; continue;}
 			if( SH->IsXStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
 		}
 
@@ -224,20 +225,33 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			}
 
 		} else if( ((XStrips.size() == 2) && (YStrips.size() == 1)) || ((XStrips.size() == 1) && (YStrips.size() == 2)) ){
-			bool IsNeighborSideX;
-			double EnergyFraction;
+			bool IsNeighborSideX = true;
+			double EnergyFraction = 0;
 			vector<MStripHit*>* NeighborSideStrips;
-			MStripHit* OtherSideStrip;
+			MStripHit* OtherSideStrip = nullptr;
 
 			//determine strip situation
-			if( XStrips.size() == 2 ) { IsNeighborSideX = true; NeighborSideStrips = &XStrips; OtherSideStrip = YStrips[0];}
-			else { IsNeighborSideX = false; NeighborSideStrips = &YStrips; OtherSideStrip = XStrips[0];}
+			if (XStrips.size() == 2) {
+				IsNeighborSideX = true;
+				NeighborSideStrips = &XStrips;
+				OtherSideStrip = YStrips[0];
+			} else {
+				IsNeighborSideX = false;
+				NeighborSideStrips = &YStrips;
+				OtherSideStrip = XStrips[0];
+			}
+
 			MStripHit* DominantStrip = GetDominantStrip(*NeighborSideStrips, EnergyFraction);
-			MStripHit* NonDominantStrip;
-			if( NeighborSideStrips->at(0) == DominantStrip ) NonDominantStrip = NeighborSideStrips->at(1); else NonDominantStrip = NeighborSideStrips->at(0);
+			MStripHit* NonDominantStrip = nullptr;
+
+			if (NeighborSideStrips->at(0) == DominantStrip) {
+				NonDominantStrip = NeighborSideStrips->at(1);
+			} else {
+				NonDominantStrip = NeighborSideStrips->at(0);
+			}
 
 			//calculate the position in the detector's coordinate system
-			if( IsNeighborSideX ) {
+			if (IsNeighborSideX == true) {
 				PosError = CalculateLocalPosition(DominantStrip, OtherSideStrip, LocalPosition, PositionResolution, BadDepth);
 			} else {
 				PosError = CalculateLocalPosition(OtherSideStrip, DominantStrip, LocalPosition, PositionResolution, BadDepth);
@@ -356,19 +370,25 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	return true;
 }
 
-MStripHit* MModuleDepthCalibration::GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction){
-	double MaxEnergy = 0.0;
+MStripHit* MModuleDepthCalibration::GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction)
+{
+	double MaxEnergy = -numeric_limits<double>::max(); // AZ: When both energies are zero (which shouldn't happen) we still pick one
 	double TotalEnergy = 0.0;
-	MStripHit* MaxStrip = NULL;
-	for(const auto SH : Strips){
+	MStripHit* MaxStrip = nullptr;
+
+	for (const auto SH : Strips) {
 		double Energy = SH->GetEnergy();
 		TotalEnergy += Energy;
-		if( Energy > MaxEnergy ){
+		if (Energy > MaxEnergy) {
 			MaxStrip = SH;
 			MaxEnergy = Energy;
 		}
 	}
-	EnergyFraction = MaxEnergy/TotalEnergy;
+	if (TotalEnergy == 0) {
+		EnergyFraction = 0;
+	} else {
+	  EnergyFraction = MaxEnergy/TotalEnergy;
+	}
 	return MaxStrip;
 }
 
