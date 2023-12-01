@@ -52,42 +52,26 @@ using namespace std;
 #include "MFile.h"
 
 // Nuclearizer libs:
-//#include "MGUIMainNuclearizer.h"
 #include "MReadOutAssembly.h"
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
 
-#include "MNCTModuleSimulationLoader.h"
-#include "MNCTModuleSimulationLoader2020.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-//#include "MNCTModuleMeasurementLoaderNCT2009.h"
-//#include "MNCTModuleMeasurementLoaderGRIPS2013.h"
-#include "MNCTModuleReceiverCOSI2014.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-//#include "MNCTModuleSimulationLoader.h"
-#include "MNCTModuleEnergyCalibration.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleEnergyCalibrationLinear.h"
-#include "MNCTModuleEnergyCalibrationNonlinear.h"
-#include "MNCTModuleCrosstalkCorrection.h"
-#include "MNCTModuleChargeSharingCorrection.h"
-//#include "MNCTModuleDepthAndStripCalibration.h"
-#include "MNCTModuleDepthCalibration.h"
-#include "MNCTModuleDepthCalibrationB.h"
-#include "MNCTModuleDepthCalibrationLinearStrip.h"
-#include "MNCTModuleDepthCalibrationLinearPixel.h"
-#include "MNCTModuleDepthCalibration3rdPolyPixel.h"
-//#include "MNCTModuleStripPairing.h"
-//#include "MNCTModuleStripPairingGreedy.h"
-#include "MNCTModuleStripPairingGreedy_a.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
-#include "MNCTModuleFlagHits.h"
-//#include "MNCTModuleAspect.h"
-#include "MNCTModuleEventFilter.h"
-//#include "MNCTModuleDumpEvent.h"
-#include "MNCTModuleEventSaver.h"
-#include "MNCTModuleResponseGenerator.h"
+#include "MModuleLoaderSimulationsBalloon.h"
+#include "MModuleLoaderSimulationsSMEX.h"
+#include "MModuleLoaderMeasurementsROA.h"
+#include "MModuleReceiverBalloon.h"
+#include "MModuleLoaderMeasurementsBinary.h"
+#include "MModuleEnergyCalibration.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleCrosstalkCorrection.h"
+#include "MModuleChargeSharingCorrection.h"
+#include "MModuleDepthCalibration.h"
+#include "MModuleDepthCalibrationB.h"
+#include "MModuleStripPairingGreedy.h"
+#include "MModuleEventFilter.h"
+#include "MModuleEventSaver.h"
+#include "MModuleResponseGenerator.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -121,42 +105,25 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
-  m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader2020());
-  m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderROA());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderGRIPS2013());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderNCT2009());
-  m_Supervisor->AddAvailableModule(new MNCTModuleReceiverCOSI2014());
-  m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderBinary());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsBalloon());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSMEX());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsROA());
+  m_Supervisor->AddAvailableModule(new MModuleReceiverBalloon());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsBinary());
   
-  m_Supervisor->AddAvailableModule(new MNCTModuleEventFilter());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibration());
-  m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationUniversal());
-  m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationLinear());
-  m_Supervisor->AddAvailableModule(new MNCTModuleEnergyCalibrationNonlinear());
+  m_Supervisor->AddAvailableModule(new MModuleEventFilter());
+  m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
 
-  //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairing());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy());
-  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_a());
-  m_Supervisor->AddAvailableModule(new MNCTModuleStripPairingGreedy_b());
-  m_Supervisor->AddAvailableModule(new MNCTModuleChargeSharingCorrection());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleDepthAndStripCalibration());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearStrip());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationLinearPixel());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration3rdPolyPixel());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibration());
-  m_Supervisor->AddAvailableModule(new MNCTModuleDepthCalibrationB());
-	m_Supervisor->AddAvailableModule(new MNCTModuleFlagHits());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleAspect());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleDumpEvent());
+  m_Supervisor->AddAvailableModule(new MModuleStripPairingGreedy());
+  m_Supervisor->AddAvailableModule(new MModuleChargeSharingCorrection());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());
 
-  m_Supervisor->AddAvailableModule(new MNCTModuleCrosstalkCorrection());  
+  m_Supervisor->AddAvailableModule(new MModuleCrosstalkCorrection());  
   
-  m_Supervisor->AddAvailableModule(new MNCTModuleEventSaver());
+  m_Supervisor->AddAvailableModule(new MModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
-  m_Supervisor->AddAvailableModule(new MNCTModuleResponseGenerator());
-  //m_Supervisor->AddAvailableModule(new MNCTModuleEventReconstruction());
+  m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
 
   m_Supervisor->Load();
   

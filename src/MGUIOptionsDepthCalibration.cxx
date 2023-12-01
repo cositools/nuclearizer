@@ -29,7 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModuleDepthCalibration.h"
+#include "MModuleDepthCalibration.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,13 +69,13 @@ void MGUIOptionsDepthCalibration::Create()
 	//ummmm might need to load a detector map so that we can look at calibration data from palestine
 
 	m_CoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a coefficients file:",
-			dynamic_cast<MNCTModuleDepthCalibration*>(m_Module)->GetCoeffsFileName());
+			dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetCoeffsFileName());
 	m_CoeffsFileSelector->SetFileType("coeffs", "*.txt");
 	TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 	m_OptionsFrame->AddFrame(m_CoeffsFileSelector, LabelLayout);
 
 	m_SplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a splines file:",
-			dynamic_cast<MNCTModuleDepthCalibration*>(m_Module)->GetSplinesFileName());
+			dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetSplinesFileName());
 	m_SplinesFileSelector->SetFileType("splines", "*.ctd");
 	TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 	m_OptionsFrame->AddFrame(m_SplinesFileSelector, Label2Layout);
@@ -123,8 +123,8 @@ bool MGUIOptionsDepthCalibration::OnApply()
 {
 	// Modify this to store the data in the module!
 
-	dynamic_cast<MNCTModuleDepthCalibration*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
-	dynamic_cast<MNCTModuleDepthCalibration*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
+	dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
+	dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
 
 	return true;
 }

@@ -35,7 +35,7 @@
 #include "MGUIEMinMaxEntry.h"
 
 // Nuclearizer libs:
-#include "MNCTModuleEventFilter.h"
+#include "MModuleEventFilter.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -78,8 +78,8 @@ void MGUIOptionsEventFilter::Create()
   m_TotalEnergy = new MGUIEMinMaxEntry(m_OptionsFrame, 
                                        "Choose the minimum and maximum energy [keV]:", 
                                        false,
-                                       dynamic_cast<MNCTModuleEventFilter*>(m_Module)->GetMinimumTotalEnergy(),
-                                       dynamic_cast<MNCTModuleEventFilter*>(m_Module)->GetMaximumTotalEnergy(),
+                                       dynamic_cast<MModuleEventFilter*>(m_Module)->GetMinimumTotalEnergy(),
+                                       dynamic_cast<MModuleEventFilter*>(m_Module)->GetMaximumTotalEnergy(),
                                        true, 0.0);
   m_OptionsFrame->AddFrame(m_TotalEnergy, TotalEnergyLayout);
 
@@ -132,8 +132,8 @@ bool MGUIOptionsEventFilter::OnApply()
 {
   // Store the data in the module
 
-  dynamic_cast<MNCTModuleEventFilter*>(m_Module)->SetMinimumTotalEnergy(m_TotalEnergy->GetMinValue());
-  dynamic_cast<MNCTModuleEventFilter*>(m_Module)->SetMaximumTotalEnergy(m_TotalEnergy->GetMaxValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumTotalEnergy(m_TotalEnergy->GetMinValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumTotalEnergy(m_TotalEnergy->GetMaxValue());
 
   return true;
 }

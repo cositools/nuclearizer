@@ -42,7 +42,7 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"

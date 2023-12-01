@@ -50,13 +50,13 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 //#include "MReadOutDataADCValueWithTiming.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MModuleLoaderMeasurementsROA.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 
 
@@ -227,15 +227,15 @@ bool CrossTalkOffsets::Analyze()
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   
-  MNCTModuleMeasurementLoaderROA* Loader = new MNCTModuleMeasurementLoaderROA();
+  MModuleLoaderMeasurementsROA* Loader = new MModuleLoaderMeasurementsROA();
   Loader->SetFileName(m_FileName);
   S->SetModule(Loader, 0);
    
-  MNCTModuleEnergyCalibrationUniversal* EnergyCalibrator = new MNCTModuleEnergyCalibrationUniversal();
+  MModuleEnergyCalibrationUniversal* EnergyCalibrator = new MModuleEnergyCalibrationUniversal();
   EnergyCalibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
   S->SetModule(EnergyCalibrator, 1);
   
-  MNCTModuleStripPairingGreedy_b* Pairing = new MNCTModuleStripPairingGreedy_b();
+  MModuleStripPairingGreedy* Pairing = new MModuleStripPairingGreedy();
   //Pairing->SetMode(0);
   S->SetModule(Pairing, 2);
 

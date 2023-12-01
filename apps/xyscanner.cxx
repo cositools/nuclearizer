@@ -30,18 +30,18 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MSupervisor.h"
-#include "MNCTModuleMeasurementLoaderROA.h"
-#include "MNCTModuleEnergyCalibrationUniversal.h"
-#include "MNCTModuleStripPairingGreedy_b.h"
+#include "MModuleLoaderMeasurementsROA.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleStripPairingGreedy.h"
 #include "MAssembly.h"
 #include "MFileEventsSim.h"
 #include "MDGeometryQuest.h"
-#include "MNCTDepthCalibrator.h"
-#include "MNCTModuleMeasurementLoaderBinary.h"
-#include "MNCTBinaryFlightDataParser.h"
+#include "MDepthCalibrator.h"
+#include "MModuleLoaderMeasurementsBinary.h"
+#include "MBinaryFlightDataParser.h"
 
 
 class Options
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 	}
 
 	//setup nuclearizer modules
-	MNCTModuleEnergyCalibrationUniversal* Calibrator = new MNCTModuleEnergyCalibrationUniversal();
+	MModuleEnergyCalibrationUniversal* Calibrator = new MModuleEnergyCalibrationUniversal();
 	Calibrator->SetFileName(options->EnergyCalibrationFilename);
 	if (Calibrator->Initialize() == false){
 		cout << "failed to initialize energy calibrator module, exiting..." << endl;
@@ -136,10 +136,10 @@ int main(int argc, char** argv)
 	}
 
 	unsigned int counter = 0;
-	MNCTModuleMeasurementLoaderBinary* Loader = new MNCTModuleMeasurementLoaderBinary();
+	MModuleLoaderMeasurementsBinary* Loader = new MModuleLoaderMeasurementsBinary();
 	Loader->SetFileName(InputRawFile);
-	Loader->SetDataSelectionMode(MNCTBinaryFlightDataParserDataModes::c_Raw);
-	Loader->SetAspectMode(MNCTBinaryFlightDataParserAspectModes::c_Neither);
+	Loader->SetDataSelectionMode(MBinaryFlightDataParserDataModes::c_Raw);
+	Loader->SetAspectMode(MBinaryFlightDataParserAspectModes::c_Neither);
 	Loader->EnableCoincidenceMerging(false);
 	if (Loader->Initialize() == false) {
 		cout << "failed to initialize Loader module, exiting..." << endl;
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
 			Loader->AnalyzeEvent(Event);
 			Calibrator->AnalyzeEvent(Event);
 			unsigned int NSH = Event->GetNStripHits();
-			MNCTStripHit *XSH, *YSH;
+			MStripHit *XSH, *YSH;
 			if(NSH == 2){
 				if(Event->GetStripHit(0)->IsXStrip()){
 					if(!Event->GetStripHit(1)->IsXStrip()){
@@ -221,19 +221,19 @@ int main(int argc, char** argv)
 						size_t NTonly = Event->GetNStripHitsTOnly();
 						fprintf(fout,"X %d:%d ---> ",XSH->GetStripID(),(int)XSH->GetTiming());
 						for(int i = 0; i < NTonly; ++i){
-							MNCTStripHit* SH = Event->GetStripHitTOnly(i);
+							MStripHit* SH = Event->GetStripHitTOnly(i);
 							if(SH->IsXStrip()) fprintf(fout,"%d:%d ",SH->GetStripID(),(int)SH->GetTiming());
 						}
 						fprintf(fout,"\nY %d:%d ---> ", YSH->GetStripID(),(int)YSH->GetTiming());
 						for(int i = 0; i < NTonly; ++i){
-							MNCTStripHit* SH = Event->GetStripHitTOnly(i);
+							MStripHit* SH = Event->GetStripHitTOnly(i);
 							if(!SH->IsXStrip()) fprintf(fout,"%d:%d ",SH->GetStripID(),(int)SH->GetTiming());
 						}
 						fprintf(fout,"\n");
 					}
 
 					//make map of TOnly strip hits on the X side
-					map<int,MNCTStripHit*> TOnlyNeighbors;
+					map<int,MStripHit*> TOnlyNeighbors;
 					for(int i = 0; i < Event->GetNStripHitsTOnly(); ++i){
 						auto SH = Event->GetStripHitTOnly(i);
 						if(SH->IsXStrip()){
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
 
 					//loop over all TOnly, compute time difference with energy collecting strip, and add to HdT histogram. also fill in raw timing histogram
 					for(const auto p: TOnlyNeighbors){
-						MNCTStripHit* SH = p.second;
+						MStripHit* SH = p.second;
 						double dID = (double)(SH->GetStripID() - XSH_id);
 						double dt = XSH->GetTiming() - SH->GetTiming();
 						HdT[XSH_id]->Fill(dID,dt);

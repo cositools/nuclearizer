@@ -41,7 +41,7 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 #include "MFileReadOuts.h"
 #include "MReadOutAssembly.h"
-#include "MNCTStripHit.h"
+#include "MStripHit.h"
 #include "MReadOutSequence.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
@@ -215,7 +215,7 @@ bool ThresholdDeterminator::Analyze()
   MReadOutAssembly* Event = new MReadOutAssembly();
   while (ReadNextEvent(File, Event) == true) {
     for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
-      MNCTStripHit* SH = Event->GetStripHit(i);
+      MStripHit* SH = Event->GetStripHit(i);
       MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
       if (Histograms[R] != 0) {
         Histograms[R]->Fill(SH->GetADCUnits());
@@ -330,7 +330,7 @@ bool ThresholdDeterminator::ReadNextEvent(MFileReadOuts& ROAFile, MReadOutAssemb
       dynamic_cast<const MReadOutDataTiming*>(RO.GetReadOutData().Get(MReadOutDataTiming::m_TypeID));
     
     
-    MNCTStripHit* SH = new MNCTStripHit();
+    MStripHit* SH = new MStripHit();
     SH->SetDetectorID(Strip->GetDetectorID());
     SH->IsXStrip(Strip->IsPositiveStrip());
     SH->SetStripID(Strip->GetStripID());

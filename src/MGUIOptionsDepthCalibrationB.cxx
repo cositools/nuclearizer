@@ -29,7 +29,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MNCTModuleDepthCalibrationB.h"
+#include "MModuleDepthCalibrationB.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ void MGUIOptionsDepthCalibrationB::Create()
 	PreCreate();
 
 	m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a lookup table file:",
-			dynamic_cast<MNCTModuleDepthCalibrationB*>(m_Module)->GetLookupTableFilename());
+			dynamic_cast<MModuleDepthCalibrationB*>(m_Module)->GetLookupTableFilename());
 	m_FileSelector->SetFileType("", "*.txt");
 	TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 	m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
@@ -114,7 +114,7 @@ bool MGUIOptionsDepthCalibrationB::OnApply()
 {
 	// Modify this to store the data in the module!
 
-	dynamic_cast<MNCTModuleDepthCalibrationB*>(m_Module)->SetLookupTableFilename(m_FileSelector->GetFileName());
+	dynamic_cast<MModuleDepthCalibrationB*>(m_Module)->SetLookupTableFilename(m_FileSelector->GetFileName());
 
 	return true;
 }

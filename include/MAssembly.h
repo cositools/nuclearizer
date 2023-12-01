@@ -74,7 +74,7 @@ class MAssembly
   // IMPORTANT:
   // If you add one analysis level, make sure you also handle it in:
   // -> ALL module constructors!
-  // -> MNCTData::GetHighestAnalysislevel()
+  // -> MData::GetHighestAnalysislevel()
 
   // protected methods:
  protected:
