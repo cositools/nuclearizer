@@ -38,14 +38,31 @@ MAKEFLAGS += --no-builtin-rules
 #.NOTPARALLEL: megalib
 .SILENT:
 
+
+#----------------------------------------------------------------
+# External libraries
+#
+
+H5CXXFLAGS =
+H5LIBS =
+ifneq ($(shell which brew 2>/dev/null),)
+  H5CXXFLAGS += -I$(shell brew --prefix hdf5)/include
+  H5LIBS += -L$(shell brew --prefix hdf5)/lib -lhdf5_cpp
+else
+  $(error "Unable to find HDF5 headers and libraries")
+endif
+
+
 #----------------------------------------------------------------
 # Definitions based on architecture and user options
 #
 
 CMD=""
-CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
+CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include $(H5CXXFLAGS)
 # Comment this line out if you want to accept warnings
 #CXXFLAGS += -Werror -Wno-unused-variable
+
+LIBS += $(H5LIBS)
 
 # Names of the program
 NUCLEARIZER_PRG = $(BN)/nuclearizer
@@ -72,6 +89,8 @@ $(LB)/MGUIOptionsLoaderSimulations.o \
 $(LB)/MModuleLoaderMeasurements.o \
 $(LB)/MModuleLoaderMeasurementsROA.o \
 $(LB)/MGUIOptionsLoaderMeasurements.o \
+$(LB)/MModuleLoaderMeasurementsHDF.o \
+$(LB)/MGUIOptionsLoaderMeasurementsHDF.o \
 $(LB)/MBinaryFlightDataParser.o \
 $(LB)/MModuleReceiverBalloon.o \
 $(LB)/MGUIOptionsReceiverBalloon.o \
@@ -183,6 +202,7 @@ $(FRETALON_DEP_FILES): $(LB)/%.d: $(FRETALON_DIR)/src/%.cxx
 $(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h $(LB)/%.d
 	@echo "Compiling $(subst $(FRETALON_DIR)/src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@echo "$(CXX) $(CXXFLAGS) -c $< -o $@"
 
 $(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
 	@echo "Creating dependencies for $(subst src/,,$<) ..."
@@ -196,7 +216,7 @@ $(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
 	@echo "Generating LinkDef ..."
 	@$(BN)/generatelinkdef -o $(NUCLEARIZER_LINKDEF) -i $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES)
 	@echo "Generating dictionary ..."
-	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
+	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include $(H5CXXFLAGS) -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
 	@mv $(NUCLEARIZER_ROOTPCM) $(LB)
 
 $(NUCLEARIZER_DICT_LIB): $(NUCLEARIZER_DICT)
