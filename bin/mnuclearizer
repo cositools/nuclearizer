@@ -210,6 +210,8 @@ if [[ ${TEST} == "TRUE" ]]; then
     COMMAND+=" -g ${GEO}"
   fi
 
+  echo "Test run command:"
+  echo "${COMMAND}"
   OUT=$( timeout 10s ${COMMAND} 2>&1 )
   ERROR=$(echo ${OUT} | grep -i -e "ERROR" -e "FATAL" -e "Error")
   if [[ ${ERROR} != "" ]]; then
