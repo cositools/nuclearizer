@@ -265,7 +265,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
   
   while ((SimEvent = m_Reader->GetNextEvent(false)) != nullptr) {
     
-    //cout<<endl<<endl<<"ID: "<<SimEvent->GetID()<<endl;
+    cout<<endl<<endl<<"ID: "<<SimEvent->GetID()<<endl;
     
     // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
     m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
@@ -430,6 +430,8 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         pSide.m_Energy = HT->GetEnergy();
         nSide.m_Energy = HT->GetEnergy();
         
+        cout<<"Set energy: "<<HT->GetEnergy()<<endl;
+
         //m_EnergyOrig will be unchanged: to see if event is incompletely absorbed or not
         //(m_Energy is changed due to crosstalk and charge loss, etc)
         pSide.m_EnergyOrig = HT->GetEnergy();
@@ -624,6 +626,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
               pStripsEnergies[pStripID] = 0.;
             }
             pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+            cout<<"Adding: "<<EnergyPerChargeCarrier<<endl;
             
             if (nStripsEnergies.count(nStripID) == 0){
               nStripsEnergies[nStripID] = 0.;
@@ -690,6 +693,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         for (auto P: pStripsEnergies) {
           //change the energy of original strip
           if (pSide.m_ROE.GetStripID() == P.first){
+            cout<<"pSide: "<<P.second<<endl;
             pSide.m_Energy = P.second;
             pSide.m_EnergyOrig = P.second;
             pOrigHit = true;
@@ -712,6 +716,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
             chargeShareStrip.m_ROE.SetStripID(P.first);
             chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
             chargeShareStrip.m_Timing = pSide.m_Timing;
+            cout<<"chargeShareStrip: "<<P.second<<endl;
             chargeShareStrip.m_Energy = P.second;
             chargeShareStrip.m_EnergyOrig = P.second;
             chargeShareStrip.m_Depth = pSide.m_Depth;
@@ -925,6 +930,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           EnergyOrig += SubHit.m_EnergyOrig;
         }
         
+        cout<<"Merged energy: "<<Energy<<endl;
         Hit.m_Energy = Energy;
         Hit.m_EnergyOrig = EnergyOrig;
       }
@@ -967,7 +973,9 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
             double energy2 = (*sh2).m_Energy;
             double depth1 = (*sh1).m_Depth;
             double depth2 = (*sh2).m_Depth;
-            if (side1 && depth1 == depth2){
+            if (side1 && depth1 == depth2) {
+
+              cout<<energy1<<":"<<energy2<<endl;
               vector<double> newEnergies = ApplyChargeLoss(energy1,energy2,detID1,0,depth1,depth2);
               (*sh1).m_Energy = newEnergies.at(0);
               (*sh2).m_Energy = newEnergies.at(1);
@@ -998,6 +1006,8 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         sim_arr[i2][3] = sstrip;
         sim_arr[i2][4] = senergy;
         
+        cout<<"Energy: "<<senergy<<endl;
+
         ++i;
         ++i2;
       }
@@ -1117,6 +1127,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         }
         
         if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
+          cout<<(*k).m_ADC<<" < "<<m_LLDThresholds[ROE_map_key]<<endl;
           k = MergedStripHits.erase(k);
         } else {
           double prob = m_Random.Rndm();
@@ -1127,6 +1138,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         }
       }
       
+
       
       // (4c) Take care of guard ring vetoes
       list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
@@ -1222,6 +1234,10 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
     T = SimEvent->GetTime().GetAsSeconds();
   }
   */
+
+      if (MergedStripHits.size() == 0){
+        cout<<"Nothing left before 6.5"<<endl;
+      }
       
       
       //Step (6.5): Dead time
@@ -1472,12 +1488,15 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
 
       } // End photo peak fudge factor
       
-      
+      cout<<"Check is events left"<<endl;
+
       // Check if there are any strips left
       if (MergedStripHits.size() == 0){
         delete SimEvent;
         continue;
       }
+
+      cout<<"yes"<<endl;
       
       double finalEventEnergy = 0;
       int nNStripHits = 0;
@@ -1623,7 +1642,7 @@ int MDetectorEffectsEngineBalloon::EnergyToADC(MDEEStripHit& Hit, double mean_en
   
   //get energy from gaussian around mean_energy with sigma=EnergyResolution
   //TRandom3 r(0);
-  double energy = m_Random.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
+   double energy = m_Random.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
   //	double energy = mean_energy; 
   //  spectrum->Fill(energy);
   
@@ -1687,11 +1706,18 @@ double MDetectorEffectsEngineBalloon::NoiseShieldEnergy(double energy, MString s
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Calculate new summed energy of two strips affected by charge loss
-vector<double> MDetectorEffectsEngineBalloon::ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2){
-  
+vector<double> MDetectorEffectsEngineBalloon::ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2) 
+{  
+  vector<double> retEnergy;
+  if (energy1 == 0 && energy2 == 0) {
+    retEnergy.push_back(0);
+    retEnergy.push_back(0);
+    return retEnergy;
+  }
+
   double trueSum = energy1+energy2;
   double diff = abs(energy1-energy2);
-  
+
   //deal with depth
   //use average depth? or don't do charge loss if hits dont have the same depth?
   //	double Depth = (depth1+depth2)/2.;
@@ -1724,8 +1750,6 @@ vector<double> MDetectorEffectsEngineBalloon::ApplyChargeLoss(double energy1, do
   newE2 = energy2 - sumDiff/2.;
   
   m_ChargeLossHist->Fill(trueSum,sumDiff);
-  
-  vector<double> retEnergy;
   
   retEnergy.push_back(newE1);
   retEnergy.push_back(newE2);
