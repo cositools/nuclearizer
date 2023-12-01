@@ -1,6 +1,6 @@
 TYPE DAT
 
-DIR=$(NUCLEARIZER)/resource/examples/crabsanitycheck
+DIR=$(NUCLEARIZER)/resource/examples/crabsanitycheck/rawdata
 
 IN COSIa160612__000629.dat.gz
 IN COSIa160612__001304.dat.gz
