@@ -84,6 +84,7 @@ MDetectorEffectsEngineBalloon::MDetectorEffectsEngineBalloon()
   m_ShowProgressBar = false;
   m_SaveToFile = false;
   m_ApplyFudgeFactor = true;
+  m_ChargeLossHist = nullptr;
 }
 
 
@@ -96,6 +97,27 @@ MDetectorEffectsEngineBalloon::~MDetectorEffectsEngineBalloon()
   // Intentionally left blank
   
   if (m_OwnGeometry == true) delete m_Geometry;
+  
+  for (auto& C: m_EnergyCalibration) {
+    delete C.second;
+  }
+  
+  for (auto& C: m_ResolutionCalibration) {
+    delete C.second;
+  }
+  
+  // automaytically deleted
+  //for (auto& C: m_FSTThresholds) {
+  //  delete C.second;
+  //}
+  
+  //for (auto& V1: m_ChargeSharingFactors) {
+  //  for (auto& V2: V1) {
+  //    delete V2; 
+  //  }
+  //}
+  
+  //delete m_ChargeLossHist;
 }
 
 
@@ -265,7 +287,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
   
   while ((SimEvent = m_Reader->GetNextEvent(false)) != nullptr) {
     
-    cout<<endl<<endl<<"ID: "<<SimEvent->GetID()<<endl;
+    //cout<<endl<<endl<<"ID: "<<SimEvent->GetID()<<endl;
     
     // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
     m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
@@ -430,7 +452,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         pSide.m_Energy = HT->GetEnergy();
         nSide.m_Energy = HT->GetEnergy();
         
-        cout<<"Set energy: "<<HT->GetEnergy()<<endl;
+        //cout<<"Set energy: "<<HT->GetEnergy()<<endl;
 
         //m_EnergyOrig will be unchanged: to see if event is incompletely absorbed or not
         //(m_Energy is changed due to crosstalk and charge loss, etc)
@@ -626,7 +648,6 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
               pStripsEnergies[pStripID] = 0.;
             }
             pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
-            cout<<"Adding: "<<EnergyPerChargeCarrier<<endl;
             
             if (nStripsEnergies.count(nStripID) == 0){
               nStripsEnergies[nStripID] = 0.;
@@ -693,7 +714,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         for (auto P: pStripsEnergies) {
           //change the energy of original strip
           if (pSide.m_ROE.GetStripID() == P.first){
-            cout<<"pSide: "<<P.second<<endl;
+            //cout<<"pSide: "<<P.second<<endl;
             pSide.m_Energy = P.second;
             pSide.m_EnergyOrig = P.second;
             pOrigHit = true;
@@ -716,7 +737,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
             chargeShareStrip.m_ROE.SetStripID(P.first);
             chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
             chargeShareStrip.m_Timing = pSide.m_Timing;
-            cout<<"chargeShareStrip: "<<P.second<<endl;
+            //cout<<"chargeShareStrip: "<<P.second<<endl;
             chargeShareStrip.m_Energy = P.second;
             chargeShareStrip.m_EnergyOrig = P.second;
             chargeShareStrip.m_Depth = pSide.m_Depth;
@@ -930,7 +951,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           EnergyOrig += SubHit.m_EnergyOrig;
         }
         
-        cout<<"Merged energy: "<<Energy<<endl;
+        //cout<<"Merged energy: "<<Energy<<endl;
         Hit.m_Energy = Energy;
         Hit.m_EnergyOrig = EnergyOrig;
       }
@@ -975,7 +996,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
             double depth2 = (*sh2).m_Depth;
             if (side1 && depth1 == depth2) {
 
-              cout<<energy1<<":"<<energy2<<endl;
+              //cout<<energy1<<":"<<energy2<<endl;
               vector<double> newEnergies = ApplyChargeLoss(energy1,energy2,detID1,0,depth1,depth2);
               (*sh1).m_Energy = newEnergies.at(0);
               (*sh2).m_Energy = newEnergies.at(1);
@@ -1006,7 +1027,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         sim_arr[i2][3] = sstrip;
         sim_arr[i2][4] = senergy;
         
-        cout<<"Energy: "<<senergy<<endl;
+        //cout<<"Energy: "<<senergy<<endl;
 
         ++i;
         ++i2;
@@ -1127,7 +1148,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         }
         
         if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
-          cout<<(*k).m_ADC<<" < "<<m_LLDThresholds[ROE_map_key]<<endl;
+          //cout<<(*k).m_ADC<<" < "<<m_LLDThresholds[ROE_map_key]<<endl;
           k = MergedStripHits.erase(k);
         } else {
           double prob = m_Random.Rndm();
@@ -1488,7 +1509,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
 
       } // End photo peak fudge factor
       
-      cout<<"Check is events left"<<endl;
+      //cout<<"Check is events left"<<endl;
 
       // Check if there are any strips left
       if (MergedStripHits.size() == 0){
@@ -1496,7 +1517,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         continue;
       }
 
-      cout<<"yes"<<endl;
+      //cout<<"yes"<<endl;
       
       double finalEventEnergy = 0;
       int nNStripHits = 0;
