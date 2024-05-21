@@ -81,6 +81,12 @@ MModuleTemplate::MModuleTemplate() : MModule()
   m_HasOptionsGUI = false;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
+
+  // Can the program be run multi-threaded
+  m_AllowMultiThreading = true;
+
+  // Can we use multiple instances of this class
+  m_AllowMultipleInstances = true;
 }
 
 
@@ -110,6 +116,17 @@ bool MModuleTemplate::Initialize()
 bool MModuleTemplate::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   // Main data analysis routine, which updates the event to a new level 
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleTemplate::Finalize()
+{
+  // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
 
   return true;
 }
