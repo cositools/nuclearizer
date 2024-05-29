@@ -46,12 +46,6 @@ ClassImp(MModuleDepthCalibration2024)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TH1D* EHist;
-
-//for debug breaking
-void dummy(void){
-  return;
-}
 
 MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
 {
