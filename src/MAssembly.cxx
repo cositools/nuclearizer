@@ -68,6 +68,7 @@ using namespace std;
 #include "MModuleChargeSharingCorrection.h"
 #include "MModuleDepthCalibration.h"
 #include "MModuleDepthCalibrationB.h"
+#include "MModuleDepthCalibration2024.h"
 #include "MModuleStripPairingGreedy.h"
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
@@ -118,6 +119,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleChargeSharingCorrection());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibration2024());
 
   m_Supervisor->AddAvailableModule(new MModuleCrosstalkCorrection());  
   

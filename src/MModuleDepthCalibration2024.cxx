@@ -54,7 +54,7 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Depth calibration 2024"; // - Determining the depth of each event (by Sean)";
+  m_Name = "Depth calibration 2024"; // - Determining the depth of each event (by Sean);
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "DepthCalibration2024";
