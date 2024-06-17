@@ -119,17 +119,19 @@ bool MModuleDepthCalibration2024::Initialize()
 
   // Look through the Geometry and get the names and thicknesses of all the detectors.
   for(unsigned int i = 0; i < m_Detectors.size(); ++i){
+    // TODO: need to fix DetID, but leaving as 11 for debugging purposes
+    unsigned int DetID = 11;
     MDDetector* det = m_Detectors[i];
     MString det_name = det->GetName();
-    m_DetectorNames.push_back(det_name);
     MDVolume* vol = det->GetSensitiveVolume(0); MDShapeBRIK* shape = dynamic_cast<MDShapeBRIK*>(vol->GetShape());
     double thickness = shape->GetSizeZ();
-    m_Thicknesses.push_back(thickness);
+    m_Thicknesses[DetID] = thickness;
+    m_DetectorNames[DetID] = det_name;
     MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
-    m_XPitches.push_back(strip->GetPitchX());
-    m_YPitches.push_back(strip->GetPitchY());
-    m_NXStrips.push_back(strip->GetNStripsX());
-    m_NYStrips.push_back(strip->GetNStripsY());
+    m_XPitches[DetID] = strip->GetPitchX();
+    m_YPitches[DetID] = strip->GetPitchY();
+    m_NXStrips[DetID] = strip->GetNStripsX();
+    m_NYStrips[DetID] = strip->GetNStripsY();
     cout << "Found detector " << det_name << " with thickness " << thickness << " cm, corresponding to DetID=" << i << "." << endl;
     }
 
@@ -403,6 +405,10 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
   // vector<double> depthvec, ctdvec, anovec, catvec;
   vector<double> depthvec;
   vector<vector<double>> ctdarr;
+  for( unsigned int i=0; i < 5; ++i ){
+    vector<double> temp_vec;
+    ctdarr.push_back(temp_vec);
+  }
   MString line;
   int DetID, NewDetID;
   while( F.ReadLine(line) ){
@@ -415,10 +421,14 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
           AddDepthCTD(depthvec, ctdarr, DetID, m_DepthGrid, m_CTDMap);        
         }
         depthvec.clear(); ctdarr.clear(); 
+        for( unsigned int i=0; i < 5; ++i ){
+            vector<double> temp_vec;
+            ctdarr.push_back(temp_vec);
+        }
         DetID = NewDetID;
       } else {
-        vector<MString> tokens = line.Tokenize(" ");
-        depthvec.push_back(tokens[0].ToDouble()); 
+        vector<MString> tokens = line.Tokenize(",");
+        depthvec.push_back(tokens[0].ToDouble());
 
         // Multiple CTDs allowed
         for( unsigned int i = 0; i < (tokens.size() - 1); ++i ){
@@ -509,8 +519,8 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<ve
 
   // Check to make sure things look right.
   // First check that the CTDs all have the right length.
-  for( int i = 0; i < ctdarr.size(); ++i ){
-    if( ctdarr[i].size() != depthvec.size() ){
+  for( unsigned int i = 0; i < ctdarr.size(); ++i ){
+    if( (ctdarr[i].size() != depthvec.size()) && (ctdarr[i].size() > 0) ){
       cout << "MModuleDepthCalibration2024::AddDepthCTD: The number of values in the CTD list is not equal to the number of depth values." << endl;
       return false;
     }

@@ -110,12 +110,12 @@ class MModuleDepthCalibration2024 : public MModule
   unordered_map<int, vector<double>> m_Coeffs;
   MString m_CoeffsFile;
   MString m_SplinesFile;
-  vector<MString> m_DetectorNames;
-  vector<double> m_Thicknesses;
-  vector<int> m_NXStrips;
-  vector<int> m_NYStrips;
-  vector<double> m_XPitches;
-  vector<double> m_YPitches;
+  unordered_map<int, vector<MString>> m_DetectorNames;
+  unordered_map<int, double> m_Thicknesses;
+  unordered_map<int, int> m_NXStrips;
+  unordered_map<int, int> m_NYStrips;
+  unordered_map<int, double> m_XPitches;
+  unordered_map<int, double> m_YPitches;
   uint64_t m_NoError;
   uint64_t m_Error1;
   uint64_t m_Error2;
