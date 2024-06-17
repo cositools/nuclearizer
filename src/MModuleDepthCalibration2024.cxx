@@ -550,7 +550,7 @@ vector<double>* MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
   // If there is a CTD array for the given detector, return it.
   // If the Grade is larger than the number of CTD vectors stored, then just return Grade 0 vector.
   if( m_CTDMap.count(DetID) > 0 ){
-    if ( m_CTDMap[DetID].size() > Grade) {
+    if ( ((int)m_CTDMap[DetID].size()) > Grade) {
       return &(m_CTDMap[DetID][Grade]);
     }
     else {

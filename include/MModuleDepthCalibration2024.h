@@ -126,8 +126,8 @@ class MModuleDepthCalibration2024 : public MModule
   MModuleEnergyCalibrationUniversal* m_EnergyCalibration;
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
-  unordered_map<int,vector<vector<double>>> m_CTDMap;
-  unordered_map<int,vector<double>> m_DepthGrid;
+  unordered_map<int, vector<vector<double>>> m_CTDMap;
+  unordered_map<int, vector<double>> m_DepthGrid;
   bool m_SplinesFileIsLoaded;
   bool m_CoeffsFileIsLoaded;
 
