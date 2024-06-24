@@ -123,18 +123,26 @@ bool MModuleDepthCalibration2024::Initialize()
     unsigned int DetID = 11;
     MDDetector* det = m_Detectors[i];
     MString det_name = det->GetName();
-    MDVolume* vol = det->GetSensitiveVolume(0); MDShapeBRIK* shape = dynamic_cast<MDShapeBRIK*>(vol->GetShape());
-    // test
-    double thickness = shape->GetSizeZ();
-    m_Thicknesses[DetID] = thickness;
-    m_DetectorNames[DetID] = det_name;
-    MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
-    m_XPitches[DetID] = strip->GetPitchX();
-    m_YPitches[DetID] = strip->GetPitchY();
-    m_NXStrips[DetID] = strip->GetNStripsX();
-    m_NYStrips[DetID] = strip->GetNStripsY();
-    cout << "Found detector " << det_name << " with thickness " << thickness << " cm, corresponding to DetID=" << i << "." << endl;
+    if (det_name != "GuardRingDetector"){
+      // TODO: determine thickness of each detector using the geometry file
+      // cout << "Trying to get thickness from the geometry file..." << endl;
+      // cout << "step 1" << endl;
+      // MDVolume* vol = det->GetSensitiveVolume(0); 
+      // cout << "step 2" << endl;
+      // MDShapeBRIK* shape = dynamic_cast<MDShapeBRIK*>(vol->GetShape());
+      // cout << "step 3" << endl;
+      // double thickness = (shape->GetSize()).GetZ();
+      // cout << "Success, the thickness is " << thickness << " cm" << endl;
+      // m_Thicknesses[DetID] = thickness;
+      m_DetectorNames[DetID] = det_name;
+      MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
+      m_XPitches[DetID] = strip->GetPitchX();
+      m_YPitches[DetID] = strip->GetPitchY();
+      m_NXStrips[DetID] = strip->GetNStripsX();
+      m_NYStrips[DetID] = strip->GetNStripsY();
+      cout << "Found detector " << det_name << " corresponding to DetID=" << i << "." << endl;
     }
+  }
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   m_EnergyCalibration = (MModuleEnergyCalibrationUniversal*) S->GetAvailableModuleByXmlTag("EnergyCalibrationUniversal");
@@ -285,6 +293,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       }
 
     LocalPosition.SetXYZ(Xpos, Ypos, Zpos);
+    // TODO: Don't use the detector name
     GlobalPosition = m_Geometry->GetGlobalPosition(LocalPosition, m_DetectorNames[DetID]);
     PositionResolution.SetXYZ(Xsigma, Ysigma, Zsigma);
     
