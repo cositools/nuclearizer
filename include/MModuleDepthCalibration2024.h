@@ -110,7 +110,7 @@ class MModuleDepthCalibration2024 : public MModule
   unordered_map<int, vector<double>> m_Coeffs;
   MString m_CoeffsFile;
   MString m_SplinesFile;
-  unordered_map<int, vector<MString>> m_DetectorNames;
+  unordered_map<int, MString> m_DetectorNames;
   unordered_map<int, double> m_Thicknesses;
   unordered_map<int, int> m_NXStrips;
   unordered_map<int, int> m_NYStrips;
