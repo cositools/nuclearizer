@@ -124,6 +124,7 @@ bool MModuleDepthCalibration2024::Initialize()
     MDDetector* det = m_Detectors[i];
     MString det_name = det->GetName();
     MDVolume* vol = det->GetSensitiveVolume(0); MDShapeBRIK* shape = dynamic_cast<MDShapeBRIK*>(vol->GetShape());
+    // test
     double thickness = shape->GetSizeZ();
     m_Thicknesses[DetID] = thickness;
     m_DetectorNames[DetID] = det_name;
