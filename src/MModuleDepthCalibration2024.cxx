@@ -122,8 +122,8 @@ bool MModuleDepthCalibration2024::Initialize()
     // TODO: need to fix DetID, but leaving as 11 for debugging purposes
     unsigned int DetID = 11;
     MDDetector* det = m_Detectors[i];
-    MString det_name = det->GetName();
-    if (det_name != "GuardRingDetector"){
+    // MString det_name = (det->GetDetectorVolume())->GetNamedDetectorName(0);
+    if (det->GetNNamedDetectors() > 0){
       // TODO: determine thickness of each detector using the geometry file
       // cout << "Trying to get thickness from the geometry file..." << endl;
       // cout << "step 1" << endl;
@@ -134,6 +134,7 @@ bool MModuleDepthCalibration2024::Initialize()
       // double thickness = (shape->GetSize()).GetZ();
       // cout << "Success, the thickness is " << thickness << " cm" << endl;
       // m_Thicknesses[DetID] = thickness;
+      MString det_name = det->GetNamedDetectorName(0);
       m_DetectorNames[DetID] = det_name;
       MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
       m_XPitches[DetID] = strip->GetPitchX();
@@ -169,6 +170,8 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     int Grade = GetHitGrade(H);
 
+    // cout << "got a hit with grade " << Grade << endl;
+
     // Handle different grades differently    
     // GRADE=-1 is an error. Break from the loop and continue.
     if ( Grade == -1 ){
@@ -193,15 +196,20 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // Take a Hit and separate its activated X- and Y-strips into separate vectors.
       std::vector<MStripHit*> XStrips;
       std::vector<MStripHit*> YStrips;
+      // cout << "looping over strip hits..." << endl;
       for( unsigned int j = 0; j < H->GetNStripHits(); ++j){
+        // cout << "strip hit " << j << endl;
         MStripHit* SH = H->GetStripHit(j);
         if( SH->IsXStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
       }
 
+      // cout << "finished looping over strip hits" << endl;
       double XEnergyFraction;
       double YEnergyFraction;
       MStripHit* XSH = GetDominantStrip(XStrips, XEnergyFraction); 
       MStripHit* YSH = GetDominantStrip(YStrips, YEnergyFraction); 
+
+      // cout << "found the dominant strips" << endl;
 
       double CTD_s = 0.0;
 
@@ -218,7 +226,10 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       double Ysigma = m_YPitches[DetID]/sqrt(12.0);
       double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
 
+      // cout << "looking up the coefficients" << endl;
       vector<double>* Coeffs = GetPixelCoeffs(pixel_code);
+
+      // cout << "Got the coefficients: " << Coeffs << endl;
 
       // If there aren't coefficients loaded, then calibration is incomplete.
       if( Coeffs == nullptr ){
@@ -230,6 +241,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // If there isn't timing information, set no depth, but don't set global bad flag.
       // Alex's old comments suggest assigning the event to the middle of the detector and the position resolution to be large.
       else if( (XSH->GetTiming() < 1.0E-6) || (YSH->GetTiming() < 1.0E-6) ){
+          // cout << "no timing info" << endl;
           ++m_Error3;
           H->SetNoDepth();
       }
@@ -237,8 +249,16 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // If there are coefficients and timing information is loaded, try calculating the CTD and depth
       else {
 
-        vector<double> ctdvec = *GetCTD(DetID, Grade);
-        vector<double> depthvec = *GetDepth(DetID);
+        vector<double> ctdvec = GetCTD(DetID, Grade);
+        vector<double> depthvec = GetDepth(DetID);
+
+	if ( ctdvec.size() == 0){
+	  cout << "Empty CTD vector" << endl;
+	  H->SetNoDepth();
+	  Event->SetDepthCalibrationIncomplete();
+	}
+
+	// cout << "got the ctd info: " << ctdvec[0] << endl;
 
         // TODO: For Card Cage, may need to add noise
         double CTD;
@@ -249,13 +269,21 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           CTD = (YSH->GetTiming() - XSH->GetTiming());
         }
 
+        // cout << "Got the CTD: " << CTD << endl;
+
         // Confirmed that this matches SP's python code.
         CTD_s = (CTD - Coeffs->at(1))/Coeffs->at(0); //apply inverse stretch and offset
+
+        // cout << "Transformed CTD: " << CTD_s << endl;
 
         double Xmin = * std::min_element(ctdvec.begin(), ctdvec.end());
         double Xmax = * std::max_element(ctdvec.begin(), ctdvec.end());
 
+        // cout << "Got the min and max ctd values: " << Xmin << "; " << Xmax << endl;
+
         double noise = GetTimingNoiseFWHM(pixel_code, 662.0);
+
+        // cout << "Got the timing noise: " << noise << endl;
 
         //if the CTD is out of range, check if we should reject the event.
         if( (CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise)) ){
@@ -266,7 +294,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
         // If the CTD is in range, calculate the depth
         else {
-
+          // cout << "Calculating depth" << endl;
           // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in depthvec
           // Utlize symmetry of the normal distribution.
           // TODO: Get the energy of the event and pass it to GetTimingNoiseFWHM
@@ -275,7 +303,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           // Weight the depth by probability
           double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
           double weighted_depth = 0.0;
-          for( int i = 0; i < depthvec.size(); ++i ){
+          for( unsigned int i = 0; i < depthvec.size(); ++i ){
             weighted_depth += prob_dist[i]*depthvec[i];
           }
           // Calculate the expectation value of the depth
@@ -283,7 +311,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
           // Calculate the standard deviation of the depth
           double depth_var = 0.0;
-          for( int i=0; i<depthvec.size(); ++i ){
+          for( unsigned int i=0; i<depthvec.size(); ++i ){
             depth_var += prob_dist[i]*pow(depthvec[i]-mean_depth, 2.0);
           }
 
@@ -294,10 +322,22 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     LocalPosition.SetXYZ(Xpos, Ypos, Zpos);
     // TODO: Don't use the detector name
+    // cout << m_DetectorNames[DetID] << endl;
     GlobalPosition = m_Geometry->GetGlobalPosition(LocalPosition, m_DetectorNames[DetID]);
+    // cout << "Found the GlobalPosition" << endl;
+
     PositionResolution.SetXYZ(Xsigma, Ysigma, Zsigma);
     
-    H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
+    // cout << "Set the PositionResolution vector" << endl;
+
+    H->SetPosition(GlobalPosition); 
+
+    // cout << "Set the global position for the strip hit" << endl;
+
+    H->SetPositionResolution(PositionResolution);
+
+    // cout << "Set the position resolution for the strip hit" << endl;
+
 
     }
   }
@@ -393,8 +433,9 @@ std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int pixel_code)
 vector<double> MModuleDepthCalibration2024::norm_pdf(vector<double> x, double mu, double sigma)
 {
   vector<double> result;
-  for( int i=0; x.size(); ++i ){
-    result.push_back(1.0 / (sigma * sqrt(2.0 * M_PI)) * exp(-(pow((x[i] - mu)/sigma, 2)/2.0)));
+  for( unsigned int i=0; i<x.size(); ++i ){
+    double prob = 1.0 / (sigma * sqrt(2.0 * M_PI)) * exp(-(pow((x[i] - mu)/sigma, 2.0)/2.0));
+    result.push_back(prob);
   }
   return result;
 }
@@ -440,9 +481,13 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
         vector<MString> tokens = line.Tokenize(",");
         depthvec.push_back(tokens[0].ToDouble());
 
-        // Multiple CTDs allowed
+        // Multiple CTDs allowed.
         for( unsigned int i = 0; i < (tokens.size() - 1); ++i ){
           ctdarr[i].push_back(tokens[1+i].ToDouble());
+        }
+        // Fill in the higher grades with the GRADE=0 CTD if there are none listed in the file.
+        for(unsigned int i=tokens.size()-1; i<5; ++i){
+          ctdarr[i].push_back(tokens[1].ToDouble());
         }
       }
     }
@@ -549,46 +594,46 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<ve
 }
 
 
-vector<double>* MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
+vector<double> MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
 {
   // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
 
   if( !m_SplinesFileIsLoaded ){
     cout << "MModuleDepthCalibration2024::GetCTD: cannot return Depth to CTD relation because the file was not loaded." << endl;
-    return nullptr;
+    return vector<double> ();
   }
   // If there is a CTD array for the given detector, return it.
   // If the Grade is larger than the number of CTD vectors stored, then just return Grade 0 vector.
   if( m_CTDMap.count(DetID) > 0 ){
     if ( ((int)m_CTDMap[DetID].size()) > Grade) {
-      return &(m_CTDMap[DetID][Grade]);
+      return (m_CTDMap[DetID][Grade]);
     }
     else {
       cout << "MModuleDepthCalibration2024::GetCTD: No CTD map is loaded for Grade " << Grade << ". Returning Grade 0 CTD." << endl;
-      return &(m_CTDMap[DetID][0]);
+      return (m_CTDMap[DetID][0]);
     }
   } else {
     cout << "MModuleDepthCalibration2024::GetCTD: No CTD map is loaded for Det " << DetID << "." << endl;
-    return nullptr;
+    return vector<double> ();
   }
 }
 
-vector<double>* MModuleDepthCalibration2024::GetDepth(int DetID)
+vector<double> MModuleDepthCalibration2024::GetDepth(int DetID)
 {
   // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
 
   if( !m_SplinesFileIsLoaded ){
     cout << "MModuleDepthCalibration2024::GetDepth: cannot return Depth grid because the file was not loaded." << endl;
-    return nullptr;
+    return vector<double> ();
   }
 
   // If there is a CTD array for the given detector, return it.
   // If the Grade is larger than the number of CTD vectors stored, then just return Grade 0 vector.
   if( m_DepthGrid.count(DetID) > 0 ){
-    return &m_DepthGrid[DetID];
+    return m_DepthGrid[DetID];
     } else {
       cout << "MModuleDepthCalibration2024::GetDepth: No Depth grid is loaded for Det " << DetID << "." << endl;
-      return nullptr;
+      return vector<double> ();
   }
 } 
 
