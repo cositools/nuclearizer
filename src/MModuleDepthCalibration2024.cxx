@@ -220,6 +220,8 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // TODO: Calculate X and Y positions more rigorously using charge sharing.
       double Xpos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)XSH->GetStripID()));
       double Ypos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)YSH->GetStripID()));
+      // cout << "X position " << Xpos << endl;
+      // cout << "Y position " << Ypos << endl;
       double Zpos = 0.0;
 
       double Xsigma = m_XPitches[DetID]/sqrt(12.0);
@@ -258,8 +260,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 	  Event->SetDepthCalibrationIncomplete();
 	}
 
-	// cout << "got the ctd info: " << ctdvec[0] << endl;
-
         // TODO: For Card Cage, may need to add noise
         double CTD;
         if ( XSH->IsPositiveStrip() ){
@@ -272,7 +272,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         // cout << "Got the CTD: " << CTD << endl;
 
         // Confirmed that this matches SP's python code.
-        CTD_s = (CTD - Coeffs->at(1))/Coeffs->at(0); //apply inverse stretch and offset
+        CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
 
         // cout << "Transformed CTD: " << CTD_s << endl;
 
@@ -301,22 +301,28 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           vector<double> prob_dist = norm_pdf(ctdvec, CTD_s, noise/2.355);
           
           // Weight the depth by probability
-          double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
+	  double prob_sum = 0.0;
+	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
+	    prob_sum += prob_dist[k];
+	  }
+          //double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
+	  // cout << "summed probability: " << prob_sum << endl;
           double weighted_depth = 0.0;
-          for( unsigned int i = 0; i < depthvec.size(); ++i ){
-            weighted_depth += prob_dist[i]*depthvec[i];
+          for( unsigned int k = 0; k < depthvec.size(); ++k ){
+            weighted_depth += prob_dist[k]*depthvec[k];
           }
           // Calculate the expectation value of the depth
           double mean_depth = weighted_depth/prob_sum;
 
           // Calculate the standard deviation of the depth
           double depth_var = 0.0;
-          for( unsigned int i=0; i<depthvec.size(); ++i ){
-            depth_var += prob_dist[i]*pow(depthvec[i]-mean_depth, 2.0);
+          for( unsigned int k=0; k<depthvec.size(); ++k ){
+            depth_var += prob_dist[k]*pow(depthvec[k]-mean_depth, 2.0);
           }
 
           Zsigma =  sqrt(depth_var/prob_sum);
           Zpos = m_Thicknesses[DetID]/2.0 - mean_depth;
+	  // cout << "calculated depth: " << Zpos << endl;
         }
       }
 
@@ -435,6 +441,7 @@ vector<double> MModuleDepthCalibration2024::norm_pdf(vector<double> x, double mu
   vector<double> result;
   for( unsigned int i=0; i<x.size(); ++i ){
     double prob = 1.0 / (sigma * sqrt(2.0 * M_PI)) * exp(-(pow((x[i] - mu)/sigma, 2.0)/2.0));
+    // cout << "Probability: " << prob << endl;
     result.push_back(prob);
   }
   return result;
