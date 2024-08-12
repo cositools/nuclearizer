@@ -66,20 +66,28 @@ void MGUIOptionsDepthCalibration2024::Create()
 {
   PreCreate();
 
-  //ummmm might need to load a detector map so that we can look at calibration data from palestine
-
   m_CoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a coefficients file:",
       dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetCoeffsFileName());
-  m_CoeffsFileSelector->SetFileType("coeffs", "*.txt");
+  m_CoeffsFileSelector->SetFileType("coeffs", "*.csv");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_CoeffsFileSelector, LabelLayout);
 
   m_SplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a splines file:",
       dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetSplinesFileName());
-  m_SplinesFileSelector->SetFileType("splines", "*.ctd");
+  m_SplinesFileSelector->SetFileType("splines", "*.csv");
   TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_SplinesFileSelector, Label2Layout);
 
+  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Calibration file:",
+      dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetTACCalFileName());
+  m_TACCalFileSelector->SetFileType("TAC", "*.csv");
+  TGLayoutHints* Label3Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_TACCalFileSelector, Label3Layout);
+
+  m_UCSDOverride = new TGCheckButton(m_OptionsFrame, "Check this box if you're using the card cage at UCSD", 1);
+  m_UCSDOverride->SetOn(dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetUCSDOverride());
+  TGLayoutHints* Label4Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_UCSDOverride, Label4Layout);
 
   PostCreate();
 }
@@ -125,6 +133,8 @@ bool MGUIOptionsDepthCalibration2024::OnApply()
 
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetUCSDOverride(m_UCSDOverride->IsOn());
 
   return true;
 }

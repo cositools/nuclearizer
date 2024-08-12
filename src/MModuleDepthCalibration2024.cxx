@@ -117,10 +117,17 @@ bool MModuleDepthCalibration2024::Initialize()
   // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
   m_Detectors = m_Geometry->GetDetectorList();
 
+  if( LoadTACCalFile(m_TACCalFile) == false ){
+    cout << "No TAC Calibration file loaded. Proceeding without TAC Calibration." << endl;
+  }
+
   // Look through the Geometry and get the names and thicknesses of all the detectors.
   for(unsigned int i = 0; i < m_Detectors.size(); ++i){
     // TODO: need to fix DetID, but leaving as 11 for debugging purposes
-    unsigned int DetID = 11;
+    unsigned int DetID = i;
+    if ( m_UCSDOverride ){
+      DetID = 11;
+    }
     MDDetector* det = m_Detectors[i];
     // MString det_name = (det->GetDetectorVolume())->GetNamedDetectorName(0);
     if (det->GetNNamedDetectors() > 0){
@@ -141,7 +148,7 @@ bool MModuleDepthCalibration2024::Initialize()
       m_YPitches[DetID] = strip->GetPitchY();
       m_NXStrips[DetID] = strip->GetNStripsX();
       m_NYStrips[DetID] = strip->GetNStripsY();
-      cout << "Found detector " << det_name << " corresponding to DetID=" << i << "." << endl;
+      cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
     }
   }
 
@@ -215,11 +222,13 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
       //now try and get z position
       int DetID = XSH->GetDetectorID();
-      int pixel_code = 10000*DetID + 100*XSH->GetStripID() + YSH->GetStripID();
+      int XStripID = XSH->GetStripID();
+      int YStripID = YSH->GetStripID();
+      int pixel_code = 10000*DetID + 100*XStripID + YStripID;
 
       // TODO: Calculate X and Y positions more rigorously using charge sharing.
-      double Xpos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)XSH->GetStripID()));
-      double Ypos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)YSH->GetStripID()));
+      double Xpos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)XStripID));
+      double Ypos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)YStripID));
       // cout << "X position " << Xpos << endl;
       // cout << "Y position " << Ypos << endl;
       double Zpos = 0.0;
@@ -230,6 +239,9 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
       // cout << "looking up the coefficients" << endl;
       vector<double>* Coeffs = GetPixelCoeffs(pixel_code);
+
+      double XTiming = XSH->GetTiming();
+      double YTiming = YSH->GetTiming();
 
       // cout << "Got the coefficients: " << Coeffs << endl;
 
@@ -242,7 +254,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       }
       // If there isn't timing information, set no depth, but don't set global bad flag.
       // Alex's old comments suggest assigning the event to the middle of the detector and the position resolution to be large.
-      else if( (XSH->GetTiming() < 1.0E-6) || (YSH->GetTiming() < 1.0E-6) ){
+      else if( (XTiming < 1.0E-6) || (YTiming < 1.0E-6) ){
           // cout << "no timing info" << endl;
           ++m_Error3;
           H->SetNoDepth();
@@ -254,18 +266,26 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         vector<double> ctdvec = GetCTD(DetID, Grade);
         vector<double> depthvec = GetDepth(DetID);
 
-	if ( ctdvec.size() == 0){
-	  cout << "Empty CTD vector" << endl;
-	  H->SetNoDepth();
-	  Event->SetDepthCalibrationIncomplete();
-	}
+      	if ( ctdvec.size() == 0){
+      	  cout << "Empty CTD vector" << endl;
+      	  H->SetNoDepth();
+      	  Event->SetDepthCalibrationIncomplete();
+      	}
 
         // TODO: For Card Cage, may need to add noise
         double CTD;
         if ( XSH->IsPositiveStrip() ){
+          if ( m_TACCalFileIsLoaded ){
+            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+          }
           CTD = (XSH->GetTiming() - YSH->GetTiming());
         }
         else {
+          if ( m_TACCalFileIsLoaded ){
+            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+          }
           CTD = (YSH->GetTiming() - XSH->GetTiming());
         }
 
@@ -396,7 +416,7 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
     MString Line;
     while( F.ReadLine( Line ) ){
       if( !Line.BeginsWith("#") ){
-        std::vector<MString> Tokens = Line.Tokenize(" ");
+        std::vector<MString> Tokens = Line.Tokenize(",");
         if( Tokens.size() == 5 ){
           int pixel_code = Tokens[0].ToInt();
           double Stretch = Tokens[1].ToDouble();
@@ -418,6 +438,54 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
   return true;
 
 }
+
+bool MModuleDepthCalibration2024::LoadTACCalFile(MString FName)
+{
+  // Read in the TAC Calibration file, which should contain for each strip:
+  //  DetID, h or l for high or low voltage, TAC cal, TAC cal error, TAC cal offset, TAC offset error
+  MFile F;
+  if( F.Open(FName) == false ){
+    cout << "MModuleDepthCalibration2024: failed to open TAC Calibration file." << endl;
+    m_TACCalFileIsLoaded = false;
+    return false;
+  } else {
+    for(unsigned int i = 0; i < m_Detectors.size(); ++i){
+      unordered_map<int, vector<double>> temp_map_HV;
+      m_HVTACCal[i] = temp_map_HV;
+      unordered_map<int, vector<double>> temp_map_LV;
+      m_LVTACCal[i] = temp_map_LV;
+    }
+    MString Line;
+    while( F.ReadLine( Line ) ){
+      if( !Line.BeginsWith("#") ){
+        std::vector<MString> Tokens = Line.Tokenize(",");
+        if( Tokens.size() == 7 ){
+          int DetID = Tokens[0].ToInt();
+          int StripID = Tokens[2].ToInt();
+          double taccal = Tokens[3].ToDouble();
+          double taccal_err = Tokens[4].ToDouble();
+          double offset = Tokens[5].ToDouble();
+          double offset_err = Tokens[6].ToDouble();
+          vector<double> cal_vals;
+          cal_vals.push_back(taccal); cal_vals.push_back(offset); cal_vals.push_back(taccal_err); cal_vals.push_back(offset_err);
+          if ( Tokens[1] == "l" or Tokens[1] == "n" ){
+            m_LVTACCal[DetID][StripID] = cal_vals;
+          }
+          else if ( Tokens[1] == "h" or Tokens[1] == "p" ){
+            m_HVTACCal[DetID][StripID] = cal_vals;
+          }
+        }
+      }
+    }
+    F.Close();
+  }
+
+  m_TACCalFileIsLoaded = true;
+
+  return true;
+
+}
+
 
 std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int pixel_code)
 {
@@ -667,6 +735,10 @@ bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
   m_SplinesFile = SplinesFileNameNode->GetValue();
   }
 
+  MXmlNode* TACCalFileNameNode = Node->GetNode("TACCalFileName");
+  if (TACCalFileNameNode != 0) {
+    m_TACCalFile = TACCalFileNameNode->GetValue();
+  }
 
   return true;
 }
@@ -681,6 +753,7 @@ MXmlNode* MModuleDepthCalibration2024::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFile);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
+  new MXmlNode(Node, "TACCalFileName", m_TACCalFile);
 
   return Node;
 }
