@@ -197,7 +197,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
     // If the Grade is 0-4, we can handle it.
     else {
 
-      MVector LocalPosition, PositionResolution, GlobalPosition;
+      MVector LocalPosition, PositionResolution, GlobalPosition, GlobalResolution, LocalOrigin;
 
       // Calculate the position. If error is thrown, record and no depth.
       // Take a Hit and separate its activated X- and Y-strips into separate vectors.
@@ -252,7 +252,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         Event->SetDepthCalibrationIncomplete();
         ++m_Error1;
       }
-      // If there isn't timing information, set no depth, but don't set global bad flag.
+      // If there isn't timing information, set no depth.
       // Alex's old comments suggest assigning the event to the middle of the detector and the position resolution to be large.
       else if( (XTiming < 1.0E-6) || (YTiming < 1.0E-6) ){
           // cout << "no timing info" << endl;
@@ -349,12 +349,15 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       }
 
     LocalPosition.SetXYZ(Xpos, Ypos, Zpos);
+    LocalOrigin.SetXYZ(0.0,0.0,0.0);
     // TODO: Don't use the detector name
     // cout << m_DetectorNames[DetID] << endl;
     GlobalPosition = m_Geometry->GetGlobalPosition(LocalPosition, m_DetectorNames[DetID]);
     // cout << "Found the GlobalPosition" << endl;
 
+    // Make sure XYZ resolution are correctly mapped to the global coord system.
     PositionResolution.SetXYZ(Xsigma, Ysigma, Zsigma);
+    GlobalResolution = (m_Geometry->GetGlobalPosition(PositionResolution, m_DetectorNames[DetID]) - m_Geometry->GetGlobalPosition(LocalOrigin, m_DetectorNames[DetID])).Abs();
     
     // cout << "Set the PositionResolution vector" << endl;
 
@@ -362,7 +365,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     // cout << "Set the global position for the strip hit" << endl;
 
-    H->SetPositionResolution(PositionResolution);
+    H->SetPositionResolution(GlobalResolution);
 
     // cout << "Set the position resolution for the strip hit" << endl;
 
