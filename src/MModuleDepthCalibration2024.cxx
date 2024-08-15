@@ -258,6 +258,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           // cout << "no timing info" << endl;
           ++m_Error3;
           H->SetNoDepth();
+          Event->SetDepthCalibrationIncomplete();
       }
 
       // If there are coefficients and timing information is loaded, try calculating the CTD and depth
@@ -343,6 +344,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           Zsigma =  sqrt(depth_var/prob_sum);
           Zpos = m_Thicknesses[DetID]/2.0 - mean_depth;
 	  // cout << "calculated depth: " << Zpos << endl;
+          m_NoError+=1;
         }
       }
 
