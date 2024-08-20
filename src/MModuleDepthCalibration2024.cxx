@@ -310,7 +310,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
         // cout << "Got the min and max ctd values: " << Xmin << "; " << Xmax << endl;
 
-        double noise = GetTimingNoiseFWHM(pixel_code, 662.0);
+        double noise = GetTimingNoiseFWHM(pixel_code, H->GetEnergy());
 
         // cout << "Got the timing noise: " << noise << endl;
 
