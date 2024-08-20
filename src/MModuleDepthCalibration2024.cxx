@@ -288,14 +288,14 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
             XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
             YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
           }
-          CTD = (XSH->GetTiming() - YSH->GetTiming());
+          CTD = (YTiming - XTiming);
         }
         else {
           if ( m_TACCalFileIsLoaded ){
             XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
             YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
           }
-          CTD = (YSH->GetTiming() - XSH->GetTiming());
+          CTD = (XTiming - YTiming);
         }
 
         // cout << "Got the CTD: " << CTD << endl;
@@ -413,13 +413,20 @@ double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int pixel_code, double En
 {
   // Placeholder for determining the timing noise with energy, and possibly even on a pixel-by-pixel basis.
   // Should follow 1/E relation
-  // TODO: Fill this in
-  return 6.0*2.355;
+  // TODO: Check that this makes sense
+  if ( m_Coeffs_Energy != NULL ){
+    return m_Coeffs[pixel_code][2] * m_Coeffs_Energy/Energy;
+  }
+  else{
+    return 6.0*2.355;
+  }
 }
 
 bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
 {
-  // Read in the stretch and offset file, which should contain for each pixel:
+  // Read in the stretch and offset file, which should have a header line with information on the measurements:
+  // ### 800 V 80 K 59.5 keV
+  // And which should contain for each pixel:
   // Pixel code (10000*det + 100*Xchannel + Ychannel), Stretch, Offset, Timing/CTD noise, Chi2 for the CTD fit (for diagnostics mainly)
   MFile F;
   if( F.Open(FName) == false ){
@@ -428,13 +435,18 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
   } else {
     MString Line;
     while( F.ReadLine( Line ) ){
-      if( !Line.BeginsWith("#") ){
+      if ( Line.BeginsWith('#') ){
+        std::vector<MString> Tokens = Line.Tokenize(" ");
+        m_Coeffs_Energy = Tokens[5].ToDouble();
+        cout << "The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
+      }
+      else {
         std::vector<MString> Tokens = Line.Tokenize(",");
         if( Tokens.size() == 5 ){
           int pixel_code = Tokens[0].ToInt();
           double Stretch = Tokens[1].ToDouble();
           double Offset = Tokens[2].ToDouble();
-          double CTD_FWHM = Tokens[3].ToDouble();
+          double CTD_FWHM = Tokens[3].ToDouble() * 2.355;
           double Chi2 = Tokens[4].ToDouble();
           // Previous iteration of depth calibration read in "Scale" instead of ctd resolution.
           vector<double> coeffs;
