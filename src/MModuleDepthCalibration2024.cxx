@@ -87,6 +87,7 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   m_Error2 = 0;
   m_Error3 = 0;
   m_Error4 = 0;
+  m_Error5 = 0;
   m_ErrorSH = 0;
 }
 
@@ -187,14 +188,21 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       ++m_ErrorSH;
     }
 
-    // GRADE=5 is some complicated geometry with separated strips. No depth in this case.
-    else if( Grade == 5 ){
+    // GRADE=5 is some complicated geometry with multiple hits on a single strip. 
+    // GRADE=4 means there are more than 2 strip hits on one or both sides.
+    // TODO: handle GRADE
+    else if( Grade > 3 ){
       H->SetNoDepth();
-      ++m_Error4;
       Event->SetDepthCalibrationIncomplete();
+      if(Grade==4){
+        ++m_Error4;
+      }
+      else if(Grade==5){
+        ++m_Error5;
+      }
     }
 
-    // If the Grade is 0-4, we can handle it.
+    // If the Grade is 0-3, we can handle it.
     else {
 
       MVector LocalPosition, PositionResolution, GlobalPosition, GlobalResolution, LocalOrigin;
@@ -310,7 +318,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         if( (CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise)) ){
           H->SetNoDepth();
           Event->SetDepthCalibrationIncomplete();
-          ++m_Error1;
+          ++m_Error2;
         }
 
         // If the CTD is in range, calculate the depth
@@ -607,7 +615,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
     if( SH->IsPositiveStrip() ) PStrips.push_back(SH); else NStrips.push_back(SH);
   }
 
-  // if multiple, presumably separated strip hits, bad grade.
+  // if the same strip has multiple hits, this is a bad grade.
   bool MultiHitX = H->GetStripHitMultipleTimesX();
   bool MultiHitY = H->GetStripHitMultipleTimesY();
   if( MultiHitX || MultiHitY ){
@@ -774,8 +782,9 @@ void MModuleDepthCalibration2024::Finalize()
   cout << "Number of hits missing calibration coefficients: " << m_Error1 << endl;
   cout << "Number of hits too far outside of detector: " << m_Error2 << endl;
   cout << "Number of hits missing timing information: " << m_Error3 << endl;
-  cout << "Number of hits with strips hit multiple times: " << m_Error4 << endl;
-  cout << "Number of hits with too many strip hits: " << m_ErrorSH << endl;
+  cout << "Number of hits with strips hit multiple times: " << m_Error5 << endl;
+  cout << "Number of hits with too many strip hits: " << m_Error4 << endl;
+  cout << "Number of hits with no strip hits: " << m_ErrorSH << endl;
   /*
   TFile* rootF = new TFile("EHist.root","recreate");
   rootF->WriteTObject( EHist );
