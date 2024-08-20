@@ -285,15 +285,15 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         double CTD;
         if ( XSH->IsPositiveStrip() ){
           if ( m_TACCalFileIsLoaded ){
-            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
           }
           CTD = (XSH->GetTiming() - YSH->GetTiming());
         }
         else {
           if ( m_TACCalFileIsLoaded ){
-            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
           }
           CTD = (YSH->GetTiming() - XSH->GetTiming());
         }
@@ -481,10 +481,10 @@ bool MModuleDepthCalibration2024::LoadTACCalFile(MString FName)
           double offset_err = Tokens[6].ToDouble();
           vector<double> cal_vals;
           cal_vals.push_back(taccal); cal_vals.push_back(offset); cal_vals.push_back(taccal_err); cal_vals.push_back(offset_err);
-          if ( Tokens[1] == "l" or Tokens[1] == "n" ){
+          if ( Tokens[1] == "l" or Tokens[1] == "p" ){
             m_LVTACCal[DetID][StripID] = cal_vals;
           }
-          else if ( Tokens[1] == "h" or Tokens[1] == "p" ){
+          else if ( Tokens[1] == "h" or Tokens[1] == "n" ){
             m_HVTACCal[DetID][StripID] = cal_vals;
           }
         }
