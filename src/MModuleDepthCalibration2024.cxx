@@ -350,7 +350,8 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           }
 
           Zsigma =  sqrt(depth_var/prob_sum);
-          Zpos = m_Thicknesses[DetID]/2.0 - mean_depth;
+          // Zpos = m_Thicknesses[DetID]/2.0 - mean_depth;
+          Zpos = mean_depth;
 	  // cout << "calculated depth: " << Zpos << endl;
           m_NoError+=1;
         }
@@ -548,7 +549,6 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
   // ### DetID, HV, Temperature, Photopeak Energy (TODO: More? Fewer?)
   // depth, ctd0, ctd1, ctd2.... (Basically, allow for CTDs for different subpixel regions)
   // '' '' ''
-  // The minimum depth listed should be 0.0 and the maximum should be equal to the total depth of the detector.
   MFile F; 
   if( F.Open(FName) == false ){
     return false;
@@ -688,7 +688,9 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<ve
 
   CTDMap[DetID] = ctdarr;
   DepthGrid[DetID] = depthvec;
-  m_Thicknesses[DetID] = * std::max_element(depthvec.begin(), depthvec.end());
+  double maxdepth = * std::max_element(depthvec.begin(), depthvec.end());
+  double mindepth = * std::min_element(depthvec.begin(), depthvec.end());
+  m_Thicknesses[DetID] = maxdepth-mindepth;
   cout << "MModuleDepthCalibration2024::AddDepthCTD: The thickness of detector " << DetID << " is " << m_Thicknesses[DetID] << endl;
   return true;
 }
