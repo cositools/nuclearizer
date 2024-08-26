@@ -355,8 +355,8 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           }
 
           Zsigma =  sqrt(depth_var/prob_sum);
-          // Zpos = m_Thicknesses[DetID]/2.0 - mean_depth;
-          Zpos = mean_depth;
+          Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
+          // Zpos = mean_depth;
 	  // cout << "calculated depth: " << Zpos << endl;
           m_NoError+=1;
         }
@@ -741,18 +741,22 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<ve
       return false;
     }
   }
-  // Now make sure the values for the depth start with 0.0.
-  // if( * std::min_element(depthvec.begin(), depthvec.end()) != 0.0){
-  //     cout << "MModuleDepthCalibration2024::AddDepthCTD: The minimum depth is not zero." << endl;
-  //     return false;
-  // }
 
-  CTDMap[DetID] = ctdarr;
-  DepthGrid[DetID] = depthvec;
   double maxdepth = * std::max_element(depthvec.begin(), depthvec.end());
   double mindepth = * std::min_element(depthvec.begin(), depthvec.end());
   m_Thicknesses[DetID] = maxdepth-mindepth;
   cout << "MModuleDepthCalibration2024::AddDepthCTD: The thickness of detector " << DetID << " is " << m_Thicknesses[DetID] << endl;
+  
+  //Now make sure the values for the depth start with 0.0.
+  if( mindepth != 0.0){
+      cout << "MModuleDepthCalibration2024::AddDepthCTD: The minimum depth is not zero. Editing the depth vector." << endl;
+      for( unsigned int i = 0; i < depthvec.size(); ++i ){
+        depthvec[i] -= mindepth;
+      }
+  }
+
+  CTDMap[DetID] = ctdarr;
+  DepthGrid[DetID] = depthvec;
   return true;
 }
 
