@@ -251,8 +251,19 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // cout << "looking up the coefficients" << endl;
       vector<double>* Coeffs = GetPixelCoeffs(pixel_code);
 
+      // TODO: For Card Cage, may need to add noise
       double XTiming = XSH->GetTiming();
       double YTiming = YSH->GetTiming();
+      if ( m_TACCalFileIsLoaded ) {
+        if ( XSH->IsPositiveStrip() ){
+          XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
+          YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+        }
+        else {
+          XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
+          YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+        }
+      }
 
       // cout << "Got the coefficients: " << Coeffs << endl;
 
@@ -284,20 +295,11 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       	  Event->SetDepthCalibrationIncomplete();
       	}
 
-        // TODO: For Card Cage, may need to add noise
         double CTD;
         if ( XSH->IsPositiveStrip() ){
-          if ( m_TACCalFileIsLoaded ){
-            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
-          }
           CTD = (YTiming - XTiming);
         }
         else {
-          if ( m_TACCalFileIsLoaded ){
-            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
-          }
           CTD = (XTiming - YTiming);
         }
 
