@@ -200,6 +200,9 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       else if(Grade==5){
         ++m_Error5;
       }
+      else if(Grade==6){
+        ++m_Error6;
+      }
     }
 
     // If the Grade is 0-3, we can handle it.
@@ -612,7 +615,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
     return -1;
   }
   if( H->GetNStripHits() == 0 ){
-    // Error if no strip hits listed. Bad grad is returned
+    // Error if no strip hits listed. Bad grade is returned
     cout << "ERROR in MModuleDepthCalibration2024: HIT WITH NO STRIP HITS" << endl;
     return -1;
   }
@@ -620,11 +623,20 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   // Take a Hit and separate its activated p and n strips into separate vectors.
   std::vector<MStripHit*> PStrips;
   std::vector<MStripHit*> NStrips;
+  vector<int> PStripIDs;
+  vector<int> NStripIDs;
   for( unsigned int j = 0; j < H->GetNStripHits(); ++j){
     MStripHit* SH = H->GetStripHit(j);
     if( SH == NULL ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got NULL strip hit :( " << endl; return -1;}
     if( SH->GetEnergy() == 0 ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got strip without energy :( " << endl; return -1;}
-    if( SH->IsPositiveStrip() ) PStrips.push_back(SH); else NStrips.push_back(SH);
+    if( SH->IsPositiveStrip() ){
+      PStrips.push_back(SH); 
+      PStripIDs.push_back(SH->GetStripID());
+    }
+    else {
+      NStrips.push_back(SH);
+      NStripIDs.push_back(SH->GetStripID());
+    }
   }
 
   // if the same strip has multiple hits, this is a bad grade.
@@ -634,31 +646,78 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
     return 5;  
   }
 
+  if( PStrips.size()>0 && NStrips.size()>0 ){
+    int Nmin = * std::min_element(NStripIDs.begin(), NStripIDs.end());
+    int Nmax = * std::max_element(NStripIDs.begin(), NStripIDs.end());
+
+    int Pmin = * std::min_element(PStripIDs.begin(), PStripIDs.end());
+    int Pmax = * std::max_element(PStripIDs.begin(), PStripIDs.end());
+
+    // If the strip hits are not all adjacent, it's a bad grade.
+    if ( ((Nmax - Nmin) >= (NStrips.size())) || ((Pmax - Pmin) >= (PStrips.size())) ){
+      return 6;
+    }
+  }
+  else{
+    // cout << "ERROR in MModuleDepthCalibration2024: HIT with no strip hits on one side" << endl;
+    return -1;
+  }
+
+  int return_value;
   // If 1 strip on each side, GRADE=0
   // This represents the center of the pixel
   if( (PStrips.size() == 1) && (NStrips.size() == 1) ){
-    return 0;
+    return_value = 0;
   } 
   // If 2 hits on N side and 1 on P, GRADE=1
   // This represents the middle of the edges of the pixel
   else if( (PStrips.size() == 1) && (NStrips.size() == 2) ){
-    return 1;
+    return_value = 1;
   } 
 
   // If 2 hits on P and 1 on N, GRADE=2
   // This represents the middle of the edges of the pixel
   else if( (PStrips.size() == 2) && (NStrips.size() == 1) ){
-    return 2;
+    return_value = 2;
   } 
+  
   // If 2 strip hits on both sides, GRADE=3
   // This represents the corners the pixel
   else if( (PStrips.size() == 2) && (NStrips.size() == 2) ){
-    return 3;
-  } else {
+    return_value = 3;
+  } 
+
+  // If 3 hits on N side and 1 on P, GRADE=0
+  // This represents the middle of the pixel, near the p (LV) side of the detector.
+  else if( (PStrips.size() == 1) && (NStrips.size() == 3) ){
+    return_value = 0;
+  } 
+
+  // If 3 hits on P and 1 on N, GRADE=0
+  // This represents the middle of the pixel, near the n (HV) side of the detector.
+  else if( (PStrips.size() == 3) && (NStrips.size() == 1) ){
+    return_value = 0;
+  } 
+
+  // If 3 hits on N side and 2 on P, GRADE=0
+  // This represents the middle of the edge of the pixel, near the p (LV) side of the detector.
+  else if( (PStrips.size() == 2) && (NStrips.size() == 3) ){
+    return_value = 2;
+  } 
+
+  // If 3 hits on P and 2 on N, GRADE=0
+  // This represents the middle of the edge of the pixel, near the n (HV) side of the detector.
+  else if( (PStrips.size() == 3) && (NStrips.size() == 2) ){
+    return_value = 1;
+  } 
+
+  else {
     // If more complicated than the above cases, return 4 for now.
     // TODO: Handle more complicated charge distributions.
-    return 4;
+    return_value = 4;
   }
+
+  return return_value;
 }
 
 bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<vector<double>> ctdarr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap){
@@ -797,8 +856,9 @@ void MModuleDepthCalibration2024::Finalize()
   cout << "Number of hits too far outside of detector: " << m_Error2 << endl;
   cout << "Number of hits missing timing information: " << m_Error3 << endl;
   cout << "Number of hits with strips hit multiple times: " << m_Error5 << endl;
+  cout << "Number of hits with non-adjacent strip hits: " << m_Error6 << endl;
   cout << "Number of hits with too many strip hits: " << m_Error4 << endl;
-  cout << "Number of hits with no strip hits: " << m_ErrorSH << endl;
+  cout << "Number of hits with no strip hits on one or both sides: " << m_ErrorSH << endl;
   /*
   TFile* rootF = new TFile("EHist.root","recreate");
   rootF->WriteTObject( EHist );

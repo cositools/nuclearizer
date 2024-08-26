@@ -140,6 +140,7 @@ class MModuleDepthCalibration2024 : public MModule
   uint64_t m_Error3;
   uint64_t m_Error4;
   uint64_t m_Error5;
+  uint64_t m_Error6;
   uint64_t m_ErrorSH;
   vector<MDDetector*> m_Detectors;
   MModuleEnergyCalibrationUniversal* m_EnergyCalibration;
