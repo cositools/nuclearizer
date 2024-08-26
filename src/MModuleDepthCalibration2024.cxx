@@ -681,10 +681,10 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<ve
     }
   }
   // Now make sure the values for the depth start with 0.0.
-  if( * std::min_element(depthvec.begin(), depthvec.end()) != 0.0){
-      cout << "MModuleDepthCalibration2024::AddDepthCTD: The minimum depth is not zero." << endl;
-      return false;
-  }
+  // if( * std::min_element(depthvec.begin(), depthvec.end()) != 0.0){
+  //     cout << "MModuleDepthCalibration2024::AddDepthCTD: The minimum depth is not zero." << endl;
+  //     return false;
+  // }
 
   CTDMap[DetID] = ctdarr;
   DepthGrid[DetID] = depthvec;
