@@ -111,6 +111,8 @@ $(LB)/MModuleDepthCalibrationB.o\
 $(LB)/MGUIOptionsDepthCalibrationB.o\
 $(LB)/MGUIOptionsResponseGenerator.o\
 $(LB)/MModuleResponseGenerator.o\
+$(LB)/MModuleDiagnostics.o\
+$(LB)/MGUIExpoDiagnostics.o\
 
 
 
