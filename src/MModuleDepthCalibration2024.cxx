@@ -150,6 +150,10 @@ bool MModuleDepthCalibration2024::Initialize()
       m_NXStrips[DetID] = strip->GetNStripsX();
       m_NYStrips[DetID] = strip->GetNStripsY();
       cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
+      cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
+      cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
+      cout << "X strip pitch: " << m_XPitches[DetID] << endl;
+      cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
     }
   }
 
@@ -335,12 +339,12 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           vector<double> prob_dist = norm_pdf(ctdvec, CTD_s, noise/2.355);
           
           // Weight the depth by probability
-	  double prob_sum = 0.0;
-	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
-	    prob_sum += prob_dist[k];
-	  }
+      	  double prob_sum = 0.0;
+      	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
+      	    prob_sum += prob_dist[k];
+      	  }
           //double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
-	  // cout << "summed probability: " << prob_sum << endl;
+	         //cout << "summed probability: " << prob_sum << endl;
           double weighted_depth = 0.0;
           for( unsigned int k = 0; k < depthvec.size(); ++k ){
             weighted_depth += prob_dist[k]*depthvec[k];
