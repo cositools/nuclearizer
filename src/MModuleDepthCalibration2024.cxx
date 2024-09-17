@@ -260,12 +260,12 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       double YTiming = YSH->GetTiming();
       if ( m_TACCalFileIsLoaded ) {
         if ( XSH->IsPositiveStrip() ){
-          XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
-          YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
-        }
-        else {
           XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
           YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+        }
+        else {
+          XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
+          YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
         }
       }
 
@@ -301,10 +301,10 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
         double CTD;
         if ( XSH->IsPositiveStrip() ){
-          CTD = (YTiming - XTiming);
+          CTD = (XTiming - YTiming);
         }
         else {
-          CTD = (XTiming - YTiming);
+          CTD = (YTiming - XTiming);
         }
 
         // cout << "Got the CTD: " << CTD << endl;
