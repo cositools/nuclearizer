@@ -503,10 +503,10 @@ bool MModuleDepthCalibration2024::LoadTACCalFile(MString FName)
           double offset_err = Tokens[6].ToDouble();
           vector<double> cal_vals;
           cal_vals.push_back(taccal); cal_vals.push_back(offset); cal_vals.push_back(taccal_err); cal_vals.push_back(offset_err);
-          if ( Tokens[1] == "l" or Tokens[1] == "p" ){
+          if ( Tokens[1] == "l" or Tokens[1] == "n" ){
             m_LVTACCal[DetID][StripID] = cal_vals;
           }
-          else if ( Tokens[1] == "h" or Tokens[1] == "n" ){
+          else if ( Tokens[1] == "h" or Tokens[1] == "p" ){
             m_HVTACCal[DetID][StripID] = cal_vals;
           }
         }
