@@ -259,14 +259,26 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // TODO: For Card Cage, may need to add noise
       double XTiming = XSH->GetTiming();
       double YTiming = YSH->GetTiming();
-      if ( m_TACCalFileIsLoaded ) {
-        if ( XSH->IsLowVoltageStrip() ){
-          XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
-          YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+      if ( !m_UCSDOverride ) {
+        if ( m_TACCalFileIsLoaded ) {
+          if ( XSH->IsLowVoltageStrip() ){
+            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+          }
+          else {
+            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+          }
         }
-        else {
-          XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
-          YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+        else { 
+          if ( XSH->IsLowVoltageStrip() ){
+            XTiming = XTiming*0.425 - 525.;
+            YTiming = YTiming*0.43 - 500.;
+          }
+          else {
+            XTiming = XTiming*0.43 - 500.;
+            YTiming = YTiming*0.425 -525.;
+
         }
       }
 
