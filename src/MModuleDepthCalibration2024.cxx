@@ -242,14 +242,15 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       int pixel_code = 10000*DetID + 100*XStripID + YStripID;
 
       // TODO: Calculate X and Y positions more rigorously using charge sharing.
-      double Xpos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)XStripID));
-      double Ypos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)YStripID));
+      // Somewhat confusing notation: XStrips run parallel to X-axis, so we calculate X position with YStrips.
+      double Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)YStripID));
+      double Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)XStripID));
       // cout << "X position " << Xpos << endl;
       // cout << "Y position " << Ypos << endl;
       double Zpos = 0.0;
 
-      double Xsigma = m_XPitches[DetID]/sqrt(12.0);
-      double Ysigma = m_YPitches[DetID]/sqrt(12.0);
+      double Xsigma = m_YPitches[DetID]/sqrt(12.0);
+      double Ysigma = m_XPitches[DetID]/sqrt(12.0);
       double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
 
       // cout << "looking up the coefficients" << endl;
@@ -259,13 +260,13 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       double XTiming = XSH->GetTiming();
       double YTiming = YSH->GetTiming();
       if ( m_TACCalFileIsLoaded ) {
-        if ( XSH->IsPositiveStrip() ){
-          XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
-          YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
-        }
-        else {
+        if ( XSH->IsLowVoltageStrip() ){
           XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
           YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+        }
+        else {
+          XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
+          YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
         }
       }
 
@@ -300,11 +301,11 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       	}
 
         double CTD;
-        if ( XSH->IsPositiveStrip() ){
-          CTD = (XTiming - YTiming);
+        if ( XSH->IsLowVoltageStrip() ){
+          CTD = (YTiming - XTiming);
         }
         else {
-          CTD = (YTiming - XTiming);
+          CTD = (XTiming - YTiming);
         }
 
         // cout << "Got the CTD: " << CTD << endl;
@@ -503,10 +504,10 @@ bool MModuleDepthCalibration2024::LoadTACCalFile(MString FName)
           double offset_err = Tokens[6].ToDouble();
           vector<double> cal_vals;
           cal_vals.push_back(taccal); cal_vals.push_back(offset); cal_vals.push_back(taccal_err); cal_vals.push_back(offset_err);
-          if ( Tokens[1] == "l" or Tokens[1] == "n" ){
+          if ( Tokens[1] == "l" ){
             m_LVTACCal[DetID][StripID] = cal_vals;
           }
-          else if ( Tokens[1] == "h" or Tokens[1] == "p" ){
+          else if ( Tokens[1] == "h" ){
             m_HVTACCal[DetID][StripID] = cal_vals;
           }
         }
