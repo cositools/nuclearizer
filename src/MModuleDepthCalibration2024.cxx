@@ -272,12 +272,12 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         }
         else { 
           if ( XSH->IsLowVoltageStrip() ){
-            XTiming = XTiming*0.425 - 525.;
+            XTiming = XTiming*0.405 - 525.;
             YTiming = YTiming*0.43 - 500.;
           }
           else {
             XTiming = XTiming*0.43 - 500.;
-            YTiming = YTiming*0.425 -525.;
+            YTiming = YTiming*0.405 -525.;
           }
         }
       }
