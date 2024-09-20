@@ -278,7 +278,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           else {
             XTiming = XTiming*0.43 - 500.;
             YTiming = YTiming*0.425 -525.;
-
+          }
         }
       }
 
