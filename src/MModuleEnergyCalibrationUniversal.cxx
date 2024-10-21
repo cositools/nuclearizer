@@ -155,7 +155,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
         R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-        R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
+        R.IsPositiveStrip((Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p") || (Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "l"));
         if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true) {
           CP_ROEToLine[R] = i;
         } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {

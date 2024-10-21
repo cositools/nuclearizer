@@ -26,6 +26,7 @@
 // Nuclearizer libs
 #include "MReadOutElement.h"
 #include "MReadOutElementDoubleStrip.h"
+#include "MStripHit.h"
 
 // Forward declarations:
 
@@ -58,15 +59,20 @@ class MStripHit
   //! Return the Strip ID
   int GetStripID() const { return m_ReadOutElement->GetStripID(); }
 
-  //! Set the strip type (x/y)
+  //! Set the strip type (x/y). Note that x strips run parallel to the x-axis!!
   void IsXStrip(bool PositiveStrip) { m_ReadOutElement->IsPositiveStrip(PositiveStrip); }
-  //! Return the strip type (x/y)
+  //! Return the strip type (x/y). Note that x strips run parallel to the x-axis!!
   bool IsXStrip() const { return m_ReadOutElement->IsPositiveStrip(); }
 
   //! Set the strip type (positive or negative)
   void IsPositiveStrip(bool PositiveStrip) { m_ReadOutElement->IsPositiveStrip(PositiveStrip); }
   //! Return the strip type (positive or negative)
   bool IsPositiveStrip() const { return m_ReadOutElement->IsPositiveStrip(); }
+
+  //! Set the strip type (LV or HV)
+  void IsLowVoltageStrip(bool LowVoltageStrip) { m_ReadOutElement->IsLowVoltageStrip(LowVoltageStrip); }
+  //! Return the strip type (LV or HV)
+  bool IsLowVoltageStrip() const { return m_ReadOutElement->IsLowVoltageStrip(); }
 
   //! Set whether the strip has triggered
   void HasTriggered(bool HasTriggered) { m_HasTriggered = HasTriggered; }
