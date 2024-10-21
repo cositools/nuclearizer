@@ -112,6 +112,8 @@ $(LB)/MGUIOptionsDepthCalibrationB.o \
 $(LB)/MGUIOptionsResponseGenerator.o \
 $(LB)/MModuleResponseGenerator.o \
 $(LB)/MModuleDiagnostics.o \
+$(LB)/MModuleDiagnosticsEnergyPerStrip.o \
+$(LB)/MGUIExpoDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnostics.o \
 
 
