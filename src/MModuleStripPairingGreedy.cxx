@@ -34,6 +34,7 @@
 // MEGAlib libs:
 //#include "MMath.h"
 #include "MGUIOptionsStripPairing.h"
+#include <malloc/_malloc_type.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -396,7 +397,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 
     if (Difference > 2*pUncertainty + 2*nUncertainty + 20) {
 			if (Event->GetHit(h)->GetStripHitMultipleTimesX() == false && Event->GetHit(h)->GetStripHitMultipleTimesY() == false){
-		  	Event->SetStripPairingIncomplete(true,"bad pairing");
+		  	Event->SetStripPairingIncomplete(true, "bad pairing");
 			}
 /*			if (nHits[0] != 0 && nHits[1] != 0){
 				PrintXYStripsHitOrig();
@@ -458,6 +459,10 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 		dummy_func();
 	}
 */
+
+  if (m_StripPairingFailed != "") {
+    Event->SetStripPairingIncomplete(true, m_StripPairingFailed);
+  }
 
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
   /*
@@ -658,6 +663,9 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 
 
 	vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
+
+  if (m_StripPairingFailed != "") return;
+
 
 	//pair indexes over the pairs (hits) -- for each pair, there is a new MHit
 	//strip indexes over the strips in each pair on the x or y side
@@ -1892,6 +1900,11 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
 
+      if (hitEnergy.size() <= i+twoHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
 			hitEnergy.at(i+twoHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+twoHitsCounter, energyTwo);
 			energyResolution.at(i+twoHitsCounter-1) = eResOne;
@@ -1946,6 +1959,12 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
+
+      if (hitEnergy.size() <= i+twoHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
 
 			hitEnergy.at(i+twoHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+twoHitsCounter, energyTwo);
@@ -2017,6 +2036,12 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
+
+      if (hitEnergy.size() <= i+threeHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
 
 			hitEnergy.at(i+threeHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+threeHitsCounter, energyTwo);
@@ -2090,6 +2115,12 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
 
+      if (hitEnergy.size() <= i+threeHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
+
 			hitEnergy.at(i+threeHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+threeHitsCounter, energyTwo);
 			hitEnergy.insert(hitEnergy.begin()+i+threeHitsCounter+1, energyThree);
@@ -2154,6 +2185,9 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 bool MModuleStripPairingGreedy::CheckAllStripsWerePaired(){
   
   vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
+
+  if (m_StripPairingFailed != "") return false;
+
   int counter = 0;
   
   //count how many strips in decodedFinalPairs are equal to original strips

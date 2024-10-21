@@ -26,6 +26,7 @@
 // Nuclearizer libs
 #include "MReadOutElement.h"
 #include "MReadOutElementDoubleStrip.h"
+#include "MStripHit.h"
 
 // Forward declarations:
 
