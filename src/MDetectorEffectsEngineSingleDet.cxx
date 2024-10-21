@@ -24,7 +24,7 @@
 
 
 // Include the header:
-#include "/Users/parshad/Software/nuclearizer_parshad_fork/include/MDetectorEffectsEngineSingleDet.h"
+#include "MDetectorEffectsEngineSingleDet.h"
 
 // Standard
 #include <iostream>
@@ -61,7 +61,7 @@ using namespace std;
 #include "MReadOutElementDoubleStrip.h"
 
 // Nuclearizer
-#include "/Users/parshad/Software/nuclearizer_parshad_fork/include/MDetectorEffectsEngineSingleDet.h"
+#include "MDetectorEffectsEngineSingleDet.h"
 #include "MDepthCalibrator.h"
 
 
@@ -208,7 +208,9 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // for shield veto: shield pulse duration and card cage delay: constant for now
   m_ShieldThreshold = 80.;
   m_ShieldPulseDuration = 1.7e-6;
-  m_CCDelay = 700.e-9;
+  m_StripDelayBefore = 1.4e-6;
+  m_StripDelayBefore = 0.4e-6;
+  m_ASICDeadTimePerChannel = 1e-6;
   m_ShieldDelay = 900.e-9; //this is just a guess based on when veto window occurs!
   m_ShieldVetoWindowSize = 0.4e-6;
   // for shield veto: gets updated with shield event times
@@ -267,34 +269,34 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     
   //   //cout<<endl<<endl<<"ID: "<<SimEvent->GetID()<<endl;
     
-  //   // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
-  //   m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
+    // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
+    m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
     
     
-  //   if (SimEvent->GetNHTs() == 0) {
-  //     //cout<<SimEvent->GetID()<<": No hits"<<endl;
-  //     delete SimEvent;
-  //     continue;
-  //   }
+    if (SimEvent->GetNHTs() == 0) {
+      //cout<<SimEvent->GetID()<<": No hits"<<endl;
+      delete SimEvent;
+      continue;
+    }
     
   //   // Step (-1): Include aspect information
   //   //		cout << SimEvent->GetGalacticPointingXAxis() << endl;
   //   //		cout << SimEvent->GetGalacticPointingZAxis() << endl;
     
-  //   bool HasOverflow = false;
+    bool HasOverflow = false;
     
-  //   double eventInitialEnergy = 0.;
-  //   for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
-  //     MSimHT* HT = SimEvent->GetHTAt(h);
-  //     eventInitialEnergy += HT->GetEnergy();
-  //   }
+    double eventInitialEnergy = 0.;
+    for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+      MSimHT* HT = SimEvent->GetHTAt(h);
+      eventInitialEnergy += HT->GetEnergy();
+    }
     
     
-  //   // Step (0): Check whether events should be vetoed
-  //   double evt_time = SimEvent->GetTime().GetAsSeconds();
-  //   bool hasDetHits = false;
-  //   bool hasShieldHits = false;
-  //   bool increaseShieldDeadTime = false;
+    // Step (0): Check whether events should be vetoed
+    double evt_time = SimEvent->GetTime().GetAsSeconds();
+    bool hasDetHits = false;
+    bool hasShieldHits = false;
+    bool increaseShieldDeadTime = false;
     
   //   // first check if there's another shield hit above the threshold
   //   // if so, veto event

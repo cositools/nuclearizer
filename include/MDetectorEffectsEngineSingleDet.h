@@ -339,11 +339,17 @@ private:
   unsigned long m_ChargeLossCounter;
   
   double m_ShieldPulseDuration;
-  double m_CCDelay;
+  //! Strip Delay for ENABLE to fall
+  double m_StripDelayBefore;
+  //! ASIC Deadtime per channel that is read out
+  double m_ASICDeadTimePerChannel;
+  //! Strip Delay after the channels are read out - acquisition reset etc...
+  double m_StripDelayAfter;
   double m_ShieldTime;
 	double m_ShieldDelay;
 	double m_ShieldVetoWindowSize;
   bool m_IsShieldDead;
+
   
   long m_NumShieldCounts;
   
