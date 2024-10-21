@@ -113,6 +113,8 @@ $(LB)/MGUIOptionsResponseGenerator.o \
 $(LB)/MModuleResponseGenerator.o \
 $(LB)/MModuleDiagnostics.o \
 $(LB)/MGUIExpoDiagnostics.o \
+$(LB)/MDetectorEffectsEngineSingleDet.o \
+$(LB)/MModuleLoaderSimulationsSingleDet.o \
 
 
 
