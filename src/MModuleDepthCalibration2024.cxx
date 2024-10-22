@@ -437,13 +437,18 @@ double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int pixel_code, double En
 {
   // Placeholder for determining the timing noise with energy, and possibly even on a pixel-by-pixel basis.
   // Should follow 1/E relation
-  // TODO: Check that this makes sense
+  // TODO: Determine real energy dependence and implement it here.
+  double noiseFWHM = 0.0;
   if ( m_Coeffs_Energy != NULL ){
-    return m_Coeffs[pixel_code][2] * m_Coeffs_Energy/Energy;
+    noiseFWHM = m_Coeffs[pixel_code][2] * m_Coeffs_Energy/Energy;
+    if ( noiseFWHM < 3.0*2.355 ){
+      noiseFWHM = 3.0*2.355;
+    }
   }
-  else{
-    return 6.0*2.355;
+  else {
+    noiseFWHM = 6.0*2.355;
   }
+  return noiseFWHM;
 }
 
 bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
