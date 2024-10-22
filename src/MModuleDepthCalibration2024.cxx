@@ -88,6 +88,7 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   m_Error3 = 0;
   m_Error4 = 0;
   m_Error5 = 0;
+  m_Error6 = 0;
   m_ErrorSH = 0;
 }
 
