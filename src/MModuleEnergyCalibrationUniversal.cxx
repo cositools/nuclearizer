@@ -313,6 +313,16 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
       resolutionfit->FixParameter(1,f1);
 
       m_ResolutionCalibration[CR.first] = resolutionfit;
+    }
+    else if (CalibratorType == "p2" || CalibratorType == "poly2") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f2 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P2","([0]+[1]*x+[2]*x*x) / 2.355",0.,2000.);
+      resolutionfit->FixParameter(0,f0);
+      resolutionfit->FixParameter(1,f1);
+      resolutionfit->FixParameter(2,f2);
+      m_ResolutionCalibration[CR.first] = resolutionfit;
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown resolution calibrator type ("<<CalibratorType<<") for strip"<<CR.first<<endl;
       continue;
