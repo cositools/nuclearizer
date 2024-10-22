@@ -101,18 +101,20 @@ $(LB)/MGUIOptionsEventFilter.o \
 $(LB)/MModuleEventFilter.o \
 $(LB)/MCalibratorEnergy.o \
 $(LB)/MCalibratorEnergyPointwiseLinear.o \
-$(LB)/MDepthCalibrator.o\
-$(LB)/GCUSettingsParser.o\
-$(LB)/MTIRecord.o\
-$(LB)/GCUHousekeepingParser.o\
-$(LB)/LivetimeParser.o\
-$(LB)/MDepthCalibratorB.o\
-$(LB)/MModuleDepthCalibrationB.o\
-$(LB)/MGUIOptionsDepthCalibrationB.o\
-$(LB)/MGUIOptionsResponseGenerator.o\
-$(LB)/MModuleResponseGenerator.o\
-$(LB)/MModuleDiagnostics.o\
-$(LB)/MGUIExpoDiagnostics.o\
+$(LB)/MDepthCalibrator.o \
+$(LB)/GCUSettingsParser.o \
+$(LB)/MTIRecord.o \
+$(LB)/GCUHousekeepingParser.o \
+$(LB)/LivetimeParser.o \
+$(LB)/MDepthCalibratorB.o \
+$(LB)/MModuleDepthCalibrationB.o \
+$(LB)/MGUIOptionsDepthCalibrationB.o \
+$(LB)/MGUIOptionsResponseGenerator.o \
+$(LB)/MModuleResponseGenerator.o \
+$(LB)/MModuleDiagnostics.o \
+$(LB)/MModuleDiagnosticsEnergyPerStrip.o \
+$(LB)/MGUIExpoDiagnosticsEnergyPerStrip.o \
+$(LB)/MGUIExpoDiagnostics.o \
 
 
 

@@ -86,6 +86,13 @@ MModuleStripPairingGreedy::MModuleStripPairingGreedy() : MModule()
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = true;
+
+  m_MagicNumberA = 65; //38;
+  m_MagicNumberB = 100; //50;
+  m_MagicNumberC = 200; //100;
+  m_MagicNumberD = 5000;
+  m_MagicNumberE = 10000;
+
 }
 
 
@@ -384,7 +391,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
     nUncertainty = sqrt(nUncertainty);
     
     double Difference = fabs(pEnergy - nEnergy);
-/*		if (Difference > 100){
+/*		if (Difference > m_MagicNumberC){
 			cout << "Difference: " << Difference << endl;
 			cout << "strip hit multiple times?  " << Event->GetHit(h)->GetStripHitMultipleTimes() << endl;
 			dummy_func();
@@ -1000,7 +1007,7 @@ void MModuleStripPairingGreedy::DetermineOption(bool adjStripsHit){
 
 //checks if any hits are on adjacent strips, and return true if so
 //appends any hits on adjacent strips to stripsHit vector
-//if strip n and n+1 are hit, the "strip number" for the combined strips is 50+n
+//if strip n and n+1 are hit, the "strip number" for the combined strips is m_MagicNumberB+n
 //for example, if strips 3 and 4 are hit, 53 is appended to the end of stripsHit
 bool MModuleStripPairingGreedy::CheckForAdjacentStrips(){
  
@@ -1026,9 +1033,9 @@ bool MModuleStripPairingGreedy::CheckForAdjacentStrips(){
         adjStrips = true;
         
         counter += 1;
-        //label combined strip by adding 50 to the lower strip number
+        //label combined strip by adding m_MagicNumberB to the lower strip number
         //append combined strip number to stripsHit
-        adjStripLabel = stripsHit[axis][i] + 50;
+        adjStripLabel = stripsHit[axis][i] + m_MagicNumberB;
         stripsHit[axis].push_back(adjStripLabel);
         
         //add row and column to kill matrix
@@ -1107,9 +1114,9 @@ void MModuleStripPairingGreedy::AddMultipleHits(int axis){
       x1 = stripsHit[axis][i];
       x2 = stripsHit[axis][j];
       
-      //label combinations by multiplying the lower strip number by 100 and adding it to the higher strip number
+      //label combinations by multiplying the lower strip number by m_MagicNumberC and adding it to the higher strip number
       //append combined strip to pairHitsVec
-      pair = x1*100+x2;
+      pair = x1*m_MagicNumberC+x2;
       pairHitsVec.push_back(pair);
       
       //count number of pairs
@@ -1186,7 +1193,7 @@ void MModuleStripPairingGreedy::ChargeSharingThreeStrips(int axis){
 	//check pairs of adjacent strips
 	for (int i=nHitsOrig[axis]; i<nHitsOrig[axis]+nHitsAdj[axis]-1; i++){
 		if ( fabs(stripsHit[axis][i+1] - stripsHit[axis][i]) == 1){
-			int sID_one = stripsHit[axis][i]-50;
+			int sID_one = stripsHit[axis][i]-m_MagicNumberB;
 
 			//get strip IDs to check energies
 			int indOne = GetStripIndex(axis,sID_one);
@@ -1198,7 +1205,7 @@ void MModuleStripPairingGreedy::ChargeSharingThreeStrips(int axis){
 
 			//if energy makes sense, get new "strip ID"
 			if (eTwo > eOne && eTwo > eThree){
-				int newStripID = 5000+sID_one;
+				int newStripID = m_MagicNumberD+sID_one;
 				stripsHit[axis].push_back(newStripID);
 				float newEnergy = eOne+eTwo+eThree;
 				energy[axis].push_back(newEnergy);
@@ -1250,9 +1257,9 @@ void MModuleStripPairingGreedy::AddThreeHits(int axis){
       x1 = stripsHit[axis][i];
       x2 = stripsHit[axis][j];
       
-      //label combinations by multiplying the lower strip number by 100 and adding it to the higher strip number
+      //label combinations by multiplying the lower strip number by m_MagicNumberC and adding it to the higher strip number
       //append combined strip to pairHitsVec
-      pair = x1*10000+x2;
+      pair = x1*m_MagicNumberE+x2;
       pairHitsVec.push_back(pair);
       
       //count number of pairs
@@ -1732,7 +1739,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 
 /*
 	for (unsigned int pair=0; pair<finalPairs.size(); pair++){
-		if (finalPairs.at(pair)[0] > 100 && finalPairs.at(pair)[1] > 100){
+		if (finalPairs.at(pair)[0] > m_MagicNumberC && finalPairs.at(pair)[1] > m_MagicNumberC){
 			dummy_func();
 		}
 	}
@@ -1762,91 +1769,91 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 		yChargeSharing = false;
 
 		//charge sharing between two strips
-    if (finalPairs[i][0] > 50 && finalPairs[i][0] < 100){
-      xVec.push_back(finalPairs[i][0]-50);
-      xVec.push_back(finalPairs[i][0]+1-50);
+    if (finalPairs[i][0] > m_MagicNumberB && finalPairs[i][0] < m_MagicNumberC){
+      xVec.push_back(finalPairs[i][0]-m_MagicNumberB);
+      xVec.push_back(finalPairs[i][0]+1-m_MagicNumberB);
 			xChargeSharing = true;
     }
 		//charge sharing between three strips
-		else if (finalPairs[i][0] > 5000 && finalPairs[i][0] < 5100){
-			xVec.push_back(finalPairs[i][0]-5000);
-			xVec.push_back(finalPairs[i][0]+1-5000);
-			xVec.push_back(finalPairs[i][0]+2-5000);
+		else if (finalPairs[i][0] > m_MagicNumberD && finalPairs[i][0] < m_MagicNumberD + m_MagicNumberC){
+			xVec.push_back(finalPairs[i][0]-m_MagicNumberD);
+			xVec.push_back(finalPairs[i][0]+1-m_MagicNumberD);
+			xVec.push_back(finalPairs[i][0]+2-m_MagicNumberD);
 			xChargeSharing = true;
 		}
 		//two hits on x: y strip hit twice
-    else if (finalPairs[i][0] > 100 && finalPairs[i][0] < 10000){
+    else if (finalPairs[i][0] > m_MagicNumberC && finalPairs[i][0] < m_MagicNumberE){
 			xTwoHits = true;
-      if (finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100 > 50){
+      if (finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				xChargeSharing = true;
-        xVec.push_back(finalPairs[i][0]/100);
-        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100-50);
-        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100+1-50);
+        xVec.push_back(finalPairs[i][0]/m_MagicNumberC);
+        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        xVec.push_back(finalPairs[i][0]/100);
-        xVec.push_back(finalPairs[i][0] - (int)(finalPairs[i][0]/100)*100);
+        xVec.push_back(finalPairs[i][0]/m_MagicNumberC);
+        xVec.push_back(finalPairs[i][0] - (int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC);
       }
     }
 		//three hits on x: y strip hit three times
-		else if (finalPairs[i][0] > 10000){
+		else if (finalPairs[i][0] > m_MagicNumberE){
 			xThreeHits = true;
-			xVec.push_back(finalPairs[i][0]/10000);
-			int lowerFourDigits = finalPairs[i][0]-(int)(finalPairs[i][0]/10000)*10000;
-	    if (lowerFourDigits-(int)(lowerFourDigits/100)*100 > 50){
+			xVec.push_back(finalPairs[i][0]/m_MagicNumberE);
+			int lowerFourDigits = finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberE)*m_MagicNumberE;
+	    if (lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				xChargeSharing = true;
-        xVec.push_back(lowerFourDigits/100);
-        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100-50);
-        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100+1-50);
+        xVec.push_back(lowerFourDigits/m_MagicNumberC);
+        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        xVec.push_back(lowerFourDigits/100);
-        xVec.push_back(lowerFourDigits - (int)(lowerFourDigits/100)*100);
+        xVec.push_back(lowerFourDigits/m_MagicNumberC);
+        xVec.push_back(lowerFourDigits - (int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC);
       }
  		}
 		//simplest case: one hit on x, one on y
-    else if (finalPairs[i][0] < 38) {xVec.push_back(finalPairs[i][0]);}
+    else if (finalPairs[i][0] < m_MagicNumberA) {xVec.push_back(finalPairs[i][0]);}
     
-    if (finalPairs[i][1] > 50 && finalPairs[i][1] < 100){
-      yVec.push_back(finalPairs[i][1]-50);
-      yVec.push_back(finalPairs[i][1]+1-50);
+    if (finalPairs[i][1] > m_MagicNumberB && finalPairs[i][1] < m_MagicNumberC){
+      yVec.push_back(finalPairs[i][1]-m_MagicNumberB);
+      yVec.push_back(finalPairs[i][1]+1-m_MagicNumberB);
 			yChargeSharing = true;
     }
-		else if (finalPairs[i][1] > 5000 && finalPairs[i][1] < 5100){
-			yVec.push_back(finalPairs[i][1]-5000);
-			yVec.push_back(finalPairs[i][1]+1-5000);
-			yVec.push_back(finalPairs[i][1]+2-5000);
+		else if (finalPairs[i][1] > m_MagicNumberD && finalPairs[i][1] < m_MagicNumberD + m_MagicNumberC){
+			yVec.push_back(finalPairs[i][1]-m_MagicNumberD);
+			yVec.push_back(finalPairs[i][1]+1-m_MagicNumberD);
+			yVec.push_back(finalPairs[i][1]+2-m_MagicNumberD);
 			yChargeSharing = true;
 		}
-    else if (finalPairs[i][1] > 100 && finalPairs[i][1] < 10000){
+    else if (finalPairs[i][1] > m_MagicNumberC && finalPairs[i][1] < m_MagicNumberE){
 			yTwoHits = true;
-      if (finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100 > 50){
+      if (finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				yChargeSharing = true;
-        yVec.push_back(finalPairs[i][1]/100);
-        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100-50);
-        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100+1-50);
+        yVec.push_back(finalPairs[i][1]/m_MagicNumberC);
+        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        yVec.push_back(finalPairs[i][1]/100);
-        yVec.push_back(finalPairs[i][1] - (int)(finalPairs[i][1]/100)*100);
+        yVec.push_back(finalPairs[i][1]/m_MagicNumberC);
+        yVec.push_back(finalPairs[i][1] - (int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC);
       }
     }
-		else if (finalPairs[i][1] > 10000){
+		else if (finalPairs[i][1] > m_MagicNumberE){
 			yThreeHits = true;
-			yVec.push_back(finalPairs[i][1]/10000);
-			int lowerFourDigits = finalPairs[i][1]-(int)(finalPairs[i][1]/10000)*10000;
-	    if (lowerFourDigits-(int)(lowerFourDigits/100)*100 > 50){
+			yVec.push_back(finalPairs[i][1]/m_MagicNumberE);
+			int lowerFourDigits = finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberE)*m_MagicNumberE;
+	    if (lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				yChargeSharing = true;
-        yVec.push_back(lowerFourDigits/100);
-        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100-50);
-        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100+1-50);
+        yVec.push_back(lowerFourDigits/m_MagicNumberC);
+        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        yVec.push_back(lowerFourDigits/100);
-        yVec.push_back(lowerFourDigits - (int)(lowerFourDigits/100)*100);
+        yVec.push_back(lowerFourDigits/m_MagicNumberC);
+        yVec.push_back(lowerFourDigits - (int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC);
       }
  		}
-    else if (finalPairs[i][1] < 38) {yVec.push_back(finalPairs[i][1]);}
+    else if (finalPairs[i][1] < m_MagicNumberA) {yVec.push_back(finalPairs[i][1]);}
 
 		if (xTwoHits){
 			twoHitsCounter += 1;
@@ -1875,7 +1882,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				yStripHitMultipleTimes.push_back(1);
 				xStripHitMultipleTimes.push_back(0);
 				chargeSharing.push_back(1);
-				indexTwo = GetStripIndex(0, (50+xVec[1]));
+				indexTwo = GetStripIndex(0, (m_MagicNumberB+xVec[1]));
 			}
 			else {
 				xVecNew.push_back(xVec[1]);
@@ -1936,7 +1943,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexTwo = GetStripIndex(1, (50+yVec[1]));
+				indexTwo = GetStripIndex(1, (m_MagicNumberB+yVec[1]));
 			}
 			else {
 				pair.push_back(xVec);
@@ -2011,7 +2018,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				pair.push_back(yVec);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexThree = GetStripIndex(0,(50+xVec[2]));
+				indexThree = GetStripIndex(0,(m_MagicNumberB+xVec[2]));
 			}
 			else {
 				xVecNew.push_back(xVec[2]);
@@ -2089,7 +2096,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexThree = GetStripIndex(1,(50+yVec[2]));
+				indexThree = GetStripIndex(1,(m_MagicNumberB+yVec[2]));
 			}
 			else {
 				pair.push_back(xVec);

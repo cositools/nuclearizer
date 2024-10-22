@@ -74,6 +74,7 @@ using namespace std;
 #include "MModuleEventSaver.h"
 #include "MModuleResponseGenerator.h"
 #include "MModuleDiagnostics.h"
+#include "MModuleDiagnosticsEnergyPerStrip.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,6 +130,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
 
   m_Supervisor->AddAvailableModule(new MModuleDiagnostics());
+  m_Supervisor->AddAvailableModule(new MModuleDiagnosticsEnergyPerStrip());
 
   m_Supervisor->Load();
   
