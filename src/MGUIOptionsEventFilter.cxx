@@ -88,6 +88,11 @@ void MGUIOptionsEventFilter::Create()
     "In addition, it is always applied to the highest analysis level:\n"
     "Reconstructed event -> hits -> strip hits");
   m_OptionsFrame->AddFrame(TotalEnergyLabel, TotalEnergyLayout);
+
+  m_SingleSiteOnly = new TGCheckButton(m_OptionsFrame, "Only keep single site events (one strip on each side)", 1);
+  m_SingleSiteOnly->SetOn(dynamic_cast<MModuleEventFilter*>(m_Module)->GetSingleSiteOnly());
+  TGLayoutHints* Label4Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_SingleSiteOnly, Label4Layout);
   
   
   PostCreate();
@@ -134,6 +139,7 @@ bool MGUIOptionsEventFilter::OnApply()
 
   dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumTotalEnergy(m_TotalEnergy->GetMinValue());
   dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumTotalEnergy(m_TotalEnergy->GetMaxValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetSingleSiteOnly(m_SingleSiteOnly->IsOn());
 
   return true;
 }

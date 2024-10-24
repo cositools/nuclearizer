@@ -70,6 +70,8 @@ class MGUIOptionsEventFilter : public MGUIOptions
   TGTextEntry* m_Detectors;
   //! The total energy selection
   MGUIEMinMaxEntry* m_TotalEnergy;
+
+  TGCheckButton* m_SingleSiteOnly;
 	
   // private members:
  private:
