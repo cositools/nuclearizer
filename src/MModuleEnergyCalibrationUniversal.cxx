@@ -413,7 +413,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
   for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
     MStripHit* SH = Event->GetStripHit(i);
     if (SH->GetEnergy() < 8 || SH->GetTiming() < 8700 || SH->GetTiming() > 12000) {
-      cout<<"HACK: Removing strip ht due to TAC "<<SH->GetTiming()<<" cut or energy "<<SH->GetEnergy()<<endl;
+      // cout<<"HACK: Removing strip ht due to TAC "<<SH->GetTiming()<<" cut or energy "<<SH->GetEnergy()<<endl;
       Event->RemoveStripHit(i);
       delete SH;
     } else {
@@ -421,6 +421,22 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
+  // unsigned int NXStripHits = 0;
+  // unsigned int NYStripHits = 0;
+  // for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
+  //   MStripHit* SH = Event->GetStripHit(i);
+  //   if ( SH->IsXStrip() ) {
+  //     ++NXStripHits;
+  //   }
+  //   else{
+  //     ++NYStripHits;
+  //   }
+  //   ++i;
+  // }
+  // if ( NXStripHits!=1 || NYStripHits!=1 ){
+  //   Event->SetEnergyCalibrationIncomplete_BadStrip(true);
+  //   // cout<<"HACK: flagging multiple-pixel event"<<endl;
+  // }
 
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
   
