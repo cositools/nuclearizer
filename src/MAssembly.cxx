@@ -70,6 +70,7 @@ using namespace std;
 #include "MModuleDepthCalibrationB.h"
 #include "MModuleDepthCalibration2024.h"
 #include "MModuleStripPairingGreedy.h"
+#include "MModuleStripPairingChiSquare.h"
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
 #include "MModuleResponseGenerator.h"
@@ -118,6 +119,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
 
   m_Supervisor->AddAvailableModule(new MModuleStripPairingGreedy());
+  m_Supervisor->AddAvailableModule(new MModuleStripPairingChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleChargeSharingCorrection());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());

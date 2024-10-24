@@ -95,6 +95,7 @@ $(LB)/MGUIOptionsDepthCalibration2024.o \
 $(LB)/MGUIExpoStripPairing.o \
 $(LB)/MModuleStripPairingGreedy.o \
 $(LB)/MGUIOptionsStripPairing.o \
+$(LB)/MModuleStripPairingChiSquare.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MModuleEventSaver.o \
 $(LB)/MGUIOptionsEventFilter.o \
