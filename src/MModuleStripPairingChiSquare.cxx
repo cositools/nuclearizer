@@ -182,6 +182,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 
   if (Event->GetNStripHits() == 0) {
     Event->SetStripPairingIncomplete(true, "No strip hits");
+    Event->SetAnalysisProgress(MAssembly::c_StripPairing);
     return false;
   }
 
@@ -220,7 +221,8 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <=1; ++side) { // side loop
       if (StripHits[d][side].size() > MaxStripHits) {
-        Event->SetStripPairingIncomplete(true, "More than 6 hit strps on one side");
+        Event->SetStripPairingIncomplete(true, "More than 6 hit strIps on one side");
+        Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
       }
     }
@@ -250,6 +252,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 
     if (StripHits[d][0].size() == 0 || StripHits[d][1].size() == 0) {
       Event->SetStripPairingIncomplete(true, "One detector side has not strip hits");
+      Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
 
@@ -459,6 +462,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
     // Now create hits:
     if (BestChiSquare == numeric_limits<double>::max()) {
       Event->SetStripPairingIncomplete(true, "Pairing did not find a single match");
+      Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
 
@@ -528,6 +532,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 
     if (EnergyTotal > max(XEnergyTotal, YEnergyTotal) + 2.5*max(XEnergyRes, YEnergyRes) || EnergyTotal < min(XEnergyTotal, YEnergyTotal) - 2.5*max(XEnergyRes, YEnergyRes)) {
       Event->SetStripPairingIncomplete(true, "Strips not pairable wihin 2.5 sigma of measure denergy");
+      Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
 
