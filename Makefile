@@ -88,6 +88,7 @@ $(LB)/MModuleCrosstalkCorrection.o \
 $(LB)/MGUIOptionsCrosstalkCorrection.o \
 $(LB)/MModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
+$(LB)/MGUIExpoDepthCalibration2024.o \
 $(LB)/MModuleDepthCalibration.o \
 $(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MModuleDepthCalibration2024.o \

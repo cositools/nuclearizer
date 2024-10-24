@@ -125,7 +125,8 @@ bool MModuleDepthCalibration2024::Initialize()
 
   // Look through the Geometry and get the names and thicknesses of all the detectors.
   for(unsigned int i = 0; i < m_Detectors.size(); ++i){
-    // TODO: need to fix DetID, but leaving as 11 for debugging purposes
+    // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
+    // If using the card cage at UCSD, default to DetID=11.
     unsigned int DetID = i;
     if ( m_UCSDOverride ){
       DetID = 11;
@@ -155,6 +156,7 @@ bool MModuleDepthCalibration2024::Initialize()
       cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
       cout << "X strip pitch: " << m_XPitches[DetID] << endl;
       cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
+      m_DetectorIDs.push_back(DetID);
     }
   }
 
@@ -170,6 +172,23 @@ bool MModuleDepthCalibration2024::Initialize()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void MModuleDepthCalibration2024::CreateExpos()
+{
+  // Create all expos
+
+  if (HasExpos() == true) return;
+
+  // Set the histogram display
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration2024(this);
+  m_ExpoDepthCalibration->SetDepthHistogramArrangement(&m_DetectorIDs);
+  for(unsigned int i = 0; i < m_DetectorIDs.size(); ++i){
+    unsigned int DetID = m_DetectorIDs[i];
+    double thickness = m_Thicknesses[DetID];
+    m_ExpoDepthCalibration->SetDepthHistogramParameters(DetID, 120, -thickness/2.,thickness/2.);
+  }
+  m_Expos.push_back(m_ExpoDepthCalibration);
+}
 
 
 bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event) 
@@ -376,6 +395,10 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
           // Zpos = mean_depth;
 	  // cout << "calculated depth: " << Zpos << endl;
+
+          // Add the depth to the GUI histogram.
+          m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+
           m_NoError+=1;
         }
       }
