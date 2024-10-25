@@ -61,7 +61,6 @@ $(LB)/MAspectPacket.o \
 $(LB)/MAspectReconstruction.o \
 $(LB)/MHit.o \
 $(LB)/MTimeAndCoordinate.o \
-$(LB)/MStrip.o \
 $(LB)/MStripHit.o \
 $(LB)/MGuardringHit.o \
 $(LB)/MDetectorEffectsEngineBalloon.o \
