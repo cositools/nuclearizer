@@ -421,22 +421,6 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
-  // unsigned int NXStripHits = 0;
-  // unsigned int NYStripHits = 0;
-  // for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
-  //   MStripHit* SH = Event->GetStripHit(i);
-  //   if ( SH->IsXStrip() ) {
-  //     ++NXStripHits;
-  //   }
-  //   else{
-  //     ++NYStripHits;
-  //   }
-  //   ++i;
-  // }
-  // if ( NXStripHits!=1 || NYStripHits!=1 ){
-  //   Event->SetEnergyCalibrationIncomplete_BadStrip(true);
-  //   // cout<<"HACK: flagging multiple-pixel event"<<endl;
-  // }
 
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
   
