@@ -155,7 +155,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
         R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-        R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
+        R.IsPositiveStrip((Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p") || (Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "l"));
         if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true) {
           CP_ROEToLine[R] = i;
         } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
@@ -313,6 +313,16 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
       resolutionfit->FixParameter(1,f1);
 
       m_ResolutionCalibration[CR.first] = resolutionfit;
+    }
+    else if (CalibratorType == "p2" || CalibratorType == "poly2") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f2 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P2","([0]+[1]*x+[2]*x*x) / 2.355",0.,2000.);
+      resolutionfit->FixParameter(0,f0);
+      resolutionfit->FixParameter(1,f1);
+      resolutionfit->FixParameter(2,f2);
+      m_ResolutionCalibration[CR.first] = resolutionfit;
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown resolution calibrator type ("<<CalibratorType<<") for strip"<<CR.first<<endl;
       continue;
@@ -398,7 +408,20 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       
       if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     } 
-  } 
+  }
+
+  for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
+    MStripHit* SH = Event->GetStripHit(i);
+    if (SH->GetEnergy() < 8 || SH->GetTiming() < 8700 || SH->GetTiming() > 12000) {
+      // cout<<"HACK: Removing strip ht due to TAC "<<SH->GetTiming()<<" cut or energy "<<SH->GetEnergy()<<endl;
+      Event->RemoveStripHit(i);
+      delete SH;
+    } else {
+      ++i;
+    }
+  }
+
+
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
   
   return true;

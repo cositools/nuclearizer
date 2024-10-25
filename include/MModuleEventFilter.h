@@ -79,6 +79,11 @@ class MModuleEventFilter : public MModule
   //! Get the maximum total energy!
   double GetMaximumTotalEnergy() const { return m_MaximumTotalEnergy; }
 
+  //! Set whether the module should filter out all non-single-site events
+  void SetSingleSiteOnly( bool SingleSiteOnly ) {m_SingleSiteOnly = SingleSiteOnly;}
+  //! Get whether the module should filter out all non-single-site events
+  bool GetSingleSiteOnly() const {return m_SingleSiteOnly;}
+
   //!AWL compute kinemaics
   double kinematics(MVector SourcePosition, MVector Site1, MVector Site2, double E0);
 
@@ -124,6 +129,7 @@ class MModuleEventFilter : public MModule
   TFile* RootFile;
   float m_YEnergy, m_X17Energy, m_X18Energy;
   float m_YTiming, m_X17Timing, m_X18Timing;
+  bool m_SingleSiteOnly;
 
 
   

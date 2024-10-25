@@ -228,6 +228,9 @@ class MModuleStripPairingGreedy : public MModule
   //! The display of debugging data
   MGUIExpoStripPairing* m_ExpoStripPairing;
  
+  //! Need a global strip pairing failed flag
+  MString m_StripPairingFailed;
+
   int m_TotalMatches; //Event Counters 
   int m_NMatches; //Variable Match counter, used to events with a specific numbers of strips involved 
   int m_NBadMatches; //Counts the number of badly matched events
@@ -275,6 +278,13 @@ class MModuleStripPairingGreedy : public MModule
  private:
 	//operation mode
 	unsigned int m_Mode;
+
+
+  unsigned int m_MagicNumberA;
+  unsigned int m_MagicNumberB;
+  unsigned int m_MagicNumberC;
+  unsigned int m_MagicNumberD;
+  unsigned int m_MagicNumberE;
 
 
 

@@ -66,6 +66,7 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventFilter);
@@ -78,9 +79,13 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
   m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
+
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = true;
   
   m_MinimumTotalEnergy = 0;
   m_MaximumTotalEnergy = 10000;
+  m_SingleSiteOnly=false;
 }
 
 
@@ -144,9 +149,28 @@ bool MModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event)
       FilteredOut = true; 
     }   
   }
-  
+
+  if ( m_SingleSiteOnly ){
+    unsigned int NXStripHits = 0;
+    unsigned int NYStripHits = 0;
+    for (unsigned int i = 0; i < Event->GetNStripHits(); ++i ) {
+      MStripHit* SH = Event->GetStripHit(i);
+      if ( SH->IsXStrip() ) {
+        ++NXStripHits;
+      }
+      else{
+        ++NYStripHits;
+      }
+    }
+    if ( NXStripHits!=1 || NYStripHits!=1 ){
+      FilteredOut = true;
+    }
+  }
+
   if (FilteredOut == true) {
     Event->SetFilteredOut(true);
+    Event->SetAnalysisProgress(MAssembly::c_EventFilter);
+    return false;
   }
   
   Event->SetAnalysisProgress(MAssembly::c_EventFilter);
