@@ -64,10 +64,10 @@ class MGUIExpoTACcut : public MGUIExpo
   virtual void Export(const MString& FileName);
 
   //! Set the TAC histogram parameters 
-  void SetTACHistogramParameters(int NBins, double Min, double Max);
+  void SetTACHistogramParameters(int NBins, unsigned int Min, unsigned int Max);
 
   //! Add data to the TAC histogram
-  void AddTAC(double TAC);
+  void AddTAC(unsigned int TAC);
 
   // protected methods:
  protected:
