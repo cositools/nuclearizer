@@ -134,7 +134,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
-  m_Supervisor->AddAvailableModule(new MModuleTACcute());
+  m_Supervisor->AddAvailableModule(new MModuleTACcut());
 
   m_Supervisor->AddAvailableModule(new MModuleDiagnostics());
   m_Supervisor->AddAvailableModule(new MModuleDiagnosticsEnergyPerStrip());
