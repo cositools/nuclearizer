@@ -71,8 +71,14 @@ class MGUIOptionsEventFilter : public MGUIOptions
   //! The total energy selection
   MGUIEMinMaxEntry* m_TotalEnergy;
 
-  TGCheckButton* m_SingleSiteOnly;
-	
+  //! The number of LV-strips
+  MGUIEMinMaxEntry* m_LVStrips;
+  //! The number of HV-strips
+  MGUIEMinMaxEntry* m_HVStrips;
+
+  //! The number of hits
+  MGUIEMinMaxEntry* m_Hits;
+
   // private members:
  private:
 
