@@ -91,7 +91,7 @@ void MGUIExpoTACcut::Reset()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoTACcut::SetTACHistogramParameters(int NBins, double Min, double Max)
+void MGUIExpoTACcut::SetTACHistogramParameters(int NBins, unsigned int Min, unsigned int Max)
 {
   // Set the TAC histogram parameters 
 
@@ -106,7 +106,7 @@ void MGUIExpoTACcut::SetTACHistogramParameters(int NBins, double Min, double Max
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoTACcut::AddTAC(double TAC)
+void MGUIExpoTACcut::AddTAC(unsigned int TAC)
 {
   // Add data to the TAC histogram
 
