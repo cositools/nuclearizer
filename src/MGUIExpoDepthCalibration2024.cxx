@@ -88,7 +88,7 @@ void MGUIExpoDepthCalibration2024::Reset()
 
 void MGUIExpoDepthCalibration2024::SetDepthHistogramArrangement(vector<unsigned int>* DetIDs)
 {
-  // TODO: take in the list of detector IDs and determine the number in X and number in Y
+  // Take in the list of detector IDs and determine the number in X and number in Y
   // Update the variable m_DetectorMap.
   m_Mutex.Lock();
 

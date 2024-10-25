@@ -214,7 +214,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     // GRADE=5 is some complicated geometry with multiple hits on a single strip. 
     // GRADE=4 means there are more than 2 strip hits on one or both sides.
-    // TODO: handle GRADE
     else if( Grade > 3 ){
       H->SetNoDepth();
       Event->SetDepthCalibrationIncomplete();
@@ -368,7 +367,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           // cout << "Calculating depth" << endl;
           // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in depthvec
           // Utlize symmetry of the normal distribution.
-          // TODO: Get the energy of the event and pass it to GetTimingNoiseFWHM
           vector<double> prob_dist = norm_pdf(ctdvec, CTD_s, noise/2.355);
           
           // Weight the depth by probability
@@ -405,7 +403,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     LocalPosition.SetXYZ(Xpos, Ypos, Zpos);
     LocalOrigin.SetXYZ(0.0,0.0,0.0);
-    // TODO: Don't use the detector name
     // cout << m_DetectorNames[DetID] << endl;
     GlobalPosition = m_Geometry->GetGlobalPosition(LocalPosition, m_DetectorNames[DetID]);
     // cout << "Found the GlobalPosition" << endl;
