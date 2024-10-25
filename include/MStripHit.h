@@ -70,6 +70,8 @@ class MStripHit
   bool IsPositiveStrip() const { return m_ReadOutElement->IsPositiveStrip(); }
 
   //! Set the strip type (LV or HV)
+  //! Remark:  LV = negative = Y strip in old nomenclature)
+  //! Remark:  HV = positive = X strip in old nomenclature)
   void IsLowVoltageStrip(bool LowVoltageStrip) { m_ReadOutElement->IsLowVoltageStrip(LowVoltageStrip); }
   //! Return the strip type (LV or HV)
   bool IsLowVoltageStrip() const { return m_ReadOutElement->IsLowVoltageStrip(); }
