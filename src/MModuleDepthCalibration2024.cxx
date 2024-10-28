@@ -241,7 +241,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       for( unsigned int j = 0; j < H->GetNStripHits(); ++j){
         // cout << "strip hit " << j << endl;
         MStripHit* SH = H->GetStripHit(j);
-        if( SH->IsXStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
+        if( SH->IsLowVoltageStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
       }
 
       // cout << "finished looping over strip hits" << endl;
@@ -674,7 +674,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
     MStripHit* SH = H->GetStripHit(j);
     if( SH == NULL ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got NULL strip hit :( " << endl; return -1;}
     if( SH->GetEnergy() == 0 ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got strip without energy :( " << endl; return -1;}
-    if( SH->IsPositiveStrip() ){
+    if( SH->IsLowVoltageStrip() ){
       PStrips.push_back(SH); 
       PStripIDs.push_back(SH->GetStripID());
     }

@@ -74,27 +74,58 @@ void MGUIOptionsEventFilter::Create()
 
   // Modify here
 
-  TGLayoutHints* TotalEnergyLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  TGLayoutHints* FirstLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 30, 2);
+  TGLayoutHints* SecondariesLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 10, 10, 2, 2);
+
+  TGLabel* TotalEnergyLabel = new TGLabel(m_OptionsFrame,
+    "Energy window\n"
+    "This requires that an energy calibration has been applied previously.\n"
+    "In addition, it is always applied to the highest analysis level:\n"
+    "Reconstructed event -> hits -> strip hits");
+  m_OptionsFrame->AddFrame(TotalEnergyLabel, FirstLayout);
+
   m_TotalEnergy = new MGUIEMinMaxEntry(m_OptionsFrame, 
                                        "Choose the minimum and maximum energy [keV]:", 
                                        false,
                                        dynamic_cast<MModuleEventFilter*>(m_Module)->GetMinimumTotalEnergy(),
                                        dynamic_cast<MModuleEventFilter*>(m_Module)->GetMaximumTotalEnergy(),
                                        true, 0.0);
-  m_OptionsFrame->AddFrame(m_TotalEnergy, TotalEnergyLayout);
+  m_OptionsFrame->AddFrame(m_TotalEnergy, SecondariesLayout);
 
-  TGLabel* TotalEnergyLabel = new TGLabel(m_OptionsFrame, 
-    "The energy window requires that an energy calibration has been applied.\n"
-    "In addition, it is always applied to the highest analysis level:\n"
-    "Reconstructed event -> hits -> strip hits");
-  m_OptionsFrame->AddFrame(TotalEnergyLabel, TotalEnergyLayout);
 
-  m_SingleSiteOnly = new TGCheckButton(m_OptionsFrame, "Only keep single site events (one strip on each side)", 1);
-  m_SingleSiteOnly->SetOn(dynamic_cast<MModuleEventFilter*>(m_Module)->GetSingleSiteOnly());
-  TGLayoutHints* Label4Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_SingleSiteOnly, Label4Layout);
   
-  
+  TGLabel* StripsLabel = new TGLabel(m_OptionsFrame,
+    "Low- and high voltage read-out strips");
+  m_OptionsFrame->AddFrame(StripsLabel, FirstLayout);
+  m_LVStrips = new MGUIEMinMaxEntry(m_OptionsFrame,
+                                   "Choose the minimum and maximum number of low voltage strips:",
+                                   false,
+                                   dynamic_cast<MModuleEventFilter*>(m_Module)->GetMinimumLVStrips(),
+                                   dynamic_cast<MModuleEventFilter*>(m_Module)->GetMaximumLVStrips(),
+                                   true, 0.0);
+  m_OptionsFrame->AddFrame(m_LVStrips, SecondariesLayout);
+
+  m_HVStrips = new MGUIEMinMaxEntry(m_OptionsFrame,
+                                   "Choose the minimum and maximum number of high voltage strips:",
+                                   false,
+                                   dynamic_cast<MModuleEventFilter*>(m_Module)->GetMinimumHVStrips(),
+                                   dynamic_cast<MModuleEventFilter*>(m_Module)->GetMaximumHVStrips(),
+                                   true, 0.0);
+  m_OptionsFrame->AddFrame(m_HVStrips, SecondariesLayout);
+
+  TGLabel* HitsLabel = new TGLabel(m_OptionsFrame,
+    "Hit window\n"
+    "This requires that Strip pairing has been done.");
+  m_OptionsFrame->AddFrame(HitsLabel, FirstLayout);
+
+  m_Hits = new MGUIEMinMaxEntry(m_OptionsFrame,
+                                "Choose the minimum and maximum number of hits:",
+                                false,
+                                dynamic_cast<MModuleEventFilter*>(m_Module)->GetMinimumHits(),
+                                dynamic_cast<MModuleEventFilter*>(m_Module)->GetMaximumHits(),
+                                true, 0.0);
+  m_OptionsFrame->AddFrame(m_Hits, SecondariesLayout);
+
   PostCreate();
 }
 
@@ -139,7 +170,15 @@ bool MGUIOptionsEventFilter::OnApply()
 
   dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumTotalEnergy(m_TotalEnergy->GetMinValue());
   dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumTotalEnergy(m_TotalEnergy->GetMaxValue());
-  dynamic_cast<MModuleEventFilter*>(m_Module)->SetSingleSiteOnly(m_SingleSiteOnly->IsOn());
+
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumHVStrips(m_HVStrips->GetMinValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumHVStrips(m_HVStrips->GetMaxValue());
+
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumLVStrips(m_LVStrips->GetMinValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumLVStrips(m_LVStrips->GetMaxValue());
+
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumHits(m_Hits->GetMinValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumHits(m_Hits->GetMaxValue());
 
   return true;
 }

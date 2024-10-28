@@ -264,7 +264,7 @@ bool pnGraphs::Analyze()
 	        int DetectorID = 0;
 	        for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
 	          DetectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
-	          if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+	          if (Event->GetHit(h)->GetStripHit(s)->IsLowVoltageStrip() == true) {
 	            ++pNStrips;
 	            pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
 	          } else {
@@ -301,7 +301,7 @@ bool pnGraphs::Analyze()
 					for (unsigned int h=0; h<Event->GetNHits(); h++){
 						for (unsigned int s=0; s<Event->GetHit(h)->GetNStripHits(); s++){
 							detectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
-							if (Event->GetHit(h)->GetStripHit(s)->IsXStrip()){
+							if (Event->GetHit(h)->GetStripHit(s)->IsLowVoltageStrip()){
 								if (m_Side == 1){
 									stripID = Event->GetHit(h)->GetStripHit(s)->GetStripID();
 									if (stripID == strip && m_DetID == detectorID){

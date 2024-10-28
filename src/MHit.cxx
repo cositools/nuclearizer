@@ -162,7 +162,7 @@ void MHit::StreamEvta(ostream& S)
   for (unsigned int s = 0; s < GetNStripHits(); ++s) {
     //GetStripHit(s)->StreamRoa(cout);
     vector<int> NewOrigins = GetStripHit(s)->GetOrigins();
-    if (GetStripHit(s)->IsPositiveStrip() == true) {
+    if (GetStripHit(s)->IsLowVoltageStrip() == true) {
       for (int o: NewOrigins) {
         xOrigins.push_back(o);
       }

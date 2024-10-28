@@ -60,16 +60,18 @@ class MStripHit
   int GetStripID() const { return m_ReadOutElement->GetStripID(); }
 
   //! Set the strip type (x/y). Note that x strips run parallel to the x-axis!!
-  void IsXStrip(bool PositiveStrip) { m_ReadOutElement->IsPositiveStrip(PositiveStrip); }
+  //void IsLowVoltageStrip(bool PositiveStrip) { m_ReadOutElement->IsLowVoltageStrip(PositiveStrip); }
   //! Return the strip type (x/y). Note that x strips run parallel to the x-axis!!
-  bool IsXStrip() const { return m_ReadOutElement->IsPositiveStrip(); }
+  //bool IsLowVoltageStrip() const { return m_ReadOutElement->IsLowVoltageStrip(); }
 
   //! Set the strip type (positive or negative)
-  void IsPositiveStrip(bool PositiveStrip) { m_ReadOutElement->IsPositiveStrip(PositiveStrip); }
+  //void IsLowVoltageStrip(bool PositiveStrip) { m_ReadOutElement->IsLowVoltageStrip(PositiveStrip); }
   //! Return the strip type (positive or negative)
-  bool IsPositiveStrip() const { return m_ReadOutElement->IsPositiveStrip(); }
+  //bool IsLowVoltageStrip() const { return m_ReadOutElement->IsLowVoltageStrip(); }
 
   //! Set the strip type (LV or HV)
+  //! Remark:  HV = negative = Y strip in old nomenclature)
+  //! Remark:  LV = positive = X strip in old nomenclature)
   void IsLowVoltageStrip(bool LowVoltageStrip) { m_ReadOutElement->IsLowVoltageStrip(LowVoltageStrip); }
   //! Return the strip type (LV or HV)
   bool IsLowVoltageStrip() const { return m_ReadOutElement->IsLowVoltageStrip(); }

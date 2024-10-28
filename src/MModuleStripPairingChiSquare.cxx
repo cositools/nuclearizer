@@ -192,7 +192,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 
   for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) {
     MStripHit* SH = Event->GetStripHit(sh);
-    unsigned int Side = (SH->IsXStrip() == true) ? 0 : 1;
+    unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
 
     // Check if detector is on list
     bool DetectorFound = false;

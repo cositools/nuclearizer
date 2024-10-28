@@ -368,7 +368,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
     double nUncertainty = 0.0;
     
     for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
-      if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+      if (Event->GetHit(h)->GetStripHit(s)->IsLowVoltageStrip() == true) {
         ++pNStrips;
         pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
         pUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
@@ -459,7 +459,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 			MStripHit* striphit = Event->GetStripHit(sh);
 			cout << striphit->GetDetectorID() << '\t';
 			cout << striphit->GetStripID() << '\t';
-			cout << striphit->IsPositiveStrip() << '\t';
+			cout << striphit->IsLowVoltageStrip() << '\t';
 			cout << striphit->GetEnergy() << endl;
 		}
 		dummy_func();
@@ -496,7 +496,7 @@ int MModuleStripPairingGreedy::GetEventInfo(MReadOutAssembly* Event, int detecto
   //Find the number of hits per side for this detector
   for (unsigned int i = 0; i < Event->GetNStripHits(); i++){
     if (detector == Event->GetStripHit(i)->GetDetectorID()){
-      if (Event->GetStripHit(i)->IsXStrip() == true){
+      if (Event->GetStripHit(i)->IsLowVoltageStrip() == true){
         n_x += 1;
       }
       else {
@@ -529,7 +529,7 @@ int MModuleStripPairingGreedy::GetEventInfo(MReadOutAssembly* Event, int detecto
 
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
-        if (Event->GetStripHit(i)->IsXStrip() == true){
+        if (Event->GetStripHit(i)->IsLowVoltageStrip() == true){
           xTotalEnergy += Event->GetStripHit(i)->GetEnergy();
 					xTotalUnc += pow(Event->GetStripHit(i)->GetEnergyResolution(),2);
         }    
@@ -546,7 +546,7 @@ int MModuleStripPairingGreedy::GetEventInfo(MReadOutAssembly* Event, int detecto
 
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
-        if (Event->GetStripHit(i)->IsXStrip() == true){
+        if (Event->GetStripHit(i)->IsLowVoltageStrip() == true){
           stripID = Event->GetStripHit(i)->GetStripID();
           stripEnergy = Event->GetStripHit(i)->GetEnergy();
           stripSigma = Event->GetStripHit(i)->GetEnergyResolution();
@@ -695,7 +695,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair)[0].size(); strip++){
 			for (unsigned int n = 0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
-					if (Event->GetStripHit(n)->IsXStrip() == true){
+					if (Event->GetStripHit(n)->IsLowVoltageStrip() == true){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair)[0].at(strip)){
 							Hit->AddStripHit(Event->GetStripHit(n));
 							Hit->SetHitQuality(hitQualityFactor.at(pair));
@@ -711,7 +711,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair)[1].size(); strip++){
 			for (unsigned int n=0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
-					if (Event->GetStripHit(n)->IsXStrip() == false){
+					if (Event->GetStripHit(n)->IsLowVoltageStrip() == false){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair)[1].at(strip)){
 							Hit->AddStripHit(Event->GetStripHit(n));
 						}
@@ -762,11 +762,11 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 				int yhit_strip[3] = {0, 0, 0};
 				double yhit_energy[3] = {0.0, 0.0, 0.0};
 				for (unsigned int s = 0; s < 4; ++s){
-				if (Hit->GetStripHit(s)->IsXStrip() == true){
+				if (Hit->GetStripHit(s)->IsLowVoltageStrip() == true){
 				xhit_strip[nXhits] = Hit->GetStripHit(s)->GetStripID();
 				xhit_energy[nXhits] = Hit->GetStripHit(s)->GetEnergy();
 				nXhits = nXhits + 1;
-				} else if (Hit->GetStripHit(s)->IsXStrip() == false){
+				} else if (Hit->GetStripHit(s)->IsLowVoltageStrip() == false){
 				yhit_strip[nYhits] = Hit->GetStripHit(s)->GetStripID();
 				yhit_energy[nYhits] = Hit->GetStripHit(s)->GetEnergy();
 				}
@@ -800,7 +800,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
     // If y strip was hit multiple times, need to use the x energy
     else if (Event->GetHit(sh)->GetStripHitMultipleTimesY() == true) {
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == true){
           Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         }
@@ -812,7 +812,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
     // If x strip was hit multiple times, need to use the y energy
     else if (Event->GetHit(sh)->GetStripHitMultipleTimesX() == true) {
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false){
           Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         }
@@ -829,7 +829,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {  
         //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
         
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false) {
           EnergyY += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           SigmaYSquared += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         } else {
