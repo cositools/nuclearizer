@@ -316,7 +316,7 @@ bool ChargeLossOffsets::Analyze()
 						MStripHit *StripHit = Hit->GetStripHit(sh);
 						detector = StripHit->GetDetectorID();
 	
-						if (StripHit->IsXStrip() == true){
+						if (StripHit->IsLowVoltageStrip() == true){
 							nXStripHits++;
 							xEnergy += StripHit->GetEnergy();
 							xStripIDs.push_back(StripHit->GetStripID());

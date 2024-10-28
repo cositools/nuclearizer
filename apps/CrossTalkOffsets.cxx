@@ -313,7 +313,7 @@ bool CrossTalkOffsets::Analyze()
 
 				//Make a histogram of true single-site events with only two strips to double check energy calibration
 				if ((num_Single_DetHits == 1) && (Event->GetHit(0)->GetNStripHits() == 2)) {	
-					if (Event->GetHit(0)->GetStripHit(0)->IsXStrip() == true) {
+					if (Event->GetHit(0)->GetStripHit(0)->IsLowVoltageStrip() == true) {
 						SingleSite_Hist[DetectorID]->Fill(Event->GetHit(0)->GetStripHit(1)->GetEnergy());
 					} else {
 			//			SingleSite_Hist[DetectorID]->Fill(Event->GetHit(0)->GetStripHit(0)->GetEnergy());
@@ -337,7 +337,7 @@ bool CrossTalkOffsets::Analyze()
 					for (unsigned int i = 0; i < 2; ++i) { //loop through the two hits...
 						for (unsigned int s = 0; s < 2; ++s) { //...each with two strips...
 							//...to record the energy and strip number of each strip hit fo later comparison 
-							if (Event->GetHit(GoodHit[i])->GetStripHit(s)->IsXStrip() == true) {
+							if (Event->GetHit(GoodHit[i])->GetStripHit(s)->IsLowVoltageStrip() == true) {
 								x_energy[nXhit] = Event->GetHit(GoodHit[i])->GetStripHit(s)->GetEnergy();
 								x_strip[nXhit] = Event->GetHit(GoodHit[i])->GetStripHit(s)->GetStripID();
 								nXhit = nXhit + 1;

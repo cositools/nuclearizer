@@ -124,7 +124,7 @@ void MGUIExpoDiagnosticsEnergyPerStrip::AddHit(MHit* H)
   for (unsigned int h = 0; h < H->GetNStripHits(); ++h) {
     MStripHit* SH = H->GetStripHit(h);
     // TODO: Should be LV / HV - old version?
-    if (SH->IsXStrip() == true) {
+    if (SH->IsLowVoltageStrip() == true) {
       m_StripHitsLV->Fill(SH->GetStripID(), SH->GetEnergy());
     } else {
       m_StripHitsHV->Fill(SH->GetStripID(), SH->GetEnergy());
@@ -145,7 +145,7 @@ void MGUIExpoDiagnosticsEnergyPerStrip::AddStripHit(MStripHit* SH, bool UseEnerg
   m_Mutex.Lock();
 
   // TODO: Should be LV / HV - old version?
-  if (SH->IsXStrip() == true) {
+  if (SH->IsLowVoltageStrip() == true) {
     m_StripHitsLV->Fill(SH->GetStripID(), UseEnergy == true ? SH->GetEnergy() : SH->GetADCUnits());
   } else {
     m_StripHitsHV->Fill(SH->GetStripID(), UseEnergy == true ? SH->GetEnergy() : SH->GetADCUnits());

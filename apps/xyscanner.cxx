@@ -198,15 +198,15 @@ int main(int argc, char** argv)
 			unsigned int NSH = Event->GetNStripHits();
 			MStripHit *XSH, *YSH;
 			if(NSH == 2){
-				if(Event->GetStripHit(0)->IsXStrip()){
-					if(!Event->GetStripHit(1)->IsXStrip()){
+				if(Event->GetStripHit(0)->IsLowVoltageStrip()){
+					if(!Event->GetStripHit(1)->IsLowVoltageStrip()){
 						XSH = Event->GetStripHit(0);
 						YSH = Event->GetStripHit(1);
 					} else {
 						continue;
 					}
 				} else {
-					if(Event->GetStripHit(1)->IsXStrip()){
+					if(Event->GetStripHit(1)->IsLowVoltageStrip()){
 						XSH = Event->GetStripHit(1);
 						YSH = Event->GetStripHit(0);
 					} else {
@@ -222,12 +222,12 @@ int main(int argc, char** argv)
 						fprintf(fout,"X %d:%d ---> ",XSH->GetStripID(),(int)XSH->GetTiming());
 						for(int i = 0; i < NTonly; ++i){
 							MStripHit* SH = Event->GetStripHitTOnly(i);
-							if(SH->IsXStrip()) fprintf(fout,"%d:%d ",SH->GetStripID(),(int)SH->GetTiming());
+							if(SH->IsLowVoltageStrip()) fprintf(fout,"%d:%d ",SH->GetStripID(),(int)SH->GetTiming());
 						}
 						fprintf(fout,"\nY %d:%d ---> ", YSH->GetStripID(),(int)YSH->GetTiming());
 						for(int i = 0; i < NTonly; ++i){
 							MStripHit* SH = Event->GetStripHitTOnly(i);
-							if(!SH->IsXStrip()) fprintf(fout,"%d:%d ",SH->GetStripID(),(int)SH->GetTiming());
+							if(!SH->IsLowVoltageStrip()) fprintf(fout,"%d:%d ",SH->GetStripID(),(int)SH->GetTiming());
 						}
 						fprintf(fout,"\n");
 					}
@@ -236,7 +236,7 @@ int main(int argc, char** argv)
 					map<int,MStripHit*> TOnlyNeighbors;
 					for(int i = 0; i < Event->GetNStripHitsTOnly(); ++i){
 						auto SH = Event->GetStripHitTOnly(i);
-						if(SH->IsXStrip()){
+						if(SH->IsLowVoltageStrip()){
 							if(abs(SH->GetStripID() - XSH->GetStripID()) <= 3){ //keep in mind that sometimes we have more than one TOnly trigger on each side (like 4 neighboring strips)
 								TOnlyNeighbors[SH->GetStripID()] = SH;
 							}

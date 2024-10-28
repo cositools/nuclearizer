@@ -122,7 +122,7 @@ void MGUIExpoDiagnostics::AddStripHit(MStripHit* SH)
   m_Mutex.Lock();
 
   // TODO: Should be LV / HV - old version?
-  if (SH->IsXStrip() == true) {
+  if (SH->IsLowVoltageStrip() == true) {
     m_StripHitsLV->Fill(SH->GetStripID(), SH->GetEnergy());
   } else {
     m_StripHitsHV->Fill(SH->GetStripID(), SH->GetEnergy());

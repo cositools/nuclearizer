@@ -194,7 +194,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			MStripHit* SH = H->GetStripHit(j);
 			if( SH == NULL ) { cout << "ERROR in MNCTModuleDepthCalibration: Depth Calibration: got NULL strip hit :( " << endl; continue;}
 			if( SH->GetEnergy() == 0 ) { cout << "ERROR in MNCTModuleDepthCalibration: Depth Calibration: got strip without energy :( " << endl; continue;}
-			if( SH->IsXStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
+			if( SH->IsLowVoltageStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
 		}
 
 		MVector LocalPosition, PositionResolution, GlobalPosition;

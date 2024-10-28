@@ -191,7 +191,7 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
     
     MStripHit* SH = new MStripHit();
     SH->SetDetectorID(Strip->GetDetectorID());
-    SH->IsXStrip(Strip->IsPositiveStrip());
+    SH->IsLowVoltageStrip(Strip->IsLowVoltageStrip());
     SH->SetStripID(Strip->GetStripID());
     
     SH->SetTiming(Timing->GetTiming());
