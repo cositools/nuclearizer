@@ -128,6 +128,8 @@ bool MModuleTemplate::AnalyzeEvent(MReadOutAssembly* Event)
 void MModuleTemplate::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
+
+  MModule::Finalize();
 }
 
 

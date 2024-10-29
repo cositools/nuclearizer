@@ -552,6 +552,8 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 void MModuleStripPairingChiSquare::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
+
+  MModule::Finalize();
 }
 
 
