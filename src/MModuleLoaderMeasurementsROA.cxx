@@ -115,7 +115,7 @@ bool MModuleLoaderMeasurementsROA::AnalyzeEvent(MReadOutAssembly* Event)
   // Here: Just read it.
     
   if (ReadNextEvent(Event) == false) {
-    cout<<"MModuleLoaderMeasurementsROA: No more events!"<<endl;
+    cout<<m_Name<<": No more events!"<<endl;
     m_IsFinished = true;
     return false;
   }
@@ -131,7 +131,7 @@ bool MModuleLoaderMeasurementsROA::AnalyzeEvent(MReadOutAssembly* Event)
 
 void MModuleLoaderMeasurementsROA::Finalize()
 {
-  // Initialize the module 
+  // Finalize the module
   
   MModule::Finalize();
   
@@ -194,13 +194,19 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
     SH->IsLowVoltageStrip(Strip->IsLowVoltageStrip());
     SH->SetStripID(Strip->GetStripID());
     
-    SH->SetTiming(Timing->GetTiming());
-    SH->SetADCUnits(ADC->GetADCValue());
-    
+    if (Timing != nullptr) {
+      SH->SetTiming(Timing->GetTiming());
+    } else {
+      cout<<m_Name<<": Warning: Event without timing found"<<endl;
+    }
+    if (ADC != nullptr) {
+      SH->SetADCUnits(ADC->GetADCValue());
+    } else {
+      cout<<m_Name<<": Warning: Event without ADC's found"<<endl;
+    }
     if (Origins != nullptr) {
       SH->AddOrigins(Origins->GetOrigins());
     }
-    
     
     Event->AddStripHit(SH);
   }
