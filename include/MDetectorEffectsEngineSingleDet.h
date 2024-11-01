@@ -252,13 +252,15 @@ private:
  
 	//COSI constants
 	//! number of detectors
-	static const int nDets = 12;
+	static const int nDets = 1;
 	//! number of sides
 	static const int nSides = 2;
 	//! number of strips
-	static const int nStrips = 37;
+	static const int nStrips = 63;
 	//! slots in DSP dead time buffer
 	static const int nDTBuffSlots = 16;
+
+  // MString DetectorName;
  
   //! The DEE internal random number generator
   TRandom m_Random;
