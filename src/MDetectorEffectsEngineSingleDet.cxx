@@ -510,260 +510,260 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           }
         }
         
-        //initialize these variables before the for loop
-        map<unsigned int,double> pStripsEnergies;
-        map<unsigned int,double> nStripsEnergies;
+  //       //initialize these variables before the for loop
+  //       map<unsigned int,double> pStripsEnergies;
+  //       map<unsigned int,double> nStripsEnergies;
         
-        double totalEnergyDeposited = 0.;
+  //       double totalEnergyDeposited = 0.;
         
-        //then apply charge sharing for each POSITION
-        //the position could have one or more IAs
-        for (unsigned int pos=0; pos<OriginsGroupedByPosition.size(); pos++){
-          //figure out the energy deposited for all the IAs
-          double energyDeposited = EnergyDepositedByPosition[pos];
+  //       //then apply charge sharing for each POSITION
+  //       //the position could have one or more IAs
+  //       for (unsigned int pos=0; pos<OriginsGroupedByPosition.size(); pos++){
+  //         //figure out the energy deposited for all the IAs
+  //         double energyDeposited = EnergyDepositedByPosition[pos];
           
-          totalEnergyDeposited += energyDeposited;
+  //         totalEnergyDeposited += energyDeposited;
           
-          //get IA position in detector
-          MVector IAPosition = IAPositions[pos];
+  //         //get IA position in detector
+  //         MVector IAPosition = IAPositions[pos];
           
-          MDVolumeSequence IAVolSeq = m_Geometry->GetVolumeSequence(IAPosition, false, false);
-          MVector IAPositionInDetector = IAVolSeq.GetPositionInSensitiveVolume();
-          if (IAVolSeq.GetDetector() == 0 || IAVolSeq.GetSensitiveVolume() == 0){
-            //if IA not in the detector, just use the HT position
-            IAPositionInDetector = PositionInDetector;
-            m_NumberOfFailedIASearches += 1;
-          } else {
-            m_NumberOfSuccessfulIASearches += 1;
-          }
+  //         MDVolumeSequence IAVolSeq = m_Geometry->GetVolumeSequence(IAPosition, false, false);
+  //         MVector IAPositionInDetector = IAVolSeq.GetPositionInSensitiveVolume();
+  //         if (IAVolSeq.GetDetector() == 0 || IAVolSeq.GetSensitiveVolume() == 0){
+  //           //if IA not in the detector, just use the HT position
+  //           IAPositionInDetector = PositionInDetector;
+  //           m_NumberOfFailedIASearches += 1;
+  //         } else {
+  //           m_NumberOfSuccessfulIASearches += 1;
+  //         }
           
-          //now we have the energy deposited at this position
-          //that is enough information to do the diffusion
-          //do half-keV steps to avoid iterating over hundreds of thousands of charge carriers
-          // so this isn't really the number of charge carriers, but the number of steps
-          double EnergyPerChargeCarrier = 0.5;
-          int NChargeCarriers = (int)(energyDeposited/EnergyPerChargeCarrier);
-          //unless the deposited energy is perfectly divisible by 0.5, there will be some extra energy
-          // need to account for it or else there is extra charge loss
-          double ExtraEnergy = energyDeposited - NChargeCarriers*EnergyPerChargeCarrier;
+  //         //now we have the energy deposited at this position
+  //         //that is enough information to do the diffusion
+  //         //do half-keV steps to avoid iterating over hundreds of thousands of charge carriers
+  //         // so this isn't really the number of charge carriers, but the number of steps
+  //         double EnergyPerChargeCarrier = 0.5;
+  //         int NChargeCarriers = (int)(energyDeposited/EnergyPerChargeCarrier);
+  //         //unless the deposited energy is perfectly divisible by 0.5, there will be some extra energy
+  //         // need to account for it or else there is extra charge loss
+  //         double ExtraEnergy = energyDeposited - NChargeCarriers*EnergyPerChargeCarrier;
           
-          //figured out by printing out IAPositionInDetector.Z() for Am241 source:
-          // IAPositionInDetector.Z() < 0: closer to n side for *all* detector stacks
-          double DriftLengthN = IAPositionInDetector.Z() + Detector->GetStructuralSize().Z();
-          double DriftLengthP = Detector->GetStructuralSize().Z()*2 - DriftLengthN;
-          if (DriftLengthN < 0){ DriftLengthN = 0; }
-          if (DriftLengthP < 0){ DriftLengthP = 0; }
+  //         //figured out by printing out IAPositionInDetector.Z() for Am241 source:
+  //         // IAPositionInDetector.Z() < 0: closer to n side for *all* detector stacks
+  //         double DriftLengthN = IAPositionInDetector.Z() + Detector->GetStructuralSize().Z();
+  //         double DriftLengthP = Detector->GetStructuralSize().Z()*2 - DriftLengthN;
+  //         if (DriftLengthN < 0){ DriftLengthN = 0; }
+  //         if (DriftLengthP < 0){ DriftLengthP = 0; }
           
-          // double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
-          // double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
-          				double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
-          				double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
+  //         // double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
+  //         // double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
+  //         double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
+  //         double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
           
-          double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN;
-          double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP;
+  //         double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN;
+  //         double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP;
           
-          double DriftX = 0;
-          double DriftY = 0;
+  //         double DriftX = 0;
+  //         double DriftY = 0;
           
-          double xDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthX();
-          double xDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetX();
-          double xInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchX();
+  //         double xDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthX();
+  //         double xDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetX();
+  //         double xInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchX();
           
-          double yDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthY();
-          double yDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetY();
-          double yInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchY();
+  //         double yDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthY();
+  //         double yDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetY();
+  //         double yInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchY();
           
-          double xInDet = IAPositionInDetector.X() + xDetectorHalfWidth - xDetectorOffset;
-          double yInDet = IAPositionInDetector.Y() + yDetectorHalfWidth - yDetectorOffset;
+  //         double xInDet = IAPositionInDetector.X() + xDetectorHalfWidth - xDetectorOffset;
+  //         double yInDet = IAPositionInDetector.Y() + yDetectorHalfWidth - yDetectorOffset;
           
-          int nStripID = 0;
-          int pStripID = 0;
+  //         int nStripID = 0;
+  //         int pStripID = 0;
 
-          // ---> Time critical
-          for (int i = 0; i < NChargeCarriers + 1; ++i) {
-            //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
-            if (i == NChargeCarriers) { 
-              EnergyPerChargeCarrier = ExtraEnergy; 
-            }
+  //         // ---> Time critical
+  //         for (int i = 0; i < NChargeCarriers + 1; ++i) {
+  //           //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
+  //           if (i == NChargeCarriers) { 
+  //             EnergyPerChargeCarrier = ExtraEnergy; 
+  //           }
             
             
-            // First n side
-            // Draw random x and y from 2D gaussian with mean = 0, sigma = 1
-            double y = m_Random.Rndm();
-            double z = m_Random.Rndm();
-            double x = z * 6.28318530717958623;
-            double r = sqrt(-2*log(y));
-            DriftX = r * sin(x) * DriftRadiusSigmaN;
-            DriftY = r * cos(x) * DriftRadiusSigmaN;
+  //           // First n side
+  //           // Draw random x and y from 2D gaussian with mean = 0, sigma = 1
+  //           double y = m_Random.Rndm();
+  //           double z = m_Random.Rndm();
+  //           double x = z * 6.28318530717958623;
+  //           double r = sqrt(-2*log(y));
+  //           DriftX = r * sin(x) * DriftRadiusSigmaN;
+  //           DriftY = r * cos(x) * DriftRadiusSigmaN;
             
-            // We need both to know when we are in the guard ring
-            int nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
-            int pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
-            if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
-              nStripID = 65;
-            } else {
-              nStripID = 64 - nStripIDinterim; 
-            }
+  //           // We need both to know when we are in the guard ring
+  //           int nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
+  //           int pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
+  //           if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
+  //             nStripID = 65;
+  //           } else {
+  //             nStripID = 64 - nStripIDinterim; 
+  //           }
 
             
             
-            // Then p side
+  //           // Then p side
             
-            y = m_Random.Rndm();
-            z = m_Random.Rndm();
-            x = z * 6.28318530717958623;
-            r = sqrt(-2*log(y));
-            DriftX = r * sin(x) * DriftRadiusSigmaP;
-            DriftY = r * cos(x) * DriftRadiusSigmaP;
+  //           y = m_Random.Rndm();
+  //           z = m_Random.Rndm();
+  //           x = z * 6.28318530717958623;
+  //           r = sqrt(-2*log(y));
+  //           DriftX = r * sin(x) * DriftRadiusSigmaP;
+  //           DriftY = r * cos(x) * DriftRadiusSigmaP;
             
-            nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
-            pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
-            if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
-              pStripID = 65;
-            } else {
-              pStripID = 64 - pStripIDinterim; 
-            }
+  //           nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
+  //           pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
+  //           if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
+  //             pStripID = 65;
+  //           } else {
+  //             pStripID = 64 - pStripIDinterim; 
+  //           }
             
             
             
-            // Save which strips have been hit
-            if (pStripsEnergies.count(pStripID) == 0){
-              pStripsEnergies[pStripID] = 0.;
-            }
-            pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+  //           // Save which strips have been hit
+  //           if (pStripsEnergies.count(pStripID) == 0){
+  //             pStripsEnergies[pStripID] = 0.;
+  //           }
+  //           pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
             
-            if (nStripsEnergies.count(nStripID) == 0){
-              nStripsEnergies[nStripID] = 0.;
-            }
-            nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
-          }
-          // <--- Time critical
+  //           if (nStripsEnergies.count(nStripID) == 0){
+  //             nStripsEnergies[nStripID] = 0.;
+  //           }
+  //           nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
+  //         }
+  //         // <--- Time critical
           
-  // //         /*
-  // //         // Clio's original
-  // //         for (int i=0; i<NChargeCarriers+1; i++){
-  // //           //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
-  // //           if (i == NChargeCarriers){ EnergyPerChargeCarrier = ExtraEnergy; }
+  // // //         /*
+  // // //         // Clio's original
+  // // //         for (int i=0; i<NChargeCarriers+1; i++){
+  // // //           //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
+  // // //           if (i == NChargeCarriers){ EnergyPerChargeCarrier = ExtraEnergy; }
             
-  // //           //first n side
-  // //           //Rannor draws random x and y from 2D gaussian with mean = 0, sigma = 1
-  // //           m_Random.Rannor(DriftX,DriftY);
-  // //           DriftX *= DriftRadiusSigmaN;
-  // //           DriftY *= DriftRadiusSigmaN;
+  // // //           //first n side
+  // // //           //Rannor draws random x and y from 2D gaussian with mean = 0, sigma = 1
+  // // //           m_Random.Rannor(DriftX,DriftY);
+  // // //           DriftX *= DriftRadiusSigmaN;
+  // // //           DriftY *= DriftRadiusSigmaN;
             
-  // //           MVector DriftPositionN = IAPositionInDetector + MVector(DriftX, DriftY, 0);
+  // // //           MVector DriftPositionN = IAPositionInDetector + MVector(DriftX, DriftY, 0);
             
-  // //           MDGridPoint GPDriftN = Detector->GetGridPoint(DriftPositionN);
-  // //           int nStripID;
-  // //           //if position isn't in detector (0) or is guard ring (7) assign as guard ring
-  // //           if (GPDriftN.GetType() == MDGridPoint::c_GuardRing || GPDriftN.GetType() == MDGridPoint::c_Unknown){
-  // //             nStripID = 38;
-  // //           }
-  // //           else { nStripID = 38-(GPDriftN.GetXGrid()+1); }
+  // // //           MDGridPoint GPDriftN = Detector->GetGridPoint(DriftPositionN);
+  // // //           int nStripID;
+  // // //           //if position isn't in detector (0) or is guard ring (7) assign as guard ring
+  // // //           if (GPDriftN.GetType() == MDGridPoint::c_GuardRing || GPDriftN.GetType() == MDGridPoint::c_Unknown){
+  // // //             nStripID = 38;
+  // // //           }
+  // // //           else { nStripID = 38-(GPDriftN.GetXGrid()+1); }
             
-  // //           //then p side
-  // //           m_Random.Rannor(DriftX,DriftY);
-  // //           DriftX *= DriftRadiusSigmaP;
-  // //           DriftY *= DriftRadiusSigmaP;
+  // // //           //then p side
+  // // //           m_Random.Rannor(DriftX,DriftY);
+  // // //           DriftX *= DriftRadiusSigmaP;
+  // // //           DriftY *= DriftRadiusSigmaP;
             
-  // //           MVector DriftPositionP = IAPositionInDetector + MVector(DriftX, DriftY, 0);
+  // // //           MVector DriftPositionP = IAPositionInDetector + MVector(DriftX, DriftY, 0);
             
-  // //           MDGridPoint GPDriftP = Detector->GetGridPoint(DriftPositionP);
-  // //           int pStripID;
-  // //           if (GPDriftP.GetType() == MDGridPoint::c_GuardRing || GPDriftP.GetType() == MDGridPoint::c_Unknown){
-  // //             pStripID = 38;
-  // //           }
-  // //           else { pStripID = 38-(GPDriftP.GetYGrid()+1); }
+  // // //           MDGridPoint GPDriftP = Detector->GetGridPoint(DriftPositionP);
+  // // //           int pStripID;
+  // // //           if (GPDriftP.GetType() == MDGridPoint::c_GuardRing || GPDriftP.GetType() == MDGridPoint::c_Unknown){
+  // // //             pStripID = 38;
+  // // //           }
+  // // //           else { pStripID = 38-(GPDriftP.GetYGrid()+1); }
             
-  // //           //save which strips have been hit
-  // //           if (pStripsEnergies.count(pStripID) == 0){
-  // //             pStripsEnergies[pStripID] = 0.;
-  // //           }
-  // //           pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+  // // //           //save which strips have been hit
+  // // //           if (pStripsEnergies.count(pStripID) == 0){
+  // // //             pStripsEnergies[pStripID] = 0.;
+  // // //           }
+  // // //           pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
             
-  // //           if (nStripsEnergies.count(nStripID) == 0){
-  // //             nStripsEnergies[nStripID] = 0.;
-  // //           }
-  // //           nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
-  // //         }
-  // //         */
+  // // //           if (nStripsEnergies.count(nStripID) == 0){
+  // // //             nStripsEnergies[nStripID] = 0.;
+  // // //           }
+  // // //           nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
+  // // //         }
+  // // //         */
   //       }
         
-        //lists of strips that charge cloud hit: at least one must be original strip
-        //what if no charge is on the original strip? this happens occasionally
-        bool pOrigHit = false;
-        bool nOrigHit = false;
+        // //lists of strips that charge cloud hit: at least one must be original strip
+        // //what if no charge is on the original strip? this happens occasionally
+        // bool pOrigHit = false;
+        // bool nOrigHit = false;
         
-        for (auto P: pStripsEnergies) {
-          //change the energy of original strip
-          if (pSide.m_ROE.GetStripID() == P.first){
-            pSide.m_Energy = P.second;
-            pSide.m_EnergyOrig = P.second;
-            pOrigHit = true;
-          }
-          //make new strip hit if needed
-          //guard ring hit
-          else if (P.first == 65){
-            MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsPositiveStrip(true);
-            chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
-            chargeShareGRHit.m_ROE.SetStripID(65);
-            chargeShareGRHit.m_Energy = P.second;
-            chargeShareGRHit.m_Position = MVector(0,0,0); // apparently not important
-            GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
-          }
-          //normal strip hit
-          else {
-            MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsPositiveStrip(true);
-            chargeShareStrip.m_ROE.SetStripID(P.first);
-            chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
-            chargeShareStrip.m_Timing = pSide.m_Timing;
-            chargeShareStrip.m_Energy = P.second;
-            chargeShareStrip.m_EnergyOrig = P.second;
-            chargeShareStrip.m_Depth = pSide.m_Depth;
-            chargeShareStrip.m_Position = pSide.m_Position;
-            chargeShareStrip.m_Origins = pSide.m_Origins;
-            chargeShareStrip.m_HitIndex = pSide.m_HitIndex;
-            StripHits.push_back(chargeShareStrip);
-          }
-        }
+        // for (auto P: pStripsEnergies) {
+        //   //change the energy of original strip
+        //   if (pSide.m_ROE.GetStripID() == P.first){
+        //     pSide.m_Energy = P.second;
+        //     pSide.m_EnergyOrig = P.second;
+        //     pOrigHit = true;
+        //   }
+        //   //make new strip hit if needed
+        //   //guard ring hit
+        //   else if (P.first == 65){
+        //     MDEEStripHit chargeShareGRHit;
+        //     chargeShareGRHit.m_ROE.IsPositiveStrip(true);
+        //     chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
+        //     chargeShareGRHit.m_ROE.SetStripID(65);
+        //     chargeShareGRHit.m_Energy = P.second;
+        //     chargeShareGRHit.m_Position = MVector(0,0,0); // apparently not important
+        //     GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
+        //   }
+        //   //normal strip hit
+        //   else {
+        //     MDEEStripHit chargeShareStrip;
+        //     chargeShareStrip.m_ROE.IsPositiveStrip(true);
+        //     chargeShareStrip.m_ROE.SetStripID(P.first);
+        //     chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
+        //     chargeShareStrip.m_Timing = pSide.m_Timing;
+        //     chargeShareStrip.m_Energy = P.second;
+        //     chargeShareStrip.m_EnergyOrig = P.second;
+        //     chargeShareStrip.m_Depth = pSide.m_Depth;
+        //     chargeShareStrip.m_Position = pSide.m_Position;
+        //     chargeShareStrip.m_Origins = pSide.m_Origins;
+        //     chargeShareStrip.m_HitIndex = pSide.m_HitIndex;
+        //     StripHits.push_back(chargeShareStrip);
+        //   }
+        // }
         
-        for (auto N: nStripsEnergies){
-          if (nSide.m_ROE.GetStripID() == N.first){
-            nSide.m_Energy = N.second;
-            nSide.m_EnergyOrig = N.second;
-            nOrigHit = true;
-          }
-          else if (N.first == 65){
-            MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsPositiveStrip(false);
-            chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
-            chargeShareGRHit.m_ROE.SetStripID(65);
-            chargeShareGRHit.m_Energy = N.second;
-            chargeShareGRHit.m_Position = MVector(0,0,0);
-            GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
-          }
-          else {
-            MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsPositiveStrip(false);
-            chargeShareStrip.m_ROE.SetStripID(N.first);
-            chargeShareStrip.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
-            chargeShareStrip.m_Timing = nSide.m_Timing;
-            chargeShareStrip.m_Energy = N.second;
-            chargeShareStrip.m_EnergyOrig = N.second;
-            chargeShareStrip.m_Depth = nSide.m_Depth;
-            chargeShareStrip.m_Position = nSide.m_Position;
-            chargeShareStrip.m_Origins = nSide.m_Origins;
-            chargeShareStrip.m_HitIndex = nSide.m_HitIndex;
-            StripHits.push_back(chargeShareStrip);
-          }
-        }
+        // for (auto N: nStripsEnergies){
+        //   if (nSide.m_ROE.GetStripID() == N.first){
+        //     nSide.m_Energy = N.second;
+        //     nSide.m_EnergyOrig = N.second;
+        //     nOrigHit = true;
+        //   }
+        //   else if (N.first == 65){
+        //     MDEEStripHit chargeShareGRHit;
+        //     chargeShareGRHit.m_ROE.IsPositiveStrip(false);
+        //     chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
+        //     chargeShareGRHit.m_ROE.SetStripID(65);
+        //     chargeShareGRHit.m_Energy = N.second;
+        //     chargeShareGRHit.m_Position = MVector(0,0,0);
+        //     GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
+        //   }
+        //   else {
+        //     MDEEStripHit chargeShareStrip;
+        //     chargeShareStrip.m_ROE.IsPositiveStrip(false);
+        //     chargeShareStrip.m_ROE.SetStripID(N.first);
+        //     chargeShareStrip.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
+        //     chargeShareStrip.m_Timing = nSide.m_Timing;
+        //     chargeShareStrip.m_Energy = N.second;
+        //     chargeShareStrip.m_EnergyOrig = N.second;
+        //     chargeShareStrip.m_Depth = nSide.m_Depth;
+        //     chargeShareStrip.m_Position = nSide.m_Position;
+        //     chargeShareStrip.m_Origins = nSide.m_Origins;
+        //     chargeShareStrip.m_HitIndex = nSide.m_HitIndex;
+        //     StripHits.push_back(chargeShareStrip);
+        //   }
+        // }
         
-        if (pOrigHit){ StripHits.push_back(pSide); }
-        if (nOrigHit){ StripHits.push_back(nSide); }
+        // if (pOrigHit){ StripHits.push_back(pSide); }
+        // if (nOrigHit){ StripHits.push_back(nSide); }
         
-        m_TotalHitsCounter++;
+        // m_TotalHitsCounter++;
         
       }
       
@@ -786,9 +786,6 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // if (StripHits.size() != 0) {
       //   cout << "Number of strip hits: " << StripHits.size() << endl;
       // }
-      if (SimEvent->GetNGRs() != 0) {
-        cout << "Number of GR hits: " << SimEvent->GetNGRs() << endl;
-      }
       list<MDEEStripHit> GuardRingHits;
       // (1b) The guard ring hits
       vector<int> GRIndices;
@@ -868,7 +865,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         //      cout << "-----------" << endl;
         MergedStripHits.push_back(Start);
 
-        cout << "First Merged Strip: " << MergedStripHits.front().m_ROE.GetStripID() << endl;
+        // cout << "First Merged Strip: " << MergedStripHits.front().m_ROE.GetStripID() << endl;
 
 
       }
@@ -1082,19 +1079,19 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //     }
       
       
-      // (3d) Give each striphit an noised ADC value; handle ADC overflow
-      list<MDEEStripHit>::iterator A = MergedStripHits.begin();
-      while (A != MergedStripHits.end()) {
-        double Energy = (*A).m_Energy;
-        (*A).m_ADC = EnergyToADC((*A),Energy);
-        if ((*A).m_ADC > 8029){  // number for McBride, I don't know what this number is
-          A = MergedStripHits.erase(A);
-          HasOverflow = true;
-        }
-        else {
-          ++A;
-        }
-      }
+  //     // (3d) Give each striphit an noised ADC value; handle ADC overflow
+  //     list<MDEEStripHit>::iterator A = MergedStripHits.begin();
+  //     while (A != MergedStripHits.end()) {
+  //       double Energy = (*A).m_Energy;
+  //       (*A).m_ADC = EnergyToADC((*A),Energy);
+  //       if ((*A).m_ADC > 8029){  // number for McBride, I don't know what this number is
+  //         A = MergedStripHits.erase(A);
+  //         HasOverflow = true;
+  //       }
+  //       else {
+  //         ++A;
+  //       }
+  //     }
       
       
   //     // Step (4): Apply thresholds and triggers including guard ring hits
@@ -1570,7 +1567,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //       m_NumberOfEventsWithADCOverflows += 1;
   // //     } else {
   // //       m_NumberOfEventsWithNoADCOverflows += 1;
-      }
+      // }
 
       // // TESTER TO FIND NAME OF DETECTOR 
       // MSimHT* HT = SimEvent->GetHTAt(5);
