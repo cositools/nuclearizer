@@ -256,7 +256,9 @@ private:
 	//! number of sides
 	static const int nSides = 2;
 	//! number of strips
-	static const int nStrips = 63;
+	static const int nStrips = 64;
+  //! number of ASICs for 1 det (change for multiple)
+  static const int nASICs = 4;
 	//! slots in DSP dead time buffer
 	static const int nDTBuffSlots = 16;
 
@@ -356,7 +358,8 @@ private:
   long m_NumShieldCounts;
   
 	//! drift constant: used for charge sharing due to diffusion; one for each detector
-	vector<double> m_DriftConstant;
+	// vector<double> m_DriftConstant;
+  double m_DriftConstant;
 
 	TH2D* m_ChargeLossHist;
 
