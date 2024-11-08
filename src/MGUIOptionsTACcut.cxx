@@ -87,10 +87,10 @@ void MGUIOptionsTACcut::Create()
                                        true, 0.0);
   m_OptionsFrame->AddFrame(m_TAC, TACLayout);
 
-  TGLabel* TACLabel = new TGLabel(m_OptionsFrame, 
-    "This is TAC cut and this text is here because.\n"
-    "I'm not sure if I can remove it yet");
-  m_OptionsFrame->AddFrame(TACLabel, TACLayout);
+  // TGLabel* TACLabel = new TGLabel(m_OptionsFrame, 
+  //   "This is a TAC cut and this text is here because.\n"
+  //   "I'm not sure if I can remove it yet");
+  // m_OptionsFrame->AddFrame(TACLabel, TACLayout);
   
   
   PostCreate();

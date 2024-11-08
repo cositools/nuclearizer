@@ -19,10 +19,14 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TGClient.h"
+#include "TH1.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
+#include "MGUIExpoTACcut.h"
+
 
 // Forward declarations:
 
@@ -44,6 +48,9 @@ class MModuleTACcut : public MModule
 
   //! Initialize the module
   virtual bool Initialize();
+
+  //! Create expos 
+  virtual void CreateExpos();
 
   //! Finalize the module
   virtual void Finalize();
@@ -93,6 +100,11 @@ class MModuleTACcut : public MModule
 
 // declare min and max TAC variables here
 unsigned int m_MinimumTAC, m_MaximumTAC;
+
+vector<unsigned int> m_DetectorIDs;
+unordered_map<int, double> m_Thicknesses;
+
+MGUIExpoTACcut* m_ExpoTACcut;
 
 
 #ifdef ___CLING___

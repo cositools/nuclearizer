@@ -1,6 +1,6 @@
 /*
  * MGUIExpoTACcut.h
- *
+ *    
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
@@ -55,19 +55,31 @@ class MGUIExpoTACcut : public MGUIExpo
   virtual void Create();
 
   //! Update the frame
-  virtual void Update();
+  //virtual void Update();
 
   //! Reset the data in the UI
   virtual void Reset();
 
   //! Export the data in the UI
-  virtual void Export(const MString& FileName);
+  //virtual void Export(const MString& FileName);
 
-  //! Set the TAC histogram parameters 
-  void SetTACHistogramParameters(int NBins, unsigned int Min, unsigned int Max);
+  //! Set the arrangment of the TAC histogram
+  //!  0    1    2    3 
+  //!  4    5    6    7
+  //!  8    9   10   11
+  void SetTACHistogramArrangement(vector<unsigned int>* DetIDs);
+  
+  //! Set the energy histogram parameters 
+  void SetTACHistogramParameters(unsigned int DetID, unsigned int NBins, double TACMin, double TACMax);
+  
+  //! Set the energy histogram parameters 
+  void SetTACHistogramName(unsigned int DetID, MString Name);
 
   //! Add data to the TAC histogram
-  void AddTAC(unsigned int TAC);
+  //!  0    1    2    3 
+  //!  4    5    6    7
+  //!  8    9   10   11
+  void AddTAC(unsigned int DetID, double TAC);
 
   // protected methods:
  protected:
@@ -79,11 +91,25 @@ class MGUIExpoTACcut : public MGUIExpo
   // private members:
  private:
   //! TAC canvas
-  TRootEmbeddedCanvas* m_TACCanvas;
-  //! TAC histogram
-  TH1D* m_TAC;
+  unordered_map<unsigned int, TRootEmbeddedCanvas*> m_TACCanvases;
+  //! TAC vs detector ID histogram
+  unordered_map<unsigned int, TH1D*> m_TACHistograms;
 
+  //! Detectors in x direction
+  unsigned int m_NColumns;
+  //! Detectors in y direction
+  unsigned int m_NRows;
 
+  // Map the detector ID to the x,y position of histograms.
+  vector<vector<unsigned int>> m_DetectorMap;
+  
+  //! The number of bins of the histogram
+  unordered_map<unsigned int, unsigned int> m_NBins;
+  //! The minimum TAC
+  unordered_map<unsigned int, double> m_Min;
+  //! The maximum TAC
+  unordered_map<unsigned int, double> m_Max;
+  
 
 #ifdef ___CLING___
  public:

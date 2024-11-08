@@ -74,12 +74,12 @@ using namespace std;
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
 #include "MModuleResponseGenerator.h"
-<<<<<<< HEAD
+
 #include "MModuleTACcut.h"
-=======
+
 #include "MModuleDiagnostics.h"
 #include "MModuleDiagnosticsEnergyPerStrip.h"
->>>>>>> cositools/nuclearizer/develop/firstlight
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
