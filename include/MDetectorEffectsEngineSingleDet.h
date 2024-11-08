@@ -122,7 +122,9 @@ public:
  
   //! Initialize the module
   bool Initialize();
-  //! Analyze whatever needs to be analyzed...
+  //! Get deadtime from list of channels in one ASIC
+  double dTimeGeDs(vector<int> ASICChannels);
+    //! Analyze whatever needs to be analyzed...
   bool GetNextEvent(MReadOutAssembly* Event);
   //! Finalize the module
   bool Finalize();
@@ -297,8 +299,16 @@ private:
   
 	//! Dead time buffer with 16 slots
 	vector<vector<double> > m_DeadTimeBuffer = vector<vector<double> >(nDets, vector<double> (nDTBuffSlots));
+  //! Stores dead time for each ASIC
+  vector<vector<double> > m_ASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
   //! Stores dead time for each detector
-  vector<double> m_ASICDeadTime = vector<double>(nDets);
+  vector<double> m_DetectorDeadTime = vector<double>(nDets);
+  //! Stores last hit time per ASIC
+  vector<vector<double> > m_ASICLastHitTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
+  //! Strip ID for particular hit in ASIC
+  vector<vector<vector<int> > > m_ASICHitStripID = vector<vector<vector<int> > >(nDets, vector<vector<int>>(nASICs));
+  //! Boolean to increase GeD ASIC deadtime or not
+  vector<vector<double> > increaseASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
 	//! Stores last hit time for any detector
 	double m_LastHitTime;
   //! Stores last time detector was hit to check if detector still dead
@@ -353,6 +363,7 @@ private:
 	double m_ShieldDelay;
 	double m_ShieldVetoWindowSize;
   bool m_IsShieldDead;
+  int m_StripHitsErased;
 
   
   long m_NumShieldCounts;
