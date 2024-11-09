@@ -200,8 +200,6 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
     m_Roa<<endl;
   }
   
-  //  TCanvas specCanvas("c","c",600,400); 
-  //  Threshold1D* spectrum = new Threshold1D("spec","spectrum",40,640,680);
   
   //count how many events have multiple hits per strip
   m_MultipleHitsCounter = 0;
@@ -1409,53 +1407,53 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //       }
   // //     }
       
-  // //     // Step (6.75):
-  // //     //figure out if dead time buffers are full, and update them accordingly
-  // //     double empty_buffer_val = -1;
-  // //     double time_buffer_empty = .000625;
+      // // Step (6.75):
+      // //figure out if dead time buffers are full, and update them accordingly
+      // double empty_buffer_val = -1;
+      // double time_buffer_empty = .000625;
       
-  // //     //increase buffer times if necessary
-  // //     for (int d=0; d<nDets; d++){
-  // //       int indexOfLargest = -1;
-  // //       double maxTime = -1;
-  // //       for (int s=0; s<nDTBuffSlots; s++){
-  // //         //if buffer slot not empty
-  // //         if (m_DeadTimeBuffer[d][s] != -1){
-  // //           //if buffer slot has exceeded time to empty, set it to empty
-  // //           if (m_DeadTimeBuffer[d][s] >= time_buffer_empty){
-  // //             m_DeadTimeBuffer[d][s] = empty_buffer_val;
-  // //           }
-  // //           //otherwise, find index of largest buffer slot and increase ONLY that slot
-  // //           else {
-  // //             if (m_DeadTimeBuffer[d][s] > maxTime){
-  // //               maxTime = m_DeadTimeBuffer[d][s];
-  // //               indexOfLargest = s;
-  // //             }
-  // //           }
-  // //         }
-  // //       }
-  // //       if (indexOfLargest != -1){ m_DeadTimeBuffer[d][indexOfLargest] += evt_time-m_LastHitTime; }
-  // //     }
+      // //increase buffer times if necessary
+      // for (int d=0; d<nDets; d++){
+      //   int indexOfLargest = -1;
+      //   double maxTime = -1;
+      //   for (int s=0; s<nDTBuffSlots; s++){
+      //     //if buffer slot not empty
+      //     if (m_DeadTimeBuffer[d][s] != -1){
+      //       //if buffer slot has exceeded time to empty, set it to empty
+      //       if (m_DeadTimeBuffer[d][s] >= time_buffer_empty){
+      //         m_DeadTimeBuffer[d][s] = empty_buffer_val;
+      //       }
+      //       //otherwise, find index of largest buffer slot and increase ONLY that slot
+      //       else {
+      //         if (m_DeadTimeBuffer[d][s] > maxTime){
+      //           maxTime = m_DeadTimeBuffer[d][s];
+      //           indexOfLargest = s;
+      //         }
+      //       }
+      //     }
+      //   }
+      //   if (indexOfLargest != -1){ m_DeadTimeBuffer[d][indexOfLargest] += evt_time-m_LastHitTime; }
+      // }
       
       
-  // //     //figure out which detectors were hit
-  // //     vector<int> bufferFull = vector<int>(nDets,0);
+      // //figure out which detectors were hit
+      // vector<int> bufferFull = vector<int>(nDets,0);
       
-  // //     //check if buffer is full for each detector
-  // //     for (int d=0; d<nDets; d++){
-  // //       int nextEmptySlot = 16;
-  // //       for (int s=0; s<nDTBuffSlots; s++){
-  // //         if (m_DeadTimeBuffer[d][s] == empty_buffer_val){
-  // //           nextEmptySlot = s;
-  // //           break;
-  // //         }
-  // //       }
-  // //       bufferFull[d] = nextEmptySlot;
-  // //     }
+      // //check if buffer is full for each detector
+      // for (int d=0; d<nDets; d++){
+      //   int nextEmptySlot = 16;
+      //   for (int s=0; s<nDTBuffSlots; s++){
+      //     if (m_DeadTimeBuffer[d][s] == empty_buffer_val){
+      //       nextEmptySlot = s;
+      //       break;
+      //     }
+      //   }
+      //   bufferFull[d] = nextEmptySlot;
+      // }
       
-  // //     for (int i=0; i<nDets; i++){
-  // //       if (bufferFull[i] > m_MaxBufferFullIndex){ m_MaxBufferFullIndex = bufferFull[i]; m_MaxBufferDetector = i; }
-  // //     }
+      // for (int i=0; i<nDets; i++){
+      //   if (bufferFull[i] > m_MaxBufferFullIndex){ m_MaxBufferFullIndex = bufferFull[i]; m_MaxBufferDetector = i; }
+      // }
       
       
   // //     /*		if (bufferFull[0] == 16){
@@ -1488,35 +1486,35 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       
 
       
-  // //     // Step (7): 
+      // Step (7): 
       
-  // //     //update trigger rates
-  // //     set<int> detectorsHit;
-  // //     list<MDEEStripHit>::iterator TR = MergedStripHits.begin();
-  // //     while (TR != MergedStripHits.end()) {
-  // //       int DetID = (*TR).m_ROE.GetDetectorID();
-  // //       detectorsHit.insert(DetID);
-  // //       ++TR;
-  // //     }
+      //update trigger rates
+      set<int> detectorsHit;
+      list<MDEEStripHit>::iterator TR = MergedStripHits.begin();
+      while (TR != MergedStripHits.end()) {
+        int DetID = (*TR).m_ROE.GetDetectorID();
+        detectorsHit.insert(DetID);
+        ++TR;
+      }
       
-  // //     for (set<int>::iterator s=detectorsHit.begin(); s!=detectorsHit.end(); ++s){
-  // //       int detID = *s;
-  // //       m_TriggerRates[detID] += 1;
-  // //     }
+      for (set<int>::iterator s=detectorsHit.begin(); s!=detectorsHit.end(); ++s){
+        int detID = *s;
+        m_TriggerRates[detID] += 1;
+      }
       
-  // //     //update last time (and first time for first event)
-  // //     if (SimEvent->GetTime().GetAsSeconds() < m_FirstTime){
-  // //       m_FirstTime = SimEvent->GetTime().GetAsSeconds();
-  // //     }
-  // //     m_LastTime = SimEvent->GetTime().GetAsSeconds();
+      //update last time (and first time for first event)
+      if (SimEvent->GetTime().GetAsSeconds() < m_FirstTime){
+        m_FirstTime = SimEvent->GetTime().GetAsSeconds();
+      }
+      m_LastTime = SimEvent->GetTime().GetAsSeconds();
       
 
       
-  // //     // Step (8): Apply fudge factor to completely absorbed events (photopeak)
-  // //     //to deal with successor stuff, need to do this for each SimHT
-  // //     //but same origin can make multiple SimHTs, so have to add them back together
-  // //     if (m_ApplyFudgeFactor){
-  // //       /*
+      // Step (8): Apply fudge factor to completely absorbed events (photopeak)
+      //to deal with successor stuff, need to do this for each SimHT
+      //but same origin can make multiple SimHTs, so have to add them back together
+      if (m_ApplyFudgeFactor){
+        /*
   // //       // Clio's version
   // //       map<int,double> initialEnergyByIA;
   // //       map<int,double> finalEnergyByIA;
@@ -1586,117 +1584,117 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //       }
   // //       */ 
         
-  // //       // Normally we just have the INIT's in the simulations, thus we have to simplify this:
-  // //       // If the total measured energy is in any of the INIT windows, test for erasing
+        // Normally we just have the INIT's in the simulations, thus we have to simplify this:
+        // If the total measured energy is in any of the INIT windows, test for erasing
         
-  // //       // Sum up all energies:
-  // //       double TotalMeasuredEnergy = 0.0;
-  // //       for (list<MDEEStripHit>::iterator p = MergedStripHits.begin(); p != MergedStripHits.end(); ++p){
-  // //         if ((*p).m_ROE.IsPositiveStrip() == false) {
-  // //           TotalMeasuredEnergy += (*p).m_EnergyOrig;
-  // //         }
-  // //       }
+        // Sum up all energies:
+        double TotalMeasuredEnergy = 0.0;
+        for (list<MDEEStripHit>::iterator p = MergedStripHits.begin(); p != MergedStripHits.end(); ++p){
+          if ((*p).m_ROE.IsPositiveStrip() == false) {
+            TotalMeasuredEnergy += (*p).m_EnergyOrig;
+          }
+        }
         
-  // //       // Now check every INIT if the energy is withing the window:
-  // //       for (unsigned int ia = 0; ia < SimEvent->GetNIAs(); ++ia) {
+        // Now check every INIT if the energy is withing the window:
+        for (unsigned int ia = 0; ia < SimEvent->GetNIAs(); ++ia) {
           
-  // //         double initialEnergy = SimEvent->GetIAAt(0)->GetSecondaryEnergy();
+          double initialEnergy = SimEvent->GetIAAt(0)->GetSecondaryEnergy();
           
-  // //         // Clio's 
-  // //         double sigma = 8.35e-4*initialEnergy+1.69;
-  // //         double windowSize = 1.5*sigma;
-  // //         double threshold = 7.04e-5*initialEnergy+0.79;
+          // Clio's 
+          double sigma = 8.35e-4*initialEnergy+1.69;
+          double windowSize = 1.5*sigma;
+          double threshold = 7.04e-5*initialEnergy+0.79;
           
-  // //         //cout<<"Measued: "<<TotalMeasuredEnergy<<": init: "<<initialEnergy<<endl;
-  // //         if (TotalMeasuredEnergy > initialEnergy-windowSize && TotalMeasuredEnergy < initialEnergy+windowSize) {
-  // //           //cout<<" In photo peak "<<endl;
-  // //           // In window, test for erasal
-  // //           double prob = m_Random.Rndm();
-  // //           if (prob > threshold){
-  // //             MergedStripHits.clear();
-  // //           }
+          //cout<<"Measued: "<<TotalMeasuredEnergy<<": init: "<<initialEnergy<<endl;
+          if (TotalMeasuredEnergy > initialEnergy-windowSize && TotalMeasuredEnergy < initialEnergy+windowSize) {
+            //cout<<" In photo peak "<<endl;
+            // In window, test for erasal
+            double prob = m_Random.Rndm();
+            if (prob > threshold){
+              MergedStripHits.clear();
+            }
 
-  // //           break;
-  // //         //} else {
-  // //           //cout<<"Not in photo peak"<<endl;
-  // //         }
-  // //       }
+            break;
+          //} else {
+            //cout<<"Not in photo peak"<<endl;
+          }
+        }
 
-  // //     } // End photo peak fudge factor
+      } // End photo peak fudge factor
       
       
-  // //     // Check if there are any strips left
-  // //     if (MergedStripHits.size() == 0){
-  // //       delete SimEvent;
-  // //       continue;
-  // //     }
+      // Check if there are any strips left
+      if (MergedStripHits.size() == 0){
+        delete SimEvent;
+        continue;
+      }
       
-  // //     double finalEventEnergy = 0;
-  // //     int nNStripHits = 0;
-  // //     for (MDEEStripHit Hit: MergedStripHits){
-  // //       if (!Hit.m_ROE.IsPositiveStrip()){
-  // //         finalEventEnergy += Hit.m_Energy;
-  // //         nNStripHits++;
-  // //       }
-  // //     }
-  // //     if (finalEventEnergy > eventInitialEnergy+100){
-  // //       cout << eventInitialEnergy << '\t' << finalEventEnergy << endl;
-  // //       cout << "SIM HITS: " << endl;
-  // //       for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
-  // //         cout << SimEvent->GetHTAt(h)->GetEnergy() << endl;
-  // //       }
-  // //       cout << "DEE STRIP HITS: " << endl;
-  // //       for (MDEEStripHit Hit: MergedStripHits){
-  // //         if (!Hit.m_ROE.IsPositiveStrip()){
-  // //           cout << Hit.m_Energy << endl;
-  // //         }
-  // //       }
-  // //       cout << endl << endl;
-  // //     }
+      double finalEventEnergy = 0;
+      int nNStripHits = 0;
+      for (MDEEStripHit Hit: MergedStripHits){
+        if (!Hit.m_ROE.IsPositiveStrip()){
+          finalEventEnergy += Hit.m_Energy;
+          nNStripHits++;
+        }
+      }
+      if (finalEventEnergy > eventInitialEnergy+100){
+        cout << eventInitialEnergy << '\t' << finalEventEnergy << endl;
+        cout << "SIM HITS: " << endl;
+        for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+          cout << SimEvent->GetHTAt(h)->GetEnergy() << endl;
+        }
+        cout << "DEE STRIP HITS: " << endl;
+        for (MDEEStripHit Hit: MergedStripHits){
+          if (!Hit.m_ROE.IsPositiveStrip()){
+            cout << Hit.m_Energy << endl;
+          }
+        }
+        cout << endl << endl;
+      }
       
       
-  // //     // (1) Move the information to the read-out-assembly
-  // //     Event->SetID(SimEvent->GetID());
-  // //     Event->SetTimeUTC(SimEvent->GetTime());
+      // (1) Move the information to the read-out-assembly
+      Event->SetID(SimEvent->GetID());
+      Event->SetTimeUTC(SimEvent->GetTime());
       
-  // //     for (unsigned int i = 0; i < IAs.size(); ++i) {
-  // //       Event->AddSimIA(*IAs[i]);
-  // //     }
-  // //     for (MDEEStripHit Hit: MergedStripHits){
-  // //       MStripHit* SH = new MStripHit();
-  // //       SH->SetDetectorID(Hit.m_ROE.GetDetectorID());
-  // //       SH->SetStripID(Hit.m_ROE.GetStripID());
-  // //       SH->IsXStrip(Hit.m_ROE.IsPositiveStrip());
-  // //       SH->SetADCUnits(Hit.m_ADC);
-  // //       SH->SetTiming(Hit.m_Timing);
-  // //       SH->SetPreampTemp(20);
-  // //       vector<int> O;
-  // //       for (int i: Hit.m_Origins) O.push_back(i);
-  // //       SH->AddOrigins(O); 
-  // //       Event->AddStripHit(SH); 
-  // //     }
+      for (unsigned int i = 0; i < IAs.size(); ++i) {
+        Event->AddSimIA(*IAs[i]);
+      }
+      for (MDEEStripHit Hit: MergedStripHits){
+        MStripHit* SH = new MStripHit();
+        SH->SetDetectorID(Hit.m_ROE.GetDetectorID());
+        SH->SetStripID(Hit.m_ROE.GetStripID());
+        SH->IsXStrip(Hit.m_ROE.IsPositiveStrip());
+        SH->SetADCUnits(Hit.m_ADC);
+        SH->SetTiming(Hit.m_Timing);
+        SH->SetPreampTemp(20);
+        vector<int> O;
+        for (int i: Hit.m_Origins) O.push_back(i);
+        SH->AddOrigins(O); 
+        Event->AddStripHit(SH); 
+      }
       
-  // //     // (2) Dump event to file in ROA format
-  // //     if (m_SaveToFile == true) {
-  // //       m_Roa<<"SE"<<endl;
-  // //       m_Roa<<"ID "<<SimEvent->GetID()<<endl;
-  // //       //m_Roa<<"ID "<<++RunningID<<endl;
-  // //       m_Roa<<"TI "<<SimEvent->GetTime() << endl;
-  // //       for (unsigned int i = 0; i < IAs.size(); ++i) {
-  // //         m_Roa<<IAs[i]->ToSimString()<<endl;
-  // //       }
-  // //       for (MDEEStripHit Hit: MergedStripHits){
-  // //         m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
+      // (2) Dump event to file in ROA format
+      if (m_SaveToFile == true) {
+        m_Roa<<"SE"<<endl;
+        m_Roa<<"ID "<<SimEvent->GetID()<<endl;
+        //m_Roa<<"ID "<<++RunningID<<endl;
+        m_Roa<<"TI "<<SimEvent->GetTime() << endl;
+        for (unsigned int i = 0; i < IAs.size(); ++i) {
+          m_Roa<<IAs[i]->ToSimString()<<endl;
+        }
+        for (MDEEStripHit Hit: MergedStripHits){
+          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
           
-  // //         MString Origins;
-  // //         for (int Origin: Hit.m_Origins) {
-  // //           if (Origins != "") Origins += ";";
-  // //           Origins += Origin;
-  // //         }
-  // //         if (Origins == "") Origins += "-";
-  // //         m_Roa<<" "<<Origins<<endl;
-  // //       }
-  // //     }
+          MString Origins;
+          for (int Origin: Hit.m_Origins) {
+            if (Origins != "") Origins += ";";
+            Origins += Origin;
+          }
+          if (Origins == "") Origins += "-";
+          m_Roa<<" "<<Origins<<endl;
+        }
+      }
       
       // (3) Take care of some final statistics
       if (HasOverflow == true) {
@@ -1711,6 +1709,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // MDDetector* Detector = VS->GetDetector();
       // MString DetectorName = Detector->GetName();
 
+      m_EventTimes.push_back(evt_time);
+      // m_EventTimes.push_back(SimEvent->GetHTAt(h)->GetEnergy());
       // Never forget to delete the event
       delete SimEvent;
       
@@ -1751,7 +1751,35 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // cout<<endl;
   // cout<<"Ratio of events with ADC overflows: "<<(m_NumberOfEventsWithADCOverflows > 0 ? double(m_NumberOfEventsWithADCOverflows) / (m_NumberOfEventsWithADCOverflows + m_NumberOfEventsWithNoADCOverflows): 0)<<endl;
   // cout<<"Ratio of failed IA searches for charge sharing: "<<(m_NumberOfFailedIASearches > 0 ? double(m_NumberOfFailedIASearches) / (m_NumberOfFailedIASearches + m_NumberOfSuccessfulIASearches): 0)<<endl;
-  
+
+  // Create a sample plot here -- maybe save the data as well ...
+  TCanvas *canvas = new TCanvas("c1", "My Canvas", 800, 600);
+  TH1F *hist = new TH1F("hist", "Sample Histogram", 100, -1, 3);
+  for (double value : m_EventTimes) {
+      hist->Fill(value);
+   }
+
+  hist->SetTitle("Light Curve");
+  hist->GetXaxis()->SetTitle("Time (s)");
+  hist->GetYaxis()->SetTitle("Counts");
+
+  hist->Draw();
+  canvas->Draw();
+  // canvas->SaveAs("/Users/parshad/Software/canvas.png");
+
+  // Disable if not needed
+  ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/SingleDet_DEE_Cs137_10xPos.csv");
+  file << "Index, Times\n";
+  int index = 1;
+    for (double time : m_EventTimes) {
+      file << index << "," << time << "\n";
+      index++;
+    }
+  file.close();
+
+  m_EventTimes.clear();
+  ///////
+
   if (m_SaveToFile == true) {
     m_Roa<<"EN"<<endl<<endl;
     m_Roa.close();

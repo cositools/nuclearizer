@@ -303,6 +303,10 @@ private:
   vector<vector<double> > m_ASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
   //! Stores dead time for each detector
   vector<double> m_DetectorDeadTime = vector<double>(nDets);
+  //! Stores all events' times
+  list<double> m_EventTimes;
+  // // ! Stores all events' energies
+  // list<double> m_EventEnergies;
   //! Stores last hit time per ASIC
   vector<vector<double> > m_ASICLastHitTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
   //! Strip ID for particular hit in ASIC
