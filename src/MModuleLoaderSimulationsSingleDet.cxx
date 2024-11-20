@@ -184,26 +184,26 @@ bool MModuleLoaderSimulationsSingleDet::ReadXmlConfiguration(MXmlNode* Node)
   if (SimulationFileNameNode != 0) {
     SetSimulationFileName(SimulationFileNameNode->GetValue());
   }
-  // MXmlNode* EnergyCalibrationFileNameNode = Node->GetNode("EnergyCalibrationFileName");
-  // if (EnergyCalibrationFileNameNode != 0) {
-  //   SetEnergyCalibrationFileName(EnergyCalibrationFileNameNode->GetValue());
-  // }
+  MXmlNode* EnergyCalibrationFileNameNode = Node->GetNode("EnergyCalibrationFileName");
+  if (EnergyCalibrationFileNameNode != 0) {
+    SetEnergyCalibrationFileName(EnergyCalibrationFileNameNode->GetValue());
+  }
   // MXmlNode* DeadStripFileNameNode = Node->GetNode("DeadStripFileName");
   // if (DeadStripFileNameNode != 0) {
   //   SetDeadStripFileName(DeadStripFileNameNode->GetValue());
   // }
-  // MXmlNode* ThresholdFileNameNode = Node->GetNode("ThresholdFileName");
-  // if (ThresholdFileNameNode != 0) {
-  //   SetThresholdFileName(ThresholdFileNameNode->GetValue());
-  // }
+  MXmlNode* ThresholdFileNameNode = Node->GetNode("ThresholdFileName");
+  if (ThresholdFileNameNode != 0) {
+    SetThresholdFileName(ThresholdFileNameNode->GetValue());
+  }
 	// MXmlNode* GuardRingThresholdFileNameNode = Node->GetNode("GuardRingThresholdFileName");
 	// if (GuardRingThresholdFileNameNode != 0) {
 	// 	SetGuardRingThresholdFileName(GuardRingThresholdFileNameNode->GetValue());
 	// }
-	// MXmlNode* ChargeSharingFileNameNode = Node->GetNode("ChargeSharingFileName");
-	// if (ChargeSharingFileNameNode != 0) {
-	// 	SetChargeSharingFileName(ChargeSharingFileNameNode->GetValue());
-	// }
+	MXmlNode* ChargeSharingFileNameNode = Node->GetNode("ChargeSharingFileName");
+	if (ChargeSharingFileNameNode != 0) {
+		SetChargeSharingFileName(ChargeSharingFileNameNode->GetValue());
+	}
   // MXmlNode* CrosstalkFileNameNode = Node->GetNode("CrosstalkFileName");
   // if (CrosstalkFileNameNode != 0) {
   //   SetCrosstalkFileName(CrosstalkFileNameNode->GetValue());
@@ -246,11 +246,11 @@ MXmlNode* MModuleLoaderSimulationsSingleDet::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
   new MXmlNode(Node, "SimulationFileName", m_SimulationFileName);
-  // new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
+  new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
   // new MXmlNode(Node, "DeadStripFileName", m_DeadStripFileName);
-  // new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
+  new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
 	// new MXmlNode(Node, "GuardRingThresholdFileName", m_GuardRingThresholdFileName);
-	// new MXmlNode(Node, "ChargeSharingFileName", m_ChargeSharingFileName);
+	new MXmlNode(Node, "ChargeSharingFileName", m_ChargeSharingFileName);
 	// new MXmlNode(Node, "CrosstalkFileName", m_CrosstalkFileName);
 	// new MXmlNode(Node, "ChargeLossFileName", m_ChargeLossFileName);
   // new MXmlNode(Node, "DepthCalibrationCoeffsFileName", m_DepthCalibrationCoeffsFileName);

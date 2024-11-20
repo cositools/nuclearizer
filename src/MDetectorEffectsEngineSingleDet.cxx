@@ -127,38 +127,46 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
     m_OwnGeometry = true;
   }
   
-  // //load energy calibration information
-  // if (ParseEnergyCalibrationFile() == false) return false;
+  //load energy calibration information
+  if (ParseEnergyCalibrationFile() == false) return false;
   // //load dead strip information
   // if (ParseDeadStripFile() == false) return false;
-  // //load threshold information
-  // if (ParseThresholdFile() == false) return false;
+  //load threshold information
+  if (ParseThresholdFile() == false) return false;
   // //load guard ring threshold information
   // if (ParseGuardRingThresholdFile() == false) return false;
   
-  // //load charge sharing factors
-  // if (ParseChargeSharingFile() == false) return false;
+  //load charge sharing factors
+  if (ParseChargeSharingFile() == false) return false;
   // //load charge loss coefficients
   // if (InitializeChargeLoss() == false) return false;
   // //load crosstalk coefficients
   // if (ParseCrosstalkFile() == false) return false;
   
-  //initialize dead time and trigger rates
+  // //initialize dead time and trigger rates
+  // for (int i=0; i<nDets; i++){
+  //   m_DetectorDeadTime[i] = 0; m_TriggerRates[i]=0;
+  //   for (int j=0; j<nDTBuffSlots; j++){
+  //     m_DeadTimeBuffer[i][j] = -1;
+  //   }
+  //   for (int k=0; k<nASICs; k++){
+  //     m_ASICDeadTime[i][k] = 0; m_TotalASICDeadTime[i][k] = 0; m_ASICLastHitTime[i][k] = -10;
+  //   }
+  // }
+
+  // initialize dead time and trigger rates
   for (int i=0; i<nDets; i++){
-    m_DetectorDeadTime[i] = 0; m_TotalDeadTime[i] = 0.; m_TriggerRates[i]=0;
+    m_DetectorDeadTime[i] = 0; m_TriggerRates[i]=0;
     for (int j=0; j<nDTBuffSlots; j++){
       m_DeadTimeBuffer[i][j] = -1;
     }
-    for (int k=0; k<nASICs; k++){
-      m_ASICDeadTime[i][k] = 0; m_ASICLastHitTime[i][k] = -10;
-    }
   }
   
-  //initialize last time to 0 (will this exclude first event?)
-  m_LastHitTime = 0;
-  for (int i=0; i<nDets; i++){
-    m_LastHitTimeByDet[i] = 0;
-  }
+  // //initialize last time to 0 (will this exclude first event?)
+  // m_LastHitTime = 0;
+  // for (int i=0; i<nDets; i++){
+  //   m_LastHitTimeByDet[i] = 0;
+  // }
   
   //initialize m_FirstTime to max double and m_LastTime to 0
   m_FirstTime = std::numeric_limits<double>::max();
@@ -209,11 +217,12 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // for shield veto: shield pulse duration and card cage delay: constant for now
   m_ShieldThreshold = 80.;
   m_ShieldPulseDuration = 1.7e-6;
-  m_StripDelayAfter = 1.4e-6;
-  m_StripDelayBefore = 0.4e-6;
+  m_StripDelayAfter = 0.4e-6;
+  m_StripDelayBefore = 1.4e-6;
   m_ASICDeadTimePerChannel = 1e-6;
   m_ShieldDelay = 900.e-9; //this is just a guess based on when veto window occurs!
   m_ShieldVetoWindowSize = 0.4e-6;
+  m_ASICLastHitTime = -10;
   // for shield veto: gets updated with shield event times
   // start at -10s so that it doesn't veto beginning events by accident
   m_ShieldTime = -10;
@@ -278,22 +287,26 @@ double MDetectorEffectsEngineSingleDet::dTimeGeDs(vector<int> ASICChannels) {
 
     // Loop through each channel ID in the sorted list
     for (int ID : ASICChannels) {
-        // Edge case: If ID is 1 or 33, add the channel and the next channel (ID + 1)
-        if (ID == 1 || ID == 33) {
-            ASICChannelsSet.insert(ID);
-            ASICChannelsSet.insert(ID + 1);
-        } 
-        // Edge case: If ID is 32 or 64, add the previous channel (ID - 1) and the channel itself
-        else if (ID == 32 || ID == 64) {
-            ASICChannelsSet.insert(ID - 1);
-            ASICChannelsSet.insert(ID);
-        } 
-        // General case: Add the previous channel (ID - 1), the channel itself (ID), and the next channel (ID + 1)
-        else {
-            ASICChannelsSet.insert(ID - 1);
-            ASICChannelsSet.insert(ID);
-            ASICChannelsSet.insert(ID + 1);
-        }
+      
+      if (ID == 65) {
+        continue;
+      }
+      else if (ID == 1 || ID == 66) {
+        // Edge case: If ID is 1 or 66, add the channel and the next channel (ID + 1)
+        ASICChannelsSet.insert(ID);
+        ASICChannelsSet.insert(ID + 1);
+      } 
+      // Edge case: If ID is 130 or 64, add the previous channel (ID - 1) and the channel itself
+      else if (ID == 130 || ID == 64) {
+        ASICChannelsSet.insert(ID - 1);
+        ASICChannelsSet.insert(ID);
+      } 
+      // General case: Add the previous channel (ID - 1), the channel itself (ID), and the next channel (ID + 1)
+      else {
+        ASICChannelsSet.insert(ID - 1);
+        ASICChannelsSet.insert(ID);
+        ASICChannelsSet.insert(ID + 1);
+      }
     }
 
     // Count the number of unique channels read out
@@ -320,7 +333,6 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
     m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
     
-    
     if (SimEvent->GetNHTs() == 0) {
       // cout<<SimEvent->GetID()<<": No hits"<<endl;
       delete SimEvent;
@@ -337,14 +349,23 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
       MSimHT* HT = SimEvent->GetHTAt(h);
       eventInitialEnergy += HT->GetEnergy();
+      // if (eventInitialEnergy == 0) {
+      //   cout << "Initial hit energy: " << eventInitialEnergy << endl;
+      // }
+      // if (HT->GetDetectorType() == 4) {
+      //   MDVolumeSequence* VS = HT->GetVolumeSequence();
+      //   MDDetector* Detector = VS->GetDetector();
+      //   MString DetName = Detector->GetName();
+      //   cout << "DetName: " << DetName << endl;
+      // }
     }
     
     
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
     // bool hasDetHits = false;
-    bool hasShieldHits = false;
-    bool increaseShieldDeadTime = false;
+    // bool hasShieldHits = false;
+    // bool increaseShieldDeadTime = false;
     
     // first check if there's another shield hit above the threshold
     // if so, veto event
@@ -445,8 +466,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         pSide.m_OppositeStrip = nSide.m_ID;
         nSide.m_OppositeStrip = pSide.m_ID;
         
-        pSide.m_ROE.IsPositiveStrip(true);
-        nSide.m_ROE.IsPositiveStrip(false);
+        pSide.m_ROE.IsLowVoltageStrip(true); // Is this right?? Need to check
+        nSide.m_ROE.IsLowVoltageStrip(false);
         
         // Convert detector name in detector ID
         pSide.m_ROE.SetDetectorID(DetectorID);
@@ -489,6 +510,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         //(m_Energy is changed due to crosstalk and charge loss, etc)
         pSide.m_EnergyOrig = HT->GetEnergy();
         nSide.m_EnergyOrig = HT->GetEnergy();
+
         //hit index to keep track of which SimHT this strip hit came from
         pSide.m_HitIndex = h;
         nSide.m_HitIndex = h;
@@ -602,10 +624,10 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           if (DriftLengthN < 0){ DriftLengthN = 0; }
           if (DriftLengthP < 0){ DriftLengthP = 0; }
           
-          // double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
-          // double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
-          double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
-          double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
+          double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
+          double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
+          // double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
+          // double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
           
           // double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN; // NEEDED FOR MULTIPLE DETS
           // double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP; // NEEDED FOR MULTIPLE DETS
@@ -682,11 +704,14 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
               pStripsEnergies[pStripID] = 0.;
             }
             pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+            // cout << "P strip eng: " << pStripsEnergies[pStripID] << endl;
             
             if (nStripsEnergies.count(nStripID) == 0){
+              // cout << "nStrip Energy set to 0" << endl;
               nStripsEnergies[nStripID] = 0.;
             }
             nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
+            // cout << "N strip eng: " << nStripsEnergies[nStripID] << endl;
           }
           // <--- Time critical
           
@@ -750,13 +775,14 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           if (pSide.m_ROE.GetStripID() == P.first){
             pSide.m_Energy = P.second;
             pSide.m_EnergyOrig = P.second;
+            
             pOrigHit = true;
           }
           //make new strip hit if needed
           //guard ring hit
           else if (P.first == 65){
             MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsPositiveStrip(true);
+            chargeShareGRHit.m_ROE.IsLowVoltageStrip(true);
             chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
             chargeShareGRHit.m_ROE.SetStripID(65);
             chargeShareGRHit.m_Energy = P.second;
@@ -766,7 +792,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           //normal strip hit
           else {
             MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsPositiveStrip(true);
+            chargeShareStrip.m_ROE.IsLowVoltageStrip(true);
             chargeShareStrip.m_ROE.SetStripID(P.first);
             chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
             chargeShareStrip.m_Timing = pSide.m_Timing;
@@ -788,7 +814,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           }
           else if (N.first == 65){
             MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsPositiveStrip(false);
+            chargeShareGRHit.m_ROE.IsLowVoltageStrip(false);
             chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
             chargeShareGRHit.m_ROE.SetStripID(65);
             chargeShareGRHit.m_Energy = N.second;
@@ -797,7 +823,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           }
           else {
             MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsPositiveStrip(false);
+            chargeShareStrip.m_ROE.IsLowVoltageStrip(false);
             chargeShareStrip.m_ROE.SetStripID(N.first);
             chargeShareStrip.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
             chargeShareStrip.m_Timing = nSide.m_Timing;
@@ -840,45 +866,50 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       list<MDEEStripHit> GuardRingHits;
       // (1b) The guard ring hits
       vector<int> GRIndices;
-      for (unsigned int h = 0; h < SimEvent->GetNGRs(); ++h) {
-        MSimGR* GR = SimEvent->GetGRAt(h);
-        MDVolumeSequence* VS = GR->GetVolumeSequence();
-        MDDetector* Detector = VS->GetDetector();
-        MString DetectorName = Detector->GetName();
-        // DetectorName.RemoveAllInPlace("Detector_");
-        // int DetectorID = DetectorName.ToInt();
-        int DetectorID = 0;
+      // for (unsigned int h = 0; h < SimEvent->GetNGRs(); ++h) {
+      for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
+        MSimHT* HT = SimEvent->GetHTAt(h);
+        if (HT->GetDetectorType() == 4) {
+          MSimHT* GR = SimEvent->GetHTAt(h);
+          // MSimGR* GR = SimEvent->GetGRAt(h);
+          MDVolumeSequence* VS = GR->GetVolumeSequence();
+          MDDetector* Detector = VS->GetDetector();
+          MString DetectorName = Detector->GetName();
+          // DetectorName.RemoveAllInPlace("Detector_");
+          // int DetectorID = DetectorName.ToInt();
+          int DetectorID = 0;
 
-        
-        MDEEStripHit GuardRingHitP;
-        GuardRingHitP.m_ROE.IsPositiveStrip(true);
-        GuardRingHitP.m_ROE.SetDetectorID(DetectorID);
-        GuardRingHitP.m_ROE.SetStripID(65); // ?
-        GuardRingHitP.m_Energy = GR->GetEnergy();
-        GuardRingHitP.m_Position = MVector(0, 0, 0); // <-- not important
-        
-        MDEEStripHit GuardRingHitN;
-        GuardRingHitN.m_ROE.IsPositiveStrip(false);
-        GuardRingHitN.m_ROE.SetDetectorID(DetectorID);
-        GuardRingHitN.m_ROE.SetStripID(65); // ?
-        GuardRingHitN.m_Energy = GR->GetEnergy();
-        GuardRingHitN.m_Position = MVector(0, 0, 0); // <-- not important
-        
-        //add extra energy from charge sharing to guard ring hits already present
-        for (unsigned int gr=0; gr<GuardRingHitsFromChargeSharing.size(); gr++){
-          if (GuardRingHitP.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
-            GuardRingHitP.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
-            GRIndices.push_back(gr);
+          
+          MDEEStripHit GuardRingHitP;
+          GuardRingHitP.m_ROE.IsLowVoltageStrip(true);
+          GuardRingHitP.m_ROE.SetDetectorID(DetectorID);
+          GuardRingHitP.m_ROE.SetStripID(65); // ?
+          GuardRingHitP.m_Energy = GR->GetEnergy();
+          GuardRingHitP.m_Position = MVector(0, 0, 0); // <-- not important
+          
+          MDEEStripHit GuardRingHitN;
+          GuardRingHitN.m_ROE.IsLowVoltageStrip(false);
+          GuardRingHitN.m_ROE.SetDetectorID(DetectorID);
+          GuardRingHitN.m_ROE.SetStripID(65); // ?
+          GuardRingHitN.m_Energy = GR->GetEnergy();
+          GuardRingHitN.m_Position = MVector(0, 0, 0); // <-- not important
+          
+          //add extra energy from charge sharing to guard ring hits already present
+          for (unsigned int gr=0; gr<GuardRingHitsFromChargeSharing.size(); gr++){
+            if (GuardRingHitP.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
+              GuardRingHitP.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
+              GRIndices.push_back(gr);
+            }
+            if (GuardRingHitN.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
+              GuardRingHitN.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
+              GRIndices.push_back(gr);
+            }
           }
-          if (GuardRingHitN.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
-            GuardRingHitN.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
-            GRIndices.push_back(gr);
-          }
+          
+          GuardRingHits.push_back(GuardRingHitP);
+          GuardRingHits.push_back(GuardRingHitN);
+          // cout << "GR Strip ID: " << GuardRingHitN.m_ROE.GetStripID() << endl;
         }
-        
-        GuardRingHits.push_back(GuardRingHitP);
-        GuardRingHits.push_back(GuardRingHitN);
-        cout << "GR Strip ID: " << GuardRingHitN.m_ROE.GetStripID() << endl;
       }
       
       //add guard ring hits from charge sharing that aren't already present
@@ -1013,8 +1044,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //         int stripID2 = (*sh2).m_ROE.GetStripID();
   // //         int detID1 = (*sh1).m_ROE.GetDetectorID();
   // //         int detID2 = (*sh2).m_ROE.GetDetectorID();
-  // //         bool side1 = (*sh1).m_ROE.IsPositiveStrip();
-  // //         bool side2 = (*sh2).m_ROE.IsPositiveStrip();
+  // //         bool side1 = (*sh1).m_ROE.IsLowVoltageStrip();
+  // //         bool side2 = (*sh2).m_ROE.IsLowVoltageStrip();
   // //         if (abs(stripID1-stripID2) == 1 && side1 == side2 && detID1 == detID2){
   // //           adjacent = true;
   // //         }
@@ -1057,7 +1088,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //     int i2 = 0;
   // //     while (i != MergedStripHits.end()) {
   // //       int sdet = (*i).m_ROE.GetDetectorID();
-  // //       bool bside = (*i).m_ROE.IsPositiveStrip();
+  // //       bool bside = (*i).m_ROE.IsLowVoltageStrip();
   // //       int sside = 0;
   // //       if (bside == true) {sside = 1;}
   // //       int sstrip = (*i).m_ROE.GetStripID();
@@ -1140,9 +1171,17 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       while (A != MergedStripHits.end()) {
         double Energy = (*A).m_Energy;
         (*A).m_ADC = EnergyToADC((*A),Energy);
+        // if ((*A).m_ROE.IsLowVoltageStrip()) {
+        //   cout << "Low Voltage strip eng: " << (*A).m_Energy << " With ADC: " << (*A).m_ADC << endl;
+        // }
+        // if (!(*A).m_ROE.IsLowVoltageStrip()) {
+        //   cout << "High Voltage strip eng: " << (*A).m_Energy << " With ADC: " << (*A).m_ADC << endl;
+        // }
+        // cout << (*A).m_Energy << endl;
         if ((*A).m_ADC > 8029){  // number for McBride, I don't know what this number is
           A = MergedStripHits.erase(A);
           HasOverflow = true;
+          // cout << "Erased because of ADC" << endl;
         }
         else {
           ++A;
@@ -1161,7 +1200,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   //     while (j != MergedStripHits.end()) {
   //       int det = (*j).m_ROE.GetDetectorID();
   //       int stripID = (*j).m_ROE.GetStripID();
-  //       bool side_b = (*j).m_ROE.IsPositiveStrip();
+  //       bool side_b = (*j).m_ROE.IsLowVoltageStrip();
   //       int side = 0;
   //       if (side_b) {side = 1;}
         
@@ -1175,100 +1214,101 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   //     }
       
       
-  //     // (4b) Handle trigger thresholds make sure we throw out timing too!
-  //     list<MDEEStripHit>::iterator k = MergedStripHits.begin();
-  //     while (k != MergedStripHits.end()) {
+      // // (4b) Handle trigger thresholds make sure we throw out timing too!
+      // list<MDEEStripHit>::iterator k = MergedStripHits.begin();
+      // while (k != MergedStripHits.end()) {
         
-  //       //so that we can use default value if necessary
-  //       MReadOutElementDoubleStrip ROE_map_key = (*k).m_ROE;
-  //       if (m_LLDThresholds.count((*k).m_ROE) == 0){
-  //         ROE_map_key.SetDetectorID(12);
-  //         ROE_map_key.SetStripID(0);
-  //         ROE_map_key.IsPositiveStrip(0);
-  //       }
+      //   //so that we can use default value if necessary
+      //   MReadOutElementDoubleStrip ROE_map_key = (*k).m_ROE;
+      //   if (m_LLDThresholds.count((*k).m_ROE) == 0){
+      //     ROE_map_key.SetDetectorID(12);
+      //     ROE_map_key.SetStripID(0);
+      //     ROE_map_key.IsLowVoltageStrip(0);
+      //   }
         
-  //       if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
-  //         k = MergedStripHits.erase(k);
-  //       } else {
-  //         double prob = m_Random.Rndm();
-  //         if (prob > m_FSTThresholds[ROE_map_key]->Eval((*k).m_ADC)){
-  //           (*k).m_Timing = 0.0;
-  //         }
-  //         ++k;
-  //       }
-  //     }
+      //   if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
+      //     // cout << "Low Voltage: " << (*k).m_ROE.IsLowVoltageStrip() << " ADC Value: " << (*k).m_ADC << endl;
+      //     k = MergedStripHits.erase(k);
+      //   } else {
+      //     double prob = m_Random.Rndm();
+      //     if (prob > m_FSTThresholds[ROE_map_key]->Eval((*k).m_ADC)){
+      //       (*k).m_Timing = 0.0;
+      //     }
+      //     ++k;
+      //   }
+      // }
       
 
       
-  //     // (4c) Take care of guard ring vetoes
-  //     list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
-  //     vector<int> grHit = vector<int>(nDets,0);
-  //     while (gr != GuardRingHits.end()) {
-  //       if ((*gr).m_Energy > m_GuardRingThresholds[(*gr).m_ROE]){
-  //         int detID = (*gr).m_ROE.GetDetectorID();
-  //         grHit[detID] = 1;
-  //       }
-  //       ++gr;
-  //     }
-  //     list<MDEEStripHit>::iterator grVeto = MergedStripHits.begin();
-  //     while (grVeto != MergedStripHits.end()){
-  //       int detID = (*grVeto).m_ROE.GetDetectorID();
-  //       if (grHit[detID] == 1){ 
-  //         grVeto = MergedStripHits.erase(grVeto);
-  //       }
-  //       else{ ++grVeto; }
-  //     }
-  //     //update dead time stuff if the hit is vetoed by the guard ring
-  //     for (int det=0; det<nDets; det++){
-  //       if (grHit[det] == 1){
-  //         //make sure CC not already dead
-  //         if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
-  //           m_DetectorDeadTime[det] = 2.8e-6;
-  //           m_LastHitTimeByDet[det] = evt_time;
-  //           m_TotalDeadTime[det] += m_DetectorDeadTime[det];
-  //         }
-  //       }
-  //     }
+      // // (4c) Take care of guard ring vetoes
+      // list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
+      // vector<int> grHit = vector<int>(nDets,0);
+      // while (gr != GuardRingHits.end()) {
+      //   if ((*gr).m_Energy > m_GuardRingThresholds[(*gr).m_ROE]){
+      //     int detID = (*gr).m_ROE.GetDetectorID();
+      //     grHit[detID] = 1;
+      //   }
+      //   ++gr;
+      // }
+      // list<MDEEStripHit>::iterator grVeto = MergedStripHits.begin();
+      // while (grVeto != MergedStripHits.end()){
+      //   int detID = (*grVeto).m_ROE.GetDetectorID();
+      //   if (grHit[detID] == 1){ 
+      //     grVeto = MergedStripHits.erase(grVeto);
+      //   }
+      //   else{ ++grVeto; }
+      // }
+      // //update dead time stuff if the hit is vetoed by the guard ring
+      // for (int det=0; det<nDets; det++){
+      //   if (grHit[det] == 1){
+      //     //make sure CC not already dead
+      //     if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
+      //       m_DetectorDeadTime[det] = 2.8e-6;
+      //       m_LastHitTimeByDet[det] = evt_time;
+      //       m_TotalDeadTime[det] += m_DetectorDeadTime[det];
+      //     }
+      //   }
+      // }
       
       
-      // (4d) Make sure there is at least one strip left on each side of each detector
-      //  If not, remove remaining strip(s) from detector because they won't trigger detector
-      vector<int> xExists = vector<int>(nDets,0);
-      vector<int> yExists = vector<int>(nDets,0);
+      // // (4d) Make sure there is at least one strip left on each side of each detector
+      // //  If not, remove remaining strip(s) from detector because they won't trigger detector
+      // vector<int> xExists = vector<int>(nDets,0);
+      // vector<int> yExists = vector<int>(nDets,0);
       
-      //look for (at least) one strip on each side
-      list<MDEEStripHit>::iterator tr = MergedStripHits.begin();
-      while (tr != MergedStripHits.end()) {
-        int DetID = (*tr).m_ROE.GetDetectorID();
-        // if ((*tr).m_Timing != 0){
-        if ((*tr).m_ROE.IsPositiveStrip()){ xExists[DetID] = 1; }
-        else{ yExists[DetID] = 1; }
-        // }
-        ++tr;
-      }
+      // //look for (at least) one strip on each side
+      // list<MDEEStripHit>::iterator tr = MergedStripHits.begin();
+      // while (tr != MergedStripHits.end()) {
+      //   int DetID = (*tr).m_ROE.GetDetectorID();
+      //   // if ((*tr).m_Timing != 0){
+      //   if ((*tr).m_ROE.IsLowVoltageStrip()){ xExists[DetID] = 1; }
+      //   else{ yExists[DetID] = 1; }
+      //   // }
+      //   ++tr;
+      // }
       
-      //remove hits that won't trigger detector
-      tr = MergedStripHits.begin();
-      while (tr != MergedStripHits.end()) {
-        int DetID = (*tr).m_ROE.GetDetectorID();
-        if ( xExists[DetID] == 0 || yExists[DetID] == 0){
-          tr = MergedStripHits.erase(tr);
-        }
-        else{ ++tr;}
-      }
+      // //remove hits that won't trigger detector
+      // tr = MergedStripHits.begin();
+      // while (tr != MergedStripHits.end()) {
+      //   int DetID = (*tr).m_ROE.GetDetectorID();
+      //   if ( xExists[DetID] == 0 || yExists[DetID] == 0){
+      //     tr = MergedStripHits.erase(tr);
+      //   }
+      //   else{ ++tr;}
+      // }
       
-      //apply dead time for hits that don't have coincidence
-      //i.e. hits with strip hits on only x OR y, not both
-      for (int det=0; det<nDets; det++){
-        if ((xExists[det] == 0 && yExists[det] == 1) || (xExists[det] == 1 && yExists[det] == 0)){
-          //make sure CC not already dead
-          if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
-            m_DetectorDeadTime[det] = 2.8e-6;
-            m_LastHitTimeByDet[det] = evt_time;
-            m_TotalDeadTime[det] += m_DetectorDeadTime[det];
-          }
-        }
-      }
+      // //apply dead time for hits that don't have coincidence
+      // //i.e. hits with strip hits on only x OR y, not both
+      // for (int det=0; det<nDets; det++){
+      //   if ((xExists[det] == 0 && yExists[det] == 1) || (xExists[det] == 1 && yExists[det] == 0)){
+      //     //make sure CC not already dead
+      //     if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
+      //       m_DetectorDeadTime[det] += 2.8e-6;
+      //       m_LastHitTimeByDet[det] = evt_time;
+      //       m_TotalDeadTime[det] += m_DetectorDeadTime[det];
+      //     }
+      //   }
+      // }
       
   // //     // Step (5): Split into card cage events - i.e. split by detector
   // //     /*    vector<vector<MDEEStripHit>> CardCagedStripHits;
@@ -1299,83 +1339,172 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // list<MDEEStripHit>::iterator i = MergedStripHits.begin();
       // cout << "Merged Srtips size: " << MergedStripHits.size() << endl;
       // while (i != MergedStripHits.end()) {
-      //   if ((*i).m_ROE.IsPositiveStrip()) {
+      //   if ((*i).m_ROE.IsLowVoltageStrip()) {
       //     cout << "Positive Strip ID: " << (*i).m_ROE.GetStripID() << endl;
       //   }
-      //   if (!(*i).m_ROE.IsPositiveStrip()) {
+      //   if (!(*i).m_ROE.IsLowVoltageStrip()) {
       //     cout << "Negative Strip ID: " << (*i).m_ROE.GetStripID() << endl;
       //   }
       //   ++i;
       // }
 
+      // // Checking for deadtime implementation by checking without it
+      // list<MDEEStripHit>::iterator a = MergedStripHits.begin();
+      // while (a != MergedStripHits.end()) {
+      //   if ((*a).m_ROE.GetStripID() == 65) {
+      //     cout << "Strip 65 .. will fix later, skipping" << endl;
+      //     continue;
+      //   }
+      //   m_EventStripIDs.push_back((*a).m_ROE.GetStripID());
+      //   m_EventTimes.push_back(evt_time);
+      //   m_EventStripEnergy.push_back((*a).m_Energy);
+      //   m_EventStripADC.push_back((*a).m_ADC);
+      //   a++;
+      // }
+
+
+      // //// Deadtime implementation (Each ASIC has its own enable)
+      // //Step (6.5): Dead time
+      // vector<int> updateLastHitTime = vector<int>(nDets,0);
+      // // vector<vector<double> > ASICISDead = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
       
-      //Step (6.5): Dead time
-      vector<int> updateLastHitTime = vector<int>(nDets,0);
-      vector<vector<double> > ASICISDead = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
-      
-      for (int det=0; det<nDets; det++) {
-        for (int ASIC=0; ASIC<nASICs; ASIC++) {
-          increaseASICDeadTime[det][ASIC] = false;
-        }
-      }
+      // for (int det=0; det<nDets; det++) {
+      //   for (int ASIC=0; ASIC<nASICs; ASIC++) {
+      //     increaseASICDeadTime[det][ASIC] = false;
+      //   }
+      // }
+
+      // list<MDEEStripHit>::iterator i = MergedStripHits.begin();
+      // int ASICofDet = 5;
+
+      // while (i != MergedStripHits.end()) {
+      //   for (int det=0; det<nDets; det++) {
+      //     ASICofDet = 5;
+      //     if ((*i).m_ROE.GetStripID() == 65) {
+      //       cout << "Strip is 65, skipping .. will fix later" << endl;
+      //       continue;
+      //     }
+      //     else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+      //       ASICofDet = 0;
+      //     }
+      //     else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+      //       ASICofDet = 1;
+      //     }
+      //     else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+      //       ASICofDet = 2;
+      //     }
+      //     else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+      //       ASICofDet = 3;
+      //     }
+      //     else {
+      //       cout << "Strip not associated, something went wrong in assigning strip ID" << endl;
+      //       continue;
+      //     }
+
+      //     if (m_ASICLastHitTime[det][ASICofDet] + m_StripDelayBefore > evt_time) {
+      //       // Event occured within delay before period so increase deadtime
+      //       m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+      //       increaseASICDeadTime[det][ASICofDet] = true;
+      //       // ASICISDead[det][ASICofDet] = false;
+      //       m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+      //       m_EventTimes.push_back(evt_time);
+      //       m_EventStripEnergy.push_back((*i).m_Energy);
+      //       m_EventStripADC.push_back((*i).m_ADC);
+      //     }
+      //     else if(m_ASICLastHitTime[det][ASICofDet] + m_ASICDeadTime[det][ASICofDet] > evt_time) {
+      //       // Event occured within deadtime
+      //       m_StripHitsErased += 1;
+      //       // ASICISDead[det][ASICofDet] = true;
+      //       i = MergedStripHits.erase(i);
+      //     }
+      //     else if(m_ASICLastHitTime[det][ASICofDet] + m_ASICDeadTime[det][ASICofDet] < evt_time) {
+      //       // Event occured after deadtime
+      //       m_DetectorDeadTime[det] += m_ASICDeadTime[det][ASICofDet]; // add ASIC deadtime number to total detector deadtime
+      //       m_TotalASICDeadTime[det][ASICofDet] += m_ASICDeadTime[det][ASICofDet];
+      //       m_ASICHitStripID[det][ASICofDet].clear();
+      //       m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+      //       m_ASICDeadTime[det][ASICofDet] = dTimeGeDs(m_ASICHitStripID[det][ASICofDet]);
+      //       m_ASICLastHitTime[det][ASICofDet] = evt_time;
+      //       // m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+      //       // ASICISDead[det][ASICofDet] = false;
+      //       m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+      //       m_EventTimes.push_back(evt_time);
+      //       m_EventStripEnergy.push_back((*i).m_Energy);
+      //       m_EventStripADC.push_back((*i).m_ADC);
+      //     }
+      //   }
+      //   ++i;
+      // }
+
+      // // Increases deadtime if hit occured within delay before period, adds up all 4 asic deadtimes into detector deadtime.
+      // // int ASICNow = 0;
+      // for (int det=0; det<nDets; det++) {
+      //   for (int ASIC=0; ASIC<nASICs; ASIC++) {
+      //     if (increaseASICDeadTime[det][ASIC]) {
+      //       m_ASICDeadTime[det][ASIC] += dTimeGeDs(m_ASICHitStripID[det][ASIC]);
+      //     }
+      //     // ASICNow = ASIC;
+      //   }
+      // }
+
+
+      //// Deadtime implementation (Enable is shared between the entire detector)
+      //Step (6.5): Dead time      
+      increaseASICDeadTime = false;
 
       list<MDEEStripHit>::iterator i = MergedStripHits.begin();
-      int ASICofDet = 5;
+      // int ASICofDet = 5;
 
+      int StripID = 500;
       while (i != MergedStripHits.end()) {
-        for (int det=0; det<nDets; det++) {
 
-          ASICofDet = 5;
-          if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
-            ASICofDet = 0;
-          }
-          else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
-            ASICofDet = 1;
-          }
-          else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
-            ASICofDet = 2;
-          }
-          else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
-            ASICofDet = 3;
-          }
-          else {
-            cout << "Strip not associated, something went wrong in assigning strip ID" << endl;
-            continue;
-          }
+        if ((*i).m_ROE.GetStripID() == 65) {
+          cout << "Strip is 65, skipping .. will fix later" << endl;
+          continue;
+        }
+        else if ((*i).m_ROE.IsLowVoltageStrip()) {
+          // Setting Low Voltage strips to 1-64
+          StripID = (*i).m_ROE.GetStripID();
+        }
+        else {
+          // Setting High Voltage strips to 66-130
+          StripID = (*i).m_ROE.GetStripID() + 65;
+        }
 
-          if (m_ASICLastHitTime[det][ASICofDet] + m_StripDelayBefore > evt_time) {
-            m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-            increaseASICDeadTime[det][ASICofDet] = true;
-            ASICISDead[det][ASICofDet] = false;
-          }
-          else if(m_ASICLastHitTime[det][ASICofDet] + m_ASICDeadTime[det][ASICofDet] > evt_time) {
-            m_StripHitsErased += 1;
-            ASICISDead[det][ASICofDet] = true;
-            i = MergedStripHits.erase(i);
-          }
-          else if(m_ASICLastHitTime[det][ASICofDet] + m_ASICDeadTime[det][ASICofDet] < evt_time) {
-            m_ASICHitStripID[det][ASICofDet].clear();
-            m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-            m_ASICDeadTime[det][ASICofDet] = dTimeGeDs(m_ASICHitStripID[det][ASICofDet]);
-            m_ASICLastHitTime[det][ASICofDet] = evt_time;
-            m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-            ASICISDead[det][ASICofDet] = false;
-          }
+        if (m_ASICLastHitTime + m_StripDelayBefore > evt_time) {
+          // Event occured within delay before period so increase deadtime
+          m_ASICHitStripID.push_back((*i).m_ROE.GetStripID());
+          increaseASICDeadTime = true;
+          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+          m_EventTimes.push_back(evt_time);
+          m_EventStripEnergy.push_back((*i).m_Energy);
+          m_EventStripADC.push_back((*i).m_ADC);
+        }
+        else if(m_ASICLastHitTime + m_currentDeadtime > evt_time) {
+          // Event occured within deadtime
+          m_StripHitsErased += 1;
+          i = MergedStripHits.erase(i);
+        }
+        else if(m_ASICLastHitTime + m_currentDeadtime < evt_time) {
+          // Event occured after deadtime
+          m_totalDeadTime += m_currentDeadtime;
+          m_ASICHitStripID.clear();
+          m_ASICHitStripID.push_back((*i).m_ROE.GetStripID());
+          m_currentDeadtime = dTimeGeDs(m_ASICHitStripID);
+          m_ASICLastHitTime = evt_time;
+          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+          m_EventTimes.push_back(evt_time);
+          m_EventStripEnergy.push_back((*i).m_Energy);
+          m_EventStripADC.push_back((*i).m_ADC);
         }
         ++i;
       }
 
       // Increases deadtime if hit occured within delay before period, adds up all 4 asic deadtimes into detector deadtime.
-      for (int det=0; det<nDets; det++) {
-        int ASICNow = 0;
-        for (int ASIC=0; ASIC<nASICs; ASIC++) {
-          if (increaseASICDeadTime[det][ASICofDet]) {
-            m_ASICDeadTime[det][ASIC] += dTimeGeDs(m_ASICHitStripID[det][ASIC]);
-          }
-          ASICNow = ASIC;
-        }
-        m_DetectorDeadTime[det] += m_ASICDeadTime[det][ASICNow];
+      if (increaseASICDeadTime) {
+        m_currentDeadtime += dTimeGeDs(m_ASICHitStripID);
       }
+      ///// Deadtime implementation
 
       // cout << "ASIC deadtime with one hit: " << dTimeGeDs({5}) << endl;
       
@@ -1509,7 +1638,6 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       m_LastTime = SimEvent->GetTime().GetAsSeconds();
       
 
-      
       // Step (8): Apply fudge factor to completely absorbed events (photopeak)
       //to deal with successor stuff, need to do this for each SimHT
       //but same origin can make multiple SimHTs, so have to add them back together
@@ -1534,7 +1662,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //         double initialEnergy = SimEvent->GetIAById(initIA)->GetSecondaryEnergy();
   // //         double finalEnergy = 0.0;
   // //         for (list<MDEEStripHit>::iterator p=MergedStripHits.begin(); p!=MergedStripHits.end(); ++p){
-  // //           if ((*p).m_ROE.IsPositiveStrip() == false && (*p).m_HitIndex == h){
+  // //           if ((*p).m_ROE.IsLowVoltageStrip() == false && (*p).m_HitIndex == h){
   // //             finalEnergy += (*p).m_EnergyOrig;
   // //           }
   // //         }
@@ -1590,7 +1718,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         // Sum up all energies:
         double TotalMeasuredEnergy = 0.0;
         for (list<MDEEStripHit>::iterator p = MergedStripHits.begin(); p != MergedStripHits.end(); ++p){
-          if ((*p).m_ROE.IsPositiveStrip() == false) {
+          if ((*p).m_ROE.IsLowVoltageStrip() == false) {
             TotalMeasuredEnergy += (*p).m_EnergyOrig;
           }
         }
@@ -1632,7 +1760,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       double finalEventEnergy = 0;
       int nNStripHits = 0;
       for (MDEEStripHit Hit: MergedStripHits){
-        if (!Hit.m_ROE.IsPositiveStrip()){
+        if (!Hit.m_ROE.IsLowVoltageStrip()){
           finalEventEnergy += Hit.m_Energy;
           nNStripHits++;
         }
@@ -1645,7 +1773,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         }
         cout << "DEE STRIP HITS: " << endl;
         for (MDEEStripHit Hit: MergedStripHits){
-          if (!Hit.m_ROE.IsPositiveStrip()){
+          if (!Hit.m_ROE.IsLowVoltageStrip()){
             cout << Hit.m_Energy << endl;
           }
         }
@@ -1664,7 +1792,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         MStripHit* SH = new MStripHit();
         SH->SetDetectorID(Hit.m_ROE.GetDetectorID());
         SH->SetStripID(Hit.m_ROE.GetStripID());
-        SH->IsXStrip(Hit.m_ROE.IsPositiveStrip());
+        SH->IsXStrip(Hit.m_ROE.IsLowVoltageStrip());
+        // cout << "setting ADC units: " << Hit.m_ADC << endl;
         SH->SetADCUnits(Hit.m_ADC);
         SH->SetTiming(Hit.m_Timing);
         SH->SetPreampTemp(20);
@@ -1684,7 +1813,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           m_Roa<<IAs[i]->ToSimString()<<endl;
         }
         for (MDEEStripHit Hit: MergedStripHits){
-          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
+          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsLowVoltageStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
           
           MString Origins;
           for (int Origin: Hit.m_Origins) {
@@ -1709,7 +1838,6 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // MDDetector* Detector = VS->GetDetector();
       // MString DetectorName = Detector->GetName();
 
-      m_EventTimes.push_back(evt_time);
       // m_EventTimes.push_back(SimEvent->GetHTAt(h)->GetEnergy());
       // Never forget to delete the event
       delete SimEvent;
@@ -1736,9 +1864,7 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   //	cout << "Num shield counts: " << m_NumShieldCounts << endl;
   cout << "Shield rate (cps): " << m_NumShieldCounts/(m_LastTime-m_FirstTime) << endl;
   cout << "Dead time " << endl;
-  for (int i=0; i<nDets; i++){
-    cout << i << ":\t" << m_DetectorDeadTime[i] << endl;
-  }
+  cout << "Total Deadtime of the Instrument: " << m_totalDeadTime << endl;
   cout << "Trigger rates (events per second)" << endl;
   for (int i=0; i<nDets; i++){
     cout << i << ":\t" << m_TriggerRates[i]/(m_LastTime-m_FirstTime) << endl;
@@ -1753,10 +1879,11 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // cout<<"Ratio of failed IA searches for charge sharing: "<<(m_NumberOfFailedIASearches > 0 ? double(m_NumberOfFailedIASearches) / (m_NumberOfFailedIASearches + m_NumberOfSuccessfulIASearches): 0)<<endl;
 
   // Create a sample plot here -- maybe save the data as well ...
-  TCanvas *canvas = new TCanvas("c1", "My Canvas", 800, 600);
-  TH1F *hist = new TH1F("hist", "Sample Histogram", 100, -1, 3);
-  for (double value : m_EventTimes) {
-      hist->Fill(value);
+  // Plots a light curve of all hits
+  TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
+  TH1F *hist = new TH1F("hist", "Sample Histogram", 200, -10, 110);
+  for (int i = 0; i<m_EventTimes.size(); i++) {
+      hist->Fill(m_EventTimes[i]);
    }
 
   hist->SetTitle("Light Curve");
@@ -1764,20 +1891,32 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   hist->GetYaxis()->SetTitle("Counts");
 
   hist->Draw();
-  canvas->Draw();
+  canvas2->Draw();
   // canvas->SaveAs("/Users/parshad/Software/canvas.png");
+  // // End Plot
 
-  // Disable if not needed
-  ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/SingleDet_DEE_Cs137_10xPos.csv");
-  file << "Index, Times\n";
-  int index = 1;
-    for (double time : m_EventTimes) {
-      file << index << "," << time << "\n";
-      index++;
-    }
-  file.close();
+  // Plots a ADC vs Energy of all hits
+  TCanvas *canvas = new TCanvas("c1", "My Canvas", 800, 600);
+  TGraph *EngADC = new TGraph(m_EventStripADC.size(), m_EventStripEnergy.data(), m_EventStripADC.data());
+
+  EngADC->SetTitle("Energy vs ADC;Energy;ADC");
+  EngADC->SetMarkerStyle(3);  // Example of setting marker style
+  EngADC->Draw("AL");          // Draw with line and points
+  canvas->Draw();
+  // End Plot
+
+  // // Saves to csv ... Disable if not needed
+  // ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/Cs137_singleDet_10x_noDT_1000Flux_100s.csv");
+  // file << "Index, Strip ID, Times\n";
+  // for (int i = 0; i<m_EventTimes.size(); i++) {
+  //   file << i+1 << "," << m_EventStripIDs[i] << "," << m_EventTimes[i] << "\n";
+  // }
+  // file.close();
 
   m_EventTimes.clear();
+  m_EventStripIDs.clear();
+  m_EventStripADC.clear();
+  m_EventStripEnergy.clear();
   ///////
 
   if (m_SaveToFile == true) {
@@ -1999,34 +2138,34 @@ int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_
 // }
 
 
-// /////////////////////////////////////////////////////////////////////////////////
-// //! Read in charge sharing factors
-// bool MDetectorEffectsEngineSingleDet::ParseChargeSharingFile()
-// {
+/////////////////////////////////////////////////////////////////////////////////
+//! Read in charge sharing factors
+bool MDetectorEffectsEngineSingleDet::ParseChargeSharingFile()
+{
   
-//   MParser Parser;
-//   if (Parser.Open(m_ChargeSharingFileName) == false){
-//     cout << "Unable to open charge sharing file" << endl;
-//     return false;
-//   }
+  MParser Parser;
+  if (Parser.Open(m_ChargeSharingFileName) == false){
+    cout << "Unable to open charge sharing file" << endl;
+    return false;
+  }
   
-//   for (unsigned int i=0; i<nDets*nSides; i++){
-//     int det = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
-//     int side = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
-//     double slope = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
-//     double yInt = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
+  for (unsigned int i=0; i<nDets*nSides; i++){
+    int det = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+    int side = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
+    double slope = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
+    double yInt = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
     
-//     TF1 *f = new TF1(MString(det)+"_"+MString(side),"[0]*x+[1]",0,2000);
-//     f->SetParameter(0,slope);
-//     f->SetParameter(1,yInt);
+    TF1 *f = new TF1(MString(det)+"_"+MString(side),"[0]*x+[1]",0,2000);
+    f->SetParameter(0,slope);
+    f->SetParameter(1,yInt);
     
-//     m_ChargeSharingFactors[det][side] = f;
+    m_ChargeSharingFactors[det][side] = f;
     
-//   }
+  }
   
-//   return true;
+  return true;
   
-// }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -2074,7 +2213,7 @@ int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_
   //   MReadOutElementDoubleStrip R;
   //   R.SetDetectorID(detector);
   //   R.SetStripID(65);
-  //   R.IsPositiveStrip(side);
+  //   R.IsLowVoltageStrip(side);
     
   //   m_GuardRingThresholds[R] = threshold;
   // }
@@ -2085,203 +2224,203 @@ int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// //! Read in thresholds
-// bool MDetectorEffectsEngineSingleDet::ParseThresholdFile()
-// {
-  // MParser Parser;
-  // if (Parser.Open(m_ThresholdFileName, MFile::c_Read) == false) {
-  //   cout << "Unable to open threshold file " << m_ThresholdFileName << endl;
-  //   return false;
-  // }
+//! Read in thresholds
+bool MDetectorEffectsEngineSingleDet::ParseThresholdFile()
+{
+  MParser Parser;
+  if (Parser.Open(m_ThresholdFileName, MFile::c_Read) == false) {
+    cout << "Unable to open threshold file " << m_ThresholdFileName << endl;
+    return false;
+  }
   
-  // //vectors for averaging, for strips where there isn't threshold info for some reason
-  // vector<double> lldVals;
-  // vector<double> functionMaxVals;
-  // vector<double> par0Vals;
-  // vector<double> par1Vals;
-  // vector<double> par2Vals;
-  // vector<double> par3Vals;
+  //vectors for averaging, for strips where there isn't threshold info for some reason
+  vector<double> lldVals;
+  vector<double> functionMaxVals;
+  vector<double> par0Vals;
+  vector<double> par1Vals;
+  vector<double> par2Vals;
+  vector<double> par3Vals;
   
-  // for (unsigned int i=0; i<Parser.GetNLines(); i++) {
-  //   unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
-  //   if (NTokens != 7){ continue; } //this shouldn't happen but just in case
+  for (unsigned int i=0; i<Parser.GetNLines(); i++) {
+    unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+    if (NTokens != 7){ continue; } //this shouldn't happen but just in case
     
-  //   //decode identifier
-  //   int identifier = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
-  //   int det = identifier / 1000;
-  //   int strip = (identifier % 1000) / 10;
-  //   bool isPos = identifier % 10;
+    //decode identifier
+    int identifier = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+    int det = identifier / 1000;
+    int strip = (identifier % 1000) / 10;
+    bool isPos = identifier % 10;
     
-  //   MReadOutElementDoubleStrip R;
-  //   R.SetDetectorID(det);
-  //   R.SetStripID(strip);
-  //   R.IsPositiveStrip(isPos);
+    MReadOutElementDoubleStrip R;
+    R.SetDetectorID(det);
+    R.SetStripID(strip);
+    R.IsLowVoltageStrip(isPos);
     
-  //   double lldThresh = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
-  //   double functionMax = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+    double lldThresh = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
+    double functionMax = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
     
-  //   m_LLDThresholds[R] = lldThresh;
+    m_LLDThresholds[R] = lldThresh;
     
-  //   TF1* erf = new TF1("erf"+MString(identifier),"[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldThresh,functionMax);
-  //   erf->SetParameter(1,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
-  //   erf->SetParameter(2,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
-  //   erf->SetParameter(3,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
-  //   erf->SetParameter(0,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
+    TF1* erf = new TF1("erf"+MString(identifier),"[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldThresh,functionMax);
+    erf->SetParameter(1,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
+    erf->SetParameter(2,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+    erf->SetParameter(3,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
+    erf->SetParameter(0,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
     
-  //   m_FSTThresholds[R] = erf;
+    m_FSTThresholds[R] = erf;
     
-  //   lldVals.push_back(lldThresh);
-  //   functionMaxVals.push_back(functionMax);
-  //   par0Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
-  //   par1Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
-  //   par2Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
-  //   par3Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
+    lldVals.push_back(lldThresh);
+    functionMaxVals.push_back(functionMax);
+    par0Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
+    par1Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
+    par2Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+    par3Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
     
-  // }
+  }
   
-  // //add average value as a default
-  // double lldAvg = accumulate(lldVals.begin(),lldVals.end(),0.0)/lldVals.size();
-  // double funcMaxAvg = accumulate(functionMaxVals.begin(),functionMaxVals.end(),0.0)/functionMaxVals.size();
-  // double par0Avg = accumulate(par0Vals.begin(),par0Vals.end(),0.0)/par0Vals.size();
-  // double par1Avg = accumulate(par1Vals.begin(),par1Vals.end(),0.0)/par1Vals.size();
-  // double par2Avg = accumulate(par2Vals.begin(),par2Vals.end(),0.0)/par2Vals.size();
-  // double par3Avg = accumulate(par3Vals.begin(),par3Vals.end(),0.0)/par3Vals.size();
+  //add average value as a default
+  double lldAvg = accumulate(lldVals.begin(),lldVals.end(),0.0)/lldVals.size();
+  double funcMaxAvg = accumulate(functionMaxVals.begin(),functionMaxVals.end(),0.0)/functionMaxVals.size();
+  double par0Avg = accumulate(par0Vals.begin(),par0Vals.end(),0.0)/par0Vals.size();
+  double par1Avg = accumulate(par1Vals.begin(),par1Vals.end(),0.0)/par1Vals.size();
+  double par2Avg = accumulate(par2Vals.begin(),par2Vals.end(),0.0)/par2Vals.size();
+  double par3Avg = accumulate(par3Vals.begin(),par3Vals.end(),0.0)/par3Vals.size();
   
-  // MReadOutElementDoubleStrip R;
-  // R.SetDetectorID(12);
-  // R.SetStripID(0);
-  // R.IsPositiveStrip(0);
+  MReadOutElementDoubleStrip R;
+  R.SetDetectorID(12);
+  R.SetStripID(0);
+  R.IsLowVoltageStrip(0);
   
-  // m_LLDThresholds[R] = lldAvg;
+  m_LLDThresholds[R] = lldAvg;
   
-  // TF1* erf = new TF1("erf12000","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldAvg,funcMaxAvg);
-  // erf->SetParameter(0,par0Avg);
-  // erf->SetParameter(1,par1Avg);
-  // erf->SetParameter(2,par2Avg);
-  // erf->SetParameter(3,par3Avg);
+  TF1* erf = new TF1("erf12000","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldAvg,funcMaxAvg);
+  erf->SetParameter(0,par0Avg);
+  erf->SetParameter(1,par1Avg);
+  erf->SetParameter(2,par2Avg);
+  erf->SetParameter(3,par3Avg);
   
-  // m_FSTThresholds[R] = erf;
+  m_FSTThresholds[R] = erf;
   
-//   return true;
-// }
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// //! Parse ecal file: should be done once at the beginning to save all the poly3 coefficients
-// bool MDetectorEffectsEngineSingleDet::ParseEnergyCalibrationFile()
-// {
-  // MParser Parser;
-  // if (Parser.Open(m_EnergyCalibrationFileName, MFile::c_Read) == false){
-  //   cout << "Unable to open calibration file " << m_EnergyCalibrationFileName << endl;
-  //   return false;
-  // }
+//! Parse ecal file: should be done once at the beginning to save all the poly3 coefficients
+bool MDetectorEffectsEngineSingleDet::ParseEnergyCalibrationFile()
+{
+  MParser Parser;
+  if (Parser.Open(m_EnergyCalibrationFileName, MFile::c_Read) == false){
+    cout << "Unable to open calibration file " << m_EnergyCalibrationFileName << endl;
+    return false;
+  }
   
-  // map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
-  // map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
-  // //used to make sure there are enough data points:
-  // map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine; //peak fits
+  map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
+  map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
+  //used to make sure there are enough data points:
+  map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine; //peak fits
   
-  // for (unsigned int i=0; i<Parser.GetNLines(); i++){
-  //   unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
-  //   if (NTokens < 2) continue;
-  //   if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"CM") == true || 
-  //     Parser.GetTokenizerAt(i)->IsTokenAt(0,"CP") == true ||
-  //     Parser.GetTokenizerAt(i)->IsTokenAt(0,"CR") == true) {
+  for (unsigned int i=0; i<Parser.GetNLines(); i++){
+    unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+    if (NTokens < 2) continue;
+    if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"CM") == true || 
+      Parser.GetTokenizerAt(i)->IsTokenAt(0,"CP") == true ||
+      Parser.GetTokenizerAt(i)->IsTokenAt(0,"CR") == true) {
       
-  //     if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"dss") == true) {
-  //       MReadOutElementDoubleStrip R;
-  //       R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
-  //       R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-  //       R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
+      if (Parser.GetTokenizerAt(i)->IsTokenAt(1,"dss") == true) {
+        MReadOutElementDoubleStrip R;
+        R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
+        R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
+        R.IsLowVoltageStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
         
-  //       if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"CM") == true) {
-  //         CM_ROEToLine[R] = i;
-  //       }
-  //       else if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"CP") == true) {
-  //         CP_ROEToLine[R] = i;
-  //       }
-  //       else {
-  //         CR_ROEToLine[R] = i;
-  //       }
-  //     }
-  //     }
-  // }
+        if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"CM") == true) {
+          CM_ROEToLine[R] = i;
+        }
+        else if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"CP") == true) {
+          CP_ROEToLine[R] = i;
+        }
+        else {
+          CR_ROEToLine[R] = i;
+        }
+      }
+      }
+  }
   
-  // for (auto CM: CM_ROEToLine){
+  for (auto CM: CM_ROEToLine){
     
-  //   //only use calibration if we have 3 data points
-  //   if (CP_ROEToLine.find(CM.first) != CP_ROEToLine.end()){
-  //     unsigned int i = CP_ROEToLine[CM.first];
-  //     if (Parser.GetTokenizerAt(i)->IsTokenAt(5,"pakw") == true){
-  //       if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3){
-  //         continue;
-  //       }
-  //     }
-  //   }
+    //only use calibration if we have 3 data points
+    if (CP_ROEToLine.find(CM.first) != CP_ROEToLine.end()){
+      unsigned int i = CP_ROEToLine[CM.first];
+      if (Parser.GetTokenizerAt(i)->IsTokenAt(5,"pakw") == true){
+        if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3){
+          continue;
+        }
+      }
+    }
     
     
-  //   //get the fit function from the file
-  //   unsigned int Pos = 5;
-  //   MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
-  //   CalibratorType.ToLower();
+    //get the fit function from the file
+    unsigned int Pos = 5;
+    MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
+    CalibratorType.ToLower();
     
-  //   //for now Carolyn just does poly3 and poly4, so I am only doing those one
-  //   if (CalibratorType == "poly3"){
-  //     double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-  //     double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-  //     double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-  //     double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+    //for now Carolyn just does poly3 and poly4, so I am only doing those one
+    if (CalibratorType == "poly3"){
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       
-  //     //from fit parameters, define function
-  //     TF1* melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8162.);
-  //     melinatorfit->FixParameter(0,a0);
-  //     melinatorfit->FixParameter(1,a1);
-  //     melinatorfit->FixParameter(2,a2);
-  //     melinatorfit->FixParameter(3,a3);
+      //from fit parameters, define function
+      TF1* melinatorfit = new TF1("poly3","[0]+[1]*x+[2]*x^2+[3]*x^3",0.,8162.);
+      melinatorfit->FixParameter(0,a0);
+      melinatorfit->FixParameter(1,a1);
+      melinatorfit->FixParameter(2,a2);
+      melinatorfit->FixParameter(3,a3);
       
-  //     //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-  //     m_EnergyCalibration[CM.first] = melinatorfit;
+      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_EnergyCalibration[CM.first] = melinatorfit;
       
-  //   } else if (CalibratorType == "poly4"){
-  //     double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-  //     double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-  //     double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-  //     double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-  //     double a4 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+    } else if (CalibratorType == "poly4"){
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a4 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       
-  //     //from fit parameters, define function
-  //     TF1* melinatorfit = new TF1("poly4","[0]+[1]*x+[2]*x^2+[3]*x^3+[4]*x^4",0.,8162.);
-  //     melinatorfit->FixParameter(0,a0);
-  //     melinatorfit->FixParameter(1,a1);
-  //     melinatorfit->FixParameter(2,a2);
-  //     melinatorfit->FixParameter(3,a3);	
-  //     melinatorfit->FixParameter(4,a4);
+      //from fit parameters, define function
+      TF1* melinatorfit = new TF1("poly4","[0]+[1]*x+[2]*x^2+[3]*x^3+[4]*x^4",0.,8162.);
+      melinatorfit->FixParameter(0,a0);
+      melinatorfit->FixParameter(1,a1);
+      melinatorfit->FixParameter(2,a2);
+      melinatorfit->FixParameter(3,a3);	
+      melinatorfit->FixParameter(4,a4);
       
-  //     //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-  //     m_EnergyCalibration[CM.first] = melinatorfit;
-  //   }
-  // }
+      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_EnergyCalibration[CM.first] = melinatorfit;
+    }
+  }
   
-  // for (auto CR: CR_ROEToLine){
+  for (auto CR: CR_ROEToLine){
     
-  //   unsigned int Pos = 5;
-  //   MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
-  //   CalibratorType.ToLower();
-  //   if (CalibratorType == "p1"){
-  //     double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-  //     double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-  //     TF1* resolutionfit = new TF1("P1","[0]+[1]*x",0.,2000.);
-  //     resolutionfit->SetParameter(0,f0);
-  //     resolutionfit->SetParameter(1,f1);
+    unsigned int Pos = 5;
+    MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
+    CalibratorType.ToLower();
+    if (CalibratorType == "p1"){
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P1","[0]+[1]*x",0.,2000.);
+      resolutionfit->SetParameter(0,f0);
+      resolutionfit->SetParameter(1,f1);
       
-  //     m_ResolutionCalibration[CR.first] = resolutionfit;
-  //   }
-  // }
+      m_ResolutionCalibration[CR.first] = resolutionfit;
+    }
+  }
   
-//   return true;
-// }
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

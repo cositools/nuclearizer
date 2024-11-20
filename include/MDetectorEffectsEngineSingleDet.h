@@ -304,21 +304,40 @@ private:
   //! Stores dead time for each detector
   vector<double> m_DetectorDeadTime = vector<double>(nDets);
   //! Stores all events' times
-  list<double> m_EventTimes;
-  // // ! Stores all events' energies
-  // list<double> m_EventEnergies;
-  //! Stores last hit time per ASIC
-  vector<vector<double> > m_ASICLastHitTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
+  vector<double> m_EventTimes;
+  //! Stores all strip IDs
+  vector<double> m_EventStripIDs;
+  //! Stores all strip energies
+  vector<double> m_EventStripEnergy;
+  //! Stores all strip ADC values
+  vector<double> m_EventStripADC;
+
+  // Below are variables for each ASIC having its own enable line
+  // //! Stores last hit time per ASIC
+  // vector<vector<double> > m_ASICLastHitTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
+  // //! Strip ID for particular hit in ASIC
+  // vector<vector<vector<int> > > m_ASICHitStripID = vector<vector<vector<int> > >(nDets, vector<vector<int>>(nASICs));
+  // //! Boolean to increase GeD ASIC deadtime or not
+  // vector<vector<double> > increaseASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
+  // //! Stores last time detector was hit to check if detector still dead
+  // vector<double> m_LastHitTimeByDet = vector<double>(nDets);
+	// //! Stores total dead time by detector
+  // vector<vector<double>> m_TotalASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
+
+  // Below are variables for one enable for entire telescope
+  //! Stores last good hit from all detectors
+  double m_ASICLastHitTime;
   //! Strip ID for particular hit in ASIC
-  vector<vector<vector<int> > > m_ASICHitStripID = vector<vector<vector<int> > >(nDets, vector<vector<int>>(nASICs));
+  vector<int> m_ASICHitStripID;
   //! Boolean to increase GeD ASIC deadtime or not
-  vector<vector<double> > increaseASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
-	//! Stores last hit time for any detector
-	double m_LastHitTime;
-  //! Stores last time detector was hit to check if detector still dead
-  vector<double> m_LastHitTimeByDet = vector<double>(nDets);
-	//! Stores total dead time by detector
-  vector<double> m_TotalDeadTime = vector<double>(nDets);
+  bool increaseASICDeadTime;
+  //! Stores total dead time of the instrument
+  double m_totalDeadTime;
+  //! Stores current dead time of the instrument
+  double m_currentDeadtime;
+  // //! Stores total dead time by detector
+  // vector<vector<double>> m_TotalASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
+
 	//! Stores trigger rates (number of events) for each detector
   vector<int> m_TriggerRates = vector<int>(nDets);
 	//! Stores time of first event; used to get number of events per second
