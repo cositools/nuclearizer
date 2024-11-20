@@ -51,8 +51,11 @@ public:
   
   //! Set the simulation file name 
   void SetSimulationFileName(const MString& FileName) { m_SimulationFileName = FileName; }
+  //! Set the deadtime constants file name
+  void SetDeadtimeFileName(const MString& FileName) { m_DeadtimeFileName = FileName; }
   //! Get the simulation file name 
   MString GetSimulationFileName() const { return m_SimulationFileName; }
+  MString GetDeadtimeFileName() const { return m_DeadtimeFileName; }
   
   //! Show the progress of simulation file reading
   void ShowProgressBar(bool Flag) { m_ShowProgressBar = Flag; }
@@ -213,6 +216,8 @@ protected:
   
   //! Simulation file name
   MString m_SimulationFileName;
+  //! Deadtime constants
+  MString m_DeadtimeFileName;
   //! The file reader
   MFileEventsSim* m_Reader;
   

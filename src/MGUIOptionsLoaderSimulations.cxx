@@ -74,6 +74,11 @@ void MGUIOptionsLoaderSimulations::Create()
   m_SimulationFileSelector->SetFileType("Sim file (gzip'ed)", "*.sim.gz");
   m_OptionsFrame->AddFrame(m_SimulationFileSelector, LabelLayout);
 
+  m_DeadtimeFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a deadtime constants file:",
+    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadtimeFileName());
+  m_DeadtimeFileSelector->SetFileType("Deadtime file", "*.txt");
+  m_OptionsFrame->AddFrame(m_DeadtimeFileSelector, LabelLayout);
+
   m_EnergyCalibrationFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetEnergyCalibrationFileName());
   m_EnergyCalibrationFileSelector->SetFileType("Ecal file", "*.ecal");
@@ -187,6 +192,7 @@ bool MGUIOptionsLoaderSimulations::OnApply()
   // Modify this to store the data in the module!
 
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetSimulationFileName(m_SimulationFileSelector->GetFileName());
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
 	dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());

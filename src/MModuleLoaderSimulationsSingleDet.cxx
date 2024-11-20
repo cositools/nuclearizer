@@ -184,6 +184,10 @@ bool MModuleLoaderSimulationsSingleDet::ReadXmlConfiguration(MXmlNode* Node)
   if (SimulationFileNameNode != 0) {
     SetSimulationFileName(SimulationFileNameNode->GetValue());
   }
+  MXmlNode* DeadtimeFileNameNode = Node->GetNode("DeadtimeFileName");
+  if (DeadtimeFileNameNode != 0) {
+    SetDeadtimeFileName(DeadtimeFileNameNode->GetValue());
+  }
   MXmlNode* EnergyCalibrationFileNameNode = Node->GetNode("EnergyCalibrationFileName");
   if (EnergyCalibrationFileNameNode != 0) {
     SetEnergyCalibrationFileName(EnergyCalibrationFileNameNode->GetValue());
@@ -246,6 +250,7 @@ MXmlNode* MModuleLoaderSimulationsSingleDet::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
   new MXmlNode(Node, "SimulationFileName", m_SimulationFileName);
+  new MXmlNode(Node, "DeadtimeFileName", m_DeadtimeFileName);
   new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
   // new MXmlNode(Node, "DeadStripFileName", m_DeadStripFileName);
   new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
