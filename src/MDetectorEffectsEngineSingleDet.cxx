@@ -223,7 +223,8 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   m_ShieldDelay = 900.e-9; //this is just a guess based on when veto window occurs!
   m_ShieldVetoWindowSize = 0.4e-6;
   m_ASICLastHitTime = -10;
-  m_totalDeadTime = 0;
+  m_totalDeadTime = 0.0;
+  m_currentDeadtime = 0;
   // for shield veto: gets updated with shield event times
   // start at -10s so that it doesn't veto beginning events by accident
   m_ShieldTime = -10;
@@ -1474,9 +1475,9 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
 
         if (m_ASICLastHitTime + m_StripDelayBefore > evt_time) {
           // Event occured within delay before period so increase deadtime
-          m_ASICHitStripID.push_back((*i).m_ROE.GetStripID());
+          m_ASICHitStripID.push_back(StripID);
           increaseASICDeadTime = true;
-          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+          m_EventStripIDs.push_back(StripID);
           m_EventTimes.push_back(evt_time);
           m_EventStripEnergy.push_back((*i).m_Energy);
           m_EventStripADC.push_back((*i).m_ADC);
@@ -1488,12 +1489,13 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         }
         else if(m_ASICLastHitTime + m_currentDeadtime < evt_time) {
           // Event occured after deadtime
+          cout << "Updating totaldeadtime" << endl;
           m_totalDeadTime += m_currentDeadtime;
           m_ASICHitStripID.clear();
-          m_ASICHitStripID.push_back((*i).m_ROE.GetStripID());
+          m_ASICHitStripID.push_back(StripID);
           m_currentDeadtime = dTimeGeDs(m_ASICHitStripID);
           m_ASICLastHitTime = evt_time;
-          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+          m_EventStripIDs.push_back(StripID);
           m_EventTimes.push_back(evt_time);
           m_EventStripEnergy.push_back((*i).m_Energy);
           m_EventStripADC.push_back((*i).m_ADC);
@@ -1879,22 +1881,22 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // cout<<"Ratio of events with ADC overflows: "<<(m_NumberOfEventsWithADCOverflows > 0 ? double(m_NumberOfEventsWithADCOverflows) / (m_NumberOfEventsWithADCOverflows + m_NumberOfEventsWithNoADCOverflows): 0)<<endl;
   // cout<<"Ratio of failed IA searches for charge sharing: "<<(m_NumberOfFailedIASearches > 0 ? double(m_NumberOfFailedIASearches) / (m_NumberOfFailedIASearches + m_NumberOfSuccessfulIASearches): 0)<<endl;
 
-  // // Create a sample plot here -- maybe save the data as well ...
-  // // Plots a light curve of all hits
-  // TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
-  // TH1F *hist = new TH1F("hist", "Sample Histogram", 200, -10, 110);
-  // for (int i = 0; i<m_EventTimes.size(); i++) {
-  //     hist->Fill(m_EventTimes[i]);
-  //  }
+  // Create a sample plot here -- maybe save the data as well ...
+  // Plots a light curve of all hits
+  TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
+  TH1F *hist = new TH1F("hist", "Sample Histogram", 200, -10, 110);
+  for (int i = 0; i<m_EventTimes.size(); i++) {
+      hist->Fill(m_EventTimes[i]);
+   }
 
-  // hist->SetTitle("Light Curve");
-  // hist->GetXaxis()->SetTitle("Time (s)");
-  // hist->GetYaxis()->SetTitle("Counts");
+  hist->SetTitle("Light Curve");
+  hist->GetXaxis()->SetTitle("Time (s)");
+  hist->GetYaxis()->SetTitle("Counts");
 
-  // hist->Draw();
-  // canvas2->Draw();
-  // // canvas->SaveAs("/Users/parshad/Software/canvas.png");
-  // // // End Plot
+  hist->Draw();
+  canvas2->Draw();
+  // canvas->SaveAs("/Users/parshad/Software/canvas.png");
+  // // End Plot
 
   // // Plots a ADC vs Energy of all hits
   // TCanvas *canvas = new TCanvas("c1", "My Canvas", 800, 600);
@@ -1906,13 +1908,13 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // canvas->Draw();
   // // End Plot
 
-  // // Saves to csv ... Disable if not needed
-  // ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/Cs137_singleDet_10x_noDT_1000Flux_100s.csv");
-  // file << "Index, Strip ID, Times\n";
-  // for (int i = 0; i<m_EventTimes.size(); i++) {
-  //   file << i+1 << "," << m_EventStripIDs[i] << "," << m_EventTimes[i] << "\n";
-  // }
-  // file.close();
+  // Saves to csv ... Disable if not needed
+  ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/Cs137_singleDet_10x_noDT_1000Flux_100s_EnableShared.csv");
+  file << "Index, Strip ID, Times\n";
+  for (int i = 0; i<m_EventTimes.size(); i++) {
+    file << i+1 << "," << m_EventStripIDs[i] << "," << m_EventTimes[i] << "\n";
+  }
+  file.close();
 
   m_EventTimes.clear();
   m_EventStripIDs.clear();
