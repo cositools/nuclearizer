@@ -1895,20 +1895,20 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // cout<<"Ratio of events with ADC overflows: "<<(m_NumberOfEventsWithADCOverflows > 0 ? double(m_NumberOfEventsWithADCOverflows) / (m_NumberOfEventsWithADCOverflows + m_NumberOfEventsWithNoADCOverflows): 0)<<endl;
   // cout<<"Ratio of failed IA searches for charge sharing: "<<(m_NumberOfFailedIASearches > 0 ? double(m_NumberOfFailedIASearches) / (m_NumberOfFailedIASearches + m_NumberOfSuccessfulIASearches): 0)<<endl;
 
-  // Create a sample plot here -- maybe save the data as well ...
-  // Plots a light curve of all hits
-  TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
-  TH1F *hist = new TH1F("hist", "Sample Histogram", 100, 0, 100);
-  for (int i = 0; i<m_EventTimes.size(); i++) {
-      hist->Fill(m_EventTimes[i]);
-   }
+  // // Create a sample plot here -- maybe save the data as well ...
+  // // Plots a light curve of all hits
+  // TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
+  // TH1F *hist = new TH1F("hist", "Sample Histogram", 100, 0, 100);
+  // for (int i = 0; i<m_EventTimes.size(); i++) {
+  //     hist->Fill(m_EventTimes[i]);
+  //  }
 
-  hist->SetTitle("Light Curve");
-  hist->GetXaxis()->SetTitle("Time (s)");
-  hist->GetYaxis()->SetTitle("Counts");
+  // hist->SetTitle("Light Curve");
+  // hist->GetXaxis()->SetTitle("Time (s)");
+  // hist->GetYaxis()->SetTitle("Counts");
 
-  hist->Draw();
-  canvas2->Draw();
+  // hist->Draw();
+  // canvas2->Draw();
   // canvas->SaveAs("/Users/parshad/Software/canvas.png");
   // // End Plot
 
