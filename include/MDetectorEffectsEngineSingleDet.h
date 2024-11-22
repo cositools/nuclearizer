@@ -137,6 +137,8 @@ public:
   
   
 protected:
+  //! Read in deadtime constants
+  bool ParseDeadtimeFile();
   //! Read in and parse energy calibration file
   bool ParseEnergyCalibrationFile();
   //! Read in and parse thresholds file
@@ -337,9 +339,9 @@ private:
   //! Boolean to increase GeD ASIC deadtime or not
   bool increaseASICDeadTime;
   //! Stores total dead time of the instrument
-  double m_totalDeadTime;
+  double m_StripsTotalDeadtime;
   //! Stores current dead time of the instrument
-  double m_currentDeadtime;
+  double m_StripsCurrentDeadtime;
   // //! Stores total dead time by detector
   // vector<vector<double>> m_TotalASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
 
@@ -368,6 +370,12 @@ private:
 
 	//! charge sharing factors
 	vector<vector<TF1*> > m_ChargeSharingFactors = vector<vector<TF1*> >(nDets, vector<TF1*>(nSides));
+
+  double m_StripCoincidenceWindowFromFile;
+  double m_ASICDeadTimePerChannelFromFile;
+  double m_StripDelayAfter1FromFile;
+  double m_StripDelayAfter2FromFile;
+
  
   //! Charge loss fit coefficients
 	double m_ChargeLossCoefficients[nDets][nSides][3][2];
@@ -382,10 +390,12 @@ private:
   
   double m_ShieldPulseDuration;
   //! Strip Delay for ENABLE to fall
-  double m_StripDelayBefore;
+  double m_StripCoincidenceWindow;
   //! ASIC Deadtime per channel that is read out
   double m_ASICDeadTimePerChannel;
   //! Strip Delay after the channels are read out - acquisition reset etc...
+  double m_StripDelayAfter1;
+  double m_StripDelayAfter2;
   double m_StripDelayAfter;
   double m_ShieldTime;
 	double m_ShieldDelay;

@@ -1,0 +1,2 @@
+CoincidenceWindow (s); DeadtimePerStrip (s); delayAfter1 (s); delayAfter2 (s)
+1.4e-6		       1e-6	             0.2e-6	      0.2e-6

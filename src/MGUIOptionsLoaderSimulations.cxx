@@ -74,7 +74,7 @@ void MGUIOptionsLoaderSimulations::Create()
   m_SimulationFileSelector->SetFileType("Sim file (gzip'ed)", "*.sim.gz");
   m_OptionsFrame->AddFrame(m_SimulationFileSelector, LabelLayout);
 
-  m_DeadtimeFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a deadtime constants file:",
+  m_DeadtimeFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a deadtime parameters file:",
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadtimeFileName());
   m_DeadtimeFileSelector->SetFileType("Deadtime file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadtimeFileSelector, LabelLayout);
