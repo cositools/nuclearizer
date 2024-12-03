@@ -145,24 +145,6 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // //load crosstalk coefficients
   // if (ParseCrosstalkFile() == false) return false;
   
-  // //initialize dead time and trigger rates
-  // for (int i=0; i<nDets; i++){
-  //   m_DetectorDeadTime[i] = 0; m_TriggerRates[i]=0;
-  //   for (int j=0; j<nDTBuffSlots; j++){
-  //     m_DeadTimeBuffer[i][j] = -1;
-  //   }
-  //   for (int k=0; k<nASICs; k++){
-  //     m_ASICDeadTime[i][k] = 0; m_TotalASICDeadTime[i][k] = 0; m_ASICLastHitTime[i][k] = -10;
-  //   }
-  // }
-
-  // initialize dead time and trigger rates
-  for (int i=0; i<nDets; i++){
-    m_DetectorDeadTime[i] = 0; m_TriggerRates[i]=0;
-    for (int j=0; j<nDTBuffSlots; j++){
-      m_DeadTimeBuffer[i][j] = -1;
-    }
-  }
   
   // //initialize last time to 0 (will this exclude first event?)
   // m_LastHitTime = 0;
@@ -215,6 +197,7 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   m_MultipleHitsCounter = 0;
   m_TotalHitsCounter = 0;
   m_ChargeLossCounter = 0;
+  m_TotalHitsBeforeDeadtime = 0;
   
   // Strip deadtime parameters
   m_StripCoincidenceWindow = m_StripCoincidenceWindowFromFile;
@@ -222,9 +205,21 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   m_StripDelayAfter1 = m_StripDelayAfter1FromFile;
   m_StripDelayAfter2 = m_StripDelayAfter2FromFile;
   m_StripDelayAfter = m_StripDelayAfter1 + m_StripDelayAfter2;
+
   m_StripsCurrentDeadtime = 0.0;
-  m_StripsTotalDeadtime = 0.0;
   m_ASICLastHitTime = -10;
+  m_StripsTotalDeadtime = 0.0;
+
+  for (int i=0; i<nDets; i++){
+    m_TriggerRates[i]=0;
+    for (int j=0; j<nDTBuffSlots; j++){
+      m_DeadTimeBuffer[i][j] = -1;
+    }
+    for (int k=0; k<nASICs; k++){
+      m_ASICDeadTime[i][k] = 0.0;
+    }
+  }
+
   m_StripHitsErased = 0;
 
   // Shield deadtime parameters
@@ -292,25 +287,28 @@ double MDetectorEffectsEngineSingleDet::dTimeGeDs(vector<int> ASICChannels) {
     // Sort ASICChannels to process channels in ascending order
     sort(ASICChannels.begin(), ASICChannels.end());
 
+    // cout << "---------------" << endl;
+    // cout << "ASIC Channels list:" << endl; 
+
     // Loop through each channel ID in the sorted list
     for (int ID : ASICChannels) {
-      
+
       if (ID == 65) {
         cout << "Strip ID is 65... skipping, will fix later" << endl; 
         continue;
       }
-      else if (ID == 1 || ID == 66) {
-        // Edge case: If ID is 1 or 66, add the channel and the next channel (ID + 1)
+      else if (ID == 1 || ID == 33) {
+        // Edge case: If ID is 1 or 33, add the channel and the next channel (ID + 1)
         ASICChannelsSet.insert(ID);
         ASICChannelsSet.insert(ID + 1);
       } 
-      // Edge case: If ID is 130 or 64, add the previous channel (ID - 1) and the channel itself
-      else if (ID == 130 || ID == 64) {
+      else if (ID == 32 || ID == 64) {
+        // Edge case: If ID is 32 or 64, add the previous channel (ID - 1) and the channel itself
         ASICChannelsSet.insert(ID - 1);
         ASICChannelsSet.insert(ID);
       } 
-      // General case: Add the previous channel (ID - 1), the channel itself (ID), and the next channel (ID + 1)
       else {
+        // General case: Add the previous channel (ID - 1), the channel itself (ID), and the next channel (ID + 1)
         ASICChannelsSet.insert(ID - 1);
         ASICChannelsSet.insert(ID);
         ASICChannelsSet.insert(ID + 1);
@@ -320,8 +318,11 @@ double MDetectorEffectsEngineSingleDet::dTimeGeDs(vector<int> ASICChannels) {
     // Count the number of unique channels read out
     int countUnique = ASICChannelsSet.size();
 
+    // cout << "--------------" << endl;
+    // cout << countUnique << endl;
+
     // Calculate the total deadtime based on unique channels
-    double GeD_deadtime = m_StripCoincidenceWindow + (m_ASICDeadTimePerChannel * countUnique) + m_StripDelayAfter;
+    double GeD_deadtime = m_StripCoincidenceWindow + (m_ASICDeadTimePerChannel * countUnique) + m_StripDelayAfter; // adds in the deadtime per channel
 
     return GeD_deadtime;
 }
@@ -371,6 +372,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
+    // cout << setprecision(17) << evt_time << endl;
     // bool hasDetHits = false;
     // bool hasShieldHits = false;
     // bool increaseShieldDeadTime = false;
@@ -486,7 +488,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         MVector PositionInDetector = VS->GetPositionInSensitiveVolume();
         MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
         // double Depth_ = PositionInDetector.GetZ();
-        double Depth = PositionInDetector.GetZ(); // THIS NEEDS TO BE SET TO DEPTH CALIBRATER ONCE READY
+        double Depth = -(PositionInDetector.GetZ() - (1.5/2.0)); // THIS NEEDS TO BE SET TO DEPTH CALIBRATER ONCE READY
         // double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
         pSide.m_Depth = Depth;
         nSide.m_Depth = Depth;
@@ -496,6 +498,13 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         pSide.m_ROE.SetStripID(65-(GP.GetYGrid()+1));
         nSide.m_ROE.SetStripID(65-(GP.GetXGrid()+1));
 
+        // cout << "___________" << endl;
+        // cout << "Strip ID (pos): " << pSide.m_ROE.GetStripID() << endl;
+        // // // cout << "Opposite Strip ID (pos): " << pSide.m_OppositeStrip << endl;
+
+        // // // cout << "___________" << endl;
+        // cout << "Strip ID (neg): " << nSide.m_ROE.GetStripID() << endl;
+        // // cout << "Opposite Strip ID (neg): " << nSide.m_OppositeStrip << endl;
         
         
   //       // //SetStripID needs to be called before we can look up the depth calibration coefficients
@@ -511,8 +520,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   // //       pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0);
   // //       nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0);
         
-  //       pSide.m_Energy = HT->GetEnergy();
-  //       nSide.m_Energy = HT->GetEnergy();
+        pSide.m_Energy = HT->GetEnergy();
+        nSide.m_Energy = HT->GetEnergy();
         
   //       //m_EnergyOrig will be unchanged: to see if event is incompletely absorbed or not
         //(m_Energy is changed due to crosstalk and charge loss, etc)
@@ -937,16 +946,16 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         StripHits.pop_front();
         Start.m_ROE = Start.m_SubStripHits.front().m_ROE;
         
-  //       //      cout << "------" << endl;
-  //       //      cout << Start.m_SubStripHits[0].m_Energy << '\t';
-  //       //      cout << Start.m_SubStripHits[0].m_OppositeStrip->m_Energy << endl;
+            //  cout << "------" << endl;
+            //  cout << Start.m_SubStripHits[0].m_Energy << '\t';
+            //  cout << Start.m_SubStripHits[0].m_OppositeStrip->m_Energy << endl;
         
         list<MDEEStripHit>::iterator i = StripHits.begin();
         while (i != StripHits.end()) {
           if ((*i).m_ROE == Start.m_ROE) {
             Start.m_SubStripHits.push_back(*i);
-            //          cout << (*i).m_Energy << '\t';
-            //          cout << (*i).m_OppositeStrip->m_Energy << endl;
+            // cout << (*i).m_Energy << '\t';
+            // cout << (*i).m_OppositeStrip->m_Energy << endl;
             i = StripHits.erase(i);
           } else {
             ++i;
@@ -954,6 +963,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         }
         //      cout << "-----------" << endl;
         MergedStripHits.push_back(Start);
+        // cout << Start.m_ROE.GetStripID() << endl;
 
         // cout << "First Merged Strip: " << MergedStripHits.front().m_ROE.GetStripID() << endl;
 
@@ -989,7 +999,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         }
       }
       
-      
+      // cout << "-------------" << endl;
       // Merge origins
       for (MDEEStripHit& Hit: MergedStripHits) {
         Hit.m_Origins.clear();
@@ -998,11 +1008,12 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
             Hit.m_Origins.push_back(Origin);
           }
         }
+        // cout << "Is Low voltage: " << Hit.m_ROE.IsLowVoltageStrip() << " Strip ID: " << Hit.m_ROE.GetStripID() << endl;
         Hit.m_Origins.sort();
         Hit.m_Origins.unique();
-        if (Hit.m_ROE.GetStripID() == 65) {
-          cout << "GR Hit in merged: " << Hit.m_ROE.GetStripID() << endl; 
-        }     
+        // if (Hit.m_ROE.GetStripID() == 65) {
+        //   cout << "GR Hit in merged: " << Hit.m_ROE.GetStripID() << endl; 
+        // }     
       }
 
       // cout << "Merged Srtips size: " << MergedStripHits.size() << endl;
@@ -1243,6 +1254,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         } else {
           double prob = m_Random.Rndm();
           if (prob > m_FSTThresholds[ROE_map_key]->Eval((*k).m_ADC)){
+            // cout << "timing is thrown out" << endl;
             (*k).m_Timing = 0.0;
           }
           ++k;
@@ -1374,163 +1386,114 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // }
 
 
-      // //// Deadtime implementation (Each ASIC has its own enable)
+      // //// Deadtime implementation (ASICs read out hits in parallel but have a shared Enable line)
       // //Step (6.5): Dead time
-      // vector<int> updateLastHitTime = vector<int>(nDets,0);
-      // // vector<vector<double> > ASICISDead = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
-      
-      // for (int det=0; det<nDets; det++) {
-      //   for (int ASIC=0; ASIC<nASICs; ASIC++) {
-      //     increaseASICDeadTime[det][ASIC] = false;
-      //   }
-      // }
-
-      // list<MDEEStripHit>::iterator i = MergedStripHits.begin();
-      // int ASICofDet = 5;
-
-      // while (i != MergedStripHits.end()) {
-      //   for (int det=0; det<nDets; det++) {
-      //     ASICofDet = 5;
-      //     if ((*i).m_ROE.GetStripID() == 65) {
-      //       cout << "Strip is 65, skipping .. will fix later" << endl;
-      //       continue;
-      //     }
-      //     else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
-      //       ASICofDet = 0;
-      //     }
-      //     else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
-      //       ASICofDet = 1;
-      //     }
-      //     else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
-      //       ASICofDet = 2;
-      //     }
-      //     else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
-      //       ASICofDet = 3;
-      //     }
-      //     else {
-      //       cout << "Strip not associated, something went wrong in assigning strip ID" << endl;
-      //       continue;
-      //     }
-
-      //     if (m_ASICLastHitTime[det][ASICofDet] + m_StripCoincidenceWindow > evt_time) {
-      //       // Event occured within delay before period so increase deadtime
-      //       m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-      //       increaseASICDeadTime[det][ASICofDet] = true;
-      //       // ASICISDead[det][ASICofDet] = false;
-      //       m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
-      //       m_EventTimes.push_back(evt_time);
-      //       m_EventStripEnergy.push_back((*i).m_Energy);
-      //       m_EventStripADC.push_back((*i).m_ADC);
-      //     }
-      //     else if(m_ASICLastHitTime[det][ASICofDet] + m_ASICDeadTime[det][ASICofDet] > evt_time) {
-      //       // Event occured within deadtime
-      //       m_StripHitsErased += 1;
-      //       // ASICISDead[det][ASICofDet] = true;
-      //       i = MergedStripHits.erase(i);
-      //     }
-      //     else if(m_ASICLastHitTime[det][ASICofDet] + m_ASICDeadTime[det][ASICofDet] < evt_time) {
-      //       // Event occured after deadtime
-      //       m_DetectorDeadTime[det] += m_ASICDeadTime[det][ASICofDet]; // add ASIC deadtime number to total detector deadtime
-      //       m_TotalASICDeadTime[det][ASICofDet] += m_ASICDeadTime[det][ASICofDet];
-      //       m_ASICHitStripID[det][ASICofDet].clear();
-      //       m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-      //       m_ASICDeadTime[det][ASICofDet] = dTimeGeDs(m_ASICHitStripID[det][ASICofDet]);
-      //       m_ASICLastHitTime[det][ASICofDet] = evt_time;
-      //       // m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-      //       // ASICISDead[det][ASICofDet] = false;
-      //       m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
-      //       m_EventTimes.push_back(evt_time);
-      //       m_EventStripEnergy.push_back((*i).m_Energy);
-      //       m_EventStripADC.push_back((*i).m_ADC);
-      //     }
-      //   }
-      //   ++i;
-      // }
-
-      // // Increases deadtime if hit occured within delay before period, adds up all 4 asic deadtimes into detector deadtime.
-      // // int ASICNow = 0;
-      // for (int det=0; det<nDets; det++) {
-      //   for (int ASIC=0; ASIC<nASICs; ASIC++) {
-      //     if (increaseASICDeadTime[det][ASIC]) {
-      //       m_ASICDeadTime[det][ASIC] += dTimeGeDs(m_ASICHitStripID[det][ASIC]);
-      //     }
-      //     // ASICNow = ASIC;
-      //   }
-      // }
-
-      // // Checking for deadtime implementation by checking without it
-      // list<MDEEStripHit>::iterator a = MergedStripHits.begin();
-      // while (a != MergedStripHits.end()) {
-      //   if ((*a).m_ROE.GetStripID() == 65) {
-      //     cout << "Strip 65 .. will fix later, skipping" << endl;
-      //     continue;
-      //   }
-      //   m_EventStripIDs.push_back((*a).m_ROE.GetStripID());
-      //   m_EventTimes.push_back(evt_time);
-      //   m_EventStripEnergy.push_back((*a).m_Energy);
-      //   m_EventStripADC.push_back((*a).m_ADC);
-      //   a++;
-      // }
-
-      //// Deadtime implementation (Enable is shared between the entire detector)
-      //Step (6.5): Dead time      
-      increaseASICDeadTime = false;
+      bool ASICFirstHitAfterDead = false;
+      double det = 500;
+      bool IsASICDead = false;
+      // cout << MergedStripHits.size() << endl;
 
       list<MDEEStripHit>::iterator i = MergedStripHits.begin();
-      // int ASICofDet = 5;
-
-      int StripID = 500;
+      int ASICofDet = 5;
+      // cout << "------------" << endl;
       while (i != MergedStripHits.end()) {
+        m_TotalHitsBeforeDeadtime += 1;
+
+        det = (*i).m_ROE.GetDetectorID();
+        ASICofDet = 5;
 
         if ((*i).m_ROE.GetStripID() == 65) {
           cout << "Strip is 65, skipping .. will fix later" << endl;
           continue;
         }
-        else if ((*i).m_ROE.IsLowVoltageStrip()) {
-          // Setting Low Voltage strips to 1-64
-          StripID = (*i).m_ROE.GetStripID();
+        else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+          ASICofDet = 0;
+        }
+        else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+          ASICofDet = 1;
+        }
+        else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+          ASICofDet = 2;
+        }
+        else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+          ASICofDet = 3;
         }
         else {
-          // Setting High Voltage strips to 66-130
-          StripID = (*i).m_ROE.GetStripID() + 65;
+          cout << "Strip not associated, something went wrong in assigning strip ID" << endl;
+          continue;
         }
+        
+        if (m_ASICLastHitTime + m_StripsCurrentDeadtime < evt_time) {
+          // cout << "This should only print once per merged list" << endl;
+          // Event occured after deadtime
 
-        if (m_ASICLastHitTime + m_StripCoincidenceWindow > evt_time) {
-          // Event occured within delay before period so increase deadtime
-          m_ASICHitStripID.push_back(StripID);
-          increaseASICDeadTime = true;
-          m_EventStripIDs.push_back(StripID);
+          // clear the original list
+          for (int det=0; det<nDets; det++) {
+            for (int ASIC=0; ASIC<nASICs; ASIC++) {
+              m_ASICHitStripID[det][ASIC].clear();
+            }
+          }
+
+          ASICFirstHitAfterDead = true;
+          m_ASICLastHitTime = evt_time;
+          m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+
+          // Adds events to a plotter / .csv saver
+          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
           m_EventTimes.push_back(evt_time);
           m_EventStripEnergy.push_back((*i).m_Energy);
           m_EventStripADC.push_back((*i).m_ADC);
         }
-        else if(m_ASICLastHitTime + m_StripsCurrentDeadtime > evt_time) {
+
+        else if (m_ASICLastHitTime + m_StripCoincidenceWindow > evt_time) {
+          // if (m_ASICLastHitTime == evt_time) {
+          //   cout  << "------------ Coin" << endl;
+          //   cout << setprecision(10) << "evt_time must be less than this: " << m_ASICLastHitTime + m_StripCoincidenceWindow << endl;
+          //   cout << setprecision(10) << "evt_time: " << evt_time << endl;
+          // }
+          // Event occured within coincidence window so append all strip IDs
+          m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+
+          // Adds events to a plotter / .csv saver
+          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+          m_EventTimes.push_back(evt_time);
+          m_EventStripEnergy.push_back((*i).m_Energy);
+          m_EventStripADC.push_back((*i).m_ADC);
+        }
+
+        else if (m_ASICLastHitTime + m_StripsCurrentDeadtime > evt_time) {
           // Event occured within deadtime
+          // cout << m_ASICHitStripID[det][ASICofDet].size() << endl;
+          IsASICDead = true;
           m_StripHitsErased += 1;
           i = MergedStripHits.erase(i);
         }
-        else if(m_ASICLastHitTime + m_StripsCurrentDeadtime < evt_time) {
-          // Event occured after deadtime
-          m_StripsTotalDeadtime += m_StripsCurrentDeadtime;
-          m_ASICHitStripID.clear();
-          m_ASICHitStripID.push_back(StripID);
-          m_StripsCurrentDeadtime = dTimeGeDs(m_ASICHitStripID);
-          m_ASICLastHitTime = evt_time;
-          m_EventStripIDs.push_back(StripID);
-          m_EventTimes.push_back(evt_time);
-          m_EventStripEnergy.push_back((*i).m_Energy);
-          m_EventStripADC.push_back((*i).m_ADC);
-        }
+
         ++i;
       }
 
-      // Increases deadtime if hit occured within delay before period, adds up all 4 asic deadtimes into detector deadtime.
-      if (increaseASICDeadTime) {
-        m_StripsCurrentDeadtime += dTimeGeDs(m_ASICHitStripID);
+      if (ASICFirstHitAfterDead) {
+        m_StripsTotalDeadtime += m_StripsCurrentDeadtime; // add ASIC deadtime number to total detector deadtime
+        m_StripsCurrentDeadtime = 0.0;
       }
-      ///// Deadtime implementation
 
-      // cout << "ASIC deadtime with one hit: " << dTimeGeDs({5}) << endl;
+      // Increases deadtime if hit occured within delay before period.
+      for (int det=0; det<nDets; det++) {
+        for (int ASIC=0; ASIC<nASICs; ASIC++) {
+          if (!IsASICDead) {
+            m_ASICDeadTime[det][ASIC] = dTimeGeDs(m_ASICHitStripID[det][ASIC]);
+            if (m_ASICDeadTime[det][ASIC] > m_StripsCurrentDeadtime) {
+              m_StripsCurrentDeadtime = m_ASICDeadTime[det][ASIC];
+            }
+          }
+          // else {
+          //   m_ASICHitStripID[det][ASIC].clear();
+          // }
+        }
+      }
+
+      // End Deadtime implementation
+
       
   // //     for (int d=0; d<nDets; d++){
   // //       //second conditional for running multiple sim files when t starts at 0
@@ -1837,7 +1800,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           m_Roa<<IAs[i]->ToSimString()<<endl;
         }
         for (MDEEStripHit Hit: MergedStripHits){
-          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsLowVoltageStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
+          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsLowVoltageStrip() ? "l" : "h")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
           
           MString Origins;
           for (int Origin: Hit.m_Origins) {
@@ -1880,8 +1843,11 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   cout << "charge loss applies counter: " << m_ChargeLossCounter << endl;
   //	cout << "Num shield counts: " << m_NumShieldCounts << endl;
   cout << "Shield rate (cps): " << m_NumShieldCounts/(m_LastTime-m_FirstTime) << endl;
+  cout << "Total Hits before Deadtime: " << m_TotalHitsBeforeDeadtime << endl;
   cout << "Dead time " << endl;
+  // Single Enable Line
   cout << "Total Deadtime of the Instrument: " << m_StripsTotalDeadtime << endl;
+  cout << "Avg Deadtime per hit: " << m_StripsTotalDeadtime/m_TotalHitsBeforeDeadtime << endl;
   cout << "Trigger rates (events per second)" << endl;
   for (int i=0; i<nDets; i++){
     cout << i << ":\t" << m_TriggerRates[i]/(m_LastTime-m_FirstTime) << endl;
@@ -1895,22 +1861,22 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // cout<<"Ratio of events with ADC overflows: "<<(m_NumberOfEventsWithADCOverflows > 0 ? double(m_NumberOfEventsWithADCOverflows) / (m_NumberOfEventsWithADCOverflows + m_NumberOfEventsWithNoADCOverflows): 0)<<endl;
   // cout<<"Ratio of failed IA searches for charge sharing: "<<(m_NumberOfFailedIASearches > 0 ? double(m_NumberOfFailedIASearches) / (m_NumberOfFailedIASearches + m_NumberOfSuccessfulIASearches): 0)<<endl;
 
-  // Create a sample plot here -- maybe save the data as well ...
-  // Plots a light curve of all hits
-  TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
-  TH1F *hist = new TH1F("hist", "Sample Histogram", 100, 0, 100);
-  for (int i = 0; i<m_EventTimes.size(); i++) {
-      hist->Fill(m_EventTimes[i]);
-   }
+  // // Create a sample plot here -- maybe save the data as well ...
+  // // Plots a light curve of all hits
+  // TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
+  // TH1F *hist = new TH1F("hist", "Sample Histogram", 100, 0, 100);
+  // for (int i = 0; i<m_EventTimes.size(); i++) {
+  //     hist->Fill(m_EventTimes[i]);
+  //  }
 
-  hist->SetTitle("Light Curve");
-  hist->GetXaxis()->SetTitle("Time (s)");
-  hist->GetYaxis()->SetTitle("Counts");
+  // hist->SetTitle("Light Curve");
+  // hist->GetXaxis()->SetTitle("Time (s)");
+  // hist->GetYaxis()->SetTitle("Counts");
 
-  hist->Draw();
-  canvas2->Draw();
-  // canvas->SaveAs("/Users/parshad/Software/canvas.png");
-  // End Plot
+  // hist->Draw();
+  // canvas2->Draw();
+  // // canvas->SaveAs("/Users/parshad/Software/canvas.png");
+  // // End Plot
 
   // // Plots a ADC vs Energy of all hits
   // TCanvas *canvas = new TCanvas("c1", "My Canvas", 800, 600);
@@ -1923,7 +1889,7 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // // End Plot
 
   // // Saves to csv ... Disable if not needed
-  // ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/Cs137_singleDet_10x_noDT_100000Flux_100s_EnableShared_oldChanges.csv");
+  // ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/Cs137_singleDet_10x_noDT_100000Flux_100s_Parallel.csv");
   // file << "Index, Strip ID, Times\n";
   // for (int i = 0; i<m_EventTimes.size(); i++) {
   //   file << i+1 << "," << m_EventStripIDs[i] << "," << m_EventTimes[i] << "\n";
@@ -2001,7 +1967,7 @@ int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_
   //get the fit function
   TF1* Fit = m_EnergyCalibration[Hit.m_ROE];
   // if (Fit == 0) {
-  //   cout << "Is low voltage: " << Hit.m_ROE.IsLowVoltageStrip() << " Energy: " << energy << endl;
+  //   cout << "Is low voltage: " << Hit.m_ROE.IsLowVoltageStrip() << " Energy: " << energy << "; Strip ID: " <<Hit.m_ROE.GetStripID() << endl;
   // }
   if (Fit != 0) {
     // find roots - while considering the limits of the fit function
@@ -2010,7 +1976,7 @@ int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_
       //cout<<"Info: Setting AD units to max (8191): E="<<energy<<" vs. E_max="<<Fit->GetMaximum(0, 8191)<<endl;
       ADC_double = 8191; 
     } else if (energy <= 0 || energy < Fit->GetMinimum(0, 8191)) {
-      //cout<<"Info: Setting AD units to min (0): E="<<energy<<" vs. E_min"<<Fit->GetMinimum(0, 8191)<<endl;
+      // cout<<"Info: Setting AD units to min (0): E="<<energy<<" vs. E_min"<<Fit->GetMinimum(0, 8191)<<endl;
       ADC_double = 0.0;
     } else {
       ADC_double = Fit->GetX(energy, 0., MaxEnergy);
