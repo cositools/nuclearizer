@@ -192,42 +192,42 @@ bool MModuleLoaderSimulationsSingleDet::ReadXmlConfiguration(MXmlNode* Node)
   if (EnergyCalibrationFileNameNode != 0) {
     SetEnergyCalibrationFileName(EnergyCalibrationFileNameNode->GetValue());
   }
-  // MXmlNode* DeadStripFileNameNode = Node->GetNode("DeadStripFileName");
-  // if (DeadStripFileNameNode != 0) {
-  //   SetDeadStripFileName(DeadStripFileNameNode->GetValue());
-  // }
+  MXmlNode* DeadStripFileNameNode = Node->GetNode("DeadStripFileName");
+  if (DeadStripFileNameNode != 0) {
+    SetDeadStripFileName(DeadStripFileNameNode->GetValue());
+  }
   MXmlNode* ThresholdFileNameNode = Node->GetNode("ThresholdFileName");
   if (ThresholdFileNameNode != 0) {
     SetThresholdFileName(ThresholdFileNameNode->GetValue());
   }
-	// MXmlNode* GuardRingThresholdFileNameNode = Node->GetNode("GuardRingThresholdFileName");
-	// if (GuardRingThresholdFileNameNode != 0) {
-	// 	SetGuardRingThresholdFileName(GuardRingThresholdFileNameNode->GetValue());
-	// }
+	MXmlNode* GuardRingThresholdFileNameNode = Node->GetNode("GuardRingThresholdFileName");
+	if (GuardRingThresholdFileNameNode != 0) {
+		SetGuardRingThresholdFileName(GuardRingThresholdFileNameNode->GetValue());
+	}
 	MXmlNode* ChargeSharingFileNameNode = Node->GetNode("ChargeSharingFileName");
 	if (ChargeSharingFileNameNode != 0) {
 		SetChargeSharingFileName(ChargeSharingFileNameNode->GetValue());
 	}
-  // MXmlNode* CrosstalkFileNameNode = Node->GetNode("CrosstalkFileName");
-  // if (CrosstalkFileNameNode != 0) {
-  //   SetCrosstalkFileName(CrosstalkFileNameNode->GetValue());
-  // }
-	// MXmlNode* ChargeLossFileNameNode = Node->GetNode("ChargeLossFileName");
-	// if (ChargeLossFileNameNode != 0) {
-	// 	SetChargeLossFileName(ChargeLossFileNameNode->GetValue());
-	// }
-  // MXmlNode* DepthCalibrationCoeffsFileNameNode = Node->GetNode("DepthCalibrationCoeffsFileName");
-  // if (DepthCalibrationCoeffsFileNameNode != 0) {
-  //   SetDepthCalibrationCoeffsFileName(DepthCalibrationCoeffsFileNameNode->GetValue());
-  // }
-  // MXmlNode* DepthCalibrationSplinesFileNameNode = Node->GetNode("DepthCalibrationSplinesFileName");
-  // if (DepthCalibrationSplinesFileNameNode != 0) {
-  //   SetDepthCalibrationSplinesFileName(DepthCalibrationSplinesFileNameNode->GetValue());
-  // }
-  // MXmlNode* ApplyFudgeFactorNode = Node->GetNode("ApplyFudgeFactor");
-  // if (ApplyFudgeFactorNode != 0) {
-  //   m_ApplyFudgeFactor = ApplyFudgeFactorNode->GetValueAsBoolean();
-  // }
+  MXmlNode* CrosstalkFileNameNode = Node->GetNode("CrosstalkFileName");
+  if (CrosstalkFileNameNode != 0) {
+    SetCrosstalkFileName(CrosstalkFileNameNode->GetValue());
+  }
+	MXmlNode* ChargeLossFileNameNode = Node->GetNode("ChargeLossFileName");
+	if (ChargeLossFileNameNode != 0) {
+		SetChargeLossFileName(ChargeLossFileNameNode->GetValue());
+	}
+  MXmlNode* DepthCalibrationCoeffsFileNameNode = Node->GetNode("DepthCalibrationCoeffsFileName");
+  if (DepthCalibrationCoeffsFileNameNode != 0) {
+    SetDepthCalibrationCoeffsFileName(DepthCalibrationCoeffsFileNameNode->GetValue());
+  }
+  MXmlNode* DepthCalibrationSplinesFileNameNode = Node->GetNode("DepthCalibrationSplinesFileName");
+  if (DepthCalibrationSplinesFileNameNode != 0) {
+    SetDepthCalibrationSplinesFileName(DepthCalibrationSplinesFileNameNode->GetValue());
+  }
+  MXmlNode* ApplyFudgeFactorNode = Node->GetNode("ApplyFudgeFactor");
+  if (ApplyFudgeFactorNode != 0) {
+    m_ApplyFudgeFactor = ApplyFudgeFactorNode->GetValueAsBoolean();
+  }
   MXmlNode* UseStopAfterNode = Node->GetNode("UseStopAfter");
   if (UseStopAfterNode != 0) {
     m_UseStopAfter = UseStopAfterNode->GetValueAsBoolean();
@@ -252,15 +252,15 @@ MXmlNode* MModuleLoaderSimulationsSingleDet::CreateXmlConfiguration()
   new MXmlNode(Node, "SimulationFileName", m_SimulationFileName);
   new MXmlNode(Node, "DeadtimeFileName", m_DeadtimeFileName);
   new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
-  // new MXmlNode(Node, "DeadStripFileName", m_DeadStripFileName);
+  new MXmlNode(Node, "DeadStripFileName", m_DeadStripFileName);
   new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
-	// new MXmlNode(Node, "GuardRingThresholdFileName", m_GuardRingThresholdFileName);
+	new MXmlNode(Node, "GuardRingThresholdFileName", m_GuardRingThresholdFileName);
 	new MXmlNode(Node, "ChargeSharingFileName", m_ChargeSharingFileName);
-	// new MXmlNode(Node, "CrosstalkFileName", m_CrosstalkFileName);
-	// new MXmlNode(Node, "ChargeLossFileName", m_ChargeLossFileName);
-  // new MXmlNode(Node, "DepthCalibrationCoeffsFileName", m_DepthCalibrationCoeffsFileName);
-  // new MXmlNode(Node, "DepthCalibrationSplinesFileName", m_DepthCalibrationSplinesFileName);
-  // new MXmlNode(Node, "ApplyFudgeFactor", m_ApplyFudgeFactor);
+	new MXmlNode(Node, "CrosstalkFileName", m_CrosstalkFileName);
+	new MXmlNode(Node, "ChargeLossFileName", m_ChargeLossFileName);
+  new MXmlNode(Node, "DepthCalibrationCoeffsFileName", m_DepthCalibrationCoeffsFileName);
+  new MXmlNode(Node, "DepthCalibrationSplinesFileName", m_DepthCalibrationSplinesFileName);
+  new MXmlNode(Node, "ApplyFudgeFactor", m_ApplyFudgeFactor);
   new MXmlNode(Node, "UseStopAfter", m_UseStopAfter);
   new MXmlNode(Node, "MaximumAcceptedEvents", m_MaximumAcceptedEvents);
   

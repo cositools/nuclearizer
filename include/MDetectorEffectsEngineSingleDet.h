@@ -298,6 +298,8 @@ private:
  
 	//! Calibration map between read-out element and guard ring thresholds
 	map<MReadOutElementDoubleStrip, double> m_GuardRingThresholds;
+  //! Number of GR Hits
+  int m_countGR;
  
   //! Calibration map between read-out element and fitted function for energy calibration
   map<MReadOutElementDoubleStrip, TF1*> m_EnergyCalibration;
@@ -307,8 +309,7 @@ private:
 	//! Dead time buffer with 16 slots
 	vector<vector<double> > m_DeadTimeBuffer = vector<vector<double> >(nDets, vector<double> (nDTBuffSlots));
 
-  //! Stores dead time for each detector
-  vector<double> m_DetectorDeadTime = vector<double>(nDets);
+  // Helper variables for printing out data
   //! Stores all events' times
   vector<double> m_EventTimes;
   //! Stores all strip IDs
@@ -320,25 +321,16 @@ private:
 
   //! Stores current dead time of the instrument
   double m_StripsCurrentDeadtime;
-  //! Whether to reset ASIC deadtime or not
-  vector<vector<bool> > ResetASICDeadtime = vector<vector<bool> >(nDets, vector<bool>(nASICs, 0));
   //! Stores dead time for each ASIC
   vector<vector<double> > m_ASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
   //! Stores last good event time
   double m_ASICLastHitTime;
-  // vector<vector<double> > m_ASICLastHitTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
   //! Strip ID for particular hit in ASIC
   vector<vector<vector<int> > > m_ASICHitStripID = vector<vector<vector<int> > >(nDets, vector<vector<int>>(nASICs));
-  //! Boolean to increase GeD ASIC deadtime or not
-  vector<vector<double> > increaseASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
-  //! Stores last time detector was hit to check if detector still dead
-  vector<double> m_LastHitTimeByDet = vector<double>(nDets);
-	//! Stores total dead time by detector
-  vector<vector<double>> m_TotalASICDeadTime = vector<vector<double> >(nDets, vector<double>(nASICs, 0));
   //! Stores total dead time of the instrument
   double m_StripsTotalDeadtime;
-  // //! Stores the last strips deadtime to be added on to total deadtime
-  // double m_LastStripsDeadtime;
+  //! Bool to store if ASIC is dead or not
+  bool IsASICDead;
 
 	//! Stores trigger rates (number of events) for each detector
   vector<int> m_TriggerRates = vector<int>(nDets);

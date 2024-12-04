@@ -133,8 +133,8 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // if (ParseDeadStripFile() == false) return false;
   //load threshold information
   if (ParseThresholdFile() == false) return false;
-  // //load guard ring threshold information
-  // if (ParseGuardRingThresholdFile() == false) return false;
+  //load guard ring threshold information
+  if (ParseGuardRingThresholdFile() == false) return false;
   
   //load charge sharing factors
   if (ParseChargeSharingFile() == false) return false;
@@ -205,6 +205,8 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   m_StripDelayAfter1 = m_StripDelayAfter1FromFile;
   m_StripDelayAfter2 = m_StripDelayAfter2FromFile;
   m_StripDelayAfter = m_StripDelayAfter1 + m_StripDelayAfter2;
+  IsASICDead = false;
+  m_countGR = 0;
 
   m_StripsCurrentDeadtime = 0.0;
   m_ASICLastHitTime = -10;
@@ -234,6 +236,7 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   m_ShieldDeadTime = 0;
   m_IsShieldDead = false;
   m_NumShieldCounts = 0;
+
   
   // initialize constants for charge sharing due to diffusion
   double k = 1.38e-16; //Boltzmann's constant
@@ -457,13 +460,13 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         MDDetector* Detector = VS->GetDetector();
         MString DetectorName = Detector->GetName();
         // cout<<endl<<endl<<"Detector Name: "<<DetectorName<<endl;
-        if(!DetectorName.BeginsWith("D1")){
+        if(!DetectorName.BeginsWith("D")){
           // cout<<endl<<endl<<"Skipped ID: "<<SimEvent->GetID()<<endl;
           continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
         }
-        // DetectorName.RemoveAllInPlace("ActiveDetector"); // WILL NEED FOR MULTIPLE DETECTORS 
-        // int DetectorID = DetectorName.ToInt(); // GO BACK TO THIS WITH MULTIPLE DETECTORS
-        int DetectorID = 0;
+        DetectorName.RemoveAllInPlace("D"); // WILL NEED FOR MULTIPLE DETECTORS 
+        int DetectorID = DetectorName.ToInt()-1; // GO BACK TO THIS WITH MULTIPLE DETECTORS
+        // int DetectorID = 0;
         
         
         MDEEStripHit pSide; // High voltage
@@ -887,6 +890,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
         MSimHT* HT = SimEvent->GetHTAt(h);
         if (HT->GetDetectorType() == 4) {
+          m_countGR += 1;
           MSimHT* GR = SimEvent->GetHTAt(h);
           // MSimGR* GR = SimEvent->GetGRAt(h);
           MDVolumeSequence* VS = GR->GetVolumeSequence();
@@ -1263,35 +1267,35 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       
 
       
-      // // (4c) Take care of guard ring vetoes
-      // list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
-      // vector<int> grHit = vector<int>(nDets,0);
-      // while (gr != GuardRingHits.end()) {
-      //   if ((*gr).m_Energy > m_GuardRingThresholds[(*gr).m_ROE]){
-      //     int detID = (*gr).m_ROE.GetDetectorID();
-      //     grHit[detID] = 1;
-      //   }
-      //   ++gr;
-      // }
-      // list<MDEEStripHit>::iterator grVeto = MergedStripHits.begin();
-      // while (grVeto != MergedStripHits.end()){
-      //   int detID = (*grVeto).m_ROE.GetDetectorID();
-      //   if (grHit[detID] == 1){ 
-      //     grVeto = MergedStripHits.erase(grVeto);
-      //   }
-      //   else{ ++grVeto; }
-      // }
-      // //update dead time stuff if the hit is vetoed by the guard ring
-      // for (int det=0; det<nDets; det++){
-      //   if (grHit[det] == 1){
-      //     //make sure CC not already dead
-      //     if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
-      //       m_DetectorDeadTime[det] = 2.8e-6;
-      //       m_LastHitTimeByDet[det] = evt_time;
-      //       m_StripsTotalDeadtime[det] += m_DetectorDeadTime[det];
-      //     }
-      //   }
-      // }
+      // (4c) Take care of guard ring vetoes
+      list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
+      vector<int> grHit = vector<int>(nDets,0);
+      while (gr != GuardRingHits.end()) {
+        if ((*gr).m_Energy > m_GuardRingThresholds[(*gr).m_ROE]){ // Need to enable once we have the GR thresholds
+          int detID = (*gr).m_ROE.GetDetectorID();
+          grHit[detID] = 1;
+        }
+        ++gr;
+      }
+      list<MDEEStripHit>::iterator grVeto = MergedStripHits.begin();
+      while (grVeto != MergedStripHits.end()){
+        int detID = (*grVeto).m_ROE.GetDetectorID();
+        if (grHit[detID] == 1){ 
+          grVeto = MergedStripHits.erase(grVeto);
+        }
+        else{ ++grVeto; }
+      }
+      //update dead time stuff if the hit is vetoed by the guard ring
+      for (int det=0; det<nDets; det++){
+        if (grHit[det] == 1){
+          //make sure CC not already dead
+          if (!IsASICDead){
+            m_StripsCurrentDeadtime += 2.8e-6;
+            m_ASICLastHitTime = evt_time;
+            m_StripsTotalDeadtime += m_StripsCurrentDeadtime;
+          }
+        }
+      }
       
       
       // (4d) Make sure there is at least one strip left on each side of each detector
@@ -1390,7 +1394,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // //Step (6.5): Dead time
       bool ASICFirstHitAfterDead = false;
       double det = 500;
-      bool IsASICDead = false;
+      IsASICDead = false;
       // cout << MergedStripHits.size() << endl;
 
       list<MDEEStripHit>::iterator i = MergedStripHits.begin();
@@ -1486,12 +1490,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
               m_StripsCurrentDeadtime = m_ASICDeadTime[det][ASIC];
             }
           }
-          // else {
-          //   m_ASICHitStripID[det][ASIC].clear();
-          // }
         }
       }
-
       // End Deadtime implementation
 
       
@@ -1844,10 +1844,11 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   //	cout << "Num shield counts: " << m_NumShieldCounts << endl;
   cout << "Shield rate (cps): " << m_NumShieldCounts/(m_LastTime-m_FirstTime) << endl;
   cout << "Total Hits before Deadtime: " << m_TotalHitsBeforeDeadtime << endl;
+  cout << "Guard Ring Hits: " << m_countGR << endl;
   cout << "Dead time " << endl;
   // Single Enable Line
   cout << "Total Deadtime of the Instrument: " << m_StripsTotalDeadtime << endl;
-  cout << "Avg Deadtime per hit: " << m_StripsTotalDeadtime/m_TotalHitsBeforeDeadtime << endl;
+  cout << "Avg Deadtime per Hit: " << m_StripsTotalDeadtime/m_TotalHitsBeforeDeadtime << endl;
   cout << "Trigger rates (events per second)" << endl;
   for (int i=0; i<nDets; i++){
     cout << i << ":\t" << m_TriggerRates[i]/(m_LastTime-m_FirstTime) << endl;
@@ -1889,7 +1890,7 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // // End Plot
 
   // // Saves to csv ... Disable if not needed
-  // ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/Cs137_singleDet_10x_noDT_100000Flux_100s_Parallel.csv");
+  // ofstream file("/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Extracted/Cs137_singleDet_10x_noDT_1000Flux_100s_Parallel.csv");
   // file << "Index, Strip ID, Times\n";
   // for (int i = 0; i<m_EventTimes.size(); i++) {
   //   file << i+1 << "," << m_EventStripIDs[i] << "," << m_EventTimes[i] << "\n";
@@ -2200,32 +2201,32 @@ bool MDetectorEffectsEngineSingleDet::ParseChargeSharingFile()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// //! Read in guard ring thresholds
-// bool MDetectorEffectsEngineSingleDet::ParseGuardRingThresholdFile()
-// {
+//! Read in guard ring thresholds
+bool MDetectorEffectsEngineSingleDet::ParseGuardRingThresholdFile()
+{
   
-  // MParser Parser;
-  // if (Parser.Open(m_GuardRingThresholdFileName, MFile::c_Read) == false) {
-  //   cout << "Unable to open guard ring threshold file " << m_GuardRingThresholdFileName << endl;
-  //   return false;
-  // }
+  MParser Parser;
+  if (Parser.Open(m_GuardRingThresholdFileName, MFile::c_Read) == false) {
+    cout << "Unable to open guard ring threshold file " << m_GuardRingThresholdFileName << endl;
+    return false;
+  }
   
-  // for (unsigned int i=2; i<26; i++){
-  //   int detector = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
-  //   int side = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
-  //   double threshold = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
+  for (unsigned int i=2; i<26; i++){
+    int detector = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+    int side = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
+    double threshold = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2);
     
-  //   MReadOutElementDoubleStrip R;
-  //   R.SetDetectorID(detector);
-  //   R.SetStripID(65);
-  //   R.IsLowVoltageStrip(side);
+    MReadOutElementDoubleStrip R;
+    R.SetDetectorID(detector);
+    R.SetStripID(65);
+    R.IsLowVoltageStrip(side);
     
-  //   m_GuardRingThresholds[R] = threshold;
-  // }
+    m_GuardRingThresholds[R] = threshold;
+  }
   
-//   return true;
+  return true;
   
-// }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
