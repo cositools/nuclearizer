@@ -290,14 +290,11 @@ double MDetectorEffectsEngineSingleDet::dTimeGeDs(vector<int> ASICChannels) {
     // Sort ASICChannels to process channels in ascending order
     sort(ASICChannels.begin(), ASICChannels.end());
 
-    // cout << "---------------" << endl;
-    // cout << "ASIC Channels list:" << endl; 
-
     // Loop through each channel ID in the sorted list
     for (int ID : ASICChannels) {
 
       if (ID == 65) {
-        cout << "Strip ID is 65... skipping, will fix later" << endl; 
+        cout << "Strip ID is 65; should not happen" << endl; 
         continue;
       }
       else if (ID == 1 || ID == 33) {
@@ -321,9 +318,6 @@ double MDetectorEffectsEngineSingleDet::dTimeGeDs(vector<int> ASICChannels) {
     // Count the number of unique channels read out
     int countUnique = ASICChannelsSet.size();
 
-    // cout << "--------------" << endl;
-    // cout << countUnique << endl;
-
     // Calculate the total deadtime based on unique channels
     double GeD_deadtime = m_StripCoincidenceWindow + (m_ASICDeadTimePerChannel * countUnique) + m_StripDelayAfter; // adds in the deadtime per channel
 
@@ -339,8 +333,6 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
   //int RunningID = 0;
   
   while ((SimEvent = m_Reader->GetNextEvent(false)) != nullptr) {
-    
-    // cout<<endl<<endl<<"ID: "<<SimEvent->GetID()<<endl;
     
     // Always update the number of simulated events, since for that nu,ber it doesn't matter if the event passes or not
     m_NumberOfSimulatedEvents = SimEvent->GetSimulationEventID();
@@ -361,1468 +353,1310 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
       MSimHT* HT = SimEvent->GetHTAt(h);
       eventInitialEnergy += HT->GetEnergy();
-      // if (eventInitialEnergy == 0) {
-      //   cout << "Initial hit energy: " << eventInitialEnergy << endl;
-      // }
-      // if (HT->GetDetectorType() == 4) {
-      //   MDVolumeSequence* VS = HT->GetVolumeSequence();
-      //   MDDetector* Detector = VS->GetDetector();
-      //   MString DetName = Detector->GetName();
-      //   cout << "DetName: " << DetName << endl;
-      // }
     }
     
     
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
-    // cout << setprecision(17) << evt_time << endl;
-    // bool hasDetHits = false;
-    // bool hasShieldHits = false;
-    // bool increaseShieldDeadTime = false;
-    
-    // first check if there's another shield hit above the threshold
-    // if so, veto event
-  //   for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
-  //     MSimHT* HT = SimEvent->GetHTAt(h);
-  //     if (HT->GetDetectorType() == 4) {
-  //       MDVolumeSequence* VS = HT->GetVolumeSequence();
-  //       MDDetector* Detector = VS->GetDetector();
-  //       MString DetName = Detector->GetName();
-        
-  //       //ONLY veto CsI shields, NOT NaI for polarization calibration
-  //       if (DetName.GetSubString(0,6) == "Shield"){
-          
-  //         double energy = HT->GetEnergy();
-  //         energy = NoiseShieldEnergy(energy,DetName);
-  //         HT->SetEnergy(energy);
-          
-  //         if (energy > m_ShieldThreshold) {
-  //           if (m_ShieldTime + m_ShieldPulseDuration < evt_time){ hasShieldHits = true; }
-  //           increaseShieldDeadTime = true;
-  //           //this is handling paralyzable dead time
-  //           m_ShieldTime = evt_time;
-  //         }
-  //       }
-  //       else if (HT->GetDetectorType() == 3){ hasDetHits = true; }
-  //     }
-  //   }
-    
-  //   if (hasShieldHits == true){ m_NumShieldCounts++; }
-  //   if (increaseShieldDeadTime == true){ m_ShieldDeadTime += m_ShieldPulseDuration; }
-    
-  //   //3 cases to veto events:
-  //   //(1) shield active starts in veto window
-  //   //(2) shield active ends in veto window
-  //   //(3) shield active during the entire veto window
-  //   //this if statement could perhaps be condensed but I'm less confused this way
-  //   if ((m_ShieldTime + m_ShieldDelay > evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay < evt_time + m_CCDelay + m_ShieldVetoWindowSize) || 
-  //     (m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay + m_ShieldVetoWindowSize) || 
-  //     (m_ShieldTime + m_ShieldDelay < evt_time + m_CCDelay && m_ShieldTime + m_ShieldDelay + m_ShieldPulseDuration > evt_time + m_CCDelay + m_ShieldVetoWindowSize)){
-  //     // 		  delete SimEvent;
-  //     //      continue;
-  //     //don't delete the event yet: need to apply dead time to the card cage first!
-  //     m_ShieldVeto = true;
-  //     }
-  //     else { m_ShieldVeto = false; }
+ 
       
-      //get interactions to look for ionization in hits
-      vector<MSimIA*> IAs;
-      for (unsigned int i=0; i<SimEvent->GetNIAs(); i++){
-        MSimIA* ia = SimEvent->GetIAAt(i);
-        IAs.push_back(ia);
-      }
+    //get interactions to look for ionization in hits
+    vector<MSimIA*> IAs;
+    for (unsigned int i=0; i<SimEvent->GetNIAs(); i++){
+      MSimIA* ia = SimEvent->GetIAAt(i);
+      IAs.push_back(ia);
+    }
+    
+    // Step (0.5): Get aspect information
+    if (SimEvent->HasGalacticPointing()){
+      Event->SetSimAspectInfo(true);
       
-      // Step (0.5): Get aspect information
-      if (SimEvent->HasGalacticPointing()){
-        Event->SetSimAspectInfo(true);
-        
-        double phi = SimEvent->GetGalacticPointingXAxis().Phi()*c_Deg;
-        if (phi < 0.0){ phi += 360; }
-        Event->SetGalacticPointingXAxisPhi(phi);
-        Event->SetGalacticPointingXAxisTheta(SimEvent->GetGalacticPointingXAxis().Theta()*c_Deg-90);
-        
-        phi = SimEvent->GetGalacticPointingZAxis().Phi()*c_Deg;
-        if (phi < 0.0){ phi += 360; }
-        Event->SetGalacticPointingZAxisPhi(phi);
-        Event->SetGalacticPointingZAxisTheta(SimEvent->GetGalacticPointingZAxis().Theta()*c_Deg-90);
-      }
+      double phi = SimEvent->GetGalacticPointingXAxis().Phi()*c_Deg;
+      if (phi < 0.0){ phi += 360; }
+      Event->SetGalacticPointingXAxisPhi(phi);
+      Event->SetGalacticPointingXAxisTheta(SimEvent->GetGalacticPointingXAxis().Theta()*c_Deg-90);
       
-      // Step (1): Convert positions into strip hits
-      list<MDEEStripHit> StripHits;
-      vector<MDEEStripHit> GuardRingHitsFromChargeSharing;
-      vector<int> detectorsHitForShieldVeto(nDets,0);
+      phi = SimEvent->GetGalacticPointingZAxis().Phi()*c_Deg;
+      if (phi < 0.0){ phi += 360; }
+      Event->SetGalacticPointingZAxisPhi(phi);
+      Event->SetGalacticPointingZAxisTheta(SimEvent->GetGalacticPointingZAxis().Theta()*c_Deg-90);
+    }
+    
+    // Step (1): Convert positions into strip hits
+    list<MDEEStripHit> StripHits;
+    vector<MDEEStripHit> GuardRingHitsFromChargeSharing;
+    vector<int> detectorsHitForShieldVeto(nDets,0);
 
-      // (1a) The real strips
-      for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
-        MSimHT* HT = SimEvent->GetHTAt(h);
+    // (1a) The real strips
+    for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
+      MSimHT* HT = SimEvent->GetHTAt(h);
+      
+      MDVolumeSequence* VS = HT->GetVolumeSequence();
+      MDDetector* Detector = VS->GetDetector();
+      MString DetectorName = Detector->GetName();
+      if(!DetectorName.BeginsWith("D")){
+        continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
+      }
+      // Sets the detector ID for different hits. May need to change if there is a change in naming convention
+      DetectorName.RemoveAllInPlace("D");
+      int DetectorID = DetectorName.ToInt()-1;
+      
+      
+      MDEEStripHit pSide; // High voltage
+      MDEEStripHit nSide; // Low voltage
+      
+      //should be unique identifiers
+      pSide.m_ID = h*10;
+      nSide.m_ID = h*10+5;
+      
+      pSide.m_OppositeStrip = nSide.m_ID;
+      nSide.m_OppositeStrip = pSide.m_ID;
+      
+      pSide.m_ROE.IsLowVoltageStrip(true); // Is this right?? Need to check
+      nSide.m_ROE.IsLowVoltageStrip(false);
+      
+      // Convert detector name in detector ID
+      pSide.m_ROE.SetDetectorID(DetectorID);
+      nSide.m_ROE.SetDetectorID(DetectorID);
+      detectorsHitForShieldVeto[DetectorID] = 1;
+      
+      // Convert position into
+      MVector PositionInDetector = VS->GetPositionInSensitiveVolume();
+      MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
+      // double Depth_ = PositionInDetector.GetZ();
+      double Depth = -(PositionInDetector.GetZ() - (1.5/2.0)); // THIS NEEDS TO BE SET TO DEPTH CALIBRATER ONCE READY
+      // double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
+      pSide.m_Depth = Depth;
+      nSide.m_Depth = Depth;
+      
+      // Not sure about if p or n-side is up, but we can debug this later
+      // Confirmed by Clio on 11/14/18: this is right
+      pSide.m_ROE.SetStripID(65-(GP.GetYGrid()+1));
+      nSide.m_ROE.SetStripID(65-(GP.GetXGrid()+1));
+      
+// // This needs to be implemented once the depth calibration is implemented
+      // //SetStripID needs to be called before we can look up the depth calibration coefficients
+      // int PixelCode = DetectorID*10000 + pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID();
+      // std::vector<double>* Coeffs = m_DepthCalibrator->GetPixelCoeffs(PixelCode);
+      // if( Coeffs == NULL ){
+      //   //pixel is not calibrated! discard this event....
+      //   //cout << "pixel " << PixelCode << " has no depth calibration... discarding event" << endl;
+      //   //delete SimEvent;
+      //   continue;
+      // }
+      
+//       pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0);
+//       nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0);
+      
+      pSide.m_Energy = HT->GetEnergy();
+      nSide.m_Energy = HT->GetEnergy();
+      
+//       //m_EnergyOrig will be unchanged: to see if event is incompletely absorbed or not
+      //(m_Energy is changed due to crosstalk and charge loss, etc)
+      pSide.m_EnergyOrig = HT->GetEnergy();
+      nSide.m_EnergyOrig = HT->GetEnergy();
+
+      //hit index to keep track of which SimHT this strip hit came from
+      pSide.m_HitIndex = h;
+      nSide.m_HitIndex = h;
+      
+      MVector PosFromGP = GP.GetPosition();
+      
+      pSide.m_Position = PositionInDetector;
+      nSide.m_Position = PositionInDetector;
+      
+      
+      // (1aa): charge sharing due to diffusion
+      
+      // Get the origins: these are the IA indices
+      // We have to do a bit of a convoluted assignment since different version of MEGAlib have different types (int vs. unsigned int)
+      auto HTOrigins = HT->GetOrigins();
+      vector<int> Origins(HTOrigins.begin(), HTOrigins.end());
+
+      pSide.m_Origins = list<int>(Origins.begin(), Origins.end());
+      nSide.m_Origins = list<int>(Origins.begin(), Origins.end());
+      
+      //group origins for this HT by position
+      //  and figure out each energy is deposited at each position
+      MVector PrevPos(0,0,0);
+      vector<vector<int> > OriginsGroupedByPosition;
+      vector<MVector> IAPositions;
+      vector<double> EnergyDepositedByPosition;
+      vector<int> temp_vec;
+      double energyDeposited = 0.;
+      double totalEnergyFromIAs = 0.;
+      
+      for (unsigned int o=0; o<Origins.size(); o++){
+        int iaID = Origins[o];
+        //for some reason Origin[o] is 0 when the IAs aren't saved,
+        //which makes the code crash unless I do this
+        if (iaID == 0){
+          iaID++;
+        }
+        MSimIA* ia = SimEvent->GetIAById(iaID);
+        MVector iaPosition = ia->GetPosition();
+        if (PrevPos == iaPosition){
+          temp_vec.push_back(Origins[o]);
+          energyDeposited += ia->GetSecondaryEnergy();
+        }
+        else {
+          if (temp_vec.size() != 0){
+            OriginsGroupedByPosition.push_back(temp_vec);
+            EnergyDepositedByPosition.push_back(energyDeposited);
+            totalEnergyFromIAs += energyDeposited;
+          }
+          temp_vec.clear();
+          temp_vec.push_back(Origins[o]);
+          IAPositions.push_back(iaPosition);
+          energyDeposited = ia->GetSecondaryEnergy();
+        }
+        PrevPos = iaPosition;
+      }
+      if (temp_vec.size() != 0){
+        OriginsGroupedByPosition.push_back(temp_vec);
+        EnergyDepositedByPosition.push_back(energyDeposited);
+        totalEnergyFromIAs += energyDeposited;
+      }
+      
+      //scale energy deposited so that the sum of the energy deposits equals the HT energy
+      if (totalEnergyFromIAs != 0){
+        for (unsigned int pos=0; pos<EnergyDepositedByPosition.size(); pos++){
+          EnergyDepositedByPosition[pos] = EnergyDepositedByPosition[pos]*(HT->GetEnergy()/totalEnergyFromIAs);
+        }
+      }
+      
+      //initialize these variables before the for loop
+      map<unsigned int,double> pStripsEnergies;
+      map<unsigned int,double> nStripsEnergies;
+      
+      double totalEnergyDeposited = 0.;
+      
+      //then apply charge sharing for each POSITION
+      //the position could have one or more IAs
+      for (unsigned int pos=0; pos<OriginsGroupedByPosition.size(); pos++){
+        //figure out the energy deposited for all the IAs
+        double energyDeposited = EnergyDepositedByPosition[pos];
         
-        MDVolumeSequence* VS = HT->GetVolumeSequence();
+        totalEnergyDeposited += energyDeposited;
+        
+        //get IA position in detector
+        MVector IAPosition = IAPositions[pos];
+        
+        MDVolumeSequence IAVolSeq = m_Geometry->GetVolumeSequence(IAPosition, false, false);
+        MVector IAPositionInDetector = IAVolSeq.GetPositionInSensitiveVolume();
+        if (IAVolSeq.GetDetector() == 0 || IAVolSeq.GetSensitiveVolume() == 0){
+          //if IA not in the detector, just use the HT position
+          IAPositionInDetector = PositionInDetector;
+          m_NumberOfFailedIASearches += 1;
+        } else {
+          m_NumberOfSuccessfulIASearches += 1;
+        }
+        
+        //now we have the energy deposited at this position
+        //that is enough information to do the diffusion
+        //do half-keV steps to avoid iterating over hundreds of thousands of charge carriers
+        // so this isn't really the number of charge carriers, but the number of steps
+        double EnergyPerChargeCarrier = 0.5;
+        int NChargeCarriers = (int)(energyDeposited/EnergyPerChargeCarrier);
+        //unless the deposited energy is perfectly divisible by 0.5, there will be some extra energy
+        // need to account for it or else there is extra charge loss
+        double ExtraEnergy = energyDeposited - NChargeCarriers*EnergyPerChargeCarrier;
+        
+        //figured out by printing out IAPositionInDetector.Z() for Am241 source:
+        // IAPositionInDetector.Z() < 0: closer to n side for *all* detector stacks
+        double DriftLengthN = IAPositionInDetector.Z() + Detector->GetStructuralSize().Z();
+        double DriftLengthP = Detector->GetStructuralSize().Z()*2 - DriftLengthN;
+        if (DriftLengthN < 0){ DriftLengthN = 0; }
+        if (DriftLengthP < 0){ DriftLengthP = 0; }
+        
+        double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
+        double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
+        // double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
+        // double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
+        
+        // double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN; // NEEDED FOR MULTIPLE DETS
+        // double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP; // NEEDED FOR MULTIPLE DETS
+
+        double DriftRadiusSigmaN = m_DriftConstant*sqrt(DriftLengthN)*factorN;
+        double DriftRadiusSigmaP = m_DriftConstant*sqrt(DriftLengthP)*factorP;
+        
+        double DriftX = 0;
+        double DriftY = 0;
+        
+        double xDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthX();
+        double xDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetX();
+        double xInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchX();
+        
+        double yDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthY();
+        double yDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetY();
+        double yInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchY();
+        
+        double xInDet = IAPositionInDetector.X() + xDetectorHalfWidth - xDetectorOffset;
+        double yInDet = IAPositionInDetector.Y() + yDetectorHalfWidth - yDetectorOffset;
+        
+        int nStripID = 0;
+        int pStripID = 0;
+
+        // ---> Time critical
+        for (int i = 0; i < NChargeCarriers + 1; ++i) {
+          //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
+          if (i == NChargeCarriers) { 
+            EnergyPerChargeCarrier = ExtraEnergy; 
+          }
+          
+          
+          // First n side
+          // Draw random x and y from 2D gaussian with mean = 0, sigma = 1
+          double y = m_Random.Rndm();
+          double z = m_Random.Rndm();
+          double x = z * 6.28318530717958623;
+          double r = sqrt(-2*log(y));
+          DriftX = r * sin(x) * DriftRadiusSigmaN;
+          DriftY = r * cos(x) * DriftRadiusSigmaN;
+          
+          // We need both to know when we are in the guard ring
+          int nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
+          int pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
+          if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
+            nStripID = 65;
+          } else {
+            nStripID = 64 - nStripIDinterim; 
+          }
+
+          
+          
+          // Then p side
+          
+          y = m_Random.Rndm();
+          z = m_Random.Rndm();
+          x = z * 6.28318530717958623;
+          r = sqrt(-2*log(y));
+          DriftX = r * sin(x) * DriftRadiusSigmaP;
+          DriftY = r * cos(x) * DriftRadiusSigmaP;
+          
+          nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
+          pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
+          if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
+            pStripID = 65;
+          } else {
+            pStripID = 64 - pStripIDinterim; 
+          }
+          
+          
+          
+          // Save which strips have been hit
+          if (pStripsEnergies.count(pStripID) == 0){
+            pStripsEnergies[pStripID] = 0.;
+          }
+          pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+          // cout << "P strip eng: " << pStripsEnergies[pStripID] << endl;
+          
+          if (nStripsEnergies.count(nStripID) == 0){
+            // cout << "nStrip Energy set to 0" << endl;
+            nStripsEnergies[nStripID] = 0.;
+          }
+          nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
+          // cout << "N strip eng: " << nStripsEnergies[nStripID] << endl;
+        }
+        // <--- Time critical
+        
+// // //         /*
+// // //         // Clio's original
+// // //         for (int i=0; i<NChargeCarriers+1; i++){
+// // //           //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
+// // //           if (i == NChargeCarriers){ EnergyPerChargeCarrier = ExtraEnergy; }
+          
+// // //           //first n side
+// // //           //Rannor draws random x and y from 2D gaussian with mean = 0, sigma = 1
+// // //           m_Random.Rannor(DriftX,DriftY);
+// // //           DriftX *= DriftRadiusSigmaN;
+// // //           DriftY *= DriftRadiusSigmaN;
+          
+// // //           MVector DriftPositionN = IAPositionInDetector + MVector(DriftX, DriftY, 0);
+          
+// // //           MDGridPoint GPDriftN = Detector->GetGridPoint(DriftPositionN);
+// // //           int nStripID;
+// // //           //if position isn't in detector (0) or is guard ring (7) assign as guard ring
+// // //           if (GPDriftN.GetType() == MDGridPoint::c_GuardRing || GPDriftN.GetType() == MDGridPoint::c_Unknown){
+// // //             nStripID = 38;
+// // //           }
+// // //           else { nStripID = 38-(GPDriftN.GetXGrid()+1); }
+          
+// // //           //then p side
+// // //           m_Random.Rannor(DriftX,DriftY);
+// // //           DriftX *= DriftRadiusSigmaP;
+// // //           DriftY *= DriftRadiusSigmaP;
+          
+// // //           MVector DriftPositionP = IAPositionInDetector + MVector(DriftX, DriftY, 0);
+          
+// // //           MDGridPoint GPDriftP = Detector->GetGridPoint(DriftPositionP);
+// // //           int pStripID;
+// // //           if (GPDriftP.GetType() == MDGridPoint::c_GuardRing || GPDriftP.GetType() == MDGridPoint::c_Unknown){
+// // //             pStripID = 38;
+// // //           }
+// // //           else { pStripID = 38-(GPDriftP.GetYGrid()+1); }
+          
+// // //           //save which strips have been hit
+// // //           if (pStripsEnergies.count(pStripID) == 0){
+// // //             pStripsEnergies[pStripID] = 0.;
+// // //           }
+// // //           pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
+          
+// // //           if (nStripsEnergies.count(nStripID) == 0){
+// // //             nStripsEnergies[nStripID] = 0.;
+// // //           }
+// // //           nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
+// // //         }
+// // //         */
+      }
+      
+      //lists of strips that charge cloud hit: at least one must be original strip
+      //what if no charge is on the original strip? this happens occasionally
+      bool pOrigHit = false;
+      bool nOrigHit = false;
+      
+      for (auto P: pStripsEnergies) {
+        //change the energy of original strip
+        if (pSide.m_ROE.GetStripID() == P.first){
+          pSide.m_Energy = P.second;
+          pSide.m_EnergyOrig = P.second;
+          
+          pOrigHit = true;
+        }
+        //make new strip hit if needed
+        //guard ring hit
+        else if (P.first == 65){
+          MDEEStripHit chargeShareGRHit;
+          chargeShareGRHit.m_ROE.IsLowVoltageStrip(true);
+          chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
+          chargeShareGRHit.m_ROE.SetStripID(65);
+          chargeShareGRHit.m_Energy = P.second;
+          chargeShareGRHit.m_Position = MVector(0,0,0); // apparently not important
+          GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
+        }
+        //normal strip hit
+        else {
+          MDEEStripHit chargeShareStrip;
+          chargeShareStrip.m_ROE.IsLowVoltageStrip(true);
+          chargeShareStrip.m_ROE.SetStripID(P.first);
+          chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
+          chargeShareStrip.m_Timing = pSide.m_Timing;
+          chargeShareStrip.m_Energy = P.second;
+          chargeShareStrip.m_EnergyOrig = P.second;
+          chargeShareStrip.m_Depth = pSide.m_Depth;
+          chargeShareStrip.m_Position = pSide.m_Position;
+          chargeShareStrip.m_Origins = pSide.m_Origins;
+          chargeShareStrip.m_HitIndex = pSide.m_HitIndex;
+          StripHits.push_back(chargeShareStrip);
+        }
+      }
+      
+      for (auto N: nStripsEnergies){
+        if (nSide.m_ROE.GetStripID() == N.first){
+          nSide.m_Energy = N.second;
+          nSide.m_EnergyOrig = N.second;
+          nOrigHit = true;
+        }
+        else if (N.first == 65){
+          MDEEStripHit chargeShareGRHit;
+          chargeShareGRHit.m_ROE.IsLowVoltageStrip(false);
+          chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
+          chargeShareGRHit.m_ROE.SetStripID(65);
+          chargeShareGRHit.m_Energy = N.second;
+          chargeShareGRHit.m_Position = MVector(0,0,0);
+          GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
+        }
+        else {
+          MDEEStripHit chargeShareStrip;
+          chargeShareStrip.m_ROE.IsLowVoltageStrip(false);
+          chargeShareStrip.m_ROE.SetStripID(N.first);
+          chargeShareStrip.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
+          chargeShareStrip.m_Timing = nSide.m_Timing;
+          chargeShareStrip.m_Energy = N.second;
+          chargeShareStrip.m_EnergyOrig = N.second;
+          chargeShareStrip.m_Depth = nSide.m_Depth;
+          chargeShareStrip.m_Position = nSide.m_Position;
+          chargeShareStrip.m_Origins = nSide.m_Origins;
+          chargeShareStrip.m_HitIndex = nSide.m_HitIndex;
+          StripHits.push_back(chargeShareStrip);
+        }
+      }
+      
+      if (pOrigHit){ StripHits.push_back(pSide); }
+      if (nOrigHit){ StripHits.push_back(nSide); }
+      
+      m_TotalHitsCounter++;
+      
+    }
+    
+// //     //delete event and update deadtime if the event was vetoed by the shields
+// //     //can't do this earlier because need to know which detectors got hit
+// //     if (m_ShieldVeto){
+// //       for (int det=0; det<nDets; det++){
+// //         if (detectorsHitForShieldVeto[det] == 1){
+// //           //make sure CC not already dead
+// //           if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
+// //             m_DetectorDeadTime[det] = 1e-5;
+// //             m_LastHitTimeByDet[det] = evt_time;
+// //             m_StripsTotalDeadtime[det] += m_DetectorDeadTime[det];
+// //           }
+// //         }
+// //       }
+// //       delete SimEvent;
+// //       continue;
+// //     }
+    // if (StripHits.size() != 0) {
+    //   cout << "Number of strip hits: " << StripHits.size() << endl;
+    // }
+    list<MDEEStripHit> GuardRingHits;
+    // (1b) The guard ring hits
+    vector<int> GRIndices;
+    // for (unsigned int h = 0; h < SimEvent->GetNGRs(); ++h) {
+    for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
+      MSimHT* HT = SimEvent->GetHTAt(h);
+      if (HT->GetDetectorType() == 4) {
+        m_countGR += 1;
+        MSimHT* GR = SimEvent->GetHTAt(h);
+        // MSimGR* GR = SimEvent->GetGRAt(h);
+        MDVolumeSequence* VS = GR->GetVolumeSequence();
         MDDetector* Detector = VS->GetDetector();
         MString DetectorName = Detector->GetName();
-        // cout<<endl<<endl<<"Detector Name: "<<DetectorName<<endl;
-        if(!DetectorName.BeginsWith("D")){
-          // cout<<endl<<endl<<"Skipped ID: "<<SimEvent->GetID()<<endl;
-          continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
-        }
-        DetectorName.RemoveAllInPlace("D"); // WILL NEED FOR MULTIPLE DETECTORS 
-        int DetectorID = DetectorName.ToInt()-1; // GO BACK TO THIS WITH MULTIPLE DETECTORS
-        // int DetectorID = 0;
-        
-        
-        MDEEStripHit pSide; // High voltage
-        MDEEStripHit nSide; // Low voltage
-        
-        //should be unique identifiers
-        pSide.m_ID = h*10;
-        nSide.m_ID = h*10+5;
-        
-        pSide.m_OppositeStrip = nSide.m_ID;
-        nSide.m_OppositeStrip = pSide.m_ID;
-        
-        pSide.m_ROE.IsLowVoltageStrip(true); // Is this right?? Need to check
-        nSide.m_ROE.IsLowVoltageStrip(false);
-        
-        // Convert detector name in detector ID
-        pSide.m_ROE.SetDetectorID(DetectorID);
-        nSide.m_ROE.SetDetectorID(DetectorID);
-        detectorsHitForShieldVeto[DetectorID] = 1;
-        
-        // Convert position into
-        MVector PositionInDetector = VS->GetPositionInSensitiveVolume();
-        MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
-        // double Depth_ = PositionInDetector.GetZ();
-        double Depth = -(PositionInDetector.GetZ() - (1.5/2.0)); // THIS NEEDS TO BE SET TO DEPTH CALIBRATER ONCE READY
-        // double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
-        pSide.m_Depth = Depth;
-        nSide.m_Depth = Depth;
-        
-        // Not sure about if p or n-side is up, but we can debug this later
-        // Confirmed by Clio on 11/14/18: this is right
-        pSide.m_ROE.SetStripID(65-(GP.GetYGrid()+1));
-        nSide.m_ROE.SetStripID(65-(GP.GetXGrid()+1));
+        // DetectorName.RemoveAllInPlace("Detector_");
+        // int DetectorID = DetectorName.ToInt();
+        int DetectorID = 0;
 
-        // cout << "___________" << endl;
-        // cout << "Strip ID (pos): " << pSide.m_ROE.GetStripID() << endl;
-        // // // cout << "Opposite Strip ID (pos): " << pSide.m_OppositeStrip << endl;
-
-        // // // cout << "___________" << endl;
-        // cout << "Strip ID (neg): " << nSide.m_ROE.GetStripID() << endl;
-        // // cout << "Opposite Strip ID (neg): " << nSide.m_OppositeStrip << endl;
         
+        MDEEStripHit GuardRingHitP;
+        GuardRingHitP.m_ROE.IsLowVoltageStrip(true);
+        GuardRingHitP.m_ROE.SetDetectorID(DetectorID);
+        GuardRingHitP.m_ROE.SetStripID(65); // ?
+        GuardRingHitP.m_Energy = GR->GetEnergy();
+        GuardRingHitP.m_Position = MVector(0, 0, 0); // <-- not important
         
-  //       // //SetStripID needs to be called before we can look up the depth calibration coefficients
-  //       // int PixelCode = DetectorID*10000 + pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID();
-  //       // std::vector<double>* Coeffs = m_DepthCalibrator->GetPixelCoeffs(PixelCode);
-  //       // if( Coeffs == NULL ){
-  //       //   //pixel is not calibrated! discard this event....
-  //       //   //cout << "pixel " << PixelCode << " has no depth calibration... discarding event" << endl;
-  //       //   //delete SimEvent;
-  //       //   continue;
-  //       // }
+        MDEEStripHit GuardRingHitN;
+        GuardRingHitN.m_ROE.IsLowVoltageStrip(false);
+        GuardRingHitN.m_ROE.SetDetectorID(DetectorID);
+        GuardRingHitN.m_ROE.SetStripID(65); // ?
+        GuardRingHitN.m_Energy = GR->GetEnergy();
+        GuardRingHitN.m_Position = MVector(0, 0, 0); // <-- not important
         
-  // //       pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0);
-  // //       nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0);
-        
-        pSide.m_Energy = HT->GetEnergy();
-        nSide.m_Energy = HT->GetEnergy();
-        
-  //       //m_EnergyOrig will be unchanged: to see if event is incompletely absorbed or not
-        //(m_Energy is changed due to crosstalk and charge loss, etc)
-        pSide.m_EnergyOrig = HT->GetEnergy();
-        nSide.m_EnergyOrig = HT->GetEnergy();
-
-        //hit index to keep track of which SimHT this strip hit came from
-        pSide.m_HitIndex = h;
-        nSide.m_HitIndex = h;
-        
-        MVector PosFromGP = GP.GetPosition();
-        
-        pSide.m_Position = PositionInDetector;
-        nSide.m_Position = PositionInDetector;
-        
-        
-        // (1aa): charge sharing due to diffusion
-        
-        // Get the origins: these are the IA indices
-        // We have to do a bit of a convoluted assignment since different version of MEGAlib have different types (int vs. unsigned int)
-        auto HTOrigins = HT->GetOrigins();
-        vector<int> Origins(HTOrigins.begin(), HTOrigins.end());
-
-        pSide.m_Origins = list<int>(Origins.begin(), Origins.end());
-        nSide.m_Origins = list<int>(Origins.begin(), Origins.end());
-        
-        //group origins for this HT by position
-        //  and figure out each energy is deposited at each position
-        MVector PrevPos(0,0,0);
-        vector<vector<int> > OriginsGroupedByPosition;
-        vector<MVector> IAPositions;
-        vector<double> EnergyDepositedByPosition;
-        vector<int> temp_vec;
-        double energyDeposited = 0.;
-        double totalEnergyFromIAs = 0.;
-        
-        for (unsigned int o=0; o<Origins.size(); o++){
-          int iaID = Origins[o];
-          //for some reason Origin[o] is 0 when the IAs aren't saved,
-          //which makes the code crash unless I do this
-          if (iaID == 0){
-            iaID++;
+        //add extra energy from charge sharing to guard ring hits already present
+        for (unsigned int gr=0; gr<GuardRingHitsFromChargeSharing.size(); gr++){
+          if (GuardRingHitP.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
+            GuardRingHitP.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
+            GRIndices.push_back(gr);
           }
-          MSimIA* ia = SimEvent->GetIAById(iaID);
-          MVector iaPosition = ia->GetPosition();
-          if (PrevPos == iaPosition){
-            temp_vec.push_back(Origins[o]);
-            energyDeposited += ia->GetSecondaryEnergy();
-          }
-          else {
-            if (temp_vec.size() != 0){
-              OriginsGroupedByPosition.push_back(temp_vec);
-              EnergyDepositedByPosition.push_back(energyDeposited);
-              totalEnergyFromIAs += energyDeposited;
-            }
-            temp_vec.clear();
-            temp_vec.push_back(Origins[o]);
-            IAPositions.push_back(iaPosition);
-            energyDeposited = ia->GetSecondaryEnergy();
-          }
-          PrevPos = iaPosition;
-        }
-        if (temp_vec.size() != 0){
-          OriginsGroupedByPosition.push_back(temp_vec);
-          EnergyDepositedByPosition.push_back(energyDeposited);
-          totalEnergyFromIAs += energyDeposited;
-        }
-        
-        //scale energy deposited so that the sum of the energy deposits equals the HT energy
-        if (totalEnergyFromIAs != 0){
-          for (unsigned int pos=0; pos<EnergyDepositedByPosition.size(); pos++){
-            EnergyDepositedByPosition[pos] = EnergyDepositedByPosition[pos]*(HT->GetEnergy()/totalEnergyFromIAs);
+          if (GuardRingHitN.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
+            GuardRingHitN.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
+            GRIndices.push_back(gr);
           }
         }
         
-        //initialize these variables before the for loop
-        map<unsigned int,double> pStripsEnergies;
-        map<unsigned int,double> nStripsEnergies;
-        
-        double totalEnergyDeposited = 0.;
-        
-        //then apply charge sharing for each POSITION
-        //the position could have one or more IAs
-        for (unsigned int pos=0; pos<OriginsGroupedByPosition.size(); pos++){
-          //figure out the energy deposited for all the IAs
-          double energyDeposited = EnergyDepositedByPosition[pos];
-          
-          totalEnergyDeposited += energyDeposited;
-          
-          //get IA position in detector
-          MVector IAPosition = IAPositions[pos];
-          
-          MDVolumeSequence IAVolSeq = m_Geometry->GetVolumeSequence(IAPosition, false, false);
-          MVector IAPositionInDetector = IAVolSeq.GetPositionInSensitiveVolume();
-          if (IAVolSeq.GetDetector() == 0 || IAVolSeq.GetSensitiveVolume() == 0){
-            //if IA not in the detector, just use the HT position
-            IAPositionInDetector = PositionInDetector;
-            m_NumberOfFailedIASearches += 1;
-          } else {
-            m_NumberOfSuccessfulIASearches += 1;
-          }
-          
-          //now we have the energy deposited at this position
-          //that is enough information to do the diffusion
-          //do half-keV steps to avoid iterating over hundreds of thousands of charge carriers
-          // so this isn't really the number of charge carriers, but the number of steps
-          double EnergyPerChargeCarrier = 0.5;
-          int NChargeCarriers = (int)(energyDeposited/EnergyPerChargeCarrier);
-          //unless the deposited energy is perfectly divisible by 0.5, there will be some extra energy
-          // need to account for it or else there is extra charge loss
-          double ExtraEnergy = energyDeposited - NChargeCarriers*EnergyPerChargeCarrier;
-          
-          //figured out by printing out IAPositionInDetector.Z() for Am241 source:
-          // IAPositionInDetector.Z() < 0: closer to n side for *all* detector stacks
-          double DriftLengthN = IAPositionInDetector.Z() + Detector->GetStructuralSize().Z();
-          double DriftLengthP = Detector->GetStructuralSize().Z()*2 - DriftLengthN;
-          if (DriftLengthN < 0){ DriftLengthN = 0; }
-          if (DriftLengthP < 0){ DriftLengthP = 0; }
-          
-          double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
-          double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
-          // double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
-          // double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
-          
-          // double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN; // NEEDED FOR MULTIPLE DETS
-          // double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP; // NEEDED FOR MULTIPLE DETS
-
-          double DriftRadiusSigmaN = m_DriftConstant*sqrt(DriftLengthN)*factorN;
-          double DriftRadiusSigmaP = m_DriftConstant*sqrt(DriftLengthP)*factorP;
-          
-          double DriftX = 0;
-          double DriftY = 0;
-          
-          double xDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthX();
-          double xDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetX();
-          double xInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchX();
-          
-          double yDetectorHalfWidth = 0.5*dynamic_cast<MDStrip2D*>(Detector)->GetWidthY();
-          double yDetectorOffset = dynamic_cast<MDStrip2D*>(Detector)->GetOffsetY();
-          double yInvDetectorPitch = 1.0/dynamic_cast<MDStrip2D*>(Detector)->GetPitchY();
-          
-          double xInDet = IAPositionInDetector.X() + xDetectorHalfWidth - xDetectorOffset;
-          double yInDet = IAPositionInDetector.Y() + yDetectorHalfWidth - yDetectorOffset;
-          
-          int nStripID = 0;
-          int pStripID = 0;
-
-          // ---> Time critical
-          for (int i = 0; i < NChargeCarriers + 1; ++i) {
-            //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
-            if (i == NChargeCarriers) { 
-              EnergyPerChargeCarrier = ExtraEnergy; 
-            }
-            
-            
-            // First n side
-            // Draw random x and y from 2D gaussian with mean = 0, sigma = 1
-            double y = m_Random.Rndm();
-            double z = m_Random.Rndm();
-            double x = z * 6.28318530717958623;
-            double r = sqrt(-2*log(y));
-            DriftX = r * sin(x) * DriftRadiusSigmaN;
-            DriftY = r * cos(x) * DriftRadiusSigmaN;
-            
-            // We need both to know when we are in the guard ring
-            int nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
-            int pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
-            if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
-              nStripID = 65;
-            } else {
-              nStripID = 64 - nStripIDinterim; 
-            }
-
-            
-            
-            // Then p side
-            
-            y = m_Random.Rndm();
-            z = m_Random.Rndm();
-            x = z * 6.28318530717958623;
-            r = sqrt(-2*log(y));
-            DriftX = r * sin(x) * DriftRadiusSigmaP;
-            DriftY = r * cos(x) * DriftRadiusSigmaP;
-            
-            nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
-            pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
-            if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
-              pStripID = 65;
-            } else {
-              pStripID = 64 - pStripIDinterim; 
-            }
-            
-            
-            
-            // Save which strips have been hit
-            if (pStripsEnergies.count(pStripID) == 0){
-              pStripsEnergies[pStripID] = 0.;
-            }
-            pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
-            // cout << "P strip eng: " << pStripsEnergies[pStripID] << endl;
-            
-            if (nStripsEnergies.count(nStripID) == 0){
-              // cout << "nStrip Energy set to 0" << endl;
-              nStripsEnergies[nStripID] = 0.;
-            }
-            nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
-            // cout << "N strip eng: " << nStripsEnergies[nStripID] << endl;
-          }
-          // <--- Time critical
-          
-  // // //         /*
-  // // //         // Clio's original
-  // // //         for (int i=0; i<NChargeCarriers+1; i++){
-  // // //           //last iteration is for extra energy -- change EnergyPerChargeCarrier just for last iteration
-  // // //           if (i == NChargeCarriers){ EnergyPerChargeCarrier = ExtraEnergy; }
-            
-  // // //           //first n side
-  // // //           //Rannor draws random x and y from 2D gaussian with mean = 0, sigma = 1
-  // // //           m_Random.Rannor(DriftX,DriftY);
-  // // //           DriftX *= DriftRadiusSigmaN;
-  // // //           DriftY *= DriftRadiusSigmaN;
-            
-  // // //           MVector DriftPositionN = IAPositionInDetector + MVector(DriftX, DriftY, 0);
-            
-  // // //           MDGridPoint GPDriftN = Detector->GetGridPoint(DriftPositionN);
-  // // //           int nStripID;
-  // // //           //if position isn't in detector (0) or is guard ring (7) assign as guard ring
-  // // //           if (GPDriftN.GetType() == MDGridPoint::c_GuardRing || GPDriftN.GetType() == MDGridPoint::c_Unknown){
-  // // //             nStripID = 38;
-  // // //           }
-  // // //           else { nStripID = 38-(GPDriftN.GetXGrid()+1); }
-            
-  // // //           //then p side
-  // // //           m_Random.Rannor(DriftX,DriftY);
-  // // //           DriftX *= DriftRadiusSigmaP;
-  // // //           DriftY *= DriftRadiusSigmaP;
-            
-  // // //           MVector DriftPositionP = IAPositionInDetector + MVector(DriftX, DriftY, 0);
-            
-  // // //           MDGridPoint GPDriftP = Detector->GetGridPoint(DriftPositionP);
-  // // //           int pStripID;
-  // // //           if (GPDriftP.GetType() == MDGridPoint::c_GuardRing || GPDriftP.GetType() == MDGridPoint::c_Unknown){
-  // // //             pStripID = 38;
-  // // //           }
-  // // //           else { pStripID = 38-(GPDriftP.GetYGrid()+1); }
-            
-  // // //           //save which strips have been hit
-  // // //           if (pStripsEnergies.count(pStripID) == 0){
-  // // //             pStripsEnergies[pStripID] = 0.;
-  // // //           }
-  // // //           pStripsEnergies[pStripID] += EnergyPerChargeCarrier;
-            
-  // // //           if (nStripsEnergies.count(nStripID) == 0){
-  // // //             nStripsEnergies[nStripID] = 0.;
-  // // //           }
-  // // //           nStripsEnergies[nStripID] += EnergyPerChargeCarrier;
-  // // //         }
-  // // //         */
-        }
-        
-        //lists of strips that charge cloud hit: at least one must be original strip
-        //what if no charge is on the original strip? this happens occasionally
-        bool pOrigHit = false;
-        bool nOrigHit = false;
-        
-        for (auto P: pStripsEnergies) {
-          //change the energy of original strip
-          if (pSide.m_ROE.GetStripID() == P.first){
-            pSide.m_Energy = P.second;
-            pSide.m_EnergyOrig = P.second;
-            
-            pOrigHit = true;
-          }
-          //make new strip hit if needed
-          //guard ring hit
-          else if (P.first == 65){
-            MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsLowVoltageStrip(true);
-            chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
-            chargeShareGRHit.m_ROE.SetStripID(65);
-            chargeShareGRHit.m_Energy = P.second;
-            chargeShareGRHit.m_Position = MVector(0,0,0); // apparently not important
-            GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
-          }
-          //normal strip hit
-          else {
-            MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsLowVoltageStrip(true);
-            chargeShareStrip.m_ROE.SetStripID(P.first);
-            chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
-            chargeShareStrip.m_Timing = pSide.m_Timing;
-            chargeShareStrip.m_Energy = P.second;
-            chargeShareStrip.m_EnergyOrig = P.second;
-            chargeShareStrip.m_Depth = pSide.m_Depth;
-            chargeShareStrip.m_Position = pSide.m_Position;
-            chargeShareStrip.m_Origins = pSide.m_Origins;
-            chargeShareStrip.m_HitIndex = pSide.m_HitIndex;
-            StripHits.push_back(chargeShareStrip);
-          }
-        }
-        
-        for (auto N: nStripsEnergies){
-          if (nSide.m_ROE.GetStripID() == N.first){
-            nSide.m_Energy = N.second;
-            nSide.m_EnergyOrig = N.second;
-            nOrigHit = true;
-          }
-          else if (N.first == 65){
-            MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsLowVoltageStrip(false);
-            chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
-            chargeShareGRHit.m_ROE.SetStripID(65);
-            chargeShareGRHit.m_Energy = N.second;
-            chargeShareGRHit.m_Position = MVector(0,0,0);
-            GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
-          }
-          else {
-            MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsLowVoltageStrip(false);
-            chargeShareStrip.m_ROE.SetStripID(N.first);
-            chargeShareStrip.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
-            chargeShareStrip.m_Timing = nSide.m_Timing;
-            chargeShareStrip.m_Energy = N.second;
-            chargeShareStrip.m_EnergyOrig = N.second;
-            chargeShareStrip.m_Depth = nSide.m_Depth;
-            chargeShareStrip.m_Position = nSide.m_Position;
-            chargeShareStrip.m_Origins = nSide.m_Origins;
-            chargeShareStrip.m_HitIndex = nSide.m_HitIndex;
-            StripHits.push_back(chargeShareStrip);
-          }
-        }
-        
-        if (pOrigHit){ StripHits.push_back(pSide); }
-        if (nOrigHit){ StripHits.push_back(nSide); }
-        
-        m_TotalHitsCounter++;
-        
+        GuardRingHits.push_back(GuardRingHitP);
+        GuardRingHits.push_back(GuardRingHitN);
+        // cout << "GR Strip ID: " << GuardRingHitN.m_ROE.GetStripID() << endl;
       }
-      
-  // //     //delete event and update deadtime if the event was vetoed by the shields
-  // //     //can't do this earlier because need to know which detectors got hit
-  // //     if (m_ShieldVeto){
-  // //       for (int det=0; det<nDets; det++){
-  // //         if (detectorsHitForShieldVeto[det] == 1){
-  // //           //make sure CC not already dead
-  // //           if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
-  // //             m_DetectorDeadTime[det] = 1e-5;
-  // //             m_LastHitTimeByDet[det] = evt_time;
-  // //             m_StripsTotalDeadtime[det] += m_DetectorDeadTime[det];
-  // //           }
-  // //         }
-  // //       }
-  // //       delete SimEvent;
-  // //       continue;
-  // //     }
-      // if (StripHits.size() != 0) {
-      //   cout << "Number of strip hits: " << StripHits.size() << endl;
-      // }
-      list<MDEEStripHit> GuardRingHits;
-      // (1b) The guard ring hits
-      vector<int> GRIndices;
-      // for (unsigned int h = 0; h < SimEvent->GetNGRs(); ++h) {
-      for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
-        MSimHT* HT = SimEvent->GetHTAt(h);
-        if (HT->GetDetectorType() == 4) {
-          m_countGR += 1;
-          MSimHT* GR = SimEvent->GetHTAt(h);
-          // MSimGR* GR = SimEvent->GetGRAt(h);
-          MDVolumeSequence* VS = GR->GetVolumeSequence();
-          MDDetector* Detector = VS->GetDetector();
-          MString DetectorName = Detector->GetName();
-          // DetectorName.RemoveAllInPlace("Detector_");
-          // int DetectorID = DetectorName.ToInt();
-          int DetectorID = 0;
+    }
+    
+    //add guard ring hits from charge sharing that aren't already present
+    for (unsigned int h=0; h<GuardRingHitsFromChargeSharing.size(); h++){
+      //did we already count this hit?
+      if (find(GRIndices.begin(), GRIndices.end(), h) == GRIndices.end()){
+        GuardRingHits.push_back(GuardRingHitsFromChargeSharing[h]);
+      }
+    }
 
-          
-          MDEEStripHit GuardRingHitP;
-          GuardRingHitP.m_ROE.IsLowVoltageStrip(true);
-          GuardRingHitP.m_ROE.SetDetectorID(DetectorID);
-          GuardRingHitP.m_ROE.SetStripID(65); // ?
-          GuardRingHitP.m_Energy = GR->GetEnergy();
-          GuardRingHitP.m_Position = MVector(0, 0, 0); // <-- not important
-          
-          MDEEStripHit GuardRingHitN;
-          GuardRingHitN.m_ROE.IsLowVoltageStrip(false);
-          GuardRingHitN.m_ROE.SetDetectorID(DetectorID);
-          GuardRingHitN.m_ROE.SetStripID(65); // ?
-          GuardRingHitN.m_Energy = GR->GetEnergy();
-          GuardRingHitN.m_Position = MVector(0, 0, 0); // <-- not important
-          
-          //add extra energy from charge sharing to guard ring hits already present
-          for (unsigned int gr=0; gr<GuardRingHitsFromChargeSharing.size(); gr++){
-            if (GuardRingHitP.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
-              GuardRingHitP.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
-              GRIndices.push_back(gr);
-            }
-            if (GuardRingHitN.m_ROE == GuardRingHitsFromChargeSharing[gr].m_ROE){
-              GuardRingHitN.m_Energy += GuardRingHitsFromChargeSharing[gr].m_Energy;
-              GRIndices.push_back(gr);
-            }
-          }
-          
-          GuardRingHits.push_back(GuardRingHitP);
-          GuardRingHits.push_back(GuardRingHitN);
-          // cout << "GR Strip ID: " << GuardRingHitN.m_ROE.GetStripID() << endl;
+
+    // (1c): Merge strip hits
+    list<MDEEStripHit> MergedStripHits;
+    while (StripHits.size() > 0) {
+      MDEEStripHit Start;
+      Start.m_SubStripHits.push_back(StripHits.front());
+      StripHits.pop_front();
+      Start.m_ROE = Start.m_SubStripHits.front().m_ROE;
+      
+          //  cout << "------" << endl;
+          //  cout << Start.m_SubStripHits[0].m_Energy << '\t';
+          //  cout << Start.m_SubStripHits[0].m_OppositeStrip->m_Energy << endl;
+      
+      list<MDEEStripHit>::iterator i = StripHits.begin();
+      while (i != StripHits.end()) {
+        if ((*i).m_ROE == Start.m_ROE) {
+          Start.m_SubStripHits.push_back(*i);
+          // cout << (*i).m_Energy << '\t';
+          // cout << (*i).m_OppositeStrip->m_Energy << endl;
+          i = StripHits.erase(i);
+        } else {
+          ++i;
         }
       }
-      
-      //add guard ring hits from charge sharing that aren't already present
-      for (unsigned int h=0; h<GuardRingHitsFromChargeSharing.size(); h++){
-        //did we already count this hit?
-        if (find(GRIndices.begin(), GRIndices.end(), h) == GRIndices.end()){
-          GuardRingHits.push_back(GuardRingHitsFromChargeSharing[h]);
-        }
-      }
+      //      cout << "-----------" << endl;
+      MergedStripHits.push_back(Start);
+      // cout << Start.m_ROE.GetStripID() << endl;
+
+      // cout << "First Merged Strip: " << MergedStripHits.front().m_ROE.GetStripID() << endl;
 
 
-      // (1c): Merge strip hits
-      list<MDEEStripHit> MergedStripHits;
-      while (StripHits.size() > 0) {
-        MDEEStripHit Start;
-        Start.m_SubStripHits.push_back(StripHits.front());
-        StripHits.pop_front();
-        Start.m_ROE = Start.m_SubStripHits.front().m_ROE;
-        
-            //  cout << "------" << endl;
-            //  cout << Start.m_SubStripHits[0].m_Energy << '\t';
-            //  cout << Start.m_SubStripHits[0].m_OppositeStrip->m_Energy << endl;
-        
-        list<MDEEStripHit>::iterator i = StripHits.begin();
-        while (i != StripHits.end()) {
-          if ((*i).m_ROE == Start.m_ROE) {
-            Start.m_SubStripHits.push_back(*i);
-            // cout << (*i).m_Energy << '\t';
-            // cout << (*i).m_OppositeStrip->m_Energy << endl;
-            i = StripHits.erase(i);
-          } else {
-            ++i;
-          }
-        }
-        //      cout << "-----------" << endl;
-        MergedStripHits.push_back(Start);
-        // cout << Start.m_ROE.GetStripID() << endl;
-
-        // cout << "First Merged Strip: " << MergedStripHits.front().m_ROE.GetStripID() << endl;
-
-
-      }
-      
-      
-      //    bool fromSameInteraction = true;
-      for (MDEEStripHit& Hit: MergedStripHits){
-        int nIndep = 0;
-        int nSubHits = Hit.m_SubStripHits.size();
-        if (nSubHits > 1){
-          for (int i=0; i<nSubHits; i++){
-            bool sharedOrigin = false;
-            for (int j=0; j<nSubHits; j++){
-              if (i != j){
-                MDEEStripHit& SubHit1 = Hit.m_SubStripHits.at(i);
-                MDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(j);
-                
-                for (int o1: SubHit1.m_Origins){
-                  for (int o2: SubHit2.m_Origins){
-                    if (o1 == o2){ sharedOrigin = true; }
-                  }
+    }
+    
+    
+    //    bool fromSameInteraction = true;
+    for (MDEEStripHit& Hit: MergedStripHits){
+      int nIndep = 0;
+      int nSubHits = Hit.m_SubStripHits.size();
+      if (nSubHits > 1){
+        for (int i=0; i<nSubHits; i++){
+          bool sharedOrigin = false;
+          for (int j=0; j<nSubHits; j++){
+            if (i != j){
+              MDEEStripHit& SubHit1 = Hit.m_SubStripHits.at(i);
+              MDEEStripHit& SubHit2 = Hit.m_SubStripHits.at(j);
+              
+              for (int o1: SubHit1.m_Origins){
+                for (int o2: SubHit2.m_Origins){
+                  if (o1 == o2){ sharedOrigin = true; }
                 }
               }
             }
-            if (!sharedOrigin){ nIndep++; }
           }
-          if (nIndep == 1){ nIndep++; }
-          //cout << SimEvent->GetID() << '\t' << Hit.m_ROE.GetDetectorID() << '\t'<<  nIndep << '\t' << nSubHits << '\t';
-          //cout << Hit.m_SubStripHits.at(0).m_Energy << endl;
-          m_MultipleHitsCounter += nIndep;
+          if (!sharedOrigin){ nIndep++; }
+        }
+        if (nIndep == 1){ nIndep++; }
+        //cout << SimEvent->GetID() << '\t' << Hit.m_ROE.GetDetectorID() << '\t'<<  nIndep << '\t' << nSubHits << '\t';
+        //cout << Hit.m_SubStripHits.at(0).m_Energy << endl;
+        m_MultipleHitsCounter += nIndep;
+      }
+    }
+    
+    // cout << "-------------" << endl;
+    // Merge origins
+    for (MDEEStripHit& Hit: MergedStripHits) {
+      Hit.m_Origins.clear();
+      for (MDEEStripHit& SubHit: Hit.m_SubStripHits) {
+        for (int& Origin: SubHit.m_Origins) {
+          Hit.m_Origins.push_back(Origin);
         }
       }
+      // cout << "Is Low voltage: " << Hit.m_ROE.IsLowVoltageStrip() << " Strip ID: " << Hit.m_ROE.GetStripID() << endl;
+      Hit.m_Origins.sort();
+      Hit.m_Origins.unique();
+      // if (Hit.m_ROE.GetStripID() == 65) {
+      //   cout << "GR Hit in merged: " << Hit.m_ROE.GetStripID() << endl; 
+      // }     
+    }
+
+    // cout << "Merged Srtips size: " << MergedStripHits.size() << endl;
+    
+
+    
+// //     // Step (2): Calculate and noise timing
+// //     const double TimingNoise = 3.76; //ns//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be (12.5/2.35)/sqrt(2)
+// //     for (MDEEStripHit& Hit: MergedStripHits) {
       
-      // cout << "-------------" << endl;
-      // Merge origins
-      for (MDEEStripHit& Hit: MergedStripHits) {
-        Hit.m_Origins.clear();
-        for (MDEEStripHit& SubHit: Hit.m_SubStripHits) {
-          for (int& Origin: SubHit.m_Origins) {
-            Hit.m_Origins.push_back(Origin);
-          }
-        }
-        // cout << "Is Low voltage: " << Hit.m_ROE.IsLowVoltageStrip() << " Strip ID: " << Hit.m_ROE.GetStripID() << endl;
-        Hit.m_Origins.sort();
-        Hit.m_Origins.unique();
-        // if (Hit.m_ROE.GetStripID() == 65) {
-        //   cout << "GR Hit in merged: " << Hit.m_ROE.GetStripID() << endl; 
-        // }     
+// //       //find lowest timing value 
+// //       double LowestNoisedTiming = Hit.m_SubStripHits.front().m_Timing + m_Random.Gaus(0,TimingNoise);
+// //       for(size_t i = 1; i < Hit.m_SubStripHits.size(); ++i){
+// //         double Timing = Hit.m_SubStripHits.at(i).m_Timing + m_Random.Gaus(0,TimingNoise);
+// //         //SubHit.m_Timing += m_Random.Gaus(0,TimingNoise);
+// //         if( Timing < LowestNoisedTiming ) LowestNoisedTiming = Timing;
+// //       }
+// //       LowestNoisedTiming -= fmod(LowestNoisedTiming,5.0); //round down to nearest multiple of 5
+// //       Hit.m_Timing = LowestNoisedTiming;
+// //     }
+    
+    // Step (3): Calculate and noise ADC values including cross talk, charge loss, charge sharing, ADC overflow!
+    
+    // (3a) Add energy of all subhits to get energy of each striphit
+    for (MDEEStripHit& Hit: MergedStripHits) { 
+      double Energy = 0;
+      double EnergyOrig = 0;
+      for (MDEEStripHit SubHit: Hit.m_SubStripHits) {
+        Energy += SubHit.m_Energy;
+        EnergyOrig += SubHit.m_EnergyOrig;
       }
-
-      // cout << "Merged Srtips size: " << MergedStripHits.size() << endl;
       
+      Hit.m_Energy = Energy;
+      Hit.m_EnergyOrig = EnergyOrig;
+    }
+    
 
-      
-  // //     // Step (2): Calculate and noise timing
-  // //     const double TimingNoise = 3.76; //ns//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be (12.5/2.35)/sqrt(2)
-  // //     for (MDEEStripHit& Hit: MergedStripHits) {
+// //     // (3b) Charge loss
+// //     list<MDEEStripHit>::iterator sh1, sh2;
+// //     for (sh1 = MergedStripHits.begin(); sh1 != MergedStripHits.end(); ++sh1){
+// //       for (sh2 = sh1; sh2 != MergedStripHits.end(); ++sh2){
+// //         if (sh1 == sh2){ continue; }
         
-  // //       //find lowest timing value 
-  // //       double LowestNoisedTiming = Hit.m_SubStripHits.front().m_Timing + m_Random.Gaus(0,TimingNoise);
-  // //       for(size_t i = 1; i < Hit.m_SubStripHits.size(); ++i){
-  // //         double Timing = Hit.m_SubStripHits.at(i).m_Timing + m_Random.Gaus(0,TimingNoise);
-  // //         //SubHit.m_Timing += m_Random.Gaus(0,TimingNoise);
-  // //         if( Timing < LowestNoisedTiming ) LowestNoisedTiming = Timing;
-  // //       }
-  // //       LowestNoisedTiming -= fmod(LowestNoisedTiming,5.0); //round down to nearest multiple of 5
-  // //       Hit.m_Timing = LowestNoisedTiming;
-  // //     }
-      
-      // Step (3): Calculate and noise ADC values including cross talk, charge loss, charge sharing, ADC overflow!
-      
-      // (3a) Add energy of all subhits to get energy of each striphit
-      for (MDEEStripHit& Hit: MergedStripHits) { 
-        double Energy = 0;
-        double EnergyOrig = 0;
-        for (MDEEStripHit SubHit: Hit.m_SubStripHits) {
-          Energy += SubHit.m_Energy;
-          EnergyOrig += SubHit.m_EnergyOrig;
-        }
+// //         //check if strip hits are adjacent
+// //         bool adjacent = false;
+// //         int stripID1 = (*sh1).m_ROE.GetStripID();
+// //         int stripID2 = (*sh2).m_ROE.GetStripID();
+// //         int detID1 = (*sh1).m_ROE.GetDetectorID();
+// //         int detID2 = (*sh2).m_ROE.GetDetectorID();
+// //         bool side1 = (*sh1).m_ROE.IsLowVoltageStrip();
+// //         bool side2 = (*sh2).m_ROE.IsLowVoltageStrip();
+// //         if (abs(stripID1-stripID2) == 1 && side1 == side2 && detID1 == detID2){
+// //           adjacent = true;
+// //         }
         
-        Hit.m_Energy = Energy;
-        Hit.m_EnergyOrig = EnergyOrig;
+// //         //if adjacent, check if strip hits share origins
+// //         bool sharedOrigin = false;
+// //         if (adjacent){
+// //           for (int o1: (*sh1).m_Origins){
+// //             for (int o2: (*sh2).m_Origins){
+// //               if (o1 == o2){
+// //                 sharedOrigin = true;
+// //                 break;
+// //               }
+// //             }
+// //           }
+// //         }
+        
+// //         //if shared origin and adjacent, apply charge loss effect -- only on p side
+// //         if (adjacent && sharedOrigin){
+// //           double energy1 = (*sh1).m_Energy;
+// //           double energy2 = (*sh2).m_Energy;
+// //           double depth1 = (*sh1).m_Depth;
+// //           double depth2 = (*sh2).m_Depth;
+// //           if (side1 && depth1 == depth2){
+// //             vector<double> newEnergies = ApplyChargeLoss(energy1,energy2,detID1,0,depth1,depth2);
+// //             (*sh1).m_Energy = newEnergies.at(0);
+// //             (*sh2).m_Energy = newEnergies.at(1);
+// //           }
+// //         }
+        
+// //       }
+// //     }
+    
+    
+// //     // (3c) Cross talk
+    
+// //     //Identify hits that need crosstalk
+// //     double sim_arr[MergedStripHits.size()][5];
+// //     list<MDEEStripHit>::iterator i = MergedStripHits.begin();
+// //     int i2 = 0;
+// //     while (i != MergedStripHits.end()) {
+// //       int sdet = (*i).m_ROE.GetDetectorID();
+// //       bool bside = (*i).m_ROE.IsLowVoltageStrip();
+// //       int sside = 0;
+// //       if (bside == true) {sside = 1;}
+// //       int sstrip = (*i).m_ROE.GetStripID();
+// //       double senergy = (*i).m_Energy;
+      
+// //       sim_arr[i2][0] = i2;
+// //       sim_arr[i2][1] = sdet;
+// //       sim_arr[i2][2] = sside;
+// //       sim_arr[i2][3] = sstrip;
+// //       sim_arr[i2][4] = senergy;
+      
+// //       ++i;
+// //       ++i2;
+// //     }
+    
+// //     //Add cross talk energy to chosen strips
+// //     //E_sim = M^-1(E_real+C) <- cross talk correction
+// //     //E_real = (E_sim*M)-C <- adding cross talk
+// //     //CCS 190408: changing sim_energies, matrix, and constant from arrays to vectors
+// //     //  old way didn't compile on mac os
+// //     vector<double> sim_energies = vector<double>(MergedStripHits.size());
+// //     vector<vector<double> > matrix = vector<vector<double> >(MergedStripHits.size(), vector<double> (MergedStripHits.size()));
+// //     vector<double> constant = vector<double>(MergedStripHits.size());
+    
+// //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+// //       sim_energies[i] = sim_arr[i][4];
+// //     }
+    
+// //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+// //       for (unsigned int j=0; j<MergedStripHits.size(); j++) {
+// //         int mdet = sim_arr[i][1];
+// //         int mside = sim_arr[i][2];
+// //         int mstrip = sim_arr[i][3];
+        
+// //         double a0 = m_CrosstalkCoefficients[mdet][mside][0][0];
+// //         double b0 = m_CrosstalkCoefficients[mdet][mside][0][1];
+// //         double a1 = m_CrosstalkCoefficients[mdet][mside][1][0];
+// //         double b1 = m_CrosstalkCoefficients[mdet][mside][1][1];
+        
+// //         if (i == j) {
+// //           matrix[i][j] += 1.0;
+// //         }
+// //         if (sim_arr[j][1] == mdet && sim_arr[j][2] == mside && sim_arr[j][3] == mstrip+1) {
+// //           constant[i] += a0/2.;
+// //           constant[j] += a0/2.;
+// //           matrix[i][j] += b0;
+// //           matrix[j][i] += b0;
+// //         }
+// //         if (sim_arr[j][1] == mdet && sim_arr[j][2] == mside && sim_arr[j][3] == mstrip+2) {
+// //           constant[i] += a1/2.;
+// //           constant[j] += a1/2.;
+// //           matrix[i][j] += b1;
+// //           matrix[j][i] += b1;
+// //         }
+// //       }
+// //     }
+    
+// //     vector<double> real_energies = vector<double>(MergedStripHits.size());
+// //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+// //       for (unsigned int j=0; j<MergedStripHits.size(); j++) {
+// //         real_energies[i] += matrix[j][i]*sim_energies[j];
+// //       }
+// //     }
+// //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
+// //       real_energies[i] -= constant[i];
+// //     }
+    
+// //     list<MDEEStripHit>::iterator l = MergedStripHits.begin();
+// //     int l2 = 0;
+// //     while (l != MergedStripHits.end()) {
+// //       (*l).m_Energy = real_energies[l2];
+      
+// //       ++l;
+// //       ++l2;
+// //     }
+    
+    
+    // (3d) Give each striphit an noised ADC value; handle ADC overflow
+    list<MDEEStripHit>::iterator A = MergedStripHits.begin();
+    while (A != MergedStripHits.end()) {
+      double Energy = (*A).m_Energy;
+      (*A).m_ADC = EnergyToADC((*A),Energy);
+      if ((*A).m_ADC > 8029){  // number for McBride, I don't know what this number is
+        A = MergedStripHits.erase(A);
+        HasOverflow = true;
+      }
+      else {
+        ++A;
+      }
+    }
+    
+    
+    // Step (4): Apply thresholds and triggers including guard ring hits
+    //           * use the trigger threshold calibration and invert it here 
+    //           * take care of guard ring hits with their special thresholds
+    //           * take care of hits in dead strips
+    //           * throw out hits which did not trigger
+    
+//     // (4a) Take care of dead strips:
+//     list<MDEEStripHit>::iterator j = MergedStripHits.begin();
+//     while (j != MergedStripHits.end()) {
+//       int det = (*j).m_ROE.GetDetectorID();
+//       int stripID = (*j).m_ROE.GetStripID();
+//       bool side_b = (*j).m_ROE.IsLowVoltageStrip();
+//       int side = 0;
+//       if (side_b) {side = 1;}
+      
+//       //if strip has been flagged as dead, erase strip hit
+//       if (m_DeadStrips[det][side][stripID-1] == 1){
+//         j = MergedStripHits.erase(j);
+//       }
+//       else {
+//         ++j;
+//       }
+//     }
+    
+    
+    // (4b) Handle trigger thresholds make sure we throw out timing too!
+    list<MDEEStripHit>::iterator k = MergedStripHits.begin();
+    while (k != MergedStripHits.end()) {
+      
+      //so that we can use default value if necessary
+      MReadOutElementDoubleStrip ROE_map_key = (*k).m_ROE;
+      if (m_LLDThresholds.count((*k).m_ROE) == 0){
+        ROE_map_key.SetDetectorID(12);
+        ROE_map_key.SetStripID(0);
+        ROE_map_key.IsLowVoltageStrip(0);
       }
       
-
-  // //     // (3b) Charge loss
-  // //     list<MDEEStripHit>::iterator sh1, sh2;
-  // //     for (sh1 = MergedStripHits.begin(); sh1 != MergedStripHits.end(); ++sh1){
-  // //       for (sh2 = sh1; sh2 != MergedStripHits.end(); ++sh2){
-  // //         if (sh1 == sh2){ continue; }
-          
-  // //         //check if strip hits are adjacent
-  // //         bool adjacent = false;
-  // //         int stripID1 = (*sh1).m_ROE.GetStripID();
-  // //         int stripID2 = (*sh2).m_ROE.GetStripID();
-  // //         int detID1 = (*sh1).m_ROE.GetDetectorID();
-  // //         int detID2 = (*sh2).m_ROE.GetDetectorID();
-  // //         bool side1 = (*sh1).m_ROE.IsLowVoltageStrip();
-  // //         bool side2 = (*sh2).m_ROE.IsLowVoltageStrip();
-  // //         if (abs(stripID1-stripID2) == 1 && side1 == side2 && detID1 == detID2){
-  // //           adjacent = true;
-  // //         }
-          
-  // //         //if adjacent, check if strip hits share origins
-  // //         bool sharedOrigin = false;
-  // //         if (adjacent){
-  // //           for (int o1: (*sh1).m_Origins){
-  // //             for (int o2: (*sh2).m_Origins){
-  // //               if (o1 == o2){
-  // //                 sharedOrigin = true;
-  // //                 break;
-  // //               }
-  // //             }
-  // //           }
-  // //         }
-          
-  // //         //if shared origin and adjacent, apply charge loss effect -- only on p side
-  // //         if (adjacent && sharedOrigin){
-  // //           double energy1 = (*sh1).m_Energy;
-  // //           double energy2 = (*sh2).m_Energy;
-  // //           double depth1 = (*sh1).m_Depth;
-  // //           double depth2 = (*sh2).m_Depth;
-  // //           if (side1 && depth1 == depth2){
-  // //             vector<double> newEnergies = ApplyChargeLoss(energy1,energy2,detID1,0,depth1,depth2);
-  // //             (*sh1).m_Energy = newEnergies.at(0);
-  // //             (*sh2).m_Energy = newEnergies.at(1);
-  // //           }
-  // //         }
-          
-  // //       }
-  // //     }
-      
-      
-  // //     // (3c) Cross talk
-      
-  // //     //Identify hits that need crosstalk
-  // //     double sim_arr[MergedStripHits.size()][5];
-  // //     list<MDEEStripHit>::iterator i = MergedStripHits.begin();
-  // //     int i2 = 0;
-  // //     while (i != MergedStripHits.end()) {
-  // //       int sdet = (*i).m_ROE.GetDetectorID();
-  // //       bool bside = (*i).m_ROE.IsLowVoltageStrip();
-  // //       int sside = 0;
-  // //       if (bside == true) {sside = 1;}
-  // //       int sstrip = (*i).m_ROE.GetStripID();
-  // //       double senergy = (*i).m_Energy;
-        
-  // //       sim_arr[i2][0] = i2;
-  // //       sim_arr[i2][1] = sdet;
-  // //       sim_arr[i2][2] = sside;
-  // //       sim_arr[i2][3] = sstrip;
-  // //       sim_arr[i2][4] = senergy;
-        
-  // //       ++i;
-  // //       ++i2;
-  // //     }
-      
-  // //     //Add cross talk energy to chosen strips
-  // //     //E_sim = M^-1(E_real+C) <- cross talk correction
-  // //     //E_real = (E_sim*M)-C <- adding cross talk
-  // //     //CCS 190408: changing sim_energies, matrix, and constant from arrays to vectors
-  // //     //  old way didn't compile on mac os
-  // //     vector<double> sim_energies = vector<double>(MergedStripHits.size());
-  // //     vector<vector<double> > matrix = vector<vector<double> >(MergedStripHits.size(), vector<double> (MergedStripHits.size()));
-  // //     vector<double> constant = vector<double>(MergedStripHits.size());
-      
-  // //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
-  // //       sim_energies[i] = sim_arr[i][4];
-  // //     }
-      
-  // //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
-  // //       for (unsigned int j=0; j<MergedStripHits.size(); j++) {
-  // //         int mdet = sim_arr[i][1];
-  // //         int mside = sim_arr[i][2];
-  // //         int mstrip = sim_arr[i][3];
-          
-  // //         double a0 = m_CrosstalkCoefficients[mdet][mside][0][0];
-  // //         double b0 = m_CrosstalkCoefficients[mdet][mside][0][1];
-  // //         double a1 = m_CrosstalkCoefficients[mdet][mside][1][0];
-  // //         double b1 = m_CrosstalkCoefficients[mdet][mside][1][1];
-          
-  // //         if (i == j) {
-  // //           matrix[i][j] += 1.0;
-  // //         }
-  // //         if (sim_arr[j][1] == mdet && sim_arr[j][2] == mside && sim_arr[j][3] == mstrip+1) {
-  // //           constant[i] += a0/2.;
-  // //           constant[j] += a0/2.;
-  // //           matrix[i][j] += b0;
-  // //           matrix[j][i] += b0;
-  // //         }
-  // //         if (sim_arr[j][1] == mdet && sim_arr[j][2] == mside && sim_arr[j][3] == mstrip+2) {
-  // //           constant[i] += a1/2.;
-  // //           constant[j] += a1/2.;
-  // //           matrix[i][j] += b1;
-  // //           matrix[j][i] += b1;
-  // //         }
-  // //       }
-  // //     }
-      
-  // //     vector<double> real_energies = vector<double>(MergedStripHits.size());
-  // //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
-  // //       for (unsigned int j=0; j<MergedStripHits.size(); j++) {
-  // //         real_energies[i] += matrix[j][i]*sim_energies[j];
-  // //       }
-  // //     }
-  // //     for (unsigned int i=0; i<MergedStripHits.size(); i++) {
-  // //       real_energies[i] -= constant[i];
-  // //     }
-      
-  // //     list<MDEEStripHit>::iterator l = MergedStripHits.begin();
-  // //     int l2 = 0;
-  // //     while (l != MergedStripHits.end()) {
-  // //       (*l).m_Energy = real_energies[l2];
-        
-  // //       ++l;
-  // //       ++l2;
-  // //     }
-      
-      
-      // (3d) Give each striphit an noised ADC value; handle ADC overflow
-      list<MDEEStripHit>::iterator A = MergedStripHits.begin();
-      while (A != MergedStripHits.end()) {
-        double Energy = (*A).m_Energy;
-        (*A).m_ADC = EnergyToADC((*A),Energy);
-        // if ((*A).m_ADC == 0) {
-        //   cout << "0 ADC value, is low voltage " << (*A).m_ROE.IsLowVoltageStrip() << " with energy: " << (*A).m_Energy << endl;
-        // }
-        // if ((*A).m_ROE.IsLowVoltageStrip()) {
-        //   cout << "Low Voltage strip eng: " << (*A).m_Energy << " With ADC: " << (*A).m_ADC << endl;
-        // }
-        // if (!(*A).m_ROE.IsLowVoltageStrip()) {
-        //   cout << "High Voltage strip eng: " << (*A).m_Energy << " With ADC: " << (*A).m_ADC << endl;
-        // }
-        // cout << (*A).m_Energy << endl;
-        if ((*A).m_ADC > 8029){  // number for McBride, I don't know what this number is
-          A = MergedStripHits.erase(A);
-          HasOverflow = true;
-          // cout << "Erased because of ADC" << endl;
+      if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
+        k = MergedStripHits.erase(k);
+      } else {
+        double prob = m_Random.Rndm();
+        if (prob > m_FSTThresholds[ROE_map_key]->Eval((*k).m_ADC)){
+          // cout << "timing is thrown out" << endl;
+          (*k).m_Timing = 0.0;
         }
-        else {
-          ++A;
-        }
+        ++k;
       }
-      
-      
-  //     // Step (4): Apply thresholds and triggers including guard ring hits
-  //     //           * use the trigger threshold calibration and invert it here 
-  //     //           * take care of guard ring hits with their special thresholds
-  //     //           * take care of hits in dead strips
-  //     //           * throw out hits which did not trigger
-      
-  //     // (4a) Take care of dead strips:
-  //     list<MDEEStripHit>::iterator j = MergedStripHits.begin();
-  //     while (j != MergedStripHits.end()) {
-  //       int det = (*j).m_ROE.GetDetectorID();
-  //       int stripID = (*j).m_ROE.GetStripID();
-  //       bool side_b = (*j).m_ROE.IsLowVoltageStrip();
-  //       int side = 0;
-  //       if (side_b) {side = 1;}
-        
-  //       //if strip has been flagged as dead, erase strip hit
-  //       if (m_DeadStrips[det][side][stripID-1] == 1){
-  //         j = MergedStripHits.erase(j);
-  //       }
-  //       else {
-  //         ++j;
-  //       }
-  //     }
-      
-      
-      // (4b) Handle trigger thresholds make sure we throw out timing too!
-      list<MDEEStripHit>::iterator k = MergedStripHits.begin();
-      while (k != MergedStripHits.end()) {
-        
-        //so that we can use default value if necessary
-        MReadOutElementDoubleStrip ROE_map_key = (*k).m_ROE;
-        if (m_LLDThresholds.count((*k).m_ROE) == 0){
-          ROE_map_key.SetDetectorID(12);
-          ROE_map_key.SetStripID(0);
-          ROE_map_key.IsLowVoltageStrip(0);
-        }
-        
-        if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
-          // cout << "Low Voltage: " << (*k).m_ROE.IsLowVoltageStrip() << " ADC Value: " << (*k).m_ADC << endl;
-          k = MergedStripHits.erase(k);
-        } else {
-          double prob = m_Random.Rndm();
-          if (prob > m_FSTThresholds[ROE_map_key]->Eval((*k).m_ADC)){
-            // cout << "timing is thrown out" << endl;
-            (*k).m_Timing = 0.0;
-          }
-          ++k;
-        }
+    }
+    
+
+    
+    // (4c) Take care of guard ring vetoes
+    list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
+    vector<int> grHit = vector<int>(nDets,0);
+    while (gr != GuardRingHits.end()) {
+      if ((*gr).m_Energy > m_GuardRingThresholds[(*gr).m_ROE]){ // Need to enable once we have the GR thresholds
+        int detID = (*gr).m_ROE.GetDetectorID();
+        grHit[detID] = 1;
       }
-      
-
-      
-      // (4c) Take care of guard ring vetoes
-      list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
-      vector<int> grHit = vector<int>(nDets,0);
-      while (gr != GuardRingHits.end()) {
-        if ((*gr).m_Energy > m_GuardRingThresholds[(*gr).m_ROE]){ // Need to enable once we have the GR thresholds
-          int detID = (*gr).m_ROE.GetDetectorID();
-          grHit[detID] = 1;
-        }
-        ++gr;
+      ++gr;
+    }
+    list<MDEEStripHit>::iterator grVeto = MergedStripHits.begin();
+    while (grVeto != MergedStripHits.end()){
+      int detID = (*grVeto).m_ROE.GetDetectorID();
+      if (grHit[detID] == 1){ 
+        grVeto = MergedStripHits.erase(grVeto);
       }
-      list<MDEEStripHit>::iterator grVeto = MergedStripHits.begin();
-      while (grVeto != MergedStripHits.end()){
-        int detID = (*grVeto).m_ROE.GetDetectorID();
-        if (grHit[detID] == 1){ 
-          grVeto = MergedStripHits.erase(grVeto);
-        }
-        else{ ++grVeto; }
-      }
-      //update dead time stuff if the hit is vetoed by the guard ring
-      for (int det=0; det<nDets; det++){
-        if (grHit[det] == 1){
-          //make sure CC not already dead
-          if (!IsASICDead){
-            m_StripsCurrentDeadtime += 2.8e-6;
-            m_ASICLastHitTime = evt_time;
-            m_StripsTotalDeadtime += m_StripsCurrentDeadtime;
-          }
-        }
-      }
-      
-      
-      // (4d) Make sure there is at least one strip left on each side of each detector
-      //  If not, remove remaining strip(s) from detector because they won't trigger detector
-      vector<int> xExists = vector<int>(nDets,0);
-      vector<int> yExists = vector<int>(nDets,0);
-      
-      //look for (at least) one strip on each side
-      list<MDEEStripHit>::iterator tr = MergedStripHits.begin();
-      while (tr != MergedStripHits.end()) {
-        int DetID = (*tr).m_ROE.GetDetectorID();
-        // if ((*tr).m_Timing != 0){
-        if ((*tr).m_ROE.IsLowVoltageStrip()){ xExists[DetID] = 1; }
-        else{ yExists[DetID] = 1; }
-        // }
-        ++tr;
-      }
-      
-      //remove hits that won't trigger detector
-      tr = MergedStripHits.begin();
-      while (tr != MergedStripHits.end()) {
-        int DetID = (*tr).m_ROE.GetDetectorID();
-        if ( xExists[DetID] == 0 || yExists[DetID] == 0){
-          tr = MergedStripHits.erase(tr);
-        }
-        else{ ++tr;}
-      }
-      
-      // //apply dead time for hits that don't have coincidence
-      // //i.e. hits with strip hits on only x OR y, not both
-      // for (int det=0; det<nDets; det++){
-      //   if ((xExists[det] == 0 && yExists[det] == 1) || (xExists[det] == 1 && yExists[det] == 0)){
-      //     //make sure CC not already dead
-      //     if (evt_time > m_LastHitTimeByDet[det] + m_DetectorDeadTime[det]){
-      //       m_DetectorDeadTime[det] += 2.8e-6;
-      //       m_LastHitTimeByDet[det] = evt_time;
-      //       m_StripsTotalDeadtime[det] += m_DetectorDeadTime[det];
-      //     }
-      //   }
-      // }
-      
-  // //     // Step (5): Split into card cage events - i.e. split by detector
-  // //     /*    vector<vector<MDEEStripHit>> CardCagedStripHits;
-  // //      *    for (MDEEStripHit Hit: MergedStripHits) {
-  // //      *      bool Found = false;
-  // //      *      for (vector<MDEEStripHit>& V: CardCagedStripHits) {
-  // //      *        if (V[0].m_ROE.GetDetectorID() == Hit.m_ROE.GetDetectorID()) {
-  // //      *          V.push_back(Hit);
-  // //      *          Found = true;
-  // // }
-  // // }
-  // // if (Found == false) {
-  // //   vector<MDEEStripHit> New;
-  // //   New.push_back(Hit);
-  // //   CardCagedStripHits.push_back(New);
-  // // }
-  // // }
-  
-  
-  // // // Step (6): Determine and noise the global event time
-  // // vector<double> CardCageTiming(CardCagedStripHits.size());
-  // // for (double& T: CardCageTiming) {
-  // //   T = SimEvent->GetTime().GetAsSeconds();
-  // // }
-  // // */
-      
-      // // Trying to check if positive and negative strips are shown
-      // list<MDEEStripHit>::iterator i = MergedStripHits.begin();
-      // cout << "Merged Srtips size: " << MergedStripHits.size() << endl;
-      // while (i != MergedStripHits.end()) {
-      //   if ((*i).m_ROE.IsLowVoltageStrip()) {
-      //     cout << "Positive Strip ID: " << (*i).m_ROE.GetStripID() << endl;
-      //   }
-      //   if (!(*i).m_ROE.IsLowVoltageStrip()) {
-      //     cout << "Negative Strip ID: " << (*i).m_ROE.GetStripID() << endl;
-      //   }
-      //   ++i;
-      // }
-
-      // // Checking for deadtime implementation by checking without it
-      // list<MDEEStripHit>::iterator a = MergedStripHits.begin();
-      // while (a != MergedStripHits.end()) {
-      //   if ((*a).m_ROE.GetStripID() == 65) {
-      //     cout << "Strip 65 .. will fix later, skipping" << endl;
-      //     continue;
-      //   }
-      //   m_EventStripIDs.push_back((*a).m_ROE.GetStripID());
-      //   m_EventTimes.push_back(evt_time);
-      //   m_EventStripEnergy.push_back((*a).m_Energy);
-      //   m_EventStripADC.push_back((*a).m_ADC);
-      //   a++;
-      // }
-
-
-      // //// Deadtime implementation (ASICs read out hits in parallel but have a shared Enable line)
-      // //Step (6.5): Dead time
-      bool ASICFirstHitAfterDead = false;
-      double det = 500;
-      IsASICDead = false;
-      // cout << MergedStripHits.size() << endl;
-
-      list<MDEEStripHit>::iterator i = MergedStripHits.begin();
-      int ASICofDet = 5;
-      // cout << "------------" << endl;
-      while (i != MergedStripHits.end()) {
-        m_TotalHitsBeforeDeadtime += 1;
-
-        det = (*i).m_ROE.GetDetectorID();
-        ASICofDet = 5;
-
-        if ((*i).m_ROE.GetStripID() == 65) {
-          cout << "Strip is 65, skipping .. will fix later" << endl;
-          continue;
-        }
-        else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
-          ASICofDet = 0;
-        }
-        else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
-          ASICofDet = 1;
-        }
-        else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
-          ASICofDet = 2;
-        }
-        else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
-          ASICofDet = 3;
-        }
-        else {
-          cout << "Strip not associated, something went wrong in assigning strip ID" << endl;
-          continue;
-        }
-        
-        if (m_ASICLastHitTime + m_StripsCurrentDeadtime < evt_time) {
-          // cout << "This should only print once per merged list" << endl;
-          // Event occured after deadtime
-
-          // clear the original list
-          for (int det=0; det<nDets; det++) {
-            for (int ASIC=0; ASIC<nASICs; ASIC++) {
-              m_ASICHitStripID[det][ASIC].clear();
-            }
-          }
-
-          ASICFirstHitAfterDead = true;
+      else{ ++grVeto; }
+    }
+    //update dead time stuff if the hit is vetoed by the guard ring
+    for (int det=0; det<nDets; det++){
+      if (grHit[det] == 1){
+        //make sure CC not already dead
+        if (!IsASICDead){
+          m_StripsCurrentDeadtime = 2.8e-6;
           m_ASICLastHitTime = evt_time;
-          m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-
-          // Adds events to a plotter / .csv saver
-          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
-          m_EventTimes.push_back(evt_time);
-          m_EventStripEnergy.push_back((*i).m_Energy);
-          m_EventStripADC.push_back((*i).m_ADC);
-        }
-
-        else if (m_ASICLastHitTime + m_StripCoincidenceWindow > evt_time) {
-          // if (m_ASICLastHitTime == evt_time) {
-          //   cout  << "------------ Coin" << endl;
-          //   cout << setprecision(10) << "evt_time must be less than this: " << m_ASICLastHitTime + m_StripCoincidenceWindow << endl;
-          //   cout << setprecision(10) << "evt_time: " << evt_time << endl;
-          // }
-          // Event occured within coincidence window so append all strip IDs
-          m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-
-          // Adds events to a plotter / .csv saver
-          m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
-          m_EventTimes.push_back(evt_time);
-          m_EventStripEnergy.push_back((*i).m_Energy);
-          m_EventStripADC.push_back((*i).m_ADC);
-        }
-
-        else if (m_ASICLastHitTime + m_StripsCurrentDeadtime > evt_time) {
-          // Event occured within deadtime
-          // cout << m_ASICHitStripID[det][ASICofDet].size() << endl;
-          IsASICDead = true;
-          m_StripHitsErased += 1;
-          i = MergedStripHits.erase(i);
-        }
-
-        ++i;
-      }
-
-      if (ASICFirstHitAfterDead) {
-        m_StripsTotalDeadtime += m_StripsCurrentDeadtime; // add ASIC deadtime number to total detector deadtime
-        m_StripsCurrentDeadtime = 0.0;
-      }
-
-      // Increases deadtime if hit occured within delay before period.
-      for (int det=0; det<nDets; det++) {
-        for (int ASIC=0; ASIC<nASICs; ASIC++) {
-          if (!IsASICDead) {
-            m_ASICDeadTime[det][ASIC] = dTimeGeDs(m_ASICHitStripID[det][ASIC]);
-            if (m_ASICDeadTime[det][ASIC] > m_StripsCurrentDeadtime) {
-              m_StripsCurrentDeadtime = m_ASICDeadTime[det][ASIC];
-            }
-          }
+          m_StripsTotalDeadtime += m_StripsCurrentDeadtime;
         }
       }
-      // End Deadtime implementation
+    }
+    
 
-      
-  // //     for (int d=0; d<nDets; d++){
-  // //       //second conditional for running multiple sim files when t starts at 0
-  // //       if (m_LastHitTimeByDet[d] + m_DetectorDeadTime[d] > evt_time && m_LastHitTimeByDet[d]<evt_time){ detIsDead[d] = 1; }
-  // //     }
-      
-      // //erase strip hits in dead detectors
-      // list<MDEEStripHit>::iterator DT = MergedStripHits.begin();
-      // while (DT != MergedStripHits.end()) {
-      //   int DetID = (*DT).m_ROE.GetDetectorID();
-      //   //			detHit[DetID] = 1;
-      //   if (detIsDead[DetID] == 1){
-      //     DT = MergedStripHits.erase(DT);
-      //   }
-      //   else {
-      //     updateLastHitTime[DetID] = 1;
-      //     ++DT;
-      //   }
-      // }
-      
-  // //     //update last hit time for live detectors that were hit
-  // //     for (int d=0; d<nDets; d++){
-  // //       if (updateLastHitTime[d] == 1){
-  // //         m_LastHitTimeByDet[d] = evt_time;
-  // //         m_DetectorDeadTime[d] = 1e-5;
-  // //         m_StripsTotalDeadtime[d] += m_DetectorDeadTime[d];
-  // //       }
-  // //     }
-      
-      // // Step (6.75):
-      // //figure out if dead time buffers are full, and update them accordingly
-      // double empty_buffer_val = -1;
-      // double time_buffer_empty = .000625;
-      
-      // //increase buffer times if necessary
-      // for (int d=0; d<nDets; d++){
-      //   int indexOfLargest = -1;
-      //   double maxTime = -1;
-      //   for (int s=0; s<nDTBuffSlots; s++){
-      //     //if buffer slot not empty
-      //     if (m_DeadTimeBuffer[d][s] != -1){
-      //       //if buffer slot has exceeded time to empty, set it to empty
-      //       if (m_DeadTimeBuffer[d][s] >= time_buffer_empty){
-      //         m_DeadTimeBuffer[d][s] = empty_buffer_val;
-      //       }
-      //       //otherwise, find index of largest buffer slot and increase ONLY that slot
-      //       else {
-      //         if (m_DeadTimeBuffer[d][s] > maxTime){
-      //           maxTime = m_DeadTimeBuffer[d][s];
-      //           indexOfLargest = s;
-      //         }
-      //       }
-      //     }
-      //   }
-      //   if (indexOfLargest != -1){ m_DeadTimeBuffer[d][indexOfLargest] += evt_time-m_LastHitTime; }
-      // }
-      
-      
-      // //figure out which detectors were hit
-      // vector<int> bufferFull = vector<int>(nDets,0);
-      
-      // //check if buffer is full for each detector
-      // for (int d=0; d<nDets; d++){
-      //   int nextEmptySlot = 16;
-      //   for (int s=0; s<nDTBuffSlots; s++){
-      //     if (m_DeadTimeBuffer[d][s] == empty_buffer_val){
-      //       nextEmptySlot = s;
-      //       break;
-      //     }
-      //   }
-      //   bufferFull[d] = nextEmptySlot;
-      // }
-      
-      // for (int i=0; i<nDets; i++){
-      //   if (bufferFull[i] > m_MaxBufferFullIndex){ m_MaxBufferFullIndex = bufferFull[i]; m_MaxBufferDetector = i; }
-      // }
-      
-      
-  // //     /*		if (bufferFull[0] == 16){
-  // //      *			cout << "************" << endl;
-  // //      *			cout << "evt_time: " << evt_time << '\t' << "last time: " << m_LastHitTime << endl;
-  // //      *			cout << "Buffer values: " << endl;
-  // //      *			for (int i=0; i<16; i++){
-  // //      *				cout << m_DeadTimeBuffer[0][i] << '\t';
-  // // }
-  // // cout << endl;
-  
-  // // cout << "next empty slot: " << bufferFull[0] << endl;
-  // // }
-  // // */
-  // //     //erase strip hits in detectors when buffer is full
-  // //     list<MDEEStripHit>::iterator DH = MergedStripHits.begin();
-  // //     while (DH != MergedStripHits.end()) {
-  // //       int DetID = (*DH).m_ROE.GetDetectorID();
-  // //       if (bufferFull[DetID] == 16){
-  // //         DH = MergedStripHits.erase(DH);
-  // //       }
-  // //       else {
-  // //         m_DeadTimeBuffer[DetID][bufferFull[DetID]] = 0;
-  // //         ++DH;
-  // //       }
-  // //     }
-      
-  // //     //update LastHitTime
-  // //     m_LastHitTime = evt_time;
-      
+    // // Checking for deadtime implementation by checking without it
+    // list<MDEEStripHit>::iterator a = MergedStripHits.begin();
+    // while (a != MergedStripHits.end()) {
+    //   if ((*a).m_ROE.GetStripID() == 65) {
+    //     cout << "Strip 65 should not be here" << endl;
+    //     continue;
+    //   }
+    //   m_EventStripIDs.push_back((*a).m_ROE.GetStripID());
+    //   m_EventTimes.push_back(evt_time);
+    //   m_EventStripEnergy.push_back((*a).m_Energy);
+    //   m_EventStripADC.push_back((*a).m_ADC);
+    //   a++;
+    // }
 
-      
-      // Step (7): 
-      
-      //update trigger rates
-      set<int> detectorsHit;
-      list<MDEEStripHit>::iterator TR = MergedStripHits.begin();
-      while (TR != MergedStripHits.end()) {
-        int DetID = (*TR).m_ROE.GetDetectorID();
-        detectorsHit.insert(DetID);
-        ++TR;
+
+    // //// Deadtime implementation (ASICs read out hits in parallel but have a shared Enable line)
+    // //Step (5): Dead time
+
+    // Is this neccessary??
+    // for (int d=0; d<nDets; d++){
+    //   //second conditional for running multiple sim files when t starts at 0
+    //   if (m_ASICLastHitTime + m_StripsCurrentDeadtime > evt_time && m_ASICLastHitTime<evt_time){ detIsDead[d] = 1; }
+    // }
+    
+    bool ASICFirstHitAfterDead = false;
+    double det = 500;
+    IsASICDead = false;
+    list<MDEEStripHit>::iterator i = MergedStripHits.begin();
+    int ASICofDet = 5;
+
+    while (i != MergedStripHits.end()) {
+      // go through each merged strip hit list and add strip ids to a list of strips that are read out in parallel.
+      m_TotalHitsBeforeDeadtime += 1;
+
+      det = (*i).m_ROE.GetDetectorID();
+      ASICofDet = 5;
+
+      if ((*i).m_ROE.GetStripID() == 65) {
+        cout << "Strip is 65; should not happen." << endl;
+        continue;
       }
-      
-      for (set<int>::iterator s=detectorsHit.begin(); s!=detectorsHit.end(); ++s){
-        int detID = *s;
-        m_TriggerRates[detID] += 1;
+      else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+        ASICofDet = 0;
       }
-      
-      //update last time (and first time for first event)
-      if (SimEvent->GetTime().GetAsSeconds() < m_FirstTime){
-        m_FirstTime = SimEvent->GetTime().GetAsSeconds();
+      else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+        ASICofDet = 1;
       }
-      m_LastTime = SimEvent->GetTime().GetAsSeconds();
-      
-
-      // Step (8): Apply fudge factor to completely absorbed events (photopeak)
-      //to deal with successor stuff, need to do this for each SimHT
-      //but same origin can make multiple SimHTs, so have to add them back together
-      if (m_ApplyFudgeFactor){
-        /*
-  // //       // Clio's version
-  // //       map<int,double> initialEnergyByIA;
-  // //       map<int,double> finalEnergyByIA;
-  // //       map<int,vector<unsigned int> > HitIndexByIA;
-        
-  // //       for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
-  // //         MSimHT* Hit = SimEvent->GetHTAt(h);
-  // //         int initIA = Hit->GetSmallestOrigin();
-  // //         //again I have this problem if the IAs aren't in the sim
-  // //         if (initIA == 0){ initIA++; }
-  // //         MString IAprocess = SimEvent->GetIAById(initIA)->GetProcess();
-  // //         while (IAprocess != "INIT"){
-  // //           initIA = SimEvent->GetIAById(initIA)->GetOriginID();
-  // //           IAprocess = SimEvent->GetIAById(initIA)->GetProcess();
-  // //         }
-          
-  // //         double initialEnergy = SimEvent->GetIAById(initIA)->GetSecondaryEnergy();
-  // //         double finalEnergy = 0.0;
-  // //         for (list<MDEEStripHit>::iterator p=MergedStripHits.begin(); p!=MergedStripHits.end(); ++p){
-  // //           if ((*p).m_ROE.IsLowVoltageStrip() == false && (*p).m_HitIndex == h){
-  // //             finalEnergy += (*p).m_EnergyOrig;
-  // //           }
-  // //         }
-          
-  // //         initialEnergyByIA[initIA] = initialEnergy;
-  // //         finalEnergyByIA[initIA] += finalEnergy;
-  // //         HitIndexByIA[initIA].push_back(h);
-  // //       }
-        
-  // //       //now that we have initial and final energy for each INIT IA,
-  // //       // figure out if IA was completely absorbed or not
-  // //       map<int,bool> eraseHit;
-  // //       for (auto i: initialEnergyByIA){
-  // //         double initialEnergy = i.second;
-  // //         double finalEnergy = finalEnergyByIA[i.first];
-          
-  // //         double sigma = 8.35e-4*initialEnergy+1.69;
-  // //         double windowSize = 1.5*sigma;
-  // //         double threshold = 7.04e-5*initialEnergy+0.79;
-          
-  // //         if (finalEnergy > initialEnergy-windowSize && finalEnergy < initialEnergy+windowSize){
-  // //           double prob = m_Random.Rndm();
-  // //           if (prob > threshold){
-  // //             eraseHit[i.first] = true;
-  // //           }
-  // //           else { eraseHit[i.first] = false; }
-  // //         }
-  // //       }
-  // //       //erase strip hits from IAs where probability was above the threshold
-  // //       for (auto i: eraseHit){
-  // //         if (i.second == true){
-  // //           list<MDEEStripHit>::iterator p = MergedStripHits.begin();
-  // //           while (p != MergedStripHits.end()){
-  // //             bool eraseP = false;
-  // //             for (unsigned int j=0; j<HitIndexByIA[i.first].size(); j++){
-  // //               if ((*p).m_HitIndex == HitIndexByIA[i.first][j]){
-  // //                 eraseP = true;
-  // //                 break;
-  // //               }
-  // //             }
-  // //             if (eraseP){
-  // //               p = MergedStripHits.erase(p);
-  // //             }
-  // //             else { ++p; }
-  // //           }
-  // //         }
-  // //       }
-  // //       */ 
-        
-        // Normally we just have the INIT's in the simulations, thus we have to simplify this:
-        // If the total measured energy is in any of the INIT windows, test for erasing
-        
-        // Sum up all energies:
-        double TotalMeasuredEnergy = 0.0;
-        for (list<MDEEStripHit>::iterator p = MergedStripHits.begin(); p != MergedStripHits.end(); ++p){
-          if ((*p).m_ROE.IsLowVoltageStrip() == false) {
-            TotalMeasuredEnergy += (*p).m_EnergyOrig;
-          }
-        }
-        
-        // Now check every INIT if the energy is withing the window:
-        for (unsigned int ia = 0; ia < SimEvent->GetNIAs(); ++ia) {
-          
-          double initialEnergy = SimEvent->GetIAAt(0)->GetSecondaryEnergy();
-          
-          // Clio's 
-          double sigma = 8.35e-4*initialEnergy+1.69;
-          double windowSize = 1.5*sigma;
-          double threshold = 7.04e-5*initialEnergy+0.79;
-          
-          //cout<<"Measued: "<<TotalMeasuredEnergy<<": init: "<<initialEnergy<<endl;
-          if (TotalMeasuredEnergy > initialEnergy-windowSize && TotalMeasuredEnergy < initialEnergy+windowSize) {
-            //cout<<" In photo peak "<<endl;
-            // In window, test for erasal
-            double prob = m_Random.Rndm();
-            if (prob > threshold){
-              MergedStripHits.clear();
-            }
-
-            break;
-          //} else {
-            //cout<<"Not in photo peak"<<endl;
-          }
-        }
-
-      } // End photo peak fudge factor
-      
-      
-      // Check if there are any strips left
-      if (MergedStripHits.size() == 0){
-        delete SimEvent;
+      else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+        ASICofDet = 2;
+      }
+      else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+        ASICofDet = 3;
+      }
+      else {
+        cout << "Strip not associated, something went wrong in assigning strip ID" << endl;
         continue;
       }
       
-      double finalEventEnergy = 0;
-      int nNStripHits = 0;
-      for (MDEEStripHit Hit: MergedStripHits){
-        if (!Hit.m_ROE.IsLowVoltageStrip()){
-          finalEventEnergy += Hit.m_Energy;
-          nNStripHits++;
-        }
-      }
-      if (finalEventEnergy > eventInitialEnergy+100){
-        cout << eventInitialEnergy << '\t' << finalEventEnergy << endl;
-        cout << "SIM HITS: " << endl;
-        for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
-          cout << SimEvent->GetHTAt(h)->GetEnergy() << endl;
-        }
-        cout << "DEE STRIP HITS: " << endl;
-        for (MDEEStripHit Hit: MergedStripHits){
-          if (!Hit.m_ROE.IsLowVoltageStrip()){
-            cout << Hit.m_Energy << endl;
+      if (m_ASICLastHitTime + m_StripsCurrentDeadtime < evt_time) {
+        // Event occured after deadtime
+
+        // clear the original lists
+        for (int det=0; det<nDets; det++) {
+          for (int ASIC=0; ASIC<nASICs; ASIC++) {
+            m_ASICHitStripID[det][ASIC].clear();
           }
         }
-        cout << endl << endl;
-      }
-      
-      
-      // (1) Move the information to the read-out-assembly
-      Event->SetID(SimEvent->GetID());
-      Event->SetTimeUTC(SimEvent->GetTime());
-      
-      for (unsigned int i = 0; i < IAs.size(); ++i) {
-        Event->AddSimIA(*IAs[i]);
-      }
-      for (MDEEStripHit Hit: MergedStripHits){
-        MStripHit* SH = new MStripHit();
-        SH->SetDetectorID(Hit.m_ROE.GetDetectorID());
-        SH->SetStripID(Hit.m_ROE.GetStripID());
-        SH->IsXStrip(Hit.m_ROE.IsLowVoltageStrip());
-        // cout << "setting ADC units: " << Hit.m_ADC << endl;
-        SH->SetADCUnits(Hit.m_ADC);
-        SH->SetTiming(Hit.m_Timing);
-        SH->SetPreampTemp(20);
-        vector<int> O;
-        for (int i: Hit.m_Origins) O.push_back(i);
-        SH->AddOrigins(O); 
-        Event->AddStripHit(SH); 
-      }
-      
-      // (2) Dump event to file in ROA format
-      if (m_SaveToFile == true) {
-        m_Roa<<"SE"<<endl;
-        m_Roa<<"ID "<<SimEvent->GetID()<<endl;
-        //m_Roa<<"ID "<<++RunningID<<endl;
-        m_Roa<<"TI "<<SimEvent->GetTime() << endl;
-        for (unsigned int i = 0; i < IAs.size(); ++i) {
-          m_Roa<<IAs[i]->ToSimString()<<endl;
-        }
-        for (MDEEStripHit Hit: MergedStripHits){
-          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsLowVoltageStrip() ? "l" : "h")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
-          
-          MString Origins;
-          for (int Origin: Hit.m_Origins) {
-            if (Origins != "") Origins += ";";
-            Origins += Origin;
-          }
-          if (Origins == "") Origins += "-";
-          m_Roa<<" "<<Origins<<endl;
-        }
-      }
-      
-      // (3) Take care of some final statistics
-      if (HasOverflow == true) {
-        m_NumberOfEventsWithADCOverflows += 1;
-      } else {
-        m_NumberOfEventsWithNoADCOverflows += 1;
+
+        ASICFirstHitAfterDead = true;
+        m_ASICLastHitTime = evt_time;
+        m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+
+        // Adds events to a plotter / .csv saver
+        m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+        m_EventTimes.push_back(evt_time);
+        m_EventStripEnergy.push_back((*i).m_Energy);
+        m_EventStripADC.push_back((*i).m_ADC);
       }
 
-      // Never forget to delete the event
-      delete SimEvent;
+      else if (m_ASICLastHitTime + m_StripCoincidenceWindow > evt_time) {
+        // Event occured within coincidence window so append all strip IDs
+        m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+
+        // Adds events to a plotter / .csv saver
+        m_EventStripIDs.push_back((*i).m_ROE.GetStripID());
+        m_EventTimes.push_back(evt_time);
+        m_EventStripEnergy.push_back((*i).m_Energy);
+        m_EventStripADC.push_back((*i).m_ADC);
+      }
+
+      else if (m_ASICLastHitTime + m_StripsCurrentDeadtime > evt_time) {
+        // Event occured within deadtime
+        IsASICDead = true;
+        m_StripHitsErased += 1;
+        i = MergedStripHits.erase(i);
+      }
+
+      ++i;
+    }
+
+    if (ASICFirstHitAfterDead) {
+      m_StripsTotalDeadtime += m_StripsCurrentDeadtime; // add ASIC deadtime number to total detector deadtime
+      m_StripsCurrentDeadtime = 0.0;
+    }
+
+    for (int det=0; det<nDets; det++) {
+      // Calculates deadtime after each merged strip hit list.
+      for (int ASIC=0; ASIC<nASICs; ASIC++) {
+        if (!IsASICDead) {
+          m_ASICDeadTime[det][ASIC] = dTimeGeDs(m_ASICHitStripID[det][ASIC]);
+          if (m_ASICDeadTime[det][ASIC] > m_StripsCurrentDeadtime) {
+            m_StripsCurrentDeadtime = m_ASICDeadTime[det][ASIC];
+          }
+        }
+      }
+    }
+    // End Deadtime implementation
+
+
+    // Step (5.5): Make sure there is at least one strip left on each side of each detector
+    // If not, remove remaining strip(s) from detector because they won't trigger detector
+    // Don't add to deadtime since its already accounted for
+    vector<int> xExists = vector<int>(nDets,0);
+    vector<int> yExists = vector<int>(nDets,0);
+    
+    //look for (at least) one strip on each side
+    list<MDEEStripHit>::iterator tr = MergedStripHits.begin();
+    while (tr != MergedStripHits.end()) {
+      int DetID = (*tr).m_ROE.GetDetectorID();
+      // if ((*tr).m_Timing != 0){
+      if ((*tr).m_ROE.IsLowVoltageStrip()){ xExists[DetID] = 1; }
+      else if (!(*tr).m_ROE.IsLowVoltageStrip()){ yExists[DetID] = 1; }
+      // }
+      ++tr;
+    }
+    
+    //remove hits that won't trigger detector
+    tr = MergedStripHits.begin();
+    while (tr != MergedStripHits.end()) {
+      int DetID = (*tr).m_ROE.GetDetectorID();
+      if ( xExists[DetID] == 0 || yExists[DetID] == 0){
+        tr = MergedStripHits.erase(tr);
+      }
+      else{ ++tr;}
+    }
+    
+    // // Step (5.75):
+    // //figure out if dead time buffers are full, and update them accordingly
+    // double empty_buffer_val = -1;
+    // double time_buffer_empty = .000625;
+    
+    // //increase buffer times if necessary
+    // for (int d=0; d<nDets; d++){
+    //   int indexOfLargest = -1;
+    //   double maxTime = -1;
+    //   for (int s=0; s<nDTBuffSlots; s++){
+    //     //if buffer slot not empty
+    //     if (m_DeadTimeBuffer[d][s] != -1){
+    //       //if buffer slot has exceeded time to empty, set it to empty
+    //       if (m_DeadTimeBuffer[d][s] >= time_buffer_empty){
+    //         m_DeadTimeBuffer[d][s] = empty_buffer_val;
+    //       }
+    //       //otherwise, find index of largest buffer slot and increase ONLY that slot
+    //       else {
+    //         if (m_DeadTimeBuffer[d][s] > maxTime){
+    //           maxTime = m_DeadTimeBuffer[d][s];
+    //           indexOfLargest = s;
+    //         }
+    //       }
+    //     }
+    //   }
+    //   if (indexOfLargest != -1){ m_DeadTimeBuffer[d][indexOfLargest] += evt_time-m_LastHitTime; }
+    // }
+    
+    
+    // //figure out which detectors were hit
+    // vector<int> bufferFull = vector<int>(nDets,0);
+    
+    // //check if buffer is full for each detector
+    // for (int d=0; d<nDets; d++){
+    //   int nextEmptySlot = 16;
+    //   for (int s=0; s<nDTBuffSlots; s++){
+    //     if (m_DeadTimeBuffer[d][s] == empty_buffer_val){
+    //       nextEmptySlot = s;
+    //       break;
+    //     }
+    //   }
+    //   bufferFull[d] = nextEmptySlot;
+    // }
+    
+    // for (int i=0; i<nDets; i++){
+    //   if (bufferFull[i] > m_MaxBufferFullIndex){ m_MaxBufferFullIndex = bufferFull[i]; m_MaxBufferDetector = i; }
+    // }
+    
+    
+// //     /*		if (bufferFull[0] == 16){
+// //      *			cout << "************" << endl;
+// //      *			cout << "evt_time: " << evt_time << '\t' << "last time: " << m_LastHitTime << endl;
+// //      *			cout << "Buffer values: " << endl;
+// //      *			for (int i=0; i<16; i++){
+// //      *				cout << m_DeadTimeBuffer[0][i] << '\t';
+// // }
+// // cout << endl;
+
+// // cout << "next empty slot: " << bufferFull[0] << endl;
+// // }
+// // */
+// //     //erase strip hits in detectors when buffer is full
+// //     list<MDEEStripHit>::iterator DH = MergedStripHits.begin();
+// //     while (DH != MergedStripHits.end()) {
+// //       int DetID = (*DH).m_ROE.GetDetectorID();
+// //       if (bufferFull[DetID] == 16){
+// //         DH = MergedStripHits.erase(DH);
+// //       }
+// //       else {
+// //         m_DeadTimeBuffer[DetID][bufferFull[DetID]] = 0;
+// //         ++DH;
+// //       }
+// //     }
+    
+// //     //update LastHitTime
+// //     m_LastHitTime = evt_time;
+    
+
+    
+    // Step (6): 
+    
+    //update trigger rates
+    set<int> detectorsHit;
+    list<MDEEStripHit>::iterator TR = MergedStripHits.begin();
+    while (TR != MergedStripHits.end()) {
+      int DetID = (*TR).m_ROE.GetDetectorID();
+      detectorsHit.insert(DetID);
+      ++TR;
+    }
+    
+    for (set<int>::iterator s=detectorsHit.begin(); s!=detectorsHit.end(); ++s){
+      int detID = *s;
+      m_TriggerRates[detID] += 1;
+    }
+    
+    //update last time (and first time for first event)
+    if (SimEvent->GetTime().GetAsSeconds() < m_FirstTime){
+      m_FirstTime = SimEvent->GetTime().GetAsSeconds();
+    }
+    m_LastTime = SimEvent->GetTime().GetAsSeconds();
+    
+
+    // Step (7): Apply fudge factor to completely absorbed events (photopeak)
+    //to deal with successor stuff, need to do this for each SimHT
+    //but same origin can make multiple SimHTs, so have to add them back together
+    if (m_ApplyFudgeFactor){
+      /*
+// //       // Clio's version
+// //       map<int,double> initialEnergyByIA;
+// //       map<int,double> finalEnergyByIA;
+// //       map<int,vector<unsigned int> > HitIndexByIA;
       
-      return true;
+// //       for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+// //         MSimHT* Hit = SimEvent->GetHTAt(h);
+// //         int initIA = Hit->GetSmallestOrigin();
+// //         //again I have this problem if the IAs aren't in the sim
+// //         if (initIA == 0){ initIA++; }
+// //         MString IAprocess = SimEvent->GetIAById(initIA)->GetProcess();
+// //         while (IAprocess != "INIT"){
+// //           initIA = SimEvent->GetIAById(initIA)->GetOriginID();
+// //           IAprocess = SimEvent->GetIAById(initIA)->GetProcess();
+// //         }
+        
+// //         double initialEnergy = SimEvent->GetIAById(initIA)->GetSecondaryEnergy();
+// //         double finalEnergy = 0.0;
+// //         for (list<MDEEStripHit>::iterator p=MergedStripHits.begin(); p!=MergedStripHits.end(); ++p){
+// //           if ((*p).m_ROE.IsLowVoltageStrip() == false && (*p).m_HitIndex == h){
+// //             finalEnergy += (*p).m_EnergyOrig;
+// //           }
+// //         }
+        
+// //         initialEnergyByIA[initIA] = initialEnergy;
+// //         finalEnergyByIA[initIA] += finalEnergy;
+// //         HitIndexByIA[initIA].push_back(h);
+// //       }
+      
+// //       //now that we have initial and final energy for each INIT IA,
+// //       // figure out if IA was completely absorbed or not
+// //       map<int,bool> eraseHit;
+// //       for (auto i: initialEnergyByIA){
+// //         double initialEnergy = i.second;
+// //         double finalEnergy = finalEnergyByIA[i.first];
+        
+// //         double sigma = 8.35e-4*initialEnergy+1.69;
+// //         double windowSize = 1.5*sigma;
+// //         double threshold = 7.04e-5*initialEnergy+0.79;
+        
+// //         if (finalEnergy > initialEnergy-windowSize && finalEnergy < initialEnergy+windowSize){
+// //           double prob = m_Random.Rndm();
+// //           if (prob > threshold){
+// //             eraseHit[i.first] = true;
+// //           }
+// //           else { eraseHit[i.first] = false; }
+// //         }
+// //       }
+// //       //erase strip hits from IAs where probability was above the threshold
+// //       for (auto i: eraseHit){
+// //         if (i.second == true){
+// //           list<MDEEStripHit>::iterator p = MergedStripHits.begin();
+// //           while (p != MergedStripHits.end()){
+// //             bool eraseP = false;
+// //             for (unsigned int j=0; j<HitIndexByIA[i.first].size(); j++){
+// //               if ((*p).m_HitIndex == HitIndexByIA[i.first][j]){
+// //                 eraseP = true;
+// //                 break;
+// //               }
+// //             }
+// //             if (eraseP){
+// //               p = MergedStripHits.erase(p);
+// //             }
+// //             else { ++p; }
+// //           }
+// //         }
+// //       }
+// //       */ 
+      
+      // Normally we just have the INIT's in the simulations, thus we have to simplify this:
+      // If the total measured energy is in any of the INIT windows, test for erasing
+      
+      // Sum up all energies:
+      double TotalMeasuredEnergy = 0.0;
+      for (list<MDEEStripHit>::iterator p = MergedStripHits.begin(); p != MergedStripHits.end(); ++p){
+        if ((*p).m_ROE.IsLowVoltageStrip() == false) {
+          TotalMeasuredEnergy += (*p).m_EnergyOrig;
+        }
+      }
+      
+      // Now check every INIT if the energy is withing the window:
+      for (unsigned int ia = 0; ia < SimEvent->GetNIAs(); ++ia) {
+        
+        double initialEnergy = SimEvent->GetIAAt(0)->GetSecondaryEnergy();
+        
+        // Clio's 
+        double sigma = 8.35e-4*initialEnergy+1.69;
+        double windowSize = 1.5*sigma;
+        double threshold = 7.04e-5*initialEnergy+0.79;
+        
+        //cout<<"Measued: "<<TotalMeasuredEnergy<<": init: "<<initialEnergy<<endl;
+        if (TotalMeasuredEnergy > initialEnergy-windowSize && TotalMeasuredEnergy < initialEnergy+windowSize) {
+          //cout<<" In photo peak "<<endl;
+          // In window, test for erasal
+          double prob = m_Random.Rndm();
+          if (prob > threshold){
+            MergedStripHits.clear();
+          }
+
+          break;
+        //} else {
+          //cout<<"Not in photo peak"<<endl;
+        }
+      }
+
+    } // End photo peak fudge factor
+    
+    
+    // Check if there are any strips left
+    if (MergedStripHits.size() == 0){
+      delete SimEvent;
+      continue;
+    }
+    
+    double finalEventEnergy = 0;
+    int nNStripHits = 0;
+    for (MDEEStripHit Hit: MergedStripHits){
+      if (!Hit.m_ROE.IsLowVoltageStrip()){
+        finalEventEnergy += Hit.m_Energy;
+        nNStripHits++;
+      }
+    }
+    if (finalEventEnergy > eventInitialEnergy+100){
+      cout << eventInitialEnergy << '\t' << finalEventEnergy << endl;
+      cout << "SIM HITS: " << endl;
+      for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+        cout << SimEvent->GetHTAt(h)->GetEnergy() << endl;
+      }
+      cout << "DEE STRIP HITS: " << endl;
+      for (MDEEStripHit Hit: MergedStripHits){
+        if (!Hit.m_ROE.IsLowVoltageStrip()){
+          cout << Hit.m_Energy << endl;
+        }
+      }
+      cout << endl << endl;
+    }
+    
+    
+    // (1) Move the information to the read-out-assembly
+    Event->SetID(SimEvent->GetID());
+    Event->SetTimeUTC(SimEvent->GetTime());
+    
+    for (unsigned int i = 0; i < IAs.size(); ++i) {
+      Event->AddSimIA(*IAs[i]);
+    }
+    for (MDEEStripHit Hit: MergedStripHits){
+      MStripHit* SH = new MStripHit();
+      SH->SetDetectorID(Hit.m_ROE.GetDetectorID());
+      SH->SetStripID(Hit.m_ROE.GetStripID());
+      SH->IsXStrip(Hit.m_ROE.IsLowVoltageStrip());
+      // cout << "setting ADC units: " << Hit.m_ADC << endl;
+      SH->SetADCUnits(Hit.m_ADC);
+      SH->SetTiming(Hit.m_Timing);
+      SH->SetPreampTemp(20);
+      vector<int> O;
+      for (int i: Hit.m_Origins) O.push_back(i);
+      SH->AddOrigins(O); 
+      Event->AddStripHit(SH); 
+    }
+    
+    // (2) Dump event to file in ROA format
+    if (m_SaveToFile == true) {
+      m_Roa<<"SE"<<endl;
+      m_Roa<<"ID "<<SimEvent->GetID()<<endl;
+      //m_Roa<<"ID "<<++RunningID<<endl;
+      m_Roa<<"TI "<<SimEvent->GetTime() << endl;
+      for (unsigned int i = 0; i < IAs.size(); ++i) {
+        m_Roa<<IAs[i]->ToSimString()<<endl;
+      }
+      for (MDEEStripHit Hit: MergedStripHits){
+        m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsLowVoltageStrip() ? "l" : "h")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
+        
+        MString Origins;
+        for (int Origin: Hit.m_Origins) {
+          if (Origins != "") Origins += ";";
+          Origins += Origin;
+        }
+        if (Origins == "") Origins += "-";
+        m_Roa<<" "<<Origins<<endl;
+      }
+    }
+    
+    // (3) Take care of some final statistics
+    if (HasOverflow == true) {
+      m_NumberOfEventsWithADCOverflows += 1;
+    } else {
+      m_NumberOfEventsWithNoADCOverflows += 1;
+    }
+
+    // Never forget to delete the event
+    delete SimEvent;
+    
+    return true;
   }
   
   //  spectrum->Draw();
