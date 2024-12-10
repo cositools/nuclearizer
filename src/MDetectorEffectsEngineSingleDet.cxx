@@ -145,13 +145,6 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // //load crosstalk coefficients
   // if (ParseCrosstalkFile() == false) return false;
   
-  
-  // //initialize last time to 0 (will this exclude first event?)
-  // m_LastHitTime = 0;
-  // for (int i=0; i<nDets; i++){
-  //   m_LastHitTimeByDet[i] = 0;
-  // }
-  
   //initialize m_FirstTime to max double and m_LastTime to 0
   m_FirstTime = std::numeric_limits<double>::max();
   m_LastTime = 0;
@@ -230,7 +223,6 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   m_ShieldPulseDuration = 1.7e-6;
   m_ShieldDelay = 900.e-9; //this is just a guess based on when veto window occurs!
   m_ShieldVetoWindowSize = 0.4e-6;
-  // for shield veto: gets updated with shield event times
   // start at -10s so that it doesn't veto beginning events by accident
   m_ShieldTime = -10;
   m_ShieldDeadTime = 0;
@@ -247,8 +239,8 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
 
   // need to divide each voltage by 299.79 to get statvolts (using cgs units for some reason)
   // NEEDED FOR MULTIPLE DETS
-  // m_DriftConstant.reserve(nDets);
-  // m_DriftConstant[0] = driftConstant/sqrt(1000./299.79);
+  m_DriftConstant.reserve(nDets);
+  m_DriftConstant[0] = driftConstant/sqrt(1000./299.79);
   // m_DriftConstant[1] = driftConstant/sqrt(1200/299.79);
   // m_DriftConstant[2] = driftConstant/sqrt(1500/299.79);
   // m_DriftConstant[3] = driftConstant/sqrt(1500/299.79);
@@ -262,7 +254,7 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // m_DriftConstant[11] = driftConstant/sqrt(1000/299.79);
 
   // SINGLE DET
-  m_DriftConstant = driftConstant/sqrt(1000./299.79);
+  // m_DriftConstant = driftConstant/sqrt(1000./299.79);
 
   
   // //for debugging charge loss
@@ -359,7 +351,10 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
  
+
+    // This is where shield veto code will go ...
       
+
     //get interactions to look for ionization in hits
     vector<MSimIA*> IAs;
     for (unsigned int i=0; i<SimEvent->GetNIAs(); i++){
@@ -402,8 +397,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       int DetectorID = DetectorName.ToInt()-1;
       
       
-      MDEEStripHit pSide; // High voltage
-      MDEEStripHit nSide; // Low voltage
+      MDEEStripHit pSide; // Low voltage
+      MDEEStripHit nSide; // High voltage
       
       //should be unique identifiers
       pSide.m_ID = h*10;
@@ -574,11 +569,11 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         // double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
         // double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
         
-        // double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN; // NEEDED FOR MULTIPLE DETS
-        // double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP; // NEEDED FOR MULTIPLE DETS
+        double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN; // NEEDED FOR MULTIPLE DETS
+        double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP; // NEEDED FOR MULTIPLE DETS
 
-        double DriftRadiusSigmaN = m_DriftConstant*sqrt(DriftLengthN)*factorN;
-        double DriftRadiusSigmaP = m_DriftConstant*sqrt(DriftLengthP)*factorP;
+        // double DriftRadiusSigmaN = m_DriftConstant*sqrt(DriftLengthN)*factorN;
+        // double DriftRadiusSigmaP = m_DriftConstant*sqrt(DriftLengthP)*factorP;
         
         double DriftX = 0;
         double DriftY = 0;

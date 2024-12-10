@@ -395,8 +395,8 @@ private:
   long m_NumShieldCounts;
   
 	//! drift constant: used for charge sharing due to diffusion; one for each detector
-	// vector<double> m_DriftConstant;
-  double m_DriftConstant;
+	vector<double> m_DriftConstant;
+  // double m_DriftConstant;
 
 	TH2D* m_ChargeLossHist;
 
