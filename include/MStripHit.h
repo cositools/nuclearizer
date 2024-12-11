@@ -60,14 +60,14 @@ class MStripHit
   int GetStripID() const { return m_ReadOutElement->GetStripID(); }
 
   //! Set the strip type (x/y)
-  void IsXStrip(bool PositiveStrip) { m_ReadOutElement->IsPositiveStrip(PositiveStrip); }
+  void IsXStrip(bool PositiveStrip) { m_ReadOutElement->IsLowVoltageStrip(PositiveStrip); }
   //! Return the strip type (x/y)
-  bool IsXStrip() const { return m_ReadOutElement->IsPositiveStrip(); }
+  bool IsXStrip() const { return m_ReadOutElement->IsLowVoltageStrip(); }
 
   //! Set the strip type (positive or negative)
-  void IsPositiveStrip(bool PositiveStrip) { m_ReadOutElement->IsPositiveStrip(PositiveStrip); }
+  void IsLowVoltageStrip(bool PositiveStrip) { m_ReadOutElement->IsLowVoltageStrip(PositiveStrip); }
   //! Return the strip type (positive or negative)
-  bool IsPositiveStrip() const { return m_ReadOutElement->IsPositiveStrip(); }
+  bool IsLowVoltageStrip() const { return m_ReadOutElement->IsLowVoltageStrip(); }
 
   //! Set whether the strip has triggered
   void HasTriggered(bool HasTriggered) { m_HasTriggered = HasTriggered; }

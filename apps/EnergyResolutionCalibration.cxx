@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
 				MReadOutElementDoubleStrip R;
 				R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
 				R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-				R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
+				R.IsLowVoltageStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
 				CP_ROEToLine[R] = i;
 			}
 		}
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 			
 	
 		//int GraphID;
-		GraphID = CP.first.GetDetectorID() + CP.first.IsPositiveStrip()*12;
+		GraphID = CP.first.GetDetectorID() + CP.first.IsLowVoltageStrip()*12;
 		TGraph *g = new TGraph();
 		g->SetMarkerStyle(5);
 		TGraph *gr = new TGraph();
@@ -207,47 +207,47 @@ int main(int argc, char* argv[])
 				if (energy[k1] == 59.541) {
 					energy_Det3n[0] = energy[k1];
 					numstrips_Det3n[0]++;
-					if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[0][CP.first.GetStripID()] = res[k1];
+					if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[0][CP.first.GetStripID()] = res[k1];
 					} else {averageres_Det3p[0][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 80.997) {
                                         energy_Det3n[1] = energy[k1];
                                         numstrips_Det3n[1]++;
-                                        if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[1][CP.first.GetStripID()] = res[k1];
+                                        if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[1][CP.first.GetStripID()] = res[k1];
                                         } else {averageres_Det3p[1][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 122.061) {
 					energy_Det3n[2] = energy[k1];
                                         numstrips_Det3n[2]++;
-                                        if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[2][CP.first.GetStripID()] = res[k1];
+                                        if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[2][CP.first.GetStripID()] = res[k1];
 					 } else {averageres_Det3p[2][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 356.017) {
 					energy_Det3n[3]= energy[k1];
 					numstrips_Det3n[3]++;
-					if (CP.first.IsPositiveStrip() == 0) { averageres_Det3n[3][CP.first.GetStripID()] = res[k1];
+					if (CP.first.IsLowVoltageStrip() == 0) { averageres_Det3n[3][CP.first.GetStripID()] = res[k1];
 					} else {averageres_Det3p[3][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 383.851) {
 					energy_Det3n[4] = energy[k1];
 					numstrips_Det3n[4]++;
-					if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[4][CP.first.GetStripID()] = res[k1];
+					if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[4][CP.first.GetStripID()] = res[k1];
 					} else {averageres_Det3p[4][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 661.657) {
 					energy_Det3n[5] = energy[k1];
 					numstrips_Det3n[5]++;
-					if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[5][CP.first.GetStripID()] = res[k1];
+					if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[5][CP.first.GetStripID()] = res[k1];
 					} else {averageres_Det3p[5][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 898.042) {
 					energy_Det3n[6] = energy[k1];
 					numstrips_Det3n[6]++;
-					if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[6][CP.first.GetStripID()] = res[k1];
+					if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[6][CP.first.GetStripID()] = res[k1];
 					} else {averageres_Det3p[6][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 1173.24) {
 					energy_Det3n[7] = energy[k1];
 					numstrips_Det3n[7]++;
-					if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[7][CP.first.GetStripID()] = res[k1];
+					if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[7][CP.first.GetStripID()] = res[k1];
 					} else {averageres_Det3p[7][CP.first.GetStripID()] = res[k1]; };
 				} else if (energy[k1] == 1332.5) {
 					energy_Det3n[8] = energy[k1];
 					numstrips_Det3n[8]++;
-					if (CP.first.IsPositiveStrip() == 0) {averageres_Det3n[8][CP.first.GetStripID()] = res[k1];
+					if (CP.first.IsLowVoltageStrip() == 0) {averageres_Det3n[8][CP.first.GetStripID()] = res[k1];
 					} else {averageres_Det3p[8][CP.first.GetStripID()] = res[k1]; };
 				}	
 				
@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
 		energyresolution_calibration.open(energyres_calib_file, ios::out | ios::app);
 		//energyresolution_calibration.open("EnergyResolution_Calibration.txt", ios::out | ios::app);
 		
-		if (CP.first.IsPositiveStrip() == 0) {
+		if (CP.first.IsLowVoltageStrip() == 0) {
 //			energyresolution_calibration<<"CR dss "<<CP.first.GetDetectorID()<<" "<<CP.first.GetStripID()<<" n P0 "<<f0<<"\n";
 			energyresolution_calibration<<"CR dss "<<CP.first.GetDetectorID()<<" "<<CP.first.GetStripID()<<" n P1 "<<f0<<" "<<f1<<"\n";
 		} else {

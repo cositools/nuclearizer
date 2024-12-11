@@ -155,7 +155,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
         R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-        R.IsPositiveStrip((Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p") || (Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "l"));
+        R.IsLowVoltageStrip((Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p") || (Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "l"));
         if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true) {
           CP_ROEToLine[R] = i;
         } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
@@ -179,7 +179,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
           MReadOutElementDoubleStrip R;
           R.SetDetectorID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
           R.SetStripID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-          R.IsPositiveStrip(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4) == 1);
+          R.IsLowVoltageStrip(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4) == 1);
           CT_ROEToLine[R] = i;
         }
       }
@@ -390,7 +390,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         double EnergyResolution = FitRes->Eval(Energy);
         SH->SetEnergyResolution(EnergyResolution);
       }
-      if (R.IsPositiveStrip() == true) {
+      if (R.IsLowVoltageStrip() == true) {
         if (HasExpos() == true) {
           m_ExpoEnergyCalibration->AddEnergy(Energy);
         }

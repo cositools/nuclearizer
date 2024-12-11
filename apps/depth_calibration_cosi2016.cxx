@@ -575,8 +575,8 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MModuleEnergyCalibrationU
 		MDEEStripHit pSide;
 		MDEEStripHit nSide;
 
-		pSide.m_ROE.IsPositiveStrip(true);
-		nSide.m_ROE.IsPositiveStrip(false);
+		pSide.m_ROE.IsLowVoltageStrip(true);
+		nSide.m_ROE.IsLowVoltageStrip(false);
 
 		// Convert detector name in detector ID
 		pSide.m_ROE.SetDetectorID(DetectorID);

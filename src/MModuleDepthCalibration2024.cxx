@@ -255,7 +255,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       double XTiming = XSH->GetTiming();
       double YTiming = YSH->GetTiming();
       if ( m_TACCalFileIsLoaded ) {
-        if ( XSH->IsPositiveStrip() ){
+        if ( XSH->IsLowVoltageStrip() ){
           XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
           YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
         }
@@ -296,7 +296,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       	}
 
         double CTD;
-        if ( XSH->IsPositiveStrip() ){
+        if ( XSH->IsLowVoltageStrip() ){
           CTD = (YTiming - XTiming);
         }
         else {
@@ -631,7 +631,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
     MStripHit* SH = H->GetStripHit(j);
     if( SH == NULL ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got NULL strip hit :( " << endl; return -1;}
     if( SH->GetEnergy() == 0 ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got strip without energy :( " << endl; return -1;}
-    if( SH->IsPositiveStrip() ){
+    if( SH->IsLowVoltageStrip() ){
       PStrips.push_back(SH); 
       PStripIDs.push_back(SH->GetStripID());
     }
