@@ -220,12 +220,14 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // Shield deadtime parameters
   // for shield veto: shield pulse duration and card cage delay: constant for now
   m_ShieldThreshold = 80.;
-  m_ShieldPulseDuration = 1.7e-6;
-  m_ShieldDelay = 900.e-9; //this is just a guess based on when veto window occurs!
-  m_ShieldVetoWindowSize = 0.4e-6;
-  // start at -10s so that it doesn't veto beginning events by accident
-  m_ShieldTime = -10;
-  m_ShieldDeadTime = 0;
+  m_ShieldPulseDuration = 1.7e-6; // Need to remeasure this value
+  m_ShieldDelayBefore = 0.1e-6;
+  m_ShieldDelayAfter = 0.4e-6; //this is just a guess based on when veto window occurs!
+  m_ShieldVetoWindowSize = 1.5e-6;
+  for (int i=0; i<nShieldPanels; i++){
+    m_ShieldLastHitTime[i] = -10;   // start at -10s so that it doesn't veto beginning events by accident
+    m_ShieldDeadtime[i] = 0;
+  }
   m_IsShieldDead = false;
   m_NumShieldCounts = 0;
 
@@ -271,51 +273,73 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
 
 
 ////////////////////////////////////////////////////////////////////////////////
-double MDetectorEffectsEngineSingleDet::dTimeGeDs(vector<int> ASICChannels) {
+//! Calculates GeD deadtime
+double MDetectorEffectsEngineSingleDet::dTimeASICs(vector<int> ASICChannels, bool IsShield) {
     // Return 0 if there are no channels
+    double deadtime = 0;
+    int countUnique = 0;
+
     if (ASICChannels.empty()) {
         return 0.0;
     }
 
-    unordered_set<int> ASICChannelsSet;  // Use a set to store unique channels automatically
-
-    // Sort ASICChannels to process channels in ascending order
-    sort(ASICChannels.begin(), ASICChannels.end());
-
-    // Loop through each channel ID in the sorted list
-    for (int ID : ASICChannels) {
-
-      if (ID == 65) {
-        cout << "Strip ID is 65; should not happen" << endl; 
-        continue;
+    if (IsShield) {
+      unordered_set<int> BGOChannelsSet;  // Use a set to store unique channels automatically
+      // Loop through each channel ID in the sorted list
+      for (int ID : ASICChannels) {
+        BGOChannelsSet.insert(ID);
       }
-      else if (ID == 1 || ID == 33) {
-        // Edge case: If ID is 1 or 33, add the channel and the next channel (ID + 1)
-        ASICChannelsSet.insert(ID);
-        ASICChannelsSet.insert(ID + 1);
-      } 
-      else if (ID == 32 || ID == 64) {
-        // Edge case: If ID is 32 or 64, add the previous channel (ID - 1) and the channel itself
-        ASICChannelsSet.insert(ID - 1);
-        ASICChannelsSet.insert(ID);
-      } 
-      else {
-        // General case: Add the previous channel (ID - 1), the channel itself (ID), and the next channel (ID + 1)
-        ASICChannelsSet.insert(ID - 1);
-        ASICChannelsSet.insert(ID);
-        ASICChannelsSet.insert(ID + 1);
+      
+      // Count the number of unique channels read out (2 for each hit in the BGO)
+      countUnique = BGOChannelsSet.size()*2;
+      deadtime = m_ShieldDelayBefore + (m_ASICDeadTimePerChannel * countUnique) + m_ShieldDelayAfter; // adds in the deadtime per channel
+      if (deadtime < m_ShieldPulseDuration) {
+        deadtime = m_ShieldPulseDuration;
       }
     }
 
-    // Count the number of unique channels read out
-    int countUnique = ASICChannelsSet.size();
+    else { 
+      unordered_set<int> ASICChannelsSet;  // Use a set to store unique channels automatically
 
-    // Calculate the total deadtime based on unique channels
-    double GeD_deadtime = m_StripCoincidenceWindow + (m_ASICDeadTimePerChannel * countUnique) + m_StripDelayAfter; // adds in the deadtime per channel
+      // Sort ASICChannels to process channels in ascending order
+      sort(ASICChannels.begin(), ASICChannels.end());
 
-    return GeD_deadtime;
+      // Loop through each channel ID in the sorted list
+      for (int ID : ASICChannels) {
+
+        if (ID == 65) {
+          cout << "Strip ID is 65; should not happen" << endl; 
+          continue;
+        }
+        else if (ID == 1 || ID == 33) {
+          // Edge case: If ID is 1 or 33, add the channel and the next channel (ID + 1)
+          ASICChannelsSet.insert(ID);
+          ASICChannelsSet.insert(ID + 1);
+        } 
+        else if (ID == 32 || ID == 64) {
+          // Edge case: If ID is 32 or 64, add the previous channel (ID - 1) and the channel itself
+          ASICChannelsSet.insert(ID - 1);
+          ASICChannelsSet.insert(ID);
+        } 
+        else {
+          // General case: Add the previous channel (ID - 1), the channel itself (ID), and the next channel (ID + 1)
+          ASICChannelsSet.insert(ID - 1);
+          ASICChannelsSet.insert(ID);
+          ASICChannelsSet.insert(ID + 1);
+        }
+      }
+
+      // Count the number of unique channels read out
+      countUnique = ASICChannelsSet.size();
+
+      // Calculate the total deadtime based on unique channels
+      deadtime = m_StripCoincidenceWindow + (m_ASICDeadTimePerChannel * countUnique) + m_StripDelayAfter; // adds in the deadtime per channel
+    }
+
+    return deadtime;
 }
 ////////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Analyze whatever needs to be analyzed...
@@ -350,9 +374,74 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     
     // Step (0): Check whether events should be vetoed
     double evt_time = SimEvent->GetTime().GetAsSeconds();
- 
 
+    int ShieldDetNum = 0;
+    double energy = 0;
+    int ShieldDetGroup;
+    m_ShieldVeto = false;
+ 
+    m_IsShieldDead = false;
     // This is where shield veto code will go ...
+    for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
+      MSimHT* HT = SimEvent->GetHTAt(h);
+      if (HT->GetDetectorType() == 8) {
+        MDVolumeSequence* VS = HT->GetVolumeSequence();
+        MDDetector* Detector = VS->GetDetector();
+        MString DetName = Detector->GetName();
+
+        ShieldDetNum = atoi(DetName.GetSubString(6,7));
+        energy = HT->GetEnergy();
+        ShieldDetGroup = 0;
+        energy = NoiseShieldEnergy(energy,DetName);
+        HT->SetEnergy(energy);
+
+        if (DetName.GetSubString(0,6) == "Shield" && (energy > m_ShieldThreshold)){ //"Shield" needs to change
+
+          bool found = false;
+
+          // Traverse the 2D vector
+          for (size_t i = 0; i < m_ShieldPanelGroups.size(); ++i) {
+            for (size_t j = 0; j < m_ShieldPanelGroups[i].size(); ++j) {
+              if (m_ShieldPanelGroups[i][j] == ShieldDetNum) {
+                ShieldDetGroup = i;
+                found = true;
+                break;
+              }
+            }
+            if (found) break; // Exit loop once found
+          }
+
+          if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] < evt_time) {
+          // Event occured after deadtime
+
+            for (int group=0; group<nShieldPanels; group++) {
+              m_ShieldHitID[group].clear();
+            }
+            m_ShieldLastHitTime[ShieldDetGroup] = evt_time;
+            m_ShieldHitID[ShieldDetGroup].push_back(ShieldDetNum);
+            m_ShieldVeto = true;
+            }
+
+          else if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDelayBefore > evt_time) {
+            // Event occured within coincidence window so append all strip IDs
+            m_ShieldHitID[ShieldDetGroup].push_back(ShieldDetNum);
+            m_ShieldVeto = true;
+          }
+
+          else if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] > evt_time) {
+            // Event occured within deadtime
+            m_IsShieldDead = true;
+          }
+        }
+      }
+    }
+
+    for (int group=0; group<nShieldPanels; group++) {
+      // Calculates deadtime after each merged strip hit list.
+      if (!m_IsShieldDead) {
+        m_ShieldDeadtime[group] = dTimeASICs(m_ShieldHitID[group], true);
+      }
+    }
       
 
     //get interactions to look for ionization in hits
@@ -1315,7 +1404,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // Calculates deadtime after each merged strip hit list.
       for (int ASIC=0; ASIC<nASICs; ASIC++) {
         if (!IsASICDead) {
-          m_ASICDeadTime[det][ASIC] = dTimeGeDs(m_ASICHitStripID[det][ASIC]);
+          m_ASICDeadTime[det][ASIC] = dTimeASICs(m_ASICHitStripID[det][ASIC]);
           if (m_ASICDeadTime[det][ASIC] > m_StripsCurrentDeadtime) {
             m_StripsCurrentDeadtime = m_ASICDeadTime[det][ASIC];
           }
@@ -1682,7 +1771,9 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   for (int i=0; i<nDets; i++){
     cout << i << ":\t" << m_TriggerRates[i]/(m_LastTime-m_FirstTime) << endl;
   }
-  cout << "Shield dead time: " << m_ShieldDeadTime << endl;
+  for(int i=0; i<nShieldPanels; i++){
+    cout << "Shield Panel "<< i << " dead time: " << m_ShieldDeadtime[i] << endl;
+  }
   cout << "Hits erased due to detector being dead: " << m_StripHitsErased << endl;
   
   // cout << "Max buffer full index: " << m_MaxBufferFullIndex << '\t' << "Detector " << m_MaxBufferDetector << endl;
@@ -1758,7 +1849,7 @@ bool MDetectorEffectsEngineSingleDet::ParseDeadtimeFile()
   m_ASICDeadTimePerChannelFromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(1);
   m_StripDelayAfter1FromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(2);
   m_StripDelayAfter2FromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(3);
-    
+
   return true;
   
 }
@@ -1823,28 +1914,29 @@ int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// //! Noise shield energy with measured resolution
-// double MDetectorEffectsEngineSingleDet::NoiseShieldEnergy(double energy, MString shield_name)
-// { 
+//! Noise shield energy with measured resolution
+double MDetectorEffectsEngineSingleDet::NoiseShieldEnergy(double energy, MString shield_name)
+{ 
+// Needs to be updated
   
-  // vector<double> resolution_consts{3.75,3.74,18.47,4.23,3.07,3.98};
+  vector<double> resolution_consts{3.75,3.74,18.47,4.23,3.07,3.98};
   
-  // shield_name.RemoveAllInPlace("Shield");
-  // int shield_num = shield_name.ToInt();
-  // shield_num = shield_num - 1;
-  // double res_constant = resolution_consts[shield_num];
+  shield_name.RemoveAllInPlace("Shield");
+  int shield_num = shield_name.ToInt();
+  shield_num = shield_num - 1;
+  double res_constant = resolution_consts[shield_num];
   
-  // //  TF1* ShieldRes = new TF1("ShieldRes","[0]*(x^(1/2))",0,1000); //this is from Knoll
-  // //  ShieldRes->SetParameter(0,res_constant);
+  //  TF1* ShieldRes = new TF1("ShieldRes","[0]*(x^(1/2))",0,1000); //this is from Knoll
+  //  ShieldRes->SetParameter(0,res_constant);
   
-  // //  double sigma = ShieldRes->Eval(energy);
-  // double sigma = res_constant*pow(energy,1./2);
+  //  double sigma = ShieldRes->Eval(energy);
+  double sigma = res_constant*pow(energy,1./2);
   
-  // double noised_energy = m_Random.Gaus(energy,sigma);
+  double noised_energy = m_Random.Gaus(energy,sigma);
   
-  // return noised_energy;
+  return noised_energy;
   
-// }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

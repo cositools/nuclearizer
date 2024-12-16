@@ -126,7 +126,7 @@ public:
   //! Initialize the module
   bool Initialize();
   //! Get deadtime from list of channels in one ASIC
-  double dTimeGeDs(vector<int> ASICChannels);
+  double dTimeASICs(vector<int> ASICChannels, bool IsShield = false);
     //! Analyze whatever needs to be analyzed...
   bool GetNextEvent(MReadOutAssembly* Event);
   //! Finalize the module
@@ -268,6 +268,10 @@ private:
 	static const int nStrips = 64;
   //! number of ASICs for 1 det (change for multiple)
   static const int nASICs = 4;
+  //! number of BGO Detectors
+	static const int nShieldDets = 22;
+  //! number of BGO Panels
+  static const int nShieldPanels = 6; 
 	//! slots in DSP dead time buffer
 	static const int nDTBuffSlots = 16;
 
@@ -342,12 +346,6 @@ private:
 	int m_MaxBufferFullIndex;
 	int m_MaxBufferDetector;
 
-	//! dead time on the shields
-  double m_ShieldDeadTime;
-	//! whether or not the event is vetoed by the shields
-	bool m_ShieldVeto;
-	//! shield threshold
-	double m_ShieldThreshold;
   
   //! List of dead strips
   vector<vector<vector<int> > > m_DeadStrips = vector<vector<vector<int> > >(nDets, vector<vector<int> >(nSides, vector<int>(nStrips)));
@@ -376,7 +374,6 @@ private:
   unsigned long m_ChargeLossCounter;
   unsigned long m_TotalHitsBeforeDeadtime;
   
-  double m_ShieldPulseDuration;
   //! Strip Delay for ENABLE to fall
   double m_StripCoincidenceWindow;
   //! ASIC Deadtime per channel that is read out
@@ -385,11 +382,30 @@ private:
   double m_StripDelayAfter1;
   double m_StripDelayAfter2;
   double m_StripDelayAfter;
-  double m_ShieldTime;
-	double m_ShieldDelay;
+  int m_StripHitsErased;
+  double m_ShieldPulseDuration;
+  vector<double> m_ShieldLastHitTime = vector<double>(nShieldPanels);	
+  double m_ShieldDelayBefore;
+  double m_ShieldDelayAfter;
 	double m_ShieldVetoWindowSize;
   bool m_IsShieldDead;
-  int m_StripHitsErased;
+  //! dead time on the shields
+  vector<double> m_ShieldDeadtime = vector<double>(nShieldPanels);
+	//! whether or not the event is vetoed by the shields
+	bool m_ShieldVeto;
+	//! shield threshold
+	double m_ShieldThreshold;
+  //! Shield ID for particular hit in ASIC
+  vector<vector<int> >m_ShieldHitID = vector<vector<int> >(nShieldPanels);
+  //! Group of shield numers per panel
+	vector<vector<int> > m_ShieldPanelGroups = {
+    {1, 2, 3, 4},
+    {5, 6, 7, 8},
+    {9, 10, 11, 12},
+    {13, 14, 15, 16},
+    {17, 18, 19},
+    {20, 21, 22}
+  };
 
   
   long m_NumShieldCounts;
