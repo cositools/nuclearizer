@@ -2,7 +2,7 @@
  * MDetectorEffectEngineSingleDet.cxx
  *
  *
- * Copyright (C) by Clio Sleator, Carolyn Kierans, Andreas Zoglauer.
+ * Copyright (C) by Parshad Patel, Clio Sleator, Carolyn Kierans, Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -151,16 +151,16 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   
   m_MaxBufferFullIndex = 0;
   
-  // m_DepthCalibrator = new MDepthCalibrator();
-  // if( m_DepthCalibrator->LoadCoeffsFile(m_DepthCalibrationCoeffsFileName) == false ){
-  //   cout << "Unable to load depth calibration coefficients file - Aborting!" << endl;
-  //   return false;
-  // }
+  m_DepthCalibrator = new MDepthCalibrator();
+  if( m_DepthCalibrator->LoadCoeffsFile(m_DepthCalibrationCoeffsFileName) == false ){
+    cout << "Unable to load depth calibration coefficients file - Aborting!" << endl;
+    return false;
+  }
   
-  // if( m_DepthCalibrator->LoadSplinesFile(m_DepthCalibrationSplinesFileName) == false ){
-  //   cout << "Unable to load depth calibration splines file - Aborting!" << endl;
-  //   return false;
-  // }
+  if( m_DepthCalibrator->LoadSplinesFile(m_DepthCalibrationSplinesFileName) == false ){
+    cout << "Unable to load depth calibration splines file - Aborting!" << endl;
+    return false;
+  }
   
   
   m_Reader = new MFileEventsSim(m_Geometry);
@@ -307,16 +307,16 @@ double MDetectorEffectsEngineSingleDet::dTimeASICs(vector<int> ASICChannels, boo
       // Loop through each channel ID in the sorted list
       for (int ID : ASICChannels) {
 
-        if (ID == 65) {
-          cout << "Strip ID is 65; should not happen" << endl; 
+        if (ID == 64) {
+          cout << "Strip ID is 64; should not happen" << endl; 
           continue;
         }
-        else if (ID == 1 || ID == 33) {
+        else if (ID == 0 || ID == 32) {
           // Edge case: If ID is 1 or 33, add the channel and the next channel (ID + 1)
           ASICChannelsSet.insert(ID);
           ASICChannelsSet.insert(ID + 1);
         } 
-        else if (ID == 32 || ID == 64) {
+        else if (ID == 31 || ID == 63) {
           // Edge case: If ID is 32 or 64, add the previous channel (ID - 1) and the channel itself
           ASICChannelsSet.insert(ID - 1);
           ASICChannelsSet.insert(ID);
@@ -508,30 +508,37 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       MVector PositionInDetector = VS->GetPositionInSensitiveVolume();
       MDGridPoint GP = Detector->GetGridPoint(PositionInDetector);
       // double Depth_ = PositionInDetector.GetZ();
-      double Depth = -(PositionInDetector.GetZ() - (1.5/2.0)); // THIS NEEDS TO BE SET TO DEPTH CALIBRATER ONCE READY
+      // double Depth = -(PositionInDetector.GetZ() - (1.5/2.0)); // THIS NEEDS TO BE SET TO DEPTH CALIBRATER ONCE READY
       // double Depth = -(Depth_ - (m_DepthCalibrator->GetThickness(DetectorID)/2.0)); // change the depth coordinates so that one side is 0.0 cm and the other side is ~1.5cm
+      double Depth = PositionInDetector.GetZ(); // Keeps the depth from -0.75cm to 0.75cm instead of going from 0cm to 1.5cm as we did for the balloon.
       pSide.m_Depth = Depth;
       nSide.m_Depth = Depth;
       
       // Not sure about if p or n-side is up, but we can debug this later
       // Confirmed by Clio on 11/14/18: this is right
-      pSide.m_ROE.SetStripID(65-(GP.GetYGrid()+1));
-      nSide.m_ROE.SetStripID(65-(GP.GetXGrid()+1));
-      
-// // This needs to be implemented once the depth calibration is implemented
-      // //SetStripID needs to be called before we can look up the depth calibration coefficients
-      // int PixelCode = DetectorID*10000 + pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID();
-      // std::vector<double>* Coeffs = m_DepthCalibrator->GetPixelCoeffs(PixelCode);
-      // if( Coeffs == NULL ){
-      //   //pixel is not calibrated! discard this event....
-      //   //cout << "pixel " << PixelCode << " has no depth calibration... discarding event" << endl;
-      //   //delete SimEvent;
-      //   continue;
+      pSide.m_ROE.SetStripID(63-(GP.GetYGrid())); // Is this right? Or should it be 64?
+      nSide.m_ROE.SetStripID(63-(GP.GetXGrid())); // Is this right? Or should it be 64?
+
+      // if (pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID() > 6400) {
+      //   cout << pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID() << endl;
       // }
       
-//       pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0);
-//       nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0);
+// This needs to be implemented once the depth calibration is implemented
+      //SetStripID needs to be called before we can look up the depth calibration coefficients
+      int PixelCode = DetectorID*10000 + pSide.m_ROE.GetStripID()*100 + nSide.m_ROE.GetStripID();
+      std::vector<double>* Coeffs = m_DepthCalibrator->GetPixelCoeffs(PixelCode);
+      if( Coeffs == NULL ){
+        //pixel is not calibrated! discard this event....
+        // cout << "pixel " << PixelCode << " has no depth calibration... discarding event" << endl;
+        //delete SimEvent;
+        continue;
+      }
       
+      pSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(Depth)) + (Coeffs->at(1)/2.0); // The anode and cathode timing were not important for the balloon but they may be for SMEX due to TAC cuts. Making these arbitrary for now but can adjust later.
+      nSide.m_Timing = (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(Depth)) - (Coeffs->at(1)/2.0); // Does this need to be negative or positive?
+
+      // cout << "Anode: " << (Coeffs->at(0) * m_DepthCalibrator->GetAnodeSpline(DetectorID)->Eval(-0.759995024414062)) + (Coeffs->at(1)/2.0) << "; " << "Cathode: " << (Coeffs->at(0) * m_DepthCalibrator->GetCathodeSpline(DetectorID)->Eval(-0.759995024414062)) + (Coeffs->at(1)/2.0) << endl;
+    
       pSide.m_Energy = HT->GetEnergy();
       nSide.m_Energy = HT->GetEnergy();
       
@@ -655,14 +662,9 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         
         double factorN = m_ChargeSharingFactors[DetectorID][0]->Eval(energyDeposited);
         double factorP = m_ChargeSharingFactors[DetectorID][1]->Eval(energyDeposited);
-        // double factorN = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
-        // double factorP = 1; // CONSTANT BECAUSE CHARGE SHARING IS NOT IMPLEMENTED
         
         double DriftRadiusSigmaN = m_DriftConstant[DetectorID]*sqrt(DriftLengthN)*factorN; // NEEDED FOR MULTIPLE DETS
         double DriftRadiusSigmaP = m_DriftConstant[DetectorID]*sqrt(DriftLengthP)*factorP; // NEEDED FOR MULTIPLE DETS
-
-        // double DriftRadiusSigmaN = m_DriftConstant*sqrt(DriftLengthN)*factorN;
-        // double DriftRadiusSigmaP = m_DriftConstant*sqrt(DriftLengthP)*factorP;
         
         double DriftX = 0;
         double DriftY = 0;
@@ -701,10 +703,10 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           // We need both to know when we are in the guard ring
           int nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
           int pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
-          if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
-            nStripID = 65;
+          if (nStripIDinterim < 0 || nStripIDinterim > 62 || pStripIDinterim < 0 || pStripIDinterim > 62) {
+            nStripID = 64;
           } else {
-            nStripID = 64 - nStripIDinterim; 
+            nStripID = 63 - nStripIDinterim; 
           }
 
           
@@ -720,10 +722,10 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           
           nStripIDinterim = (int) floor((DriftX + xInDet)*xInvDetectorPitch);
           pStripIDinterim = (int) floor((DriftY + yInDet)*yInvDetectorPitch);
-          if (nStripIDinterim < 0 || nStripIDinterim > 63 || pStripIDinterim < 0 || pStripIDinterim > 63) {
-            pStripID = 65;
+          if (nStripIDinterim < 0 || nStripIDinterim > 62 || pStripIDinterim < 0 || pStripIDinterim > 62) {
+            pStripID = 64;
           } else {
-            pStripID = 64 - pStripIDinterim; 
+            pStripID = 63 - pStripIDinterim; 
           }
           
           
@@ -809,11 +811,11 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         }
         //make new strip hit if needed
         //guard ring hit
-        else if (P.first == 65){
+        else if (P.first == 64){
           MDEEStripHit chargeShareGRHit;
           chargeShareGRHit.m_ROE.IsLowVoltageStrip(true);
           chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
-          chargeShareGRHit.m_ROE.SetStripID(65);
+          chargeShareGRHit.m_ROE.SetStripID(64);
           chargeShareGRHit.m_Energy = P.second;
           chargeShareGRHit.m_Position = MVector(0,0,0); // apparently not important
           GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
@@ -841,11 +843,11 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           nSide.m_EnergyOrig = N.second;
           nOrigHit = true;
         }
-        else if (N.first == 65){
+        else if (N.first == 64){
           MDEEStripHit chargeShareGRHit;
           chargeShareGRHit.m_ROE.IsLowVoltageStrip(false);
           chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
-          chargeShareGRHit.m_ROE.SetStripID(65);
+          chargeShareGRHit.m_ROE.SetStripID(64);
           chargeShareGRHit.m_Energy = N.second;
           chargeShareGRHit.m_Position = MVector(0,0,0);
           GuardRingHitsFromChargeSharing.push_back(chargeShareGRHit);
@@ -905,22 +907,24 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         MDVolumeSequence* VS = GR->GetVolumeSequence();
         MDDetector* Detector = VS->GetDetector();
         MString DetectorName = Detector->GetName();
-        // DetectorName.RemoveAllInPlace("Detector_");
-        // int DetectorID = DetectorName.ToInt();
+        // Sets the detector ID for different hits. May need to change if there is a change in naming convention
+        // cout << DetectorName << endl;
+        // DetectorName.RemoveAllInPlace("D");
+        // int DetectorID = DetectorName.ToInt()-1;
         int DetectorID = 0;
 
         
         MDEEStripHit GuardRingHitP;
         GuardRingHitP.m_ROE.IsLowVoltageStrip(true);
         GuardRingHitP.m_ROE.SetDetectorID(DetectorID);
-        GuardRingHitP.m_ROE.SetStripID(65); // ?
+        GuardRingHitP.m_ROE.SetStripID(64); // ?
         GuardRingHitP.m_Energy = GR->GetEnergy();
         GuardRingHitP.m_Position = MVector(0, 0, 0); // <-- not important
         
         MDEEStripHit GuardRingHitN;
         GuardRingHitN.m_ROE.IsLowVoltageStrip(false);
         GuardRingHitN.m_ROE.SetDetectorID(DetectorID);
-        GuardRingHitN.m_ROE.SetStripID(65); // ?
+        GuardRingHitN.m_ROE.SetStripID(64); // ?
         GuardRingHitN.m_Energy = GR->GetEnergy();
         GuardRingHitN.m_Position = MVector(0, 0, 0); // <-- not important
         
@@ -1024,7 +1028,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // cout << "Is Low voltage: " << Hit.m_ROE.IsLowVoltageStrip() << " Strip ID: " << Hit.m_ROE.GetStripID() << endl;
       Hit.m_Origins.sort();
       Hit.m_Origins.unique();
-      // if (Hit.m_ROE.GetStripID() == 65) {
+      // if (Hit.m_ROE.GetStripID() == 64) {
       //   cout << "GR Hit in merged: " << Hit.m_ROE.GetStripID() << endl; 
       // }     
     }
@@ -1033,20 +1037,21 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     
 
     
-// //     // Step (2): Calculate and noise timing
-// //     const double TimingNoise = 3.76; //ns//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be (12.5/2.35)/sqrt(2)
-// //     for (MDEEStripHit& Hit: MergedStripHits) {
+    // Step (2): Calculate and noise timing
+    const double TimingNoise = 3.76; //ns//I have been assuming 12.5 ns FWHM on the CTD... so the 1 sigma error on the timing value should be (12.5/2.35)/sqrt(2)
+    for (MDEEStripHit& Hit: MergedStripHits) {
       
-// //       //find lowest timing value 
-// //       double LowestNoisedTiming = Hit.m_SubStripHits.front().m_Timing + m_Random.Gaus(0,TimingNoise);
-// //       for(size_t i = 1; i < Hit.m_SubStripHits.size(); ++i){
-// //         double Timing = Hit.m_SubStripHits.at(i).m_Timing + m_Random.Gaus(0,TimingNoise);
-// //         //SubHit.m_Timing += m_Random.Gaus(0,TimingNoise);
-// //         if( Timing < LowestNoisedTiming ) LowestNoisedTiming = Timing;
-// //       }
-// //       LowestNoisedTiming -= fmod(LowestNoisedTiming,5.0); //round down to nearest multiple of 5
-// //       Hit.m_Timing = LowestNoisedTiming;
-// //     }
+      //find lowest timing value 
+      double LowestNoisedTiming = Hit.m_SubStripHits.front().m_Timing + m_Random.Gaus(0,TimingNoise);
+      for(size_t i = 1; i < Hit.m_SubStripHits.size(); ++i){
+        double Timing = Hit.m_SubStripHits.at(i).m_Timing + m_Random.Gaus(0,TimingNoise);
+        //SubHit.m_Timing += m_Random.Gaus(0,TimingNoise);
+        if( Timing < LowestNoisedTiming ) LowestNoisedTiming = Timing;
+      }
+      LowestNoisedTiming -= fmod(LowestNoisedTiming,5.0); //round down to nearest multiple of 5
+      Hit.m_Timing = LowestNoisedTiming;
+      // cout << Hit.m_Timing << endl;
+    }
     
     // Step (3): Calculate and noise ADC values including cross talk, charge loss, charge sharing, ADC overflow!
     
@@ -1241,7 +1246,6 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     // (4b) Handle trigger thresholds make sure we throw out timing too!
     list<MDEEStripHit>::iterator k = MergedStripHits.begin();
     while (k != MergedStripHits.end()) {
-      
       //so that we can use default value if necessary
       MReadOutElementDoubleStrip ROE_map_key = (*k).m_ROE;
       if (m_LLDThresholds.count((*k).m_ROE) == 0){
@@ -1298,8 +1302,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     // // Checking for deadtime implementation by checking without it
     // list<MDEEStripHit>::iterator a = MergedStripHits.begin();
     // while (a != MergedStripHits.end()) {
-    //   if ((*a).m_ROE.GetStripID() == 65) {
-    //     cout << "Strip 65 should not be here" << endl;
+    //   if ((*a).m_ROE.GetStripID() == 64) {
+    //     cout << "Strip 64 should not be here" << endl;
     //     continue;
     //   }
     //   m_EventStripIDs.push_back((*a).m_ROE.GetStripID());
@@ -1332,20 +1336,20 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       det = (*i).m_ROE.GetDetectorID();
       ASICofDet = 5;
 
-      if ((*i).m_ROE.GetStripID() == 65) {
-        cout << "Strip is 65; should not happen." << endl;
+      if ((*i).m_ROE.GetStripID() == 64) {
+        cout << "Strip is 64; should not happen." << endl;
         continue;
       }
-      else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+      else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 31 && (*i).m_ROE.GetStripID() >= 0) {
         ASICofDet = 0;
       }
-      else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+      else if ((*i).m_ROE.IsLowVoltageStrip() && (*i).m_ROE.GetStripID() <= 63 && (*i).m_ROE.GetStripID() >= 32) {
         ASICofDet = 1;
       }
-      else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 32 && (*i).m_ROE.GetStripID() > 0) {
+      else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 31 && (*i).m_ROE.GetStripID() >= 0) {
         ASICofDet = 2;
       }
-      else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 64 && (*i).m_ROE.GetStripID() > 32) {
+      else if ((!(*i).m_ROE.IsLowVoltageStrip()) && (*i).m_ROE.GetStripID() <= 63 && (*i).m_ROE.GetStripID() >= 32) {
         ASICofDet = 3;
       }
       else {
@@ -1701,6 +1705,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // cout << "setting ADC units: " << Hit.m_ADC << endl;
       SH->SetADCUnits(Hit.m_ADC);
       SH->SetTiming(Hit.m_Timing);
+      // cout << Hit.m_Timing << endl;
       SH->SetPreampTemp(20);
       vector<int> O;
       for (int i: Hit.m_Origins) O.push_back(i);
@@ -2139,7 +2144,7 @@ bool MDetectorEffectsEngineSingleDet::ParseGuardRingThresholdFile()
     
     MReadOutElementDoubleStrip R;
     R.SetDetectorID(detector);
-    R.SetStripID(65);
+    R.SetStripID(64);
     R.IsLowVoltageStrip(side);
     
     m_GuardRingThresholds[R] = threshold;

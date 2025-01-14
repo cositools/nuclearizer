@@ -61,10 +61,14 @@ class MDepthCalibrator
 	private:
 		//! Generate the spline from the data and add it to the internal spline map
 		void AddSpline(vector<double> xvec, vector<double> yvec, int DetID, std::unordered_map<int,TSpline3*>& SplineMap, bool invert);
+		//! Adds a Depth-to-CTD relation
+		bool AddDepthCTD(vector<double> depthvec, vector<vector<double>> ctdarr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap);
+
 
 
 	private:
-		std::unordered_map<int,std::vector<double>*> m_Coeffs;
+		unordered_map<int, vector<double>> m_Coeffs;
+		double m_Coeffs_Energy;
 		std::unordered_map<int,TSpline3*> m_SplineMap_Depth2CTD;
 		std::unordered_map<int,TSpline3*> m_SplineMap_CTD2Depth;
 		std::unordered_map<int,TSpline3*> m_SplineMap_Depth2AnoTiming;
@@ -72,6 +76,9 @@ class MDepthCalibrator
 		bool m_SplinesFileIsLoaded;
 		bool m_CoeffsFileIsLoaded;
 		std::vector<double> m_Thicknesses;
+		// The CTD Map maps each detector (int) to a 2D array of CTD values.
+  		unordered_map<int, vector<vector<double>>> m_CTDMap;
+  		unordered_map<int, vector<double>> m_DepthGrid;
 
 
 

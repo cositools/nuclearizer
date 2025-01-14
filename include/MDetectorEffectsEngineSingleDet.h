@@ -1,7 +1,7 @@
 /*
  * MMDetectorEffectsEngineSingleDet.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Parshad Patel, Andreas Zoglauer.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
