@@ -70,7 +70,15 @@ class MGUIOptionsEventFilter : public MGUIOptions
   TGTextEntry* m_Detectors;
   //! The total energy selection
   MGUIEMinMaxEntry* m_TotalEnergy;
-	
+
+  //! The number of LV-strips
+  MGUIEMinMaxEntry* m_LVStrips;
+  //! The number of HV-strips
+  MGUIEMinMaxEntry* m_HVStrips;
+
+  //! The number of hits
+  MGUIEMinMaxEntry* m_Hits;
+
   // private members:
  private:
 

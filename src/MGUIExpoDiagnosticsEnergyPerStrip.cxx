@@ -1,5 +1,5 @@
 /*
- * MGUIExpoDiagnostics.cxx
+ * MGUIExpoDiagnosticsEnergyPerStrip.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIExpoDiagnostics.h"
+#include "MGUIExpoDiagnosticsEnergyPerStrip.h"
 
 // Standard libs:
 
@@ -37,14 +37,14 @@
 
 
 #ifdef ___CLING___
-ClassImp(MGUIExpoDiagnostics)
+ClassImp(MGUIExpoDiagnosticsEnergyPerStrip)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoDiagnostics::MGUIExpoDiagnostics(MModule* Module) : MGUIExpo(Module)
+MGUIExpoDiagnosticsEnergyPerStrip::MGUIExpoDiagnosticsEnergyPerStrip(MModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 
@@ -74,7 +74,7 @@ MGUIExpoDiagnostics::MGUIExpoDiagnostics(MModule* Module) : MGUIExpo(Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoDiagnostics::~MGUIExpoDiagnostics()
+MGUIExpoDiagnosticsEnergyPerStrip::~MGUIExpoDiagnosticsEnergyPerStrip()
 {
   // kDeepCleanup is activated 
 }
@@ -83,7 +83,7 @@ MGUIExpoDiagnostics::~MGUIExpoDiagnostics()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDiagnostics::Reset()
+void MGUIExpoDiagnosticsEnergyPerStrip::Reset()
 {
   //! Reset the data in the UI
 
@@ -99,7 +99,7 @@ void MGUIExpoDiagnostics::Reset()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDiagnostics::SetStripHitHistogramParameters(int NBinsIDs, double MinIDs, double MaxIDs, int NBinsEnergy, double MinEnergy, double MaxEnergy)
+void MGUIExpoDiagnosticsEnergyPerStrip::SetStripHitHistogramParameters(int NBinsIDs, double MinIDs, double MaxIDs, int NBinsEnergy, double MinEnergy, double MaxEnergy)
 {
   // Set the energy histogram parameters 
 
@@ -115,17 +115,20 @@ void MGUIExpoDiagnostics::SetStripHitHistogramParameters(int NBinsIDs, double Mi
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDiagnostics::AddStripHit(MStripHit* SH)
+void MGUIExpoDiagnosticsEnergyPerStrip::AddHit(MHit* H)
 {
   // Add data to the energy histogram
 
   m_Mutex.Lock();
 
-  // TODO: Should be LV / HV - old version?
-  if (SH->IsLowVoltageStrip() == true) {
-    m_StripHitsLV->Fill(SH->GetStripID(), SH->GetEnergy());
-  } else {
-    m_StripHitsHV->Fill(SH->GetStripID(), SH->GetEnergy());
+  for (unsigned int h = 0; h < H->GetNStripHits(); ++h) {
+    MStripHit* SH = H->GetStripHit(h);
+    // TODO: Should be LV / HV - old version?
+    if (SH->IsLowVoltageStrip() == true) {
+      m_StripHitsLV->Fill(SH->GetStripID(), SH->GetEnergy());
+    } else {
+      m_StripHitsHV->Fill(SH->GetStripID(), SH->GetEnergy());
+    }
   }
 
   m_Mutex.UnLock();
@@ -135,7 +138,27 @@ void MGUIExpoDiagnostics::AddStripHit(MStripHit* SH)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDiagnostics::Create()
+void MGUIExpoDiagnosticsEnergyPerStrip::AddStripHit(MStripHit* SH, bool UseEnergy)
+{
+  // Add data to the energy histogram
+
+  m_Mutex.Lock();
+
+  // TODO: Should be LV / HV - old version?
+  if (SH->IsLowVoltageStrip() == true) {
+    m_StripHitsLV->Fill(SH->GetStripID(), UseEnergy == true ? SH->GetEnergy() : SH->GetADCUnits());
+  } else {
+    m_StripHitsHV->Fill(SH->GetStripID(), UseEnergy == true ? SH->GetEnergy() : SH->GetADCUnits());
+  }
+
+  m_Mutex.UnLock();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoDiagnosticsEnergyPerStrip::Create()
 {
   // Add the GUI options here
   
@@ -170,7 +193,7 @@ void MGUIExpoDiagnostics::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDiagnostics::Update()
+void MGUIExpoDiagnosticsEnergyPerStrip::Update()
 {
   //! Update the frame
 
@@ -188,7 +211,7 @@ void MGUIExpoDiagnostics::Update()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDiagnostics::Export(const MString& FileName)
+void MGUIExpoDiagnosticsEnergyPerStrip::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 
@@ -200,5 +223,5 @@ void MGUIExpoDiagnostics::Export(const MString& FileName)
 }
 
 
-// MGUIExpoDiagnostics: the end...
+// MGUIExpoDiagnosticsEnergyPerStrip: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -562,7 +562,7 @@ bool MBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 		striphits = E->GetNStripHits();
 		for(int s = 0; s < striphits; s++) {
 			det = E->GetStripHit(s)->GetDetectorID();
-			side = E->GetStripHit(s)->IsXStrip() == true;
+			side = E->GetStripHit(s)->IsLowVoltageStrip() == true;
 			temp = (m_PreampTemps[det*2 + side]*0.0005/0.5)*2.471*100 - 273.0;
 			E->GetStripHit(s)->SetPreampTemp(temp);
 		}

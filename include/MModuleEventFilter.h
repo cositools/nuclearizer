@@ -69,22 +69,45 @@ class MModuleEventFilter : public MModule
   //! Get the accepted detector list - if empty all are accepted!
   vector<int> GetDetectorList() const { return m_DetectorIDs; }
 
-  //! Set the minimum total energy!
+  //! Set the minimum total energy
   void SetMinimumTotalEnergy(double MinimumTotalEnergy) { m_MinimumTotalEnergy = MinimumTotalEnergy; }
-  //! Get the minimum total energy!
+  //! Get the minimum total energy
   double GetMinimumTotalEnergy() const { return m_MinimumTotalEnergy; }
 
-  //! Set the maximum total energy!
+  //! Set the maximum total energy
   void SetMaximumTotalEnergy(double MaximumTotalEnergy) { m_MaximumTotalEnergy = MaximumTotalEnergy; }
-  //! Get the maximum total energy!
+  //! Get the maximum total energy
   double GetMaximumTotalEnergy() const { return m_MaximumTotalEnergy; }
 
-  //!AWL compute kinemaics
-  double kinematics(MVector SourcePosition, MVector Site1, MVector Site2, double E0);
+  //! Set the minimum allowed number of HV strips
+  void SetMinimumHVStrips(double MinimumHVStrips) { m_MinimumHVStrips = MinimumHVStrips; }
+  //! Get the minimum allowed number of HV strips
+  double GetMinimumHVStrips() const { return m_MinimumHVStrips; }
 
-  //!AWL dump the CTD data
-  void DumpCTDs(void);
-  
+  //! Set the maximum allowed number of HV strips
+  void SetMaximumHVStrips(double MaximumHVStrips) { m_MaximumHVStrips = MaximumHVStrips; }
+  //! Get the maximum allowed number of HV strips
+  double GetMaximumHVStrips() const { return m_MaximumHVStrips; }
+
+  //! Set the minimum allowed number of LV strips
+  void SetMinimumLVStrips(double MinimumLVStrips) { m_MinimumLVStrips = MinimumLVStrips; }
+  //! Get the minimum allowed number of LV strips
+  double GetMinimumLVStrips() const { return m_MinimumLVStrips; }
+
+  //! Set the maximum allowed number of HV strips
+  void SetMaximumLVStrips(double MaximumLVStrips) { m_MaximumLVStrips = MaximumLVStrips; }
+  //! Get the maximum allowed number of HV strips
+  double GetMaximumLVStrips() const { return m_MaximumLVStrips; }
+
+  //! Set the minimum number of hits
+  void SetMinimumHits(double MinimumHits) { m_MinimumHits = MinimumHits; }
+  //! Get the minimum number of hits
+  double GetMinimumHits() const { return m_MinimumHits; }
+
+  //! Set the maximum number of hits
+  void SetMaximumHits(double MaximumHits) { m_MaximumHits = MaximumHits; }
+  //! Get the maximum number of hits
+  double GetMaximumHits() const { return m_MaximumHits; }
 
   // protected methods:
  protected:
@@ -103,28 +126,23 @@ class MModuleEventFilter : public MModule
 
   //! The minimum total energy
   double m_MinimumTotalEnergy;
-  //! The minimum total energy
+  //! The maximum total energy
   double m_MaximumTotalEnergy;
-  //CTD histogram output file
-  ofstream m_CTDOut;
-  //CTD histograms
-  TH3I* m_CTDHist;
-  //Source position vector
-  MVector* m_SourceVector;
-  //!number of 2 strip events
-  unsigned int m_Good2Strip, m_Bad2Strip;
-  unsigned int m_Good4Strip, m_Bad4Strip;
-  unsigned int m_BadNStrips;
-  double m_EOff;
-  unsigned int m_Bad2StripEnergy, m_Bad2StripSH;
-  unsigned int m_Bad4StripEnergy, m_Bad4StripSH;
-  unsigned int m_2StripGoodEnergyBadSH;
-  TH1D *m_CTD17, *m_CTD18;
-  TTree* EventTree;
-  TFile* RootFile;
-  float m_YEnergy, m_X17Energy, m_X18Energy;
-  float m_YTiming, m_X17Timing, m_X18Timing;
 
+  // The minimum number of HV strips
+  unsigned int m_MinimumHVStrips;
+  // The maximum number of HV strips
+  unsigned int m_MaximumHVStrips;
+
+  // The minimum number of LV strips
+  unsigned int m_MinimumLVStrips;
+  // The maximum number of LV strips
+  unsigned int m_MaximumLVStrips;
+
+  //! The minimum number of hits
+  unsigned int m_MinimumHits;
+  //! The maximum number of hits
+  unsigned int m_MaximumHits;
 
   
 #ifdef ___CLING___

@@ -61,7 +61,6 @@ $(LB)/MAspectPacket.o \
 $(LB)/MAspectReconstruction.o \
 $(LB)/MHit.o \
 $(LB)/MTimeAndCoordinate.o \
-$(LB)/MStrip.o \
 $(LB)/MStripHit.o \
 $(LB)/MGuardringHit.o \
 $(LB)/MDetectorEffectsEngineBalloon.o \
@@ -88,6 +87,7 @@ $(LB)/MModuleCrosstalkCorrection.o \
 $(LB)/MGUIOptionsCrosstalkCorrection.o \
 $(LB)/MModuleChargeSharingCorrection.o \
 $(LB)/MGUIExpoDepthCalibration.o \
+$(LB)/MGUIExpoDepthCalibration2024.o \
 $(LB)/MModuleDepthCalibration.o \
 $(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MModuleDepthCalibration2024.o \
@@ -95,6 +95,7 @@ $(LB)/MGUIOptionsDepthCalibration2024.o \
 $(LB)/MGUIExpoStripPairing.o \
 $(LB)/MModuleStripPairingGreedy.o \
 $(LB)/MGUIOptionsStripPairing.o \
+$(LB)/MModuleStripPairingChiSquare.o \
 $(LB)/MGUIOptionsEventSaver.o \
 $(LB)/MModuleEventSaver.o \
 $(LB)/MGUIOptionsEventFilter.o \
@@ -112,6 +113,8 @@ $(LB)/MGUIOptionsDepthCalibrationB.o \
 $(LB)/MGUIOptionsResponseGenerator.o \
 $(LB)/MModuleResponseGenerator.o \
 $(LB)/MModuleDiagnostics.o \
+$(LB)/MModuleDiagnosticsEnergyPerStrip.o \
+$(LB)/MGUIExpoDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnostics.o \
 $(LB)/MDetectorEffectsEngineSingleDet.o \
 $(LB)/MModuleLoaderSimulationsSingleDet.o \
