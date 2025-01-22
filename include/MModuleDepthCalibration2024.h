@@ -30,6 +30,7 @@
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MDStrip3D.h"
 #include "MDShapeBRIK.h"
+#include "MGUIExpoDepthCalibration2024.h"
 
 // Forward declarations:
 
@@ -51,6 +52,9 @@ class MModuleDepthCalibration2024 : public MModule
 
   //! Initialize the module
   virtual bool Initialize();
+
+  //! Create the expos
+  virtual void CreateExpos();
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
@@ -143,7 +147,9 @@ class MModuleDepthCalibration2024 : public MModule
   uint64_t m_Error6;
   uint64_t m_ErrorSH;
   vector<MDDetector*> m_Detectors;
+  vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibrationUniversal* m_EnergyCalibration;
+  MGUIExpoDepthCalibration2024* m_ExpoDepthCalibration;
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   unordered_map<int, vector<vector<double>>> m_CTDMap;

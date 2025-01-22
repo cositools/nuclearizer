@@ -88,6 +88,7 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   m_Error3 = 0;
   m_Error4 = 0;
   m_Error5 = 0;
+  m_Error6 = 0;
   m_ErrorSH = 0;
 }
 
@@ -124,7 +125,8 @@ bool MModuleDepthCalibration2024::Initialize()
 
   // Look through the Geometry and get the names and thicknesses of all the detectors.
   for(unsigned int i = 0; i < m_Detectors.size(); ++i){
-    // TODO: need to fix DetID, but leaving as 11 for debugging purposes
+    // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
+    // If using the card cage at UCSD, default to DetID=11.
     unsigned int DetID = i;
     if ( m_UCSDOverride ){
       DetID = 11;
@@ -150,6 +152,11 @@ bool MModuleDepthCalibration2024::Initialize()
       m_NXStrips[DetID] = strip->GetNStripsX();
       m_NYStrips[DetID] = strip->GetNStripsY();
       cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
+      cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
+      cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
+      cout << "X strip pitch: " << m_XPitches[DetID] << endl;
+      cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
+      m_DetectorIDs.push_back(DetID);
     }
   }
 
@@ -165,6 +172,23 @@ bool MModuleDepthCalibration2024::Initialize()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void MModuleDepthCalibration2024::CreateExpos()
+{
+  // Create all expos
+
+  if (HasExpos() == true) return;
+
+  // Set the histogram display
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration2024(this);
+  m_ExpoDepthCalibration->SetDepthHistogramArrangement(&m_DetectorIDs);
+  for(unsigned int i = 0; i < m_DetectorIDs.size(); ++i){
+    unsigned int DetID = m_DetectorIDs[i];
+    double thickness = m_Thicknesses[DetID];
+    m_ExpoDepthCalibration->SetDepthHistogramParameters(DetID, 120, -thickness/2.,thickness/2.);
+  }
+  m_Expos.push_back(m_ExpoDepthCalibration);
+}
 
 
 bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event) 
@@ -190,7 +214,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     // GRADE=5 is some complicated geometry with multiple hits on a single strip. 
     // GRADE=4 means there are more than 2 strip hits on one or both sides.
-    // TODO: handle GRADE
     else if( Grade > 3 ){
       H->SetNoDepth();
       Event->SetDepthCalibrationIncomplete();
@@ -218,7 +241,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       for( unsigned int j = 0; j < H->GetNStripHits(); ++j){
         // cout << "strip hit " << j << endl;
         MStripHit* SH = H->GetStripHit(j);
-        if( SH->IsXStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
+        if( SH->IsLowVoltageStrip() ) XStrips.push_back(SH); else YStrips.push_back(SH);
       }
 
       // cout << "finished looping over strip hits" << endl;
@@ -238,14 +261,15 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       int pixel_code = 10000*DetID + 100*XStripID + YStripID;
 
       // TODO: Calculate X and Y positions more rigorously using charge sharing.
-      double Xpos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)XStripID));
-      double Ypos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)YStripID));
+      // Somewhat confusing notation: XStrips run parallel to X-axis, so we calculate X position with YStrips.
+      double Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)YStripID));
+      double Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)XStripID));
       // cout << "X position " << Xpos << endl;
       // cout << "Y position " << Ypos << endl;
       double Zpos = 0.0;
 
-      double Xsigma = m_XPitches[DetID]/sqrt(12.0);
-      double Ysigma = m_YPitches[DetID]/sqrt(12.0);
+      double Xsigma = m_YPitches[DetID]/sqrt(12.0);
+      double Ysigma = m_XPitches[DetID]/sqrt(12.0);
       double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
 
       // cout << "looking up the coefficients" << endl;
@@ -254,14 +278,26 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // TODO: For Card Cage, may need to add noise
       double XTiming = XSH->GetTiming();
       double YTiming = YSH->GetTiming();
-      if ( m_TACCalFileIsLoaded ) {
-        if ( XSH->IsLowVoltageStrip() ){
-          XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
-          YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+      if ( !m_UCSDOverride ) {
+        if ( m_TACCalFileIsLoaded ) {
+          if ( XSH->IsLowVoltageStrip() ){
+            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+          }
+          else {
+            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
+            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+          }
         }
-        else {
-          XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
-          YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+        else { 
+          if ( XSH->IsLowVoltageStrip() ){
+            XTiming = XTiming*0.405 - 525.;
+            YTiming = YTiming*0.43 - 500.;
+          }
+          else {
+            XTiming = XTiming*0.43 - 500.;
+            YTiming = YTiming*0.405 -525.;
+          }
         }
       }
 
@@ -331,16 +367,15 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           // cout << "Calculating depth" << endl;
           // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in depthvec
           // Utlize symmetry of the normal distribution.
-          // TODO: Get the energy of the event and pass it to GetTimingNoiseFWHM
           vector<double> prob_dist = norm_pdf(ctdvec, CTD_s, noise/2.355);
           
           // Weight the depth by probability
-	  double prob_sum = 0.0;
-	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
-	    prob_sum += prob_dist[k];
-	  }
+      	  double prob_sum = 0.0;
+      	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
+      	    prob_sum += prob_dist[k];
+      	  }
           //double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
-	  // cout << "summed probability: " << prob_sum << endl;
+	         //cout << "summed probability: " << prob_sum << endl;
           double weighted_depth = 0.0;
           for( unsigned int k = 0; k < depthvec.size(); ++k ){
             weighted_depth += prob_dist[k]*depthvec[k];
@@ -358,13 +393,16 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
           // Zpos = mean_depth;
 	  // cout << "calculated depth: " << Zpos << endl;
+
+          // Add the depth to the GUI histogram.
+          m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+
           m_NoError+=1;
         }
       }
 
     LocalPosition.SetXYZ(Xpos, Ypos, Zpos);
     LocalOrigin.SetXYZ(0.0,0.0,0.0);
-    // TODO: Don't use the detector name
     // cout << m_DetectorNames[DetID] << endl;
     GlobalPosition = m_Geometry->GetGlobalPosition(LocalPosition, m_DetectorNames[DetID]);
     // cout << "Found the GlobalPosition" << endl;
@@ -419,13 +457,18 @@ double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int pixel_code, double En
 {
   // Placeholder for determining the timing noise with energy, and possibly even on a pixel-by-pixel basis.
   // Should follow 1/E relation
-  // TODO: Check that this makes sense
+  // TODO: Determine real energy dependence and implement it here.
+  double noiseFWHM = 0.0;
   if ( m_Coeffs_Energy != NULL ){
-    return m_Coeffs[pixel_code][2] * m_Coeffs_Energy/Energy;
+    noiseFWHM = m_Coeffs[pixel_code][2] * m_Coeffs_Energy/Energy;
+    if ( noiseFWHM < 3.0*2.355 ){
+      noiseFWHM = 3.0*2.355;
+    }
   }
-  else{
-    return 6.0*2.355;
+  else {
+    noiseFWHM = 6.0*2.355;
   }
+  return noiseFWHM;
 }
 
 bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
@@ -499,10 +542,10 @@ bool MModuleDepthCalibration2024::LoadTACCalFile(MString FName)
           double offset_err = Tokens[6].ToDouble();
           vector<double> cal_vals;
           cal_vals.push_back(taccal); cal_vals.push_back(offset); cal_vals.push_back(taccal_err); cal_vals.push_back(offset_err);
-          if ( Tokens[1] == "l" or Tokens[1] == "p" ){
+          if ( Tokens[1] == "l" ){
             m_LVTACCal[DetID][StripID] = cal_vals;
           }
-          else if ( Tokens[1] == "h" or Tokens[1] == "n" ){
+          else if ( Tokens[1] == "h" ){
             m_HVTACCal[DetID][StripID] = cal_vals;
           }
         }

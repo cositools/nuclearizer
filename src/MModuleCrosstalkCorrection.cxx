@@ -212,8 +212,8 @@ bool compare_striphits(MStripHit* SH1, MStripHit* SH2)
   int side1 = 0, side2 = 0;
   int strip1 = SH1->GetStripID();
   int strip2 = SH2->GetStripID();
-  if (not SH1->IsXStrip()) side1 = 1;
-  if (not SH2->IsXStrip()) side2 = 1;
+  if (not SH1->IsLowVoltageStrip()) side1 = 1;
+  if (not SH2->IsLowVoltageStrip()) side2 = 1;
   if (det1 != det2) return (det1<det2);
   else if ((det1==det2) && (side1!=side2)) return (side1<side2);
   else if ((det1==det2) && (side1==side2)) return (strip1<strip2);
@@ -257,8 +257,8 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         // Count number of X and Y strips
         MStripHit *SH = Event->GetStripHit(i_sh);
         if ((SH->GetDetectorID()==i_det) 
-          && (((SH->IsXStrip()==true) && (i_side==0)) 
-          || ((SH->IsXStrip()==false) && (i_side==1))))
+          && (((SH->IsLowVoltageStrip()==true) && (i_side==0)) 
+          || ((SH->IsLowVoltageStrip()==false) && (i_side==1))))
         {
           StripHits.push_back(SH);
         }
@@ -306,7 +306,7 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     // if y strip was hit multiple times, need to use the x energy
     if (Event->GetHit(sh)->GetStripHitMultipleTimesX()){
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false){
           energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
         }
       }
@@ -314,7 +314,7 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     else{
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {        
         // for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true) {
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == true) {
           energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
         }
       }
@@ -331,7 +331,7 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     // if y strip was hit multiple times, need to use the x energy
     if (Event->GetHit(sh)->GetStripHitMultipleTimesY()){
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == true){
           energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
         }
       }
@@ -339,7 +339,7 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     else{
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {        
         // for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false) {
           energy = energy + Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
         }
       }
@@ -365,7 +365,7 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     // If y strip was hit multiple times, need to use the x energy
     else if (Event->GetHit(sh)->GetStripHitMultipleTimesY() == true) {
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == true){
           Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         }
@@ -377,7 +377,7 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     // If x strip was hit multiple times, need to use the y energy
     else if (Event->GetHit(sh)->GetStripHitMultipleTimesX() == true) {
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false){
           Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         }
@@ -394,7 +394,7 @@ bool MModuleCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {  
         //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
         
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false) {
           EnergyY += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           SigmaYSquared += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         } else {
@@ -480,7 +480,7 @@ void MModuleCrosstalkCorrection::CorrectCrosstalk(vector<MStripHit*> StripHits,
     for (unsigned int j=0; j<StripHits.size(); j++)
     {
       mout << StripHits[j]->GetDetectorID() << " "
-      << !StripHits[j]->IsXStrip() << " "
+      << !StripHits[j]->IsLowVoltageStrip() << " "
       << StripHits[j]->GetStripID() << " "
       << StripHits[j]->GetEnergy() << endl;
     }
@@ -553,7 +553,7 @@ void MModuleCrosstalkCorrection::CorrectCrosstalk(vector<MStripHit*> StripHits,
     for (unsigned int j=0; j<StripHits.size(); j++)
     {
       mout << StripHits[j]->GetDetectorID() << " "
-      << !StripHits[j]->IsXStrip() << " "
+      << !StripHits[j]->IsLowVoltageStrip() << " "
       << StripHits[j]->GetStripID() << " "
       << StripHits[j]->GetEnergy() << endl;
     }

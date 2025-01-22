@@ -280,6 +280,13 @@ class MModuleStripPairingGreedy : public MModule
 	unsigned int m_Mode;
 
 
+  unsigned int m_MagicNumberA;
+  unsigned int m_MagicNumberB;
+  unsigned int m_MagicNumberC;
+  unsigned int m_MagicNumberD;
+  unsigned int m_MagicNumberE;
+
+
 
 #ifdef ___CLING___
  public:
