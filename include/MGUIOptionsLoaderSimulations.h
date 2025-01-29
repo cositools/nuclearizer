@@ -71,6 +71,8 @@ class MGUIOptionsLoaderSimulations : public MGUIOptions
  private:
   //! Select which file to load
   MGUIEFileSelector* m_SimulationFileSelector;
+  //! Select deadtime constants file
+  MGUIEFileSelector* m_DeadtimeFileSelector;
   //! Energy calibration file name
   MGUIEFileSelector* m_EnergyCalibrationFileSelector;
   //! Dead strip file name

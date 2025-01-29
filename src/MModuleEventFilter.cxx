@@ -66,7 +66,6 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
-  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventFilter);
@@ -79,21 +78,9 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
   m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
-
-  m_AllowMultiThreading = true;
-  m_AllowMultipleInstances = true;
   
   m_MinimumTotalEnergy = 0;
   m_MaximumTotalEnergy = 10000;
-
-  m_MinimumHVStrips = 0;
-  m_MaximumHVStrips = 20;
-
-  m_MinimumLVStrips = 0;
-  m_MaximumLVStrips = 20;
-
-  m_MinimumHits = 0;
-  m_MaximumHits = 100;
 }
 
 
@@ -158,28 +145,8 @@ bool MModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event)
     }   
   }
   
-  unsigned int NHVStrips = 0;
-  unsigned int NLVStrips = 0;
-  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) {
-    if (Event->GetStripHit(sh)->IsLowVoltageStrip() == true) {
-      ++NLVStrips;
-    } else {
-      ++NHVStrips;
-    }
-  }
-  if (NHVStrips < m_MinimumHVStrips || NHVStrips > m_MaximumHVStrips || NLVStrips < m_MinimumLVStrips || NLVStrips > m_MaximumLVStrips) {
-    FilteredOut = true;
-  }
-
-  if (Event->GetNHits() < m_MinimumHits || Event->GetNHits() > m_MaximumHits) {
-    FilteredOut = true;
-  }
-
-
   if (FilteredOut == true) {
     Event->SetFilteredOut(true);
-    Event->SetAnalysisProgress(MAssembly::c_EventFilter);
-    return false;
   }
   
   Event->SetAnalysisProgress(MAssembly::c_EventFilter);
@@ -198,6 +165,7 @@ void MModuleEventFilter::ShowOptionsGUI()
   MGUIOptionsEventFilter* Options = new MGUIOptionsEventFilter(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
+  
 }
 
 
@@ -207,7 +175,7 @@ void MModuleEventFilter::ShowOptionsGUI()
 bool MModuleEventFilter::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
-
+  
   MXmlNode* MinimumTotalEnergyNode = Node->GetNode("MinimumTotalEnergy");
   if (MinimumTotalEnergyNode != 0) {
     m_MinimumTotalEnergy = MinimumTotalEnergyNode->GetValueAsDouble();
@@ -215,33 +183,6 @@ bool MModuleEventFilter::ReadXmlConfiguration(MXmlNode* Node)
   MXmlNode* MaximumTotalEnergyNode = Node->GetNode("MaximumTotalEnergy");
   if (MaximumTotalEnergyNode != 0) {
     m_MaximumTotalEnergy = MaximumTotalEnergyNode->GetValueAsDouble();
-  }
-
-  MXmlNode* MinimumHVStripsNode = Node->GetNode("MinimumHVStrips");
-  if (MinimumHVStripsNode != 0) {
-    m_MinimumHVStrips = MinimumHVStripsNode->GetValueAsUnsignedInt();
-  }
-  MXmlNode* MaximumHVStripsNode = Node->GetNode("MaximumHVStrips");
-  if (MaximumHVStripsNode != 0) {
-    m_MaximumHVStrips = MaximumHVStripsNode->GetValueAsUnsignedInt();
-  }
-
-  MXmlNode* MinimumLVStripsNode = Node->GetNode("MinimumLVStrips");
-  if (MinimumLVStripsNode != 0) {
-    m_MinimumLVStrips = MinimumLVStripsNode->GetValueAsUnsignedInt();
-  }
-  MXmlNode* MaximumLVStripsNode = Node->GetNode("MaximumLVStrips");
-  if (MaximumLVStripsNode != 0) {
-    m_MaximumLVStrips = MaximumLVStripsNode->GetValueAsUnsignedInt();
-  }
-
-  MXmlNode* MinimumHitsNode = Node->GetNode("MinimumHits");
-  if (MinimumHitsNode != 0) {
-    m_MinimumHits = MinimumHitsNode->GetValueAsUnsignedInt();
-  }
-  MXmlNode* MaximumHitsNode = Node->GetNode("MaximumHits");
-  if (MaximumHitsNode != 0) {
-    m_MaximumHits = MaximumHitsNode->GetValueAsUnsignedInt();
   }
 
   return true;
@@ -259,15 +200,6 @@ MXmlNode* MModuleEventFilter::CreateXmlConfiguration()
 
   new MXmlNode(Node, "MinimumTotalEnergy", m_MinimumTotalEnergy);
   new MXmlNode(Node, "MaximumTotalEnergy", m_MaximumTotalEnergy);
-
-  new MXmlNode(Node, "MinimumHVStrips", m_MinimumHVStrips);
-  new MXmlNode(Node, "MaximumHVStrips", m_MaximumHVStrips);
-
-  new MXmlNode(Node, "MinimumLVStrips", m_MinimumLVStrips);
-  new MXmlNode(Node, "MaximumLVStrips", m_MaximumLVStrips);
-
-  new MXmlNode(Node, "MinimumHits", m_MinimumHits);
-  new MXmlNode(Node, "MaximumHits", m_MaximumHits);
 
   return Node;
 }
