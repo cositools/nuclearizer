@@ -463,6 +463,29 @@ MStripHit* MModuleDepthCalibration2024::GetDominantStrip(vector<MStripHit*>& Str
   return MaxStrip;
 }
 
+MStripHit* MModuleDepthCalibration2024::GetMinimumStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
+{
+  double MinEnergy = numeric_limits<double>::max(); // AZ: When both energies are zero (which shouldn't happen) we still pick one
+  double TotalEnergy = 0.0;
+  MStripHit* MinStrip = nullptr;
+
+  // Iterate through strip hits and get the strip with highest energy
+  for (const auto SH : Strips) {
+    double Energy = SH->GetEnergy();
+    TotalEnergy += Energy;
+    if (Energy < MinEnergy) {
+      MinStrip = SH;
+      MinEnergy = Energy;
+    }
+  }
+  if (TotalEnergy == 0) {
+    EnergyFraction = 0;
+  } else {
+    EnergyFraction = MinEnergy/TotalEnergy;
+  }
+  return MinStrip;
+}
+
 double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int pixel_code, double Energy)
 {
   // Placeholder for determining the timing noise with energy, and possibly even on a pixel-by-pixel basis.

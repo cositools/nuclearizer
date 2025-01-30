@@ -96,6 +96,7 @@ class MModuleDepthCalibration2024 : public MModule
  protected:
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
   MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
+  MStripHit* GetMinimumStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
   //! Retrieve the appropriate Depth values given the DetID
 	vector<double> GetDepth(int DetID);
   //! Retrieve the appropriate CTD values given the DetID and Grade
