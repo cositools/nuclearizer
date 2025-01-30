@@ -74,8 +74,12 @@ using namespace std;
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
 #include "MModuleResponseGenerator.h"
+
+#include "MModuleTACcut.h"
+
 #include "MModuleDiagnostics.h"
 #include "MModuleDiagnosticsEnergyPerStrip.h"
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -130,6 +134,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
+  m_Supervisor->AddAvailableModule(new MModuleTACcut());
 
   m_Supervisor->AddAvailableModule(new MModuleDiagnostics());
   m_Supervisor->AddAvailableModule(new MModuleDiagnosticsEnergyPerStrip());
