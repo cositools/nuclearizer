@@ -90,6 +90,8 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   m_Error5 = 0;
   m_Error6 = 0;
   m_ErrorSH = 0;
+  m_ErrorNullSH=0;
+  m_ErrorNoE=0;
 }
 
 
@@ -206,10 +208,18 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     // Handle different grades differently    
     // GRADE=-1 is an error. Break from the loop and continue.
-    if ( Grade == -1 ){
+    if ( Grade < 0 ){
       H->SetNoDepth();
       Event->SetDepthCalibrationIncomplete();
-      ++m_ErrorSH;
+      if ( Grade == -1 ) {
+        ++m_ErrorSH;
+      }
+      else if( Grade == -2 ) {
+        ++m_ErrorNullSH;
+      }
+      else if( Grade == -3 ) {
+        ++m_ErrorNoE;
+      }
     }
 
     // GRADE=5 is some complicated geometry with multiple hits on a single strip. 
@@ -908,6 +918,8 @@ void MModuleDepthCalibration2024::Finalize()
   cout << "Number of hits with non-adjacent strip hits: " << m_Error6 << endl;
   cout << "Number of hits with too many strip hits: " << m_Error4 << endl;
   cout << "Number of hits with no strip hits on one or both sides: " << m_ErrorSH << endl;
+  cout << "Number of hits with null strip hits: " << m_ErrorNullSH << endl;
+  cout << "Number of hits 0 energy on a strip hit: " << m_ErrorNoE << endl;
   /*
   TFile* rootF = new TFile("EHist.root","recreate");
   rootF->WriteTObject( EHist );
