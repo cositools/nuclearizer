@@ -63,6 +63,7 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   AddPreceedingModuleType(MAssembly::c_EventLoader, true);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
+  AddPreceedingModuleType(MAssembly::c_TACcut, false);
 //  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
@@ -121,9 +122,9 @@ bool MModuleDepthCalibration2024::Initialize()
   // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
   m_Detectors = m_Geometry->GetDetectorList();
 
-  if( LoadTACCalFile(m_TACCalFile) == false ){
-    cout << "No TAC Calibration file loaded. Proceeding without TAC Calibration." << endl;
-  }
+  // if( LoadTACCalFile(m_TACCalFile) == false ){
+  //   cout << "No TAC Calibration file loaded. Proceeding without TAC Calibration." << endl;
+  // }
 
   // Look through the Geometry and get the names and thicknesses of all the detectors.
   for(unsigned int i = 0; i < m_Detectors.size(); ++i){
@@ -288,28 +289,28 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // TODO: For Card Cage, may need to add noise
       double XTiming = XSH->GetTiming();
       double YTiming = YSH->GetTiming();
-      if ( !m_UCSDOverride ) {
-        if ( m_TACCalFileIsLoaded ) {
-          if ( XSH->IsLowVoltageStrip() ){
-            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
-          }
-          else {
-            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
-          }
-        }
-        else { 
-          if ( XSH->IsLowVoltageStrip() ){
-            XTiming = XTiming*0.405 - 525.;
-            YTiming = YTiming*0.43 - 500.;
-          }
-          else {
-            XTiming = XTiming*0.43 - 500.;
-            YTiming = YTiming*0.405 -525.;
-          }
-        }
-      }
+      // if ( !m_UCSDOverride ) {
+      //   if ( m_TACCalFileIsLoaded ) {
+      //     if ( XSH->IsLowVoltageStrip() ){
+      //       XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
+      //       YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
+      //     }
+      //     else {
+      //       XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
+      //       YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
+      //     }
+      //   }
+      //   else { 
+      //     if ( XSH->IsLowVoltageStrip() ){
+      //       XTiming = XTiming*0.405 - 525.;
+      //       YTiming = YTiming*0.43 - 500.;
+      //     }
+      //     else {
+      //       XTiming = XTiming*0.43 - 500.;
+      //       YTiming = YTiming*0.405 -525.;
+      //     }
+      //   }
+      // }
 
       // cout << "Got the coefficients: " << Coeffs << endl;
 

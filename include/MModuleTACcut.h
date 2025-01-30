@@ -79,6 +79,14 @@ class MModuleTACcut : public MModule
   //! Get the maximum TAC value!
   unsigned int GetMaximumTAC() const { return m_MaximumTAC; }
 
+  //! Set filename for TAC Calibration
+  void SetTACCalFileName( const MString& FileName) {m_TACCalFile = FileName;}
+  //! Get filename for TAC Calibration
+  MString GetTACCalFileName() const {return m_TACCalFile;}
+
+  //! Load the TAC calibration file
+  bool LoadTACCalFile(MString FName);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
 
@@ -100,9 +108,11 @@ class MModuleTACcut : public MModule
 
 // declare min and max TAC variables here
 unsigned int m_MinimumTAC, m_MaximumTAC;
+MString m_TACCalFile;
+unordered_map<int, unordered_map<int, vector<double>>> m_HVTACCal;
+unordered_map<int, unordered_map<int, vector<double>>> m_LVTACCal;
 
 vector<unsigned int> m_DetectorIDs;
-unordered_map<int, double> m_Thicknesses;
 
 MGUIExpoTACcut* m_ExpoTACcut;
 

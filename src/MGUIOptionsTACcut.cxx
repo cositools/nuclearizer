@@ -87,6 +87,13 @@ void MGUIOptionsTACcut::Create()
                                        true, 0.0);
   m_OptionsFrame->AddFrame(m_TAC, TACLayout);
 
+  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Calibration file:", 
+    dynamic_cast<MModuleTACcut*>(m_Module)->GetTACCalFileName());
+  m_TACCalFileSelector->SetFileType("TAC", "*.csv");
+  TGLayoutHints* Label3Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_TACCalFileSelector, Label3Layout);
+
+
   // TGLabel* TACLabel = new TGLabel(m_OptionsFrame, 
   //   "This is a TAC cut and this text is here because.\n"
   //   "I'm not sure if I can remove it yet");
@@ -139,6 +146,9 @@ bool MGUIOptionsTACcut::OnApply()
 *>(m_Module)->SetMinimumTAC(m_TAC->GetMinValue());
   dynamic_cast<MModuleTACcut
 *>(m_Module)->SetMaximumTAC(m_TAC->GetMaxValue());
+
+  dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
+
 
   return true;
 }

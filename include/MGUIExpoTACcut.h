@@ -55,13 +55,13 @@ class MGUIExpoTACcut : public MGUIExpo
   virtual void Create();
 
   //! Update the frame
-  //virtual void Update();
+  virtual void Update();
 
   //! Reset the data in the UI
   virtual void Reset();
 
   //! Export the data in the UI
-  //virtual void Export(const MString& FileName);
+  virtual void Export(const MString& FileName);
 
   //! Set the arrangment of the TAC histogram
   //!  0    1    2    3 
