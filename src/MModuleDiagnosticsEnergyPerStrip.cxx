@@ -172,6 +172,7 @@ void MModuleDiagnosticsEnergyPerStrip::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
 
+  MModule::Finalize();
 }
 
 
