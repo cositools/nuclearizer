@@ -381,8 +381,14 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           
           // Weight the depth by probability
       	  double prob_sum = 0.0;
+          double max_prob = 0.0;
+          double maxprob_depth;
       	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
       	    prob_sum += prob_dist[k];
+            if(prob_dist[k] > max_prob){
+              max_prob=prob_dist[k];
+              maxprob_depth = depthvec[k];
+            }
       	  }
           //double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
 	         //cout << "summed probability: " << prob_sum << endl;
@@ -401,12 +407,11 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
           Zsigma =  sqrt(depth_var/prob_sum);
           Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
-          // Zpos = mean_depth;
-	  // cout << "calculated depth: " << Zpos << endl;
 
           // Add the depth to the GUI histogram.
-          m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
-
+          if (Event->IsStripPairingIncomplete()==false) {
+            m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+          }
           m_NoError+=1;
         }
       }
@@ -744,7 +749,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   int return_value;
   // If 1 strip on each side, GRADE=0
   // This represents the center of the pixel
-  if( (PStrips.size() == 1) && (NStrips.size() == 1) ){
+  if( (PStrips.size() == 1) && (NStrips.size() == 1) || (PStrips.size() == 3) && (NStrips.size() == 3) ){
     return_value = 0;
   } 
   // If 2 hits on N side and 1 on P, GRADE=1
