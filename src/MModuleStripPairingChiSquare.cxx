@@ -380,16 +380,16 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
     vector<vector<unsigned int>> BestXSideCombo;
     vector<vector<unsigned int>> BestYSideCombo;
 
-    for (unsigned int xc = 0; xc < Combinations[d][0].size(); ++xc) {
-      for (unsigned int yc = 0; yc < Combinations[d][1].size(); ++yc) {
+    for (unsigned int xc = 0; xc < Combinations[d][0].size(); ++xc) { // Loop over combinations of x-strips (xc represents a list of sets of strips,  and each set is a proposed Hit)
+      for (unsigned int yc = 0; yc < Combinations[d][1].size(); ++yc) { // Loop over combinations of y-strips (xc represents a list of sets of strips,  and each set is a proposed Hit)
 
-        if (abs(long(Combinations[d][0][xc].size()) - long(Combinations[d][1][yc].size())) > 1) {
+        if (abs(long(Combinations[d][0][xc].size()) - long(Combinations[d][1][yc].size())) > 1) { // Skip this pair of combos if the x- and y-strip combos differ in size by more than one
           continue;
         }
 
         unsigned int MinSize = min(Combinations[d][0][xc].size(), Combinations[d][1][yc].size());
 
-        if (max(Combinations[d][0][xc].size(), Combinations[d][1][yc].size()) > MaxCombinations) {
+        if (max(Combinations[d][0][xc].size(), Combinations[d][1][yc].size()) > MaxCombinations) { // Skip if either side has more than 5 sets of strips
           continue;
         }
 
@@ -408,14 +408,14 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 
             double xEnergy = 0;
             double xResolution = 0;
-            for (unsigned int entry = 0; entry < Combinations[d][0][xc][en].size(); ++entry) {
+            for (unsigned int entry = 0; entry < Combinations[d][0][xc][en].size(); ++entry) { // Sum up energy on xstrips in the set of strips, en
               xEnergy += StripHits[d][0][Combinations[d][0][xc][en][entry]]->GetEnergy();
               xResolution += pow(StripHits[d][0][Combinations[d][0][xc][en][entry]]->GetEnergyResolution(), 2);
             }
 
             double yEnergy = 0;
             double yResolution = 0;
-            for (unsigned int entry = 0; entry < Combinations[d][1][yc][ep].size(); ++entry) {
+            for (unsigned int entry = 0; entry < Combinations[d][1][yc][ep].size(); ++entry) { // Sum up energy on ystrips in the set of strips, ep
               yEnergy += StripHits[d][1][Combinations[d][1][yc][ep][entry]]->GetEnergy();
               yResolution += pow(StripHits[d][1][Combinations[d][1][yc][ep][entry]]->GetEnergyResolution(), 2);
             }
@@ -423,9 +423,9 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
             //cout << "  Sub - Test en=" << en << " (" << xEnergy << ") with ep="
             //     << ep << " (" << yEnergy << "):" << endl;
             //cout<<xResolution<<":"<<yResolution<<endl;
-            ChiSquare += (xEnergy - yEnergy)*(xEnergy - yEnergy) / (xResolution + yResolution);
+            ChiSquare += (xEnergy - yEnergy)*(xEnergy - yEnergy) / (xResolution + yResolution); // Chi-squared is determined by how close the energies on either side match
           }
-          ChiSquare /= MinSize;
+          ChiSquare /= MinSize; // Chi-squared is normalized by the number of sets of strips in the smaller of the two combos xc and yc
           //cout<<"Chi square: "<<ChiSquare<<endl;
 
           if (ChiSquare < BestChiSquare) {
