@@ -487,6 +487,9 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
     double XEnergyTotal = 0;
     double YEnergyTotal = 0;
     double EnergyTotal = 0;
+    double XEnergyResTotal = 0;
+    double YEnergyResTotal = 0;
+
     // Create a list for plotting X and Y energies
     vector<double> XEnergies;
     vector<double> YEnergies;
@@ -496,12 +499,15 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
       YPos = 0;
       XEnergy = 0;
       YEnergy = 0;
+      XEnergyRes = 0;
+      YEnergyRes = 0;
 
       for (unsigned int sh = 0; sh < BestXSideCombo[h].size(); ++sh) {
         //cout<<"x-pos: "<<StripHits[d][0][BestXSideCombo[h][sh]]->GetNonStripPosition()<<endl;
         XEnergy += StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergy();
         XEnergyRes += StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergyResolution()*StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergyResolution();
       }
+      XEnergyResTotal += XEnergyRes;
       XEnergyRes = sqrt(XEnergyRes);
       XEnergyTotal += XEnergy;
 
@@ -509,6 +515,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
         YEnergy += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergy();
         YEnergyRes += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergyResolution()*StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergyResolution();
       }
+      YEnergyResTotal += YEnergyRes;
       YEnergyRes = sqrt(YEnergyRes);
       YEnergyTotal += YEnergy;
 
@@ -543,8 +550,10 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
         Hit->AddStripHit(StripHits[d][1][BestYSideCombo[h][sh]]);
       }
     }
+    XEnergyResTotal = sqrt(XEnergyResTotal);
+    YEnergyResTotal = sqrt(YEnergyResTotal);
 
-    if (EnergyTotal > max(XEnergyTotal, YEnergyTotal) + 2.5*max(XEnergyRes, YEnergyRes) || EnergyTotal < min(XEnergyTotal, YEnergyTotal) - 2.5*max(XEnergyRes, YEnergyRes)) {
+    if (EnergyTotal > max(XEnergyTotal, YEnergyTotal) + 2.5*max(XEnergyResTotal, YEnergyResTotal) || EnergyTotal < min(XEnergyTotal, YEnergyTotal) - 2.5*max(XEnergyResTotal, YEnergyResTotal)) {
       Event->SetStripPairingIncomplete(true, "Strips not pairable wihin 2.5 sigma of measure denergy");
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
