@@ -223,3 +223,62 @@ void MGUIExpoTACcut::Create()
 
   m_Mutex.UnLock();
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoTACcut::Update()
+{
+  //! Update the frame
+
+  m_Mutex.Lock();
+
+  double Max = 0;
+  // for (auto H : m_TACHistograms) {
+  for ( const auto dethistpair : m_TACHistograms ){
+    TH1D* H = dethistpair.second;
+    for (int bx = 2; bx < H->GetNbinsX(); ++bx) { // Skip first and last
+      if (Max < H->GetBinContent(bx)) {
+        Max = H->GetBinContent(bx);
+      }
+    }
+  }
+  Max *= 1.1;
+  for ( const auto dethistpair : m_TACHistograms ){
+    TH1D* H = dethistpair.second;
+    H->SetMaximum(Max);
+  }
+  
+  for (auto C : m_TACCanvases) {
+
+    (C.second)->GetCanvas()->Modified();
+    (C.second)->GetCanvas()->Update();
+  }
+
+  m_Mutex.UnLock();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoTACcut::Export(const MString& FileName)
+{
+  // Add data to the energy histogram
+
+  m_Mutex.Lock();
+
+  TCanvas* P = new TCanvas();
+  P->Divide(m_NColumns, m_NRows);
+  for (unsigned int y = 0; y < m_DetectorMap.size(); ++y) {
+    for (unsigned int x = 0; x < m_DetectorMap[y].size(); ++x) {
+      unsigned int DetID = m_DetectorMap[y][x];
+      P->cd((x+1) + m_NColumns*y);
+      m_TACHistograms[DetID]->DrawCopy("colz");
+    }
+  }
+  P->SaveAs(FileName);
+  delete P;
+
+  m_Mutex.UnLock();
+}

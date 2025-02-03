@@ -71,6 +71,9 @@ class MGUIOptionsTACcut : public MGUIOptions
   //! The total TAC selection
   MGUIEMinMaxEntry* m_TAC;
 
+  //! Select TAC Calibration file to load, converts readout timing to nanoseconds
+  MGUIEFileSelector* m_TACCalFileSelector;
+
   TGCheckButton* m_SingleSiteOnly;
 	
   // private members:
