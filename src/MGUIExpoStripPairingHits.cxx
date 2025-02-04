@@ -1,5 +1,5 @@
 /*
- * MGUIExpoStripPairing.cxx
+ * MGUIExpoStripPairingHits.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIExpoStripPairing.h"
+#include "MGUIExpoStripPairingHits.h"
 
 // Standard libs:
 
@@ -37,28 +37,28 @@
 
 
 #ifdef ___CLING___
-ClassImp(MGUIExpoStripPairing)
+ClassImp(MGUIExpoStripPairingHits)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoStripPairing::MGUIExpoStripPairing(MModule* Module) : MGUIExpo(Module)
+MGUIExpoStripPairingHits::MGUIExpoStripPairingHits(MModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 
   // Set the new title of the tab here:
-  m_TabTitle = "Strip Pairing Energies";
+  m_TabTitle = "Strip Pairing Hits";
 
   // Add all histograms and canvases below
-  m_Energies = new TH2D("", "Strip pairing: energy distribution LV vs. HV side", 1000, 0, 1000, 1000, 0, 1000);
-  m_Energies->SetXTitle("Energy LV Side [keV]");
-  m_Energies->SetYTitle("Energy HV Side [keV]");
-  m_Energies->SetZTitle("counts");
-  m_Energies->SetFillColor(kAzure+7);
 
-  m_EnergiesCanvas = 0;
+  m_Hits = new TH1D("", "Strip pairing: Number of Hits per Event", 5, 1, 5);
+  m_Hits->SetXTitle("Number of Hits");
+  m_Hits->SetYTitle("Number of Events");
+  m_Hits->SetFillColor(kAzure+7);
+
+  m_HitsCanvas = 0;
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -68,7 +68,7 @@ MGUIExpoStripPairing::MGUIExpoStripPairing(MModule* Module) : MGUIExpo(Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoStripPairing::~MGUIExpoStripPairing()
+MGUIExpoStripPairingHits::~MGUIExpoStripPairingHits()
 {
   // kDeepCleanup is activated 
 }
@@ -77,28 +77,13 @@ MGUIExpoStripPairing::~MGUIExpoStripPairing()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoStripPairing::Reset()
+void MGUIExpoStripPairingHits::Reset()
 {
   //! Reset the data in the UI
 
   m_Mutex.Lock();
   
-  m_Energies->Reset();
-  
-  m_Mutex.UnLock();
-}
-  
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MGUIExpoStripPairing::SetEnergiesHistogramParameters(int NBins, double Min, double Max)
-{
-  // Set the energy histogram parameters 
-
-  m_Mutex.Lock();
-  
-  m_Energies->SetBins(NBins, Min, Max, NBins, Min, Max);
+  m_Hits->Reset();
   
   m_Mutex.UnLock();
 }
@@ -107,13 +92,13 @@ void MGUIExpoStripPairing::SetEnergiesHistogramParameters(int NBins, double Min,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoStripPairing::AddEnergies(double pEnergy, double nEnergy)
+void MGUIExpoStripPairingHits::AddHits(int NHits)
 {
   // Add data to the energy histogram
 
   m_Mutex.Lock();
   
-  m_Energies->Fill(pEnergy, nEnergy);
+  m_Hits->Fill(NHits);
   
   m_Mutex.UnLock();
 }
@@ -122,7 +107,22 @@ void MGUIExpoStripPairing::AddEnergies(double pEnergy, double nEnergy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoStripPairing::Create()
+void MGUIExpoStripPairingHits::SetHitsHistogramParameters(int NBins, double Min, double Max)
+{
+  // Set the energy histogram parameters 
+
+  m_Mutex.Lock();
+  
+  m_Hits->SetBins(NBins, Min, Max);
+  
+  m_Mutex.UnLock();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIExpoStripPairingHits::Create()
 {
   // Add the GUI options here
   
@@ -137,15 +137,14 @@ void MGUIExpoStripPairing::Create()
   TGHorizontalFrame* HFrame = new TGHorizontalFrame(this);
   AddFrame(HFrame, CanvasLayout);
 
-  
-  m_EnergiesCanvas = new TRootEmbeddedCanvas("Energies", HFrame, 100, 100);
-  HFrame->AddFrame(m_EnergiesCanvas, CanvasLayout);
+  m_HitsCanvas = new TRootEmbeddedCanvas("Hits", HFrame, 100, 100);
+  HFrame->AddFrame(m_HitsCanvas, CanvasLayout);
 
-  m_EnergiesCanvas->GetCanvas()->cd();
-  m_EnergiesCanvas->GetCanvas()->SetGridy();
-  m_EnergiesCanvas->GetCanvas()->SetGridx();
-  m_Energies->Draw("colz");
-  m_EnergiesCanvas->GetCanvas()->Update();
+  m_HitsCanvas->GetCanvas()->cd();
+  m_HitsCanvas->GetCanvas()->SetGridy();
+  m_HitsCanvas->GetCanvas()->SetGridx();
+  m_Hits->Draw("colz");
+  m_HitsCanvas->GetCanvas()->Update();
   
   m_IsCreated = true;
   
@@ -156,15 +155,15 @@ void MGUIExpoStripPairing::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoStripPairing::Update()
+void MGUIExpoStripPairingHits::Update()
 {
   //! Update the frame
 
   m_Mutex.Lock();
-  
-  if (m_EnergiesCanvas != 0) {
-    m_EnergiesCanvas->GetCanvas()->Modified();
-    m_EnergiesCanvas->GetCanvas()->Update();
+
+  if (m_HitsCanvas != 0) {
+    m_HitsCanvas->GetCanvas()->Modified();
+    m_HitsCanvas->GetCanvas()->Update();
   }
   
   m_Mutex.UnLock();
@@ -174,17 +173,19 @@ void MGUIExpoStripPairing::Update()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoStripPairing::Export(const MString& FileName)
+
+void MGUIExpoStripPairingHits::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 
   m_Mutex.Lock();
   
-  m_EnergiesCanvas->GetCanvas()->SaveAs(FileName);
+  m_HitsCanvas->GetCanvas()->SaveAs(FileName);
   
   m_Mutex.UnLock();
 }
 
 
-// MGUIExpoStripPairing: the end...
+
+// MGUIExpoStripPairingHits: the end...
 ////////////////////////////////////////////////////////////////////////////////

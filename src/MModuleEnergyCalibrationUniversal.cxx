@@ -396,8 +396,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
 
   for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
     MStripHit* SH = Event->GetStripHit(i);
-    if (SH->GetEnergy() < 8 || SH->GetTiming() < 8700 || SH->GetTiming() > 12000) {
-      // cout<<"HACK: Removing strip hit due to TAC "<<SH->GetTiming()<<" cut or energy "<<SH->GetEnergy()<<endl;
+    if (SH->GetEnergy() < 20) {
       Event->RemoveStripHit(i);
       delete SH;
     } else {

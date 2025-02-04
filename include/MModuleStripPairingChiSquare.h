@@ -31,6 +31,8 @@
 #include "MModule.h"
 #include "MStripHit.h"
 #include "MGUIExpoStripPairing.h"
+#include "MGUIExpoStripPairingHits.h"
+#include "MGUIExpoStripPairingStripHits.h"
 
 // Forward declarations:
 
@@ -84,6 +86,8 @@ class MModuleStripPairingChiSquare : public MModule
  protected:
   //! The display of debugging data
   MGUIExpoStripPairing* m_ExpoStripPairing;
+  MGUIExpoStripPairingHits* m_ExpoStripPairingHits;
+  MGUIExpoStripPairingStripHits* m_ExpoStripPairingStripHits;
 
 
   // private members:
