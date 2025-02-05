@@ -15,16 +15,16 @@ For new classes, copy and modify an existing one, or use the MModuleTemplate cla
 * Option GUI's start with MGUIOptions
 * Expo (= data display) GUI's start with MGUIExpo
 
-### Class functions
+### Member functions
 
 The naming follows the "upper camel case" convention, e.g.,
 ```
 MVector, Clear, IsNull, SetMagThetaPhi
 ```
 
-### Member variables start with
+### Member variables
 
-Member variables start with "m_", and the remainder also follow the "upper camel case" convention, e.g.,
+Member variables start with "m_", and the remainder of the name follow the "upper camel case" convention, e.g.,
 ```
 m_X, m_DataPoint, m_IsNonZero
 ```
@@ -38,17 +38,17 @@ X, DataPoint, IsNonZero
 
 ## Comments
 
-Use doxygen-style comments (//!) for classes, member functions, and variables, including a brief description of the method's functionality.
-```cpp
-//! Standard constructor giving x, y, z component of the data
-MVector(double X = 0.0, double Y = 0.0, double Z = 0.0);
+- Use doxygen-style comments (//!) for classes, member functions, and variables, including a brief description of the method's functionality.
+  ```cpp
+  //! Standard constructor giving x, y, z component of the data
+  MVector(double X = 0.0, double Y = 0.0, double Z = 0.0);
 
+  //! Flag indicating if the vector is zero
+  bool m_IsZero;
+  ```
+- Document all classes and all member functions and variables in the header
 
-//! Flag indicating if the vector is zero
-bool m_IsZero;
-```
-
-Use single-line comments (//) to explain logic within methods.
+- Use single-line comments (//) to explain logic within methods.
 
 
 ## Formatting
@@ -110,7 +110,9 @@ Use single-line comments (//) to explain logic within methods.
 
 ### 4. **Spaces Around Braces inside functions**
 
-- **Opening Brace**: The opening brace { should be placed at the end of the line for function definitions, conditionals, loops, and class definitions - the exception are meber functions, where it is placed on a single new line.
+- **Opening Brace**: The opening brace { should be placed at the end of the line for function definitions, conditionals, loops, and class definitions - the exception are meber functions, where it is placed on a single new line
+
+- **Closing Brace**: The closing brace } should be on its own line, aligned with the line where the corresponding opening brace appeared.
   ```cpp
   if (m_X == 0) {  // Correct
     // Do something
@@ -121,9 +123,9 @@ Use single-line comments (//) to explain logic within methods.
   }
   ```
 
-- **Closing Brace**: The closing brace } should be on its own line, aligned with the line where the corresponding opening brace appeared.
   ```cpp
-    void SomeFunction() {
+    void Class::SomeFunction()
+    {
       // Code logic here
     }
   ```
@@ -136,7 +138,7 @@ Use single-line comments (//) to explain logic within methods.
     // do something
   }
   
-  for (int i = 0; i < n; i++) {  // Correct
+  for (int i = 0; i < n; ++i) {  // Correct
     // loop body
   }
    ```
@@ -236,7 +238,8 @@ Use single-line comments (//) to explain logic within methods.
    - If you find yourself repeating code, consider moving that code into a function. Functions promote code reusability and make debugging easier.
    - Example:
      ```cpp
-     double AverageOffsetCalculation(double XOffset, double YOffset) {
+     double AverageOffsetCalculation(double XOffset, double YOffset)
+     {
          return 0.5*(XOffset + YOffset);
      }
      ```
@@ -250,7 +253,7 @@ Use single-line comments (//) to explain logic within methods.
    - Arrays in C++ are fixed in size and can be cumbersome. Use `std::vector` for dynamic arrays, as it automatically resizes.
    - Example:
      ```cpp
-     std::vector<int> Numbers = {1, 2, 3, 4, 5};
+     vector<int> Numbers = {1, 2, 3, 4, 5};
      Numbers.push_back(6); // Adds 6 to the end
      ```
 
@@ -264,7 +267,8 @@ Use single-line comments (//) to explain logic within methods.
        cout<<"Error: "<<e.what()<<endl;
      }
      ```
-
+   - The class MExceptions has a wide range of useful exceptions
+   - 
 
 ### 10. **Avoid Global Variables**
    - Global variables make your code harder to debug and test. Use local variables or pass parameters to functions instead.
