@@ -244,7 +244,7 @@ bool ThresholdCalculation::Analyze()
 
 					int det = Event->GetStripHit(sh)->GetDetectorID();
 					int strip = Event->GetStripHit(sh)->GetStripID();
-					bool isPos = Event->GetStripHit(sh)->IsPositiveStrip();
+					bool isPos = Event->GetStripHit(sh)->IsLowVoltageStrip();
 
 					double energy = Event->GetStripHit(sh)->GetEnergy();
 					double adc = Event->GetStripHit(sh)->GetADCUnits();
@@ -396,7 +396,7 @@ void ThresholdCalculation::FSTThresholdsLine(map<int, TH1D*> FSTSpec, map<int, f
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		//put everything back in energy
 		double lld_thresh = Calibrator->GetEnergy(R,lld_thresholds[H.first]);
@@ -422,7 +422,7 @@ void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, fl
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		TF1* erf = new TF1("erf","[0]*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+[3]",lld_thresholds[H.first],spectrum_kink[H.first]+180);
 		erf->SetParameters(-40,200,90,10);
@@ -452,7 +452,7 @@ void ThresholdCalculation::FSTThresholdsErf(map<int, TH1D*> FSTSpec, map<int, fl
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		//put everything back in energy
 /*		double lld_thresh = Calibrator->GetEnergy(R,lld_thresholds[H.first]);
@@ -532,7 +532,7 @@ void ThresholdCalculation::FSTThresholdsErfFixedMean(map<int, TH1D*> FSTSpec, ma
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		TF1* erf = new TF1("erf","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lld_thresholds[H.first],spectrum_kink[H.first]+180);
 		erf->SetParameters(40,200,90,10);
@@ -589,7 +589,7 @@ void ThresholdCalculation::FSTThresholdsErfFixedMean(map<int, TH1D*> FSTSpec, ma
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		//or leave everything in ADC for the DEE
 		double lld_thresh = lld_thresholds[H.first];
@@ -609,7 +609,7 @@ void ThresholdCalculation::FSTThresholdsErfFixedMean(map<int, TH1D*> FSTSpec, ma
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		//put everything back in energy
 		double lld_thresh = Calibrator->GetEnergy(R,lld_thresholds[H.first]);
@@ -653,7 +653,7 @@ void ThresholdCalculation::FSTThresholdsFastOverTotal(map<int, TH1D*> FSTSpec, m
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		TF1* erf = new TF1("erf","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lld_thresholds[H.first],spectrum_kink[H.first]+180);
 		erf->SetParameters(1,200,90,0);
@@ -725,7 +725,7 @@ void ThresholdCalculation::FSTThresholdsFastOverTotal(map<int, TH1D*> FSTSpec, m
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		//or leave everything in ADC for the DEE
 		double lld_thresh = lld_thresholds[H.first];
@@ -745,7 +745,7 @@ void ThresholdCalculation::FSTThresholdsFastOverTotal(map<int, TH1D*> FSTSpec, m
 		MReadOutElementDoubleStrip R;
 		R.SetDetectorID(H.first / 1000);
 		R.SetStripID((H.first % 1000) / 10);
-		R.IsPositiveStrip(H.first % 10);
+		R.IsLowVoltageStrip(H.first % 10);
 
 		//put everything back in energy
 		double lld_thresh = Calibrator->GetEnergy(R,lld_thresholds[H.first]);

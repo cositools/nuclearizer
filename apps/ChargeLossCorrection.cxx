@@ -294,7 +294,7 @@ bool ChargeLossCorrection::Analyze()
 					if (Event->GetHit(h)->GetNStripHits()==3){
 						for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); s++){
 							detectorID = Event->GetHit(h)->GetStripHit(s)->GetDetectorID();
-							if (Event->GetHit(h)->GetStripHit(s)->IsXStrip()){
+							if (Event->GetHit(h)->GetStripHit(s)->IsLowVoltageStrip()){
 								xStripIDs.push_back(Event->GetHit(h)->GetStripHit(s)->GetStripID());
 								xE = Event->GetHit(h)->GetStripHit(s)->GetEnergy();
 								xEnergy.push_back(xE);

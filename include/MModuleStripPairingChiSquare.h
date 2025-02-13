@@ -1,5 +1,5 @@
 /*
- * MModuleTemplate.h
+ * MModuleStripPairingChiSquare.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,20 +9,28 @@
  */
 
 
-#ifndef __MModuleTemplate__
-#define __MModuleTemplate__
+#ifndef __MModuleStripPairingChiSquare__
+#define __MModuleStripPairingChiSquare__
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Standard libs:
+#include<iostream>
+#include<vector>
+#include<cmath>
+#include<algorithm>
+#include<map>
+#include<limits>
 
 // ROOT libs:
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
+#include "MStripHit.h"
+#include "MGUIExpoStripPairing.h"
 
 // Forward declarations:
 
@@ -30,17 +38,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleTemplate : public MModule
+class MModuleStripPairingChiSquare : public MModule
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleTemplate();
+  MModuleStripPairingChiSquare();
   //! Default destructor
-  virtual ~MModuleTemplate();
+  virtual ~MModuleStripPairingChiSquare();
   
   //! Create a new object of this class 
-  virtual MModuleTemplate* Clone() { return new MModuleTemplate(); }
+  virtual MModuleStripPairingChiSquare* Clone() { return new MModuleStripPairingChiSquare(); }
+
+  //! Create the expos
+  virtual void CreateExpos();
 
   //! Initialize the module
   virtual bool Initialize();
@@ -61,6 +72,8 @@ class MModuleTemplate : public MModule
 
   // protected methods:
  protected:
+  // Find a new set of combinations giving the existing gone
+  vector<vector<vector<unsigned int>>> FindNewCombinations(vector<vector<vector<unsigned int>>> OldOnes, vector<MStripHit*> StripHits);
 
   // private methods:
  private:
@@ -69,6 +82,8 @@ class MModuleTemplate : public MModule
 
   // protected members:
  protected:
+  //! The display of debugging data
+  MGUIExpoStripPairing* m_ExpoStripPairing;
 
 
   // private members:
@@ -79,7 +94,7 @@ class MModuleTemplate : public MModule
 
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleTemplate, 0) // no description
+  ClassDef(MModuleStripPairingChiSquare, 0) // no description
 #endif
 
 };

@@ -367,7 +367,7 @@ bool MModuleLoaderMeasurementsBinary::AnalyzeEvent(MReadOutAssembly* Event)
 		MStripHit* SH = NewEvent->GetStripHit(i);
 		int id = SH->GetStripID();
 		int T = (int) SH->GetTiming();
-		if( SH->IsXStrip() ){
+		if( SH->IsLowVoltageStrip() ){
 		fprintf(f_TOnly,"X%d---%d, ",id,T);
 		} else {
 		fprintf(f_TOnly,"Y%d---%d; ",id,T);
@@ -378,7 +378,7 @@ bool MModuleLoaderMeasurementsBinary::AnalyzeEvent(MReadOutAssembly* Event)
 		MStripHit* SH = NewEvent->GetStripHitTOnly(i);
 		int id = SH->GetStripID();
 		int T = (int) SH->GetTiming();
-		if( SH->IsXStrip() ){
+		if( SH->IsLowVoltageStrip() ){
 		fprintf(f_TOnly,"X%d---%d, ",id,T);
 		} else {
 		fprintf(f_TOnly,"Y%d---%d, ",id,T);
