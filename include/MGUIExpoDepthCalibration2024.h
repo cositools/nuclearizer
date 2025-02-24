@@ -36,6 +36,10 @@
 // NuSTAR libs
 #include "MGUIExpo.h"
 
+// Standard libs
+#include <unordered_map>
+using namespace std;
+
 // Forward declarations:
 
 
