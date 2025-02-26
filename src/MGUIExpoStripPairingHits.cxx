@@ -58,7 +58,7 @@ MGUIExpoStripPairingHits::MGUIExpoStripPairingHits(MModule* Module) : MGUIExpo(M
   m_Hits->SetYTitle("Number of Events");
   m_Hits->SetFillColor(kAzure+7);
 
-  m_HitsCanvas = 0;
+  m_HitsCanvas = nullptr;
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -161,7 +161,7 @@ void MGUIExpoStripPairingHits::Update()
 
   m_Mutex.Lock();
 
-  if (m_HitsCanvas != 0) {
+  if (m_HitsCanvas != nullptr) {
     m_HitsCanvas->GetCanvas()->Modified();
     m_HitsCanvas->GetCanvas()->Update();
   }

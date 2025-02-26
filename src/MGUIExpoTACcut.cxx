@@ -52,7 +52,7 @@ MGUIExpoTACcut::MGUIExpoTACcut(MModule* Module) : MGUIExpo(Module)
   m_TabTitle = "TAC Calibration";
   
   // Set the histogram arrangment
-  // SetTACHistogramArrangement(1, 1);
+  // SetTACHistogramArrangement(1,1);
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -118,7 +118,7 @@ void MGUIExpoTACcut::SetTACHistogramArrangement(vector<unsigned int>* DetIDs)
     TAC->SetFillColor(kAzure+7);
     
     m_TACHistograms[DetID] = TAC;
-    // m_TACCanvases[DetID] = 0;
+    m_TACCanvases[DetID] = 0;
 
     ++column;
   }

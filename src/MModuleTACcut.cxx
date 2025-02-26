@@ -61,7 +61,7 @@ MModuleTACcut::MModuleTACcut() : MModule()
   m_XmlTag = "XmlTagTACcut";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(MAssembly::c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_EventLoader, true);
   //AddPreceedingModuleType(MAssembly::c_DetectorEffectsEngine);
 
   // AddPreceedingModuleType(MAssembly::c_EnergyCalibration);

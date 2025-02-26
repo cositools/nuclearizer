@@ -1,0 +1,307 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"star_age",
+				"star_agenew"
+			],
+			[
+				"g",
+				"g"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 136.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/Sophie/Desktop/COSI/calibrations/Data/CalibratedDATs/notebooks/plotting_helper.py",
+		"/Users/Sophie/.bash_profile",
+		"/Users/Sophie/Downloads/IOPEXPORT_BIB (24).bib",
+		"/Users/Sophie/Downloads/S1387647306000972.bib",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/depth_cal/nrl4_lbl_HP52301-1_600V_/ctd_fits/LBL-HP52301-1_am241_co57_cs137_linear_taccal_240225/14-3/hv_59.5_.png",
+		"/Users/Sophie/COSItools/cosi-setup/setup-retrieve-git-repository.sh",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/WNB5C/Project.toml",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/neHQ1/Project.toml",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/EPmOI/src/ChargeDriftModels/ADLChargeDriftModel/drift_velocity_default.yaml",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/EPmOI/src/ChargeDriftModels/ADLChargeDriftModel/TemperatureModels/LinearModel.jl",
+		"/Users/Sophie/Desktop/COSI/simulations/COSI_SSD/cosi_smex.jl",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/mkeGb/Project.toml",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/EPmOI/Project.toml",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/EPmOI/src/ChargeDriftModels/ADLChargeDriftModel/TemperatureModels/drift_velocity_config_powerlaw.yaml",
+		"/Users/Sophie/gammaraytoys/README.md",
+		"/Users/Sophie/COSItools/cosi-setup/allowed-versions.txt",
+		"/Users/Sophie/COSItools/external/BuildLogROOT.txt",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/ged_analysis_settings/intialize_analysis_settings.py",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/README.md",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/ctd_detector_data.py",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/asic_electronics_sim.py",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/process_hdf_data.py",
+		"/Users/Sophie/COSItools/cosi-setup/build-root.sh",
+		"/Users/Sophie/.zshrc",
+		"/Users/Sophie/.bashrc",
+		"/Users/Sophie/.julia/packages/SolidStateDetectors/EPmOI/src/ChargeDriftModels/ADLChargeDriftModel/TemperatureModels/BoltzmannModel.jl",
+		"/Users/Sophie/miniconda3/envs/fr_julia_env/lib/python3.10/site-packages/asic/config.py",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/shapers.py",
+		"/Users/Sophie/Desktop/COSI/simulations/ged-analysis/ged_analysis_settings/nrl4_lbl_HP52301-1_600V_Jun22_settings.yaml",
+		"/Users/Sophie/.zrch",
+		"/Users/Sophie/.zprofile",
+		"/Users/Sophie/COSItools/nuclearizer/src/MGUIExpoDepthCalibration2024.cxx",
+		"/Users/Sophie/COSItools/nuclearizer/src/MGUIExpoTACcut.cxx",
+		"/Users/Sophie/COSItools/nuclearizer/include/MGUIExpoTACcut.h",
+		"/Users/Sophie/COSItools/nuclearizer/src/MModuleTACcut.cxx",
+		"/Users/Sophie/COSItools/nuclearizer/include/MModuleTACcut.h",
+		"/Users/Sophie/COSItools/nuclearizer/include/MModuleDepthCalibration2024.h",
+		"/Users/Sophie/COSItools/nuclearizer/src/MModuleEnergyCalibrationUniversal.cxx",
+		"/Users/Sophie/COSItools/nuclearizer/include/MAssembly.h",
+		"/opt/local/etc/macports/macports.conf.default",
+		"/opt/local/etc/macports/macports.conf",
+		"/Users/Sophie/Desktop/COSI/.bash_profile",
+		"/Users/Sophie/.bashprofile",
+		"/usr/local/bin/jupyter-troubleshoot",
+		"/usr/local/bin/jupyter-serverextension",
+		"/usr/local/bin/jupyter",
+		"/Users/Sophie/.jupyter/jupyter_server_config.py",
+		"/Users/Sophie/.jupyter/jupyter_notebook_config.py",
+		"/Users/Sophie/COSItools/nuclearizer/include/MGUIOptionsTACcut.h",
+		"/Users/Sophie/COSItools/nuclearizer/Makefile",
+		"/Users/Sophie/COSItools/nuclearizer/src/MAssembly.cxx",
+		"/Users/Sophie/COSItools/nuclearizer/src/MGUIOptionsTACcut.cxx",
+		"/Users/Sophie/COSItools/nuclearizer/src/MGUITACcut.cxx",
+		"/Users/Sophie/Desktop/COSI/calibrations/Sophie_Cal_Data/UncalibratedROAs/nuclearize_read_all.sh",
+		"/Users/Sophie/Desktop/COSI/calibrations/Sophie_Cal_Data/CalibratedDATs/20231003_Cs137_AC_600V_1.dat",
+		"/Users/Sophie/Documents/GitHub/megalib/src/mimrec/src/MImageSpheric.cxx",
+		"/Users/Sophie/Desktop/COSI/calibrations/Sophie_Cal_Data/MelinatorCalibrationResults/20231012_Am241_Ba133_Cs137.ecal",
+		"/Users/Sophie/Desktop/COSI/calibrations/Sophie_Cal_Data/MelinatorCalibrationResults/20231012_Am241_Ba133_Cs137",
+		"/Users/Sophie/Desktop/COSI/calibrations/Sophie_Cal_Data/UncalibratedROAs/20231006_Cs137_DC_600V_1.log",
+		"/Users/Sophie/Desktop/COSI/calibrations/Sophie_Cal_Data/CardCageGSEData/READMe.txt",
+		"/Users/Sophie/Documents/GitHub/megalib/src/global/misc/src/MFunction3DSpherical.cxx",
+		"/Users/Sophie/Documents/GitHub/megalib/src/fretalon/melinator/src/MMelinator.cxx",
+		"/Users/Sophie/Documents/GitHub/megalib/resource/examples/advanced/AllSky/Converter.cxx",
+		"/Users/Sophie/Documents/GitHub/megalib/src/sivan/src/MInterfaceSivan.cxx",
+		"/Users/Sophie/Documents/GitHub/megalib/src/global/misc/inc/MResponseMatrixO1.h",
+		"/Users/Sophie/Desktop/figueroa/uX/calibration_source_sim/rad_classes.py",
+		"/Users/Sophie/Desktop/figueroa/uX/calibration_source_sim/stage2_pattern.txt",
+		"/Users/Sophie/Desktop/figueroa/uX/S2_spot.p",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/36245posdat.txt",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/timestamps_pulse_X.txt",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/plotting_params.py",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/pulse_datarf.csv",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/pulsedata_reformatting.py",
+		"/Users/Sophie/Downloads/IOPEXPORT_BIB-2.bib",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/fig26_plot.py",
+		"/Users/Sophie/Desktop/figueroa/uX/fig26_secondtry.py",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/launch_day_through_flight.adrc_hk_dat",
+		"/Users/Sophie/Desktop/figueroa/uX/flightplot.py",
+		"/Users/Sophie/Desktop/figueroa/uX/first_flight_paper/tdas.mat",
+		"/Users/Sophie/Desktop/figueroa/uX/calibration_source_sim/stage2_test.py",
+		"/Users/Sophie/Desktop/figueroa/uX/fig26_plot.py",
+		"/Users/Sophie/Desktop/calibration_source_sim/new_source.py",
+		"/Users/Sophie/Desktop/calibration_source_sim/stage2_test.py",
+		"/Users/Sophie/Desktop/stage2_test.py",
+		"/Users/Sophie/calibration_source_sim/stage2_test.py",
+		"/Users/Sophie/calibration_source_sim/rad_classes.py",
+		"/Users/Sophie/calibration_source_sim/new_source.py",
+		"/Users/Sophie/Desktop/statmech_q3.py",
+		"/Users/Sophie/Desktop/website/P3.3.java",
+		"/Users/Sophie/Desktop/website/contact.html",
+		"/Users/Sophie/Desktop/website/styles.css",
+		"/Users/Sophie/Desktop/HW2.java",
+		"/Users/Sophie/Desktop/java_practice.java",
+		"/Users/Sophie/Desktop/website/index.html",
+		"/Users/Sophie/Desktop/website/references.html",
+		"/Users/Sophie/Desktop/website/methodology.html",
+		"/Users/Sophie/Desktop/website/intro.html",
+		"/Users/Sophie/Desktop/website/background.html",
+		"/Users/Sophie/Desktop/styles.css",
+		"/Users/Sophie/Desktop/references.html",
+		"/Users/Sophie/Desktop/methodology.html",
+		"/Users/Sophie/Desktop/background.html",
+		"/Users/Sophie/Desktop/intro.html",
+		"/Users/Sophie/Desktop/contact.html",
+		"/Users/Sophie/Desktop/home.html",
+		"/Users/Sophie/Downloads/IOPEXPORT_BIB.bib",
+		"/Users/Sophie/mesa_runs/websitecopy2.html",
+		"/Users/Sophie/mesa_runs/mesa_data.py",
+		"/Users/Sophie/mesa_runs/websitecopy.html",
+		"/Users/Sophie/mesa_runs/my_mesaplot.py",
+		"/Users/Sophie/mesa_runs/HR_met.py",
+		"/Users/Sophie/mesa_runs/Mt_q.py",
+		"/Users/Sophie/mesa_runs/HR_q.py",
+		"/Users/Sophie/mesa_runs/prob_distribution.py",
+		"/Users/Sophie/mesa_runs/Mt_met.py"
+	],
+	"find":
+	{
+		"height": 39.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 24.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 280.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "MModuleTACcut.sublime-project",
+	"replace":
+	{
+		"height": 44.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 322.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
