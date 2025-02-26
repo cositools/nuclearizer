@@ -78,12 +78,6 @@ void MGUIOptionsDepthCalibration2024::Create()
   TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_SplinesFileSelector, Label2Layout);
 
-  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Calibration file:",
-      dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetTACCalFileName());
-  m_TACCalFileSelector->SetFileType("TAC", "*.csv");
-  TGLayoutHints* Label3Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_TACCalFileSelector, Label3Layout);
-
   m_UCSDOverride = new TGCheckButton(m_OptionsFrame, "Check this box if you're using the card cage at UCSD", 1);
   m_UCSDOverride->SetOn(dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetUCSDOverride());
   TGLayoutHints* Label4Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
@@ -133,7 +127,6 @@ bool MGUIOptionsDepthCalibration2024::OnApply()
 
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
-  dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetUCSDOverride(m_UCSDOverride->IsOn());
 
   return true;

@@ -63,6 +63,7 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   AddPreceedingModuleType(MAssembly::c_EventLoader, true);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
+  AddPreceedingModuleType(MAssembly::c_TACcut, true);
 //  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
@@ -90,6 +91,8 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   m_Error5 = 0;
   m_Error6 = 0;
   m_ErrorSH = 0;
+  m_ErrorNullSH=0;
+  m_ErrorNoE=0;
 }
 
 
@@ -118,10 +121,6 @@ bool MModuleDepthCalibration2024::Initialize()
   // The detectors need to be in the same order as DetIDs.
   // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
   m_Detectors = m_Geometry->GetDetectorList();
-
-  if( LoadTACCalFile(m_TACCalFile) == false ){
-    cout << "No TAC Calibration file loaded. Proceeding without TAC Calibration." << endl;
-  }
 
   // Look through the Geometry and get the names and thicknesses of all the detectors.
   for(unsigned int i = 0; i < m_Detectors.size(); ++i){
@@ -206,10 +205,18 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
     // Handle different grades differently    
     // GRADE=-1 is an error. Break from the loop and continue.
-    if ( Grade == -1 ){
+    if ( Grade < 0 ){
       H->SetNoDepth();
       Event->SetDepthCalibrationIncomplete();
-      ++m_ErrorSH;
+      if ( Grade == -1 ) {
+        ++m_ErrorSH;
+      }
+      else if( Grade == -2 ) {
+        ++m_ErrorNullSH;
+      }
+      else if( Grade == -3 ) {
+        ++m_ErrorNoE;
+      }
     }
 
     // GRADE=5 is some complicated geometry with multiple hits on a single strip. 
@@ -278,30 +285,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // TODO: For Card Cage, may need to add noise
       double XTiming = XSH->GetTiming();
       double YTiming = YSH->GetTiming();
-      if ( !m_UCSDOverride ) {
-        if ( m_TACCalFileIsLoaded ) {
-          if ( XSH->IsLowVoltageStrip() ){
-            XTiming = XTiming*m_LVTACCal[DetID][XStripID][0] + m_LVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_HVTACCal[DetID][YStripID][0] + m_HVTACCal[DetID][YStripID][1];
-          }
-          else {
-            XTiming = XTiming*m_HVTACCal[DetID][XStripID][0] + m_HVTACCal[DetID][XStripID][1];
-            YTiming = YTiming*m_LVTACCal[DetID][YStripID][0] + m_LVTACCal[DetID][YStripID][1];
-          }
-        }
-        else { 
-          if ( XSH->IsLowVoltageStrip() ){
-            XTiming = XTiming*0.405 - 525.;
-            YTiming = YTiming*0.43 - 500.;
-          }
-          else {
-            XTiming = XTiming*0.43 - 500.;
-            YTiming = YTiming*0.405 -525.;
-          }
-        }
-      }
-
-      // cout << "Got the coefficients: " << Coeffs << endl;
+      
 
       // If there aren't coefficients loaded, then calibration is incomplete.
       if( Coeffs == nullptr ){
@@ -371,8 +355,14 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           
           // Weight the depth by probability
       	  double prob_sum = 0.0;
+          double max_prob = 0.0;
+          double maxprob_depth;
       	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
       	    prob_sum += prob_dist[k];
+            if(prob_dist[k] > max_prob){
+              max_prob=prob_dist[k];
+              maxprob_depth = depthvec[k];
+            }
       	  }
           //double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
 	         //cout << "summed probability: " << prob_sum << endl;
@@ -391,12 +381,11 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
           Zsigma =  sqrt(depth_var/prob_sum);
           Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
-          // Zpos = mean_depth;
-	  // cout << "calculated depth: " << Zpos << endl;
 
           // Add the depth to the GUI histogram.
-          m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
-
+          if (Event->IsStripPairingIncomplete()==false) {
+            m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+          }
           m_NoError+=1;
         }
       }
@@ -451,6 +440,29 @@ MStripHit* MModuleDepthCalibration2024::GetDominantStrip(vector<MStripHit*>& Str
     EnergyFraction = MaxEnergy/TotalEnergy;
   }
   return MaxStrip;
+}
+
+MStripHit* MModuleDepthCalibration2024::GetMinimumStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
+{
+  double MinEnergy = numeric_limits<double>::max(); // AZ: When both energies are zero (which shouldn't happen) we still pick one
+  double TotalEnergy = 0.0;
+  MStripHit* MinStrip = nullptr;
+
+  // Iterate through strip hits and get the strip with highest energy
+  for (const auto SH : Strips) {
+    double Energy = SH->GetEnergy();
+    TotalEnergy += Energy;
+    if (Energy < MinEnergy) {
+      MinStrip = SH;
+      MinEnergy = Energy;
+    }
+  }
+  if (TotalEnergy == 0) {
+    EnergyFraction = 0;
+  } else {
+    EnergyFraction = MinEnergy/TotalEnergy;
+  }
+  return MinStrip;
 }
 
 double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int pixel_code, double Energy)
@@ -508,53 +520,6 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
   }
 
   m_CoeffsFileIsLoaded = true;
-
-  return true;
-
-}
-
-bool MModuleDepthCalibration2024::LoadTACCalFile(MString FName)
-{
-  // Read in the TAC Calibration file, which should contain for each strip:
-  //  DetID, h or l for high or low voltage, TAC cal, TAC cal error, TAC cal offset, TAC offset error
-  MFile F;
-  if( F.Open(FName) == false ){
-    cout << "MModuleDepthCalibration2024: failed to open TAC Calibration file." << endl;
-    m_TACCalFileIsLoaded = false;
-    return false;
-  } else {
-    for(unsigned int i = 0; i < m_Detectors.size(); ++i){
-      unordered_map<int, vector<double>> temp_map_HV;
-      m_HVTACCal[i] = temp_map_HV;
-      unordered_map<int, vector<double>> temp_map_LV;
-      m_LVTACCal[i] = temp_map_LV;
-    }
-    MString Line;
-    while( F.ReadLine( Line ) ){
-      if( !Line.BeginsWith("#") ){
-        std::vector<MString> Tokens = Line.Tokenize(",");
-        if( Tokens.size() == 7 ){
-          int DetID = Tokens[0].ToInt();
-          int StripID = Tokens[2].ToInt();
-          double taccal = Tokens[3].ToDouble();
-          double taccal_err = Tokens[4].ToDouble();
-          double offset = Tokens[5].ToDouble();
-          double offset_err = Tokens[6].ToDouble();
-          vector<double> cal_vals;
-          cal_vals.push_back(taccal); cal_vals.push_back(offset); cal_vals.push_back(taccal_err); cal_vals.push_back(offset_err);
-          if ( Tokens[1] == "l" ){
-            m_LVTACCal[DetID][StripID] = cal_vals;
-          }
-          else if ( Tokens[1] == "h" ){
-            m_HVTACCal[DetID][StripID] = cal_vals;
-          }
-        }
-      }
-    }
-    F.Close();
-  }
-
-  m_TACCalFileIsLoaded = true;
 
   return true;
 
@@ -711,7 +676,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   int return_value;
   // If 1 strip on each side, GRADE=0
   // This represents the center of the pixel
-  if( (PStrips.size() == 1) && (NStrips.size() == 1) ){
+  if( (PStrips.size() == 1) && (NStrips.size() == 1) || (PStrips.size() == 3) && (NStrips.size() == 3) ){
     return_value = 0;
   } 
   // If 2 hits on N side and 1 on P, GRADE=1
@@ -870,11 +835,6 @@ bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
   m_SplinesFile = SplinesFileNameNode->GetValue();
   }
 
-  MXmlNode* TACCalFileNameNode = Node->GetNode("TACCalFileName");
-  if (TACCalFileNameNode != 0) {
-    m_TACCalFile = TACCalFileNameNode->GetValue();
-  }
-
   return true;
 }
 
@@ -888,7 +848,6 @@ MXmlNode* MModuleDepthCalibration2024::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFile);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
-  new MXmlNode(Node, "TACCalFileName", m_TACCalFile);
 
   return Node;
 }
@@ -908,6 +867,8 @@ void MModuleDepthCalibration2024::Finalize()
   cout << "Number of hits with non-adjacent strip hits: " << m_Error6 << endl;
   cout << "Number of hits with too many strip hits: " << m_Error4 << endl;
   cout << "Number of hits with no strip hits on one or both sides: " << m_ErrorSH << endl;
+  cout << "Number of hits with null strip hits: " << m_ErrorNullSH << endl;
+  cout << "Number of hits 0 energy on a strip hit: " << m_ErrorNoE << endl;
   /*
   TFile* rootF = new TFile("EHist.root","recreate");
   rootF->WriteTObject( EHist );

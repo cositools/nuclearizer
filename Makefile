@@ -93,6 +93,8 @@ $(LB)/MGUIOptionsDepthCalibration.o \
 $(LB)/MModuleDepthCalibration2024.o \
 $(LB)/MGUIOptionsDepthCalibration2024.o \
 $(LB)/MGUIExpoStripPairing.o \
+$(LB)/MGUIExpoStripPairingHits.o \
+$(LB)/MGUIExpoStripPairingStripHits.o \
 $(LB)/MModuleStripPairingGreedy.o \
 $(LB)/MGUIOptionsStripPairing.o \
 $(LB)/MModuleStripPairingChiSquare.o \
@@ -116,6 +118,9 @@ $(LB)/MModuleDiagnostics.o \
 $(LB)/MModuleDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnostics.o \
+$(LB)/MModuleTACcut.o \
+$(LB)/MGUIExpoTACcut.o \
+$(LB)/MGUIOptionsTACcut.o \
 
 
 
