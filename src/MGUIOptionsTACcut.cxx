@@ -77,14 +77,7 @@ void MGUIOptionsTACcut::Create()
   // Modify here
 
   TGLayoutHints* TACLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_TAC = new MGUIEMinMaxEntry(m_OptionsFrame, 
-                                       "Choose the minimum and maximum TAC cut (in imaginary TAC units):", 
-                                       false,
-                                       dynamic_cast<MModuleTACcut
-                                      *>(m_Module)->GetMinimumTAC(),
-                                       dynamic_cast<MModuleTACcut
-                                      *>(m_Module)->GetMaximumTAC(),
-                                       true, 0.0);
+  m_TAC = new MGUIEMinMaxEntry(m_OptionsFrame, "Choose the minimum and maximum TAC cut (in imaginary TAC units):", false, dynamic_cast<MModuleTACcut*>(m_Module)->GetMinimumTAC(), dynamic_cast<MModuleTACcut*>(m_Module)->GetMaximumTAC(), true, 0.0);
   m_OptionsFrame->AddFrame(m_TAC, TACLayout);
 
   m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Calibration file:", 
@@ -142,11 +135,8 @@ bool MGUIOptionsTACcut::OnApply()
 {
   // Store the data in the module
 
-  dynamic_cast<MModuleTACcut
-*>(m_Module)->SetMinimumTAC(m_TAC->GetMinValue());
-  dynamic_cast<MModuleTACcut
-*>(m_Module)->SetMaximumTAC(m_TAC->GetMaxValue());
-
+  dynamic_cast<MModuleTACcut*>(m_Module)->SetMinimumTAC(m_TAC->GetMinValue());
+  dynamic_cast<MModuleTACcut*>(m_Module)->SetMaximumTAC(m_TAC->GetMaxValue());
   dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
 
 

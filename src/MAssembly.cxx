@@ -74,9 +74,7 @@ using namespace std;
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
 #include "MModuleResponseGenerator.h"
-
 #include "MModuleTACcut.h"
-
 #include "MModuleDiagnostics.h"
 #include "MModuleDiagnosticsEnergyPerStrip.h"
 

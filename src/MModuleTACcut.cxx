@@ -55,7 +55,7 @@ MModuleTACcut::MModuleTACcut() : MModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "TAC Cut";
+  m_Name = "TAC Calibration";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagTACcut";
