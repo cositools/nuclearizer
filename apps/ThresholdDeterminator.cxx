@@ -332,7 +332,7 @@ bool ThresholdDeterminator::ReadNextEvent(MFileReadOuts& ROAFile, MReadOutAssemb
     
     MStripHit* SH = new MStripHit();
     SH->SetDetectorID(Strip->GetDetectorID());
-    SH->IsLowVoltageStrip(Strip->IsLowVoltageStrip());
+    SH->IsXStrip(Strip->IsLowVoltageStrip());
     SH->SetStripID(Strip->GetStripID());
     
     SH->SetTiming(Timing->GetTiming());

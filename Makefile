@@ -116,6 +116,8 @@ $(LB)/MModuleDiagnostics.o \
 $(LB)/MModuleDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnostics.o \
+$(LB)/MDetectorEffectsEngineSingleDet.o \
+$(LB)/MModuleLoaderSimulationsSingleDet.o \
 
 
 
