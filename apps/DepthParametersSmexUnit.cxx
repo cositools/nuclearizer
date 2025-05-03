@@ -327,15 +327,18 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: DepthParameters <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  Usage<<"         -config: configuration file (.yaml)"<<endl;
+  Usage<<"         -config: configuration file (.xml)"<<endl;
   Usage<<"           -path:path to data files; default is '.'"<<endl;
+  Usage<<"           -e_path: path to ecal files; default is '.'"<<endl;
+  Usage<<"           -e:   ecal file name (default is read from config file)"<<endl;
+  Usage<<"           -t_path: path to tac cal files, default is '.'"<<endl;
+  Usage<<"           -t:   TAC calibration file (otherwise use tac from yaml)"<<endl;
   Usage<<"           -p:   only fit one pixel (HV, LV)"<<endl;
   Usage<<"           -b:   number of bins (default = 200)"<<endl;
   Usage<<"           -a:   process all files (even if ctd list already saved)"<<endl;
 //  Usage<<"         -i:   input file name (.roa)"<<endl;
 //  Usage<<"         --emin:   minimum Event energy"<<endl;
 //  Usage<<"         --emax:   maximum Event energy"<<endl;
-  Usage<<"         -t:   TAC calibration file (otherwise use tac from yaml)"<<endl;
 //  Usage<<"         -g:   greedy strip pairing (default is chi-square)"<<endl;
   Usage<<"         -c:   Card cage data (i.e. no TAC calibration required)"<<endl;
   Usage<<"         -d:   out directory (directory for ctd lists and also outfile; default '.')"<<endl;
@@ -363,6 +366,8 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
   bool outfile_in = false;
   bool taccal_in = false;
   bool ecal_in = false;
+  m_EcalFile = "";
+  m_TACFile = "";
   m_Nbins = 200;
   m_HighBin = 200;
   m_LowBin = -200;
@@ -379,7 +384,7 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if (Option == "-config" || Option == "-o" || Option == "-e" || Option == "-t" || Option == "-path" || Option == "-b" || Option == "-d") {
+    if (Option == "-config" || Option == "-o" || Option == "-e" || Option == "-t" || Option == "-path" || Option == "-b" || Option == "-d" || Option == "t_path" || Option == "e_path") {
       if (!((argc > i+1) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
@@ -426,9 +431,16 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
     } 
 */
     if (Option == "-e") {
-      m_EcalFile = argv[++i];
+      m_EcalFile = m_EcalFile + argv[++i];
+      if (!m_EcalFile.EndsWith(".ecal")) m_EcalFile = m_EcalFile + ".ecal";
       cout<<"Accepting file name: "<<m_EcalFile<<endl;
       ecal_in = true;
+    } 
+    if (Option == "-e_path") {
+      MString path = argv[++i];
+      if (path.EndsWith("/")) path.Remove(path.Length() - 1, 1);
+      m_EcalFile= path + "/" + m_EcalFile;
+      cout<<"Accepting ecal directory, looking for ecal file at:  "<<m_EcalFile<<endl;
     } 
 /*
     if (Option == "--emin") {
@@ -440,9 +452,17 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
     } 
 */
     if (Option == "-t") {
-      m_TACFile = argv[++i];
+      m_TACFile = m_TACFile + argv[++i];
+      if (!m_TACFile.EndsWith(".csv")) m_TACFile = m_TACFile + ".csv";
       cout<<"Accepting file name: "<<m_TACFile<<endl;
       taccal_in = true;
+    } 
+
+    if (Option == "-t_path") {
+      MString path = argv[++i];
+      if (path.EndsWith("/")) path.Remove(path.Length() - 1,1);
+      m_TACFile = path + "/" + m_TACFile;
+      cout<<"Accepting tac directory name: "<<m_TACFile<<endl;
     } 
 
     if (Option == "-d"){
@@ -506,14 +526,16 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
   if ((NodeA = Doc->GetNode("Analysis")) != nullptr) {
     MXmlNode* aNode;
     if ((aNode = NodeA->GetNode("Ecal")) != 0 && !ecal_in) {
-      m_EcalFile = aNode->GetValueAsString();
+      m_EcalFile = m_EcalFile +  aNode->GetValueAsString();
+      if (!m_EcalFile.EndsWith(".ecal")) m_EcalFile = m_EcalFile + ".ecal";
       cout << "loaded ecal filename from config: "<<m_EcalFile<<endl;
     } else {
       cout << "no ecal specified in config!"<<endl;
       return false;
     }
     if ((aNode = NodeA->GetNode("Taccal")) != 0 && !taccal_in) {
-      m_TACFile = aNode->GetValueAsString();
+      m_TACFile = m_TACFile + aNode->GetValueAsString();
+      if (!m_TACFile.EndsWith(".csv")) m_TACFile = m_TACFile + ".csv";
       cout << "loaded taccal filename from config: "<<m_TACFile<<endl;
     } else {
       cout << "no taccal specified in config!"<<endl;
@@ -524,8 +546,6 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-
-  cout << "loaded xml" << endl;
 
   // initialize Histograms
   Am241LvCtd.resize(m_Nstrips, vector<TH1D*>(m_Nstrips, nullptr));
@@ -550,7 +570,7 @@ bool DepthParameters::ParseCommandLine(int argc, char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Do whatever analysis is necessary
+//! Generate the histograms as TH1Ds
 bool DepthParameters::GenerateCTD(MString m_FileName)
 {
   MString out_ctd_root = m_OutDir +  "/"+ m_FileName + "_" + to_string(m_LowBin) + "_" + to_string(m_HighBin) + "_" + to_string(m_Nbins) + ".root";
@@ -558,6 +578,7 @@ bool DepthParameters::GenerateCTD(MString m_FileName)
 
   // load from file if exists
   if (!m_ProcessAll && false) { // to do and file exists!! todo 
+    cout<<"Loading histograms from "<<out_ctd_root<<endl;
     bool loaded_all = true;
     TFile* inFile = new TFile(out_ctd_root, "READ");
     for (int i = 0; i < m_Nstrips; ++i) {
@@ -581,6 +602,7 @@ bool DepthParameters::GenerateCTD(MString m_FileName)
 
 
   // initialize the vector of TH1Ds!
+  cout<<"processing ctds for "<<m_FileName<<endl;
   for (int i = 0; i < m_Nstrips; ++i) {
     for (int j = 0; j < m_Nstrips; ++j) {
       Histograms[i][j]->Reset();// = new TH1D(name, name, m_Nbins, m_LowBin, m_HighBin);
@@ -678,7 +700,7 @@ bool DepthParameters::GenerateCTD(MString m_FileName)
           //int DetID = H->GetStripHit(0)->GetDetectorID();
           //TH2D* Hist = Histograms[DetID];
           //SymmetryFCN* FCN = FCNs[DetID]; 
-          
+           
           /*if (Hist == nullptr) {
             char name[64]; sprintf(name,"Detector %d (Uncorrected)",DetID);
             Hist = new TH2D(name, name, g_HistBins, g_MinCTD, g_MaxCTD, g_HistBins, g_MinRatio, g_MaxRatio);
@@ -742,7 +764,7 @@ bool DepthParameters::GenerateCTD(MString m_FileName)
   }
   outFile->Close();
   delete outFile;
-  
+
   watch.Stop();
   cout<<m_FileName<<" ; total time (s): "<<watch.CpuTime()<<endl;
  
@@ -810,6 +832,7 @@ bool DepthParameters::Analyze()
     for (long unsigned int j = 0; j < D.m_LowVoltageSideFiles.size(); j++){
       MString fname = D.m_HighVoltageSideFiles[j];
       if (m_DataPath != "." && !fname.Contains("/")) fname = m_DataPath + "/" + fname;
+      if (!fname.EndsWith(".roa")) fname = fname + ".hdf.roa";
       if (GenerateCTD(fname) == false) {
         cout<<"Error during ctd generation!"<<fname<<endl;
         return false;
@@ -823,6 +846,7 @@ bool DepthParameters::Analyze()
     for (long unsigned int j = 0; j < D.m_HighVoltageSideFiles.size(); j++){
       MString fname = D.m_HighVoltageSideFiles[j];
       if (m_DataPath != "." && !fname.Contains("/")) fname = m_DataPath + "/" + fname;
+      if (!fname.EndsWith(".roa")) fname = fname + ".hdf.roa";
       if (GenerateCTD(fname) == false) {
         cout<<"Error during ctd generation!"<<fname<<endl;
         return false;
