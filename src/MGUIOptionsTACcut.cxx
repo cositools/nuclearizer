@@ -34,6 +34,7 @@
 #include "MString.h"
 #include "MGUIEFileSelector.h"
 #include "MGUIEMinMaxEntry.h"
+#include "MGUIEEntry.h"
 
 // Nuclearizer libs:
 #include "MModuleTACcut.h"
@@ -74,24 +75,23 @@ void MGUIOptionsTACcut::Create()
 {
   PreCreate();
 
-  // Modify here
-
-  TGLayoutHints* TACLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_TAC = new MGUIEMinMaxEntry(m_OptionsFrame, "Choose the minimum and maximum TAC cut (in imaginary TAC units):", false, dynamic_cast<MModuleTACcut*>(m_Module)->GetMinimumTAC(), dynamic_cast<MModuleTACcut*>(m_Module)->GetMaximumTAC(), true, 0.0);
-  m_OptionsFrame->AddFrame(m_TAC, TACLayout);
-
-  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Calibration file:", 
-    dynamic_cast<MModuleTACcut*>(m_Module)->GetTACCalFileName());
+  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Calibration file:", dynamic_cast<MModuleTACcut*>(m_Module)->GetTACCalFileName());
   m_TACCalFileSelector->SetFileType("TAC", "*.csv");
-  TGLayoutHints* Label3Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_TACCalFileSelector, Label3Layout);
+  TGLayoutHints* TACCalLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_TACCalFileSelector, TACCalLayout);
 
+  m_TACCutFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Cut file:", dynamic_cast<MModuleTACcut*>(m_Module)->GetTACCutFileName());
+  m_TACCutFileSelector->SetFileType("TAC", "*.csv");
+  TGLayoutHints* TACCutLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_TACCutFileSelector, TACCutLayout);
 
-  // TGLabel* TACLabel = new TGLabel(m_OptionsFrame, 
-  //   "This is a TAC cut and this text is here because.\n"
-  //   "I'm not sure if I can remove it yet");
-  // m_OptionsFrame->AddFrame(TACLabel, TACLayout);
-  
+  TGLayoutHints* DisableTimeLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);  
+  m_DisableTime = new MGUIEEntry(m_OptionsFrame, "Diable Time [ns]:", false, dynamic_cast<MModuleTACcut*>(m_Module)->GetDisableTime(), false, -numeric_limits<double>::max()/2, numeric_limits<double>::max()/2);
+  m_OptionsFrame->AddFrame(m_DisableTime, DisableTimeLayout);
+
+  TGLayoutHints* FlagToEnDelayLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);  
+  m_FlagToEnDelay = new MGUIEEntry(m_OptionsFrame, "FLAG to ENABLE delay [ns]:", false, dynamic_cast<MModuleTACcut*>(m_Module)->GetFlagToEnDelay(), false, -numeric_limits<double>::max()/2, numeric_limits<double>::max()/2);
+  m_OptionsFrame->AddFrame(m_FlagToEnDelay, FlagToEnDelayLayout);  
   
   PostCreate();
 }
@@ -134,10 +134,10 @@ bool MGUIOptionsTACcut::ProcessMessage(long Message, long Parameter1, long Param
 bool MGUIOptionsTACcut::OnApply()
 {
   // Store the data in the module
-
-  dynamic_cast<MModuleTACcut*>(m_Module)->SetMinimumTAC(m_TAC->GetMinValue());
-  dynamic_cast<MModuleTACcut*>(m_Module)->SetMaximumTAC(m_TAC->GetMaxValue());
   dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
+  dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCutFileName(m_TACCutFileSelector->GetFileName());
+  dynamic_cast<MModuleTACcut*>(m_Module)->SetDisableTime(m_DisableTime->GetAsDouble());
+  dynamic_cast<MModuleTACcut*>(m_Module)->SetFlagToEnDelay(m_FlagToEnDelay->GetAsDouble());
 
   return true;
 }

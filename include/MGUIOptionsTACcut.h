@@ -38,6 +38,7 @@
 // Forward declarations:
 class MGUIEFileSelector;
 class MGUIEMinMaxEntry;
+class MGUIEEntry;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -71,8 +72,18 @@ class MGUIOptionsTACcut : public MGUIOptions
   //! The total TAC selection
   MGUIEMinMaxEntry* m_TAC;
 
+  //! FPGA setting of time between FLAG rising and ENABLE falling
+  MGUIEEntry* m_DisableTime;
+
+  //! internal FPGA delay between FLAG rising and FPGA reacting
+  MGUIEEntry* m_FlagToEnDelay;
+
   //! Select TAC Calibration file to load, converts readout timing to nanoseconds
   MGUIEFileSelector* m_TACCalFileSelector;
+
+  //! Select TAC Cut file to load, which specifies the parameters for removing strip hits
+  MGUIEFileSelector* m_TACCutFileSelector;
+
 	
   // private members:
  private:

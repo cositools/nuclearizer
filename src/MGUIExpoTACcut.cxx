@@ -113,7 +113,7 @@ void MGUIExpoTACcut::SetTACHistogramArrangement(const vector<unsigned int> DetID
     m_DetectorMap[row-1].push_back(DetID);
 
     TH1D* TAC = new TH1D("", "TAC", m_NBins[DetID], m_Min[DetID], m_Max[DetID]);
-    TAC->SetXTitle("TAC");
+    TAC->SetXTitle("Calibrated TAC (ns)");
     TAC->SetYTitle("counts");
     TAC->SetFillColor(kAzure+7);
     

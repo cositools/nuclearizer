@@ -70,23 +70,31 @@ class MModuleTACcut : public MModule
 
   ///////////// Creating functions that will update and get the min/max TAC values //////////////////////////
 
- //! Set the minimum TAC value!
-  void SetMinimumTAC(unsigned int MinimumTAC) { m_MinimumTAC = MinimumTAC; }
-  //! Get the minimum TAC value!
-  unsigned int GetMinimumTAC() const { return m_MinimumTAC; }
-
-  //! Set the maximum TAC value!
-  void SetMaximumTAC(unsigned int MaximumTAC) { m_MaximumTAC = MaximumTAC; }
-  //! Get the maximum TAC value!
-  unsigned int GetMaximumTAC() const { return m_MaximumTAC; }
-
   //! Set filename for TAC Calibration
   void SetTACCalFileName( const MString& FileName) {m_TACCalFile = FileName;}
   //! Get filename for TAC Calibration
   MString GetTACCalFileName() const {return m_TACCalFile;}
 
+  //! Set filename for TAC Cut
+  void SetTACCutFileName( const MString& FileName) {m_TACCutFile = FileName;}
+  //! Get filename for TAC Cut
+  MString GetTACCutFileName() const {return m_TACCutFile;}
+
+  //! Set the disable time
+  void SetDisableTime(double DisableTime) { m_DisableTime = DisableTime; }
+  //! Get the disable time
+  unsigned int GetDisableTime() const { return m_DisableTime; }
+
+  //! Set the shaping flag_to_en_delay
+  void SetFlagToEnDelay(double FlagToEnDelay) { m_FlagToEnDelay = FlagToEnDelay; }
+  //! Get the shaping flag_to_en_delay
+  unsigned int GetFlagToEnDelay() const { return m_FlagToEnDelay; }
+
   //! Load the TAC calibration file
   bool LoadTACCalFile(MString FName);
+
+  //! Load the TAC cut file
+  bool LoadTACCutFile(MString FName);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
@@ -107,11 +115,14 @@ class MModuleTACcut : public MModule
   // private members:
  private:
 
-// declare min and max TAC variables here
-unsigned int m_MinimumTAC, m_MaximumTAC;
+// declare TAC Cut and calibration variables here
+double m_DisableTime, m_FlagToEnDelay;
 MString m_TACCalFile;
+MString m_TACCutFile;
 unordered_map<int, unordered_map<int, vector<double>>> m_HVTACCal;
 unordered_map<int, unordered_map<int, vector<double>>> m_LVTACCal;
+unordered_map<int, unordered_map<int, vector<double>>> m_HVTACCut;
+unordered_map<int, unordered_map<int, vector<double>>> m_LVTACCut;
 
 vector<unsigned int> m_DetectorIDs;
 
