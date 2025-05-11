@@ -25,6 +25,7 @@
 #include "MFileReadOuts.h"
 
 // Nuclearizer libs:
+#include "MStripMap.h"
 #include "MModuleLoaderMeasurements.h"
 
 // H5 libs
@@ -37,18 +38,56 @@ using namespace H5;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MReadOutHDF
-{
-public:
-  uint16_t m_DT;
-  uint16_t m_AsicID;
-  uint16_t m_ChannelID;
-  uint16_t m_ADCValue;
-  uint16_t m_TACValue;
-  uint16_t m_OscillatorValue;
-  uint16_t m_Headers;
+//! Version 1.0 & 1.1 of the HDF5 hit info
+struct MReadOutHDF_1_1 {
+    uint16_t m_EventID;
+    uint32_t m_TimeCode;
+    uint8_t  m_HitType;
+    uint8_t  m_TimingType;
+    uint16_t m_StripID;
+    uint8_t  m_CrystalID;
+    uint8_t  m_Gain;
+    uint8_t  m_Overflow;
+    uint16_t m_CurrentMaximum;
+    uint16_t m_HighCurrentSamples;
+    uint16_t m_EnergyData;
+    uint16_t m_EnergyDataLowGain;
+    uint16_t m_EnergyDataHighGain;
+    uint16_t m_TimingData;
+    uint8_t  m_Pad;
+    uint8_t  m_Hits;
+    uint8_t  m_EventType;
+    uint8_t  m_CRC;
 };
 
+//! Version 1.2 of the HDF5 hit info
+struct MReadOutHDF_1_2 {
+    uint16_t m_EventID;
+    uint64_t m_TimeCode;
+    double   m_GSETimeCode;
+    uint8_t  m_HitType;
+    uint8_t  m_TimingType;
+    uint16_t m_StripID;
+    uint8_t  m_CrystalID;
+    uint8_t  m_Gain;
+    uint8_t  m_Overflow;
+    uint16_t m_CurrentMaximum;
+    uint16_t m_HighCurrentSamples;
+    uint16_t m_EnergyData;
+    uint16_t m_EnergyDataLowGain;
+    uint16_t m_EnergyDataHighGain;
+    uint16_t m_TimingData;
+    uint8_t  m_Pad;
+    uint8_t  m_Hits;
+    uint16_t m_Bytes;
+    uint8_t  m_EventType;
+    uint8_t  m_CRC;
+};
+
+//! The version string
+struct MReadOutHDFVersionString {
+    char string_col[256];
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -117,33 +156,32 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! The HDF5 file
   H5File m_FileHDF5;
   
-  //! The raw data buffer
-  vector<hvl_t> m_RawBuffer;
+  //! The HDF5 data set
+  DataSet m_DataSet;
 
-  //! The next read element in the raw buffer to read
-  size_t m_NextRawBufferPosition;
+  //! The compond data type
+  CompType m_CompoundDataType;
 
-  //! The intermediate data buffer
-  list<MReadOutHDF> m_IntermediateBuffer;
+  //! The version of the hit structure
+  MString m_HitVersion;
 
-  //! The intermediate buffer size - it's a list, thus we store the size for fast access
-  size_t m_IntermediateBufferSize;
-  
-  //! The previously read oscillator value. Needed to check for overflows
-  unsigned long m_LastOscillatorValue;
+  //! Total number of hits
+  hsize_t m_TotalHits;
 
-  //! The oscillator frequency
-  unsigned long m_OscillatorFrequency;
+  //! Current hit
+  hsize_t m_CurrentHit;
 
-  //! The oscillator offset
-  unsigned long m_OscillatorOffset;
+  //! Number of event ID roll-overs:
+  unsigned int m_NumberOfEventIDRollOvers;
 
-  //! The oscillator offset
-  unsigned long m_LastEventID;
+  //! Number of event ID roll-overs:
+  unsigned int m_LastEventID;
 
   //! The file name of the strip map
   MString m_FileNameStripMap;
 
+  //! The strip map
+  MStripMap m_StripMap;
 
 #ifdef ___CLING___
  public:

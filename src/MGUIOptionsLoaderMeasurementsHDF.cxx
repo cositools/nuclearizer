@@ -70,6 +70,7 @@ void MGUIOptionsLoaderMeasurementsHDF::Create()
 
   m_FileSelectorHDF = new MGUIEFileSelector(m_OptionsFrame, "Please select a HDF5 file:",
     dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->GetFileName());
+  m_FileSelectorHDF->SetFileType("HDF5 file", "*.hdf5");
   m_FileSelectorHDF->SetFileType("HDF5 file", "*.hdf");
   m_OptionsFrame->AddFrame(m_FileSelectorHDF, LabelLayout);
 

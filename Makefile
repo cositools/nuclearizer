@@ -79,6 +79,7 @@ $(LB)/MAspectReconstruction.o \
 $(LB)/MHit.o \
 $(LB)/MTimeAndCoordinate.o \
 $(LB)/MStripHit.o \
+$(LB)/MStripMap.o \
 $(LB)/MGuardringHit.o \
 $(LB)/MDetectorEffectsEngineBalloon.o \
 $(LB)/MModuleLoaderSimulationsBalloon.o \
