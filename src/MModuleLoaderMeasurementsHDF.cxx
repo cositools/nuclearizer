@@ -138,25 +138,25 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     m_DataSet = m_FileHDF5.openDataSet("/Hits");
 
     if (m_HitVersion == "1.0") {
-      m_CompoundDataType = CompType(sizeof(MReadOutHDF_1_1));
-      m_CompoundDataType.insertMember("EVENT_ID",              HOFFSET(MReadOutHDF_1_1, m_EventID),              PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("TIMECODE",              HOFFSET(MReadOutHDF_1_1, m_TimeCode),              PredType::STD_U32LE);
-      m_CompoundDataType.insertMember("HIT_TYPE",              HOFFSET(MReadOutHDF_1_1, m_HitType),               PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("TIMING_TYPE",           HOFFSET(MReadOutHDF_1_1, m_TimingType),           PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("STRIP_ID",              HOFFSET(MReadOutHDF_1_1, m_StripID),              PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("CRYSTAL_ID",            HOFFSET(MReadOutHDF_1_1, m_CrystalID),            PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("GAIN",                  HOFFSET(MReadOutHDF_1_1, m_Gain),                  PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("OVERFLOW",              HOFFSET(MReadOutHDF_1_1, m_Overflow),          PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("CURRENT_MAXIMUM",       HOFFSET(MReadOutHDF_1_1, m_CurrentMaximum),       PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("HIGH_CURRENT_SAMPLES",  HOFFSET(MReadOutHDF_1_1, m_HighCurrentSamples),  PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA",           HOFFSET(MReadOutHDF_1_1, m_EnergyData),           PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA_LOW_GAIN",  HOFFSET(MReadOutHDF_1_1, m_EnergyDataLowGain),  PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA_HIGH_GAIN", HOFFSET(MReadOutHDF_1_1, m_EnergyDataHighGain), PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("TIMING_DATA",           HOFFSET(MReadOutHDF_1_1, m_TimingData),           PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("PAD",                   HOFFSET(MReadOutHDF_1_1, m_Pad),                   PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("HITS",                  HOFFSET(MReadOutHDF_1_1, m_Hits),                  PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("EVENT_TYPE",            HOFFSET(MReadOutHDF_1_1, m_EventType),            PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("CRC",                   HOFFSET(MReadOutHDF_1_1, m_CRC),                   PredType::STD_U8LE);
+      m_CompoundDataType = CompType(sizeof(MReadOutHDF_1_0));
+      m_CompoundDataType.insertMember("EVENT_ID",              HOFFSET(MReadOutHDF_1_0, m_EventID),              PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("TIMECODE",              HOFFSET(MReadOutHDF_1_0, m_TimeCode),              PredType::STD_U32LE);
+      m_CompoundDataType.insertMember("HIT_TYPE",              HOFFSET(MReadOutHDF_1_0, m_HitType),               PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("TIMING_TYPE",           HOFFSET(MReadOutHDF_1_0, m_TimingType),           PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("STRIP_ID",              HOFFSET(MReadOutHDF_1_0, m_StripID),              PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("CRYSTAL_ID",            HOFFSET(MReadOutHDF_1_0, m_CrystalID),            PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("GAIN",                  HOFFSET(MReadOutHDF_1_0, m_Gain),                  PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("OVERFLOW",              HOFFSET(MReadOutHDF_1_0, m_Overflow),          PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("CURRENT_MAXIMUM",       HOFFSET(MReadOutHDF_1_0, m_CurrentMaximum),       PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("HIGH_CURRENT_SAMPLES",  HOFFSET(MReadOutHDF_1_0, m_HighCurrentSamples),  PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("ENERGY_DATA",           HOFFSET(MReadOutHDF_1_0, m_EnergyData),           PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("ENERGY_DATA_LOW_GAIN",  HOFFSET(MReadOutHDF_1_0, m_EnergyDataLowGain),  PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("ENERGY_DATA_HIGH_GAIN", HOFFSET(MReadOutHDF_1_0, m_EnergyDataHighGain), PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("TIMING_DATA",           HOFFSET(MReadOutHDF_1_0, m_TimingData),           PredType::STD_U16LE);
+      m_CompoundDataType.insertMember("PAD",                   HOFFSET(MReadOutHDF_1_0, m_Pad),                   PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("HITS",                  HOFFSET(MReadOutHDF_1_0, m_Hits),                  PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("EVENT_TYPE",            HOFFSET(MReadOutHDF_1_0, m_EventType),            PredType::STD_U8LE);
+      m_CompoundDataType.insertMember("CRC",                   HOFFSET(MReadOutHDF_1_0, m_CRC),                   PredType::STD_U8LE);
     } else if (m_HitVersion == "1.2") {
       m_CompoundDataType = CompType(sizeof(MReadOutHDF_1_2));
       m_CompoundDataType.insertMember("EVENT_ID",              HOFFSET(MReadOutHDF_1_2, m_EventID),              PredType::STD_U16LE);
@@ -239,7 +239,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       uint8_t NumberOfHits;
 
       if (m_HitVersion == "1.0") {
-        MReadOutHDF_1_1 h;
+        MReadOutHDF_1_0 h;
         m_DataSet.read(&h, m_CompoundDataType, MS, DS);
         ++m_CurrentHit;
 
@@ -265,7 +265,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         return false;
       }
 
-      //if (g_Verbosity >= c_Info) {
+      if (g_Verbosity >= c_Info) {
         cout<<endl;
         cout<<"Hit "<<m_CurrentHit<<endl;
         cout<<"  EventID: "<<EventID<<endl;
@@ -274,7 +274,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         cout<<"  EnergyData: "<<ADCs<<endl;
         cout<<"  TimingData: "<<TACs<<endl;
         cout<<"  Hits: "<<(int) NumberOfHits<<endl;
-      //}
+      }
 
       if (EventID < m_LastEventID) {
         m_NumberOfEventIDRollOvers++;
@@ -284,7 +284,11 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
 
       Event->SetID(LongEventID);
-      Event->SetCL(TimeCode);
+      if (m_HitVersion == "1.0") {
+        Event->SetCL(TimeCode);
+      } else {
+        Event->SetTI(TimeCode);
+      }
 
       if (m_StripMap.HasReadOutID(StripID) == true) {
         MStripHit* H = new MStripHit();

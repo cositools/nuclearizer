@@ -39,7 +39,7 @@ using namespace H5;
 
 
 //! Version 1.0 & 1.1 of the HDF5 hit info
-struct MReadOutHDF_1_1 {
+struct MReadOutHDF_1_0 {
     uint16_t m_EventID;
     uint32_t m_TimeCode;
     uint8_t  m_HitType;
