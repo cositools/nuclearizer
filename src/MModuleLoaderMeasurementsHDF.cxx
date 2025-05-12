@@ -338,7 +338,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         return false;
       }
 
-      //if (g_Verbosity >= c_Info) {
+      if (g_Verbosity >= c_Info) {
         cout<<endl;
         cout<<"Hit "<<m_CurrentHit<<endl;
         cout<<"  EventID: "<<EventID<<endl;
@@ -347,7 +347,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         cout<<"  EnergyData: "<<ADCs<<endl;
         cout<<"  TimingData: "<<TACs<<endl;
         cout<<"  Hits: "<<(int) NumberOfHits<<endl;
-      //}
+      }
 
       if (EventID < m_LastEventID) {
         m_NumberOfEventIDRollOvers++;
