@@ -45,11 +45,12 @@ MAKEFLAGS += --no-builtin-rules
 
 H5CXXFLAGS =
 H5LIBS =
-ifneq ($(shell which brew 2>/dev/null),)
-  H5CXXFLAGS += -I$(shell brew --prefix hdf5)/include
-  H5LIBS += -L$(shell brew --prefix hdf5)/lib -lhdf5_cpp
+ifeq ("$(shell pkg-config --exists hdf5 1>&2 2> /dev/null; echo $$?)", "0")
+        H5CXXFLAGS += $(shell pkg-config --cflags hdf5)
+        H5LIBS += $(shell pkg-config --libs hdf5)
+	H5LIBS += -lhdf5_cpp
 else
-  $(error "Unable to find HDF5 headers and libraries")
+	$(error "Unable to find HDF5 headers and libraries")
 endif
 
 
@@ -242,6 +243,7 @@ $(NUCLEARIZER_SHARED_LIB): $(FRETALON_LIBS) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DI
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
+
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(NUCLEARIZER_DEP_FILES)
