@@ -109,6 +109,12 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! Set the file name of the strip map
   void SetFileNameStripMap(const MString& Name) { m_FileNameStripMap = Name; }
 
+
+  //! Enable/Disable loading continuation files
+  bool GetLoadContinuationFiles() const { return m_LoadContinuationFiles; }
+  //! Set loading continuation files
+  void SetLoadContinuationFiles(bool LoadContinuationFiles) { m_LoadContinuationFiles = LoadContinuationFiles; }
+
   //! Initialize the module
   virtual bool Initialize();
 
@@ -130,7 +136,7 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   // protected methods:
  protected:
   //! Convert more data from raw to intermediate format - return false if no more data can be converted
-  bool Convert();
+  bool OpenHDF5File(MString FileName);
 
 
   // private methods:
@@ -155,6 +161,12 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   //! The HDF5 file
   H5File m_FileHDF5;
+
+  //! True, if we want to load continuation files
+  bool m_LoadContinuationFiles;
+
+  //! Current sub file
+  unsigned int m_ContinuationFileID;
   
   //! The HDF5 data set
   DataSet m_DataSet;

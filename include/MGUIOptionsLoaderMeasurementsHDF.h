@@ -41,6 +41,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! UI settings for the HDF measurements loader
 class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
 {
   // public Session:
@@ -60,7 +61,7 @@ class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -70,6 +71,9 @@ class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
  private:
   //! Select which file to load
   MGUIEFileSelector* m_FileSelectorHDF;
+
+  //! Check button for switch between loading continuation files or not
+  TGCheckButton* m_LoadContinuationFiles;
 
   //! Select which file to load
   MGUIEFileSelector* m_FileSelectorStripMap;

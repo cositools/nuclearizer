@@ -73,6 +73,7 @@ MModuleLoaderMeasurementsHDF::MModuleLoaderMeasurementsHDF() : MModuleLoaderMeas
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
 
+  m_LoadContinuationFiles = false;
   m_FileNameStripMap = "";
 }
 
@@ -108,8 +109,30 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_NumberOfEventIDRollOvers = 0;
   m_LastEventID = 0;
 
-  // Need to put this all in a try-catch block
+  if (OpenHDF5File(m_FileName) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open HDF5 file."<<endl;
+    return false;
+  }
+  m_ContinuationFileID = 0;
 
+  if (m_StripMap.Open(m_FileNameStripMap) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to read strip map."<<endl;
+    return false;
+  }
+
+  m_NEventsInFile = 0;
+  m_NGoodEventsInFile = 0;
+    
+  return MModule::Initialize();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Convert more data from raw to intermediate format - return false if no more data can be converted
+bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
+{
   try {
     m_FileHDF5 = H5File(m_FileName, H5F_ACC_RDONLY);
 
@@ -135,7 +158,44 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     }
     cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HitVersion<<endl;
 
+    /*
+    const size_t ChunkBytes = 1524 * sizeof(MReadOutHDF_1_0);
+    const size_t NumChunksToCache = 20;
+
+    DSetAccPropList APL;
+    APL.setChunkCache(
+      1031,                      // num slots — a prime number slightly above num chunks
+      ChunkBytes * NumChunksToCache,  // cache size in bytes
+      0.75                      // w0 (preemption policy)
+    );
+
+    // Open with tuned cache
+    m_DataSet = m_FileHDF5.openDataSet("/Hits", dapl);
+    */
+
+    // Get the data set
     m_DataSet = m_FileHDF5.openDataSet("/Hits");
+
+    // Get the data space
+    DataSpace DS = m_DataSet.getSpace();
+
+    // Get creation property list
+    DSetCreatPropList PropertyList = m_DataSet.getCreatePlist();
+    int Rank = DS.getSimpleExtentNdims();
+
+    // Check if chunked
+    if (PropertyList.getLayout() == H5D_CHUNKED) {
+      hsize_t ChunkDims[H5S_MAX_RANK];
+      PropertyList.getChunk(Rank, ChunkDims);
+
+      cout<<"Chunk dimensions: ";
+      for (int i = 0; i < Rank; ++i) {
+        cout<<ChunkDims[i]<<" ";
+      }
+      cout<<endl;
+    } else {
+      cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
+    }
 
     if (m_HitVersion == "1.0") {
       m_CompoundDataType = CompType(sizeof(MReadOutHDF_1_0));
@@ -184,7 +244,6 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
       return false;
     }
 
-    DataSpace DS = m_DataSet.getSpace();
     DS.getSimpleExtentDims(&m_TotalHits, nullptr);
     m_CurrentHit = 0;
 
@@ -193,14 +252,7 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     return false;
   }
 
-  if (m_StripMap.Open(m_FileNameStripMap) == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to read strip map"<<endl;
-  }
-
-  m_NEventsInFile = 0;
-  m_NGoodEventsInFile = 0;
-    
-  return MModule::Initialize();
+  return true;
 }
 
 
@@ -212,11 +264,32 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
 
-  // Check if we need to read more data
+  // Check if we need to read more data from the next file
   if (m_CurrentHit >= m_TotalHits) {
-    cout<<m_Name<<": No more events!"<<endl;
-    m_IsFinished = true;
-    return false;
+    if (m_LoadContinuationFiles == true) {
+      // Check if we have more files to load:
+      MString FileName = m_FileName;
+      MString NextSuffix = MString("_") + (m_ContinuationFileID+1) + ".hdf5";
+      FileName.ReplaceAllInPlace(".hdf5", NextSuffix);
+      if (MFile::Exists(FileName) == true) {
+        if (OpenHDF5File(FileName) == false) {
+          cout<<m_XmlTag<<": No more events!"<<endl;
+          m_IsFinished = true;
+          return false;
+        } else {
+          cout<<m_XmlTag<<": Switched to file: "<<FileName<<endl;
+          m_ContinuationFileID++;
+        }
+      } else {
+        cout<<m_XmlTag<<": No more events!"<<endl;
+        m_IsFinished = true;
+        return false;
+      }
+    } else {
+      cout<<m_XmlTag<<": No more events!"<<endl;
+      m_IsFinished = true;
+      return false;
+    }
   }
 
   try {
@@ -265,7 +338,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         return false;
       }
 
-      if (g_Verbosity >= c_Info) {
+      //if (g_Verbosity >= c_Info) {
         cout<<endl;
         cout<<"Hit "<<m_CurrentHit<<endl;
         cout<<"  EventID: "<<EventID<<endl;
@@ -274,7 +347,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         cout<<"  EnergyData: "<<ADCs<<endl;
         cout<<"  TimingData: "<<TACs<<endl;
         cout<<"  Hits: "<<(int) NumberOfHits<<endl;
-      }
+      //}
 
       if (EventID < m_LastEventID) {
         m_NumberOfEventIDRollOvers++;
@@ -346,6 +419,11 @@ bool MModuleLoaderMeasurementsHDF::ReadXmlConfiguration(MXmlNode* Node)
     m_FileName = FileNameHDF5Node->GetValue();
   }
 
+  MXmlNode* LoadContinuationFilesNode = Node->GetNode("LoadContinuationFiles");
+  if (LoadContinuationFilesNode != nullptr) {
+    m_LoadContinuationFiles = LoadContinuationFilesNode->GetValueAsBoolean();
+  }
+
   MXmlNode* FileNameStripMapNode = Node->GetNode("FileNameStripMap");
   if (FileNameStripMapNode != nullptr) {
     m_FileNameStripMap = FileNameStripMapNode->GetValue();
@@ -364,6 +442,7 @@ MXmlNode* MModuleLoaderMeasurementsHDF::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
   new MXmlNode(Node, "FileNameHDF5", m_FileName);
+  new MXmlNode(Node, "LoadContinuationFiles", m_LoadContinuationFiles);
   new MXmlNode(Node, "FileNameStripMap", m_FileNameStripMap);
 
   return Node;

@@ -75,6 +75,12 @@ void MGUIOptionsLoaderMeasurementsHDF::Create()
   m_OptionsFrame->AddFrame(m_FileSelectorHDF, LabelLayout);
 
 
+  m_LoadContinuationFiles = new TGCheckButton(m_OptionsFrame, "Enable loading continuation HDF5 files", 1);
+  m_LoadContinuationFiles->SetOn(dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->GetLoadContinuationFiles());
+  m_LoadContinuationFiles->Associate(this);
+  m_OptionsFrame->AddFrame(m_LoadContinuationFiles, LabelLayout);
+
+
   m_FileSelectorStripMap = new MGUIEFileSelector(m_OptionsFrame, "Please select a strip map file:",
     dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->GetFileNameStripMap());
   m_FileSelectorStripMap->SetFileType("Strip map file", "*.map");
@@ -92,14 +98,14 @@ bool MGUIOptionsLoaderMeasurementsHDF::ProcessMessage(long Message, long Paramet
 {
   // Modify here if you have more buttons
 
-	bool Status = true;
-	
+  bool Status = true;
+
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       break;
-    default:
+     default:
       break;
     }
     break;
@@ -121,12 +127,13 @@ bool MGUIOptionsLoaderMeasurementsHDF::ProcessMessage(long Message, long Paramet
 
 bool MGUIOptionsLoaderMeasurementsHDF::OnApply()
 {
-	// Modify this to store the data in the module!
+  // Modify this to store the data in the module!
 
   dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetFileName(m_FileSelectorHDF->GetFileName());
+  dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetLoadContinuationFiles(m_LoadContinuationFiles->IsOn());
   dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetFileNameStripMap(m_FileSelectorStripMap->GetFileName());
 
-	return true;
+  return true;
 }
 
 
