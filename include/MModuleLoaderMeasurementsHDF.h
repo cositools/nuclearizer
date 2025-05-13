@@ -164,6 +164,7 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   // private members:
  private:
+   /*
   //! Start of the observation time
   MTime m_StartObservationTime;
   //! Clock time belonging to the start of the observation time
@@ -172,6 +173,7 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   MTime m_EndObservationTime;
   //! Clock time belonging to the end of the observation time
   unsigned long m_EndClock;
+  */
 
   //! The HDF5 file
   H5File m_HDFFile;
@@ -200,8 +202,10 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! The current index in the batch
   unsigned int m_CurrentBatchIndex;
 
-  //! The various batches:
+  // The various batches:
+  //! The MHDFStripHit_V1_0 batch:
   vector<MHDFStripHit_V1_0> m_Buffer_1_0;
+  //! The MHDFStripHit_V1_2 batch:
   vector<MHDFStripHit_V1_2> m_Buffer_1_2;
 
   //! Total number of hits in a file
@@ -213,7 +217,7 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! Number of event ID roll-overs:
   unsigned int m_NumberOfEventIDRollOvers;
 
-  //! Number of event ID roll-overs:
+  //! The last handles event ID
   unsigned int m_LastEventID;
 
   //! The file name of the strip map
