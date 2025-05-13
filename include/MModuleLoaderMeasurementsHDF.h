@@ -38,8 +38,20 @@ using namespace H5;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The versions of the strip hits stored in the HDF file
+enum class MHDFStripHitVersion { V1_0, V1_2 };
+
+//! And a streamer for it
+inline ostream& operator<<(ostream& os, MHDFStripHitVersion Version) {
+  switch (Version) {
+    case MHDFStripHitVersion::V1_0: return os<<"1.0";
+    case MHDFStripHitVersion::V1_2: return os<<"1.2";
+    default: return os<<"Unknown";
+  }
+}
+
 //! Version 1.0 & 1.1 of the HDF5 hit info
-struct MReadOutHDF_1_0 {
+struct MHDFStripHit_V1_0 {
   uint16_t m_EventID;
   uint32_t m_TimeCode;
   uint8_t  m_HitType;
@@ -61,7 +73,7 @@ struct MReadOutHDF_1_0 {
 };
 
 //! Version 1.2 of the HDF5 hit info
-struct MReadOutHDF_1_2 {
+struct MHDFStripHit_V1_2 {
   uint16_t m_EventID;
   uint64_t m_TimeCode;
   double   m_GSETimeCode;
@@ -85,11 +97,12 @@ struct MReadOutHDF_1_2 {
 };
 
 //! The version string
-struct MReadOutHDFVersionString {
+struct MHDFStripHitVersionString {
   char string_col[256];
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
 
 //! A module to load HDF5 data files
 class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
@@ -161,25 +174,25 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   unsigned long m_EndClock;
 
   //! The HDF5 file
-  H5File m_FileHDF5;
+  H5File m_HDFFile;
 
   //! True, if we want to load continuation files
   bool m_LoadContinuationFiles;
 
-  //! Current sub file
+  //! The ID of the currently loaded continuation file
   unsigned int m_ContinuationFileID;
   
   //! The HDF5 data set
-  DataSet m_DataSet;
+  DataSet m_HDFDataSet;
 
-  //! The compond data type
-  CompType m_CompoundDataType;
+  //! The HDF5 compond data type
+  CompType m_HDFCompoundDataType;
 
-  //! The version of the hit structure
-  MString m_HitVersion;
+  //! The version of the strip hit structure
+  MHDFStripHitVersion m_HDFStripHitVersion;
 
   //! The default batch size
-  unsigned int m_DefaultBatchSize;
+  static constexpr unsigned int m_DefaultBatchSize = 10000;
 
   //! The current batch size
   unsigned int m_CurrentBatchSize;
@@ -187,14 +200,14 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! The current index in the batch
   unsigned int m_CurrentBatchIndex;
 
-  //! The various batches
-  vector<MReadOutHDF_1_0> m_Buffer_1_0;
-  vector<MReadOutHDF_1_2> m_Buffer_1_2;
+  //! The various batches:
+  vector<MHDFStripHit_V1_0> m_Buffer_1_0;
+  vector<MHDFStripHit_V1_2> m_Buffer_1_2;
 
-  //! Total number of hits
+  //! Total number of hits in a file
   hsize_t m_TotalHits;
 
-  //! Current hit
+  //! Current hit number in the file
   hsize_t m_CurrentHit;
 
   //! Number of event ID roll-overs:

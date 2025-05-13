@@ -75,8 +75,6 @@ MModuleLoaderMeasurementsHDF::MModuleLoaderMeasurementsHDF() : MModuleLoaderMeas
 
   m_LoadContinuationFiles = false;
   m_FileNameStripMap = "";
-
-  m_DefaultBatchSize = 10000;
 }
 
 
@@ -135,39 +133,40 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
 //! Convert more data from raw to intermediate format - return false if no more data can be converted
 bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 {
-  try {
-    m_FileHDF5 = H5File(m_FileName, H5F_ACC_RDONLY);
+  try { // HDF5 throws exceptions, thus need to encapsulate everything in try..catch
+
+    m_HDFFile = H5File(m_FileName, H5F_ACC_RDONLY);
 
     // ToDo: Check for version.
-    m_HitVersion = "1.0";
-    if (H5Lexists(m_FileHDF5.getId(), "HDFVersion", H5P_DEFAULT) > 0) {
-      DataSet VersionDataset = m_FileHDF5.openDataSet("/HDFVersion");
+    m_HDFStripHitVersion = MHDFStripHitVersion::V1_0;
+    if (H5Lexists(m_HDFFile.getId(), "HDFVersion", H5P_DEFAULT) > 0) {
+      DataSet VersionDataset = m_HDFFile.openDataSet("/HDFVersion");
 
       // Create compound type for version
-      CompType VersionType(sizeof(MReadOutHDFVersionString));
+      CompType VersionType(sizeof(MHDFStripHitVersionString));
       StrType StringType(PredType::C_S1, 256);
-      VersionType.insertMember("string_col", HOFFSET(MReadOutHDFVersionString, string_col), StringType);
+      VersionType.insertMember("string_col", HOFFSET(MHDFStripHitVersionString, string_col), StringType);
 
-      MReadOutHDFVersionString VS;
+      MHDFStripHitVersionString VS;
       VersionDataset.read(&VS, VersionType);
 
       if (string(VS.string_col) == "1.2") {
-        m_HitVersion = string(VS.string_col);
+        m_HDFStripHitVersion = MHDFStripHitVersion::V1_2;
       } else {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<string(VS.string_col)<<endl<<"Please update this module."<<endl;
         return false;
       }
     }
-    cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HitVersion<<endl;
+    cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
 
     // Get the data set
-    m_DataSet = m_FileHDF5.openDataSet("/Hits");
+    m_HDFDataSet = m_HDFFile.openDataSet("/Hits");
 
     // Get the data space
-    DataSpace DS = m_DataSet.getSpace();
+    DataSpace DS = m_HDFDataSet.getSpace();
 
     // Get creation property list
-    DSetCreatPropList PropertyList = m_DataSet.getCreatePlist();
+    DSetCreatPropList PropertyList = m_HDFDataSet.getCreatePlist();
     int Rank = DS.getSimpleExtentNdims();
 
     // Check if chunked
@@ -184,50 +183,50 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
     }
 
-    if (m_HitVersion == "1.0") {
-      m_CompoundDataType = CompType(sizeof(MReadOutHDF_1_0));
-      m_CompoundDataType.insertMember("EVENT_ID",              HOFFSET(MReadOutHDF_1_0, m_EventID),              PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("TIMECODE",              HOFFSET(MReadOutHDF_1_0, m_TimeCode),              PredType::STD_U32LE);
-      m_CompoundDataType.insertMember("HIT_TYPE",              HOFFSET(MReadOutHDF_1_0, m_HitType),               PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("TIMING_TYPE",           HOFFSET(MReadOutHDF_1_0, m_TimingType),           PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("STRIP_ID",              HOFFSET(MReadOutHDF_1_0, m_StripID),              PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("CRYSTAL_ID",            HOFFSET(MReadOutHDF_1_0, m_CrystalID),            PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("GAIN",                  HOFFSET(MReadOutHDF_1_0, m_Gain),                  PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("OVERFLOW",              HOFFSET(MReadOutHDF_1_0, m_Overflow),          PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("CURRENT_MAXIMUM",       HOFFSET(MReadOutHDF_1_0, m_CurrentMaximum),       PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("HIGH_CURRENT_SAMPLES",  HOFFSET(MReadOutHDF_1_0, m_HighCurrentSamples),  PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA",           HOFFSET(MReadOutHDF_1_0, m_EnergyData),           PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA_LOW_GAIN",  HOFFSET(MReadOutHDF_1_0, m_EnergyDataLowGain),  PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA_HIGH_GAIN", HOFFSET(MReadOutHDF_1_0, m_EnergyDataHighGain), PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("TIMING_DATA",           HOFFSET(MReadOutHDF_1_0, m_TimingData),           PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("PAD",                   HOFFSET(MReadOutHDF_1_0, m_Pad),                   PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("HITS",                  HOFFSET(MReadOutHDF_1_0, m_Hits),                  PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("EVENT_TYPE",            HOFFSET(MReadOutHDF_1_0, m_EventType),            PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("CRC",                   HOFFSET(MReadOutHDF_1_0, m_CRC),                   PredType::STD_U8LE);
-    } else if (m_HitVersion == "1.2") {
-      m_CompoundDataType = CompType(sizeof(MReadOutHDF_1_2));
-      m_CompoundDataType.insertMember("EVENT_ID",              HOFFSET(MReadOutHDF_1_2, m_EventID),              PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("TIMECODE",              HOFFSET(MReadOutHDF_1_2, m_TimeCode),              PredType::STD_U64LE);
-      m_CompoundDataType.insertMember("GSE_TIMECODE",          HOFFSET(MReadOutHDF_1_2, m_GSETimeCode),              PredType::IEEE_F64LE);
-      m_CompoundDataType.insertMember("HIT_TYPE",              HOFFSET(MReadOutHDF_1_2, m_HitType),               PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("TIMING_TYPE",           HOFFSET(MReadOutHDF_1_2, m_TimingType),           PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("STRIP_ID",              HOFFSET(MReadOutHDF_1_2, m_StripID),              PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("CRYSTAL_ID",            HOFFSET(MReadOutHDF_1_2, m_CrystalID),            PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("GAIN",                  HOFFSET(MReadOutHDF_1_2, m_Gain),                  PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("OVERFLOW",              HOFFSET(MReadOutHDF_1_2, m_Overflow),          PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("CURRENT_MAXIMUM",       HOFFSET(MReadOutHDF_1_2, m_CurrentMaximum),       PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("HIGH_CURRENT_SAMPLES",  HOFFSET(MReadOutHDF_1_2, m_HighCurrentSamples),  PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA",           HOFFSET(MReadOutHDF_1_2, m_EnergyData),           PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA_LOW_GAIN",  HOFFSET(MReadOutHDF_1_2, m_EnergyDataLowGain),  PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("ENERGY_DATA_HIGH_GAIN", HOFFSET(MReadOutHDF_1_2, m_EnergyDataHighGain), PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("TIMING_DATA",           HOFFSET(MReadOutHDF_1_2, m_TimingData),           PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("PAD",                   HOFFSET(MReadOutHDF_1_2, m_Pad),                   PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("HITS",                  HOFFSET(MReadOutHDF_1_2, m_Hits),                  PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("BYTES",                 HOFFSET(MReadOutHDF_1_2, m_Bytes),                  PredType::STD_U16LE);
-      m_CompoundDataType.insertMember("EVENT_TYPE",            HOFFSET(MReadOutHDF_1_2, m_EventType),            PredType::STD_U8LE);
-      m_CompoundDataType.insertMember("CRC",                   HOFFSET(MReadOutHDF_1_2, m_CRC),                   PredType::STD_U8LE);
+    if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
+      m_HDFCompoundDataType = CompType(sizeof(MHDFStripHit_V1_0));
+      m_HDFCompoundDataType.insertMember("EVENT_ID",              HOFFSET(MHDFStripHit_V1_0, m_EventID),              PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("TIMECODE",              HOFFSET(MHDFStripHit_V1_0, m_TimeCode),              PredType::STD_U32LE);
+      m_HDFCompoundDataType.insertMember("HIT_TYPE",              HOFFSET(MHDFStripHit_V1_0, m_HitType),               PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("TIMING_TYPE",           HOFFSET(MHDFStripHit_V1_0, m_TimingType),           PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("STRIP_ID",              HOFFSET(MHDFStripHit_V1_0, m_StripID),              PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("CRYSTAL_ID",            HOFFSET(MHDFStripHit_V1_0, m_CrystalID),            PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("GAIN",                  HOFFSET(MHDFStripHit_V1_0, m_Gain),                  PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("OVERFLOW",              HOFFSET(MHDFStripHit_V1_0, m_Overflow),          PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("CURRENT_MAXIMUM",       HOFFSET(MHDFStripHit_V1_0, m_CurrentMaximum),       PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("HIGH_CURRENT_SAMPLES",  HOFFSET(MHDFStripHit_V1_0, m_HighCurrentSamples),  PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("ENERGY_DATA",           HOFFSET(MHDFStripHit_V1_0, m_EnergyData),           PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("ENERGY_DATA_LOW_GAIN",  HOFFSET(MHDFStripHit_V1_0, m_EnergyDataLowGain),  PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("ENERGY_DATA_HIGH_GAIN", HOFFSET(MHDFStripHit_V1_0, m_EnergyDataHighGain), PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("TIMING_DATA",           HOFFSET(MHDFStripHit_V1_0, m_TimingData),           PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("PAD",                   HOFFSET(MHDFStripHit_V1_0, m_Pad),                   PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("HITS",                  HOFFSET(MHDFStripHit_V1_0, m_Hits),                  PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("EVENT_TYPE",            HOFFSET(MHDFStripHit_V1_0, m_EventType),            PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("CRC",                   HOFFSET(MHDFStripHit_V1_0, m_CRC),                   PredType::STD_U8LE);
+    } else if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_2) {
+      m_HDFCompoundDataType = CompType(sizeof(MHDFStripHit_V1_2));
+      m_HDFCompoundDataType.insertMember("EVENT_ID",              HOFFSET(MHDFStripHit_V1_2, m_EventID),              PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("TIMECODE",              HOFFSET(MHDFStripHit_V1_2, m_TimeCode),              PredType::STD_U64LE);
+      m_HDFCompoundDataType.insertMember("GSE_TIMECODE",          HOFFSET(MHDFStripHit_V1_2, m_GSETimeCode),              PredType::IEEE_F64LE);
+      m_HDFCompoundDataType.insertMember("HIT_TYPE",              HOFFSET(MHDFStripHit_V1_2, m_HitType),               PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("TIMING_TYPE",           HOFFSET(MHDFStripHit_V1_2, m_TimingType),           PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("STRIP_ID",              HOFFSET(MHDFStripHit_V1_2, m_StripID),              PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("CRYSTAL_ID",            HOFFSET(MHDFStripHit_V1_2, m_CrystalID),            PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("GAIN",                  HOFFSET(MHDFStripHit_V1_2, m_Gain),                  PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("OVERFLOW",              HOFFSET(MHDFStripHit_V1_2, m_Overflow),          PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("CURRENT_MAXIMUM",       HOFFSET(MHDFStripHit_V1_2, m_CurrentMaximum),       PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("HIGH_CURRENT_SAMPLES",  HOFFSET(MHDFStripHit_V1_2, m_HighCurrentSamples),  PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("ENERGY_DATA",           HOFFSET(MHDFStripHit_V1_2, m_EnergyData),           PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("ENERGY_DATA_LOW_GAIN",  HOFFSET(MHDFStripHit_V1_2, m_EnergyDataLowGain),  PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("ENERGY_DATA_HIGH_GAIN", HOFFSET(MHDFStripHit_V1_2, m_EnergyDataHighGain), PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("TIMING_DATA",           HOFFSET(MHDFStripHit_V1_2, m_TimingData),           PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("PAD",                   HOFFSET(MHDFStripHit_V1_2, m_Pad),                   PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("HITS",                  HOFFSET(MHDFStripHit_V1_2, m_Hits),                  PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("BYTES",                 HOFFSET(MHDFStripHit_V1_2, m_Bytes),                  PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("EVENT_TYPE",            HOFFSET(MHDFStripHit_V1_2, m_EventType),            PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("CRC",                   HOFFSET(MHDFStripHit_V1_2, m_CRC),                   PredType::STD_U8LE);
     } else {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HitVersion<<endl<<"Please update this module."<<endl;
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
       return false;
     }
 
@@ -254,7 +253,8 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 //! Read a batch of hits using a hyperslab
 bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
 {
-  try {
+  try { // HDF5 throws exceptions, thus need to encapsulate everything in try..catch
+
     m_CurrentBatchSize = m_DefaultBatchSize;
     if (m_TotalHits - m_CurrentHit < m_CurrentBatchSize) {
       m_CurrentBatchSize = m_TotalHits - m_CurrentHit;
@@ -263,19 +263,23 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
     hsize_t Offset[1] = { m_CurrentHit };
     hsize_t Count[1] = { m_CurrentBatchSize };
 
-    DataSpace DS = m_DataSet.getSpace();
+    DataSpace DS = m_HDFDataSet.getSpace();
     DS.selectHyperslab(H5S_SELECT_SET, Count, Offset);
 
     DataSpace MS(1, Count);
 
-    if (m_HitVersion == "1.0") {
-      m_Buffer_1_0.resize(m_CurrentBatchSize);
-      m_DataSet.read(m_Buffer_1_0.data(), m_CompoundDataType, MS, DS);
-    } else if (m_HitVersion == "1.2") {
-      m_Buffer_1_2.resize(m_CurrentBatchSize);
-      m_DataSet.read(m_Buffer_1_2.data(), m_CompoundDataType, MS, DS);
+    if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
+      if (m_Buffer_1_0.size() != m_CurrentBatchSize) {
+        m_Buffer_1_0.resize(m_CurrentBatchSize);
+      }
+      m_HDFDataSet.read(m_Buffer_1_0.data(), m_HDFCompoundDataType, MS, DS);
+    } else if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_2) {
+      if (m_Buffer_1_2.size() != m_CurrentBatchSize) {
+        m_Buffer_1_2.resize(m_CurrentBatchSize);
+      }
+      m_HDFDataSet.read(m_Buffer_1_2.data(), m_HDFCompoundDataType, MS, DS);
     } else {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HitVersion<<endl<<"Please update this module."<<endl;
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
       return false;
     }
 
@@ -344,8 +348,8 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     uint16_t TACs;
     uint8_t NumberOfHits;
 
-    if (m_HitVersion == "1.0") {
-      MReadOutHDF_1_0& Hit = m_Buffer_1_0[m_CurrentBatchIndex];
+    if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
+      MHDFStripHit_V1_0& Hit = m_Buffer_1_0[m_CurrentBatchIndex];
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
@@ -355,8 +359,8 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       ADCs = Hit.m_EnergyData;
       TACs = Hit.m_TimingData;
       NumberOfHits = Hit.m_Hits;
-    } else if (m_HitVersion == "1.2") {
-      MReadOutHDF_1_2& Hit = m_Buffer_1_2[m_CurrentBatchIndex];
+    } else if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_2) {
+      MHDFStripHit_V1_2& Hit = m_Buffer_1_2[m_CurrentBatchIndex];
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
@@ -367,7 +371,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       TACs = Hit.m_TimingData;
       NumberOfHits = Hit.m_Hits;
     } else {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HitVersion<<endl<<"Please update this module."<<endl;
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
       return false;
     }
 
@@ -390,7 +394,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
 
     Event->SetID(LongEventID);
-    if (m_HitVersion == "1.0") {
+    if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
       Event->SetCL(TimeCode);
     } else {
       Event->SetTI(TimeCode);
@@ -431,7 +435,7 @@ void MModuleLoaderMeasurementsHDF::Finalize()
   cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
   cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
 
-  m_FileHDF5.close();
+  m_HDFFile.close();
 }
 
 
