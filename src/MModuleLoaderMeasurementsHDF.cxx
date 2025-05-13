@@ -75,6 +75,8 @@ MModuleLoaderMeasurementsHDF::MModuleLoaderMeasurementsHDF() : MModuleLoaderMeas
 
   m_LoadContinuationFiles = false;
   m_FileNameStripMap = "";
+
+  m_DefaultBatchSize = 10000;
 }
 
 
