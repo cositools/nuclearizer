@@ -2,7 +2,7 @@
  * MStripMap.cxx
  *
  *
- * Copyright (C) by YOUR NAME HERE.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -68,15 +68,7 @@ MStripMap::~MStripMap()
 //! Load a strip map
 bool MStripMap::Open(MString FileName)
 {
-  m_ReadOutID.clear();
-  m_RTB.clear();
-  m_DRM.clear();
-  m_IsPrimary.clear();
-  m_ASICID.clear();
-  m_ChannelID.clear();
-  m_DetectorID.clear();
-  m_IsLowVoltage.clear();
-  m_StripNumber.clear();
+  m_StripMappings.clear();
 
   MParser Parser;
   if (Parser.Open(FileName) == false) {
@@ -88,29 +80,24 @@ bool MStripMap::Open(MString FileName)
     if (Parser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
     if (Parser.GetTokenizerAt(i)->GetTokenAtAsString(0).BeginsWith("#") == true) continue;
     if (Parser.GetTokenizerAt(i)->GetNTokens() == 9) {
-      m_ReadOutID.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0));
-      m_RTB.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1));
-      m_DRM.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
-      m_IsPrimary.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsBoolean(3));
-      m_ASICID.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4));
-      m_ChannelID.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(5));
-      m_DetectorID.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(6));
-      m_IsLowVoltage.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(7) == 0 ? true : false);
-      m_StripNumber.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(8));
+      MSingleStripMapping SM;
+      SM.m_ReadOutID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0);
+      SM.m_RTB = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1);
+      SM.m_DRM = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2);
+      SM.m_IsPrimary = Parser.GetTokenizerAt(i)->GetTokenAtAsBoolean(3);
+      SM.m_ASICID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4);
+      SM.m_ChannelID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(5);
+      SM.m_DetectorID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(6);
+      SM.m_IsLowVoltage = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(7) == 0 ? true : false;
+      SM.m_StripNumber = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(8);
+      m_StripMappings.push_back(SM);
     }
   }
 
+  // Sort by m_ReadOutID:
+  sort(m_StripMappings.begin(), m_StripMappings.end(), [](const MSingleStripMapping& A, const MSingleStripMapping& B) { return A.m_ReadOutID < B.m_ReadOutID; });
+
   return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Get number of channels
-unsigned int MStripMap::GetNumberOfReadOutIDs() const
-{
-  return m_ReadOutID.size();
 }
 
 
@@ -120,57 +107,54 @@ unsigned int MStripMap::GetNumberOfReadOutIDs() const
 //! Return true if the given read-out ID is on file
 bool MStripMap::HasReadOutID(unsigned int ROI) const
 {
-  return binary_search(m_ReadOutID.begin(), m_ReadOutID.end(), ROI);
+  auto Iter = lower_bound(m_StripMappings.begin(), m_StripMappings.end(), ROI, [](const MSingleStripMapping& SSM, unsigned int ID) { return SSM.m_ReadOutID < ID; });
+  return Iter != m_StripMappings.end() && Iter->m_ReadOutID == ROI;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Get detector by read out ID
+//! Return the index of the ROI, throw an exception otherwise
+unsigned int MStripMap::GetReadOutIDIndex(unsigned int ROI) const
+{
+  auto Iter = lower_bound(m_StripMappings.begin(), m_StripMappings.end(), ROI, [](const MSingleStripMapping& SSM, unsigned int ID) { return SSM.m_ReadOutID < ID; });
+
+  if (Iter != m_StripMappings.end() && Iter->m_ReadOutID == ROI) {
+    return distance(m_StripMappings.begin(), Iter);
+  } else {
+    throw MExceptionValueNotFound(ROI, "vector of read-out IDs");
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get detector by read-out ID
 unsigned int MStripMap::GetDetectorID(unsigned int ROI) const
 {
-  auto Iter = std::lower_bound(m_ReadOutID.begin(), m_ReadOutID.end(), ROI);
-  if (Iter != m_ReadOutID.end() && *Iter == ROI) {
-    size_t Index = std::distance(m_ReadOutID.begin(), Iter);
-    return m_DetectorID[Index];
-  } else {
-    throw MExceptionValueNotFound(ROI, "vector of read-out IDs");
-    return g_UnsignedIntNotDefined;
-  }
+  return m_StripMappings[GetReadOutIDIndex(ROI)].m_DetectorID;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Get detector side by read out ID
+//! Get detector side by read-out ID
 bool MStripMap::IsLowVoltage(unsigned int ROI) const
 {
-  auto Iter = std::lower_bound(m_ReadOutID.begin(), m_ReadOutID.end(), ROI);
-  if (Iter != m_ReadOutID.end() && *Iter == ROI) {
-    size_t Index = std::distance(m_ReadOutID.begin(), Iter);
-    return m_IsLowVoltage[Index];
-  } else {
-    throw MExceptionValueNotFound(ROI, "vector of read-out IDs");
-    return g_UnsignedIntNotDefined;
-  }
+  return m_StripMappings[GetReadOutIDIndex(ROI)].m_IsLowVoltage;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Get strip ID by read out ID
+//! Get strip ID by read-out ID
 unsigned int MStripMap::GetStripNumber(unsigned int ROI) const
 {
-  auto Iter = std::lower_bound(m_ReadOutID.begin(), m_ReadOutID.end(), ROI);
-  if (Iter != m_ReadOutID.end() && *Iter == ROI) {
-    size_t Index = std::distance(m_ReadOutID.begin(), Iter);
-    return m_StripNumber[Index];
-  } else {
-    throw MExceptionValueNotFound(ROI, "vector of read-out IDs");
-    return g_UnsignedIntNotDefined;
-  }
+  return m_StripMappings[GetReadOutIDIndex(ROI)].m_StripNumber;
 }
 
 
