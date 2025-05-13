@@ -98,10 +98,12 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_FileType = "Unknown";
   m_Detector = "Unknown";
   m_Version = -1;
+  /*
   m_StartObservationTime = MTime(0);
   m_EndObservationTime = MTime(0);
   m_StartClock = numeric_limits<long>::max();
   m_EndClock = numeric_limits<long>::max();
+  */
   
   m_TotalHits = 0;
   m_CurrentHit = 0;
@@ -109,11 +111,21 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_NumberOfEventIDRollOvers = 0;
   m_LastEventID = 0;
 
+  if (MFile::Exists(m_FileName) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileName<<" does not exist."<<endl;
+    return false;
+  }
+
   if (OpenHDF5File(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open HDF5 file."<<endl;
     return false;
   }
   m_ContinuationFileID = 0;
+
+  if (MFile::Exists(m_FileNameStripMap) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileNameStripMap<<" does not exist."<<endl;
+    return false;
+  }
 
   if (m_StripMap.Open(m_FileNameStripMap) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to read strip map."<<endl;
@@ -260,6 +272,13 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
       m_CurrentBatchSize = m_TotalHits - m_CurrentHit;
     }
 
+    if (m_CurrentBatchSize == 0) {
+      m_Buffer_1_0.resize(0);
+      m_Buffer_1_2.resize(0);
+      m_CurrentBatchIndex = 0;
+      return false;
+    }
+
     hsize_t Offset[1] = { m_CurrentHit };
     hsize_t Count[1] = { m_CurrentBatchSize };
 
@@ -280,6 +299,10 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
       m_HDFDataSet.read(m_Buffer_1_2.data(), m_HDFCompoundDataType, MS, DS);
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
+      m_CurrentBatchSize = 0;
+      m_Buffer_1_0.resize(0);
+      m_Buffer_1_2.resize(0);
+      m_CurrentBatchIndex = 0;
       return false;
     }
 
@@ -287,6 +310,10 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
 
   } catch (const H5::Exception& E) {
     cout<<m_XmlTag<<": HDF5 read error: "<<E.getDetailMsg()<<endl;
+    m_CurrentBatchSize = 0;
+    m_Buffer_1_0.resize(0);
+    m_Buffer_1_2.resize(0);
+    m_CurrentBatchIndex = 0;
     return false;
   }
 
