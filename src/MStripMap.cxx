@@ -95,7 +95,7 @@ bool MStripMap::Open(MString FileName)
       m_ASICID.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4));
       m_ChannelID.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(5));
       m_DetectorID.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(6));
-      m_IsLowVoltage.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsBoolean(7));
+      m_IsLowVoltage.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(7) == 0 ? true : false);
       m_StripNumber.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(8));
     }
   }
