@@ -158,21 +158,6 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
     }
     cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HitVersion<<endl;
 
-    /*
-    const size_t ChunkBytes = 1524 * sizeof(MReadOutHDF_1_0);
-    const size_t NumChunksToCache = 20;
-
-    DSetAccPropList APL;
-    APL.setChunkCache(
-      1031,                      // num slots — a prime number slightly above num chunks
-      ChunkBytes * NumChunksToCache,  // cache size in bytes
-      0.75                      // w0 (preemption policy)
-    );
-
-    // Open with tuned cache
-    m_DataSet = m_FileHDF5.openDataSet("/Hits", dapl);
-    */
-
     // Get the data set
     m_DataSet = m_FileHDF5.openDataSet("/Hits");
 
@@ -247,8 +232,55 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
     DS.getSimpleExtentDims(&m_TotalHits, nullptr);
     m_CurrentHit = 0;
 
-  } catch (const Exception& E) {
+    if (ReadBatchHits() == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": HDF5 read batch error"<<endl;
+      return false;
+    }
+
+  } catch (const H5::Exception& E) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": HDF5 initializion error: "<<E.getDetailMsg()<<endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read a batch of hits using a hyperslab
+bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
+{
+  try {
+    m_CurrentBatchSize = m_DefaultBatchSize;
+    if (m_TotalHits - m_CurrentHit < m_CurrentBatchSize) {
+      m_CurrentBatchSize = m_TotalHits - m_CurrentHit;
+    }
+
+    hsize_t Offset[1] = { m_CurrentHit };
+    hsize_t Count[1] = { m_CurrentBatchSize };
+
+    DataSpace DS = m_DataSet.getSpace();
+    DS.selectHyperslab(H5S_SELECT_SET, Count, Offset);
+
+    DataSpace MS(1, Count);
+
+    if (m_HitVersion == "1.0") {
+      m_Buffer_1_0.resize(m_CurrentBatchSize);
+      m_DataSet.read(m_Buffer_1_0.data(), m_CompoundDataType, MS, DS);
+    } else if (m_HitVersion == "1.2") {
+      m_Buffer_1_2.resize(m_CurrentBatchSize);
+      m_DataSet.read(m_Buffer_1_2.data(), m_CompoundDataType, MS, DS);
+    } else {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HitVersion<<endl<<"Please update this module."<<endl;
+      return false;
+    }
+
+    m_CurrentBatchIndex = 0;
+
+  } catch (const H5::Exception& E) {
+    cout<<m_XmlTag<<": HDF5 read error: "<<E.getDetailMsg()<<endl;
     return false;
   }
 
@@ -264,124 +296,118 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
 
-  // Check if we need to read more data from the next file
-  if (m_CurrentHit >= m_TotalHits) {
-    if (m_LoadContinuationFiles == true) {
-      // Check if we have more files to load:
-      MString FileName = m_FileName;
-      MString NextSuffix = MString("_") + (m_ContinuationFileID+1) + ".hdf5";
-      FileName.ReplaceAllInPlace(".hdf5", NextSuffix);
-      if (MFile::Exists(FileName) == true) {
-        if (OpenHDF5File(FileName) == false) {
+  unsigned int NStripHits = 1;
+  for (unsigned int s = 0; s < NStripHits; ++s) {
+
+    // First step is to check if we have events left in the file:
+    if (m_CurrentHit >= m_TotalHits) {
+      if (m_LoadContinuationFiles == true) {
+        // Check if we have more files to load:
+        MString FileName = m_FileName;
+        MString NextSuffix = MString("_") + (m_ContinuationFileID+1) + ".hdf5";
+        FileName.ReplaceAllInPlace(".hdf5", NextSuffix);
+        if (MFile::Exists(FileName) == true) {
+          if (OpenHDF5File(FileName) == false) {
+            cout<<m_XmlTag<<": No more events!"<<endl;
+            m_IsFinished = true;
+            return false;
+          } else {
+            cout<<m_XmlTag<<": Switched to file: "<<FileName<<endl;
+            m_ContinuationFileID++;
+          }
+        } else {
           cout<<m_XmlTag<<": No more events!"<<endl;
           m_IsFinished = true;
           return false;
-        } else {
-          cout<<m_XmlTag<<": Switched to file: "<<FileName<<endl;
-          m_ContinuationFileID++;
         }
       } else {
         cout<<m_XmlTag<<": No more events!"<<endl;
         m_IsFinished = true;
         return false;
       }
+    }
+
+    // Second step is to check is we have events left in the batch
+    if (m_CurrentBatchIndex >= m_CurrentBatchSize) {
+      if (ReadBatchHits() == false) {
+        return false;
+      }
+    }
+
+    // Extract the data we need
+    uint16_t EventID;
+    uint64_t TimeCode;
+    uint16_t StripID;
+    uint16_t ADCs;
+    uint16_t TACs;
+    uint8_t NumberOfHits;
+
+    if (m_HitVersion == "1.0") {
+      MReadOutHDF_1_0& Hit = m_Buffer_1_0[m_CurrentBatchIndex];
+      ++m_CurrentBatchIndex;
+      ++m_CurrentHit;
+
+      EventID = Hit.m_EventID;
+      TimeCode = Hit.m_TimeCode;
+      StripID = Hit.m_StripID;
+      ADCs = Hit.m_EnergyData;
+      TACs = Hit.m_TimingData;
+      NumberOfHits = Hit.m_Hits;
+    } else if (m_HitVersion == "1.2") {
+      MReadOutHDF_1_2& Hit = m_Buffer_1_2[m_CurrentBatchIndex];
+      ++m_CurrentBatchIndex;
+      ++m_CurrentHit;
+
+      EventID = Hit.m_EventID;
+      TimeCode = Hit.m_TimeCode;
+      StripID = Hit.m_StripID;
+      ADCs = Hit.m_EnergyData;
+      TACs = Hit.m_TimingData;
+      NumberOfHits = Hit.m_Hits;
     } else {
-      cout<<m_XmlTag<<": No more events!"<<endl;
-      m_IsFinished = true;
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HitVersion<<endl<<"Please update this module."<<endl;
       return false;
     }
-  }
 
-  try {
-
-    unsigned int NStripHits = 1;
-    for (unsigned int s = 0; s < NStripHits; ++s) {
-      hsize_t offset[1] = { m_CurrentHit };
-      hsize_t count[1] = { 1 };
-
-      DataSpace DS = m_DataSet.getSpace();
-      DS.selectHyperslab(H5S_SELECT_SET, count, offset);
-      DataSpace MS(1, count);
-
-      // Extract the data we need
-      uint16_t EventID;
-      uint64_t TimeCode;
-      uint16_t StripID;
-      uint16_t ADCs;
-      uint16_t TACs;
-      uint8_t NumberOfHits;
-
-      if (m_HitVersion == "1.0") {
-        MReadOutHDF_1_0 h;
-        m_DataSet.read(&h, m_CompoundDataType, MS, DS);
-        ++m_CurrentHit;
-
-        EventID = h.m_EventID;
-        TimeCode = h.m_TimeCode;
-        StripID = h.m_StripID;
-        ADCs = h.m_EnergyData;
-        TACs = h.m_TimingData;
-        NumberOfHits = h.m_Hits;
-      } else if (m_HitVersion == "1.2") {
-        MReadOutHDF_1_2 h;
-        m_DataSet.read(&h, m_CompoundDataType, MS, DS);
-        ++m_CurrentHit;
-
-        EventID = h.m_EventID;
-        TimeCode = h.m_TimeCode;
-        StripID = h.m_StripID;
-        ADCs = h.m_EnergyData;
-        TACs = h.m_TimingData;
-        NumberOfHits = h.m_Hits;
-      } else {
-        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HitVersion<<endl<<"Please update this module."<<endl;
-        return false;
-      }
-
-      if (g_Verbosity >= c_Info) {
-        cout<<endl;
-        cout<<"Hit "<<m_CurrentHit<<endl;
-        cout<<"  EventID: "<<EventID<<endl;
-        cout<<"  TimeCode: "<<TimeCode<<endl;
-        cout<<"  StripID: "<<StripID<<endl;
-        cout<<"  EnergyData: "<<ADCs<<endl;
-        cout<<"  TimingData: "<<TACs<<endl;
-        cout<<"  Hits: "<<(int) NumberOfHits<<endl;
-      }
-
-      if (EventID < m_LastEventID) {
-        m_NumberOfEventIDRollOvers++;
-      }
-      m_LastEventID = EventID;
-
-      unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
-
-      Event->SetID(LongEventID);
-      if (m_HitVersion == "1.0") {
-        Event->SetCL(TimeCode);
-      } else {
-        Event->SetTI(TimeCode);
-      }
-
-      if (m_StripMap.HasReadOutID(StripID) == true) {
-        MStripHit* H = new MStripHit();
-        H->SetDetectorID(m_StripMap.GetDetectorID(StripID));
-        H->SetStripID(m_StripMap.GetStripNumber(StripID));
-        H->IsLowVoltageStrip(m_StripMap.IsLowVoltage(StripID));
-        H->SetADCUnits(ADCs);
-        H->SetTAC(TACs);
-        Event->AddStripHit(H);
-      } else {
-        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<StripID<<" not found in strip map"<<endl;
-        return false;
-      }
-
-      NStripHits = static_cast<unsigned int>(NumberOfHits);
+    if (g_Verbosity >= c_Info) {
+      cout<<endl;
+      cout<<"Hit "<<m_CurrentHit<<endl;
+      cout<<"  EventID: "<<EventID<<endl;
+      cout<<"  TimeCode: "<<TimeCode<<endl;
+      cout<<"  StripID: "<<StripID<<endl;
+      cout<<"  EnergyData: "<<ADCs<<endl;
+      cout<<"  TimingData: "<<TACs<<endl;
+      cout<<"  Hits: "<<(int) NumberOfHits<<endl;
     }
 
-  } catch (const Exception& E) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": HDF5 read error: "<<E.getDetailMsg()<<endl;
-    return false;
+    if (EventID < m_LastEventID) {
+      m_NumberOfEventIDRollOvers++;
+    }
+    m_LastEventID = EventID;
+
+    unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
+
+    Event->SetID(LongEventID);
+    if (m_HitVersion == "1.0") {
+      Event->SetCL(TimeCode);
+    } else {
+      Event->SetTI(TimeCode);
+    }
+
+    if (m_StripMap.HasReadOutID(StripID) == true) {
+      MStripHit* H = new MStripHit();
+      H->SetDetectorID(m_StripMap.GetDetectorID(StripID));
+      H->SetStripID(m_StripMap.GetStripNumber(StripID));
+      H->IsLowVoltageStrip(m_StripMap.IsLowVoltage(StripID));
+      H->SetADCUnits(ADCs);
+      H->SetTAC(TACs);
+      Event->AddStripHit(H);
+    } else {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<StripID<<" not found in strip map"<<endl;
+      return false;
+    }
+
+    NStripHits = static_cast<unsigned int>(NumberOfHits);
   }
 
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);

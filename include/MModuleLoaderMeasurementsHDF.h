@@ -40,58 +40,58 @@ using namespace H5;
 
 //! Version 1.0 & 1.1 of the HDF5 hit info
 struct MReadOutHDF_1_0 {
-    uint16_t m_EventID;
-    uint32_t m_TimeCode;
-    uint8_t  m_HitType;
-    uint8_t  m_TimingType;
-    uint16_t m_StripID;
-    uint8_t  m_CrystalID;
-    uint8_t  m_Gain;
-    uint8_t  m_Overflow;
-    uint16_t m_CurrentMaximum;
-    uint16_t m_HighCurrentSamples;
-    uint16_t m_EnergyData;
-    uint16_t m_EnergyDataLowGain;
-    uint16_t m_EnergyDataHighGain;
-    uint16_t m_TimingData;
-    uint8_t  m_Pad;
-    uint8_t  m_Hits;
-    uint8_t  m_EventType;
-    uint8_t  m_CRC;
+  uint16_t m_EventID;
+  uint32_t m_TimeCode;
+  uint8_t  m_HitType;
+  uint8_t  m_TimingType;
+  uint16_t m_StripID;
+  uint8_t  m_CrystalID;
+  uint8_t  m_Gain;
+  uint8_t  m_Overflow;
+  uint16_t m_CurrentMaximum;
+  uint16_t m_HighCurrentSamples;
+  uint16_t m_EnergyData;
+  uint16_t m_EnergyDataLowGain;
+  uint16_t m_EnergyDataHighGain;
+  uint16_t m_TimingData;
+  uint8_t  m_Pad;
+  uint8_t  m_Hits;
+  uint8_t  m_EventType;
+  uint8_t  m_CRC;
 };
 
 //! Version 1.2 of the HDF5 hit info
 struct MReadOutHDF_1_2 {
-    uint16_t m_EventID;
-    uint64_t m_TimeCode;
-    double   m_GSETimeCode;
-    uint8_t  m_HitType;
-    uint8_t  m_TimingType;
-    uint16_t m_StripID;
-    uint8_t  m_CrystalID;
-    uint8_t  m_Gain;
-    uint8_t  m_Overflow;
-    uint16_t m_CurrentMaximum;
-    uint16_t m_HighCurrentSamples;
-    uint16_t m_EnergyData;
-    uint16_t m_EnergyDataLowGain;
-    uint16_t m_EnergyDataHighGain;
-    uint16_t m_TimingData;
-    uint8_t  m_Pad;
-    uint8_t  m_Hits;
-    uint16_t m_Bytes;
-    uint8_t  m_EventType;
-    uint8_t  m_CRC;
+  uint16_t m_EventID;
+  uint64_t m_TimeCode;
+  double   m_GSETimeCode;
+  uint8_t  m_HitType;
+  uint8_t  m_TimingType;
+  uint16_t m_StripID;
+  uint8_t  m_CrystalID;
+  uint8_t  m_Gain;
+  uint8_t  m_Overflow;
+  uint16_t m_CurrentMaximum;
+  uint16_t m_HighCurrentSamples;
+  uint16_t m_EnergyData;
+  uint16_t m_EnergyDataLowGain;
+  uint16_t m_EnergyDataHighGain;
+  uint16_t m_TimingData;
+  uint8_t  m_Pad;
+  uint8_t  m_Hits;
+  uint16_t m_Bytes;
+  uint8_t  m_EventType;
+  uint8_t  m_CRC;
 };
 
 //! The version string
 struct MReadOutHDFVersionString {
-    char string_col[256];
+  char string_col[256];
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! A module to load HDF5 data files
 class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 {
   // public interface:
@@ -137,7 +137,8 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
  protected:
   //! Convert more data from raw to intermediate format - return false if no more data can be converted
   bool OpenHDF5File(MString FileName);
-
+  //! Read a batch of hits using a hyperslab
+  bool ReadBatchHits();
 
   // private methods:
  private:
@@ -176,6 +177,19 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   //! The version of the hit structure
   MString m_HitVersion;
+
+  //! The default batch size
+  unsigned int m_DefaultBatchSize;
+
+  //! The current batch size
+  unsigned int m_CurrentBatchSize;
+
+  //! The current index in the batch
+  unsigned int m_CurrentBatchIndex;
+
+  //! The various batches
+  vector<MReadOutHDF_1_0> m_Buffer_1_0;
+  vector<MReadOutHDF_1_2> m_Buffer_1_2;
 
   //! Total number of hits
   hsize_t m_TotalHits;
