@@ -88,7 +88,8 @@ void MStripHit::Clear()
   m_PreampTemp = 0;
   m_IsGuardRing = false;
   m_IsNearestNeighbor = false;
-  m_HasGoodTiming = false;
+  m_HasFastTiming = false;
+  m_HasCalibratedTiming = false;
   m_Origins.clear();
 }
 
@@ -217,17 +218,21 @@ void MStripHit::StreamRoa(ostream& S)
 unsigned int MStripHit::MakeFlags()
 {
   //! Return flags to indicate the type of strip hit
-  //! Currently, 2 bits:
-  //!   v = Is a nearest neighbor
-  //!    v = Is a guard ring
-  //! 0b11u
+  //! Currently, 3 bits:
+  //!   v = Has fast timing
+  //!    v = Is a nearest neighbor
+  //!     v = Is a guard ring
+  //! 0b111u
 
-  unsigned int Flags = 0b00u;
+  unsigned int Flags = 0b000u;
   if (m_IsGuardRing == true) {
-    Flags = Flags | 0b01u;
+    Flags = Flags | 0b001u;
   }
   if (m_IsNearestNeighbor == true) {
-    Flags = Flags | 0b10u;
+    Flags = Flags | 0b010u;
+  }
+  if (m_HasFastTiming == true) {
+    Flags = Flags | 0b100u;
   }
 
   return Flags;
@@ -240,13 +245,15 @@ unsigned int MStripHit::MakeFlags()
 void MStripHit::ParseFlags(unsigned int Flags)
 {
   //! Set internal booleans according to flag
-  //! Currently, 2 bits:
-  //!   v = Is a nearest neighbor
-  //!    v = Is a guard ring
-  //! 0b11u
+  //! Currently, 3 bits:
+  //!   v = Has fast timing
+  //!    v = Is a nearest neighbor
+  //!     v = Is a guard ring
+  //! 0b111u
 
-  IsGuardRing(Flags & 0b01u);
-  IsNearestNeighbor(Flags & 0b10u);
+  IsGuardRing(Flags & 0b001u);
+  IsNearestNeighbor(Flags & 0b010u);
+  HasFastTiming(Flags & 0b100u);
 }
 
 

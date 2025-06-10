@@ -139,11 +139,16 @@ class MStripHit
   void IsNearestNeighbor(bool NearestNeighbor) { m_IsNearestNeighbor = NearestNeighbor; }
   //! Return a boolean indicating whether the strip is a Nearest Neighbor
   bool IsNearestNeighbor() const { return m_IsNearestNeighbor; }
+  //! Set the Fast Timing flag
+  void HasFastTiming(bool FastTiming) { m_HasFastTiming = FastTiming; }
+  //! Return a boolean indicating whether the strip has fast timing;
+  bool HasFastTiming() const { return m_HasFastTiming; }
 
-  //! Set the Good Timing flag
-  void HasGoodTiming(bool GoodTiming) { m_HasGoodTiming = GoodTiming; }
-  //! Return a boolean indicating whether the strip timing is good;
-  bool HasGoodTiming() const { return m_HasGoodTiming; }
+
+  //! Set the Calibrated Timing flag
+  void HasCalibratedTiming(bool CalibratedTiming) { m_HasCalibratedTiming = CalibratedTiming; }
+  //! Return a boolean indicating whether the strip timing has been calibrated;
+  bool HasCalibratedTiming() const { return m_HasCalibratedTiming; }
   
   
   //! Produce an unsigned int with bitwise values representing flags
@@ -199,9 +204,10 @@ class MStripHit
   //! Flags denoting the type of strip hit
   bool m_IsGuardRing;
   bool m_IsNearestNeighbor;
+  bool m_HasFastTiming;
 
-  //! Flag indicating whether the TAC/timing are reliable
-  bool m_HasGoodTiming;
+  //! Flag indicating whether the nanosecond timing has been calibrated
+  bool m_HasCalibratedTiming;
   
   //! Origin IAs from simulations
   vector<int> m_Origins;
