@@ -31,6 +31,9 @@
  #include "MReadOutElementDoubleStrip.h"
  #include "MFileEventsSim.h"
  
+ // based on MEGAlib library but created for Nuclearizer
+ #include "MReadOutElementVoxel3D.h"
+
  // Nuclearizer libs:
  #include "MDepthCalibrator.h"
  #include "MReadOutAssembly.h"
@@ -142,7 +145,11 @@
    //! empty function used to make breakpoints for debugger
    void dummy_func();
    
-   
+   /// ACS DEE
+   //! Set ACS energy correction file name
+     void SetACSLatXEnergyCorrectionFileName(const MString& FileName) { m_ACSLatXEnergyCorrectionFileName = FileName; }
+     //! Set threshold file name
+     MString GetACSLatXEnergyCorrectionFileName() const { return m_ACSLatXEnergyCorrectionFileName; }
  protected:
    //! Read in deadtime constants
    bool ParseDeadtimeFile();
@@ -154,8 +161,6 @@
    bool ParseGuardRingThresholdFile();
    //! Read in and parse dead strip file
    bool ParseDeadStripFile();
-   //! noise shield energy
-   double NoiseShieldEnergy(double energy, MString ShieldName);
    //! Read charge sharing factor file
    bool ParseChargeSharingFile();
    //! Read and initialize charge loss coefficients
@@ -164,7 +169,14 @@
    bool ParseCrosstalkFile();
    //! Apply charge loss correction
    vector<double> ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2);
-  
+ 
+   /// ACS DEE
+   //! Read in and parse the ACS energy correction file (fwhm and centroid)
+   bool ParseACSEnergyCorrectionFile();
+   
+   //! noise shield energy
+   double NoiseShieldEnergyCentroid(double energy, MString detname, int voxelx_id, int voxely_id, int voxelz_id);
+   double NoiseShieldEnergyFWHM(double energy, MString detname, int voxelx_id, int voxely_id, int voxelz_id);
  
  public:
    //! Tiny helper class for MDetectorEffectsEngineSingleDet describing a special strip hit
@@ -174,7 +186,7 @@
      //! Default constructor
      MDEEStripHit() : m_ADC(0), m_Timing(0), m_TAC(0), m_PreampTemp(0), m_Energy(0), m_EnergyOrig(0), m_HitIndex(0), m_IsGuardRing(false), m_ID(0), m_OppositeStrip(0), m_Depth(-10) {}
    
-     //! The read-out element
+     //! The read-out element for the GeD
      MReadOutElementDoubleStrip m_ROE;
      //! The ADC value
      double m_ADC;
@@ -216,6 +228,11 @@
      int m_OppositeStrip;
      //! save depth information for charge loss, and maybe other things
      double m_Depth;
+    
+     /// ACS DEE
+     //! The read-out element for the ACS
+     MReadOutElementVoxel3D m_VOX_ACS;
+
    };
    
  protected:
@@ -266,8 +283,11 @@
    
    //! The number of simulated events
    unsigned long m_NumberOfSimulatedEvents;
-   
-   
+     
+   /// ACS DEE
+   //! ACS energy correction file name
+   MString m_ACSEnergyCorrectionFileName;
+
  private:
   
    //COSI constants
@@ -454,7 +474,14 @@
    unsigned long m_NumberOfFailedIASearches;
    //! Counter for the number of times the IA was in the detector for the charge sharing determination
    unsigned long m_NumberOfSuccessfulIASearches;
- 
+     
+     
+   /// ACS DEE
+   //! Calibration map between Voxel3D read-out element and the energy resolution parameters
+   map<MReadOutElementVoxel3D, TF1*> m_Centroid;
+   map<MReadOutElementVoxel3D, TF1*> m_FWHM;
+
+    
    #ifdef ___CLING___
  public:
    ClassDef(MDetectorEffectsEngineSingleDet, 0) // no description
