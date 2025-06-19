@@ -147,9 +147,9 @@
    
    /// ACS DEE
    //! Set ACS energy correction file name
-     void SetACSLatXEnergyCorrectionFileName(const MString& FileName) { m_ACSLatXEnergyCorrectionFileName = FileName; }
+     void SetACSEnergyCorrectionFileName(const MString& FileName) { m_ACSEnergyCorrectionFileName = FileName; }
      //! Set threshold file name
-     MString GetACSLatXEnergyCorrectionFileName() const { return m_ACSLatXEnergyCorrectionFileName; }
+     MString GetACSEnergyCorrectionFileName() const { return m_ACSEnergyCorrectionFileName; }
  protected:
    //! Read in deadtime constants
    bool ParseDeadtimeFile();
