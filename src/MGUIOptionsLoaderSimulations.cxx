@@ -128,7 +128,14 @@ void MGUIOptionsLoaderSimulations::Create()
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationSplinesFileName());
   m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.ctd");
   m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
-  
+
+  // ACS DEE energy correction file
+  m_ACSEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy correction file for the ACS DEE:",
+      dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetACSEnergyCorrectionFileName());
+  m_ACSEnergyCorrectionFileSelector->SetFileType("ACS DEE energy correction file", "*.txt");
+  m_OptionsFrame->AddFrame(m_ACSEnergyCorrectionFileSelector, LabelLayout);   
+    
+    
   m_ApplyFudgeFactorSelector = new TGCheckButton(m_OptionsFrame, "Apply fudge factor to better match fluxes", 1);
   m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetApplyFudgeFactor());
   m_OptionsFrame->AddFrame(m_ApplyFudgeFactorSelector, LabelLayout);
@@ -207,6 +214,8 @@ bool MGUIOptionsLoaderSimulations::OnApply()
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationCoeffsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationTACCalFileName(m_DepthCalibrationTACCalFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
+  // ACS DEE energy correction
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetACSEnergyCorrectionFileName(m_ACSEnergyCorrectionFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetApplyFudgeFactor(m_ApplyFudgeFactorSelector->IsOn());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetUseStopAfter(m_StopAfter->IsOn());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetMaximumAcceptedEvents(m_MaximumAcceptedEvents->GetAsInt());

@@ -489,8 +489,8 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         DetName.RemoveAllInPlace("BGO_X0_"); // DetName is a string with the number of the detector
         
         ShieldDetNum = DetName.ToInt();
-        cout << "DetName: " << DetName  << endl;
-        cout << "ShieldDetNum: " << ShieldDetNum  << endl;
+        //cout << "DetName: " << DetName  << endl;
+        //cout << "ShieldDetNum: " << ShieldDetNum  << endl;
         ShieldDetNum = ShieldDetNum - 1;
         energy = HT->GetOriginalEnergy(); // Original Energy: returns the original energy deposit before noising
 
@@ -505,7 +505,7 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
           
         // ENERGY REDISTRIBUTION
 
-        if ((energy > m_ShieldThreshold)){ //"Shield" needs to change; In Carolyn's mass model this is BGO_Coinc_sideX_neg. Need to find a better naming scheme.
+        if ((corrected_energy > m_ShieldThreshold)){ //"Shield" needs to change; In Carolyn's mass model this is BGO_Coinc_sideX_neg. Need to find a better naming scheme.
 
           bool found = false;
 

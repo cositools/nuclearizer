@@ -93,6 +93,8 @@ class MGUIOptionsLoaderSimulations : public MGUIOptions
   MGUIEFileSelector* m_DepthCalibrationTACCalFileSelector;
   //! Depth calibration splines file name
   MGUIEFileSelector* m_DepthCalibrationSplinesFileSelector;
+  //! ACS DEE energy correction file
+  MGUIEFileSelector* m_ACSEnergyCorrectionFileSelector;
 	//! Apply fudge factor
 	TGCheckButton* m_ApplyFudgeFactorSelector;
   //! Use stop after a maximum number of events
