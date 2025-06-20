@@ -149,6 +149,9 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // if (InitializeChargeLoss() == false) return false;
   // //load crosstalk coefficients
   // if (ParseCrosstalkFile() == false) return false;
+ 
+  // ACS - load energy correction file
+  if (ParseACSEnergyCorrectionFile() == false) return false;
   
   //initialize m_FirstTime to max double and m_LastTime to 0
   m_FirstTime = std::numeric_limits<double>::max();
@@ -171,8 +174,7 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
     cout << "Unable to load depth calibration splines file - Aborting!" << endl;
     return false;
   }
-  
-  
+
   m_Reader = new MFileEventsSim(m_Geometry);
   if (m_Reader->Open(m_SimulationFileName) == false) {
     cout<<"Unable to open sim file "<<m_SimulationFileName<<" - Aborting!"<<endl; 
@@ -470,14 +472,15 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       if (HT->GetDetectorType() == 8) {
         // cout << "Shield hit why?" << endl;
         m_NumShieldHitCounts += 1;
+        MVector pos = HT->GetPosition();
+          
         MDVolumeSequence* VS = HT->GetVolumeSequence();
         MDDetector* Detector = VS->GetDetector();
         MString FullDetName = Detector->GetName();
         
-        MDVoxel3D* Voxel3D = new MDVoxel3D(FullDetName);
-        // create voxel grid object
+        MVector pos_in_detector = VS->GetPositionInDetector();
           
-        MDGridPoint P = Voxel3D->GetGridPoint(VS->GetPositionInDetector());
+        MDGridPoint P = VS->GetGridPoint();
         int voxelx_id = P.GetXGrid();
         int voxely_id = P.GetYGrid();
         int voxelz_id = P.GetZGrid();
@@ -491,15 +494,14 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         ShieldDetNum = ShieldDetNum - 1;
         energy = HT->GetOriginalEnergy(); // Original Energy: returns the original energy deposit before noising
 
-        
         ShieldDetGroup = 0; // Detector panel with the hit
           
         double shield_corrected_centroid = NoiseShieldEnergyCentroid(energy, FullDetName, voxelx_id, voxely_id, voxelz_id);
         double shield_FWHM_value = NoiseShieldEnergyFWHM(energy, FullDetName, voxelx_id, voxely_id, voxelz_id);
           
         double shield_sigma = shield_FWHM_value / 2.35;
-        double corrected_energy = m_Random.Gaus(shield_corrected_centroid,shield_sigma);
-        HT->SetEnergy(energy);
+        double corrected_energy = m_Random.Gaus(shield_corrected_centroid, shield_sigma);
+        HT->SetEnergy(corrected_energy);
           
         // ENERGY REDISTRIBUTION
 

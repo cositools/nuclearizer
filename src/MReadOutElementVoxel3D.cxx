@@ -136,13 +136,30 @@ bool MReadOutElementVoxel3D::operator==(const MReadOutElement& R) const
   const MReadOutElementVoxel3D* S = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
   if (S == 0) return false;
 
-  if (m_DetectorName != S->m_DetectorName) return false;
+  // Split by underscore:
+  vector<MString> tokens = m_DetectorName.Tokenize("_");
+  vector<MString> s_tokens = S->m_DetectorName.Tokenize("_");
+    
+  if (tokens.size() != 3 || s_tokens.size() != 3) {
+      cerr << "ERROR: Unexpected detector name format in operator==: "
+                << m_DetectorName << " or " << S->m_DetectorName << endl;
+      return false;
+  }
+    
+  int side = tokens[1].GetSubString(1, tokens[1].Length()).ToInt();
+  int crystal = tokens[2].ToInt();
+  int s_side = s_tokens[1].GetSubString(1, s_tokens[1].Length()).ToInt();
+  int s_crystal = s_tokens[2].ToInt();
+    
+  if (side != s_side) return false;
+  if (crystal != s_crystal) return false;
 
   if (m_VoxelXID != S->m_VoxelXID) return false;
   if (m_VoxelYID != S->m_VoxelYID) return false;
   if (m_VoxelZID != S->m_VoxelZID) return false;
 
   return true;
+              
 }
 
 
@@ -154,6 +171,41 @@ bool MReadOutElementVoxel3D::operator<(const MReadOutElement& R) const
 {
   const MReadOutElementVoxel3D* S = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
   if (S == 0) return false;
+              
+ 
+  vector<MString> tokens = m_DetectorName.Tokenize("_");
+  vector<MString> s_tokens = S->m_DetectorName.Tokenize("_");
+  
+  if (tokens.size() != 3 || s_tokens.size() != 3) {
+        cerr << "ERROR: Unexpected detector name format in operator==: "
+                  << m_DetectorName << " or " << S->m_DetectorName << endl;
+        return false;
+  }
+      
+  int side = tokens[1].GetSubString(1, tokens[1].Length()).ToInt();
+  int crystal = tokens[2].ToInt();
+  int s_side = s_tokens[1].GetSubString(1, s_tokens[1].Length()).ToInt();
+  int s_crystal = s_tokens[2].ToInt();
+                
+  if (side < s_side) return true;
+
+  if (side == s_side) {
+                  
+     if (crystal < s_crystal) return true;
+     if (crystal == s_crystal) {
+         if (m_VoxelXID < S->m_VoxelXID) return true;
+         if (m_VoxelXID == S->m_VoxelXID) {
+            if (m_VoxelYID < S->m_VoxelYID) return true;
+            if (m_VoxelYID == S->m_VoxelYID) {
+               if (m_VoxelZID < S->m_VoxelZID) return true;
+               if (m_VoxelZID == S->m_VoxelZID) return false;
+            }
+         }
+     }
+  }
+                
+  return false;
+  /*
 
     if (m_DetectorName == S->m_DetectorName) {
         
@@ -168,6 +220,7 @@ bool MReadOutElementVoxel3D::operator<(const MReadOutElement& R) const
     } else {
         return true;
     }
+   */
 
 }
 

@@ -228,6 +228,11 @@ bool MModuleLoaderSimulationsSingleDet::ReadXmlConfiguration(MXmlNode* Node)
   if (DepthCalibrationSplinesFileNameNode != 0) {
     SetDepthCalibrationSplinesFileName(DepthCalibrationSplinesFileNameNode->GetValue());
   }
+  // ACS DEE file
+  MXmlNode* ACSEnergyCorrectionFileNameNode = Node->GetNode("ACSEnergyCorrectionFileName");
+    if (ACSEnergyCorrectionFileNameNode != 0) {
+      SetACSEnergyCorrectionFileName(ACSEnergyCorrectionFileNameNode->GetValue());
+    }
   MXmlNode* ApplyFudgeFactorNode = Node->GetNode("ApplyFudgeFactor");
   if (ApplyFudgeFactorNode != 0) {
     m_ApplyFudgeFactor = ApplyFudgeFactorNode->GetValueAsBoolean();
@@ -265,6 +270,8 @@ MXmlNode* MModuleLoaderSimulationsSingleDet::CreateXmlConfiguration()
   new MXmlNode(Node, "DepthCalibrationCoeffsFileName", m_DepthCalibrationCoeffsFileName);
   new MXmlNode(Node, "DepthCalibrationTACCalFileName", m_DepthCalibrationTACCalFileName);
   new MXmlNode(Node, "DepthCalibrationSplinesFileName", m_DepthCalibrationSplinesFileName);
+  // ACS DEE
+  new MXmlNode(Node, "ACSEnergyCorrectionFileName", m_ACSEnergyCorrectionFileName);
   new MXmlNode(Node, "ApplyFudgeFactor", m_ApplyFudgeFactor);
   new MXmlNode(Node, "UseStopAfter", m_UseStopAfter);
   new MXmlNode(Node, "MaximumAcceptedEvents", m_MaximumAcceptedEvents);
