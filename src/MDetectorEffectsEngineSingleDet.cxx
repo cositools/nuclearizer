@@ -54,11 +54,16 @@ using namespace std;
 #include "MDGeometryQuest.h"
 #include "MDDetector.h"
 #include "MDStrip2D.h"
+#include "MDVoxel3D.h"
 #include "MFileEventsSim.h"
 #include "MDVolumeSequence.h"
 #include "MSimEvent.h"
 #include "MSimHT.h"
 #include "MReadOutElementDoubleStrip.h"
+
+
+// based on MEGAlib library but created for Nuclearizer
+#include "MReadOutElementVoxel3D.h"
 
 // Nuclearizer
 #include "MDetectorEffectsEngineSingleDet.h"
@@ -144,6 +149,9 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
   // if (InitializeChargeLoss() == false) return false;
   // //load crosstalk coefficients
   // if (ParseCrosstalkFile() == false) return false;
+ 
+  // ACS - load energy correction file
+  if (ParseACSEnergyCorrectionFile() == false) return false;
   
   //initialize m_FirstTime to max double and m_LastTime to 0
   m_FirstTime = std::numeric_limits<double>::max();
@@ -166,8 +174,7 @@ bool MDetectorEffectsEngineSingleDet::Initialize()
     cout << "Unable to load depth calibration splines file - Aborting!" << endl;
     return false;
   }
-  
-  
+
   m_Reader = new MFileEventsSim(m_Geometry);
   if (m_Reader->Open(m_SimulationFileName) == false) {
     cout<<"Unable to open sim file "<<m_SimulationFileName<<" - Aborting!"<<endl; 
@@ -457,27 +464,48 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     for (unsigned int h=0; h<SimEvent->GetNHTs(); h++){
       MSimHT* HT = SimEvent->GetHTAt(h);
 
-      MDVolumeSequence* VS = HT->GetVolumeSequence();
-      MDDetector* Detector = VS->GetDetector();
-      MString DetName = Detector->GetName();
+      MDVolumeSequence* VS = HT->GetVolumeSequence();  // VF: to remove?
+      MDDetector* Detector = VS->GetDetector(); // VF: to remove?
+      MString DetName = Detector->GetName(); // VF: to remove?
       // cout << DetName << ": " << HT->GetDetectorType() << endl;
       
       if (HT->GetDetectorType() == 8) {
         // cout << "Shield hit why?" << endl;
         m_NumShieldHitCounts += 1;
+        MVector pos = HT->GetPosition();
+          
         MDVolumeSequence* VS = HT->GetVolumeSequence();
         MDDetector* Detector = VS->GetDetector();
+        MString FullDetName = Detector->GetName();
+        
+        MVector pos_in_detector = VS->GetPositionInDetector();
+          
+        MDGridPoint P = VS->GetGridPoint();
+        int voxelx_id = P.GetXGrid();
+        int voxely_id = P.GetYGrid();
+        int voxelz_id = P.GetZGrid();
+          
         MString DetName = Detector->GetName();
-
-        DetName.RemoveAllInPlace("BGO_X0_");
+        DetName.RemoveAllInPlace("BGO_X0_"); // DetName is a string with the number of the detector
+        
         ShieldDetNum = DetName.ToInt();
+        //cout << "DetName: " << DetName  << endl;
+        //cout << "ShieldDetNum: " << ShieldDetNum  << endl;
         ShieldDetNum = ShieldDetNum - 1;
-        energy = HT->GetEnergy();
-        ShieldDetGroup = 0; // Detector panel with the hit
-        energy = NoiseShieldEnergy(energy,DetName);
-        HT->SetEnergy(energy);
+        energy = HT->GetOriginalEnergy(); // Original Energy: returns the original energy deposit before noising
 
-        if ((energy > m_ShieldThreshold)){ //"Shield" needs to change; In Carolyn's mass model this is BGO_Coinc_sideX_neg. Need to find a better naming scheme.
+        ShieldDetGroup = 0; // Detector panel with the hit
+          
+        double shield_corrected_centroid = NoiseShieldEnergyCentroid(energy, FullDetName, voxelx_id, voxely_id, voxelz_id);
+        double shield_FWHM_value = NoiseShieldEnergyFWHM(energy, FullDetName, voxelx_id, voxely_id, voxelz_id);
+          
+        double shield_sigma = shield_FWHM_value / 2.35;
+        double corrected_energy = m_Random.Gaus(shield_corrected_centroid, shield_sigma);
+        HT->SetEnergy(corrected_energy);
+          
+        // ENERGY REDISTRIBUTION
+
+        if ((corrected_energy > m_ShieldThreshold)){ //"Shield" needs to change; In Carolyn's mass model this is BGO_Coinc_sideX_neg. Need to find a better naming scheme.
 
           bool found = false;
 
@@ -2023,30 +2051,57 @@ int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Noise shield energy with measured resolution
-double MDetectorEffectsEngineSingleDet::NoiseShieldEnergy(double energy, MString shield_name)
+//! centroid and fwhm for the gaussian noise
+double MDetectorEffectsEngineSingleDet::NoiseShieldEnergyCentroid(double energy, MString detname, int voxelx_id, int voxely_id, int voxelz_id)
 { 
-// Needs to be updated
   
-  vector<double> resolution_consts{3.75,3.74,18.47,4.23,3.07,3.98};
-  
-  shield_name.RemoveAllInPlace("BGO_Coinc_sideX_neg_");
-  int shield_num = shield_name.ToInt();
-  shield_num = shield_num - 1;
-  double res_constant = resolution_consts[shield_num];
-  
-  //  TF1* ShieldRes = new TF1("ShieldRes","[0]*(x^(1/2))",0,1000); //this is from Knoll
-  //  ShieldRes->SetParameter(0,res_constant);
-  
-  //  double sigma = ShieldRes->Eval(energy);
-  double sigma = res_constant*pow(energy,1./2);
-  
-  double noised_energy = m_Random.Gaus(energy,sigma);
-  
-  return noised_energy;
+    MReadOutElementVoxel3D hit_V;
+    hit_V.SetDetectorName(detname);
+    hit_V.SetVoxelXID(voxelx_id);
+    hit_V.SetVoxelYID(voxely_id);
+    hit_V.SetVoxelZID(voxelz_id);
+    
+    double corrected_centroid;
+    
+    auto it = m_Centroid.find(hit_V);
+    if (it != m_Centroid.end()) {
+        TF1* gauss_centroid = it->second;
+        corrected_centroid = gauss_centroid->Eval(energy);
+        cout << "Corrected centroid = " << corrected_centroid << " keV" << endl;
+    } else {
+        cout << "WARNING: Centroid correction not found for voxel " << detname << " (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+    }
+
+  return corrected_centroid;
   
 }
 
+double MDetectorEffectsEngineSingleDet::NoiseShieldEnergyFWHM(double energy, MString detname, int voxelx_id, int voxely_id, int voxelz_id)
+{
+  
+    MReadOutElementVoxel3D hit_V;
+    hit_V.SetDetectorName(detname);
+    hit_V.SetVoxelXID(voxelx_id);
+    hit_V.SetVoxelYID(voxely_id);
+    hit_V.SetVoxelZID(voxelz_id);
+
+    double FWHM_value;
+
+    auto it_fwhm = m_FWHM.find(hit_V);
+
+    if (it_fwhm != m_FWHM.end()) {
+        TF1* gauss_fwhm = it_fwhm->second;
+
+        FWHM_value = gauss_fwhm->Eval(energy);  // E_true in keV
+        cout << "FWHM at E_true = " << energy << " keV → FWHM = " << FWHM_value << " keV" << endl;
+    } else {
+        cout << "WARNING: FWHM correction not found for voxel " << detname << " (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+    }
+
+  
+  return FWHM_value;
+  
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 // //! Calculate new summed energy of two strips affected by charge loss
@@ -2518,6 +2573,128 @@ bool MDetectorEffectsEngineSingleDet::ParseEnergyCalibrationFile()
 void MDetectorEffectsEngineSingleDet::dummy_func(){
   //empty function to make break points for debugger
 }
+
+/*//////////////////////////////////////////////////////////
+                      * ACS DEE *
+ //////////////////////////////////////////////////////////
+*/
+
+bool MDetectorEffectsEngineSingleDet::ParseACSEnergyCorrectionFile()
+{
+  MParser Parser;
+  if (Parser.Open(m_ACSEnergyCorrectionFileName, MFile::c_Read) == false) {
+    cout << "Unable to open threshold file " << m_ACSEnergyCorrectionFileName << endl;
+    return false;
+  }
+  
+  //vectors for averaging, for strips where there isn't threshold info for some reason
+  //vector<double> lldVals;
+  
+   // vector<MString> ShieldDetNames{"BGO_X0_0", "BGO_X0_1", "BGO_X0_2", "BGO_X1_0", "BGO_X1_1", "BGO_X1_2", "BGO_Y0_0", "BGO_Y0_1", "BGO_Y0_2", "BGO_Y1_0", "BGO_Y1_1", "BGO_Y1_2", "BGO_Z0_0", "BGO_Z0_1", "BGO_Z0_2", "BGO_Z0_3", "BGO_Z0_4", "BGO_Z1_0", "BGO_Z1_1", "BGO_Z1_2", "BGO_Z1_3", "BGO_Z1_4"};
+    
+    
+
+    for (unsigned int i=0; i<Parser.GetNLines(); i++) {
+        unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+        if (NTokens == 0) continue; // skip empty lines
+            
+        // Skip comment lines
+        if (Parser.GetTokenizerAt(i)->GetTokenAtAsString(0).BeginsWith("#")) continue;
+            
+        if (NTokens != 11){ continue; } //this shouldn't happen but just in case
+            
+        // For each voxel of the BGO crystal, the deposited energy is corrected generating a random energy correction following a gaussian distribution. The energy centroid and the fwhm can be computed from the parameters below (Ciabattoni et al. 2025)
+        // Detector Name
+        MString det_name = Parser.GetTokenizerAt(i)->GetTokenAtAsString(0);
+        // MEGAlib voxel X, Y, Z ID
+        int voxel_X = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
+        int voxel_Y = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2);
+        int voxel_Z = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(3);
+        // X, Y position [mm]
+        // center in the BGO crystal center
+        //double pos_X = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4);
+        //double pos_Y = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5);
+        // model parameters
+        // centroid: E_measured = m*E_true + q
+        double m_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+        double q_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(7);
+        // FWHM = sqrt(a^2 + b^2*E_true + c^2*E_true^2)
+        double a_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(8);
+        double b_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(9);
+        double c_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(10);
+            
+        MReadOutElementVoxel3D V;
+            
+        V.SetDetectorName(det_name);
+        V.SetVoxelXID(voxel_X);
+        V.SetVoxelYID(voxel_Y);
+        V.SetVoxelZID(voxel_Z);
+            
+        TF1* gauss_centroid = new TF1("centroid_"+det_name+"_"+MString(voxel_X)+MString(voxel_Y)+MString(voxel_Z),"[0]*x + [1]");
+        gauss_centroid->SetParameter(0, m_par);
+        gauss_centroid->SetParameter(1, q_par);
+
+        TF1* gauss_fwhm = new TF1("fwhm_"+det_name+"_"+MString(voxel_X)+MString(voxel_Y)+MString(voxel_Z),"sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
+        gauss_fwhm->SetParameter(0, a_par);
+        gauss_fwhm->SetParameter(1, b_par);
+        gauss_fwhm->SetParameter(2, c_par);
+
+        m_Centroid[V] = gauss_centroid;
+        m_FWHM[V] = gauss_fwhm;
+            
+    }
+
+    
+    /*
+    double lldThresh = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
+    double functionMax = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
+    
+    m_LLDThresholds[R] = lldThresh;
+    
+    TF1* erf = new TF1("erf"+MString(identifier),"[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldThresh,functionMax);
+    erf->SetParameter(1,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
+    erf->SetParameter(2,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+    erf->SetParameter(3,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
+    erf->SetParameter(0,Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
+    
+    m_FSTThresholds[R] = erf;
+    
+    lldVals.push_back(lldThresh);
+    functionMaxVals.push_back(functionMax);
+    par0Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(5));
+    par1Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(2));
+    par2Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+    par3Vals.push_back(Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4));
+    
+  }
+  
+  //add average value as a default
+  double lldAvg = accumulate(lldVals.begin(),lldVals.end(),0.0)/lldVals.size();
+  double funcMaxAvg = accumulate(functionMaxVals.begin(),functionMaxVals.end(),0.0)/functionMaxVals.size();
+  double par0Avg = accumulate(par0Vals.begin(),par0Vals.end(),0.0)/par0Vals.size();
+  double par1Avg = accumulate(par1Vals.begin(),par1Vals.end(),0.0)/par1Vals.size();
+  double par2Avg = accumulate(par2Vals.begin(),par2Vals.end(),0.0)/par2Vals.size();
+  double par3Avg = accumulate(par3Vals.begin(),par3Vals.end(),0.0)/par3Vals.size();
+  
+  MReadOutElementDoubleStrip R;
+  R.SetDetectorID(12);
+  R.SetStripID(0);
+  R.IsLowVoltageStrip(0);
+  
+  m_LLDThresholds[R] = lldAvg;
+  
+  TF1* erf = new TF1("erf12000","[0]*(-1*TMath::Erf(([1]-x)/(sqrt(2)*[2]))+1)+[3]",lldAvg,funcMaxAvg);
+  erf->SetParameter(0,par0Avg);
+  erf->SetParameter(1,par1Avg);
+  erf->SetParameter(2,par2Avg);
+  erf->SetParameter(3,par3Avg);
+  
+  m_FSTThresholds[R] = erf;
+  */
+  return true;
+}
+
+
 
 // MDummy.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

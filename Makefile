@@ -121,6 +121,7 @@ $(LB)/MModuleLoaderSimulationsSingleDet.o \
 $(LB)/MModuleTACcut.o \
 $(LB)/MGUIExpoTACcut.o \
 $(LB)/MGUIOptionsTACcut.o \
+$(LB)/MReadOutElementVoxel3D.o \
 
 
 
