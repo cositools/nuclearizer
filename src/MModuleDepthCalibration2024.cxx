@@ -30,6 +30,7 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TMath.h"
 #include "TGClient.h"
 #include "TH1.h"
 
@@ -171,6 +172,15 @@ bool MModuleDepthCalibration2024::Initialize()
     return false;
   }
 
+  if (m_MaskMetrologyEnabled == true) {
+    cout << "\n  !!! Mask Metrology Enabled !!! \n" << endl;
+    m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFile);
+    if (m_MaskMetrologyFile == false) {
+      cout << "Unable to open Metrology file" << endl;
+      return false;
+    }
+  }
+
   MSupervisor* S = MSupervisor::GetSupervisor();
   m_EnergyCalibration = (MModuleEnergyCalibrationUniversal*) S->GetAvailableModuleByXmlTag("EnergyCalibrationUniversal");
   if (m_EnergyCalibration == nullptr) {
@@ -200,6 +210,9 @@ void MModuleDepthCalibration2024::CreateExpos()
   }
   m_Expos.push_back(m_ExpoDepthCalibration);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
 
 
 bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event) 
@@ -268,9 +281,25 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
         // Somewhat confusing notation: HVStrips run parallel to X-axis, so we calculate X position with LVStrips.
-        double Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
-        double Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
-        double Zpos = 0.0;
+	double Xpos, Ypos, Zpos;
+        if ( m_MaskMetrologyEnabled ) {
+          // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
+          MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
+          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
+	  
+          vector<double> inter = GetStripIntersection(R_LV, R_HV);
+          Xpos = inter[0];
+          Ypos = inter[1];
+	  //Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
+          //Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
+	
+          Zpos = 0.0;
+	} else {
+          Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
+          Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
+          Zpos = 0.0;
+        }
+
 
         double Xsigma = m_YPitches[DetID]/sqrt(12.0);
         double Ysigma = m_XPitches[DetID]/sqrt(12.0);
@@ -364,6 +393,9 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           }
         }
 
+//      cout << "Strip ID :" << LVStripID << " " << HVStripID << endl;
+//      cout << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
+
       LocalPosition.SetXYZ(Xpos, Ypos, Zpos);
       LocalOrigin.SetXYZ(0.0,0.0,0.0);
       GlobalPosition = m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalPosition);
@@ -386,6 +418,10 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
   return true;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
 
 MStripHit* MModuleDepthCalibration2024::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
 {
@@ -410,6 +446,10 @@ MStripHit* MModuleDepthCalibration2024::GetDominantStrip(vector<MStripHit*>& Str
   return MaxStrip;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
 double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int PixelCode, double Energy)
 {
   // Placeholder for determining the timing noise with energy, and possibly even on a pixel-by-pixel basis.
@@ -427,6 +467,10 @@ double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int PixelCode, double Ene
   }
   return noiseFWHM;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
 
 bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
 {
@@ -468,6 +512,10 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FName)
 
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
 std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int PixelCode)
 {
   // Check to see if the stretch and offset have been loaded. If so, try to get the coefficients for the specified pixel.
@@ -475,7 +523,7 @@ std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int PixelCode)
     if( m_Coeffs.count(PixelCode) > 0 ){
       return &m_Coeffs[PixelCode];
     } else {
-      cout << "MModuleDepthCalibration2024::GetPixelCoeffs: cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
+     // cout << "MModuleDepthCalibration2024::GetPixelCoeffs: cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
       return nullptr;
     }
   } else {
@@ -484,6 +532,10 @@ std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int PixelCode)
   }
 
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
 
 vector<double> MModuleDepthCalibration2024::norm_pdf(vector<double> x, double mu, double sigma)
 {
@@ -556,6 +608,83 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
   return Result;
 
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FName)
+{
+  //Read the Mask Metrology File
+  // Det ID, Strip ID (0-63), Side (l,h), x_mm, y_mm, z_mm, roll_deg, pitch_deg, yaw_deg
+  MFile F;
+  if( F.Open(FName) == false ){
+    cout << "ERROR in MModuleDepthCalibration2024::LoadMaskMetrologyFile: failed to open metrology file." << endl;
+    return false;
+  } else {
+    MString Line;
+    while( F.ReadLine( Line ) ){
+      if ( Line.BeginsWith('#') ){        
+      }
+      else {
+        std::vector<MString> Tokens = Line.Tokenize(",");
+        if( Tokens.size() == 9 ){
+          //Define the readout element to track det ID, strip ID, and lv/hv
+          MReadOutElementDoubleStrip R;
+          R.SetDetectorID(Tokens[0].ToInt());
+          R.SetStripID(Tokens[1].ToInt());
+          R.IsLowVoltageStrip((Tokens[2].ToString() == "p") || (Tokens[2].ToString() == "l"));
+          double Strip_MetX = Tokens[3].ToDouble()/10; //convert to cm
+          double Strip_MetY = Tokens[4].ToDouble()/10; //convert to cm
+          double Strip_MetZ = Tokens[5].ToDouble()/10; //convert to cm
+          double Strip_Roll = Tokens[6].ToDouble();
+          double Strip_Pitch = Tokens[7].ToDouble();
+          double Strip_Yaw = Tokens[8].ToDouble();
+          vector<double> maskmet;
+          maskmet.push_back(Strip_MetX); maskmet.push_back(Strip_MetY); maskmet.push_back(Strip_MetZ); 
+          maskmet.push_back(Strip_Roll); maskmet.push_back(Strip_Pitch); maskmet.push_back(Strip_Yaw); 
+
+          //make the map that defines the metrology info for each readout element
+          m_MaskMetrology[R] = maskmet;
+        }
+      }
+    }
+
+    F.Close();
+
+  }
+
+  return true;
+
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+vector<double> MModuleDepthCalibration2024::GetStripIntersection(MReadOutElementDoubleStrip R_LVStrip, MReadOutElementDoubleStrip R_HVStrip){
+// Function to find the intersection between two strips based on the Mask Metrology
+
+  vector<double> lv_strip_met = m_MaskMetrology[R_LVStrip];
+  vector<double> hv_strip_met = m_MaskMetrology[R_HVStrip];
+
+  //Find the x position of two lines represented by the dominate strips:
+  //  LVstrip is centered at (x,y,z) = (lv_strip_met[0], lv_strip_met[1], lv_strip_met[2])
+  // and is approximately parallel to the y axis, but rotated at angle lv_strip_met[3] 
+  // around the z axis of the detector
+  // HVstrip is centered at (x,y,z) = (hv_strip_met[0], hv_strip_met[1], hv_strip_met[2])
+  // and is approximately parallel to the x axis, but rotated at angle hv_strip_met[3] 
+  // around the z axis of the detector
+  double x_intercept = (hv_strip_met[0]*tan(hv_strip_met[3]*TMath::DegToRad()) - lv_strip_met[0]/tan(lv_strip_met[3]*TMath::DegToRad()) - lv_strip_met[1] + hv_strip_met[1])/(tan(hv_strip_met[3]*TMath::DegToRad())-1/tan(lv_strip_met[3]*TMath::DegToRad()));
+    
+  double y_intercept = (x_intercept - hv_strip_met[0])*tan(hv_strip_met[3]*TMath::DegToRad()) + hv_strip_met[1];
+
+  return {x_intercept, y_intercept};
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
 
 int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   // Function for choosing which Depth-to-CTD relation to use for a given event.
@@ -672,6 +801,10 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   return return_value;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
 bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<vector<double>> ctdarr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap){
 
   // Saves a CTD array, basically allowing for multiple CTDs as a function of depth 
@@ -714,6 +847,9 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> depthvec, vector<ve
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////
+
+
 vector<double> MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
 {
   // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
@@ -738,6 +874,10 @@ vector<double> MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
   }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
 vector<double> MModuleDepthCalibration2024::GetDepth(int DetID)
 {
   // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
@@ -757,6 +897,10 @@ vector<double> MModuleDepthCalibration2024::GetDepth(int DetID)
   }
 } 
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
 void MModuleDepthCalibration2024::ShowOptionsGUI()
 {
   // Show the options GUI - or do nothing
@@ -764,6 +908,9 @@ void MModuleDepthCalibration2024::ShowOptionsGUI()
   Options->Create();
   gClient->WaitForUnmap(Options);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
 
 
 bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
@@ -778,6 +925,16 @@ bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
   MXmlNode* SplinesFileNameNode = Node->GetNode("SplinesFileName");
   if (SplinesFileNameNode != 0) {
   m_SplinesFile = SplinesFileNameNode->GetValue();
+  }
+
+  MXmlNode* MasKMetrologyNode = Node->GetNode("MaskMetrology");
+  if( MasKMetrologyNode != NULL ){
+      m_MaskMetrologyEnabled = (bool) MasKMetrologyNode->GetValueAsInt();
+  }
+
+  MXmlNode* MaskMetrologyFileNameNode = Node->GetNode("MaskMetrologyFileName");
+  if (MaskMetrologyFileNameNode != 0) {
+    m_MaskMetrologyFile = MaskMetrologyFileNameNode->GetValue();
   }
 
   MXmlNode* UCSDOverrideNode = Node->GetNode("UCSDOverride");
@@ -798,6 +955,8 @@ MXmlNode* MModuleDepthCalibration2024::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFile);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
+  new MXmlNode(Node, "MaskMetrology", (unsigned int) m_MaskMetrologyEnabled);
+  new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFile);
   new MXmlNode(Node, "UCSDOverride",(unsigned int) m_UCSDOverride);  
   
   return Node;
