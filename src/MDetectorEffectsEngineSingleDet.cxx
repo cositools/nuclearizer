@@ -614,14 +614,14 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // }
 
       // cout << "DetectorName = " << DetectorName << endl;
-      if(!DetectorName.BeginsWith("Q0D")){
+      if(!DetectorName.BeginsWith("D")){
         continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
       }
       // Sets the detector ID for different hits. May need to change if there is a change in naming convention
       // Seems like there are many hits with error "***  Error  ***  Named detector not found:"
       
-      DetectorName.RemoveAllInPlace("Q0D");
-      int DetectorID = DetectorName.ToInt();
+      DetectorName.RemoveAllInPlace("D");
+      int DetectorID = DetectorName.ToInt() - 1;
       
       
       MDEEStripHit pSide; // Low voltage
