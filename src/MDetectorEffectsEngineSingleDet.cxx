@@ -2067,7 +2067,7 @@ double MDetectorEffectsEngineSingleDet::NoiseShieldEnergyCentroid(double energy,
     if (it != m_Centroid.end()) {
         TF1* gauss_centroid = it->second;
         corrected_centroid = gauss_centroid->Eval(energy);
-        cout << "Corrected centroid = " << corrected_centroid << " keV" << endl;
+        // cout << "Corrected centroid = " << corrected_centroid << " keV" << endl;
     } else {
         cout << "WARNING: Centroid correction not found for voxel " << detname << " (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
     }
@@ -2093,7 +2093,7 @@ double MDetectorEffectsEngineSingleDet::NoiseShieldEnergyFWHM(double energy, MSt
         TF1* gauss_fwhm = it_fwhm->second;
 
         FWHM_value = gauss_fwhm->Eval(energy);  // E_true in keV
-        cout << "FWHM at E_true = " << energy << " keV → FWHM = " << FWHM_value << " keV" << endl;
+        // cout << "FWHM at E_true = " << energy << " keV → FWHM = " << FWHM_value << " keV" << endl;
     } else {
         cout << "WARNING: FWHM correction not found for voxel " << detname << " (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
     }
