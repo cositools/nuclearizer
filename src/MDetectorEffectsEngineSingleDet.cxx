@@ -359,7 +359,7 @@ double MDetectorEffectsEngineSingleDet::dTimeASICs(vector<int> ASICChannels, boo
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Helper function for getting count rate since nearest neighbor isn't implemented
-bool MDetectorEffectsEngineSingleDet::CountRate(vector<int> ASICChannels, double CountTime, bool IsShield) {
+bool MDetectorEffectsEngineSingleDet::CountRate(vector<int> ASICChannels, vector<double> CountTime, bool IsShield) {
   // Return 0 if there are no channels
   if (ASICChannels.empty()) {
       return false;
@@ -376,12 +376,17 @@ bool MDetectorEffectsEngineSingleDet::CountRate(vector<int> ASICChannels, double
 
   else { 
     unordered_set<int> ASICChannelsSet;  // Use a set to store unique channels automatically
+    vector<double> CountTimeVec;
+
 
     // Sort ASICChannels to process channels in ascending order
     sort(ASICChannels.begin(), ASICChannels.end());
 
     // Loop through each channel ID in the sorted list
-    for (int ID : ASICChannels) {
+    // for (int ID : ASICChannels) {
+    for(size_t i=0; i<ASICChannels.size(); i++){
+      int ID = ASICChannels[i];
+      int temp_size = ASICChannelsSet.size();
 
       if (ID == 64) {
         cout << "Strip ID is 64; should not happen" << endl; 
@@ -403,10 +408,17 @@ bool MDetectorEffectsEngineSingleDet::CountRate(vector<int> ASICChannels, double
         ASICChannelsSet.insert(ID);
         ASICChannelsSet.insert(ID + 1);
       }
+      int new_size = ASICChannelsSet.size();
+      for(size_t j=0; j<(new_size-temp_size); j++){
+        CountTimeVec.push_back(CountTime[i]);
+      }
     }
-    for (int i : ASICChannelsSet) {
-      m_EventStripIDs.push_back(i);
-      m_EventTimes.push_back(CountTime);
+    
+    int h = 0;
+    for (int k : ASICChannelsSet) {
+      m_EventStripIDs.push_back(k);
+      m_EventTimes.push_back(CountTimeVec[h]);
+      h++;
     }
   }
 
@@ -1487,10 +1499,11 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         // clear the original lists
         for (int det=0; det<nDets; det++) {
           for (int ASIC=0; ASIC<nASICs; ASIC++) {
-            CountRate(m_ASICHitStripID[det][ASIC], evt_time); // Counter for hits including NN
-            // CountRate(m_ASICHitStripID_noDT[det][ASIC], evt_time); // Counter for non deadtime including NN
+            CountRate(m_ASICHitStripID[det][ASIC], m_TempEvtTimes[det][ASIC]); // Counter for hits including NN
+            // CountRate(m_ASICHitStripID_noDT[det][ASIC], m_TempEvtTimes[det][ASIC]); // Counter for non-deadtime including NN
             m_ASICHitStripID_noDT[det][ASIC].clear(); // Counter for hits including NN
             m_ASICHitStripID[det][ASIC].clear();
+            m_TempEvtTimes[det][ASIC].clear();
           }
         }
 
@@ -1498,19 +1511,20 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
         m_ASICLastHitTime = evt_time;
         m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
         m_ASICHitStripID_noDT[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-        // m_ASICHitStripID_DT[det][ASICofDet].push_back((*i).m_ROE.GetStripID()); // Counter for hits including NN
+        m_TempEvtTimes[det][ASICofDet].push_back(evt_time);
       }
 
       else if (m_ASICLastHitTime + m_StripCoincidenceWindow > evt_time) {
         // Event occured within coincidence window so append all strip IDs
         m_ASICHitStripID[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
         m_ASICHitStripID_noDT[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
-        // m_ASICHitStripID_DT[det][ASICofDet].push_back((*i).m_ROE.GetStripID()); // Counter for hits including NN
+        m_TempEvtTimes[det][ASICofDet].push_back(evt_time);
       }
 
       else if (m_ASICLastHitTime + m_StripsCurrentDeadtime > evt_time) {
         // Event occured within deadtime
-        m_ASICHitStripID_noDT[det][ASICofDet].push_back((*i).m_ROE.GetStripID());
+        m_ASICHitStripID_noDT[det][ASICofDet].push_back((*i).m_ROE.GetStripID()); // remove for deadtime hits
+        m_TempEvtTimes[det][ASICofDet].push_back(evt_time); // remove for deadtime hits
         IsGeDDead = true;
         m_StripHitsErased += 1;
         i = MergedStripHits.erase(i);
@@ -1923,19 +1937,23 @@ bool MDetectorEffectsEngineSingleDet::Finalize()
   // // Create a sample plot here -- maybe save the data as well ...
   // // Plots a light curve of all hits
   // TCanvas *canvas2 = new TCanvas("c2", "My Canvas 2", 800, 600);
-  // TH1F *hist = new TH1F("hist", "Sample Histogram", 100, 0, 100);
-  // for (int i = 0; i<m_EventTimes.size(); i++) {
-  //     hist->Fill(m_EventTimes[i]);
+  // TH1F *hist = new TH1F("hist", "Sample Histogram", (1e-3/1e-7), 0, 1e-3);
+  // for (int i = 0; i<(m_EventTimes.size()-1); i++) {
+  //   if (m_EventTimes[i+1] != m_EventTimes[i]) {
+  //     double dT = m_EventTimes[i+1] - m_EventTimes[i];
+  //     // cout << "dT: " << dT << endl;
+  //     hist->Fill(dT);
+  //   }
   //  }
 
-  // hist->SetTitle("Light Curve");
-  // hist->GetXaxis()->SetTitle("Time (s)");
+  // hist->SetTitle("Time between events (s) vs Counts");
+  // hist->GetXaxis()->SetTitle("Time between events (s)");
   // hist->GetYaxis()->SetTitle("Counts");
 
   // hist->Draw();
   // canvas2->Draw();
-  // // canvas->SaveAs("/Users/parshad/Software/canvas.png");
-  // // End Plot
+  // // // canvas->SaveAs("/Users/parshad/Software/canvas.png");
+  // // // End Plot
 
   // // Plots a ADC vs Energy of all hits
   // TCanvas *canvas = new TCanvas("c1", "My Canvas", 800, 600);

@@ -136,7 +136,7 @@
    //! Get deadtime from list of channels in one ASIC
    double dTimeASICs(vector<int> ASICChannels, bool IsShield = false);
    //! Helper function for getting count rate since nearest neighbor isn't implemented
-   bool CountRate(vector<int> ASICChannels, double CountTime, bool IsShield = false);
+   bool CountRate(vector<int> ASICChannels, vector<double> CountTime, bool IsShield = false);
    //! Analyze whatever needs to be analyzed...
    bool GetNextEvent(MReadOutAssembly* Event);
    //! Finalize the module
@@ -366,8 +366,8 @@
    vector<vector<vector<int> > > m_ASICHitStripID = vector<vector<vector<int> > >(nDets, vector<vector<int>>(nASICs));
    //! Helper Strip ID vector to count for hits without deadtime
    vector<vector<vector<int>>> m_ASICHitStripID_noDT = vector<vector<vector<int> > >(nDets, vector<vector<int>>(nASICs));
-   //! Helper Strip ID vector to count for hits with deadtime
-   vector<vector<vector<int>>> m_ASICHitStripID_DT = vector<vector<vector<int> > >(nDets, vector<vector<int>>(nASICs));
+    //! Strip ID for particular hit in ASIC
+    vector<vector<vector<double> > > m_TempEvtTimes = vector<vector<vector<double> > >(nDets, vector<vector<double>>(nASICs));
    //! Stores total dead time of the instrument
    double m_StripsTotalDeadtime;
    //! Bool to store if ASIC is dead or not
