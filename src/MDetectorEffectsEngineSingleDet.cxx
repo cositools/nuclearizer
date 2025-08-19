@@ -605,23 +605,29 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       MDDetector* Detector = VS->GetDetector();
       MString DetectorName = Detector->GetName();
 
-      // cout << Detector->GetNNamedDetectors() << endl;
-      // if (!Detector->HasNamedDetector(DetectorName)) {
-      //   cout << "Named Detector not found " << DetectorName << " " << HT->GetDetectorType() << " " << HT->GetEnergy() << endl;
-      // }
-      // else {
-      //   cout << "Named Detector found " << DetectorName << " " << HT->GetDetectorType() << " " << HT->GetEnergy() << endl;
+      // This was used prior for the STTC mass model. I don't know how else to get the detector ID.
+      // if(!DetectorName.BeginsWith("D")){
+      //   continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
       // }
 
-      // cout << "DetectorName = " << DetectorName << endl;
-      if(!DetectorName.BeginsWith("D")){
+      // Sets the detector ID for different hits. May need to change if there is a change in naming convention
+      // Hack for STTC and EM mass model (Only works with 1 GeD).
+      int DetectorID = 0;
+      if (HT->GetDetectorType() != 3){
         continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
       }
-      // Sets the detector ID for different hits. May need to change if there is a change in naming convention
-      // Seems like there are many hits with error "***  Error  ***  Named detector not found:"
-      
-      DetectorName.RemoveAllInPlace("D");
-      int DetectorID = DetectorName.ToInt() - 1;
+      else if(DetectorName.BeginsWith("D")){
+        DetectorName.RemoveAllInPlace("D");
+        DetectorID = DetectorName.ToInt() - 1;
+      }
+      else if(DetectorName.BeginsWith("Q0D")){
+        DetectorName.RemoveAllInPlace("Q0D0");
+        DetectorID = DetectorName.ToInt();
+      }
+      else {
+        cout << "Massmodel not compatible with DEE or hit with wrong detector type" << endl; // This can be a GR hit for STTC
+        continue;
+      }
       
       
       MDEEStripHit pSide; // Low voltage
