@@ -616,12 +616,12 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       if (HT->GetDetectorType() != 3){
         continue; //probably a shield hit.  this can happen if the veto flag is off for the shields
       }
-      else if(DetectorName.BeginsWith("D")){
+      if(DetectorName.BeginsWith("D")){
         DetectorName.RemoveAllInPlace("D");
         DetectorID = DetectorName.ToInt() - 1;
       }
       else if(DetectorName.BeginsWith("Q0D")){
-        DetectorName.RemoveAllInPlace("Q0D0");
+        DetectorName.RemoveAllInPlace("Q0D");
         DetectorID = DetectorName.ToInt();
       }
       else {
