@@ -33,12 +33,14 @@
 
 // MEGAlib libs:
 #include "MGUIOptionsTemplate.h"
+#include "MGUIOptionsLoaderMeasurements.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -245,6 +247,19 @@ MXmlNode* MModuleLoaderMeasurementsROA::CreateXmlConfiguration()
   new MXmlNode(Node, "FileName", m_FileName);
   
   return Node;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleLoaderMeasurementsROA::ShowOptionsGUI()
+{
+  //! Show the options GUI
+
+  MGUIOptionsLoaderMeasurements* Options = new MGUIOptionsLoaderMeasurements(this, "roa");
+  Options->Create();
+  gClient->WaitForUnmap(Options);
 }
 
 

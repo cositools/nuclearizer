@@ -104,11 +104,11 @@ class MModuleDepthCalibration2024 : public MModule
   //! Load in the specified coefficients file
   bool LoadCoeffsFile(MString FName);
   //! Return the coefficients for a pixel
-  vector<double>* GetPixelCoeffs(int pixel_code);
+  vector<double>* GetPixelCoeffs(int PixelCode);
   //! Load the splines file
   bool LoadSplinesFile(MString FName);
   //! Get the timing FWHM noise for the specified pixel and Energy
-  double GetTimingNoiseFWHM(int pixel_code, double Energy);
+  double GetTimingNoiseFWHM(int PixelCode, double Energy);
 
 
   // private methods

@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsLoaderMeasurements.h
+ * MGUIOptionsLoaderMeasurementsHDF.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsLoaderMeasurements__
-#define __MGUIOptionsLoaderMeasurements__
+#ifndef __MGUIOptionsLoaderMeasurementsHDF__
+#define __MGUIOptionsLoaderMeasurementsHDF__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,14 +41,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsLoaderMeasurements : public MGUIOptions
+//! UI settings for the HDF measurements loader
+class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsLoaderMeasurements(MModule* Module, MString FileType);
+  MGUIOptionsLoaderMeasurementsHDF(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsLoaderMeasurements();
+  virtual ~MGUIOptionsLoaderMeasurementsHDF();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -60,7 +61,7 @@ class MGUIOptionsLoaderMeasurements : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -69,14 +70,19 @@ class MGUIOptionsLoaderMeasurements : public MGUIOptions
   // private members:
  private:
   //! Select which file to load
-  MGUIEFileSelector* m_FileSelector;
+  MGUIEFileSelector* m_FileSelectorHDF;
 
-  //! The file type to load
-  MString m_FileType;
+  //! Check button for switch between loading continuation files or not
+  TGCheckButton* m_LoadContinuationFiles;
+
+  //! Select which file to load
+  MGUIEFileSelector* m_FileSelectorStripMap;
+
+
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsLoaderMeasurements, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderMeasurementsHDF, 1) // basic class for dialog windows
 #endif
 
 };

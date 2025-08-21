@@ -38,6 +38,7 @@
 // Forward declarations:
 class MGUIEFileSelector;
 class MGUIEMinMaxEntry;
+class MGUIEEntry;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -68,11 +69,13 @@ class MGUIOptionsTACcut : public MGUIOptions
  protected:
   //! The detector IDs as a string
   TGTextEntry* m_Detectors;
-  //! The total TAC selection
-  MGUIEMinMaxEntry* m_TAC;
 
   //! Select TAC Calibration file to load, converts readout timing to nanoseconds
   MGUIEFileSelector* m_TACCalFileSelector;
+
+  //! Select TAC Cut file to load, which specifies the parameters for removing strip hits
+  MGUIEFileSelector* m_TACCutFileSelector;
+
 	
   // private members:
  private:

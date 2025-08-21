@@ -74,13 +74,13 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
-  AddPreceedingModuleType(MAssembly::c_TACcut);
+  // AddPreceedingModuleType(MAssembly::c_TACcut);
   
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EnergyCalibration);
   
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(MAssembly::c_NoRestriction);
+  AddSucceedingModuleType(MAssembly::c_TACcut);
   
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
@@ -400,18 +400,6 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     }
   }
-
-  for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
-    MStripHit* SH = Event->GetStripHit(i);
-    if (SH->GetEnergy() < 8) {
-      // cout<<"HACK: Removing strip hit due to TAC "<<SH->GetTiming()<<" cut or energy "<<SH->GetEnergy()<<endl;
-      Event->RemoveStripHit(i);
-      delete SH;
-    } else {
-      ++i;
-    }
-  }
-
 
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
   
