@@ -533,8 +533,9 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
             if (found) break; // Exit loop once found
           }
 
-          if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] < evt_time) {
-          // Event occured after deadtime
+    //       if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] < evt_time) {
+    //       // Event occured after deadtime
+
 
             for (int group=0; group<nShieldPanels; group++) {
               m_ShieldHitID[group].clear();
@@ -562,12 +563,14 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       }
     }
 
-    for (int group=0; group<nShieldPanels; group++) {
-      // Calculates deadtime after each merged strip hit list.
-      if (!m_IsShieldDead) {
-        m_ShieldDeadtime[group] = dTimeASICs(m_ShieldHitID[group], true);
-      }
-    }
+
+    // for (int group=0; group<nShieldPanels; group++) {
+    //   // Calculates deadtime after each merged strip hit list.
+    //   if (!m_IsShieldDead) {
+    //     m_ShieldDeadtime[group] = dTimeASICs(m_ShieldHitID[group], true);
+    //   }
+    // }
+    // // End shield veto code
       
 
     //get interactions to look for ionization in hits
