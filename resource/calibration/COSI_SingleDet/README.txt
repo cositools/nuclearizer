@@ -10,3 +10,5 @@ Crosstalk coefficients file: File from 2016 Balloon Wanaka calibrations - Needs 
 Charge loss coefficients file: File from 2016 Balloon Wanaka calibrations - Needs to be modified later
 Depth calibrations coefficients file: File from Cosifest - Needs to be modified later
 Depth calibration splines file: File from Cosifest - Needs to be modified later
+ACS energy calibration file: File from Valentina using X-Wall simulations
+TAC Cut file: File from https://drive.google.com/drive/u/0/folders/1mrV2macLMuC7pCa0l-T8gkmi7R63_oNZ (Global nuclearizer calibration file)

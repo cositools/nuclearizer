@@ -230,9 +230,9 @@ bool MModuleLoaderSimulationsSingleDet::ReadXmlConfiguration(MXmlNode* Node)
   }
   // ACS DEE file
   MXmlNode* ACSEnergyCorrectionFileNameNode = Node->GetNode("ACSEnergyCorrectionFileName");
-    if (ACSEnergyCorrectionFileNameNode != 0) {
-      SetACSEnergyCorrectionFileName(ACSEnergyCorrectionFileNameNode->GetValue());
-    }
+  if (ACSEnergyCorrectionFileNameNode != 0) {
+    SetACSEnergyCorrectionFileName(ACSEnergyCorrectionFileNameNode->GetValue());
+  }
   MXmlNode* ApplyFudgeFactorNode = Node->GetNode("ApplyFudgeFactor");
   if (ApplyFudgeFactorNode != 0) {
     m_ApplyFudgeFactor = ApplyFudgeFactorNode->GetValueAsBoolean();
