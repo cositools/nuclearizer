@@ -284,15 +284,21 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 	double Xpos, Ypos, Zpos;
         if ( m_MaskMetrologyEnabled ) {
           // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
+          int HVStripID_flipped = 63 - HVStripID;
+          HVSH->SetStripID(HVStripID_flipped);
           MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
           MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
 	  
           vector<double> inter = GetStripIntersection(R_LV, R_HV);
           Xpos = inter[0];
           Ypos = inter[1];
-	  //Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
-          //Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
-	
+
+          cout<<"StripLV: "<<LVStripID<<", StripHV: "<<HVStripID<<endl;
+          cout<<"Mask Rotation position: "<<Xpos<<", "<<Ypos<<endl;
+          double Xpos_un = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
+          double Ypos_un = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
+          cout<<"      vs: "<<Xpos_un<<", "<<Ypos_un<<endl;
+
           Zpos = 0.0;
 	} else {
           Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
@@ -547,6 +553,10 @@ vector<double> MModuleDepthCalibration2024::norm_pdf(vector<double> x, double mu
   return result;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
 bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
 {
   // Input spline files should have the following format:
@@ -662,9 +672,9 @@ vector<double> MModuleDepthCalibration2024::GetStripIntersection(MReadOutElement
   // HVstrip is centered at (x,y,z) = (hv_strip_met[0], hv_strip_met[1], hv_strip_met[2])
   // and is approximately parallel to the x axis, but rotated at angle hv_strip_met[3] 
   // around the z axis of the detector
-  double x_intercept = (hv_strip_met[0]*tan(hv_strip_met[3]*TMath::DegToRad()) - lv_strip_met[0]/tan(lv_strip_met[3]*TMath::DegToRad()) - lv_strip_met[1] + hv_strip_met[1])/(tan(hv_strip_met[3]*TMath::DegToRad())-1/tan(lv_strip_met[3]*TMath::DegToRad()));
+  double x_intercept = (hv_strip_met[0]*tan(-hv_strip_met[5]*TMath::DegToRad()) - lv_strip_met[0]/tan(lv_strip_met[5]*TMath::DegToRad()) - lv_strip_met[1] + hv_strip_met[1])/(tan(-hv_strip_met[5]*TMath::DegToRad())-1/tan(lv_strip_met[5]*TMath::DegToRad()));
     
-  double y_intercept = (x_intercept - hv_strip_met[0])*tan(hv_strip_met[3]*TMath::DegToRad()) + hv_strip_met[1];
+  double y_intercept = (x_intercept - hv_strip_met[0])*tan(hv_strip_met[5]*TMath::DegToRad()) + hv_strip_met[1];
 
   return {x_intercept, y_intercept};
 }
