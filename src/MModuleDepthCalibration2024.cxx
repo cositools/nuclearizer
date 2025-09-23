@@ -1057,6 +1057,19 @@ void MModuleDepthCalibration2024::Finalize()
   cout << "Number of hits with null strip hits: " << m_ErrorNullSH << endl;
   cout << "Number of hits 0 energy on a strip hit: " << m_ErrorNoE << endl;
 
+  // Clean up maps and vectors
+  m_Coeffs.clear();
+  m_Thicknesses.clear();
+  m_NXStrips.clear();
+  m_NYStrips.clear();
+  m_XPitches.clear();
+  m_YPitches.clear();
+  m_Detectors.clear();
+  m_CTDMap.clear();
+  m_DepthGrid.clear();
+  m_SplineMap.clear();
+  m_DetectorIDs.clear();
+
 }
 
 
