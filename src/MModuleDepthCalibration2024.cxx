@@ -362,6 +362,9 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           }
 
           // If the CTD is in range, calculate the depth
+          // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
+          // This way we can avoid problems like non-monotonicity or assigning depth to events "outside" the detector 
+          // Note that this requires that we don't massively overestimate the timing noise
           else {
             // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
             // Utlize symmetry of the normal distribution.
@@ -372,7 +375,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         	  for( unsigned int k=0; k < prob_dist.size(); ++k ){
         	    prob_sum += prob_dist[k];
         	  }
-            //double prob_sum = std::accumulate(prob_dist.begin(), prob_dist.end(), 0);
             double weighted_depth = 0.0;
             for( unsigned int k = 0; k < DepthVec.size(); ++k ){
               weighted_depth += prob_dist[k]*DepthVec[k];
@@ -548,7 +550,6 @@ vector<double> MModuleDepthCalibration2024::norm_pdf(vector<double> x, double mu
   vector<double> result;
   for( unsigned int i=0; i<x.size(); ++i ){
     double prob = 1.0 / (sigma * sqrt(2.0 * M_PI)) * exp(-(pow((x[i] - mu)/sigma, 2.0)/2.0));
-    // cout << "Probability: " << prob << endl;
     result.push_back(prob);
   }
   return result;
@@ -738,7 +739,6 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
     }
   }
   else{
-    // cout << "ERROR in MModuleDepthCalibration2024: HIT with no strip hits on one side" << endl;
     return -1;
   }
 
@@ -810,6 +810,8 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
   // CTDArr: vector of vectors of simulated CTD values. Each vector of CTDs must be the same length as Depth
   // DetID: An integer which specifies which detector.
   // CTDMap: unordered map into which the array of CTDs should be placed
+  // SplineMap: unordered map to store splines
+  // NPoints: number of points in the depth/CTD grid to be produced
 
   // TODO: Possible energy dependence of CTD?
 
@@ -823,6 +825,7 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
     }
   }
 
+  // Check that the geometry file and the depth-CTD curve match within 0.1mm tolerance
   double MaxDepth = * std::max_element(Depth.begin(), Depth.end());
   double MinDepth = * std::min_element(Depth.begin(), Depth.end());
   if (fabs((MaxDepth-MinDepth) - m_Thicknesses[DetID]) > 0.01) {
@@ -831,14 +834,16 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
     return false;
   }
 
+  // Check to make sure splines haven't already been loaded for this detector
   if (SplineMap.count(DetID)>0) {
-    cout<<"MModuleDepthCalibration2024::AddSplines: Splines already added for DetID "<<DetID<<"."<<endl;
+    cout<<"MModuleDepthCalibration2024::AddDepthCTD: Splines already added for DetID "<<DetID<<"."<<endl;
     return false;
   } else {
     vector<TSpline3*> TempVec;
     SplineMap[DetID] = TempVec;
   }
 
+  // Add a new point to the depth vector on the bottom and top of the detector to make sure we're sampling the full depth
   double dx_low = Depth[1] - Depth[0];
   double newx_low = Depth[0] - (dx_low/2.0);
   Depth.insert(Depth.begin(), newx_low);
@@ -848,16 +853,20 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
   double newx_high = Depth[N-1] + (dx_high/2.0);
   Depth.push_back(newx_high);
 
+  // If the depth vector is more dense than NPoints, use the length of the input vector
   if (NPoints < N+1) {
     NPoints = N+1;
   }
 
+  // Reconstitute the depth vector to ensure that the depth is evenly sampled
   vector<double> NewDepth;
   for (unsigned int i=0; i<NPoints; ++i) {
     NewDepth.push_back(((m_Thicknesses[DetID]/(NPoints-1))*i) - (m_Thicknesses[DetID]/2));
   }
   DepthGrid[DetID] = NewDepth;
 
+  // For each CTD vector, extrapolate to the top and bottom points we added above
+  // Then make a depth-CTD spline and fill up a new CTD vector with values sampled from the spline
   vector<vector<double>> NewCTDArr;
   for (unsigned int i=0; i<CTDArr.size(); ++i) {
     vector<double> CTD = CTDArr[i];
@@ -910,7 +919,6 @@ vector<double> MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
       return (m_CTDMap[DetID][Grade]);
     }
     else {
-      // cout << "MModuleDepthCalibration2024::GetCTD: No CTD map is loaded for Grade " << Grade << ". Returning Grade 0 CTD." << endl;
       return (m_CTDMap[DetID][0]);
     }
   } else {
@@ -961,7 +969,6 @@ TSpline3* MModuleDepthCalibration2024::GetSpline(int DetID, int Grade)
       return (m_SplineMap[DetID][Grade]);
     }
     else {
-      // cout << "MModuleDepthCalibration2024::GetSpline: No spline is loaded for Grade " << Grade << ". Returning Grade 0 spline." << endl;
       return (m_SplineMap[DetID][0]);
     }
   } else {
