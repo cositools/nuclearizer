@@ -266,13 +266,17 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         int HVStripID = HVSH->GetStripID();
         int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
-        double WeightedLVStripID = 0;
-        double WeightedHVStripID = 0;
-        bool WeightedPosResult = CalculateEnergyWeightedPosition(LVStrips, HVStrips, WeightedLVStripID, WeightedHVStripID);
-        // Try to calculate the energy-weighted strip positions. If that doesn't work, place the Hit in the middle of the dominant strips.
-        if ( WeightedPosResult == true ) {
-          LVStripID = WeightedLVStripID;
-          HVStripID = WeightedHVStripID;
+        if (m_WeightedXY==true) {
+
+          // Try to calculate the energy-weighted strip positions. If that doesn't work, place the Hit in the middle of the dominant strips.
+          double WeightedLVStripID = 0;
+          double WeightedHVStripID = 0;
+          bool WeightedPosResult = CalculateEnergyWeightedPosition(LVStrips, HVStrips, WeightedLVStripID, WeightedHVStripID);
+          if (WeightedPosResult == true) {
+            LVStripID = WeightedLVStripID;
+            HVStripID = WeightedHVStripID;
+          }
+        
         }
 
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
@@ -898,6 +902,11 @@ bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
       m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsInt();
   }
 
+  MXmlNode* WeightedXYNode = Node->GetNode("WeightedXY");
+  if( WeightedXYNode != NULL ){
+      m_WeightedXY = (bool) WeightedXYNode->GetValueAsInt();
+  }
+
   return true;
 }
 
@@ -912,6 +921,7 @@ MXmlNode* MModuleDepthCalibration2024::CreateXmlConfiguration()
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFile);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
   new MXmlNode(Node, "UCSDOverride",(unsigned int) m_UCSDOverride);  
+  new MXmlNode(Node, "WeightedXY",(unsigned int) m_WeightedXY);  
   
   return Node;
 }

@@ -77,6 +77,10 @@ class MModuleDepthCalibration2024 : public MModule
   //! Get whether the data came from the card cage at UCSD
   bool GetUCSDOverride() const {return m_UCSDOverride;}
 
+  //! Set whether X and Y positions should be calculated by weighting strips by energy
+  void SetWeightedXY( bool WeightedXY ) {m_WeightedXY = WeightedXY;}
+  //! Get whether X and Y positions should be calculated by weighting strips by energy
+  bool GetWeightedXY() const {return m_WeightedXY;}
 
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
@@ -155,6 +159,7 @@ class MModuleDepthCalibration2024 : public MModule
 
   // boolean for use with the card cage at UCSD since it tags all events as detector 11
   bool m_UCSDOverride;
+  bool m_WeightedXY;
 
 
 

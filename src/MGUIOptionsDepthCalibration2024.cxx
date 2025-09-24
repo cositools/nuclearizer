@@ -80,8 +80,13 @@ void MGUIOptionsDepthCalibration2024::Create()
 
   m_UCSDOverride = new TGCheckButton(m_OptionsFrame, "Check this box if you're using the card cage at UCSD", 1);
   m_UCSDOverride->SetOn(dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetUCSDOverride());
+  TGLayoutHints* Label3Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_UCSDOverride, Label3Layout);
+
+  m_WeightedXY = new TGCheckButton(m_OptionsFrame, "Check this box to weight the X and Y positions by energy deposited.", 1);
+  m_WeightedXY->SetOn(dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetWeightedXY());
   TGLayoutHints* Label4Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_UCSDOverride, Label4Layout);
+  m_OptionsFrame->AddFrame(m_WeightedXY, Label4Layout);
 
   PostCreate();
 }
@@ -128,6 +133,7 @@ bool MGUIOptionsDepthCalibration2024::OnApply()
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetUCSDOverride(m_UCSDOverride->IsOn());
+  dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetWeightedXY(m_WeightedXY->IsOn());
 
   return true;
 }
