@@ -109,25 +109,15 @@ class MReadOutAssembly : public MReadOutSequence
   //! Find out if the event contains strip hits in a given detector
   bool InDetector(int DetectorID);
 
-  //! Set the vetoed flag
-  void SetVeto(bool Veto = true) { m_Veto = Veto; }
-  //! Return the veto flag
-  bool GetVeto() const { return m_Veto; }
-
-  //! Set the guard ring 0 veto flag
-  void SetGR0Veto(bool Veto = true) { m_VetoGR0 = Veto; }
-  //! Get the guard ring 0 veto flag
-  bool GetGR0Veto() const { return m_VetoGR0; }
-
-  //! Set the guard ring 1 veto flag
-  void SetGR1Veto(bool Veto = true) { m_VetoGR1 = Veto; }
-  //! Get the guard ring 1 veto flag
-  bool GetGR1Veto() const { return m_VetoGR1; }
+  //! Set the guard ring veto flag
+  void SetGuardRingVeto(bool Veto = true) { m_GuardRingVeto = Veto; }
+  //! Get the guard ring veto flag
+  bool GetGuardRingVeto() const { return m_GuardRingVeto; }
 
   //! Set the shield veto flag
-  void SetShieldVeto(bool Veto = true) { m_VetoShield = Veto; }
+  void SetShieldVeto(bool Veto = true) { m_ShieldVeto = Veto; }
   //! Get the shield veto flag
-  bool GetShieldVeto() const { return m_VetoShield; }
+  bool GetShieldVeto() const { return m_ShieldVeto; }
 
   //! Set the triggered flag
   void SetTrigger(bool Trigger = true) { m_Trigger = Trigger; }
@@ -254,6 +244,9 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the filgtered-out flag
   bool IsFilteredOut() const { return m_FilteredOut; }
 
+  //! Returns true if any of the "veto" flags have been set
+  bool IsVeto() const;
+
   //! Returns true if none of the "bad" or "incomplete" flags has been set and the event has not been filtered out or rejected
   bool IsGood() const;
   //! Returns true if any of the "bad" or "incomplete" flags has been set
@@ -276,7 +269,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
   //! Stream the content in MEGAlib's roa format 
-  void StreamRoa(ostream& S, bool WithDescriptor = true);
+  void StreamRoa(ostream& S, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithTemperatures = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
   //! Build the next MReadoutAssemply from a .dat file
   bool GetNextFromDatFile(MFile &F);
   //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
@@ -335,17 +328,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Quality of this event
   double m_EventQuality;
 
-  //! Veto flag of this event
-  bool m_Veto;
-
-  //! Guard ring 0 veto flag
-  bool m_VetoGR0;
-
-  //! Guard ring 1 veto flag
-  bool m_VetoGR1;
+  //! Guard ring veto flag
+  bool m_GuardRingVeto;
 
   //! Shield veto flag
-  bool m_VetoShield;
+  bool m_ShieldVeto;
 
   //! Trigger flag of this event
   bool m_Trigger;

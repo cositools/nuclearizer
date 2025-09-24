@@ -95,22 +95,24 @@ class MModuleDepthCalibration2024 : public MModule
 	vector<double> GetDepth(int DetID);
   //! Retrieve the appropriate CTD values given the DetID and Grade
   vector<double> GetCTD(int DetID, int Grade);
+  //! Retrieve the appropriate depth-to-CTD spline given the DetID and Grade
+  TSpline3* GetSpline(int DetID, int Grade);
   //! Normal distribution
   vector<double> norm_pdf(vector<double> x, double mu, double sigma);
 	//! Adds a Depth-to-CTD relation
-	bool AddDepthCTD(vector<double> depthvec, vector<vector<double>> ctdarr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap);
+	bool AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints);
   // Calculate the Energy-weighted X and Y strip position
-  bool CalculateEnergyWeightedPosition(vector<MStripHit*> XStrips, vector<MStripHit*> YStrips, double& WeightedXStripID, double& WeightedYStripID);
+  bool CalculateEnergyWeightedPosition(vector<MStripHit*> LVStrips, vector<MStripHit*> HVStrips, double& WeightedLVStripID, double& WeightedHVStripID);
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
   //! Load in the specified coefficients file
   bool LoadCoeffsFile(MString FName);
   //! Return the coefficients for a pixel
-  vector<double>* GetPixelCoeffs(int pixel_code);
+  vector<double>* GetPixelCoeffs(int PixelCode);
   //! Load the splines file
   bool LoadSplinesFile(MString FName);
   //! Get the timing FWHM noise for the specified pixel and Energy
-  double GetTimingNoiseFWHM(int pixel_code, double Energy);
+  double GetTimingNoiseFWHM(int PixelCode, double Energy);
 
 
   // private methods
@@ -147,6 +149,7 @@ class MModuleDepthCalibration2024 : public MModule
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   unordered_map<int, vector<vector<double>>> m_CTDMap;
   unordered_map<int, vector<double>> m_DepthGrid;
+  unordered_map<int, vector<TSpline3*>> m_SplineMap;
   bool m_SplinesFileIsLoaded;
   bool m_CoeffsFileIsLoaded;
 

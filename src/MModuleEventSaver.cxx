@@ -75,8 +75,18 @@ MModuleEventSaver::MModuleEventSaver() : MModule()
   m_InternalFileName = "";
   m_Zip = false;
   m_SaveBadEvents = true;
+  m_SaveVetoEvents = true;
   m_AddTimeTag = false;
-  
+    
+  m_RoaWithADCs = true;
+  m_RoaWithTACs = true;
+  m_RoaWithEnergies = false;
+  m_RoaWithTimings = false;
+  m_RoaWithTemperatures = false;
+  m_RoaWithFlags = false;
+  m_RoaWithOrigins = false;
+  m_RoaWithNearestNeighbors = true;
+
   m_SplitFile = true;
   m_SplitFileTime.Set(60*10); // seconds
   m_SubFileStart.Set(0);
@@ -163,14 +173,49 @@ bool MModuleEventSaver::Initialize()
     Header<<endl;
   } else if (m_Mode == c_EvtaFile) {
     Header<<endl;
-//    Header<<"Version 21"<<endl;
- 		Header<<"Version 200"<<endl;
-	  Header<<"Type EVTA"<<endl;
+    Header<<"Version 200"<<endl;
+    Header<<"Type EVTA"<<endl;
     Header<<endl;
   } else if (m_Mode == c_RoaFile) {
     Header<<endl;
     Header<<"TYPE ROA"<<endl;
-    Header<<"UF doublesidedstrip adc_timing_temperature"<<endl;
+    Header<<"UF doublesidedstrip ";
+    bool IsFirst = true;
+    if (m_RoaWithADCs == true) {
+      if (IsFirst == false) Header<<"_";
+      Header<<"adc";
+      IsFirst = false;
+    }
+    if (m_RoaWithTACs == true) {
+      if (IsFirst == false) Header<<"_";
+      Header<<"tac";
+      IsFirst = false;
+    }
+    if (m_RoaWithEnergies == true) {
+      if (IsFirst == false) Header<<"_";
+      Header<<"energy";
+      IsFirst = false;
+    }
+    if (m_RoaWithTimings == true) {
+      if (IsFirst == false) Header<<"_";
+      Header<<"timing";
+      IsFirst = false;
+    }
+    if (m_RoaWithTemperatures == true) {
+      if (IsFirst == false) Header<<"_";
+      Header<<"temperature";
+      IsFirst = false;
+    }
+    if (m_RoaWithFlags == true) {
+      if (IsFirst == false) Header<<"_";
+      Header<<"flags";
+      IsFirst = false;
+    }
+    if (m_RoaWithOrigins == true) {
+      if (IsFirst == false) Header<<"_";
+      Header<<"origins";
+      IsFirst = false;
+    }
     Header<<endl;
   } else {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
@@ -288,6 +333,11 @@ bool MModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
     if (Event->IsBad() == true) return true;
   }
 
+  if (m_SaveVetoEvents == false) {
+    if (Event->IsVeto() == true) return true;
+  }
+
+
   MFile* Choosen = 0; // Wish C++ would allow unassigned references...
   if (m_SplitFile == true) {
     MTime Current = Event->GetTime();
@@ -302,14 +352,14 @@ bool MModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
   } else {
     Choosen = &m_Out; 
   }
-  
+
   ostringstream Out;
   if (m_Mode == c_EvtaFile) {
     Event->StreamEvta(Out);
   } else if (m_Mode == c_DatFile) {
     Event->StreamDat(Out, 1);    
   } else if (m_Mode == c_RoaFile) {
-    Event->StreamRoa(Out);
+    Event->StreamRoa(Out, m_RoaWithADCs, m_RoaWithTACs, m_RoaWithEnergies, m_RoaWithTimings, m_RoaWithTemperatures, m_RoaWithFlags, m_RoaWithOrigins, m_RoaWithNearestNeighbors);
   }
   Choosen->Write(Out);
   
@@ -351,6 +401,10 @@ bool MModuleEventSaver::ReadXmlConfiguration(MXmlNode* Node)
   if (SaveBadEventsNode != 0) {
     m_SaveBadEvents = SaveBadEventsNode->GetValueAsBoolean();
   }
+  MXmlNode* SaveVetoEventsNode = Node->GetNode("SaveVetoEvents");
+  if (SaveVetoEventsNode != 0) {
+    m_SaveVetoEvents = SaveVetoEventsNode->GetValueAsBoolean();
+  }
   MXmlNode* AddTimeTagNode = Node->GetNode("AddTimeTag");
   if (AddTimeTagNode != 0) {
     m_AddTimeTag = AddTimeTagNode->GetValueAsBoolean();
@@ -362,6 +416,39 @@ bool MModuleEventSaver::ReadXmlConfiguration(MXmlNode* Node)
   MXmlNode* SplitFileTimeNode = Node->GetNode("SplitFileTime");
   if (SplitFileTimeNode != 0) {
     m_SplitFileTime.Set(SplitFileTimeNode->GetValueAsInt());
+  }
+
+  MXmlNode* RoaWithADCsNode = Node->GetNode("RoaWithADCs");
+  if (RoaWithADCsNode != nullptr) {
+    m_RoaWithADCs = RoaWithADCsNode->GetValueAsBoolean();
+  }
+  MXmlNode* RoaWithTACsNode = Node->GetNode("RoaWithTACs");
+  if (RoaWithTACsNode != nullptr) {
+    m_RoaWithTACs = RoaWithTACsNode->GetValueAsBoolean();
+  }
+  MXmlNode* RoaWithEnergiesNode = Node->GetNode("RoaWithEnergies");
+  if (RoaWithEnergiesNode != nullptr) {
+    m_RoaWithEnergies = RoaWithEnergiesNode->GetValueAsBoolean();
+  }
+  MXmlNode* RoaWithTimingsNode = Node->GetNode("RoaWithTimings");
+  if (RoaWithTimingsNode != nullptr) {
+    m_RoaWithTimings = RoaWithTimingsNode->GetValueAsBoolean();
+  }
+  MXmlNode* RoaWithTemperaturesNode = Node->GetNode("RoaWithTemperatures");
+  if (RoaWithTemperaturesNode != nullptr) {
+    m_RoaWithTemperatures = RoaWithTemperaturesNode->GetValueAsBoolean();
+  }
+  MXmlNode* RoaWithFlagsNode = Node->GetNode("RoaWithFlags");
+  if (RoaWithFlagsNode != nullptr) {
+    m_RoaWithFlags = RoaWithFlagsNode->GetValueAsBoolean();
+  }
+  MXmlNode* RoaWithOriginsNode = Node->GetNode("RoaWithOrigins");
+  if (RoaWithOriginsNode != nullptr) {
+    m_RoaWithOrigins = RoaWithOriginsNode->GetValueAsBoolean();
+  }
+  MXmlNode* RoaWithNearestNeighborsNode = Node->GetNode("RoaWithNearestNeighbors");
+  if (RoaWithNearestNeighborsNode != nullptr) {
+    m_RoaWithNearestNeighbors = RoaWithNearestNeighborsNode->GetValueAsBoolean();
   }
 
   return true;
@@ -379,9 +466,17 @@ MXmlNode* MModuleEventSaver::CreateXmlConfiguration()
   new MXmlNode(Node, "FileName", m_FileName);
   new MXmlNode(Node, "Mode", m_Mode);
   new MXmlNode(Node, "SaveBadEvents", m_SaveBadEvents);
+  new MXmlNode(Node, "SaveVetoEvents", m_SaveVetoEvents);
   new MXmlNode(Node, "AddTimeTag", m_AddTimeTag);
   new MXmlNode(Node, "SplitFile", m_SplitFile);
   new MXmlNode(Node, "SplitFileTime", m_SplitFileTime.GetAsSystemSeconds());
+  new MXmlNode(Node, "RoaWithADCs", m_RoaWithADCs);
+  new MXmlNode(Node, "RoaWithTACs", m_RoaWithTACs);
+  new MXmlNode(Node, "RoaWithEnergies", m_RoaWithEnergies);
+  new MXmlNode(Node, "RoaWithTimings", m_RoaWithTimings);
+  new MXmlNode(Node, "RoaWithFlags", m_RoaWithFlags);
+  new MXmlNode(Node, "RoaWithOrigins", m_RoaWithOrigins);
+  new MXmlNode(Node, "RoaWithNearestNeighbors", m_RoaWithNearestNeighbors);
 
   return Node;
 }

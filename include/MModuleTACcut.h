@@ -80,16 +80,6 @@ class MModuleTACcut : public MModule
   //! Get filename for TAC Cut
   MString GetTACCutFileName() const {return m_TACCutFile;}
 
-  //! Set the disable time
-  void SetDisableTime(double DisableTime) { m_DisableTime = DisableTime; }
-  //! Get the disable time
-  unsigned int GetDisableTime() const { return m_DisableTime; }
-
-  //! Set the shaping flag_to_en_delay
-  void SetFlagToEnDelay(double FlagToEnDelay) { m_FlagToEnDelay = FlagToEnDelay; }
-  //! Get the shaping flag_to_en_delay
-  unsigned int GetFlagToEnDelay() const { return m_FlagToEnDelay; }
-
   //! Load the TAC calibration file
   bool LoadTACCalFile(MString FName);
 
@@ -115,14 +105,16 @@ class MModuleTACcut : public MModule
   // private members:
  private:
 
-// declare TAC Cut and calibration variables here
-double m_DisableTime, m_FlagToEnDelay;
+//! TAC cut and TAC calibration parameter files
 MString m_TACCalFile;
 MString m_TACCutFile;
-unordered_map<int, unordered_map<int, vector<double>>> m_HVTACCal;
-unordered_map<int, unordered_map<int, vector<double>>> m_LVTACCal;
-unordered_map<int, unordered_map<int, vector<double>>> m_HVTACCut;
-unordered_map<int, unordered_map<int, vector<double>>> m_LVTACCut;
+
+//! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration/cut parameters
+unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCal;
+unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCut;
+
+//! Map characters representing sides of the detectors indices to avoid mistakes
+unordered_map<char, int> m_SideToIndex;
 
 vector<unsigned int> m_DetectorIDs;
 

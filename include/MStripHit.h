@@ -130,15 +130,37 @@ class MStripHit
   void AddOrigins(vector<int> Origins);
   //! Get the origins from the simulation
   vector<int> GetOrigins() const { return m_Origins; }
-  
-  
-  
+
+  //! Set the Guard Ring flag
+  void IsGuardRing(bool GuardRing) { m_IsGuardRing = GuardRing; }
+  //! Return a boolean indicating whether the strip is a Guard Ring
+  bool IsGuardRing() const { return m_IsGuardRing; }  
+  //! Set the Nearest Neighbor flag
+  void IsNearestNeighbor(bool NearestNeighbor) { m_IsNearestNeighbor = NearestNeighbor; }
+  //! Return a boolean indicating whether the strip is a Nearest Neighbor
+  bool IsNearestNeighbor() const { return m_IsNearestNeighbor; }
+    
+  //! Set the Fast Timing flag
+  void HasFastTiming(bool FastTiming) { m_HasFastTiming = FastTiming; }
+  //! Return a boolean indicating whether the strip timing is fast;
+  bool HasFastTiming() const { return m_HasFastTiming; }
+
+  //! Set the Calibrated Timing flag
+  void HasCalibratedTiming(bool CalibratedTiming) { m_HasCalibratedTiming = CalibratedTiming; }
+  //! Return a boolean indicating whether the strip timing has been calibrated;
+  bool HasCalibratedTiming() const { return m_HasCalibratedTiming; }
+
+  //! Produce an unsigned int with bitwise values representing flags
+  unsigned int MakeFlags();
+  //! Read in unsigned int with bitwise values representing flags and update boolean flags
+  void ParseFlags(unsigned int Flags);
+
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
   //! Dump the content into a file stream
   bool StreamDat(ostream& S, int Version = 1);
   //! Stream the content in MEGAlib's roa format 
-  void StreamRoa(ostream& S);
+  void StreamRoa(ostream& S, bool WithADC = true, bool WithTAC = true, bool WithEnergy = false, bool WithTiming = false, bool WithTemperature = false, bool WithFlags = false, bool WithOrigins = false);
   
   
   // protected methods:
@@ -177,7 +199,16 @@ class MStripHit
   double m_TimingResolution;
   //! Temperature of Preamp
   double m_PreampTemp;
-  
+
+  //! Flags denoting the type of strip hit
+  bool m_IsGuardRing;
+  bool m_IsNearestNeighbor;
+
+  //! Flag indicating whether the hit has fast timing
+  bool m_HasFastTiming;
+  //! Flag indicating whether the hit has calibrated timing
+  bool m_HasCalibratedTiming;
+
   //! Origin IAs from simulations
   vector<int> m_Origins;
 

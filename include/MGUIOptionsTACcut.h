@@ -69,14 +69,6 @@ class MGUIOptionsTACcut : public MGUIOptions
  protected:
   //! The detector IDs as a string
   TGTextEntry* m_Detectors;
-  //! The total TAC selection
-  MGUIEMinMaxEntry* m_TAC;
-
-  //! FPGA setting of time between FLAG rising and ENABLE falling
-  MGUIEEntry* m_DisableTime;
-
-  //! internal FPGA delay between FLAG rising and FPGA reacting
-  MGUIEEntry* m_FlagToEnDelay;
 
   //! Select TAC Calibration file to load, converts readout timing to nanoseconds
   MGUIEFileSelector* m_TACCalFileSelector;

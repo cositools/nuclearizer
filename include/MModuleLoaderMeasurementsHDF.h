@@ -217,7 +217,7 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! Number of event ID roll-overs:
   unsigned int m_NumberOfEventIDRollOvers;
 
-  //! The last handles event ID
+  //! The last handled event ID
   unsigned int m_LastEventID;
 
   //! The file name of the strip map

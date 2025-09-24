@@ -395,17 +395,6 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     } 
   }
 
-  for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
-    MStripHit* SH = Event->GetStripHit(i);
-    if (SH->GetEnergy() < 8) {
-      Event->RemoveStripHit(i);
-      delete SH;
-    } else {
-      ++i;
-    }
-  }
-
-
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
   
   return true;

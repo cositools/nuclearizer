@@ -84,14 +84,6 @@ void MGUIOptionsTACcut::Create()
   m_TACCutFileSelector->SetFileType("TAC", "*.csv");
   TGLayoutHints* TACCutLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_TACCutFileSelector, TACCutLayout);
-
-  TGLayoutHints* DisableTimeLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);  
-  m_DisableTime = new MGUIEEntry(m_OptionsFrame, "Diable Time [ns]:", false, dynamic_cast<MModuleTACcut*>(m_Module)->GetDisableTime(), false, -numeric_limits<double>::max()/2, numeric_limits<double>::max()/2);
-  m_OptionsFrame->AddFrame(m_DisableTime, DisableTimeLayout);
-
-  TGLayoutHints* FlagToEnDelayLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);  
-  m_FlagToEnDelay = new MGUIEEntry(m_OptionsFrame, "FLAG to ENABLE delay [ns]:", false, dynamic_cast<MModuleTACcut*>(m_Module)->GetFlagToEnDelay(), false, -numeric_limits<double>::max()/2, numeric_limits<double>::max()/2);
-  m_OptionsFrame->AddFrame(m_FlagToEnDelay, FlagToEnDelayLayout);  
   
   PostCreate();
 }
@@ -136,8 +128,6 @@ bool MGUIOptionsTACcut::OnApply()
   // Store the data in the module
   dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
   dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCutFileName(m_TACCutFileSelector->GetFileName());
-  dynamic_cast<MModuleTACcut*>(m_Module)->SetDisableTime(m_DisableTime->GetAsDouble());
-  dynamic_cast<MModuleTACcut*>(m_Module)->SetFlagToEnDelay(m_FlagToEnDelay->GetAsDouble());
 
   return true;
 }

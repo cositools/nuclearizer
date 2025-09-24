@@ -140,6 +140,7 @@ $(LB)/MGUIExpoDiagnostics.o \
 $(LB)/MModuleTACcut.o \
 $(LB)/MGUIExpoTACcut.o \
 $(LB)/MGUIOptionsTACcut.o \
+$(LB)/MModuleNearestNeighbor.o \
 
 
 
