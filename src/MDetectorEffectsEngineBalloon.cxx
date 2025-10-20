@@ -434,6 +434,14 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         // Confirmed by Clio on 11/14/18: this is right
         pSide.m_ROE.SetStripID(38-(GP.GetYGrid()+1));
         nSide.m_ROE.SetStripID(38-(GP.GetXGrid()+1));
+
+        // cout << "___________" << endl;
+        // cout << "Strip ID (pos): " << pSide.m_ROE.GetStripID() << endl;
+        // cout << "Opposite Strip ID (pos): " << pSide.m_OppositeStrip << endl;
+
+        // // // cout << "___________" << endl;
+        // cout << "Strip ID (neg): " << nSide.m_ROE.GetStripID() << endl;
+        // // cout << "Opposite Strip ID (neg): " << nSide.m_OppositeStrip << endl;
         
         
         //SetStripID needs to be called before we can look up the depth calibration coefficients
@@ -908,9 +916,10 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           //cout << Hit.m_SubStripHits.at(0).m_Energy << endl;
           m_MultipleHitsCounter += nIndep;
         }
+
       }
       
-      
+      cout << "---------" << endl;
       // Merge origins
       for (MDEEStripHit& Hit: MergedStripHits) {
         Hit.m_Origins.clear();
@@ -919,8 +928,10 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
             Hit.m_Origins.push_back(Origin);
           }
         }
+        cout << "Is Low voltage: " << Hit.m_ROE.IsLowVoltageStrip() << " Strip ID: " << Hit.m_ROE.GetStripID() << endl;
         Hit.m_Origins.sort();
         Hit.m_Origins.unique();      
+        // cout << Hit.m_ROE.GetStripID() << endl;
       }
       
 
@@ -1554,7 +1565,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         MStripHit* SH = new MStripHit();
         SH->SetDetectorID(Hit.m_ROE.GetDetectorID());
         SH->SetStripID(Hit.m_ROE.GetStripID());
-        SH->IsLowVoltageStrip(Hit.m_ROE.IsLowVoltageStrip());
+        SH->IsXStrip(Hit.m_ROE.IsLowVoltageStrip());
         SH->SetADCUnits(Hit.m_ADC);
         SH->SetTiming(Hit.m_Timing);
         SH->SetPreampTemp(20);

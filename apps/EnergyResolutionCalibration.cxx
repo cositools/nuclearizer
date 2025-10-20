@@ -106,8 +106,7 @@ int main(int argc, char* argv[])
 			TMultiGraph *mg = new TMultiGraph();
 			ostringstream title;
 			title << "Detector "<<d<<", Side "<<s;
-			const char* t = title.str().c_str();
-			mg->SetTitle(t);
+			mg->SetTitle(title.str().c_str());
 			DetGraphs[GraphID] = mg;
 			TMultiGraph *mgr = new TMultiGraph();
 			mgr->SetTitle("Residuals");
@@ -115,15 +114,15 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	TMultiGraph * Det3avgres = new TMultiGraph();
+	//TMultiGraph * Det3avgres = new TMultiGraph();
 	TGraphErrors *Det3avgres_n = new TGraphErrors();
-	TGraphErrors *Det3avgres_p = new TGraphErrors();
-	double averageres_Det3n[10][40] = {0};
-	double energy_Det3n[14] = {0};
-	int numstrips_Det3n[10] = {0};
-	double averageres_Det3p[10][40] = {0};
-	double energy_Det3p[14] = {0};
-	int numstrips_Det3p[10] = {0};
+	//TGraphErrors *Det3avgres_p = new TGraphErrors();
+	double averageres_Det3n[10][40]{};
+	double energy_Det3n[14]{};
+	int numstrips_Det3n[10]{};
+	double averageres_Det3p[10][40]{};
+	//double energy_Det3p[14]{};
+	int numstrips_Det3p[10]{};
 
 
 	MParser Parser;
@@ -136,7 +135,7 @@ int main(int argc, char* argv[])
 
 	//if (Parser.Open("/home/jacqueline/MEGAlib/nuclearizer/resource/calibration/COSI19/Berkeley/EnergyCalibration.ecal") == false) {
 	cout<<"Unable to open calibration file "<<endl;
-		return false;
+		return 1;
 	}
 	
 	map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine;
@@ -155,7 +154,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	int numamstrips = 0;
+	//int numamstrips = 0;
 
 
 	for (auto CP: CP_ROEToLine) {

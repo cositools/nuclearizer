@@ -508,7 +508,7 @@ MAspect * MAspectReconstruction::InterpolateAspect(MTime ReqTime, MAspect * Befo
 
 		//Define new Elevation angles
 		double Z_Elevation = asin(interRot.GetZZ())*c_Deg;
-		double Y_Elevation = asin(interRot.GetYZ())*c_Deg;
+		//double Y_Elevation = asin(interRot.GetYZ())*c_Deg;
 		double X_Elevation = asin(interRot.GetXZ())*c_Deg;
 
 		//Define new Azimuth angles

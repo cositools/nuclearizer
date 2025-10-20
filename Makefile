@@ -38,90 +38,42 @@ MAKEFLAGS += --no-builtin-rules
 #.NOTPARALLEL: megalib
 .SILENT:
 
+
+#----------------------------------------------------------------
+# External libraries
+#
+
+H5CXXFLAGS =
+H5LIBS =
+ifeq ("$(shell pkg-config --exists hdf5 1>&2 2> /dev/null; echo $$?)", "0")
+        H5CXXFLAGS += $(shell pkg-config --cflags hdf5)
+        H5LIBS += $(shell pkg-config --libs hdf5)
+	H5LIBS += -lhdf5_cpp
+else
+	$(error "Unable to find HDF5 headers and libraries")
+endif
+
+
 #----------------------------------------------------------------
 # Definitions based on architecture and user options
 #
 
 CMD=""
-CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
+CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include $(H5CXXFLAGS)
 # Comment this line out if you want to accept warnings
 #CXXFLAGS += -Werror -Wno-unused-variable
 
-# Names of the program
-NUCLEARIZER_PRG = $(BN)/nuclearizer
-NUCLEARIZER_CXX_MAIN = src/MNuclearizerMain.cxx
+LIBS += $(H5LIBS)
 
-# The nuclearizer library
-NUCLEARIZER_LIBS = \
-$(LB)/magfld.o \
-$(LB)/MAssembly.o \
-$(LB)/MReadOutAssembly.o \
-$(LB)/MAspect.o \
-$(LB)/MAspectPacket.o \
-$(LB)/MAspectReconstruction.o \
-$(LB)/MHit.o \
-$(LB)/MTimeAndCoordinate.o \
-$(LB)/MStripHit.o \
-$(LB)/MGuardringHit.o \
-$(LB)/MDetectorEffectsEngineBalloon.o \
-$(LB)/MModuleLoaderSimulationsBalloon.o \
-$(LB)/MDetectorEffectsEngineSMEX.o \
-$(LB)/MModuleLoaderSimulationsSMEX.o \
-$(LB)/MGUIOptionsLoaderSimulations.o \
-$(LB)/MModuleLoaderMeasurements.o \
-$(LB)/MModuleLoaderMeasurementsROA.o \
-$(LB)/MGUIOptionsLoaderMeasurements.o \
-$(LB)/MBinaryFlightDataParser.o \
-$(LB)/MModuleReceiverBalloon.o \
-$(LB)/MGUIOptionsReceiverBalloon.o \
-$(LB)/MGUIExpoReceiver.o \
-$(LB)/MModuleLoaderMeasurementsBinary.o \
-$(LB)/MGUIOptionsLoaderMeasurementsBinary.o \
-$(LB)/MGUIExpoAspectViewer.o \
-$(LB)/MGUIExpoEnergyCalibration.o \
-$(LB)/MModuleEnergyCalibration.o \
-$(LB)/MModuleEnergyCalibrationUniversal.o \
-$(LB)/MGUIOptionsEnergyCalibrationUniversal.o \
-$(LB)/MInverseCrosstalkCorrection.o \
-$(LB)/MModuleCrosstalkCorrection.o \
-$(LB)/MGUIOptionsCrosstalkCorrection.o \
-$(LB)/MModuleChargeSharingCorrection.o \
-$(LB)/MGUIExpoDepthCalibration.o \
-$(LB)/MGUIExpoDepthCalibration2024.o \
-$(LB)/MModuleDepthCalibration.o \
-$(LB)/MGUIOptionsDepthCalibration.o \
-$(LB)/MModuleDepthCalibration2024.o \
-$(LB)/MGUIOptionsDepthCalibration2024.o \
-$(LB)/MGUIExpoStripPairing.o \
-$(LB)/MModuleStripPairingGreedy.o \
-$(LB)/MGUIOptionsStripPairing.o \
-$(LB)/MModuleStripPairingChiSquare.o \
-$(LB)/MGUIOptionsEventSaver.o \
-$(LB)/MModuleEventSaver.o \
-$(LB)/MGUIOptionsEventFilter.o \
-$(LB)/MModuleEventFilter.o \
-$(LB)/MCalibratorEnergy.o \
-$(LB)/MCalibratorEnergyPointwiseLinear.o \
-$(LB)/MDepthCalibrator.o \
-$(LB)/GCUSettingsParser.o \
-$(LB)/MTIRecord.o \
-$(LB)/GCUHousekeepingParser.o \
-$(LB)/LivetimeParser.o \
-$(LB)/MDepthCalibratorB.o \
-$(LB)/MModuleDepthCalibrationB.o \
-$(LB)/MGUIOptionsDepthCalibrationB.o \
-$(LB)/MGUIOptionsResponseGenerator.o \
-$(LB)/MModuleResponseGenerator.o \
-$(LB)/MModuleDiagnostics.o \
-$(LB)/MModuleDiagnosticsEnergyPerStrip.o \
-$(LB)/MGUIExpoDiagnosticsEnergyPerStrip.o \
-$(LB)/MGUIExpoDiagnostics.o \
-
-
-
-NUCLEARIZER_DEP_FILES := $(NUCLEARIZER_LIBS:.o=.d)
-NUCLEARIZER_H_FILES := $(addprefix $(NUCLEARIZER)/include/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
-
+# Definitions
+NUCLEARIZER_DIR        := $(NUCLEARIZER)
+NUCLEARIZER_PRG        := $(BN)/nuclearizer
+NUCLEARIZER_CXX_MAIN   := $(NUCLEARIZER_DIR)/src/MNuclearizerMain.cxx
+NUCLEARIZER_CXX_FILES  := $(wildcard $(NUCLEARIZER_DIR)/src/*.cxx)
+NUCLEARIZER_CXX_FILES  := $(filter-out $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_DIR)/src/MModuleTemplate.cxx,$(NUCLEARIZER_CXX_FILES))
+NUCLEARIZER_LIBS       := $(addprefix $(LB)/,$(notdir $(NUCLEARIZER_CXX_FILES:.cxx=.o)))
+NUCLEARIZER_DEP_FILES  := $(NUCLEARIZER_LIBS:.o=.d)
+NUCLEARIZER_H_FILES    := $(addprefix $(NUCLEARIZER)/include/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
 
 FRETALON_DIR          := $(MEGALIB)/src/fretalon/framework
 FRETALON_CXX_MAIN     := $(FRETALON_DIR)/src/MAssembly.cxx $(FRETALON_DIR)/src/MReadOutAssembly.cxx
@@ -141,9 +93,6 @@ NUCLEARIZER_CXX_MAIN := $(NUCLEARIZER)/src/MNuclearizerMain.cxx
 # External libraries
 # MEGAlib
 ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
-# ROOT
-ALLLIBS += -lMathCore
-
 
 
 NUCLEARIZER_DICT_NAME=Nuclearizer_Dictionary
@@ -197,26 +146,27 @@ $(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
 
 $(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
 	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -Wno-vla-cxx-extension -c $< -o $@
 
 $(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
 	@echo "Generating LinkDef ..."
 	@$(BN)/generatelinkdef -o $(NUCLEARIZER_LINKDEF) -i $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES)
 	@echo "Generating dictionary ..."
-	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
+	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include $(H5CXXFLAGS) -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
 	@mv $(NUCLEARIZER_ROOTPCM) $(LB)
 
 $(NUCLEARIZER_DICT_LIB): $(NUCLEARIZER_DICT)
 	@echo "Compiling dictionary ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(NUCLEARIZER_SHARED_LIB): $(FRETALON_LIBS) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DICT_LIB)
+$(NUCLEARIZER_SHARED_LIB): $(NUCLEARIZER_DICT_LIB) $(FRETALON_LIBS) $(NUCLEARIZER_LIBS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_DICT_LIB) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
 
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
+
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(NUCLEARIZER_DEP_FILES)

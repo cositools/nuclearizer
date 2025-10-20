@@ -71,6 +71,8 @@ class MGUIOptionsLoaderSimulations : public MGUIOptions
  private:
   //! Select which file to load
   MGUIEFileSelector* m_SimulationFileSelector;
+  //! Select deadtime constants file
+  MGUIEFileSelector* m_DeadtimeFileSelector;
   //! Energy calibration file name
   MGUIEFileSelector* m_EnergyCalibrationFileSelector;
   //! Dead strip file name
@@ -87,8 +89,12 @@ class MGUIOptionsLoaderSimulations : public MGUIOptions
 	MGUIEFileSelector* m_ChargeLossFileSelector;
   //! Depth calibration coefficients file name
   MGUIEFileSelector* m_DepthCalibrationCoeffsFileSelector;
+  //! TAC calibration file name
+  MGUIEFileSelector* m_DepthCalibrationTACCalFileSelector;
   //! Depth calibration splines file name
   MGUIEFileSelector* m_DepthCalibrationSplinesFileSelector;
+  //! ACS DEE energy correction file
+  MGUIEFileSelector* m_ACSEnergyCorrectionFileSelector;
 	//! Apply fudge factor
 	TGCheckButton* m_ApplyFudgeFactorSelector;
   //! Use stop after a maximum number of events

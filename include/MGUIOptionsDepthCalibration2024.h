@@ -74,9 +74,6 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
   //! Select spline file to load, splines will convert CTD->Depth
   MGUIEFileSelector* m_SplinesFileSelector;
 
-  //! Select TAC Calibration file to load, converts readout timing to nanoseconds
-  MGUIEFileSelector* m_TACCalFileSelector;
-
   //! Check button if working with the Card Cage at UCSD
   TGCheckButton* m_UCSDOverride;
 

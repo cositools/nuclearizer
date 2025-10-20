@@ -1,5 +1,7 @@
 #include "MDepthCalibrator.h"
 
+#include "MModule.h"
+
 //TFile* RootF;
 
 MDepthCalibrator::MDepthCalibrator()
@@ -88,17 +90,22 @@ bool MDepthCalibrator::LoadCoeffsFile(MString FName)
 	} else {
 		MString Line;
 		while( F.ReadLine( Line ) ){
-			if( !Line.BeginsWith("#") ){
+			if ( Line.BeginsWith('#') ){
 				std::vector<MString> Tokens = Line.Tokenize(" ");
+				m_Coeffs_Energy = Tokens[5].ToDouble();
+				cout << "The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
+			}
+			else {
+				std::vector<MString> Tokens = Line.Tokenize(",");
 				if( Tokens.size() == 5 ){
 					int pixel_code = Tokens[0].ToInt();
 					double Stretch = Tokens[1].ToDouble();
 					double Offset = Tokens[2].ToDouble();
-					double Scale = Tokens[3].ToDouble();
+					double CTD_FWHM = Tokens[3].ToDouble() * 2.355;
 					double Chi2 = Tokens[4].ToDouble();
-					//last two tokens are amplitude and chi2, not really needed here
-					std::vector<double>* coeffs = new std::vector<double>();
-					coeffs->push_back(Stretch); coeffs->push_back(Offset); coeffs->push_back(Scale); coeffs->push_back(Chi2);
+					// Previous iteration of depth calibration read in "Scale" instead of ctd resolution.
+					vector<double> coeffs;
+					coeffs.push_back(Stretch); coeffs.push_back(Offset); coeffs.push_back(CTD_FWHM); coeffs.push_back(Chi2);
 					m_Coeffs[pixel_code] = coeffs;
 				}
 			}
@@ -116,7 +123,7 @@ std::vector<double>* MDepthCalibrator::GetPixelCoeffs(int pixel_code)
 {
 	if( m_CoeffsFileIsLoaded ){
 		if( m_Coeffs.count(pixel_code) > 0 ){
-			return m_Coeffs[pixel_code];
+			return &m_Coeffs[pixel_code];
 		} else {
 			return NULL;
 		}
@@ -127,10 +134,81 @@ std::vector<double>* MDepthCalibrator::GetPixelCoeffs(int pixel_code)
 
 }
 
+bool MDepthCalibrator::LoadTACCalFile(MString FName)
+{
+  // Read in the TAC Calibration file, which should contain for each strip:
+  // DetID, h or l for high or low voltage, TAC cal, TAC cal error, TAC cal offset, TAC offset error
+  MFile F;
+  if (!F.Open(FName)) {
+    cout << "MDepthCalibrator: failed to open TAC Calibration file." << endl;
+    m_TACCalFileIsLoaded = false;
+    return false;
+  } 
+
+  MString Line;
+  while (F.ReadLine(Line)) {
+    if (!Line.BeginsWith("#")) {
+      vector<MString> Tokens = Line.Tokenize(",");
+      if (Tokens.size() == 7) {
+        int DetID = Tokens[0].ToInt();
+        int StripID = Tokens[2].ToInt();
+        double taccal = Tokens[3].ToDouble();
+        double taccal_err = Tokens[4].ToDouble();
+        double offset = Tokens[5].ToDouble();
+        double offset_err = Tokens[6].ToDouble();
+
+        // Create a vector with calibration values
+        vector<double> cal_vals = {taccal, offset, taccal_err, offset_err};
+
+        // Ensure the unordered_map exists for this DetID (automatically creates if missing)
+        if (Tokens[1] == "l") {
+          m_LVTACCal[DetID][StripID] = cal_vals;  
+        } else if (Tokens[1] == "h") {
+          m_HVTACCal[DetID][StripID] = cal_vals;
+        }
+      }
+    }
+  }
+
+  F.Close();
+  m_TACCalFileIsLoaded = true;
+  return true;
+}
+
+std::vector<double>* MDepthCalibrator::GetLVTACCal(int DetID, int StripID)
+{
+	if( m_TACCalFileIsLoaded ){
+		if( m_LVTACCal.count(DetID) && m_LVTACCal[DetID].count(StripID) > 0 ){
+			return &m_LVTACCal[DetID][StripID];
+		} else {
+			return NULL;
+		}
+	} else {
+		cout << "MDepthCalibrator::GetLVTACCal: cannot get coeffs, coeff file has not yet been loaded" << endl;
+		return NULL;
+	}
+
+}
+
+std::vector<double>* MDepthCalibrator::GetHVTACCal(int DetID, int StripID)
+{
+	if( m_TACCalFileIsLoaded ){
+		if( m_HVTACCal.count(DetID) && m_HVTACCal[DetID].count(StripID) > 0 ){
+			return &m_HVTACCal[DetID][StripID];
+		} else {
+			return NULL;
+		}
+	} else {
+		cout << "MDepthCalibrator::GetHVTACCal: cannot get coeffs, coeff file has not yet been loaded" << endl;
+		return NULL;
+	}
+
+}
 
 bool MDepthCalibrator::LoadSplinesFile(MString FName)
 {
-	//when invert flag is set to true, the splines returned are CTD->Depth
+
+  //when invert flag is set to true, the splines returned are CTD->Depth
 	MFile F; 
 	if( F.Open(FName) == false ){
 		return false;
@@ -149,12 +227,11 @@ bool MDepthCalibrator::LoadSplinesFile(MString FName)
 					AddSpline(depthvec, anovec, DetID, m_SplineMap_Depth2AnoTiming, false);
 					AddSpline(depthvec, catvec, DetID, m_SplineMap_Depth2CatTiming, false);
 				}
-				m_Thicknesses[NewDetID] = tokens[3].ToDouble();
-				cout << "MDepthCalibrator: from splines file, detector " << NewDetID << " has thicknesss " << m_Thicknesses[NewDetID] << endl;
+
 				depthvec.clear(); ctdvec.clear(); anovec.clear(); catvec.clear();
 				DetID = NewDetID;
 			} else {
-				vector<MString> tokens = line.Tokenize(" ");
+				vector<MString> tokens = line.Tokenize(",");
 				depthvec.push_back(tokens[0].ToDouble()); ctdvec.push_back(tokens[1].ToDouble());
 				anovec.push_back(tokens[2].ToDouble()); catvec.push_back(tokens[3].ToDouble());
 			}
@@ -171,7 +248,46 @@ bool MDepthCalibrator::LoadSplinesFile(MString FName)
 	m_SplinesFileIsLoaded = true;
 	return true;
 
+
 }
+
+// bool MDepthCalibrator::AddDepthCTD(vector<double> depthvec, vector<vector<double>> ctdarr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap){
+
+//   // Saves a CTD array, basically allowing for multiple CTDs as a function of depth 
+//   // depthvec: list of simulated depth values
+//   // ctdarr: vector of vectors of simulated CTD values. Each vector of CTDs must be the same length as depthvec
+//   // DetID: An integer which specifies which detector.
+//   // CTDMap: unordered map into which the array of CTDs should be placed
+
+//   // TODO: Possible energy dependence of CTD?
+//   // TODO: Depth values need to be evenly spaced. Check this when reading the files in.
+
+//   // Check to make sure things look right.
+//   // First check that the CTDs all have the right length.
+//   for( unsigned int i = 0; i < ctdarr.size(); ++i ){
+//     if( (ctdarr[i].size() != depthvec.size()) && (ctdarr[i].size() > 0) ){
+//       cout << "MDepthCalibrator::AddDepthCTD: The number of values in the CTD list is not equal to the number of depth values." << endl;
+//       return false;
+//     }
+//   }
+
+//   double maxdepth = * std::max_element(depthvec.begin(), depthvec.end());
+//   double mindepth = * std::min_element(depthvec.begin(), depthvec.end());
+//   m_Thicknesses[DetID] = maxdepth-mindepth;
+//   cout << "MDepthCalibrator::AddDepthCTD: The thickness of detector " << DetID << " is " << m_Thicknesses[DetID] << endl;
+  
+//   //Now make sure the values for the depth start with 0.0.
+//   if( mindepth != 0.0){
+//       cout << "MDepthCalibrator::AddDepthCTD: The minimum depth is not zero. Editing the depth vector." << endl;
+//       for( unsigned int i = 0; i < depthvec.size(); ++i ){
+//         depthvec[i] -= mindepth;
+//       }
+//   }
+
+//   CTDMap[DetID] = ctdarr;
+//   DepthGrid[DetID] = depthvec;
+//   return true;
+// }
 
 void MDepthCalibrator::AddSpline(vector<double> xvec, vector<double> yvec, int DetID, std::unordered_map<int,TSpline3*>& SplineMap, bool invert){
 	//add one more point to the start and end, corresponding to the detector edges so that the spline covers the

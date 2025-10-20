@@ -344,7 +344,7 @@ int MModuleDepthCalibrationB::CalculateLocalPosition(MStripHit* XSH, MStripHit* 
 	double Xpos = ((double)YSH->GetStripID() - 19.0)*(-0.2);
 	double Ypos = ((double)XSH->GetStripID() - 19.0)*(-0.2);
 	double Zpos = 0.0;
-	double CTD_s = 0.0;
+	//double CTD_s = 0.0;
 	int CTD = 0;
 
 	//now try and get z position

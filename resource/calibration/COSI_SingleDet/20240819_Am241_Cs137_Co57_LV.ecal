@@ -1,0 +1,777 @@
+# Energy calibration file created with Melinator
+ 
+# Used files and isotopes:
+# File: "/home/sean/nuclearizer_test/64_strip/HP52301m1/roas/asic_gse_240412000707.hdf.roa" with isotopes: Isotope Am-241 with the following lines: 59.541 keV (0.359)
+# File: "/home/sean/nuclearizer_test/64_strip/HP52301m1/roas/asic_gse_240412194613.hdf.roa" with isotopes: Isotope Cs-137 with the following lines: 661.657 keV (0.851)
+# File: "/home/sean/nuclearizer_test/64_strip/HP52301m1/roas/asic_gse_240412202859.hdf.roa" with isotopes: Isotope Cs-137 with the following lines: 661.657 keV (0.851)
+# File: "/home/sean/nuclearizer_test/64_strip/HP52301m1/roas/asic_gse_240412003006.hdf.roa" with isotopes: Isotope Co-57 with the following lines: 122.061 keV (0.856), 136.474 keV (0.1068)
+ 
+TYPE ECAL
+ 
+
+# ROU: dss 0 0 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 0 h pakw 4 1825.44 59.541 2.86645 2206.96 122.061 3.06323 2295.32 136.474 3.20904 5506.72 661.657 3.86873 
+CM dss 0 0 h poly3 -250.574 0.176784 -4.65136e-06 4.77759e-10 
+CR dss 0 0 h poly1 2.86847 0.00154938 
+
+# ROU: dss 0 0 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 0 l pakw 4 2049.39 59.541 2.68379 2436.78 122.061 2.72935 2525.41 136.474 2.84622 5750.42 661.657 2.74817 
+CM dss 0 0 l poly3 -249.651 0.138621 7.37473e-06 -6.82011e-10 
+CR dss 0 0 l poly1 2.74426 2.09796e-05 
+
+# ROU: dss 0 1 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 1 h pakw 4 1871.26 59.541 2.94126 2260.69 122.061 3.1555 2350.3 136.474 3.45624 5641.49 661.657 4.11912 
+CM dss 0 1 h poly3 -235.42 0.154063 2.41428e-06 -2.72391e-10 
+CR dss 0 1 h poly1 2.96531 0.00180298 
+
+# ROU: dss 0 1 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 1 l pakw 4 2003.13 59.541 2.74854 2391.46 122.061 2.79708 2480.8 136.474 2.64643 5751.17 661.657 3.12856 
+CM dss 0 1 l poly3 -256.79 0.154178 2.35219e-06 -2.42123e-10 
+CR dss 0 1 l poly1 2.65645 0.00069611 
+
+# ROU: dss 0 2 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 2 h pakw 4 1774.45 59.541 3.16375 2152.62 122.061 3.22227 2239.12 136.474 3.44964 5411.39 661.657 3.53644 
+CM dss 0 2 h poly3 -215.712 0.143416 8.12647e-06 -8.62538e-10 
+CR dss 0 2 h poly1 3.21133 0.000515613 
+
+# ROU: dss 0 2 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 2 l pakw 4 1972.67 59.541 2.81866 2363.01 122.061 2.84154 2452.7 136.474 2.80653 5795.12 661.657 2.93303 
+CM dss 0 2 l poly3 -244.933 0.146885 4.88333e-06 -5.58142e-10 
+CR dss 0 2 l poly1 2.80166 0.000196583 
+
+# ROU: dss 0 3 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 3 h pakw 4 1827.75 59.541 3.16049 2210.06 122.061 3.56316 2298.82 136.474 3.67227 5496.98 661.657 3.69573 
+CM dss 0 3 h poly3 -256.566 0.183993 -7.51656e-06 8.06403e-10 
+CR dss 0 3 h poly1 3.36566 0.000565429 
+
+# ROU: dss 0 3 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 3 l pakw 4 1983.67 59.541 2.85933 2373.28 122.061 2.81656 2462.62 136.474 2.77693 5761.27 661.657 2.96336 
+CM dss 0 3 l poly3 -242.775 0.142624 6.20862e-06 -6.44997e-10 
+CR dss 0 3 l poly1 2.79298 0.000245494 
+
+# ROU: dss 0 4 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 4 h pakw 4 1823.15 59.541 3.05833 2210.74 122.061 3.34027 2298.63 136.474 3.69574 5459.8 661.657 4.15552 
+CM dss 0 4 h poly3 -199.025 0.120222 1.43532e-05 -1.37365e-09 
+CR dss 0 4 h poly1 3.15271 0.00159341 
+
+# ROU: dss 0 4 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 4 l pakw 4 1971.25 59.541 2.84573 2360.61 122.061 2.80925 2450.83 136.474 2.77533 5786.56 661.657 3.23008 
+CM dss 0 4 l poly3 -268.141 0.172236 -3.58904e-06 2.75189e-10 
+CR dss 0 4 l poly1 2.73471 0.000730225 
+
+# ROU: dss 0 5 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 5 h pakw 4 1830.7 59.541 3.13568 2208.68 122.061 3.43303 2294.72 136.474 3.58921 5418.14 661.657 4.12965 
+CM dss 0 5 h poly3 -213.403 0.130629 1.23243e-05 -1.22285e-09 
+CR dss 0 5 h poly1 3.20756 0.00145149 
+
+# ROU: dss 0 5 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 5 l pakw 4 1975.77 59.541 2.78068 2365.05 122.061 2.8916 2454.4 136.474 2.88474 5723.97 661.657 3.14993 
+CM dss 0 5 l poly3 -245.843 0.147441 4.48382e-06 -4.44454e-10 
+CR dss 0 5 l poly1 2.79055 0.000553677 
+
+# ROU: dss 0 6 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 6 h pakw 4 1789.62 59.541 3.07129 2168.28 122.061 3.22146 2255.75 136.474 3.17787 5384.16 661.657 3.94284 
+CM dss 0 6 h poly3 -242.46 0.173511 -3.46636e-06 4.51008e-10 
+CR dss 0 6 h poly1 3.00476 0.00142171 
+
+# ROU: dss 0 6 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 6 l pakw 4 2022.18 59.541 2.81972 2413.59 122.061 2.86213 2503.88 136.474 2.7786 5824.43 661.657 3.15576 
+CM dss 0 6 l poly3 -263.869 0.159835 1.58528e-07 -5.46528e-11 
+CR dss 0 6 l poly1 2.75802 0.00059219 
+
+# ROU: dss 0 7 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 7 h pakw 4 1816.66 59.541 3.14952 2200.16 122.061 3.27862 2288.56 136.474 3.58202 5526.32 661.657 3.35569 
+CM dss 0 7 h poly3 -235.757 0.161849 5.27389e-07 -7.77305e-11 
+CR dss 0 7 h poly1 3.29558 0.000130943 
+
+# ROU: dss 0 7 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 7 l pakw 4 1985.65 59.541 2.81783 2377.53 122.061 2.82232 2467.31 136.474 2.83658 5773.16 661.657 2.95397 
+CM dss 0 7 l poly3 -239.494 0.13992 6.7284e-06 -6.80194e-10 
+CR dss 0 7 l poly1 2.80121 0.000230489 
+
+# ROU: dss 0 8 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 8 h pakw 4 1851.72 59.541 3.1553 2240.42 122.061 3.18419 2332.26 136.474 3.2559 5681.54 661.657 4.85073 
+CM dss 0 8 h poly3 -292.357 0.222915 -2.16584e-05 2.10821e-09 
+CR dss 0 8 h poly1 2.89391 0.00291793 
+
+# ROU: dss 0 8 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 8 l pakw 4 1910.97 59.541 2.85151 2302.44 122.061 2.83515 2392.72 136.474 2.73728 5668.6 661.657 3.36009 
+CM dss 0 8 l poly3 -246.94 0.161289 -6.27807e-07 7.95389e-11 
+CR dss 0 8 l poly1 2.70784 0.000958559 
+
+# ROU: dss 0 9 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 9 h pakw 4 1814.91 59.541 3.09147 2201.78 122.061 3.14199 2292.45 136.474 3.09875 5572.4 661.657 4.00333 
+CM dss 0 9 h poly3 -270.072 0.204339 -1.535e-05 1.55876e-09 
+CR dss 0 9 h poly1 2.94596 0.00157871 
+
+# ROU: dss 0 9 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 9 l pakw 4 1976.33 59.541 2.78753 2366.77 122.061 2.8391 2456.34 136.474 2.72892 5677.67 661.657 3.19569 
+CM dss 0 9 l poly3 -246.295 0.149017 3.42403e-06 -2.64971e-10 
+CR dss 0 9 l poly1 2.70898 0.000723058 
+
+# ROU: dss 0 10 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 10 h pakw 4 1834.51 59.541 3.02458 2219.77 122.061 3.25374 2308.95 136.474 3.2014 5545.03 661.657 3.83905 
+CM dss 0 10 h poly3 -247.837 0.173655 -4.11141e-06 4.28088e-10 
+CR dss 0 10 h poly1 3.01967 0.00125872 
+
+# ROU: dss 0 10 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 10 l pakw 4 1942.15 59.541 2.76629 2333.59 122.061 2.83541 2423.77 136.474 2.78343 5740.19 661.657 3.34656 
+CM dss 0 10 l poly3 -247.616 0.15605 1.42677e-06 -1.77104e-10 
+CR dss 0 10 l poly1 2.69158 0.0009833 
+
+# ROU: dss 0 11 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 11 h pakw 4 1830.8 59.541 3.06991 2217.58 122.061 3.14193 2307.43 136.474 3.2274 5513.92 661.657 3.86272 
+CM dss 0 11 h poly3 -255.865 0.185001 -8.72699e-06 9.70966e-10 
+CR dss 0 11 h poly1 3.00663 0.00130028 
+
+# ROU: dss 0 11 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 11 l pakw 4 2009.2 59.541 2.7809 2399.14 122.061 2.80094 2488.65 136.474 2.84638 5757.47 661.657 3.04756 
+CM dss 0 11 l poly3 -250.742 0.147503 4.27496e-06 -4.11607e-10 
+CR dss 0 11 l poly1 2.76266 0.000433317 
+
+# ROU: dss 0 12 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 12 h pakw 4 1916.71 59.541 2.96251 2298.42 122.061 3.13684 2387.16 136.474 3.03518 5643 661.657 3.87833 
+CM dss 0 12 h poly3 -274.532 0.186108 -7.49167e-06 6.93092e-10 
+CR dss 0 12 h poly1 2.88391 0.00150264 
+
+# ROU: dss 0 12 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 12 l pakw 4 2012.05 59.541 2.99433 2403.92 122.061 2.9732 2494.08 136.474 2.9246 5838.42 661.657 2.99445 
+CM dss 0 12 l poly3 -253.645 0.150535 3.32103e-06 -3.85845e-10 
+CR dss 0 12 l poly1 2.96031 4.43313e-05 
+
+# ROU: dss 0 13 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 13 h pakw 4 1813.58 59.541 3.04831 2198.98 122.061 3.06977 2288.82 136.474 2.92986 5519.07 661.657 4.08031 
+CM dss 0 13 h poly3 -260.474 0.19293 -1.1238e-05 1.18761e-09 
+CR dss 0 13 h poly1 2.82111 0.00185516 
+
+# ROU: dss 0 13 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 13 l pakw 4 1992.06 59.541 2.75571 2381.7 122.061 2.77661 2471.21 136.474 2.75887 5814.03 661.657 2.94323 
+CM dss 0 13 l poly3 -247.421 0.145895 5.3221e-06 -6.0581e-10 
+CR dss 0 13 l poly1 2.73016 0.000320037 
+
+# ROU: dss 0 14 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 14 h pakw 4 1854.09 59.541 2.95384 2238.94 122.061 3.08904 2328.19 136.474 3.09982 5573.93 661.657 4.273 
+CM dss 0 14 h poly3 -255.547 0.178505 -5.67294e-06 5.6868e-10 
+CR dss 0 14 h poly1 2.81513 0.00219933 
+
+# ROU: dss 0 14 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 14 l pakw 4 1962.58 59.541 2.81164 2350.66 122.061 2.76289 2439.43 136.474 2.84202 5665.51 661.657 3.01684 
+CM dss 0 14 l poly3 -236.705 0.139325 7.26094e-06 -6.82116e-10 
+CR dss 0 14 l poly1 2.76558 0.000376112 
+
+# ROU: dss 0 15 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 15 h pakw 4 1889.9 59.541 2.98608 2272.9 122.061 3.10775 2361.05 136.474 3.19888 5562.82 661.657 4.07421 
+CM dss 0 15 h poly3 -245.501 0.159424 1.25089e-06 -1.06885e-10 
+CR dss 0 15 h poly1 2.90598 0.00177729 
+
+# ROU: dss 0 15 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 15 l pakw 4 1943.56 59.541 2.88836 2333.99 122.061 2.88642 2424 136.474 2.846 5724.51 661.657 3.23832 
+CM dss 0 15 l poly3 -251.055 0.159221 4.37482e-07 -6.97647e-11 
+CR dss 0 15 l poly1 2.80743 0.000639245 
+
+# ROU: dss 0 16 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 16 h pakw 4 1846.54 59.541 3.00399 2241.22 122.061 3.05396 2334.8 136.474 2.88414 5693.07 661.657 5.31218 
+CM dss 0 16 h poly3 -294.454 0.229552 -2.51387e-05 2.5148e-09 
+CR dss 0 16 h poly1 2.5584 0.00401846 
+
+# ROU: dss 0 16 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 16 l pakw 4 2035.76 59.541 2.75812 2424.23 122.061 2.75521 2513.11 136.474 2.80794 5885.51 661.657 2.89207 
+CM dss 0 16 l poly3 -241.232 0.130999 1.05623e-05 -1.14767e-09 
+CR dss 0 16 l poly1 2.74999 0.000216882 
+
+# ROU: dss 0 17 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 17 h pakw 4 1798.35 59.541 3.0807 2180.69 122.061 3.13418 2269.64 136.474 3.09262 5462.49 661.657 4.58134 
+CM dss 0 17 h poly3 -256.289 0.189765 -9.77258e-06 1.06113e-09 
+CR dss 0 17 h poly1 2.83177 0.00259945 
+
+# ROU: dss 0 17 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 17 l pakw 4 1965.7 59.541 2.79119 2359.12 122.061 2.84598 2449.18 136.474 2.76927 5674.01 661.657 3.104 
+CM dss 0 17 l poly3 -237.483 0.142745 5.03773e-06 -3.9952e-10 
+CR dss 0 17 l poly1 2.74556 0.00053625 
+
+# ROU: dss 0 18 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 18 h pakw 4 1920.76 59.541 3.03095 2315.94 122.061 3.1012 2410.29 136.474 2.86305 5900.08 661.657 5.39944 
+CM dss 0 18 h poly3 -322.054 0.243951 -2.86369e-05 2.63529e-09 
+CR dss 0 18 h poly1 2.56095 0.00412786 
+
+# ROU: dss 0 18 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 18 l pakw 4 1993.56 59.541 2.82904 2385.52 122.061 2.88423 2476 136.474 2.73946 5742.85 661.657 3.24221 
+CM dss 0 18 l poly3 -263.138 0.164915 -1.98743e-06 2.284e-10 
+CR dss 0 18 l poly1 2.73839 0.000745113 
+
+# ROU: dss 0 19 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 19 h pakw 4 1803.44 59.541 2.97774 2181.62 122.061 3.1253 2269.83 136.474 2.91429 5505.1 661.657 4.49728 
+CM dss 0 19 h poly3 -264.004 0.195093 -1.05524e-05 1.02768e-09 
+CR dss 0 19 h poly1 2.72834 0.00261969 
+
+# ROU: dss 0 19 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 19 l pakw 4 1988.54 59.541 2.79539 2378.88 122.061 2.81283 2468.3 136.474 2.75192 5774.1 661.657 3.05845 
+CM dss 0 19 l poly3 -240.291 0.139435 7.17639e-06 -7.39844e-10 
+CR dss 0 19 l poly1 2.73717 0.000476809 
+
+# ROU: dss 0 20 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 20 h pakw 4 1882.74 59.541 2.93158 2263.52 122.061 3.17123 2350.57 136.474 3.30595 5517.28 661.657 4.06078 
+CM dss 0 20 h poly3 -229.034 0.140825 8.1023e-06 -7.91417e-10 
+CR dss 0 20 h poly1 2.93566 0.0017448 
+
+# ROU: dss 0 20 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 20 l pakw 4 2045.86 59.541 2.82835 2436.87 122.061 2.85441 2526.58 136.474 2.85624 5832.85 661.657 3.10758 
+CM dss 0 20 l poly3 -252.64 0.143672 5.50392e-06 -5.59214e-10 
+CR dss 0 20 l poly1 2.79685 0.000468648 
+
+# ROU: dss 0 21 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 21 h pakw 4 1869.77 59.541 3.00133 2251.47 122.061 3.18466 2339.07 136.474 3.5645 5553.13 661.657 3.72161 
+CM dss 0 21 h poly3 -234.801 0.149918 4.99828e-06 -5.2666e-10 
+CR dss 0 21 h poly1 3.10748 0.000986755 
+
+# ROU: dss 0 21 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 21 l pakw 4 1994.02 59.541 2.81862 2385.53 122.061 2.85387 2475.74 136.474 2.83539 5775.87 661.657 3.18306 
+CM dss 0 21 l poly3 -257.199 0.157729 7.30837e-07 -8.58803e-11 
+CR dss 0 21 l poly1 2.77089 0.000619492 
+
+# ROU: dss 0 22 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 22 h pakw 4 1806.42 59.541 3.04429 2187.93 122.061 3.10888 2276.95 136.474 2.85467 5508.31 661.657 4.31372 
+CM dss 0 22 h poly3 -263.701 0.196055 -1.16113e-05 1.18309e-09 
+CR dss 0 22 h poly1 2.75823 0.00227824 
+
+# ROU: dss 0 22 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 22 l pakw 4 2058.39 59.541 2.84 2451.34 122.061 2.84682 2542.05 136.474 2.73263 5916.03 661.657 3.04584 
+CM dss 0 22 l poly3 -268.565 0.159005 4.53334e-07 -1.27121e-10 
+CR dss 0 22 l poly1 2.76326 0.00041221 
+
+# ROU: dss 0 23 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 23 h pakw 4 1809.31 59.541 3.03974 2203.13 122.061 3.12517 2295.45 136.474 3.18135 5653.25 661.657 4.67651 
+CM dss 0 23 h poly3 -262.567 0.199594 -1.45235e-05 1.4392e-09 
+CR dss 0 23 h poly1 2.82448 0.00277646 
+
+# ROU: dss 0 23 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 23 l pakw 4 2004.03 59.541 2.88181 2391.99 122.061 2.83882 2481.04 136.474 2.83988 5747.4 661.657 3.03615 
+CM dss 0 23 l poly3 -250.82 0.14734 4.70381e-06 -4.72601e-10 
+CR dss 0 23 l poly1 2.82145 0.000315272 
+
+# ROU: dss 0 24 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 24 h pakw 4 1825.92 59.541 3.17576 2208.65 122.061 3.27663 2297.01 136.474 3.31019 5494.73 661.657 4.21867 
+CM dss 0 24 h poly3 -242.729 0.168258 -1.89355e-06 2.23185e-10 
+CR dss 0 24 h poly1 3.07031 0.00173513 
+
+# ROU: dss 0 24 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 24 l pakw 4 1913.05 59.541 2.88879 2303.96 122.061 2.90466 2393.91 136.474 2.80737 5659.7 661.657 3.25376 
+CM dss 0 24 l poly3 -242.406 0.155564 1.41746e-06 -1.20168e-10 
+CR dss 0 24 l poly1 2.79645 0.000675168 
+
+# ROU: dss 0 25 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 25 h pakw 4 1841.28 59.541 3.072 2217.85 122.061 3.23575 2303.42 136.474 3.52432 5446.04 661.657 3.52538 
+CM dss 0 25 h poly3 -210.329 0.124065 1.50815e-05 -1.55383e-09 
+CR dss 0 25 h poly1 3.19152 0.000550104 
+
+# ROU: dss 0 25 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 25 l pakw 4 1992.09 59.541 2.82507 2382.28 122.061 2.87124 2472.41 136.474 2.88598 5784.48 661.657 3.07202 
+CM dss 0 25 l poly3 -263.536 0.164134 -1.11525e-06 6.75907e-11 
+CR dss 0 25 l poly1 2.81871 0.00038695 
+
+# ROU: dss 0 26 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 26 h pakw 4 1809.31 59.541 3.05269 2205.5 122.061 3.09942 2301.08 136.474 3.00905 5750 661.657 5.37899 
+CM dss 0 26 h poly3 -316.965 0.264195 -3.77373e-05 3.71991e-09 
+CR dss 0 26 h poly1 2.63359 0.00402935 
+
+# ROU: dss 0 26 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 26 l pakw 4 1979.09 59.541 2.85202 2368.36 122.061 2.88197 2457.43 136.474 2.94951 5747.27 661.657 3.07931 
+CM dss 0 26 l poly3 -236.445 0.136324 8.37602e-06 -8.5365e-10 
+CR dss 0 26 l poly1 2.8557 0.000344951 
+
+# ROU: dss 0 27 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 27 h pakw 4 1877.86 59.541 3.11729 2262.62 122.061 3.24744 2352.71 136.474 3.05547 5604.52 661.657 4.3887 
+CM dss 0 27 h poly3 -283.379 0.205841 -1.52564e-05 1.5372e-09 
+CR dss 0 27 h poly1 2.90747 0.00219861 
+
+# ROU: dss 0 27 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 27 l pakw 4 1960.95 59.541 2.94452 2349.23 122.061 2.93748 2439.19 136.474 2.74728 5673.17 661.657 3.38864 
+CM dss 0 27 l poly3 -270.971 0.177723 -5.91047e-06 6.27631e-10 
+CR dss 0 27 l poly1 2.78109 0.000883034 
+
+# ROU: dss 0 28 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 28 h pakw 4 1829.78 59.541 3.19452 2218.75 122.061 3.28859 2310.25 136.474 3.05439 5625.03 661.657 4.29852 
+CM dss 0 28 h poly3 -278.855 0.212331 -1.83207e-05 1.83067e-09 
+CR dss 0 28 h poly1 2.97021 0.00195877 
+
+# ROU: dss 0 28 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 28 l pakw 4 1975.94 59.541 2.87302 2370.63 122.061 2.85925 2461.78 136.474 2.88282 5892.99 661.657 3.11545 
+CM dss 0 28 l poly3 -253.487 0.157386 9.66683e-07 -2.24286e-10 
+CR dss 0 28 l poly1 2.82665 0.000432093 
+
+# ROU: dss 0 29 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 29 h pakw 4 1859.02 59.541 3.16684 2238.24 122.061 3.28952 2324.9 136.474 3.45026 5481.38 661.657 3.29843 
+CM dss 0 29 h poly3 -225.659 0.140336 8.62847e-06 -8.5715e-10 
+CR dss 0 29 h poly1 3.28237 5.27449e-05 
+
+# ROU: dss 0 29 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 29 l pakw 4 1905.89 59.541 2.86145 2298.1 122.061 2.89307 2388.7 136.474 2.73274 5744.23 661.657 3.27311 
+CM dss 0 29 l poly3 -246.784 0.1617 -4.57847e-07 -2.79265e-11 
+CR dss 0 29 l poly1 2.74675 0.000772869 
+
+# ROU: dss 0 30 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 30 h pakw 4 1807.24 59.541 3.17188 2192.6 122.061 3.21224 2283.25 136.474 2.98279 5565.12 661.657 4.37843 
+CM dss 0 30 h poly3 -277.669 0.214145 -1.86609e-05 1.88869e-09 
+CR dss 0 30 h poly1 2.88956 0.00218157 
+
+# ROU: dss 0 30 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 30 l pakw 4 1942.42 59.541 2.88664 2336.49 122.061 2.88767 2426.85 136.474 2.82168 5720.49 661.657 3.01717 
+CM dss 0 30 l poly3 -235.414 0.144053 4.93046e-06 -4.71828e-10 
+CR dss 0 30 l poly1 2.83855 0.000261306 
+
+# ROU: dss 0 31 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 31 h pakw 4 1853.83 59.541 3.20562 2240.9 122.061 3.29388 2332.03 136.474 2.93805 5600.19 661.657 4.15994 
+CM dss 0 31 h poly3 -289.409 0.218994 -2.04607e-05 2.08587e-09 
+CR dss 0 31 h poly1 2.94895 0.00176516 
+
+# ROU: dss 0 31 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 31 l pakw 4 1986.73 59.541 2.94186 2380.83 122.061 2.96587 2471.71 136.474 2.93755 5798.88 661.657 3.25909 
+CM dss 0 31 l poly3 -255.938 0.158807 4.09282e-08 -2.40032e-11 
+CR dss 0 31 l poly1 2.89088 0.00055118 
+
+# ROU: dss 0 32 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 32 h pakw 4 1859.46 59.541 3.06419 2239.15 122.061 3.23404 2326.37 136.474 3.10328 5468.9 661.657 3.50333 
+CM dss 0 32 h poly3 -239.635 0.156991 2.44456e-06 -1.85784e-10 
+CR dss 0 32 h poly1 3.05825 0.000678114 
+
+# ROU: dss 0 32 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 32 l pakw 4 1959.02 59.541 2.88945 2350.26 122.061 2.85678 2441.15 136.474 2.87646 5677.71 661.657 3.53306 
+CM dss 0 32 l poly3 -276.081 0.185418 -9.1073e-06 9.75647e-10 
+CR dss 0 32 l poly1 2.75395 0.00115792 
+
+# ROU: dss 0 33 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 33 h pakw 4 1852.25 59.541 3.11362 2230.89 122.061 3.29715 2317.45 136.474 3.53996 5447.8 661.657 3.85823 
+CM dss 0 33 h poly3 -227.11 0.143185 7.57978e-06 -7.18888e-10 
+CR dss 0 33 h poly1 3.1816 0.00106819 
+
+# ROU: dss 0 33 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 33 l pakw 4 1955.44 59.541 2.91643 2344.72 122.061 2.87277 2434.91 136.474 2.83965 5760.14 661.657 3.32146 
+CM dss 0 33 l poly3 -265.406 0.172166 -3.63622e-06 2.93082e-10 
+CR dss 0 33 l poly1 2.79642 0.000773282 
+
+# ROU: dss 0 34 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 34 h pakw 4 1857.72 59.541 2.99011 2241.62 122.061 3.22537 2330.24 136.474 3.46642 5569.21 661.657 3.70785 
+CM dss 0 34 h poly3 -245.733 0.165898 -1.00211e-06 8.42314e-11 
+CR dss 0 34 h poly1 3.09453 0.000981799 
+
+# ROU: dss 0 34 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 34 l pakw 4 1971.6 59.541 2.8821 2360.95 122.061 2.87541 2451.39 136.474 2.8779 5777.86 661.657 3.31421 
+CM dss 0 34 l poly3 -275.125 0.179966 -6.27181e-06 5.51303e-10 
+CR dss 0 34 l poly1 2.79855 0.000769229 
+
+# ROU: dss 0 35 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 35 h pakw 4 1873.43 59.541 3.0896 2247.93 122.061 3.312 2333.23 136.474 3.5742 5454.1 661.657 3.74095 
+CM dss 0 35 h poly3 -222.094 0.131072 1.26882e-05 -1.28553e-09 
+CR dss 0 35 h poly1 3.20412 0.000865118 
+
+# ROU: dss 0 35 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 35 l pakw 4 1936.44 59.541 2.89116 2327.15 122.061 2.83284 2417.86 136.474 2.80351 5689.19 661.657 3.19311 
+CM dss 0 35 l poly3 -269.336 0.181447 -7.47509e-06 7.63839e-10 
+CR dss 0 35 l poly1 2.78028 0.000604839 
+
+# ROU: dss 0 36 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 36 h pakw 4 1811.27 59.541 3.0974 2189.41 122.061 3.22743 2276.13 136.474 3.26621 5407.37 661.657 3.98533 
+CM dss 0 36 h poly3 -229.013 0.152788 4.30359e-06 -3.88011e-10 
+CR dss 0 36 h poly1 3.04217 0.00143592 
+
+# ROU: dss 0 36 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 36 l pakw 4 1933.02 59.541 2.83284 2322.23 122.061 2.85065 2412.43 136.474 2.75934 5693.25 661.657 3.44936 
+CM dss 0 36 l poly3 -263.988 0.175148 -4.95827e-06 4.83353e-10 
+CR dss 0 36 l poly1 2.69819 0.0011118 
+
+# ROU: dss 0 37 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 37 h pakw 4 1789.65 59.541 3.0112 2165.35 122.061 3.23361 2250.24 136.474 3.27241 5390.72 661.657 3.2452 
+CM dss 0 37 h poly3 -190.233 0.108647 2.13097e-05 -2.25374e-09 
+CR dss 0 37 h poly1 3.13669 0.000196224 
+
+# ROU: dss 0 37 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 37 l pakw 4 1985.17 59.541 2.84664 2372.72 122.061 2.86999 2462.66 136.474 2.8343 5787.18 661.657 3.09086 
+CM dss 0 37 l poly3 -276.052 0.177466 -5.06058e-06 4.1361e-10 
+CR dss 0 37 l poly1 2.80584 0.000426152 
+
+# ROU: dss 0 38 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 38 h pakw 4 1832.09 59.541 3.03613 2213.22 122.061 3.24745 2300.59 136.474 3.29204 5491.62 661.657 3.75868 
+CM dss 0 38 h poly3 -227.501 0.148236 5.6653e-06 -5.78161e-10 
+CR dss 0 38 h poly1 3.06783 0.00107388 
+
+# ROU: dss 0 38 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 38 l pakw 4 1950.52 59.541 2.86966 2339.28 122.061 2.85038 2429.5 136.474 2.76105 5690.6 661.657 3.38144 
+CM dss 0 38 l poly3 -272.146 0.18095 -6.95798e-06 7.02242e-10 
+CR dss 0 38 l poly1 2.72661 0.000962972 
+
+# ROU: dss 0 39 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 39 h pakw 4 1822.17 59.541 3.04328 2211.5 122.061 2.99648 2302.78 136.474 3.0213 5640.05 661.657 4.57158 
+CM dss 0 39 h poly3 -268.56 0.201806 -1.45092e-05 1.41328e-09 
+CR dss 0 39 h poly1 2.73865 0.0027055 
+
+# ROU: dss 0 39 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 39 l pakw 4 1950.43 59.541 2.85396 2341.4 122.061 2.82738 2432.09 136.474 2.868 5761.71 661.657 3.34687 
+CM dss 0 39 l poly3 -266.589 0.175314 -5.01979e-06 4.43255e-10 
+CR dss 0 39 l poly1 2.75818 0.000878706 
+
+# ROU: dss 0 40 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 40 h pakw 4 1813.35 59.541 3.01624 2192.38 122.061 3.10901 2280.29 136.474 2.89128 5496.42 661.657 4.14362 
+CM dss 0 40 h poly3 -252.737 0.180299 -5.40747e-06 5.2249e-10 
+CR dss 0 40 h poly1 2.79351 0.00199165 
+
+# ROU: dss 0 40 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 40 l pakw 4 1979.23 59.541 2.83335 2369.5 122.061 2.86118 2460.27 136.474 2.70247 5717.69 661.657 3.45685 
+CM dss 0 40 l poly3 -282.385 0.187808 -9.52864e-06 9.72185e-10 
+CR dss 0 40 l poly1 2.6775 0.00114636 
+
+# ROU: dss 0 41 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 41 h pakw 4 1864.14 59.541 2.99293 2235.71 122.061 3.07691 2320.27 136.474 3.27253 5425.21 661.657 3.34715 
+CM dss 0 41 h poly3 -219.789 0.128363 1.42639e-05 -1.47033e-09 
+CR dss 0 41 h poly1 3.05157 0.000472332 
+
+# ROU: dss 0 41 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 41 l pakw 4 1930.03 59.541 2.84665 2320.17 122.061 2.83187 2410.75 136.474 2.65295 5706.09 661.657 3.07317 
+CM dss 0 41 l poly3 -267.434 0.179949 -6.71453e-06 6.50777e-10 
+CR dss 0 41 l poly1 2.72201 0.000503953 
+
+# ROU: dss 0 42 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 42 h pakw 4 1850.54 59.541 2.94759 2230.13 122.061 3.02757 2317.44 136.474 3.05788 5515.79 661.657 3.92913 
+CM dss 0 42 h poly3 -239.338 0.157687 2.59013e-06 -2.83492e-10 
+CR dss 0 42 h poly1 2.83728 0.00164608 
+
+# ROU: dss 0 42 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 42 l pakw 4 1933.24 59.541 2.81622 2329.63 122.061 2.82208 2421.73 136.474 2.73967 5785.6 661.657 3.19052 
+CM dss 0 42 l poly3 -263.518 0.177707 -6.69089e-06 6.24787e-10 
+CR dss 0 42 l poly1 2.72043 0.000694092 
+
+# ROU: dss 0 43 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 43 h pakw 4 1925.76 59.541 3.03616 2312.41 122.061 3.07868 2403.23 136.474 2.7437 5681.43 661.657 5.2209 
+CM dss 0 43 h poly3 -298.92 0.214462 -1.81519e-05 1.78878e-09 
+CR dss 0 43 h poly1 2.53147 0.00387656 
+
+# ROU: dss 0 43 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 43 l pakw 4 2034.6 59.541 2.76657 2427.86 122.061 2.82386 2519.12 136.474 2.6993 5876.2 661.657 3.16904 
+CM dss 0 43 l poly3 -280.236 0.175947 -5.3158e-06 4.51178e-10 
+CR dss 0 43 l poly1 2.6876 0.000714487 
+
+# ROU: dss 0 44 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 44 h pakw 4 1817.88 59.541 2.88436 2205.16 122.061 3.00116 2295.77 136.474 3.0837 5548.29 661.657 5.06739 
+CM dss 0 44 h poly3 -267.754 0.201471 -1.45502e-05 1.51933e-09 
+CR dss 0 44 h poly1 2.60355 0.00368813 
+
+# ROU: dss 0 44 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 44 l pakw 4 1956.65 59.541 2.79787 2349.72 122.061 2.79489 2440.61 136.474 2.77645 5800.37 661.657 3.17725 
+CM dss 0 44 l poly3 -257.18 0.16461 -1.56934e-06 8.62941e-11 
+CR dss 0 44 l poly1 2.71904 0.000682001 
+
+# ROU: dss 0 45 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 45 h pakw 4 1861.78 59.541 2.8937 2246.71 122.061 3.07572 2335.08 136.474 2.94888 5553.35 661.657 3.81759 
+CM dss 0 45 h poly3 -233.361 0.151544 3.7957e-06 -3.71457e-10 
+CR dss 0 45 h poly1 2.80963 0.00152074 
+
+# ROU: dss 0 45 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 45 l pakw 4 2000.02 59.541 2.77426 2392.76 122.061 2.74133 2483.24 136.474 2.59306 5804.73 661.657 3.04432 
+CM dss 0 45 l poly3 -256.088 0.155967 1.21512e-06 -1.45939e-10 
+CR dss 0 45 l poly1 2.64037 0.000582529 
+
+# ROU: dss 0 46 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 46 h pakw 4 1865.05 59.541 2.91 2241.65 122.061 2.98878 2327.19 136.474 3.20314 5440.2 661.657 3.24244 
+CM dss 0 46 h poly3 -213.254 0.12365 1.48885e-05 -1.48072e-09 
+CR dss 0 46 h poly1 2.97422 0.000431965 
+
+# ROU: dss 0 46 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 46 l pakw 4 1904.13 59.541 2.79625 2296.92 122.061 2.81224 2387.64 136.474 2.82798 5711.9 661.657 3.07101 
+CM dss 0 46 l poly3 -247.132 0.163023 -1.20542e-06 9.09399e-11 
+CR dss 0 46 l poly1 2.76315 0.000464199 
+
+# ROU: dss 0 47 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 47 h pakw 4 1865.96 59.541 2.89724 2246.47 122.061 3.08974 2333.18 136.474 3.12189 5496.91 661.657 3.51514 
+CM dss 0 47 h poly3 -218.658 0.131647 1.14884e-05 -1.14677e-09 
+CR dss 0 47 h poly1 2.931 0.000908911 
+
+# ROU: dss 0 47 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 47 l pakw 4 1949.58 59.541 2.87902 2340.76 122.061 2.85057 2431.93 136.474 2.83029 5671.44 661.657 3.68508 
+CM dss 0 47 l poly3 -282.644 0.194457 -1.22218e-05 1.28583e-09 
+CR dss 0 47 l poly1 2.70217 0.00145482 
+
+# ROU: dss 0 48 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 48 h pakw 4 1831.19 59.541 2.94329 2211.49 122.061 3.11549 2298.41 136.474 3.1506 5446.51 661.657 3.68474 
+CM dss 0 48 h poly3 -222.162 0.142035 7.82662e-06 -7.54771e-10 
+CR dss 0 48 h poly1 2.94211 0.00114363 
+
+# ROU: dss 0 48 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 48 l pakw 4 1906.64 59.541 2.84944 2300.92 122.061 2.85535 2392.72 136.474 2.83319 5665.66 661.657 3.46842 
+CM dss 0 48 l poly3 -268.571 0.188219 -1.05987e-05 1.12205e-09 
+CR dss 0 48 l poly1 2.73202 0.0010965 
+
+# ROU: dss 0 49 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 49 h pakw 4 1848.26 59.541 3.0011 2230.5 122.061 3.1234 2319.18 136.474 3.19742 5547.87 661.657 3.90718 
+CM dss 0 49 h poly3 -257.565 0.180696 -6.05247e-06 6.03395e-10 
+CR dss 0 49 h poly1 2.94874 0.0014618 
+
+# ROU: dss 0 49 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 49 l pakw 4 1927.7 59.541 2.83232 2310.16 122.061 2.86066 2398.88 136.474 2.69342 5614.65 661.657 3.13086 
+CM dss 0 49 l poly3 -272.114 0.18211 -6.47819e-06 6.52599e-10 
+CR dss 0 49 l poly1 2.73297 0.000581014 
+
+# ROU: dss 0 50 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 50 h pakw 4 1852.6 59.541 2.98178 2245.61 122.061 3.09897 2336.98 136.474 3.13692 5643.86 661.657 4.25341 
+CM dss 0 50 h poly3 -254.431 0.181412 -7.93721e-06 8.06844e-10 
+CR dss 0 50 h poly1 2.84817 0.00212116 
+
+# ROU: dss 0 50 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 50 l pakw 4 1932.92 59.541 2.74316 2321.97 122.061 2.80468 2412.07 136.474 2.77132 5734.8 661.657 3.3671 
+CM dss 0 50 l poly3 -260.66 0.170918 -3.21162e-06 2.53231e-10 
+CR dss 0 50 l poly1 2.66182 0.00105902 
+
+# ROU: dss 0 51 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 51 h pakw 4 1891.71 59.541 2.98455 2271.28 122.061 3.10604 2359.29 136.474 2.94976 5565.63 661.657 3.78592 
+CM dss 0 51 h poly3 -266.391 0.180995 -5.64864e-06 5.54933e-10 
+CR dss 0 51 h poly1 2.86779 0.00137073 
+
+# ROU: dss 0 51 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 51 l pakw 4 1878.17 59.541 2.81843 2266.07 122.061 2.82891 2355.58 136.474 2.84157 5680.19 661.657 3.07847 
+CM dss 0 51 l poly3 -243.266 0.160663 5.64522e-07 -1.41239e-10 
+CR dss 0 51 l poly1 2.78288 0.000444743 
+
+# ROU: dss 0 52 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 52 h pakw 4 1872.41 59.541 3.03749 2263.87 122.061 3.0865 2356.24 136.474 3.0446 5656.47 661.657 4.93142 
+CM dss 0 52 h poly3 -294.004 0.222401 -2.21344e-05 2.24256e-09 
+CR dss 0 52 h poly1 2.71503 0.00327853 
+
+# ROU: dss 0 52 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 52 l pakw 4 1968.83 59.541 2.80019 2360.97 122.061 2.76468 2451.48 136.474 2.79957 5720.86 661.657 3.33826 
+CM dss 0 52 l poly3 -258.595 0.164374 -1.83698e-06 2.13693e-10 
+CR dss 0 52 l poly1 2.68737 0.000968856 
+
+# ROU: dss 0 53 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 53 h pakw 4 1825.42 59.541 3.10861 2215.37 122.061 3.06689 2307.18 136.474 2.99927 5657.78 661.657 4.13738 
+CM dss 0 53 h poly3 -277.852 0.212258 -1.82928e-05 1.78986e-09 
+CR dss 0 53 h poly1 2.86252 0.00187591 
+
+# ROU: dss 0 53 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 53 l pakw 4 2003.24 59.541 2.82113 2390.69 122.061 2.77315 2479.43 136.474 2.77191 5722.55 661.657 3.133 
+CM dss 0 53 l poly3 -245.458 0.141564 6.61424e-06 -6.38168e-10 
+CR dss 0 53 l poly1 2.72706 0.000599006 
+
+# ROU: dss 0 54 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 54 h pakw 4 1865.86 59.541 3.03322 2242.2 122.061 3.31943 2327.94 136.474 3.49076 5470.02 661.657 2.96474 
+CM dss 0 54 h poly3 -220.169 0.131106 1.24462e-05 -1.2692e-09 
+CR dss 0 54 h poly1 3.29227 -0.000448573 
+
+# ROU: dss 0 54 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 54 l pakw 4 1984.77 59.541 2.77847 2371.32 122.061 2.85406 2460.77 136.474 2.79182 5686.26 661.657 3.27384 
+CM dss 0 54 l poly3 -272.953 0.174621 -4.52647e-06 4.78775e-10 
+CR dss 0 54 l poly1 2.72014 0.000832388 
+
+# ROU: dss 0 55 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 55 h pakw 4 1845.84 59.541 3.11811 2234.84 122.061 3.23428 2326.2 136.474 2.99748 5599.2 661.657 4.39479 
+CM dss 0 55 h poly3 -280.128 0.21088 -1.79605e-05 1.84632e-09 
+CR dss 0 55 h poly1 2.87811 0.00223897 
+
+# ROU: dss 0 55 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 55 l pakw 4 1918.84 59.541 2.84877 2312.07 122.061 2.83795 2403.39 136.474 2.75413 5834.27 661.657 3.29588 
+CM dss 0 55 l poly3 -259.151 0.173179 -4.21873e-06 2.72105e-10 
+CR dss 0 55 l poly1 2.72631 0.000838815 
+
+# ROU: dss 0 56 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 56 h pakw 4 1824.62 59.541 3.17131 2215.24 122.061 3.16512 2308.12 136.474 2.86158 5565.93 661.657 4.86594 
+CM dss 0 56 h poly3 -302.881 0.243241 -3.02446e-05 3.17603e-09 
+CR dss 0 56 h poly1 2.7297 0.00308856 
+
+# ROU: dss 0 56 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 56 l pakw 4 1984.68 59.541 2.86671 2380.67 122.061 2.82093 2472.59 136.474 2.70129 5777.75 661.657 3.50901 
+CM dss 0 56 l poly3 -273.095 0.179249 -7.3579e-06 7.50322e-10 
+CR dss 0 56 l poly1 2.66647 0.001231 
+
+# ROU: dss 0 57 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 57 h pakw 4 1836.2 59.541 3.0911 2213.2 122.061 3.15363 2300.65 136.474 3.03954 5490.08 661.657 3.36653 
+CM dss 0 57 h poly3 -259.448 0.182669 -5.95785e-06 5.91084e-10 
+CR dss 0 57 h poly1 3.04371 0.000480532 
+
+# ROU: dss 0 57 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 57 l pakw 4 1921.11 59.541 2.85891 2315.62 122.061 2.85969 2406.93 136.474 2.81706 5736.85 661.657 3.39002 
+CM dss 0 57 l poly3 -254.284 0.168887 -3.51876e-06 3.3297e-10 
+CR dss 0 57 l poly1 2.74596 0.000956131 
+
+# ROU: dss 0 58 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 58 h pakw 4 1870.95 59.541 3.02147 2252.8 122.061 3.35169 2339.97 136.474 3.60424 5555.61 661.657 3.2829 
+CM dss 0 58 h poly3 -221.475 0.134333 1.05353e-05 -1.09837e-09 
+CR dss 0 58 h poly1 3.26835 8.4947e-05 
+
+# ROU: dss 0 58 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 58 l pakw 4 1963.43 59.541 2.89714 2355.57 122.061 2.9308 2446.69 136.474 2.82987 5768.71 661.657 3.55254 
+CM dss 0 58 l poly3 -273.125 0.180887 -7.15954e-06 6.74857e-10 
+CR dss 0 58 l poly1 2.76358 0.00116962 
+
+# ROU: dss 0 59 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 59 h pakw 4 1840.05 59.541 3.17069 2223.77 122.061 3.39911 2313.5 136.474 3.11073 5562.53 661.657 4.14184 
+CM dss 0 59 h poly3 -273.23 0.201343 -1.36865e-05 1.38508e-09 
+CR dss 0 59 h poly1 3.04731 0.00163501 
+
+# ROU: dss 0 59 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 59 l pakw 4 1912.16 59.541 2.77817 2300.62 122.061 2.81188 2390.37 136.474 2.89739 5667.18 661.657 3.25179 
+CM dss 0 59 l poly3 -253.443 0.166742 -1.94278e-06 1.78766e-10 
+CR dss 0 59 l poly1 2.74551 0.000770716 
+
+# ROU: dss 0 60 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 60 h pakw 4 1885.82 59.541 3.02198 2263.58 122.061 3.2041 2350.55 136.474 3.10815 5489.04 661.657 3.80803 
+CM dss 0 60 h poly3 -250.5 0.163504 4.74223e-07 2.36566e-12 
+CR dss 0 60 h poly1 2.97447 0.00126518 
+
+# ROU: dss 0 60 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 60 l pakw 4 1938.88 59.541 2.78594 2328.05 122.061 2.78988 2418.4 136.474 2.77421 5791.17 661.657 3.23392 
+CM dss 0 60 l poly3 -265.756 0.175122 -4.39402e-06 3.12092e-10 
+CR dss 0 60 l poly1 2.70074 0.000794964 
+
+# ROU: dss 0 61 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 61 h pakw 4 1912.46 59.541 3.01737 2286.1 122.061 3.2626 2370.07 136.474 3.45128 5460.97 661.657 3.0309 
+CM dss 0 61 h poly3 -190.335 0.0877279 2.78054e-05 -2.80185e-09 
+CR dss 0 61 h poly1 3.24091 -0.000273062 
+
+# ROU: dss 0 61 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 61 l pakw 4 1968.34 59.541 2.79571 2358.21 122.061 2.72869 2448.21 136.474 2.73102 5722.27 661.657 2.99503 
+CM dss 0 61 l poly3 -260.019 0.164703 -1.48894e-06 1.49199e-10 
+CR dss 0 61 l poly1 2.70912 0.000418017 
+
+# ROU: dss 0 62 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 62 h pakw 2 1543.64 59.541 6.69362e-310 1544.38 661.657 6.6929e-310 
+CR dss 0 62 h poly1 0.0574485 0.00975422 
+
+# ROU: dss 0 62 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 62 l pakw 4 1981.22 59.541 2.76939 2374.75 122.061 2.78386 2466.12 136.474 2.69603 5777.2 661.657 3.3004 
+CM dss 0 62 l poly3 -273.933 0.17938 -6.92322e-06 6.75987e-10 
+CR dss 0 62 l poly1 2.64922 0.000963426 
+
+# ROU: dss 0 63 h
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 63 h pakw 4 1791.52 59.541 2.90232 2174.56 122.061 3.05448 2262.64 136.474 3.03572 5455.74 661.657 3.85204 
+CM dss 0 63 h poly3 -227.941 0.157535 1.94258e-06 -1.70553e-10 
+CR dss 0 63 h poly1 2.83169 0.00154829 
+
+# ROU: dss 0 63 l
+# Method:FittedPeak BM:Linear ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay PSM:Gaussian
+CP dss 0 63 l pakw 4 1963.83 59.541 2.58331 2354.81 122.061 2.64627 2445.25 136.474 2.55747 5725.25 661.657 2.75214 
+CM dss 0 63 l poly3 -263.795 0.170262 -3.56765e-06 3.6021e-10 
+CR dss 0 63 l poly1 2.56544 0.000279773 

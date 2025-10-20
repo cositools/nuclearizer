@@ -31,7 +31,7 @@ clean:
 
 $(PRGS): $(BN)/%: %.cxx
 	@echo "Linking and compiling $(subst $(BN)/,,$@) ... Please stand by ... "
-	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(subst $(BN)/,,$@).cxx $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(@)
+	@$(CXX) $(CXXFLAGS) -Wno-vla-cxx-extension $(LDFLAGS) $(subst $(BN)/,,$@).cxx $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $(@)
 
 
 #

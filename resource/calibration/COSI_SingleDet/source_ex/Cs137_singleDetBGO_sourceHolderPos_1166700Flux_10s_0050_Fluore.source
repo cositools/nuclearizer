@@ -1,0 +1,46 @@
+#Global parameters
+Version					1
+Geometry				$(NUCLEARIZER)/../massmodel-cosi-em/COSISMEX.sim_BGOreading.geo.setup
+
+#Physics list
+PhysicsListEM										Livermore
+PhysicsListEMActiveFluorescence 					false
+
+#Output formats
+# StoreCalibrated										true
+StoreSimulationInfo									all
+# StoreSimulationInfoIonization						false
+# DiscretizeHits										true
+
+
+
+#Run 1: Cs137 source
+
+Run Cs137_NearField
+Cs137_NearField.FileName		/Users/parshad/Software/Nuclearizer_outputs/Single_Det/Cosima_sources/Cs137_singleDetBGO_sourceHolderPos_1166700Flux_10s_0050_Fluore
+Cs137_NearField.Time			10	
+
+# 662 keV
+Cs137_NearField.Source Cs137_DiskSource
+Cs137_DiskSource.ParticleType								1
+# Cs137_DiskSource.Beam									DiskSource {-22.86+16.52+7.6195+.5} {-17.145+1.905+.5} {-16.526+2*.3175+12.7+.5}  	0 1 0 	0 {0.318/2} 0.5 0 360
+Cs137_DiskSource.Beam									DiskSource 0 0 50  	0 0 -1 	0 {0.318/2} 0.5 0 360
+Cs137_DiskSource.Spectrum								Mono 661.66
+Cs137_DiskSource.Flux									1166700.0
+
+# 32.2 keV
+Cs137_NearField.Source Cs137_DiskSource_32keV
+Cs137_DiskSource_32keV.ParticleType							1
+# Cs137_DiskSource_32keV.Beam								DiskSource {-22.86+16.52+7.6195+.5} {-17.145+1.905+.5} {-16.526+2*.3175+12.7+.5}  	0 1 0 	0 {0.318/2} 0.5 0 360
+Cs137_DiskSource_32keV.Beam								DiskSource 0 0 50 	0 0 -1 	0 {0.318/2} 0.5 0 360
+Cs137_DiskSource_32keV.Spectrum								Mono 32.2
+Cs137_DiskSource_32keV.Flux								50236.73
+
+# 31.8 keV
+Cs137_NearField.Source Cs137_DiskSource_31keV
+Cs137_DiskSource_31keV.ParticleType							1
+# Cs137_DiskSource_31keV.Beam								DiskSource {-22.86+16.52+7.6195+.5} {-17.145+1.905+.5} {-16.526+2*.3175+12.7+.5}  	0 1 0 	0 {0.318/2} 0.5 0 360
+Cs137_DiskSource_31keV.Beam								DiskSource 0 0 50  	0 0 -1 	0 {0.318/2} 0.5 0 360
+Cs137_DiskSource_31keV.Spectrum								Mono 31.8
+Cs137_DiskSource_31keV.Flux								27314.50
+
