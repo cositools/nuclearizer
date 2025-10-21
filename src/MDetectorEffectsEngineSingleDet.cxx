@@ -482,7 +482,6 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       // cout << DetName << ": " << HT->GetDetectorType() << endl;
       
       if (HT->GetDetectorType() == 8) {
-        // cout << "Shield hit why?" << endl;
         m_NumShieldHitCounts += 1;
         MVector pos = HT->GetPosition();
           
@@ -564,12 +563,12 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     }
 
 
-    // for (int group=0; group<nShieldPanels; group++) {
-    //   // Calculates deadtime after each merged strip hit list.
-    //   if (!m_IsShieldDead) {
-    //     m_ShieldDeadtime[group] = dTimeASICs(m_ShieldHitID[group], true);
-    //   }
-    // }
+    for (int group=0; group<nShieldPanels; group++) {
+      // Calculates deadtime after each merged strip hit list.
+      if (!m_IsShieldDead) {
+        m_ShieldDeadtime[group] = dTimeASICs(m_ShieldHitID[group], true);
+      }
+    }
     // // End shield veto code
       
 

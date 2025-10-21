@@ -89,8 +89,30 @@ void MSubModuleShieldTrigger::Clear()
 
 bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Main data analysis routine, which updates the event to a new level 
+  MSimEvent* SimEvent = nullptr;
+  SimEvent = Event->GetSimulatedEvent();
 
+  MTime evt_time = SimEvent->GetTime();
+
+  int ShieldDetNum = 0;
+  double energy = 0;
+  int ShieldDetGroup;
+  m_HasVeto = false;
+
+  bool m_IsShieldDead = false;
+
+  for (unsigned int h=0; h<SimEvent->GetNHTs(); h++) {
+    MSimHT* HT = SimEvent->GetHTAt(h);
+
+    MDVolumeSequence* VS = HT->GetVolumeSequence();  // VF: to remove?
+    MDDetector* Detector = VS->GetDetector(); // VF: to remove?
+    MString DetName = Detector->GetName(); // VF: to remove?
+
+    if (HT->GetDetectorType() == 8) {
+      cout << "Shield Hit Detected" << endl;
+    }
+  }
+    
   return true;
 }
 

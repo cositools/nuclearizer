@@ -89,8 +89,7 @@ void MSubModuleStripTrigger::Clear()
 
 bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Main data analysis routine, which updates the event to a new level 
-
+  // Main data analysis routine, which updates the event to a new level
   return true;
 }
 
