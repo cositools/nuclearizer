@@ -72,11 +72,6 @@ class MModuleDepthCalibration2024 : public MModule
   //! Get filename for CTD->Depth splines
   MString GetSplinesFileName() const {return m_SplinesFile;}
 
-  //! Set filename for TAC Calibration
-  void SetTACCalFileName( const MString& FileName) {m_TACCalFile = FileName;}
-  //! Get filename for TAC Calibration
-  MString GetTACCalFileName() const {return m_TACCalFile;}
-
   //! Set whether the data came from the card cage at UCSD
   void SetUCSDOverride( bool Override ) {m_UCSDOverride = Override;}
   //! Get whether the data came from the card cage at UCSD
@@ -109,13 +104,11 @@ class MModuleDepthCalibration2024 : public MModule
   //! Load in the specified coefficients file
   bool LoadCoeffsFile(MString FName);
   //! Return the coefficients for a pixel
-  vector<double>* GetPixelCoeffs(int pixel_code);
+  vector<double>* GetPixelCoeffs(int PixelCode);
   //! Load the splines file
   bool LoadSplinesFile(MString FName);
-  //! Load the TAC Calibration file
-  bool LoadTACCalFile(MString FName);
   //! Get the timing FWHM noise for the specified pixel and Energy
-  double GetTimingNoiseFWHM(int pixel_code, double Energy);
+  double GetTimingNoiseFWHM(int PixelCode, double Energy);
 
 
   // private methods
@@ -127,12 +120,8 @@ class MModuleDepthCalibration2024 : public MModule
 
   unordered_map<int, vector<double>> m_Coeffs;
   double m_Coeffs_Energy;
-  unordered_map<int, unordered_map<int, vector<double>>> m_HVTACCal;
-  unordered_map<int, unordered_map<int, vector<double>>> m_LVTACCal;
   MString m_CoeffsFile;
   MString m_SplinesFile;
-  MString m_TACCalFile;
-  unordered_map<int, MString> m_DetectorNames;
   unordered_map<int, double> m_Thicknesses;
   unordered_map<int, int> m_NXStrips;
   unordered_map<int, int> m_NYStrips;
@@ -146,7 +135,9 @@ class MModuleDepthCalibration2024 : public MModule
   uint64_t m_Error5;
   uint64_t m_Error6;
   uint64_t m_ErrorSH;
-  vector<MDDetector*> m_Detectors;
+  uint64_t m_ErrorNullSH;
+  uint64_t m_ErrorNoE;
+  unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibrationUniversal* m_EnergyCalibration;
   MGUIExpoDepthCalibration2024* m_ExpoDepthCalibration;
@@ -156,7 +147,6 @@ class MModuleDepthCalibration2024 : public MModule
   unordered_map<int, vector<double>> m_DepthGrid;
   bool m_SplinesFileIsLoaded;
   bool m_CoeffsFileIsLoaded;
-  bool m_TACCalFileIsLoaded;
 
   // boolean for use with the card cage at UCSD since it tags all events as detector 11
   bool m_UCSDOverride;

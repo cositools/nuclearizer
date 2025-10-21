@@ -1242,16 +1242,16 @@ bool MBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn, ve
 		NewEvent->SetTime( NewTime );
 
 		if( E.TrigAndVetoInfo & 0x70 ){
-			NewEvent->SetVeto();
+			NewEvent->SetShieldVeto(); // Was ->SetVeto()
 		}
 
 		if( E.TrigAndVetoInfo & 0x10 ){
-			//had a guard ring 0 veto
-			NewEvent->SetGR0Veto(true);
+			//had a guard ring veto
+			NewEvent->SetGuardRingVeto(true);
 		}
 
 		if( E.TrigAndVetoInfo & 0x20 ){
-			NewEvent->SetGR1Veto(true);
+			NewEvent->SetGuardRingVeto(true);
 		}
 
 		if( E.TrigAndVetoInfo & 0x40 ){

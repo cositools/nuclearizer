@@ -66,8 +66,9 @@ void MGUIOptionsEventSaver::Create()
 {
   PreCreate();
 
-  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);  
-  
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 10, 10);
+  TGLayoutHints* RoaCheckButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 2, 2);
+
   m_Mode = new MGUIERBList(m_OptionsFrame, "Please select an output mode:");
   m_Mode->Add("*.roa file to use with melinator");
   m_Mode->Add("*.dat file containing all information");
@@ -88,6 +89,10 @@ void MGUIOptionsEventSaver::Create()
   m_SaveBadEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveBadEvents());
   m_OptionsFrame->AddFrame(m_SaveBadEvents, LabelLayout);
 
+  m_SaveVetoEvents = new TGCheckButton(m_OptionsFrame, "Save guard ring and shield veto events (Veto)", 1);
+  m_SaveVetoEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveVetoEvents());
+  m_OptionsFrame->AddFrame(m_SaveVetoEvents, LabelLayout);
+
   m_AddTimeTag = new TGCheckButton(m_OptionsFrame, "Add a unique time tag", 3);
   m_AddTimeTag->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetAddTimeTag());
   m_OptionsFrame->AddFrame(m_AddTimeTag, LabelLayout);
@@ -103,8 +108,50 @@ void MGUIOptionsEventSaver::Create()
     dynamic_cast<MModuleEventSaver*>(m_Module)->GetSplitFileTime().GetAsSystemSeconds(), true, 0l);
   if (m_SplitFile->IsOn() == false) m_SplitFileTime->SetEnabled(false);
   m_OptionsFrame->AddFrame(m_SplitFileTime, SplitFileTimeLayout);
-  
-  
+
+  TGLabel* ROAOptionsLabel = new TGLabel(m_OptionsFrame, "Special options for roa files:");
+  m_OptionsFrame->AddFrame(ROAOptionsLabel, LabelLayout);
+
+  m_RoaWithADCs = new TGCheckButton(m_OptionsFrame, "Include ADCs", 3);
+  m_RoaWithADCs->Associate(this);
+  m_RoaWithADCs->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithADCs());
+  m_OptionsFrame->AddFrame(m_RoaWithADCs, RoaCheckButtonLayout);
+
+  m_RoaWithTACs = new TGCheckButton(m_OptionsFrame, "Include TACs", 3);
+  m_RoaWithTACs->Associate(this);
+  m_RoaWithTACs->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithTACs());
+  m_OptionsFrame->AddFrame(m_RoaWithTACs, RoaCheckButtonLayout);
+
+  m_RoaWithEnergies = new TGCheckButton(m_OptionsFrame, "Include energies", 3);
+  m_RoaWithEnergies->Associate(this);
+  m_RoaWithEnergies->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithEnergies());
+  m_OptionsFrame->AddFrame(m_RoaWithEnergies, RoaCheckButtonLayout);
+
+  m_RoaWithTimings = new TGCheckButton(m_OptionsFrame, "Include timings", 3);
+  m_RoaWithTimings->Associate(this);
+  m_RoaWithTimings->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithTimings());
+  m_OptionsFrame->AddFrame(m_RoaWithTimings, RoaCheckButtonLayout);
+
+  m_RoaWithTemperatures = new TGCheckButton(m_OptionsFrame, "Include temperatures", 3);
+  m_RoaWithTemperatures->Associate(this);
+  m_RoaWithTemperatures->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithTemperatures());
+  m_OptionsFrame->AddFrame(m_RoaWithTemperatures, RoaCheckButtonLayout);
+
+  m_RoaWithFlags = new TGCheckButton(m_OptionsFrame, "Include flags", 3);
+  m_RoaWithFlags->Associate(this);
+  m_RoaWithFlags->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithFlags());
+  m_OptionsFrame->AddFrame(m_RoaWithFlags, RoaCheckButtonLayout);
+
+  m_RoaWithOrigins = new TGCheckButton(m_OptionsFrame, "Include origins", 3);
+  m_RoaWithOrigins->Associate(this);
+  m_RoaWithOrigins->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithOrigins());
+  m_OptionsFrame->AddFrame(m_RoaWithOrigins, RoaCheckButtonLayout);
+
+  m_RoaWithNearestNeighbors = new TGCheckButton(m_OptionsFrame, "Include nearest neighbor Hits", 3);
+  m_RoaWithNearestNeighbors->Associate(this);
+  m_RoaWithNearestNeighbors->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithNearestNeighbors());
+  m_OptionsFrame->AddFrame(m_RoaWithNearestNeighbors, RoaCheckButtonLayout);
+
   PostCreate();
 }
 
@@ -153,12 +200,24 @@ bool MGUIOptionsEventSaver::OnApply()
   // Modify this to store the data in the module!
 
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetMode(m_Mode->GetSelected());
+
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSaveBadEvents(m_SaveBadEvents->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetSaveVetoEvents(m_SaveVetoEvents->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetAddTimeTag(m_AddTimeTag->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSplitFile(m_SplitFile->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSplitFileTime(MTime(m_SplitFileTime->GetAsInt()));
-  
+
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithADCs(m_RoaWithADCs->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithTACs(m_RoaWithTACs->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithEnergies(m_RoaWithEnergies->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithTimings(m_RoaWithTimings->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithTemperatures(m_RoaWithTemperatures->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithFlags(m_RoaWithFlags->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithOrigins(m_RoaWithOrigins->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithNearestNeighbors(m_RoaWithNearestNeighbors->IsOn());
+
   return true;
 }
 

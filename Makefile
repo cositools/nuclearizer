@@ -38,14 +38,32 @@ MAKEFLAGS += --no-builtin-rules
 #.NOTPARALLEL: megalib
 .SILENT:
 
+
+#----------------------------------------------------------------
+# External libraries
+#
+
+H5CXXFLAGS =
+H5LIBS =
+ifeq ("$(shell pkg-config --exists hdf5 1>&2 2> /dev/null; echo $$?)", "0")
+        H5CXXFLAGS += $(shell pkg-config --cflags hdf5)
+        H5LIBS += $(shell pkg-config --libs hdf5)
+	H5LIBS += -lhdf5_cpp
+else
+	$(error "Unable to find HDF5 headers and libraries")
+endif
+
+
 #----------------------------------------------------------------
 # Definitions based on architecture and user options
 #
 
 CMD=""
-CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include
+CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include $(H5CXXFLAGS)
 # Comment this line out if you want to accept warnings
 #CXXFLAGS += -Werror -Wno-unused-variable
+
+LIBS += $(H5LIBS)
 
 # Names of the program
 NUCLEARIZER_PRG = $(BN)/nuclearizer
@@ -62,6 +80,7 @@ $(LB)/MAspectReconstruction.o \
 $(LB)/MHit.o \
 $(LB)/MTimeAndCoordinate.o \
 $(LB)/MStripHit.o \
+$(LB)/MStripMap.o \
 $(LB)/MGuardringHit.o \
 $(LB)/MDetectorEffectsEngineBalloon.o \
 $(LB)/MModuleLoaderSimulationsBalloon.o \
@@ -71,6 +90,8 @@ $(LB)/MGUIOptionsLoaderSimulations.o \
 $(LB)/MModuleLoaderMeasurements.o \
 $(LB)/MModuleLoaderMeasurementsROA.o \
 $(LB)/MGUIOptionsLoaderMeasurements.o \
+$(LB)/MModuleLoaderMeasurementsHDF.o \
+$(LB)/MGUIOptionsLoaderMeasurementsHDF.o \
 $(LB)/MBinaryFlightDataParser.o \
 $(LB)/MModuleReceiverBalloon.o \
 $(LB)/MGUIOptionsReceiverBalloon.o \
@@ -116,6 +137,11 @@ $(LB)/MModuleDiagnostics.o \
 $(LB)/MModuleDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnosticsEnergyPerStrip.o \
 $(LB)/MGUIExpoDiagnostics.o \
+$(LB)/MModuleTACcut.o \
+$(LB)/MGUIExpoTACcut.o \
+$(LB)/MGUIOptionsTACcut.o \
+$(LB)/MModuleNearestNeighbor.o \
+
 
 
 
@@ -190,6 +216,7 @@ $(FRETALON_DEP_FILES): $(LB)/%.d: $(FRETALON_DIR)/src/%.cxx
 $(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h $(LB)/%.d
 	@echo "Compiling $(subst $(FRETALON_DIR)/src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@echo "$(CXX) $(CXXFLAGS) -c $< -o $@"
 
 $(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
 	@echo "Creating dependencies for $(subst src/,,$<) ..."
@@ -203,7 +230,7 @@ $(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
 	@echo "Generating LinkDef ..."
 	@$(BN)/generatelinkdef -o $(NUCLEARIZER_LINKDEF) -i $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES)
 	@echo "Generating dictionary ..."
-	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
+	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include $(H5CXXFLAGS) -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
 	@mv $(NUCLEARIZER_ROOTPCM) $(LB)
 
 $(NUCLEARIZER_DICT_LIB): $(NUCLEARIZER_DICT)
@@ -217,6 +244,7 @@ $(NUCLEARIZER_SHARED_LIB): $(FRETALON_LIBS) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DI
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
+
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(NUCLEARIZER_DEP_FILES)

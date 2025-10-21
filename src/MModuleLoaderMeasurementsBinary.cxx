@@ -1,19 +1,19 @@
 /*
- * MModuleLoaderMeasurementsBinary.cxx
- *
- *
- * Copyright (C) by Alex Lowell & Andreas Zoglauer.
- * All rights reserved.
- *
- *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
- *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
- */
+* MModuleLoaderMeasurementsBinary.cxx
+*
+*
+* Copyright (C) by Alex Lowell & Andreas Zoglauer.
+* All rights reserved.
+*
+*
+* This code implementation is the intellectual property of
+* Andreas Zoglauer.
+*
+* By copying, distributing or modifying the Program (or any work
+* based on the Program) you indicate your acceptance of this statement,
+* and all its terms.
+*
+*/
 
 
 
@@ -84,11 +84,11 @@ MModuleLoaderMeasurementsBinary::MModuleLoaderMeasurementsBinary() : MModule(), 
 
 	m_IgnoreAspect = false; //this was set to true and was causing events to be pushed through the pipeline before aspect info was available for them AWL Sep 20 2016
 	m_FileIsDone = false;
-  
-  m_IsZipped = false;
+
+	m_IsZipped = false;
 	m_ZipFile = NULL;
 
-  m_ExpoAspectViewer = nullptr;
+	m_ExpoAspectViewer = nullptr;
 }
 
 
@@ -106,13 +106,13 @@ MModuleLoaderMeasurementsBinary::~MModuleLoaderMeasurementsBinary()
 
 void MModuleLoaderMeasurementsBinary::CreateExpos()
 {
-  // Create all expos
-  
-  if (HasExpos() == true) return;
-  
-  // Set the histogram display
-  m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
-  m_Expos.push_back(m_ExpoAspectViewer);
+	// Create all expos
+
+	if (HasExpos() == true) return;
+
+	// Set the histogram display
+	m_ExpoAspectViewer = new MGUIExpoAspectViewer(this);
+	m_Expos.push_back(m_ExpoAspectViewer);
 }
 
 
@@ -122,35 +122,35 @@ FILE * f_TOnly;
 
 bool MModuleLoaderMeasurementsBinary::OpenNextFile()
 {
-  //! Open next file, return false on error
+	//! Open next file, return false on error
 
-  ++m_OpenFileID;
-  if (m_OpenFileID >= (int) m_BinaryFileNames.size()) return false;
+	++m_OpenFileID;
+	if (m_OpenFileID >= (int) m_BinaryFileNames.size()) return false;
 
-  m_IsZipped = m_BinaryFileNames[m_OpenFileID].EndsWith(".gz");
-  
-  if (m_IsZipped == false) {
-    if (m_In.is_open()) m_In.close();
-    m_In.clear();
-  
-    m_In.open(m_BinaryFileNames[m_OpenFileID], ios::binary);
-    if (m_In.is_open() == false) {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
-      return false;
-    }
-  } else {
-    if (m_ZipFile != NULL) gzclose(m_ZipFile);
-    
-    m_ZipFile = gzopen(m_BinaryFileNames[m_OpenFileID], "rb");
-    if (m_ZipFile == NULL) {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
-      return false;
-    }
-  }
-  
-  if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Opened file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
-  
-  return true;
+	m_IsZipped = m_BinaryFileNames[m_OpenFileID].EndsWith(".gz");
+
+	if (m_IsZipped == false) {
+		if (m_In.is_open()) m_In.close();
+		m_In.clear();
+
+		m_In.open(m_BinaryFileNames[m_OpenFileID], ios::binary);
+		if (m_In.is_open() == false) {
+			if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+			return false;
+		}
+	} else {
+		if (m_ZipFile != NULL) gzclose(m_ZipFile);
+
+		m_ZipFile = gzopen(m_BinaryFileNames[m_OpenFileID], "rb");
+		if (m_ZipFile == NULL) {
+			if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+			return false;
+		}
+	}
+
+	if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Opened file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -161,70 +161,70 @@ bool MModuleLoaderMeasurementsBinary::Initialize()
 	// Initialize the module 
 
 	m_FileIsDone = false;
-  m_BinaryFileNames.clear();
-  m_OpenFileID = -1;
+	m_BinaryFileNames.clear();
+	m_OpenFileID = -1;
 
 	if (m_In.is_open()) m_In.close();
-  m_In.clear();
-  
-  // First check if we can read is as text file, look for "TYPE" or "IN" in the first 10 lines
-  ifstream in;
-  in.open(m_FileName);
-  if (in.is_open() == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_FileName<<"\""<<endl;
-    return false;
-  } 
+	m_In.clear();
 
-  MString Directory = "./";
-  MString Line;
-  int Counter = 10;
-  while (in.good()) {
-    Line.ReadLine(in);
-    --Counter;
-    if (Line.BeginsWith("DIR") == true) {
-      Line.RemoveInPlace(0, 4);
-      Directory = Line;
-      MFile::ExpandFileName(Directory);
-      Directory += "/";
-      Counter++;
-    } else if (Line.BeginsWith("IN") == true) {
-      Line.RemoveInPlace(0, 2);
-      Line.StripFrontInPlace();
-      if (Line.BeginsWith("/") == false) {
-        Line = Directory + Line;
-      }
-      if (MFile::Exists(Line) == false) {
-        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to find file \""<<Line<<"\""<<endl;
+	// First check if we can read is as text file, look for "TYPE" or "IN" in the first 10 lines
+	ifstream in;
+	in.open(m_FileName);
+	if (in.is_open() == false) {
+		if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open file \""<<m_FileName<<"\""<<endl;
+		return false;
+	}
 
-        return false;
-      }
-      m_BinaryFileNames.push_back(Line);
-      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Added file \""<<m_BinaryFileNames.back()<<"\""<<endl;
+	MString Directory = "./";
+	MString Line;
+	int Counter = 10;
+	while (in.good()) {
+		Line.ReadLine(in);
+		--Counter;
+		if (Line.BeginsWith("DIR") == true) {
+			Line.RemoveInPlace(0, 4);
+			Directory = Line;
+			MFile::ExpandFileName(Directory);
+			Directory += "/";
+			Counter++;
+		} else if (Line.BeginsWith("IN") == true) {
+			Line.RemoveInPlace(0, 2);
+			Line.StripFrontInPlace();
+			if (Line.BeginsWith("/") == false) {
+				Line = Directory + Line;
+			}
+			if (MFile::Exists(Line) == false) {
+				if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to find file \""<<Line<<"\""<<endl;
 
-      Counter++;
-    }
-    if (Counter == 0) break;
-  }
-  if (m_BinaryFileNames.size() == 0) {
-    m_BinaryFileNames.push_back(m_FileName);
-  }
-  
-  if (OpenNextFile() == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open the file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
-    return false;
-  }
+				return false;
+			}
+			m_BinaryFileNames.push_back(Line);
+			if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Added file \""<<m_BinaryFileNames.back()<<"\""<<endl;
 
-  // Set the housekeeping file name
-  m_HousekeepingFileName = m_FileName;
-  if (m_HousekeepingFileName.Last('.') != string::npos) {
-    m_HousekeepingFileName.RemoveInPlace(m_HousekeepingFileName.Last('.'), m_HousekeepingFileName.Length() - m_HousekeepingFileName.Last('.'));
-  }
-  m_HousekeepingFileName += ".hkp";
+			Counter++;
+		}
+		if (Counter == 0) break;
+	}
+	if (m_BinaryFileNames.size() == 0) {
+		m_BinaryFileNames.push_back(m_FileName);
+	}
+
+	if (OpenNextFile() == false) {
+		if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: unable to open the file \""<<m_BinaryFileNames[m_OpenFileID]<<"\""<<endl;
+		return false;
+	}
+
+	// Set the housekeeping file name
+	m_HousekeepingFileName = m_FileName;
+	if (m_HousekeepingFileName.Last('.') != string::npos) {
+		m_HousekeepingFileName.RemoveInPlace(m_HousekeepingFileName.Last('.'), m_HousekeepingFileName.Length() - m_HousekeepingFileName.Last('.'));
+	}
+	m_HousekeepingFileName += ".hkp";
 
 	if (MBinaryFlightDataParser::Initialize() == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to initilize flight data parser"<<endl;
-    return false;
-  }
+		if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to initilize flight data parser"<<endl;
+		return false;
+	}
 	//f_TOnly = fopen("TOnly.txt","w");
 
 	return MModule::Initialize();
@@ -250,9 +250,9 @@ bool MModuleLoaderMeasurementsBinary::IsReady()
 	//unsigned int Size = 1000000; // We have to do a large chunk here or the main thread is going to sleep...
 	//vector<char> Stream(Size);
 	// Check if we reached the end of the file, if yes, truncate, and set the OK flag to false
-	// when the end of the file is reached, we want to 
+	// when the end of the file is reached, we want to
 
-	//AWL restructured this so that we don't allocate/fill a 1MB array when there is nothing to read.  
+	//AWL restructured this so that we don't allocate/fill a 1MB array when there is nothing to read.
 
 	vector<char> Stream;
 	unsigned int Size = 1000000;
@@ -261,55 +261,55 @@ bool MModuleLoaderMeasurementsBinary::IsReady()
 		Read = 0;
 	} else {
 		Stream.reserve(Size);
-    if (m_IsZipped == false) {
-      m_In.read(&Stream[0], Size);
-      Read = m_In.gcount();
-    } else {
-      Read = 0;
-      for (unsigned int i = 0; i < Size; ++i) {
-        int c = gzgetc(m_ZipFile);
-        if (c == -1) {
-          break;
-        }
-        Stream[i] = (char) c;
-        Read = i+1;
-      }
-    }
+		if (m_IsZipped == false) {
+			m_In.read(&Stream[0], Size);
+			Read = m_In.gcount();
+		} else {
+			Read = 0;
+			for (unsigned int i = 0; i < Size; ++i) {
+				int c = gzgetc(m_ZipFile);
+				if (c == -1) {
+					break;
+				}
+				Stream[i] = (char) c;
+				Read = i+1;
+			}
+		}
 	}
 
 	// If we do not read anything, try again with the next file
-  if (Read == 0) {
-    if (OpenNextFile() == true) {
-      Stream.reserve(Size);
-      if (m_IsZipped == false) {
-        m_In.read(&Stream[0], Size);
-        Read = m_In.gcount();
-      } else {
-        Read = 0;
-        for (unsigned int i = 0; i < Size; ++i) {
-          int c = gzgetc(m_ZipFile);
-          if (c == -1) {
-            break;
-          }
-          Stream[i] = (char) c;
-          Read = i+1;
-        }
-      }  
-    }
-  }
-
-	/*
-		if (Read < Size) {
-		m_IsOK = false;
+	if (Read == 0) {
+		if (OpenNextFile() == true) {
+			Stream.reserve(Size);
+			if (m_IsZipped == false) {
+				m_In.read(&Stream[0], Size);
+				Read = m_In.gcount();
+			} else {
+				Read = 0;
+				for (unsigned int i = 0; i < Size; ++i) {
+					int c = gzgetc(m_ZipFile);
+					if (c == -1) {
+						break;
+					}
+					Stream[i] = (char) c;
+					Read = i+1;
+				}
+			}
 		}
-	 */
+	}
 
 	/*
-	if (Read < Size) {
-		m_FileIsDone = true;
-		SetIsDone(true);
-	}
-	*/
+	*	i f (Read < Size) {                                                               *
+	*	m_IsOK = false;
+}
+*/
+
+	/*
+	*	i f (Read < Size) {                                                                *
+	*	m_FileIsDone = true;
+	*	SetIsDone(true);
+}
+*/
 
 	if (Read == 0) {
 		m_FileIsDone = true;
@@ -330,7 +330,7 @@ bool MModuleLoaderMeasurementsBinary::IsReady()
 	}
 
 	//cout<<"Received: "<<Received.size()<<endl;
-	
+
 	return ParseData(Received);
 }
 
@@ -353,11 +353,11 @@ bool MModuleLoaderMeasurementsBinary::AnalyzeEvent(MReadOutAssembly* Event)
 	NewEvent = m_Events[0];
 	m_Events.pop_front();
 	/*
-		if(NewEvent->GetCL() < LastCL){
-		cout << LastCL << "--->" << NewEvent->GetCL() << endl;
-		}
-		LastCL = NewEvent->GetCL();
-	 */
+	*	i f(NewEvent->GetCL() < LastCL){                                                  *
+	*	cout << LastCL << "--->" << NewEvent->GetCL() << endl;
+}
+LastCL = NewEvent->GetCL();
+*/
 
 	//print TOnly info for these events
 	/*
@@ -424,7 +424,7 @@ bool MModuleLoaderMeasurementsBinary::AnalyzeEvent(MReadOutAssembly* Event)
 		}
 		//cout<<"Adding: "<<NewEvent->GetTime()<<":"<<A->GetHeading()<<endl;
 		if (m_ExpoAspectViewer != nullptr) {
-		  m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
+			m_ExpoAspectViewer->AddHeading(NewEvent->GetTime(), A->GetHeading(), A->GetGPS_or_magnetometer(), A->GetBRMS(), A->GetAttFlag());
 		}
 		Event->SetAnalysisProgress(MAssembly::c_Aspect);
 	} else {
@@ -432,9 +432,9 @@ bool MModuleLoaderMeasurementsBinary::AnalyzeEvent(MReadOutAssembly* Event)
 			Event->SetAspectIncomplete(true);
 		}
 	}
-	Event->SetAnalysisProgress(MAssembly::c_EventLoader | 
-			MAssembly::c_EventLoaderMeasurement | 
-			MAssembly::c_EventOrdering);
+	Event->SetAnalysisProgress(MAssembly::c_EventLoader |
+	MAssembly::c_EventLoaderMeasurement |
+	MAssembly::c_EventOrdering);
 
 	if (Event->GetTime().GetAsSystemSeconds() == 0) {
 		Event->SetTimeIncomplete(true);

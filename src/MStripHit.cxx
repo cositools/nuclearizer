@@ -81,8 +81,18 @@ void MStripHit::Clear()
   m_ADCUnits = 0;
   m_Energy = 0;
   m_EnergyResolution = 0;
+  m_TAC = 0;
+  m_TACResolution = 0;
   m_Timing = 0;
+  m_TimingResolution = 0;
   m_PreampTemp = 0;
+
+  m_IsGuardRing = false;
+  m_IsNearestNeighbor = false;
+
+  m_HasFastTiming = false;
+  m_HasCalibratedTiming = false;
+
   m_Origins.clear();
 }
 
@@ -92,53 +102,27 @@ void MStripHit::Clear()
 
 bool MStripHit::Parse(MString& Line, int Version)
 {
-	const char* line = Line.Data();
-	if( line[0] == 'S' && line[1] == 'H' ){
-		int det_id, strip_id, has_triggered, timing, un_adc, adc;
-		float energy, energy_res;
-		char pos_strip;
-		sscanf(&line[3],"%d %c %d %d %d %d %d %f %f",&det_id,
-			  															   &pos_strip,
-																			&strip_id,
-																			&has_triggered,
-																			&timing,
-																			&un_adc,
-																			&adc,
-																			&energy,
-																			&energy_res);
-		SetDetectorID(det_id);
-		pos_strip == 'p' ? IsLowVoltageStrip(true) : IsLowVoltageStrip(false);
-		SetStripID(strip_id);
-		has_triggered == 0 ? HasTriggered(false) : HasTriggered(true);
-		SetTiming((double)timing);
-		SetUncorrectedADCUnits((double)un_adc);
-		SetADCUnits((double)adc);
-		SetEnergy(energy);
-		SetEnergyResolution(energy_res);
-		return true;
-	} else {
-		return false;
-	}
-
-  // to be written later 
-/*
-  vector<MString> tokens = Line.Tokenize(" ");
-  if( tokens.size() >= 10 ){
-	  SetDetectorID(tokens.at(1).ToInt());
-	  tokens.at(2) == "p" ? IsLowVoltageStrip(true) : IsLowVoltageStrip(false);
-	  SetStripID(tokens.at(3).ToInt());
-	  tokens.at(4) == "0" ? HasTriggered(false) : HasTriggered(true);
-	  SetTiming( tokens.at(5).ToDouble() );
-	  SetUncorrectedADCUnits( tokens.at(6).ToDouble() );
-	  SetADCUnits( tokens.at(7).ToDouble() );
-	  SetEnergy( tokens.at(8).ToDouble() );
-	  SetEnergyResolution( tokens.at(9).ToDouble() );
-	  int det_id, pos_strip, strip_id
-	  return true;
+  const char* line = Line.Data();
+  if (line[0] == 'S' && line[1] == 'H') {
+    int det_id, strip_id, has_triggered, timing, un_adc, adc;
+    float energy, energy_res;
+    char pos_strip;
+    unsigned int flags;
+    sscanf(&line[3],"%d %c %d %d %d %d %d %f %f %u", &det_id, &pos_strip, &strip_id, &has_triggered,  &timing, &un_adc, &adc, &energy, &energy_res, &flags);
+    SetDetectorID(det_id);
+    pos_strip == 'l' ? IsLowVoltageStrip(true) : IsLowVoltageStrip(false);
+    SetStripID(strip_id);
+    has_triggered == 0 ? HasTriggered(false) : HasTriggered(true);
+    SetTiming((double)timing);
+    SetUncorrectedADCUnits((double)un_adc);
+    SetADCUnits((double)adc);
+    SetEnergy(energy);
+    SetEnergyResolution(energy_res);
+    ParseFlags(flags);
+    return true;
   } else {
-	  return false;
+    return false;
   }
-  */
 }
 
 
@@ -170,7 +154,8 @@ bool MStripHit::StreamDat(ostream& S, int Version)
    <<m_UncorrectedADCUnits<<" "
    <<m_ADCUnits<<" "
    <<m_Energy<<" "
-   <<m_EnergyResolution<<endl;
+   <<m_EnergyResolution<<" "
+   <<MakeFlags()<<endl;
  
   return true;
 }
@@ -181,22 +166,88 @@ bool MStripHit::StreamDat(ostream& S, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MStripHit::StreamRoa(ostream& S)
+void MStripHit::StreamRoa(ostream& S, bool WithADC, bool WithTAC, bool WithEnergy, bool WithTiming, bool WithTemperature, bool WithFlags, bool WithOrigins)
 {
   //! Stream the content in MEGAlib's evta format 
 
   S<<"UH " 
    <<m_ReadOutElement->GetDetectorID()<<" "
    <<m_ReadOutElement->GetStripID()<<" "
-   <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
-   <<m_ADCUnits<<" "
-   <<m_Timing<<" "
-   <<m_PreampTemp<<" ";
-  for (unsigned int i = 0; i < m_Origins.size(); ++i) {
-    if (i != 0) S<<";";
-    S<<m_Origins[i]; 
+   <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" ";
+  if (WithADC == true) {
+    S<<m_ADCUnits<<" ";
+  }
+  if (WithTAC == true) {
+    S<<m_TAC<<" ";
+  }
+  if (WithTemperature == true) {
+    S<<m_PreampTemp<<" ";
+  }
+  if (WithEnergy == true) {
+    S<<m_Energy<<" ";
+  }
+  if (WithTiming == true) {
+    S<<m_Timing<<" ";
+  }
+  if (WithFlags == true) {
+    S<<MakeFlags()<<" ";
+  }
+  if (WithOrigins == true) {
+    if (m_Origins.size() == 0) {
+      S<<"- ";
+    } else {
+      for (unsigned int i = 0; i < m_Origins.size(); ++i) {
+        if (i != 0) S<<";";
+        S<<m_Origins[i];
+      }
+    }
   }
   S<<endl;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MStripHit::MakeFlags()
+{
+  //! Return flags to indicate the type of strip hit
+  //! Currently, 2 bits:
+  //!   v = Has fast timing
+  //!    v = Is a nearest neighbor
+  //!     v = Is a guard ring
+  //! 0b111u
+
+  unsigned int Flags = 0b000u;
+  if (m_IsGuardRing == true) {
+    Flags = Flags | 0b001u;
+  }
+  if (m_IsNearestNeighbor == true) {
+    Flags = Flags | 0b010u;
+  }
+  if (m_HasFastTiming == true) {
+    Flags = Flags | 0b100u;
+  }
+
+  return Flags;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MStripHit::ParseFlags(unsigned int Flags)
+{
+  //! Set internal booleans according to flag
+  //! Currently, 3 bits:
+  //!   v = Has fast timing
+  //!    v = Is a nearest neighbor
+  //!     v = Is a guard ring
+  //! 0b111u
+
+  IsGuardRing(Flags & 0b001u);
+  IsNearestNeighbor(Flags & 0b010u);
+  HasFastTiming(Flags & 0b100u);
 }
 
 

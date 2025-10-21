@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsDepthCalibration.h
+ * MGUIOptionsLoaderMeasurementsHDF.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsDepthCalibration2024__
-#define __MGUIOptionsDepthCalibration2024__
+#ifndef __MGUIOptionsLoaderMeasurementsHDF__
+#define __MGUIOptionsLoaderMeasurementsHDF__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,14 +41,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsDepthCalibration2024 : public MGUIOptions
+//! UI settings for the HDF measurements loader
+class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsDepthCalibration2024(MModule* Module);
+  MGUIOptionsLoaderMeasurementsHDF(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsDepthCalibration2024();
+  virtual ~MGUIOptionsLoaderMeasurementsHDF();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -60,7 +61,7 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -68,19 +69,20 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
 
   // private members:
  private:
-  //! Select which coefficients file (stretching factors and offsets) to load
-  MGUIEFileSelector* m_CoeffsFileSelector;
+  //! Select which file to load
+  MGUIEFileSelector* m_FileSelectorHDF;
 
-  //! Select spline file to load, splines will convert CTD->Depth
-  MGUIEFileSelector* m_SplinesFileSelector;
+  //! Check button for switch between loading continuation files or not
+  TGCheckButton* m_LoadContinuationFiles;
 
-  //! Check button if working with the Card Cage at UCSD
-  TGCheckButton* m_UCSDOverride;
+  //! Select which file to load
+  MGUIEFileSelector* m_FileSelectorStripMap;
+
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsDepthCalibration2024, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderMeasurementsHDF, 1) // basic class for dialog windows
 #endif
 
 };

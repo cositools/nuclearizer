@@ -46,7 +46,7 @@ class MGUIOptionsLoaderMeasurements : public MGUIOptions
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsLoaderMeasurements(MModule* Module);
+  MGUIOptionsLoaderMeasurements(MModule* Module, MString FileType);
   //! Default destructor
   virtual ~MGUIOptionsLoaderMeasurements();
 
@@ -71,6 +71,8 @@ class MGUIOptionsLoaderMeasurements : public MGUIOptions
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
 
+  //! The file type to load
+  MString m_FileType;
 
 #ifdef ___CLING___
  public:
