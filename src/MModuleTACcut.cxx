@@ -222,8 +222,15 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
         double DisableTime = m_TACCut[DetID][m_SideToIndex[Side]][StripID][2];
         double FlagToEnDelay = m_TACCut[DetID][m_SideToIndex[Side]][StripID][3];
         double FlagDelay = m_TACCut[DetID][m_SideToIndex[Side]][StripID][5];
-        double TotalOffset = ShapingOffset + DisableTime + FlagToEnDelay + FlagDelay;
-        if ((SHTiming > TotalOffset + CoincidenceWindow) || (SHTiming < TotalOffset) || (SHTiming < MaxTAC - CoincidenceWindow)) {
+        // double TotalOffset = ShapingOffset + DisableTime + FlagToEnDelay + FlagDelay; // Changing the total Offset based on data instead
+        double TotalOffset = 3000;
+        double HardCoincidenceWindow = 600; // #TODO: Subject to change pending more analysis
+        // if ((SHTiming > TotalOffset + CoincidenceWindow) || (SHTiming < TotalOffset) || (SHTiming < MaxTAC - CoincidenceWindow)) {
+        //   Passed = false;
+        // } else if (HasExpos()==true) {
+        //   m_ExpoTACcut->AddTAC(DetID, SHTiming);
+        // }
+        if ((SHTiming < TotalOffset) || (SHTiming < MaxTAC - HardCoincidenceWindow)) { //Eliminating the upper boundary condition and just using one cut based on the coincidence window
           Passed = false;
         } else if (HasExpos()==true) {
           m_ExpoTACcut->AddTAC(DetID, SHTiming);
