@@ -223,8 +223,18 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
         double FlagToEnDelay = m_TACCut[DetID][m_SideToIndex[Side]][StripID][3];
         double FlagDelay = m_TACCut[DetID][m_SideToIndex[Side]][StripID][5];
         // double TotalOffset = ShapingOffset + DisableTime + FlagToEnDelay + FlagDelay; // Changing the total Offset based on data instead
-        double TotalOffset = 3000;
-        double HardCoincidenceWindow = 600; // #TODO: Subject to change pending more analysis
+        // TotalOffset: Earliest time (in ns) after which valid timing hits can appear, start of the allowed timing window
+        constexpr double TotalOffset = 3000;
+        // TODO
+        // FIXME: Match TotalOffset with timing contributions from electronics
+        // HACK: Temporary number, rough estimate
+        // TODO(@NicoleRodriguezCavero)
+        // HardCoincidenceWindow: Width of the valid coincidence region (after TotalOffset) during which multiple strip hits are considered part of the same event
+        constexpr double HardCoincidenceWindow = 600;
+        // TODO
+        // FIXME: Coincidence window subject to change pending more analysis
+        // HACK: Temporary number, rough estimate
+        // TODO(@NicoleRodriguezCavero)
         // if ((SHTiming > TotalOffset + CoincidenceWindow) || (SHTiming < TotalOffset) || (SHTiming < MaxTAC - CoincidenceWindow)) {
         //   Passed = false;
         // } else if (HasExpos()==true) {
