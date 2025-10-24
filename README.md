@@ -66,5 +66,20 @@ In case you need to debug nuclearizer do the following:
 
 Feel free to report all issues in GitHub's issue tracker.
 
+## Acknowledgements
+
+We want to thank all the contributors not listed in GitHub contributor list:
+
++ Mark Bandstra
++ Eric Bellm
++ Alan Chiu
++ Daniel Perez
++ Carolyn Kierans
++ Clio Sleator
++ Alex Lowell
++ Hadar Lazar
++ Jacqueline Beechert
++ plus everybody listed on GitHub
+
 
 
