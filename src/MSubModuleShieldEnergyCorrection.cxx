@@ -2,12 +2,12 @@
  * MSubModuleShieldEnergyCorrection.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Valentina Fioretti.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * Andreas Zoglauer, Valentina Fioretti.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -45,11 +45,13 @@ ClassImp(MSubModuleShieldEnergyCorrection)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSubModuleShieldEnergyCorrection::MSubModuleShieldEnergyCorrection() : MSubModule()
+MSubModuleShieldEnergyCorrection::MSubModuleShieldEnergyCorrection()
+    : MSubModule()
 {
   // Construct an instance of MSubModuleShieldEnergyCorrection
 
   m_Name = "DEE shield energy correction module";
+  m_ShieldEnergyCorrectionFileName = "";
 }
 
 
@@ -89,11 +91,11 @@ void MSubModuleShieldEnergyCorrection::Clear()
 
 bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Main data analysis routine, which updates the event to a new level 
+  // Main data analysis routine, which updates the event to a new level
 
   // Set the energy
   list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
-  for (MDEECrystalHit& CH: Hits) {
+  for (MDEECrystalHit& CH : Hits) {
     CH.m_Energy = CH.m_SimulatedEnergy;
   }
 
@@ -119,7 +121,7 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 
 void MSubModuleShieldEnergyCorrection::Finalize()
 {
-  // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
+  // Finalize the analysis - do all cleanup, i.e., undo Initialize()
 
   MSubModule::Finalize();
 }
@@ -132,12 +134,11 @@ bool MSubModuleShieldEnergyCorrection::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
-  /*
-  MXmlNode* SomeTagNode = Node->GetNode("SomeTag");
-  if (SomeTagNode != 0) {
-    m_SomeTagValue = SomeTagNode->GetValue();
+  MXmlNode* ShieldEnergyCorrectionFileName = Node->GetNode("ShieldEnergyCorrectionFileName");
+  if (ShieldEnergyCorrectionFileName != 0) {
+    m_ShieldEnergyCorrectionFileName = ShieldEnergyCorrectionFileName->GetValue();
   }
-  */
+
 
   return true;
 }
@@ -149,10 +150,9 @@ bool MSubModuleShieldEnergyCorrection::ReadXmlConfiguration(MXmlNode* Node)
 MXmlNode* MSubModuleShieldEnergyCorrection::CreateXmlConfiguration(MXmlNode* Node)
 {
   //! Create an XML node tree from the configuration
-  
-  /*
-  MXmlNode* SomeTagNode = new MXmlNode(Node, "SomeTag", "SomeValue");
-  */
+
+  new MXmlNode(Node, "ShieldEnergyCorrectionFileName", m_ShieldEnergyCorrectionFileName);
+
 
   return Node;
 }

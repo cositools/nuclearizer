@@ -44,7 +44,7 @@ ClassImp(MGUIOptionsDEESMEX)
 
 
 MGUIOptionsDEESMEX::MGUIOptionsDEESMEX(MModule* Module)
-  : MGUIOptions(Module)
+    : MGUIOptions(Module)
 {
   // standard constructor
 }
@@ -55,7 +55,7 @@ MGUIOptionsDEESMEX::MGUIOptionsDEESMEX(MModule* Module)
 
 MGUIOptionsDEESMEX::~MGUIOptionsDEESMEX()
 {
-  // kDeepCleanup is activated 
+  // kDeepCleanup is activated
 }
 
 
@@ -69,7 +69,7 @@ void MGUIOptionsDEESMEX::Create()
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 
   m_EnergyCalibrationFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
-    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnergyCalibrationFileName());
+                                                          dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnergyCalibrationFileName());
   m_EnergyCalibrationFileSelector->SetFileType("Ecal file", "*.ecal");
   m_OptionsFrame->AddFrame(m_EnergyCalibrationFileSelector, LabelLayout);
 
@@ -125,12 +125,13 @@ void MGUIOptionsDEESMEX::Create()
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationSplinesFileName());
   m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.ctd");
   m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
-
-  // ACS DEE energy correction file
-  m_ACSEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy correction file for the ACS DEE:",
-      dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetACSEnergyCorrectionFileName());
-  m_ACSEnergyCorrectionFileSelector->SetFileType("ACS DEE energy correction file", "*.txt");
-  m_OptionsFrame->AddFrame(m_ACSEnergyCorrectionFileSelector, LabelLayout);
+ */
+  // shield energy correction file
+  m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy correction file for the Shield DEE:",
+                                                               dynamic_cast<MModuleDEESMEX*>(m_Module)->GetShieldEnergyCorrectionFileName());
+  m_ShieldEnergyCorrectionFileSelector->SetFileType("Shield DEE energy correction file", "*.txt");
+  m_OptionsFrame->AddFrame(m_ShieldEnergyCorrectionFileSelector, LabelLayout);
+  /*
 
   m_ApplyFudgeFactorSelector = new TGCheckButton(m_OptionsFrame, "Apply fudge factor to better match fluxes", 1);
   m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetApplyFudgeFactor());
@@ -149,7 +150,7 @@ bool MGUIOptionsDEESMEX::ProcessMessage(long Message, long Parameter1, long Para
   // Modify here if you have more buttons
 
   bool Status = true;
-  
+
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -164,7 +165,7 @@ bool MGUIOptionsDEESMEX::ProcessMessage(long Message, long Parameter1, long Para
   default:
     break;
   }
-  
+
   if (Status == false) {
     return false;
   }
@@ -180,7 +181,7 @@ bool MGUIOptionsDEESMEX::ProcessMessage(long Message, long Parameter1, long Para
 bool MGUIOptionsDEESMEX::OnApply()
 {
   // Modify this to store the data in the module!
-  
+
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
 
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
