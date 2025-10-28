@@ -98,11 +98,11 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   for (MDEEStripHit& SH: LVHits) {
     MVector Pos = SH.m_SimulatedPositionInDetector;
     int ID = (Pos.X() + 7.4/2) / (7.4/64);
-    if (ID > 0 && ID < 64) {
+    if (ID >= 0 && ID < 64 && Pos.X() >= -7.4/2) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
-      SH.m_ROE.SetStripID(65);
+      SH.m_ROE.SetStripID(64);
       SH.m_IsGuardRing = true;
     }
     SH.m_Energy = SH.m_SimulatedEnergy;
@@ -112,11 +112,11 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   for (MDEEStripHit& SH: HVHits) {
     MVector Pos = SH.m_SimulatedPositionInDetector;
     int ID = (Pos.Y() + 7.4/2) / (7.4/64);
-    if (ID > 0 && ID < 64) {
+    if (ID >= 0 && ID < 64 && Pos.Y() >= -7.4/2) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
-      SH.m_ROE.SetStripID(65);
+      SH.m_ROE.SetStripID(64);
       SH.m_IsGuardRing = true;
     }
     SH.m_Energy = SH.m_SimulatedEnergy;
