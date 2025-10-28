@@ -54,6 +54,7 @@ using namespace std;
 // Nuclearizer libs:
 #include "MFretalonRegistry.h"
 #include "MReadOutDataTAC.h"
+#include "MReadOutDataEnergy.h"
 #include "MReadOutAssembly.h"
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
@@ -104,6 +105,9 @@ MAssembly::MAssembly()
   //! Register new read out data:
   MReadOutDataTAC TAC;
   MFretalonRegistry::Instance().Register(TAC);
+
+  MReadOutDataEnergy Energy;
+  MFretalonRegistry::Instance().Register(Energy);
 
   // Create the supervisor
   m_Supervisor = MSupervisor::GetSupervisor();

@@ -40,6 +40,7 @@
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataTAC.h"
+#include "MReadOutDataEnergy.h"
 #include "MReadOutDataOrigins.h"
 
 
@@ -195,6 +196,8 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
       dynamic_cast<const MReadOutDataTiming*>(RO.GetReadOutData().Get(MReadOutDataTiming::m_TypeID));
     const MReadOutDataTAC* TAC =
       dynamic_cast<const MReadOutDataTAC*>(RO.GetReadOutData().Get(MReadOutDataTAC::m_TypeID));
+    const MReadOutDataEnergy* Energy =
+      dynamic_cast<const MReadOutDataEnergy*>(RO.GetReadOutData().Get(MReadOutDataEnergy::m_TypeID));
     const MReadOutDataOrigins* Origins =
       dynamic_cast<const MReadOutDataOrigins*>(RO.GetReadOutData().Get(MReadOutDataOrigins::m_TypeID));
     
@@ -209,6 +212,9 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
     }
     if (TAC != nullptr) {
       SH->SetTAC(TAC->GetTAC());
+    }
+    if (Energy != nullptr) {
+      SH->SetEnergy(Energy->GetEnergy());
     }
     if (ADC != nullptr) {
       SH->SetADCUnits(ADC->GetADCValue());
