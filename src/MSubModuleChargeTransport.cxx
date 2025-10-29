@@ -97,8 +97,11 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
   for (MDEEStripHit& SH: LVHits) {
     MVector Pos = SH.m_SimulatedPositionInDetector;
-    int ID = (Pos.X() + 7.4/2) / (7.4/64);
-    if (ID >= 0 && ID < 64 && Pos.X() >= -7.4/2) {
+
+    // Calculate LV strip ID by rounding down intentionally to avoid truncation towards zero
+    int ID = static_cast<int>(std::floor((Pos.X() + 7.4/2.0) / (7.4/64.0)));
+
+    if (ID >= 0 && ID < 64) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
@@ -111,8 +114,11 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   list<MDEEStripHit>& HVHits = Event->GetDEEStripHitHVListReference();
   for (MDEEStripHit& SH: HVHits) {
     MVector Pos = SH.m_SimulatedPositionInDetector;
-    int ID = (Pos.Y() + 7.4/2) / (7.4/64);
-    if (ID >= 0 && ID < 64 && Pos.Y() >= -7.4/2) {
+
+    // Calculate HV strip ID by rounding down intentionally to avoid truncation towards zero
+    int ID = static_cast<int>(std::floor((Pos.Y() + 7.4/2.0) / (7.4/64.0)));
+
+    if (ID >= 0 && ID < 64) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
