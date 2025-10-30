@@ -27,8 +27,10 @@
 #include "MSubModuleChargeTransport.h"
 
 // Standard libs:
+#include <cmath>
 
 // ROOT libs:
+#include "TMath.h"
 
 // MEGAlib libs:
 #include "MSubModule.h"
@@ -156,9 +158,23 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level 
 
-  // Dummy code:
+  // Define physical constants
+  constexpr double kB = TMath::K(); // unit: J/K
+  constexpr double ElementaryCharge = TMath::Qe(); // unit: C
+  constexpr double IonizationEnergy = 0.00295; // unit: keV
+  constexpr double Epsilon0 = 8.85418781762039e-14; // unit: F/cm
+  constexpr double EpsilonR = 16.0; // in germanium, unitless
+
+  // TODO: Read bias voltage and temperature of the detector from a file
+  constexpr double BiasVoltage = 600.0; // unit: V
+  constexpr double Temperature = 87.0; // unit: K
+
+  // TODO: Implement energy-dependent initial charge-cloud sizes
+  constexpr double InitialChargeCloudSize = 0.02; // 200µm in cm
 
   // Create strip hits
+  list<MDEEStripHit> ChargeTransportLVHits;
+
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
   for (MDEEStripHit& SH: LVHits) {
     MVector Pos = SH.m_SimulatedPositionInDetector;
@@ -167,9 +183,13 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     unsigned int DetID = SH.m_ROE.GetDetectorID();
     double XWidth = m_XWidths[DetID];
     double YWidth = m_YWidths[DetID];
+    double Thickness = m_Thicknesses[DetID];
     double XPitch = m_XPitches[DetID];
     double Radius = m_Radii[DetID];
     int NXStrips = m_NXStrips[DetID];
+
+    double MeanElectricField = BiasVoltage / Thickness; // unit: V/cm
+    double N = SH.m_SimulatedEnergy / IonizationEnergy;
 
     // Calculate LV strip ID by rounding down intentionally to avoid truncation towards zero
     int ID = static_cast<int>(std::floor((Pos.X() + XWidth/2.0) / XPitch));
@@ -177,14 +197,86 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
     // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
     if (ID >= 0 && ID < NXStrips && std::abs(Pos.Y()) <= YWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= Radius) {
-      SH.m_ROE.SetStripID(ID);
-      SH.m_IsGuardRing = false;
+
+      // Apply charge sharing based on relative coordinate to the gap of that strip (0 <= X < XPitch)
+      double XFromGap = std::fmod(Pos.X() + XWidth/2.0, XPitch);
+
+      // calculate σ and µ, assuming t = z / v = z / (µ * E)
+      double SigmaX = std::sqrt(2.0 * kB * Temperature * (Pos.Z() + Thickness / 2.0) / (ElementaryCharge * MeanElectricField)); // in cm
+      double EtaX   = std::cbrt(std::pow(InitialChargeCloudSize, 3) + 3.0 * N * ElementaryCharge * (Pos.Z() + Thickness / 2.0) / (4.0 * TMath::Pi() * Epsilon0 * EpsilonR * MeanElectricField)); // in cm
+      cout << "X: " << Pos.X() << ", Y: " << Pos.Y() << ", Z: " << Pos.Z() << ", E: " << SH.m_SimulatedEnergy << endl;
+      cout << "Sigma X: " << SigmaX << ", EtaX: " << EtaX << endl;
+
+      auto Lambda = [&](double x) -> double {
+        double a = (x - EtaX) / (TMath::Sqrt2() * SigmaX);
+        double b = (x + EtaX) / (TMath::Sqrt2() * SigmaX);
+        return SH.m_SimulatedEnergy / (8.0 * std::pow(EtaX, 3)) * (
+          std::erf(b) * (2.0 * std::pow(EtaX, 3) + x * (3.0 * std::pow(EtaX, 2) - 3.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) + 
+          std::erf(a) * (2.0 * std::pow(EtaX, 3) - x * (3.0 * std::pow(EtaX, 2) - 3.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) + 
+          std::exp(- std::pow(b,2)) * std::sqrt(2.0 / TMath::Pi()) * SigmaX * (EtaX * x + (2.0 * std::pow(EtaX, 2) - 2.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) + 
+          std::exp(- std::pow(a,2)) * std::sqrt(2.0 / TMath::Pi()) * SigmaX * (EtaX * x - (2.0 * std::pow(EtaX, 2) - 2.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) 
+        );
+      };
+
+      double MainStripEnergy    = Lambda(XPitch - XFromGap) - Lambda(-XFromGap);
+      double NNLeftStripEnergy  = Lambda(-XFromGap) - Lambda(-XPitch - XFromGap);
+      double NNRightStripEnergy = Lambda(2.0*XPitch - XFromGap) - Lambda(XPitch - XFromGap);
+
+      cout << "Energy: " << SH.m_SimulatedEnergy << ", split into " << NNLeftStripEnergy << ", " << MainStripEnergy << " and " << NNRightStripEnergy << endl;
+
+      // create entry for the main hit
+      MDEEStripHit MainSH = SH;
+      MainSH.m_ROE.SetStripID(ID);
+      MainSH.m_Energy = MainStripEnergy;
+      MainSH.m_IsGuardRing = false;
+      ChargeTransportLVHits.push_back(MainSH);
+
+      // create MDEEStripHit for the left NN
+      if (NNLeftStripEnergy > IonizationEnergy) {
+        MDEEStripHit NNLeftSH = SH;
+        NNLeftSH.m_Energy = NNLeftStripEnergy;
+        if (ID > 0) {
+          NNLeftSH.m_ROE.SetStripID(ID - 1);
+          NNLeftSH.m_IsGuardRing = false;
+          // NNLeftSH.m_IsNearestNeighbor = true;
+        } else {
+          NNLeftSH.m_ROE.SetStripID(NXStrips);
+          NNLeftSH.m_IsGuardRing = true;
+        }
+        ChargeTransportLVHits.push_back(NNLeftSH);
+      }
+      
+      // create MDEEStripHit for the right NN
+      if (NNRightStripEnergy > IonizationEnergy) {
+        MDEEStripHit NNRightSH = SH;
+        NNRightSH.m_Energy = NNRightStripEnergy;
+        if (ID < NXStrips - 1) {
+          NNRightSH.m_ROE.SetStripID(ID + 1);
+          NNRightSH.m_IsGuardRing = false;
+          // NNRightSH.m_IsNearestNeighbor = true;
+        } else {
+          NNRightSH.m_ROE.SetStripID(NXStrips);
+          NNRightSH.m_IsGuardRing = true;
+        }
+        ChargeTransportLVHits.push_back(NNRightSH);
+      }
+
     } else {
+      // TODO: implement charge sharing also for GR events
+      SH.m_Energy = SH.m_SimulatedEnergy;
       SH.m_ROE.SetStripID(NXStrips);
       SH.m_IsGuardRing = true;
+      ChargeTransportLVHits.push_back(SH);
     }
-    SH.m_Energy = SH.m_SimulatedEnergy;
   }
+
+  // replace old list by new list
+  Event->GetDEEStripHitLVListReference().clear();
+  for (MDEEStripHit& SH: ChargeTransportLVHits) {
+    Event->AddDEEStripHitLV(SH);
+  }
+
+  list<MDEEStripHit> ChargeTransportHVHits;
 
   list<MDEEStripHit>& HVHits = Event->GetDEEStripHitHVListReference();
   for (MDEEStripHit& SH: HVHits) {
@@ -194,9 +286,13 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     unsigned int DetID = SH.m_ROE.GetDetectorID();
     double XWidth = m_XWidths[DetID];
     double YWidth = m_YWidths[DetID];
+    double Thickness = m_Thicknesses[DetID];
     double YPitch = m_YPitches[DetID];
     double Radius = m_Radii[DetID];
     int NYStrips = m_NYStrips[DetID];
+
+    double MeanElectricField = BiasVoltage / Thickness; // unit: V/cm
+    double N = SH.m_SimulatedEnergy / IonizationEnergy;
 
     // Calculate HV strip ID by rounding down intentionally to avoid truncation towards zero
     // TODO: Confirm the correct strip pitch based on SMEX detector models
@@ -205,16 +301,83 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
     // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
     if (ID >= 0 && ID < NYStrips && std::abs(Pos.X()) <= XWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= Radius) {
-      SH.m_ROE.SetStripID(ID);
-      SH.m_IsGuardRing = false;
+
+      // Apply charge sharing based on relative coordinate to the gap of that strip (0 <= Y < YPitch)
+      double YFromGap = std::fmod(Pos.Y() + YWidth/2.0, YPitch);
+
+      // calculate σ and µ, assuming t = z / v = z / (µ * E)
+      double SigmaY = std::sqrt(2.0 * kB * Temperature * (Thickness / 2.0 - Pos.Z()) / (ElementaryCharge * MeanElectricField)); // in cm
+      double EtaY   = std::cbrt(std::pow(InitialChargeCloudSize, 3) + 3.0 * N * ElementaryCharge * (Thickness / 2.0 - Pos.Z()) / (4.0 * TMath::Pi() * Epsilon0 * EpsilonR * MeanElectricField)); // in cm
+
+      auto Lambda = [&](double y) -> double {
+        double a = (y - EtaY) / (TMath::Sqrt2() * SigmaY);
+        double b = (y + EtaY) / (TMath::Sqrt2() * SigmaY);
+        return SH.m_SimulatedEnergy / (8.0 * std::pow(EtaY, 3)) * (
+          std::erf(b) * (2.0 * std::pow(EtaY, 3) + y * (3.0 * std::pow(EtaY, 2) - 3.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) + 
+          std::erf(a) * (2.0 * std::pow(EtaY, 3) - y * (3.0 * std::pow(EtaY, 2) - 3.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) + 
+          std::exp(- std::pow(b,2)) * std::sqrt(2 / TMath::Pi()) * SigmaY * (EtaY * y + (2.0 * std::pow(EtaY, 2) - 2.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) + 
+          std::exp(- std::pow(a,2)) * std::sqrt(2 / TMath::Pi()) * SigmaY * (EtaY * y - (2.0 * std::pow(EtaY, 2) - 2.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) 
+        );
+      };
+
+      double MainStripEnergy    = Lambda(YPitch - YFromGap) - Lambda(-YFromGap);
+      double NNLeftStripEnergy  = Lambda(-YFromGap) - Lambda(-YPitch - YFromGap);
+      double NNRightStripEnergy = Lambda(2.0*YPitch - YFromGap) - Lambda(YPitch - YFromGap);
+
+      // create entry for the main hit
+      MDEEStripHit MainSH = SH;
+      MainSH.m_ROE.SetStripID(ID);
+      MainSH.m_Energy = MainStripEnergy;
+      MainSH.m_IsGuardRing = false;
+      ChargeTransportHVHits.push_back(MainSH);
+
+      // create MDEEStripHit for the left NN
+      if (NNLeftStripEnergy > IonizationEnergy) {
+        MDEEStripHit NNLeftSH = SH;
+        NNLeftSH.m_Energy = NNLeftStripEnergy;
+        if (ID > 0) {
+          NNLeftSH.m_ROE.SetStripID(ID - 1);
+          NNLeftSH.m_IsGuardRing = false;
+          // NNLeftSH.m_IsNearestNeighbor = true;
+        } else {
+          NNLeftSH.m_ROE.SetStripID(NYStrips);
+          NNLeftSH.m_IsGuardRing = true;
+        }
+        ChargeTransportHVHits.push_back(NNLeftSH);
+      }
+        
+      // create MDEEStripHit for the right NN
+      if (NNRightStripEnergy > IonizationEnergy) {
+        MDEEStripHit NNRightSH = SH;
+        NNRightSH.m_Energy = NNRightStripEnergy;
+        if (ID < NYStrips - 1) {
+          NNRightSH.m_ROE.SetStripID(ID + 1);
+          NNRightSH.m_IsGuardRing = false;
+          // NNRightSH.m_IsNearestNeighbor = true;
+        } else {
+          NNRightSH.m_ROE.SetStripID(NYStrips);
+          NNRightSH.m_IsGuardRing = true;
+        }
+        ChargeTransportHVHits.push_back(NNRightSH);
+      }
+
     } else {
+      // TODO: implement charge sharing also for GR events
+      SH.m_Energy = SH.m_SimulatedEnergy;
       SH.m_ROE.SetStripID(NYStrips);
       SH.m_IsGuardRing = true;
+      ChargeTransportHVHits.push_back(SH);
     }
-    SH.m_Energy = SH.m_SimulatedEnergy;
+  }
+
+  // replace old list by new list
+  Event->GetDEEStripHitHVListReference().clear();
+  for (MDEEStripHit& SH: ChargeTransportHVHits) {
+    Event->AddDEEStripHitHV(SH);
   }
 
   // Merge hits:
+  // TODO: how to deal with flags like "m_IsNearestNeighbor" etc. ?
   for (auto IterLV1 = LVHits.begin(); IterLV1 != LVHits.end(); ++IterLV1) {
     auto IterLV2 = std::next(IterLV1);
     while (IterLV2 != LVHits.end()) {
