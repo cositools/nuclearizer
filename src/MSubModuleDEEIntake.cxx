@@ -186,7 +186,13 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
     } else if (DetectorName.BeginsWith("ACS_Crystal_") == true) {
       vector<MString> Tokens = DetectorName.Tokenize("_");
-      int DetectorID = Tokens[1].ToInt();
+        
+      if (Tokens.size() != 4) {
+            cerr << "ERROR: Unexpected detector name format for the Shield"
+                      << DetectorName << endl;
+            return false;
+      }
+      int DetectorID = Tokens[2].ToInt();
       //int CrystalID = Tokens[2].ToInt();
 
       MDEECrystalHit CHit;
