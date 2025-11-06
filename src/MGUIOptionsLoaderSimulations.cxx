@@ -43,8 +43,8 @@ ClassImp(MGUIOptionsLoaderSimulations)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsLoaderSimulations::MGUIOptionsLoaderSimulations(MModule* Module) 
-  : MGUIOptions(Module)
+MGUIOptionsLoaderSimulations::MGUIOptionsLoaderSimulations(MModule* Module)
+    : MGUIOptions(Module)
 {
   // standard constructor
 }
@@ -55,7 +55,7 @@ MGUIOptionsLoaderSimulations::MGUIOptionsLoaderSimulations(MModule* Module)
 
 MGUIOptionsLoaderSimulations::~MGUIOptionsLoaderSimulations()
 {
-  // kDeepCleanup is activated 
+  // kDeepCleanup is activated
 }
 
 
@@ -69,93 +69,87 @@ void MGUIOptionsLoaderSimulations::Create()
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 
   m_SimulationFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a simulations file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetSimulationFileName());
+                                                   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetSimulationFileName());
   m_SimulationFileSelector->SetFileType("Sim file", "*.sim");
   m_SimulationFileSelector->SetFileType("Sim file (gzip'ed)", "*.sim.gz");
   m_OptionsFrame->AddFrame(m_SimulationFileSelector, LabelLayout);
 
   m_DeadtimeFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a deadtime parameters file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadtimeFileName());
+                                                 dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadtimeFileName());
   m_DeadtimeFileSelector->SetFileType("Deadtime file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadtimeFileSelector, LabelLayout);
 
   m_EnergyCalibrationFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetEnergyCalibrationFileName());
+                                                          dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetEnergyCalibrationFileName());
   m_EnergyCalibrationFileSelector->SetFileType("Ecal file", "*.ecal");
   m_OptionsFrame->AddFrame(m_EnergyCalibrationFileSelector, LabelLayout);
 
   m_DeadStripFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a dead strip file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadStripFileName());
+                                                  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadStripFileName());
   m_DeadStripFileSelector->SetFileType("Dead strips file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadStripFileSelector, LabelLayout);
 
   m_ThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a thresholds file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetThresholdFileName());
+                                                  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetThresholdFileName());
   m_ThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
   m_OptionsFrame->AddFrame(m_ThresholdFileSelector, LabelLayout);
 
-	m_GuardRingThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a guard ring thresholds file:",
-		dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetGuardRingThresholdFileName());
-	m_GuardRingThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
-	m_OptionsFrame->AddFrame(m_GuardRingThresholdFileSelector, LabelLayout);
+  m_GuardRingThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a guard ring thresholds file:",
+                                                           dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetGuardRingThresholdFileName());
+  m_GuardRingThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
+  m_OptionsFrame->AddFrame(m_GuardRingThresholdFileSelector, LabelLayout);
 
-	m_ChargeSharingFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge sharing factor file:",
-		dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetChargeSharingFileName());
-	m_ChargeSharingFileSelector->SetFileType("Charge sharing file", "*.txt");
-	m_OptionsFrame->AddFrame(m_ChargeSharingFileSelector, LabelLayout);
+  m_ChargeSharingFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge sharing factor file:",
+                                                      dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetChargeSharingFileName());
+  m_ChargeSharingFileSelector->SetFileType("Charge sharing file", "*.txt");
+  m_OptionsFrame->AddFrame(m_ChargeSharingFileSelector, LabelLayout);
 
-	m_CrosstalkFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a crosstalk coefficients file:",
-		dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetCrosstalkFileName());
-	m_CrosstalkFileSelector->SetFileType("Crosstalk file", "*.txt");
-	m_OptionsFrame->AddFrame(m_CrosstalkFileSelector, LabelLayout);
+  m_CrosstalkFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a crosstalk coefficients file:",
+                                                  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetCrosstalkFileName());
+  m_CrosstalkFileSelector->SetFileType("Crosstalk file", "*.txt");
+  m_OptionsFrame->AddFrame(m_CrosstalkFileSelector, LabelLayout);
 
-	m_ChargeLossFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge loss coefficients file:",
-		dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetChargeLossFileName());
-	m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.log");
-	m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
+  m_ChargeLossFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge loss coefficients file:",
+                                                   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetChargeLossFileName());
+  m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.log");
+  m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
 
   m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationCoeffsFileName());
+                                                               dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationCoeffsFileName());
   m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.txt");
   m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
 
   m_DepthCalibrationTACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a TAC calibration parameters file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationTACCalFileName());
+                                                               dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationTACCalFileName());
   m_DepthCalibrationTACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
   m_OptionsFrame->AddFrame(m_DepthCalibrationTACCalFileSelector, LabelLayout);
 
   m_DepthCalibrationSplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration splines file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationSplinesFileName());
+                                                                dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationSplinesFileName());
   m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.ctd");
   m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
 
-  // ACS DEE energy correction file
-  m_ACSEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy correction file for the ACS DEE:",
-      dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetACSEnergyCorrectionFileName());
-  m_ACSEnergyCorrectionFileSelector->SetFileType("ACS DEE energy correction file", "*.txt");
-  m_OptionsFrame->AddFrame(m_ACSEnergyCorrectionFileSelector, LabelLayout);   
-    
-    
   m_ApplyFudgeFactorSelector = new TGCheckButton(m_OptionsFrame, "Apply fudge factor to better match fluxes", 1);
   m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetApplyFudgeFactor());
   m_OptionsFrame->AddFrame(m_ApplyFudgeFactorSelector, LabelLayout);
 
   TGHorizontalFrame* PassedFrame = new TGHorizontalFrame(m_OptionsFrame);
-  TGLayoutHints* PassedFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);  
+  TGLayoutHints* PassedFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
   m_OptionsFrame->AddFrame(PassedFrame, PassedFrameLayout);
-  
+
   m_StopAfter = new TGCheckButton(PassedFrame, "Stop after this number of PASSED events: ", 1);
   m_StopAfter->Associate(this);
   m_StopAfter->SetOn(dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->UseStopAfter());
   TGLayoutHints* StopAfterLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 10, 10);
   PassedFrame->AddFrame(m_StopAfter, StopAfterLayout);
-  
-  m_MaximumAcceptedEvents = new MGUIEEntry(PassedFrame, " ", false, 
+
+  m_MaximumAcceptedEvents = new MGUIEEntry(PassedFrame, " ", false,
                                            dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetMaximumAcceptedEvents(), true, 0l);
-  if (m_StopAfter->IsOn() == false) m_MaximumAcceptedEvents->SetEnabled(false);
+  if (m_StopAfter->IsOn() == false)
+    m_MaximumAcceptedEvents->SetEnabled(false);
   PassedFrame->AddFrame(m_MaximumAcceptedEvents, StopAfterLayout);
-  
-  
+
+
   PostCreate();
 }
 
@@ -168,7 +162,7 @@ bool MGUIOptionsLoaderSimulations::ProcessMessage(long Message, long Parameter1,
   // Modify here if you have more buttons
 
   bool Status = true;
-  
+
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -186,7 +180,7 @@ bool MGUIOptionsLoaderSimulations::ProcessMessage(long Message, long Parameter1,
   default:
     break;
   }
-  
+
   if (Status == false) {
     return false;
   }
@@ -207,20 +201,18 @@ bool MGUIOptionsLoaderSimulations::OnApply()
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
-	dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
-	dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
-	dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());
-	dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDeadStripFileName(m_DeadStripFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationCoeffsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationTACCalFileName(m_DepthCalibrationTACCalFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
-  // ACS DEE energy correction
-  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetACSEnergyCorrectionFileName(m_ACSEnergyCorrectionFileSelector->GetFileName());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetApplyFudgeFactor(m_ApplyFudgeFactorSelector->IsOn());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetUseStopAfter(m_StopAfter->IsOn());
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetMaximumAcceptedEvents(m_MaximumAcceptedEvents->GetAsInt());
-  
+
   return true;
 }
 

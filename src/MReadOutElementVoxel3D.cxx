@@ -1,8 +1,7 @@
 /*
  * MReadOutElementVoxel3D.cxx
  *
- *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Valentina Fioretti.
  * All rights reserved.
  *
  *
@@ -46,7 +45,13 @@ ClassImp(MReadOutElementVoxel3D)
 
 
 //! Default constructor
-MReadOutElementVoxel3D::MReadOutElementVoxel3D() : MReadOutElement(), m_DetectorName(""), m_VoxelXID(g_UnsignedIntNotDefined), m_VoxelYID(g_UnsignedIntNotDefined), m_VoxelZID(g_UnsignedIntNotDefined)
+MReadOutElementVoxel3D::MReadOutElementVoxel3D()
+    : MReadOutElement(),
+      m_DetectorID(0),
+      m_CrystalID(0),
+      m_VoxelXID(g_UnsignedIntNotDefined),
+      m_VoxelYID(g_UnsignedIntNotDefined),
+      m_VoxelZID(g_UnsignedIntNotDefined)
 {
 }
 
@@ -56,16 +61,17 @@ MReadOutElementVoxel3D::MReadOutElementVoxel3D() : MReadOutElement(), m_Detector
 
 //! Parameterized constructor
 MReadOutElementVoxel3D::MReadOutElementVoxel3D(
-  const MString& DetectorName,
+  unsigned int DetectorID,
+  unsigned int CrystalID,
   unsigned int VoxelXID,
   unsigned int VoxelYID,
-  unsigned int VoxelZID
-) :
-  MReadOutElement(),
-  m_DetectorName(DetectorName),
-  m_VoxelXID(VoxelXID),
-  m_VoxelYID(VoxelYID),
-  m_VoxelZID(VoxelZID)
+  unsigned int VoxelZID)
+    : MReadOutElement(),
+      m_DetectorID(DetectorID),
+      m_CrystalID(CrystalID),
+      m_VoxelXID(VoxelXID),
+      m_VoxelYID(VoxelYID),
+      m_VoxelZID(VoxelZID)
 {
 }
 
@@ -85,11 +91,11 @@ MReadOutElementVoxel3D::~MReadOutElementVoxel3D()
 MReadOutElementVoxel3D* MReadOutElementVoxel3D::Clone() const
 {
   MReadOutElementVoxel3D* R = new MReadOutElementVoxel3D(
-    m_DetectorName,
+    m_DetectorID,
+    m_CrystalID,
     m_VoxelXID,
     m_VoxelYID,
-    m_VoxelZID
-  );
+    m_VoxelZID);
   return R;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,7 +105,8 @@ MReadOutElementVoxel3D* MReadOutElementVoxel3D::Clone() const
 void MReadOutElementVoxel3D::Clear()
 {
   MReadOutElement::Clear();
-  m_DetectorName = "";
+  m_DetectorID = g_UnsignedIntNotDefined;
+  m_CrystalID = g_UnsignedIntNotDefined;
   m_VoxelXID = g_UnsignedIntNotDefined;
   m_VoxelYID = g_UnsignedIntNotDefined;
   m_VoxelZID = g_UnsignedIntNotDefined;
@@ -110,16 +117,17 @@ void MReadOutElementVoxel3D::Clear()
 
 //! Return true if this read-out element is of the given type
 bool MReadOutElementVoxel3D::IsOfType(const MString& String) const
-{ 
-  if (String == "voxel3d") return true;
-  
+{
+  if (String == "voxel3d")
+    return true;
+
   return false;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
- 
+
 //! Return the type of this read-out element
 MString MReadOutElementVoxel3D::GetType() const
 {
@@ -134,32 +142,22 @@ MString MReadOutElementVoxel3D::GetType() const
 bool MReadOutElementVoxel3D::operator==(const MReadOutElement& R) const
 {
   const MReadOutElementVoxel3D* S = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
-  if (S == 0) return false;
+  if (S == 0)
+    return false;
 
-  // Split by underscore:
-  vector<MString> tokens = m_DetectorName.Tokenize("_");
-  vector<MString> s_tokens = S->m_DetectorName.Tokenize("_");
-    
-  if (tokens.size() != 3 || s_tokens.size() != 3) {
-      cerr << "ERROR: Unexpected detector name format in operator==: "
-                << m_DetectorName << " or " << S->m_DetectorName << endl;
-      return false;
-  }
-    
-  int side = tokens[1].GetSubString(1, tokens[1].Length()).ToInt();
-  int crystal = tokens[2].ToInt();
-  int s_side = s_tokens[1].GetSubString(1, s_tokens[1].Length()).ToInt();
-  int s_crystal = s_tokens[2].ToInt();
-    
-  if (side != s_side) return false;
-  if (crystal != s_crystal) return false;
+  if (m_DetectorID != S->m_DetectorID)
+    return false;
+  if (m_CrystalID != S->m_CrystalID)
+    return false;
 
-  if (m_VoxelXID != S->m_VoxelXID) return false;
-  if (m_VoxelYID != S->m_VoxelYID) return false;
-  if (m_VoxelZID != S->m_VoxelZID) return false;
+  if (m_VoxelXID != S->m_VoxelXID)
+    return false;
+  if (m_VoxelYID != S->m_VoxelYID)
+    return false;
+  if (m_VoxelZID != S->m_VoxelZID)
+    return false;
 
   return true;
-              
 }
 
 
@@ -170,64 +168,39 @@ bool MReadOutElementVoxel3D::operator==(const MReadOutElement& R) const
 bool MReadOutElementVoxel3D::operator<(const MReadOutElement& R) const
 {
   const MReadOutElementVoxel3D* S = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
-  if (S == 0) return false;
-              
- 
-  vector<MString> tokens = m_DetectorName.Tokenize("_");
-  vector<MString> s_tokens = S->m_DetectorName.Tokenize("_");
-  
-  if (tokens.size() != 3 || s_tokens.size() != 3) {
-        cerr << "ERROR: Unexpected detector name format in operator==: "
-                  << m_DetectorName << " or " << S->m_DetectorName << endl;
-        return false;
-  }
-      
-  int side = tokens[1].GetSubString(1, tokens[1].Length()).ToInt();
-  int crystal = tokens[2].ToInt();
-  int s_side = s_tokens[1].GetSubString(1, s_tokens[1].Length()).ToInt();
-  int s_crystal = s_tokens[2].ToInt();
-                
-  if (side < s_side) return true;
+  if (S == 0)
+    return false;
 
-  if (side == s_side) {
-                  
-     if (crystal < s_crystal) return true;
-     if (crystal == s_crystal) {
-         if (m_VoxelXID < S->m_VoxelXID) return true;
-         if (m_VoxelXID == S->m_VoxelXID) {
-            if (m_VoxelYID < S->m_VoxelYID) return true;
-            if (m_VoxelYID == S->m_VoxelYID) {
-               if (m_VoxelZID < S->m_VoxelZID) return true;
-               if (m_VoxelZID == S->m_VoxelZID) return false;
-            }
-         }
-     }
-  }
-                
-  return false;
-  /*
+  if (m_DetectorID < S->m_DetectorID)
+    return true;
 
-    if (m_DetectorName == S->m_DetectorName) {
-        
-        if (m_VoxelXID < S->m_VoxelXID) return true;
-        if (m_VoxelXID == S->m_VoxelXID) return false;
-        
-        if (m_VoxelYID < S->m_VoxelYID) return true;
-        if (m_VoxelYID == S->m_VoxelYID) return false;
-        
-        if (m_VoxelZID < S->m_VoxelZID) return true;
-        if (m_VoxelZID == S->m_VoxelZID) return false;
-    } else {
+  if (m_DetectorID == S->m_DetectorID) {
+
+    if (m_CrystalID < S->m_CrystalID)
+      return true;
+    if (m_CrystalID == S->m_CrystalID) {
+      if (m_VoxelXID < S->m_VoxelXID)
         return true;
+      if (m_VoxelXID == S->m_VoxelXID) {
+        if (m_VoxelYID < S->m_VoxelYID)
+          return true;
+        if (m_VoxelYID == S->m_VoxelYID) {
+          if (m_VoxelZID < S->m_VoxelZID)
+            return true;
+          if (m_VoxelZID == S->m_VoxelZID)
+            return false;
+        }
+      }
     }
-   */
+  }
 
+  return false;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
- 
+
 //! Return the number of parsable elements
 unsigned int MReadOutElementVoxel3D::GetNumberOfParsableElements() const
 {
@@ -246,10 +219,11 @@ bool MReadOutElementVoxel3D::Parse(const MTokenizer& T, unsigned int StartElemen
     return false;
   }
 
-  m_DetectorName = T.GetTokenAtAsString(StartElement);
-  m_VoxelXID = T.GetTokenAtAsUnsignedIntFast(StartElement + 1);
-  m_VoxelYID = T.GetTokenAtAsUnsignedIntFast(StartElement + 2);
-  m_VoxelZID = T.GetTokenAtAsUnsignedIntFast(StartElement + 3);
+  m_DetectorID = T.GetTokenAtAsUnsignedIntFast(StartElement);
+  m_CrystalID = T.GetTokenAtAsUnsignedIntFast(StartElement + 1);
+  m_VoxelXID = T.GetTokenAtAsUnsignedIntFast(StartElement + 2);
+  m_VoxelYID = T.GetTokenAtAsUnsignedIntFast(StartElement + 3);
+  m_VoxelZID = T.GetTokenAtAsUnsignedIntFast(StartElement + 4);
 
   return true;
 }
@@ -264,7 +238,9 @@ MString MReadOutElementVoxel3D::ToParsableString(bool WithDescriptor) const
   if (WithDescriptor == true) {
     Return += "voxel3d ";
   }
-  Return += m_DetectorName;
+  Return += m_DetectorID;
+  Return += " ";
+  Return += m_CrystalID;
   Return += " ";
   Return += m_VoxelXID;
   Return += " ";
@@ -282,7 +258,7 @@ MString MReadOutElementVoxel3D::ToParsableString(bool WithDescriptor) const
 MString MReadOutElementVoxel3D::ToString() const
 {
   ostringstream os;
-  os << "DetectorName: " << m_DetectorName << ", VoxelID: (" << m_VoxelXID << ", " << m_VoxelYID << ", " << m_VoxelZID << ")";
+  os << "DetectorID: " << m_DetectorID << ", CrystalID: " << m_CrystalID << ", VoxelID: (" << m_VoxelXID << ", " << m_VoxelYID << ", " << m_VoxelZID << ")";
   return os.str();
 }
 
@@ -292,7 +268,7 @@ MString MReadOutElementVoxel3D::ToString() const
 //! Stream the data
 ostream& operator<<(ostream& os, const MReadOutElementVoxel3D& R)
 {
-  os<<R.ToString();
+  os << R.ToString();
   return os;
 }
 

@@ -46,7 +46,8 @@ ClassImp(MSubModuleShieldEnergyCorrection)
 
 
 MSubModuleShieldEnergyCorrection::MSubModuleShieldEnergyCorrection()
-    : MSubModule()
+    : MSubModule(),
+      m_Random(0)
 {
   // Construct an instance of MSubModuleShieldEnergyCorrection
 
@@ -70,6 +71,10 @@ MSubModuleShieldEnergyCorrection::~MSubModuleShieldEnergyCorrection()
 bool MSubModuleShieldEnergyCorrection::Initialize()
 {
   // Initialize the module
+
+  // load shield energy correction file
+  if (ParseShieldEnergyCorrectionFile() == false)
+    return false;
 
   return MSubModule::Initialize();
 }
@@ -96,7 +101,20 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   // Set the energy
   list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
   for (MDEECrystalHit& CH : Hits) {
-    CH.m_Energy = CH.m_SimulatedEnergy;
+
+    double true_energy = CH.m_SimulatedEnergy;
+    int det_id = CH.m_DetectorID;
+    int crystal_id = CH.m_CrystalID;
+
+    MVector voxel_id = CH.m_VoxelInDetector;
+
+    double shield_corrected_centroid = NoiseShieldEnergyCentroid(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
+    double shield_FWHM_value = NoiseShieldEnergyFWHM(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
+
+    double shield_sigma = shield_FWHM_value / 2.35;
+    double corrected_energy = m_Random.Gaus(shield_corrected_centroid, shield_sigma);
+
+    CH.m_Energy = corrected_energy;
   }
 
   // Merge hits:
@@ -126,6 +144,119 @@ void MSubModuleShieldEnergyCorrection::Finalize()
   MSubModule::Finalize();
 }
 
+//! centroid and fwhm for the gaussian noise
+double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyCentroid(double energy, int det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id)
+{
+
+  MReadOutElementVoxel3D hit_V;
+  hit_V.SetDetectorID(det_id);
+  hit_V.SetCrystalID(crystal_id);
+  hit_V.SetVoxelXID(voxelx_id);
+  hit_V.SetVoxelYID(voxely_id);
+  hit_V.SetVoxelZID(voxelz_id);
+
+  double corrected_centroid = 0.0;
+
+  auto it = m_Centroid.find(hit_V);
+  if (it != m_Centroid.end()) {
+    TF1* gauss_centroid = it->second;
+    corrected_centroid = gauss_centroid->Eval(energy);
+  } else {
+    cout << "WARNING: Centroid correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+  }
+
+  return corrected_centroid;
+}
+
+double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double energy, int det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id)
+{
+
+  MReadOutElementVoxel3D hit_V;
+  hit_V.SetDetectorID(det_id);
+  hit_V.SetCrystalID(crystal_id);
+  hit_V.SetVoxelXID(voxelx_id);
+  hit_V.SetVoxelYID(voxely_id);
+  hit_V.SetVoxelZID(voxelz_id);
+
+  double FWHM_value = 0.0;
+
+  auto it_fwhm = m_FWHM.find(hit_V);
+
+  if (it_fwhm != m_FWHM.end()) {
+    TF1* gauss_fwhm = it_fwhm->second;
+
+    FWHM_value = gauss_fwhm->Eval(energy); // E_true in keV
+  } else {
+    cout << "WARNING: FWHM correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+  }
+
+
+  return FWHM_value;
+}
+
+bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
+{
+  MParser Parser;
+  if (Parser.Open(m_ShieldEnergyCorrectionFileName, MFile::c_Read) == false) {
+    cout << "Unable to open shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
+    return false;
+  }
+
+  for (unsigned int i = 0; i < Parser.GetNLines(); i++) {
+    unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+    if (NTokens == 0)
+      continue; // skip empty lines
+
+    // Skip comment lines
+    if (Parser.GetTokenizerAt(i)->GetTokenAtAsString(0).BeginsWith("#"))
+      continue;
+
+    if (NTokens != 12) {
+      continue;
+    } //this shouldn't happen but just in case
+
+    // For each voxel of the shield crystal, the deposited energy is corrected generating a random energy correction following a gaussian distribution. The energy centroid and the fwhm can be computed from the parameters below (Ciabattoni et al. 2025)
+
+    // Detector ID
+    int det_id = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+    // Crystal ID
+    int crystal_id = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
+    // MEGAlib voxel X, Y, Z ID
+    int voxel_X = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2);
+    int voxel_Y = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(3);
+    int voxel_Z = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(4);
+    // model parameters
+    // centroid: E_measured = m*E_true + q
+    double m_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(7);
+    double q_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(8);
+    // FWHM = sqrt(a^2 + b^2*E_true + c^2*E_true^2)
+    double a_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(9);
+    double b_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(10);
+    double c_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(11);
+
+    MReadOutElementVoxel3D V;
+
+    V.SetDetectorID(det_id);
+    V.SetCrystalID(crystal_id);
+    V.SetVoxelXID(voxel_X);
+    V.SetVoxelYID(voxel_Y);
+    V.SetVoxelZID(voxel_Z);
+
+    TF1* gauss_centroid = new TF1("centroid_" + MString(det_id) + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "[0]*x + [1]");
+    gauss_centroid->SetParameter(0, m_par);
+    gauss_centroid->SetParameter(1, q_par);
+
+    TF1* gauss_fwhm = new TF1("fwhm_" + MString(det_id) + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
+    gauss_fwhm->SetParameter(0, a_par);
+    gauss_fwhm->SetParameter(1, b_par);
+    gauss_fwhm->SetParameter(2, c_par);
+
+    m_Centroid[V] = gauss_centroid;
+    m_FWHM[V] = gauss_fwhm;
+  }
+
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

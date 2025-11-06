@@ -36,8 +36,7 @@ using namespace std;
 
 //! A shared data structure of all DEE classes holding the strip data on it's way
 //! to the final version
-struct MDEECrystalHit
-{
+struct MDEECrystalHit {
   // public interface:
  public:
   //! Default constructor
@@ -56,14 +55,20 @@ struct MDEECrystalHit
   MVector m_SimulatedPosition; // original: Position
   //! The simulated position in the detector
   MVector m_SimulatedPositionInDetector;
+  //! Detector ID  (1: -X, 2:+X, 3: -Y, 4:+Y, 5:Z )
+  unsigned int m_DetectorID;
+  //! Crystal ID
+  unsigned int m_CrystalID;
+  //! The simulated voxel (X, Y, Z) IDs
+  MVector m_VoxelInDetector;
   //! The energy from simulations
   double m_SimulatedEnergy; // original: m_EnergyOrig
-  //! The list of origin IDs form the simulation
-  list<int> m_SimulatedOrigins; // original: m_Origins
   //! SimHT index that the strip hit came from to check if hit was completely absorbed
   unsigned int m_SimulatedHitIndex; // original: m_HitIndex;
+  //! The list of origin IDs form the simulation
+  list<int> m_SimulatedOrigins; // original: m_Origins
 
-  // The strip data - which can be in process of being created
+  // The shield data - which can be in process of being created
 
   //! The read-out element
   MReadOutElement m_ROE;
@@ -93,27 +98,16 @@ struct MDEECrystalHit
 
   // protected methods:
  protected:
-
-
   // private methods:
  private:
-
-
-
   // protected members:
  protected:
-
-
   // private members:
  private:
-
-
-
 #ifdef ___CLING___
  public:
   ClassDef(MDEECrystalHit, 0) // no description
 #endif
-
 };
 
 #endif

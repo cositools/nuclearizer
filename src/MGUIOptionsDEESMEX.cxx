@@ -131,7 +131,7 @@ void MGUIOptionsDEESMEX::Create()
   m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
                                                                "Please select an energy correction file for the Shield DEE:",
                                                                dynamic_cast<MModuleDEESMEX*>(m_Module)->GetShieldEnergyCorrectionFileName());
-  m_ShieldEnergyCorrectionFileSelector->SetFileType("Shield DEE energy correction file", "*.txt");
+  m_ShieldEnergyCorrectionFileSelector->SetFileType("Shield DEE energy correction file", "*.csv");
   m_OptionsFrame->AddFrame(m_ShieldEnergyCorrectionFileSelector, LabelLayout);
 
   /*
