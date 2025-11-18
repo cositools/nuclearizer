@@ -454,8 +454,7 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_StripHitBelowThreshold;
   MString m_StripHitBelowThresholdString;
 
-
-
+  
   //! True if event has been filtered out
   bool m_FilteredOut;
 
