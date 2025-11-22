@@ -101,7 +101,8 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     // Calculate LV strip ID by rounding down intentionally to avoid truncation towards zero
     int ID = static_cast<int>(std::floor((Pos.X() + 7.4/2.0) / (7.4/64.0)));
 
-    if (ID >= 0 && ID < 64) {
+    // Check for strip ID and if the position is within the allowed strip length or on the guard ring
+    if (ID >= 0 && ID < 64 && std::abs(Pos.Y()) <= 7.4/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
@@ -118,7 +119,8 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     // Calculate HV strip ID by rounding down intentionally to avoid truncation towards zero
     int ID = static_cast<int>(std::floor((Pos.Y() + 7.4/2.0) / (7.4/64.0)));
 
-    if (ID >= 0 && ID < 64) {
+    // Check for strip ID and if the position is within the allowed strip length or on the guard ring
+    if (ID >= 0 && ID < 64 && std::abs(Pos.X()) <= 7.4/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
