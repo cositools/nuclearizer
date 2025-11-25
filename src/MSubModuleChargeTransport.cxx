@@ -99,9 +99,11 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     MVector Pos = SH.m_SimulatedPositionInDetector;
 
     // Calculate LV strip ID by rounding down intentionally to avoid truncation towards zero
+    // TODO: Confirm the correct strip pitch based on SMEX detector models
     int ID = static_cast<int>(std::floor((Pos.X() + 7.4/2.0) / (7.4/64.0)));
 
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
+    // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
     if (ID >= 0 && ID < 64 && std::abs(Pos.Y()) <= 7.4/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
@@ -117,9 +119,11 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     MVector Pos = SH.m_SimulatedPositionInDetector;
 
     // Calculate HV strip ID by rounding down intentionally to avoid truncation towards zero
+    // TODO: Confirm the correct strip pitch based on SMEX detector models
     int ID = static_cast<int>(std::floor((Pos.Y() + 7.4/2.0) / (7.4/64.0)));
 
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
+    // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
     if (ID >= 0 && ID < 64 && std::abs(Pos.X()) <= 7.4/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
