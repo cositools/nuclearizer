@@ -68,12 +68,13 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   PreCreate();
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 10, 10);
+  TGLayoutHints* FileSelectorLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 10, 10, 10, 10);
 
   // File loader for energy calibration file
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
     dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Energy calibration file", "*.ecal");
-  m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
+  m_OptionsFrame->AddFrame(m_FileSelector, FileSelectorLayout);
 
 
   TGLabel* SlowThresholdLabel = new TGLabel(m_OptionsFrame, "Please choose how to handle the slow threshold cut:");
