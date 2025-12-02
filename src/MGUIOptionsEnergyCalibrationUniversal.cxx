@@ -67,46 +67,48 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
 {
   PreCreate();
 
-  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  
-  //file loader for energy calibration file
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 10, 10);
+
+  // File loader for energy calibration file
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
     dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Energy calibration file", "*.ecal");
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
-  //Add button and file loader option for threshold calibration file 
-  m_ThresholdFileCB = new TGCheckButton(m_OptionsFrame, "Enable slow threshold cut determined from file (unique to each strip):", c_ThresholdFile);
-  m_ThresholdFileCB->SetState((dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdFileEnable() == 1) ?  kButtonDown : kButtonUp);
-  m_ThresholdFileCB->Associate(this);
-  m_OptionsFrame->AddFrame(m_ThresholdFileCB, LabelLayout);
 
-  m_UseThresholdFile = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdFileEnable();
+  TGLabel* SlowThresholdLabel = new TGLabel(m_OptionsFrame, "Please choose how to handle the slow threshold cut:");
+  m_OptionsFrame->AddFrame(SlowThresholdLabel, LabelLayout);
 
-  TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
 
-  m_ThresholdFile = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdFileName());
-  m_ThresholdFile->SetFileType("Threshold per strip file", "*.csv");
-  m_OptionsFrame->AddFrame(m_ThresholdFile, FileLabelLayout);
+  TGLayoutHints* RBLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 40, 10, 2, 0);
+  TGLayoutHints* RBOptionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 60, 10, 2, 0);
+  TGLayoutHints* RBOptionStretchLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 60, 10, 2, 0);
 
-  if (m_UseThresholdFile) {
-    m_ThresholdFile->SetEnabled(true);
-  } else {
-    m_ThresholdFile->SetEnabled(false);
-  }
-    
-  // Add button and value option for user-input threshold
-  m_ThresholdValueCB = new TGCheckButton(m_OptionsFrame, "Enable slow threshold cut for all strips:", c_Threshold);
-  m_ThresholdValueCB->Associate(this);
-  m_ThresholdValueCB->SetOn(dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdValueEnable());
-  m_OptionsFrame->AddFrame(m_ThresholdValueCB, LabelLayout);
-  
-  m_UseThresholdValue = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdValueEnable();
+  m_SlowThresholdCutRBIgnore = new TGRadioButton(m_OptionsFrame, "Do not apply a slow threshold cut", c_SlowThresholdIgnore);
+  m_SlowThresholdCutRBIgnore->Associate(this);
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutRBIgnore, RBLayout);
 
-  m_SetThresholdValue = new MGUIEEntry(m_OptionsFrame, "                                                                                                                  Set threshold value [keV]", false,
-                                      dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdValue(), true, 35.0);
-  if (m_ThresholdValueCB->IsOn() == false) m_SetThresholdValue->SetEnabled(false);
-  m_OptionsFrame->AddFrame(m_SetThresholdValue, LabelLayout);
+
+  m_SlowThresholdCutRBFixed = new TGRadioButton(m_OptionsFrame, "Use one uniform slow threshold cut for all strips", c_SlowThresholdFixed);
+  m_SlowThresholdCutRBFixed->Associate(this);
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutRBFixed, RBLayout);
+
+  m_SlowThresholdCutFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV]:", false, dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetSlowThresholdCutFixedValue(), true, 0.0);
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutFixedValue, RBOptionLayout);
+
+
+  m_SlowThresholdCutRBFile = new TGRadioButton(m_OptionsFrame, "Read slow threshold cuts from file (unique to each strip)", c_SlowThresholdFile);
+  m_SlowThresholdCutRBFile->Associate(this);
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutRBFile, RBLayout);
+
+  m_SlowThresholdCutFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetSlowThresholdCutFileName());
+  m_SlowThresholdCutFileSelector->SetFileType("Slow threshold cut per strip file", "*.csv");
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutFileSelector, RBOptionStretchLayout);
+
+
+  // Toggle the right button
+  MSlowThresholdCutModes SlowThresholdCutMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetSlowThresholdCutMode();
+  ToggleRadioButtons(static_cast<int>(SlowThresholdCutMode));
     
 
   PostCreate();
@@ -120,7 +122,6 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
 {
   // Modify here if you have more buttons
 
-  // TODO :: only allow one check box option at a time, either value or file
   bool Status = true;
 
   switch (GET_MSG(Message)) {
@@ -128,21 +129,10 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       break;
+    case kCM_RADIOBUTTON:
+      ToggleRadioButtons(Parameter1);
+      break;
     case kCM_CHECKBUTTON:
-        switch (Parameter1) {
-          case c_ThresholdFile:
-            if (m_ThresholdFileCB->GetState() == kButtonDown) {
-              m_UseThresholdFile = 1;
-              m_ThresholdFile->SetEnabled(true);
-            } else if (m_ThresholdFileCB->GetState() == kButtonUp) {
-              m_UseThresholdFile = 0;
-              m_ThresholdFile->SetEnabled(false);
-            }
-            break;
-          case c_Threshold:
-            m_SetThresholdValue->SetEnabled(m_ThresholdValueCB->IsOn());
-            break;
-        }
       break;
     default:
       break;
@@ -155,10 +145,38 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
   if (Status == false) {
     return false;
   }
-    
-  
+
   // Call also base class
   return MGUIOptions::ProcessMessage(Message, Parameter1, Parameter2);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIOptionsEnergyCalibrationUniversal::ToggleRadioButtons(int WidgetID)
+{
+  // Toggle the radio buttons and the entry fields
+
+  if (WidgetID == m_SlowThresholdCutRBIgnore->WidgetId()) {
+    m_SlowThresholdCutRBIgnore->SetState(kButtonDown);
+    m_SlowThresholdCutRBFixed->SetState(kButtonUp);
+    m_SlowThresholdCutFixedValue->SetEnabled(false);
+    m_SlowThresholdCutRBFile->SetState(kButtonUp);
+    m_SlowThresholdCutFileSelector->SetEnabled(false);
+  } else if (WidgetID == m_SlowThresholdCutRBFixed->WidgetId()) {
+    m_SlowThresholdCutRBIgnore->SetState(kButtonUp);
+    m_SlowThresholdCutRBFixed->SetState(kButtonDown);
+    m_SlowThresholdCutFixedValue->SetEnabled(true);
+    m_SlowThresholdCutRBFile->SetState(kButtonUp);
+    m_SlowThresholdCutFileSelector->SetEnabled(false);
+  } else if (WidgetID == m_SlowThresholdCutRBFile->WidgetId()) {
+    m_SlowThresholdCutRBIgnore->SetState(kButtonUp);
+    m_SlowThresholdCutRBFixed->SetState(kButtonUp);
+    m_SlowThresholdCutFixedValue->SetEnabled(false);
+    m_SlowThresholdCutRBFile->SetState(kButtonDown);
+    m_SlowThresholdCutFileSelector->SetEnabled(true);
+  }
 }
 
 
@@ -171,14 +189,16 @@ bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
 
   dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 
-  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetThresholdFileName(m_ThresholdFile->GetFileName());
-    
-  if (dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdFileEnable() != m_UseThresholdFile) dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetThresholdFileEnable(m_UseThresholdFile);
-  
-  if (dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetThresholdValueEnable() != m_UseThresholdValue) dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetThresholdValueEnable(m_UseThresholdValue);
+  if (m_SlowThresholdCutRBIgnore->GetState() == kButtonDown) {
+    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Ignore);
+  } else if (m_SlowThresholdCutRBFixed->GetState() == kButtonDown) {
+    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Fixed);
+  }  if (m_SlowThresholdCutRBFile->GetState() == kButtonDown) {
+    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_File);
+  }
 
-  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetThresholdValueEnable(m_ThresholdValueCB->IsOn());
-  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetThresholdValue(m_SetThresholdValue->GetAsDouble());
+  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutFixedValue(m_SlowThresholdCutFixedValue->GetAsDouble());
+  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutFileName(m_SlowThresholdCutFileSelector->GetFileName());
 
   return true;
 }

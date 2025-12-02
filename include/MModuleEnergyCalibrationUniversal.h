@@ -36,6 +36,20 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+//! Definition of the slow threshold modes
+// Attention: The ints are also used in the UI, thus don't change the numbers
+enum class MSlowThresholdCutModes : int
+{
+  e_Ignore = 0,
+  e_Fixed = 1,
+  e_File = 2
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! A universal energy calibrator
 class MModuleEnergyCalibrationUniversal : public MModule
 {
@@ -49,30 +63,26 @@ class MModuleEnergyCalibrationUniversal : public MModule
   //! Create a new object of this class 
   virtual MModuleEnergyCalibrationUniversal* Clone() { return new MModuleEnergyCalibrationUniversal(); }
 
-  //! Enable/Disable soft threshold from File
-  void SetThresholdFileEnable(bool X) {m_ThresholdFileEnabled = X;}
-  //! Get threshold from file true/false
-  bool GetThresholdFileEnable() const { return m_ThresholdFileEnabled; }
-  
   //! Set the calibration file name
   void SetFileName(const MString& FileName) { m_FileName = FileName; }
   //! Get the calibration file name
   MString GetFileName() const { return m_FileName; }
  
-  //! Set the threshold calibration file name
-  void SetThresholdFileName(const MString& ThresholdFileName) {m_ThresholdFileName = ThresholdFileName; }
-  //! Get the threshold calibration file name
-  MString GetThresholdFileName() const {return m_ThresholdFileName; }
+  //! Set the slow threshold mode
+  void SetSlowThresholdCutMode(const MSlowThresholdCutModes& Mode) { m_SlowThresholdCutMode = Mode; }
+  //! Get the slow threshold mode
+  MSlowThresholdCutModes GetSlowThresholdCutMode() const { return m_SlowThresholdCutMode; }
+
+  //! Set the slow threshold value for fixed mode
+  void SetSlowThresholdCutFixedValue(double Value) { m_SlowThresholdCutFixedValue = Value; }
+  //! Get the slow threshold value for fixed mode
+  double GetSlowThresholdCutFixedValue() const { return m_SlowThresholdCutFixedValue; }
+
+  //! Set the slow threshold cut file name
+  void SetSlowThresholdCutFileName(const MString& SlowThresholdCutFileName) { m_SlowThresholdCutFileName = SlowThresholdCutFileName; }
+  //! Get the slow threshold cut calibration file name
+  MString GetSlowThresholdCutFileName() const {return m_SlowThresholdCutFileName; }
  
-  //! Enable/Disable soft threshold value from GUI input
-  void SetThresholdValueEnable(bool X) {m_ThresholdValueEnabled = X;}
-  //! Get threshold value from GUI input true/false
-  bool GetThresholdValueEnable() const { return m_ThresholdValueEnabled; }
-  
-  //! Set the threshold value
-  void SetThresholdValue(double ThresholdValue) { m_ThresholdValue = ThresholdValue; }
-  //! Get the threshold value
-  double GetThresholdValue() const { return m_ThresholdValue; }
 
   //! Create the expos
   virtual void CreateExpos();
@@ -97,27 +107,15 @@ class MModuleEnergyCalibrationUniversal : public MModule
   //! Look up energy resolution
   double LookupEnergyResolution(MStripHit* SH, double Energy);
   
-	//! Standalone function to return energy of certain strip given ADC
-	double GetEnergy(MReadOutElementDoubleStrip R, double ADC);
-	//! Standalone function to return ADC of certain strip given energy
-	double GetADC(MReadOutElementDoubleStrip R, double energy);
+  //! Standalone function to return energy of certain strip given ADC
+  double GetEnergy(MReadOutElementDoubleStrip R, double ADC);
+  //! Standalone function to return ADC of certain strip given energy
+  double GetADC(MReadOutElementDoubleStrip R, double energy);
 
 
   // protected methods:
  protected:
-  //! The energy calibration file name
-  MString m_FileName;
-  
-  //! Threshold file enable boolean
-  bool m_ThresholdFileEnabled;
-  //! The threshold file name
-  MString m_ThresholdFileName;
-  
-  //! Threshold value enable boolean
-  bool m_ThresholdValueEnabled;
-  //! The threshold value
-  double m_ThresholdValue;
-  
+
 
   // private methods:
  private:
@@ -126,6 +124,18 @@ class MModuleEnergyCalibrationUniversal : public MModule
 
   // protected members:
  protected:
+  //! The energy calibration file name
+  MString m_FileName;
+
+  //! The slow threshold cut mode (see defnition of MModuleEnergyCalibrationUniversalSlowThresholdCutModes)
+  MSlowThresholdCutModes m_SlowThresholdCutMode;
+
+  //! The slow threshold cut value
+  double m_SlowThresholdCutFixedValue;
+
+  //! The slow threshold cut file name
+  MString m_SlowThresholdCutFileName;
+
 
   // private members:
  private:
