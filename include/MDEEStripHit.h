@@ -60,7 +60,7 @@ struct MDEEStripHit
   double m_SimulatedRelativeDepth;
   //! The energy from simulations
   double m_SimulatedEnergy; // original: m_EnergyOrig
-  //! The list of origin IDs form the simulation
+  //! The list of origin IDs from the simulation
   list<int> m_SimulatedOrigins; // original: m_Origins
   //! True if this is a guard ring
   bool m_SimulatedIsGuardRing; // original: m_IsGuardRing
