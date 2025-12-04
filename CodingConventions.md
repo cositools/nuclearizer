@@ -22,6 +22,19 @@ To format a file do the following:
 
 4. Do your pull request / check it in
 
+## How to handle future ToDo's in the code
+
+1. Mark them clearly in a way that IDE's can parse them. Choose one of:
+   ```
+   // TODO:
+   or
+   // FIXME:
+   or
+   // HACK:
+   ```
+2. Open an issue for each of them to keep track of them
+
+
 ## New classes
 
 For new classes, copy and modify an existing one, or use the MModuleTemplate class as tempplate.
