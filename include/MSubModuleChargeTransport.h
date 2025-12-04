@@ -50,6 +50,9 @@ class MSubModuleChargeTransport : public MSubModule
   //! Default destructor
   virtual ~MSubModuleChargeTransport();
 
+  //! Set geometry
+  void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
+
   //! Initialize the module
   virtual bool Initialize();
 
@@ -77,6 +80,8 @@ class MSubModuleChargeTransport : public MSubModule
 
   // protected members:
  protected:
+  //! The geometry
+  MDGeometryQuest* m_Geometry;
 
 
   // private members:

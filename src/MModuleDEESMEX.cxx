@@ -90,6 +90,9 @@ MModuleDEESMEX::~MModuleDEESMEX()
 
 bool MModuleDEESMEX::Initialize()
 {
+  // Set the geometry to the SubModules using it
+  m_ChargeTransport.SetGeometry(m_Geometry);
+
   // Initialize the module 
 
   // Each Initialize() should handle its own error messaging
