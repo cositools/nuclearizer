@@ -92,6 +92,7 @@ class MSubModuleChargeTransport : public MSubModule
   unordered_map<int, double> m_YPitches;
   unordered_map<int, double> m_XWidths;
   unordered_map<int, double> m_YWidths;
+  unordered_map<int, double> m_Radii;
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
 

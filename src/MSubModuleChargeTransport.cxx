@@ -32,6 +32,8 @@
 
 // MEGAlib libs:
 #include "MSubModule.h"
+#include "MDShapeIntersection.h"
+#include "MDShapeTUBS.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,10 +95,23 @@ bool MSubModuleChargeTransport::Initialize()
           m_NYStrips[DetID] = strip->GetNStripsY();
           m_XWidths[DetID] = strip->GetWidthX();
           m_YWidths[DetID] = strip->GetWidthY();
+
+          // Read the detector radius from the geometry (assuming it is the second shape of an intersection)
+          if (vol->GetShape()->GetType() == "Intersection" && dynamic_cast<MDShapeIntersection*>(vol->GetShape())->GetShapeB()->GetType() == "TUBS") {
+            m_Radii[DetID] = dynamic_cast<MDShapeTUBS*>(dynamic_cast<MDShapeIntersection*>(vol->GetShape())->GetShapeB())->GetRmax();
+          } else {
+            // If that does not exist, set the detector radius to a value high enough to not have an impact
+            m_Radii[DetID] = m_XWidths[DetID] + m_YWidths[DetID];
+            if (g_Verbosity >= c_Info) {
+              cout << m_Name << ": No bounding tube volume found for this detector" << endl;
+            }
+          }
+          
           if (g_Verbosity >= c_Info) {
             cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
             cout << "Detector width (X): " << m_XWidths[DetID] << endl;
             cout << "Detector width (Y): " << m_YWidths[DetID] << endl;
+            cout << "Detector radius (R): " << m_Radii[DetID] << endl;
             cout << "Detector thickness: " << m_Thicknesses[DetID] << endl;
             cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
             cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
@@ -153,6 +168,7 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     double XWidth = m_XWidths[DetID];
     double YWidth = m_YWidths[DetID];
     double XPitch = m_XPitches[DetID];
+    double Radius = m_Radii[DetID];
     int NXStrips = m_NXStrips[DetID];
 
     // Calculate LV strip ID by rounding down intentionally to avoid truncation towards zero
@@ -160,7 +176,7 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
 
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
     // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
-    if (ID >= 0 && ID < NXStrips && std::abs(Pos.Y()) <= YWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
+    if (ID >= 0 && ID < NXStrips && std::abs(Pos.Y()) <= YWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= Radius) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
@@ -179,6 +195,7 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     double XWidth = m_XWidths[DetID];
     double YWidth = m_YWidths[DetID];
     double YPitch = m_YPitches[DetID];
+    double Radius = m_Radii[DetID];
     int NYStrips = m_NYStrips[DetID];
 
     // Calculate HV strip ID by rounding down intentionally to avoid truncation towards zero
@@ -187,7 +204,7 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
 
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
     // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
-    if (ID >= 0 && ID < NYStrips && std::abs(Pos.X()) <= XWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
+    if (ID >= 0 && ID < NYStrips && std::abs(Pos.X()) <= XWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= Radius) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
