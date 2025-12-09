@@ -23,6 +23,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MSubModule.h"
+#include "MDStrip3D.h"
 
 // Forward declarations:
 
@@ -49,6 +50,9 @@ class MSubModuleChargeTransport : public MSubModule
 
   //! Default destructor
   virtual ~MSubModuleChargeTransport();
+
+  //! Set geometry
+  void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
 
   //! Initialize the module
   virtual bool Initialize();
@@ -77,6 +81,20 @@ class MSubModuleChargeTransport : public MSubModule
 
   // protected members:
  protected:
+  //! The geometry
+  MDGeometryQuest* m_Geometry;
+
+  //! The detector dimensions
+  unordered_map<int, double> m_Thicknesses;
+  unordered_map<int, int> m_NXStrips;
+  unordered_map<int, int> m_NYStrips;
+  unordered_map<int, double> m_XPitches;
+  unordered_map<int, double> m_YPitches;
+  unordered_map<int, double> m_XWidths;
+  unordered_map<int, double> m_YWidths;
+  unordered_map<int, double> m_Radii;
+  unordered_map<int, MDDetector*> m_Detectors;
+  vector<unsigned int> m_DetectorIDs;
 
 
   // private members:

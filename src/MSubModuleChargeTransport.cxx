@@ -32,6 +32,8 @@
 
 // MEGAlib libs:
 #include "MSubModule.h"
+#include "MDShapeIntersection.h"
+#include "MDShapeTUBS.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +69,70 @@ MSubModuleChargeTransport::~MSubModuleChargeTransport()
 
 bool MSubModuleChargeTransport::Initialize()
 {
-  // Initialize the module
+
+  // The detectors need to be in the same order as DetIDs.
+  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
+  vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
+
+  // Look through the Geometry and get the names and thicknesses of all the detectors.
+  for(unsigned int i = 0; i < DetList.size(); ++i){
+
+    unsigned int DetID = i;
+
+    MDDetector* det = DetList[i];
+    vector<string> DetectorNames;
+    if (det->GetTypeName() == "Strip3D") {
+      if (det->GetNSensitiveVolumes() == 1) {
+        MDVolume* vol = det->GetSensitiveVolume(0);
+        string det_name = vol->GetName().GetString();
+        if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
+          DetectorNames.push_back(det_name);
+          m_Thicknesses[DetID] = 2*(det->GetStructuralSize().GetZ());
+          MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
+          m_XPitches[DetID] = strip->GetPitchX();
+          m_YPitches[DetID] = strip->GetPitchY();
+          m_NXStrips[DetID] = strip->GetNStripsX();
+          m_NYStrips[DetID] = strip->GetNStripsY();
+          m_XWidths[DetID] = strip->GetWidthX();
+          m_YWidths[DetID] = strip->GetWidthY();
+
+          // Read the detector radius from the geometry (assuming it is the second shape of an intersection)
+          if (vol->GetShape()->GetType() == "Intersection" && dynamic_cast<MDShapeIntersection*>(vol->GetShape())->GetShapeB()->GetType() == "TUBS") {
+            m_Radii[DetID] = dynamic_cast<MDShapeTUBS*>(dynamic_cast<MDShapeIntersection*>(vol->GetShape())->GetShapeB())->GetRmax();
+          } else {
+            // If that does not exist, set the detector radius to a value high enough to not have an impact
+            m_Radii[DetID] = m_XWidths[DetID] + m_YWidths[DetID];
+            if (g_Verbosity >= c_Info) {
+              cout << m_Name << ": No bounding tube volume found for this detector" << endl;
+            }
+          }
+          
+          if (g_Verbosity >= c_Info) {
+            cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
+            cout << "Detector width (X): " << m_XWidths[DetID] << endl;
+            cout << "Detector width (Y): " << m_YWidths[DetID] << endl;
+            cout << "Detector radius (R): " << m_Radii[DetID] << endl;
+            cout << "Detector thickness: " << m_Thicknesses[DetID] << endl;
+            cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
+            cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
+            cout << "X strip pitch: " << m_XPitches[DetID] << endl;
+            cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
+          }
+          m_DetectorIDs.push_back(DetID);
+          m_Detectors[DetID] = det;
+        } else {
+          cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << det_name << endl;
+        }
+      } else {
+        cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
+      }
+    }
+  }
+
+  if (m_DetectorIDs.size() == 0) {
+    cout<<"No Strip3D detectors were found."<<endl;
+    return false; 
+  }
 
   return MSubModule::Initialize();
 }
@@ -98,17 +163,24 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   for (MDEEStripHit& SH: LVHits) {
     MVector Pos = SH.m_SimulatedPositionInDetector;
 
+    // Determine detector and strip dimensions from the geometry
+    unsigned int DetID = SH.m_ROE.GetDetectorID();
+    double XWidth = m_XWidths[DetID];
+    double YWidth = m_YWidths[DetID];
+    double XPitch = m_XPitches[DetID];
+    double Radius = m_Radii[DetID];
+    int NXStrips = m_NXStrips[DetID];
+
     // Calculate LV strip ID by rounding down intentionally to avoid truncation towards zero
-    // TODO: Confirm the correct strip pitch based on SMEX detector models
-    int ID = static_cast<int>(std::floor((Pos.X() + 7.4/2.0) / (7.4/64.0)));
+    int ID = static_cast<int>(std::floor((Pos.X() + XWidth/2.0) / XPitch));
 
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
     // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
-    if (ID >= 0 && ID < 64 && std::abs(Pos.Y()) <= 7.4/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
+    if (ID >= 0 && ID < NXStrips && std::abs(Pos.Y()) <= YWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= Radius) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
-      SH.m_ROE.SetStripID(64);
+      SH.m_ROE.SetStripID(NXStrips);
       SH.m_IsGuardRing = true;
     }
     SH.m_Energy = SH.m_SimulatedEnergy;
@@ -118,17 +190,25 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   for (MDEEStripHit& SH: HVHits) {
     MVector Pos = SH.m_SimulatedPositionInDetector;
 
+    // Determine detector and strip dimensions from the geometry
+    unsigned int DetID = SH.m_ROE.GetDetectorID();
+    double XWidth = m_XWidths[DetID];
+    double YWidth = m_YWidths[DetID];
+    double YPitch = m_YPitches[DetID];
+    double Radius = m_Radii[DetID];
+    int NYStrips = m_NYStrips[DetID];
+
     // Calculate HV strip ID by rounding down intentionally to avoid truncation towards zero
     // TODO: Confirm the correct strip pitch based on SMEX detector models
-    int ID = static_cast<int>(std::floor((Pos.Y() + 7.4/2.0) / (7.4/64.0)));
+    int ID = static_cast<int>(std::floor((Pos.Y() + YWidth/2.0) / YPitch));
 
     // Check for strip ID and if the position is within the allowed strip length or on the guard ring
     // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
-    if (ID >= 0 && ID < 64 && std::abs(Pos.X()) <= 7.4/2.0 && std::hypot(Pos.X(), Pos.Y()) <= 4.712) {
+    if (ID >= 0 && ID < NYStrips && std::abs(Pos.X()) <= XWidth/2.0 && std::hypot(Pos.X(), Pos.Y()) <= Radius) {
       SH.m_ROE.SetStripID(ID);
       SH.m_IsGuardRing = false;
     } else {
-      SH.m_ROE.SetStripID(64);
+      SH.m_ROE.SetStripID(NYStrips);
       SH.m_IsGuardRing = true;
     }
     SH.m_Energy = SH.m_SimulatedEnergy;
