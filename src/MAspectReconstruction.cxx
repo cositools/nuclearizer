@@ -232,7 +232,7 @@ bool MAspectReconstruction::AddAspectFrame(MAspectPacket PacketA)
 	MRotation FullRot = ROT_ZXY*RotGPSCryo;
 
 	
-	//Calcualte the Elevation
+	//Calculate the Elevation
 	double Z_Elevation = asin(FullRot.GetZZ())*c_Deg;
 	double Y_Elevation = asin(FullRot.GetYZ())*c_Deg;
 	double X_Elevation = asin(FullRot.GetXZ())*c_Deg;

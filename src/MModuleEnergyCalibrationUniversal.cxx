@@ -121,18 +121,14 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
 {
   // Initialize the module 
   
-  //cout<<m_XmlTag<<": TODO: Set correct energy resolution - currently hard coded to 2.0 keV (one sigma)"<<endl;
-  
   MParser Parser;
   if (Parser.Open(m_FileName, MFile::c_Read) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open calibration file "<<m_FileName<<endl;
     return false;
   }
 
-
-
   MParser Parser_Temp;
-  if ( m_TemperatureEnabled ) { 
+  if (m_TemperatureEnabled ==true) {
     if (Parser_Temp.Open(m_TempFileName, MFile::c_Read) == false) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open Temperature calibration file "<<m_TempFileName<<endl;  
       return false;
@@ -155,14 +151,14 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
         R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-        R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
+        R.IsLowVoltageStrip((Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p") || (Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "l"));
         if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true) {
           CP_ROEToLine[R] = i;
         } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
           CM_ROEToLine[R] = i;
         } else {
-	  CR_ROEToLine[R] = i;
-	}
+          CR_ROEToLine[R] = i;
+        }
       } else {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown read-out element ("<<Parser.GetTokenizerAt(i)->GetTokenAt(1)<<")"<<endl;
         return false;
@@ -179,7 +175,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
           MReadOutElementDoubleStrip R;
           R.SetDetectorID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
           R.SetStripID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-          R.IsPositiveStrip(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4) == 1);
+          R.IsLowVoltageStrip(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4) == 1);
           CT_ROEToLine[R] = i;
         }
       }
@@ -193,17 +189,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
     
     if (CP_ROEToLine.find(CM.first) != CP_ROEToLine.end()) {
       unsigned int i = CP_ROEToLine[CM.first];
-      if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == true) {
-        
-	// Below check of 3 calibration points commented out by J. Beechert on 19/11/15.
-	// Melinator now offers polynomial fits of order < 3, so we no longer want to throw an error if we only see 1 or 2 calibration points.
-	/*
-	if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6) < 3) {
-          if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Not enough calibration points (only "<<Parser.GetTokenizerAt(i)->GetTokenAtAsInt(6)<<") for strip: "<<CM.first<<endl;
-          continue;
-        }
-	*/
-      } else {
+      if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == false) {
         if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Unknown calibration point descriptor found: "<<Parser.GetTokenizerAt(i)->GetTokenAt(5)<<endl;
         continue;
       }
@@ -313,6 +299,16 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
       resolutionfit->FixParameter(1,f1);
 
       m_ResolutionCalibration[CR.first] = resolutionfit;
+    }
+    else if (CalibratorType == "p2" || CalibratorType == "poly2") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f2 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P2","([0]+[1]*x+[2]*x*x) / 2.355",0.,2000.);
+      resolutionfit->FixParameter(0,f0);
+      resolutionfit->FixParameter(1,f1);
+      resolutionfit->FixParameter(2,f2);
+      m_ResolutionCalibration[CR.first] = resolutionfit;
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Line parser: Unknown resolution calibrator type ("<<CalibratorType<<") for strip"<<CR.first<<endl;
       continue;
@@ -320,7 +316,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
   }
 
 
-  if (m_TemperatureEnabled) {
+  if (m_TemperatureEnabled == true) {
     for (auto CT: CT_ROEToLine) {
       unsigned int Pos = 5;
       double f0 = Parser_Temp.GetTokenizerAt(CT.second)->GetTokenAtAsDouble(Pos);
@@ -333,7 +329,6 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
     }
   }
 
-			
   return MModule::Initialize();
 }
 
@@ -353,44 +348,43 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     TF1* FitRes = m_ResolutionCalibration[R];
     double temp, ADCMod, newADC;
 
-    if (Fit == 0) {
+    if (Fit == nullptr) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
       Event->SetEnergyCalibrationIncomplete_BadStrip(true);
     } else {
 
       double Energy = 0;
-      if (m_TemperatureEnabled) {
-	TF1* FitTemp = m_TemperatureCalibration[R];
-	if (FitTemp == 0) {
-	  if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: temp-fit not found for read-out element "<<R<<endl;
+      if (m_TemperatureEnabled == true) {
+        TF1* FitTemp = m_TemperatureCalibration[R];
+        if (FitTemp == nullptr) {
+          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: temp-fit not found for read-out element "<<R<<endl;
           Event->SetEnergyCalibrationIncomplete_BadStrip(true);
         } else {
           temp = SH->GetPreampTemp();
-	  ADCMod = FitTemp->Eval(temp);
+          ADCMod = FitTemp->Eval(temp);
           newADC = (SH->GetADCUnits())/ADCMod;
- 	  SH->SetADCUnits(newADC); 
+          SH->SetADCUnits(newADC);
         }
       } 
        
       Energy = Fit->Eval(SH->GetADCUnits());
 
-      if (Energy < 0 && SH->GetADCUnits() > 100) {
-        Event->SetEnergyCalibrationIncomplete(true);
+      if (Energy < 0) {
         Energy = 0;
-      } else if (Energy < 0) {
-        Energy = 0;
+        if (SH->GetADCUnits() > 100) { // TODO: That's a remaining COSI-balloon hack...
+          Event->SetEnergyCalibrationIncomplete(true);
+        }
       }
-     
       
       SH->SetEnergy(Energy);
-      if (FitRes == 0) {
+      if (FitRes == nullptr) {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy Resolution fit not found for read-out element "<<R<<endl;
         Event->SetEnergyResolutionCalibrationIncomplete(true);
       } else {
         double EnergyResolution = FitRes->Eval(Energy);
         SH->SetEnergyResolution(EnergyResolution);
       }
-      if (R.IsPositiveStrip() == true) {
+      if (R.IsLowVoltageStrip() == true) {
         if (HasExpos() == true) {
           m_ExpoEnergyCalibration->AddEnergy(Energy);
         }
@@ -398,7 +392,20 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       
       if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     } 
-  } 
+  }
+
+  for (unsigned int i = 0; i < Event->GetNStripHits(); ) {
+    MStripHit* SH = Event->GetStripHit(i);
+    if (SH->GetEnergy() < 8 || SH->GetTiming() < 8700 || SH->GetTiming() > 12000) {
+      // cout<<"HACK: Removing strip hit due to TAC "<<SH->GetTiming()<<" cut or energy "<<SH->GetEnergy()<<endl;
+      Event->RemoveStripHit(i);
+      delete SH;
+    } else {
+      ++i;
+    }
+  }
+
+
   Event->SetAnalysisProgress(MAssembly::c_EnergyCalibration);
   
   return true;
@@ -408,44 +415,49 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-double MModuleEnergyCalibrationUniversal::GetEnergy(MReadOutElementDoubleStrip R, double ADC){
-	
+double MModuleEnergyCalibrationUniversal::GetEnergy(MReadOutElementDoubleStrip R, double ADC)
+{
+  //! Return the energy for a given ADC value or zero in case of error
+
   TF1* Fit = m_Calibration[R];
-  double Energy;
-  if (Fit == 0){ Energy = 0; }
-  else {
+  double Energy = 0.0;
+  if (Fit != nullptr) {
     Energy = Fit->Eval(ADC);
-    if (Energy < 0 && ADC > 100) {
-      Energy = 0;
-    } else if (Energy < 0) {
-      Energy = 0;
+    if (Energy < 0.0) {
+      Energy = 0.0;
     }
+  } else {
+    cout<<m_Name<<": GetEnergy: Error unable to find calibration"<<endl;
+    return 0;
   }
 
   return Energy;
-
 }
 
-double MModuleEnergyCalibrationUniversal::GetADC(MReadOutElementDoubleStrip R, double energy){
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+double MModuleEnergyCalibrationUniversal::GetADC(MReadOutElementDoubleStrip R, double Energy)
+{
+  //! Return the ADC value for a given energy
 
   TF1* Fit = m_Calibration[R];
-
-  double ADC;
-  if (Fit == 0){ ADC = 0; }
-  else{
-    ADC = Fit->GetX(energy);
+  if (Fit != nullptr) {
+    return Fit->GetX(Energy);
+  } else {
+    cout<<m_Name<<": GetADC: Error unable to find calibration"<<endl;
+    return 0;
   }
-
-  return ADC;
-
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
 void MModuleEnergyCalibrationUniversal::Finalize()
 {
-  // Close the tranceiver 
+  // Finalize the calibrator and clean up
 
   MModule::Finalize();
 
@@ -513,16 +525,23 @@ MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleEnergyCalibrationUniversal::LookupEnergyResolution(MStripHit* SH, double Energy){
-    MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
-	 TF1* FitRes = m_ResolutionCalibration[R];
-	 if( FitRes == 0 ){
-		 cout << "::LookupEnergyResolution: couldn't locate energy resolution" << endl;
-		 return -1.0;
-	 } else {
-		 double EnergyResolution = FitRes->Eval(Energy);
-		 return EnergyResolution;
-	 }
+
+double MModuleEnergyCalibrationUniversal::LookupEnergyResolution(MStripHit* SH, double Energy)
+{
+  //! Return the energy resolution or -1 in case of error
+
+  MReadOutElementDoubleStrip* ROE = dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
+  if (ROE == nullptr) {
+    cout<<m_Name<<": LookupEnergyResolution: Error unable to get read-out element"<<endl;
+    return -1;
+  }
+  TF1* FitRes = m_ResolutionCalibration[*ROE];
+  if (FitRes == nullptr) {
+    cout<<m_Name<<": LookupEnergyResolutio: Error: Couldn't locate energy resolution"<<endl;
+    return -1.0;
+  } else {
+    return FitRes->Eval(Energy);
+  }
 }
 
 

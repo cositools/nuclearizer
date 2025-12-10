@@ -85,6 +85,13 @@ MModuleStripPairingGreedy::MModuleStripPairingGreedy() : MModule()
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = true;
+
+  m_MagicNumberA = 65; //38;
+  m_MagicNumberB = 100; //50;
+  m_MagicNumberC = 200; //100;
+  m_MagicNumberD = 5000;
+  m_MagicNumberE = 10000;
+
 }
 
 
@@ -361,7 +368,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
     double nUncertainty = 0.0;
     
     for (unsigned int s = 0; s < Event->GetHit(h)->GetNStripHits(); ++s) {
-      if (Event->GetHit(h)->GetStripHit(s)->IsXStrip() == true) {
+      if (Event->GetHit(h)->GetStripHit(s)->IsLowVoltageStrip() == true) {
         ++pNStrips;
         pEnergy += Event->GetHit(h)->GetStripHit(s)->GetEnergy(); 
         pUncertainty += pow(Event->GetHit(h)->GetStripHit(s)->GetEnergyResolution(), 2);
@@ -383,7 +390,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
     nUncertainty = sqrt(nUncertainty);
     
     double Difference = fabs(pEnergy - nEnergy);
-/*		if (Difference > 100){
+/*		if (Difference > m_MagicNumberC){
 			cout << "Difference: " << Difference << endl;
 			cout << "strip hit multiple times?  " << Event->GetHit(h)->GetStripHitMultipleTimes() << endl;
 			dummy_func();
@@ -396,7 +403,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 
     if (Difference > 2*pUncertainty + 2*nUncertainty + 20) {
 			if (Event->GetHit(h)->GetStripHitMultipleTimesX() == false && Event->GetHit(h)->GetStripHitMultipleTimesY() == false){
-		  	Event->SetStripPairingIncomplete(true,"bad pairing");
+		  	Event->SetStripPairingIncomplete(true, "bad pairing");
 			}
 /*			if (nHits[0] != 0 && nHits[1] != 0){
 				PrintXYStripsHitOrig();
@@ -452,12 +459,16 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 			MStripHit* striphit = Event->GetStripHit(sh);
 			cout << striphit->GetDetectorID() << '\t';
 			cout << striphit->GetStripID() << '\t';
-			cout << striphit->IsPositiveStrip() << '\t';
+			cout << striphit->IsLowVoltageStrip() << '\t';
 			cout << striphit->GetEnergy() << endl;
 		}
 		dummy_func();
 	}
 */
+
+  if (m_StripPairingFailed != "") {
+    Event->SetStripPairingIncomplete(true, m_StripPairingFailed);
+  }
 
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
   /*
@@ -485,7 +496,7 @@ int MModuleStripPairingGreedy::GetEventInfo(MReadOutAssembly* Event, int detecto
   //Find the number of hits per side for this detector
   for (unsigned int i = 0; i < Event->GetNStripHits(); i++){
     if (detector == Event->GetStripHit(i)->GetDetectorID()){
-      if (Event->GetStripHit(i)->IsXStrip() == true){
+      if (Event->GetStripHit(i)->IsLowVoltageStrip() == true){
         n_x += 1;
       }
       else {
@@ -518,7 +529,7 @@ int MModuleStripPairingGreedy::GetEventInfo(MReadOutAssembly* Event, int detecto
 
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
-        if (Event->GetStripHit(i)->IsXStrip() == true){
+        if (Event->GetStripHit(i)->IsLowVoltageStrip() == true){
           xTotalEnergy += Event->GetStripHit(i)->GetEnergy();
 					xTotalUnc += pow(Event->GetStripHit(i)->GetEnergyResolution(),2);
         }    
@@ -535,7 +546,7 @@ int MModuleStripPairingGreedy::GetEventInfo(MReadOutAssembly* Event, int detecto
 
     for (unsigned int i=0; i<Event->GetNStripHits(); i++){
       if (detector == Event->GetStripHit(i)->GetDetectorID()){
-        if (Event->GetStripHit(i)->IsXStrip() == true){
+        if (Event->GetStripHit(i)->IsLowVoltageStrip() == true){
           stripID = Event->GetStripHit(i)->GetStripID();
           stripEnergy = Event->GetStripHit(i)->GetEnergy();
           stripSigma = Event->GetStripHit(i)->GetEnergyResolution();
@@ -659,6 +670,9 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 
 	vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
 
+  if (m_StripPairingFailed != "") return;
+
+
 	//pair indexes over the pairs (hits) -- for each pair, there is a new MHit
 	//strip indexes over the strips in each pair on the x or y side
 	//n indexes over the list of strip hits in the MReadOutAssembly
@@ -681,7 +695,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair)[0].size(); strip++){
 			for (unsigned int n = 0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
-					if (Event->GetStripHit(n)->IsXStrip() == true){
+					if (Event->GetStripHit(n)->IsLowVoltageStrip() == true){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair)[0].at(strip)){
 							Hit->AddStripHit(Event->GetStripHit(n));
 							Hit->SetHitQuality(hitQualityFactor.at(pair));
@@ -697,7 +711,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 		for (unsigned int strip=0; strip<decodedFinalPairs.at(pair)[1].size(); strip++){
 			for (unsigned int n=0; n<Event->GetNStripHits(); n++){
 				if (detector == Event->GetStripHit(n)->GetDetectorID()){
-					if (Event->GetStripHit(n)->IsXStrip() == false){
+					if (Event->GetStripHit(n)->IsLowVoltageStrip() == false){
 						if (Event->GetStripHit(n)->GetStripID() == decodedFinalPairs.at(pair)[1].at(strip)){
 							Hit->AddStripHit(Event->GetStripHit(n));
 						}
@@ -748,11 +762,11 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
 				int yhit_strip[3] = {0, 0, 0};
 				double yhit_energy[3] = {0.0, 0.0, 0.0};
 				for (unsigned int s = 0; s < 4; ++s){
-				if (Hit->GetStripHit(s)->IsXStrip() == true){
+				if (Hit->GetStripHit(s)->IsLowVoltageStrip() == true){
 				xhit_strip[nXhits] = Hit->GetStripHit(s)->GetStripID();
 				xhit_energy[nXhits] = Hit->GetStripHit(s)->GetEnergy();
 				nXhits = nXhits + 1;
-				} else if (Hit->GetStripHit(s)->IsXStrip() == false){
+				} else if (Hit->GetStripHit(s)->IsLowVoltageStrip() == false){
 				yhit_strip[nYhits] = Hit->GetStripHit(s)->GetStripID();
 				yhit_energy[nYhits] = Hit->GetStripHit(s)->GetEnergy();
 				}
@@ -786,7 +800,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
     // If y strip was hit multiple times, need to use the x energy
     else if (Event->GetHit(sh)->GetStripHitMultipleTimesY() == true) {
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == true){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == true){
           Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         }
@@ -798,7 +812,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
     // If x strip was hit multiple times, need to use the y energy
     else if (Event->GetHit(sh)->GetStripHitMultipleTimesX() == true) {
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++){
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false){
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false){
           Energy += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           Resolution += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         }
@@ -815,7 +829,7 @@ void MModuleStripPairingGreedy::WriteHits(MReadOutAssembly* Event, int detector)
       for (unsigned int sh_i = 0; sh_i < Event->GetHit(sh)->GetNStripHits(); sh_i++) {  
         //for now, just define the hit energy as the sum of the y strip hits. This could later be modifided to take an average of the two sides.
         
-        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsXStrip() == false) {
+        if (Event->GetHit(sh)->GetStripHit(sh_i)->IsLowVoltageStrip() == false) {
           EnergyY += Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergy();
           SigmaYSquared += pow(Event->GetHit(sh)->GetStripHit(sh_i)->GetEnergyResolution(), 2);
         } else {
@@ -992,7 +1006,7 @@ void MModuleStripPairingGreedy::DetermineOption(bool adjStripsHit){
 
 //checks if any hits are on adjacent strips, and return true if so
 //appends any hits on adjacent strips to stripsHit vector
-//if strip n and n+1 are hit, the "strip number" for the combined strips is 50+n
+//if strip n and n+1 are hit, the "strip number" for the combined strips is m_MagicNumberB+n
 //for example, if strips 3 and 4 are hit, 53 is appended to the end of stripsHit
 bool MModuleStripPairingGreedy::CheckForAdjacentStrips(){
  
@@ -1018,9 +1032,9 @@ bool MModuleStripPairingGreedy::CheckForAdjacentStrips(){
         adjStrips = true;
         
         counter += 1;
-        //label combined strip by adding 50 to the lower strip number
+        //label combined strip by adding m_MagicNumberB to the lower strip number
         //append combined strip number to stripsHit
-        adjStripLabel = stripsHit[axis][i] + 50;
+        adjStripLabel = stripsHit[axis][i] + m_MagicNumberB;
         stripsHit[axis].push_back(adjStripLabel);
         
         //add row and column to kill matrix
@@ -1099,9 +1113,9 @@ void MModuleStripPairingGreedy::AddMultipleHits(int axis){
       x1 = stripsHit[axis][i];
       x2 = stripsHit[axis][j];
       
-      //label combinations by multiplying the lower strip number by 100 and adding it to the higher strip number
+      //label combinations by multiplying the lower strip number by m_MagicNumberC and adding it to the higher strip number
       //append combined strip to pairHitsVec
-      pair = x1*100+x2;
+      pair = x1*m_MagicNumberC+x2;
       pairHitsVec.push_back(pair);
       
       //count number of pairs
@@ -1178,7 +1192,7 @@ void MModuleStripPairingGreedy::ChargeSharingThreeStrips(int axis){
 	//check pairs of adjacent strips
 	for (int i=nHitsOrig[axis]; i<nHitsOrig[axis]+nHitsAdj[axis]-1; i++){
 		if ( fabs(stripsHit[axis][i+1] - stripsHit[axis][i]) == 1){
-			int sID_one = stripsHit[axis][i]-50;
+			int sID_one = stripsHit[axis][i]-m_MagicNumberB;
 
 			//get strip IDs to check energies
 			int indOne = GetStripIndex(axis,sID_one);
@@ -1190,7 +1204,7 @@ void MModuleStripPairingGreedy::ChargeSharingThreeStrips(int axis){
 
 			//if energy makes sense, get new "strip ID"
 			if (eTwo > eOne && eTwo > eThree){
-				int newStripID = 5000+sID_one;
+				int newStripID = m_MagicNumberD+sID_one;
 				stripsHit[axis].push_back(newStripID);
 				float newEnergy = eOne+eTwo+eThree;
 				energy[axis].push_back(newEnergy);
@@ -1242,9 +1256,9 @@ void MModuleStripPairingGreedy::AddThreeHits(int axis){
       x1 = stripsHit[axis][i];
       x2 = stripsHit[axis][j];
       
-      //label combinations by multiplying the lower strip number by 100 and adding it to the higher strip number
+      //label combinations by multiplying the lower strip number by m_MagicNumberC and adding it to the higher strip number
       //append combined strip to pairHitsVec
-      pair = x1*10000+x2;
+      pair = x1*m_MagicNumberE+x2;
       pairHitsVec.push_back(pair);
       
       //count number of pairs
@@ -1724,7 +1738,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 
 /*
 	for (unsigned int pair=0; pair<finalPairs.size(); pair++){
-		if (finalPairs.at(pair)[0] > 100 && finalPairs.at(pair)[1] > 100){
+		if (finalPairs.at(pair)[0] > m_MagicNumberC && finalPairs.at(pair)[1] > m_MagicNumberC){
 			dummy_func();
 		}
 	}
@@ -1754,91 +1768,91 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 		yChargeSharing = false;
 
 		//charge sharing between two strips
-    if (finalPairs[i][0] > 50 && finalPairs[i][0] < 100){
-      xVec.push_back(finalPairs[i][0]-50);
-      xVec.push_back(finalPairs[i][0]+1-50);
+    if (finalPairs[i][0] > m_MagicNumberB && finalPairs[i][0] < m_MagicNumberC){
+      xVec.push_back(finalPairs[i][0]-m_MagicNumberB);
+      xVec.push_back(finalPairs[i][0]+1-m_MagicNumberB);
 			xChargeSharing = true;
     }
 		//charge sharing between three strips
-		else if (finalPairs[i][0] > 5000 && finalPairs[i][0] < 5100){
-			xVec.push_back(finalPairs[i][0]-5000);
-			xVec.push_back(finalPairs[i][0]+1-5000);
-			xVec.push_back(finalPairs[i][0]+2-5000);
+		else if (finalPairs[i][0] > m_MagicNumberD && finalPairs[i][0] < m_MagicNumberD + m_MagicNumberC){
+			xVec.push_back(finalPairs[i][0]-m_MagicNumberD);
+			xVec.push_back(finalPairs[i][0]+1-m_MagicNumberD);
+			xVec.push_back(finalPairs[i][0]+2-m_MagicNumberD);
 			xChargeSharing = true;
 		}
 		//two hits on x: y strip hit twice
-    else if (finalPairs[i][0] > 100 && finalPairs[i][0] < 10000){
+    else if (finalPairs[i][0] > m_MagicNumberC && finalPairs[i][0] < m_MagicNumberE){
 			xTwoHits = true;
-      if (finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100 > 50){
+      if (finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				xChargeSharing = true;
-        xVec.push_back(finalPairs[i][0]/100);
-        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100-50);
-        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/100)*100+1-50);
+        xVec.push_back(finalPairs[i][0]/m_MagicNumberC);
+        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        xVec.push_back(finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        xVec.push_back(finalPairs[i][0]/100);
-        xVec.push_back(finalPairs[i][0] - (int)(finalPairs[i][0]/100)*100);
+        xVec.push_back(finalPairs[i][0]/m_MagicNumberC);
+        xVec.push_back(finalPairs[i][0] - (int)(finalPairs[i][0]/m_MagicNumberC)*m_MagicNumberC);
       }
     }
 		//three hits on x: y strip hit three times
-		else if (finalPairs[i][0] > 10000){
+		else if (finalPairs[i][0] > m_MagicNumberE){
 			xThreeHits = true;
-			xVec.push_back(finalPairs[i][0]/10000);
-			int lowerFourDigits = finalPairs[i][0]-(int)(finalPairs[i][0]/10000)*10000;
-	    if (lowerFourDigits-(int)(lowerFourDigits/100)*100 > 50){
+			xVec.push_back(finalPairs[i][0]/m_MagicNumberE);
+			int lowerFourDigits = finalPairs[i][0]-(int)(finalPairs[i][0]/m_MagicNumberE)*m_MagicNumberE;
+	    if (lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				xChargeSharing = true;
-        xVec.push_back(lowerFourDigits/100);
-        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100-50);
-        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100+1-50);
+        xVec.push_back(lowerFourDigits/m_MagicNumberC);
+        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        xVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        xVec.push_back(lowerFourDigits/100);
-        xVec.push_back(lowerFourDigits - (int)(lowerFourDigits/100)*100);
+        xVec.push_back(lowerFourDigits/m_MagicNumberC);
+        xVec.push_back(lowerFourDigits - (int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC);
       }
  		}
 		//simplest case: one hit on x, one on y
-    else if (finalPairs[i][0] < 38) {xVec.push_back(finalPairs[i][0]);}
+    else if (finalPairs[i][0] < m_MagicNumberA) {xVec.push_back(finalPairs[i][0]);}
     
-    if (finalPairs[i][1] > 50 && finalPairs[i][1] < 100){
-      yVec.push_back(finalPairs[i][1]-50);
-      yVec.push_back(finalPairs[i][1]+1-50);
+    if (finalPairs[i][1] > m_MagicNumberB && finalPairs[i][1] < m_MagicNumberC){
+      yVec.push_back(finalPairs[i][1]-m_MagicNumberB);
+      yVec.push_back(finalPairs[i][1]+1-m_MagicNumberB);
 			yChargeSharing = true;
     }
-		else if (finalPairs[i][1] > 5000 && finalPairs[i][1] < 5100){
-			yVec.push_back(finalPairs[i][1]-5000);
-			yVec.push_back(finalPairs[i][1]+1-5000);
-			yVec.push_back(finalPairs[i][1]+2-5000);
+		else if (finalPairs[i][1] > m_MagicNumberD && finalPairs[i][1] < m_MagicNumberD + m_MagicNumberC){
+			yVec.push_back(finalPairs[i][1]-m_MagicNumberD);
+			yVec.push_back(finalPairs[i][1]+1-m_MagicNumberD);
+			yVec.push_back(finalPairs[i][1]+2-m_MagicNumberD);
 			yChargeSharing = true;
 		}
-    else if (finalPairs[i][1] > 100 && finalPairs[i][1] < 10000){
+    else if (finalPairs[i][1] > m_MagicNumberC && finalPairs[i][1] < m_MagicNumberE){
 			yTwoHits = true;
-      if (finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100 > 50){
+      if (finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				yChargeSharing = true;
-        yVec.push_back(finalPairs[i][1]/100);
-        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100-50);
-        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/100)*100+1-50);
+        yVec.push_back(finalPairs[i][1]/m_MagicNumberC);
+        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        yVec.push_back(finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        yVec.push_back(finalPairs[i][1]/100);
-        yVec.push_back(finalPairs[i][1] - (int)(finalPairs[i][1]/100)*100);
+        yVec.push_back(finalPairs[i][1]/m_MagicNumberC);
+        yVec.push_back(finalPairs[i][1] - (int)(finalPairs[i][1]/m_MagicNumberC)*m_MagicNumberC);
       }
     }
-		else if (finalPairs[i][1] > 10000){
+		else if (finalPairs[i][1] > m_MagicNumberE){
 			yThreeHits = true;
-			yVec.push_back(finalPairs[i][1]/10000);
-			int lowerFourDigits = finalPairs[i][1]-(int)(finalPairs[i][1]/10000)*10000;
-	    if (lowerFourDigits-(int)(lowerFourDigits/100)*100 > 50){
+			yVec.push_back(finalPairs[i][1]/m_MagicNumberE);
+			int lowerFourDigits = finalPairs[i][1]-(int)(finalPairs[i][1]/m_MagicNumberE)*m_MagicNumberE;
+	    if (lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC > m_MagicNumberB){
 				yChargeSharing = true;
-        yVec.push_back(lowerFourDigits/100);
-        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100-50);
-        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/100)*100+1-50);
+        yVec.push_back(lowerFourDigits/m_MagicNumberC);
+        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC-m_MagicNumberB);
+        yVec.push_back(lowerFourDigits-(int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC+1-m_MagicNumberB);
       }
       else {
-        yVec.push_back(lowerFourDigits/100);
-        yVec.push_back(lowerFourDigits - (int)(lowerFourDigits/100)*100);
+        yVec.push_back(lowerFourDigits/m_MagicNumberC);
+        yVec.push_back(lowerFourDigits - (int)(lowerFourDigits/m_MagicNumberC)*m_MagicNumberC);
       }
  		}
-    else if (finalPairs[i][1] < 38) {yVec.push_back(finalPairs[i][1]);}
+    else if (finalPairs[i][1] < m_MagicNumberA) {yVec.push_back(finalPairs[i][1]);}
 
 		if (xTwoHits){
 			twoHitsCounter += 1;
@@ -1867,7 +1881,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				yStripHitMultipleTimes.push_back(1);
 				xStripHitMultipleTimes.push_back(0);
 				chargeSharing.push_back(1);
-				indexTwo = GetStripIndex(0, (50+xVec[1]));
+				indexTwo = GetStripIndex(0, (m_MagicNumberB+xVec[1]));
 			}
 			else {
 				xVecNew.push_back(xVec[1]);
@@ -1892,6 +1906,11 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
 
+      if (hitEnergy.size() <= i+twoHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
 			hitEnergy.at(i+twoHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+twoHitsCounter, energyTwo);
 			energyResolution.at(i+twoHitsCounter-1) = eResOne;
@@ -1923,7 +1942,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexTwo = GetStripIndex(1, (50+yVec[1]));
+				indexTwo = GetStripIndex(1, (m_MagicNumberB+yVec[1]));
 			}
 			else {
 				pair.push_back(xVec);
@@ -1946,6 +1965,12 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
+
+      if (hitEnergy.size() <= i+twoHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
 
 			hitEnergy.at(i+twoHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+twoHitsCounter, energyTwo);
@@ -1992,7 +2017,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				pair.push_back(yVec);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexThree = GetStripIndex(0,(50+xVec[2]));
+				indexThree = GetStripIndex(0,(m_MagicNumberB+xVec[2]));
 			}
 			else {
 				xVecNew.push_back(xVec[2]);
@@ -2017,6 +2042,12 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
+
+      if (hitEnergy.size() <= i+threeHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
 
 			hitEnergy.at(i+threeHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+threeHitsCounter, energyTwo);
@@ -2064,7 +2095,7 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 				pair.push_back(yVecNew);
 				decodedFinalPairs.push_back(pair);
 				chargeSharing.push_back(1);
-				indexThree = GetStripIndex(1,(50+yVec[2]));
+				indexThree = GetStripIndex(1,(m_MagicNumberB+yVec[2]));
 			}
 			else {
 				pair.push_back(xVec);
@@ -2089,6 +2120,12 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 			//vector<float>::iterator itOne = hitEnergy.begin();
 			//vector<float>::iterator itTwo = energyResolution.begin();
 			//vector<float>::iterator itThree = hitQualityFactor.begin();
+
+      if (hitEnergy.size() <= i+threeHitsCounter-1) {
+        m_StripPairingFailed = "Programming error: Array out of bounds";
+        cout<<m_StripPairingFailed<<endl;
+        return decodedFinalPairs;
+      }
 
 			hitEnergy.at(i+threeHitsCounter-1) = energyOne;
 			hitEnergy.insert(hitEnergy.begin()+i+threeHitsCounter, energyTwo);
@@ -2154,6 +2191,9 @@ vector<vector<vector<int> > > MModuleStripPairingGreedy::DecodeFinalPairs(){
 bool MModuleStripPairingGreedy::CheckAllStripsWerePaired(){
   
   vector<vector<vector<int> > > decodedFinalPairs = DecodeFinalPairs();
+
+  if (m_StripPairingFailed != "") return false;
+
   int counter = 0;
   
   //count how many strips in decodedFinalPairs are equal to original strips

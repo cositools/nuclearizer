@@ -191,8 +191,8 @@ bool compare_striphits2(MStripHit* SH1, MStripHit* SH2)
   int side1 = 0, side2 = 0;
   int strip1 = SH1->GetStripID();
   int strip2 = SH2->GetStripID();
-  if (not SH1->IsXStrip()) side1 = 1;
-  if (not SH2->IsXStrip()) side2 = 1;
+  if (not SH1->IsLowVoltageStrip()) side1 = 1;
+  if (not SH2->IsLowVoltageStrip()) side2 = 1;
   if (det1 != det2) return (det1<det2);
   else if ((det1==det2) && (side1!=side2)) return (side1<side2);
   else if ((det1==det2) && (side1==side2)) return (strip1<strip2);
@@ -234,8 +234,8 @@ bool MInverseCrosstalkCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 	      // Count number of X and Y strips
 	      MStripHit *SH = Event->GetStripHit(i_sh);
 	      if ((SH->GetDetectorID()==i_det) 
-		  && (((SH->IsXStrip()==true) && (i_side==0)) 
-		      || ((SH->IsXStrip()==false) && (i_side==1))))
+		  && (((SH->IsLowVoltageStrip()==true) && (i_side==0)) 
+		      || ((SH->IsLowVoltageStrip()==false) && (i_side==1))))
 		{
 		  StripHits.push_back(SH);
 		}
@@ -281,7 +281,7 @@ void MInverseCrosstalkCorrection::ApplyCrosstalk(vector<MStripHit*> StripHits,
       for (unsigned int j=0; j<StripHits.size(); j++)
 	{
 	  mout << StripHits[j]->GetDetectorID() << " "
-	       << !StripHits[j]->IsXStrip() << " "
+	       << !StripHits[j]->IsLowVoltageStrip() << " "
 	       << StripHits[j]->GetStripID() << " "
 	       << StripHits[j]->GetEnergy() << endl;
 	}
@@ -364,7 +364,7 @@ void MInverseCrosstalkCorrection::ApplyCrosstalk(vector<MStripHit*> StripHits,
       for (unsigned int j=0; j<StripHits.size(); j++)
 	{
 	  mout << StripHits[j]->GetDetectorID() << " "
-	       << !StripHits[j]->IsXStrip() << " "
+	       << !StripHits[j]->IsLowVoltageStrip() << " "
 	       << StripHits[j]->GetStripID() << " "
 	       << StripHits[j]->GetEnergy() << endl;
 	}

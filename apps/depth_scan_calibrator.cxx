@@ -198,7 +198,7 @@ int main(int argc, char * argv[]){
 				vector<MStripHit*> XSH; vector<MStripHit*> YSH;
 				for(size_t i = 0; i < Event->GetNStripHits(); ++i){
 					MStripHit* SH = Event->GetStripHit(i);
-					if(SH->IsXStrip()) XSH.push_back(SH); else YSH.push_back(SH);
+					if(SH->IsLowVoltageStrip()) XSH.push_back(SH); else YSH.push_back(SH);
 				}
 
 				int event_type = 0;

@@ -84,6 +84,7 @@ MDetectorEffectsEngineBalloon::MDetectorEffectsEngineBalloon()
   m_ShowProgressBar = false;
   m_SaveToFile = false;
   m_ApplyFudgeFactor = true;
+  m_ChargeLossHist = nullptr;
 }
 
 
@@ -96,6 +97,27 @@ MDetectorEffectsEngineBalloon::~MDetectorEffectsEngineBalloon()
   // Intentionally left blank
   
   if (m_OwnGeometry == true) delete m_Geometry;
+  
+  for (auto& C: m_EnergyCalibration) {
+    delete C.second;
+  }
+  
+  for (auto& C: m_ResolutionCalibration) {
+    delete C.second;
+  }
+  
+  // automaytically deleted
+  //for (auto& C: m_FSTThresholds) {
+  //  delete C.second;
+  //}
+  
+  //for (auto& V1: m_ChargeSharingFactors) {
+  //  for (auto& V2: V1) {
+  //    delete V2; 
+  //  }
+  //}
+  
+  //delete m_ChargeLossHist;
 }
 
 
@@ -392,8 +414,8 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         pSide.m_OppositeStrip = nSide.m_ID;
         nSide.m_OppositeStrip = pSide.m_ID;
         
-        pSide.m_ROE.IsPositiveStrip(true);
-        nSide.m_ROE.IsPositiveStrip(false);
+        pSide.m_ROE.IsLowVoltageStrip(true);
+        nSide.m_ROE.IsLowVoltageStrip(false);
         
         // Convert detector name in detector ID
         pSide.m_ROE.SetDetectorID(DetectorID);
@@ -430,6 +452,8 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         pSide.m_Energy = HT->GetEnergy();
         nSide.m_Energy = HT->GetEnergy();
         
+        //cout<<"Set energy: "<<HT->GetEnergy()<<endl;
+
         //m_EnergyOrig will be unchanged: to see if event is incompletely absorbed or not
         //(m_Energy is changed due to crosstalk and charge loss, etc)
         pSide.m_EnergyOrig = HT->GetEnergy();
@@ -690,6 +714,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         for (auto P: pStripsEnergies) {
           //change the energy of original strip
           if (pSide.m_ROE.GetStripID() == P.first){
+            //cout<<"pSide: "<<P.second<<endl;
             pSide.m_Energy = P.second;
             pSide.m_EnergyOrig = P.second;
             pOrigHit = true;
@@ -698,7 +723,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           //guard ring hit
           else if (P.first == 38){
             MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsPositiveStrip(true);
+            chargeShareGRHit.m_ROE.IsLowVoltageStrip(true);
             chargeShareGRHit.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
             chargeShareGRHit.m_ROE.SetStripID(38);
             chargeShareGRHit.m_Energy = P.second;
@@ -708,10 +733,11 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           //normal strip hit
           else {
             MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsPositiveStrip(true);
+            chargeShareStrip.m_ROE.IsLowVoltageStrip(true);
             chargeShareStrip.m_ROE.SetStripID(P.first);
             chargeShareStrip.m_ROE.SetDetectorID(pSide.m_ROE.GetDetectorID());
             chargeShareStrip.m_Timing = pSide.m_Timing;
+            //cout<<"chargeShareStrip: "<<P.second<<endl;
             chargeShareStrip.m_Energy = P.second;
             chargeShareStrip.m_EnergyOrig = P.second;
             chargeShareStrip.m_Depth = pSide.m_Depth;
@@ -730,7 +756,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           }
           else if (N.first == 38){
             MDEEStripHit chargeShareGRHit;
-            chargeShareGRHit.m_ROE.IsPositiveStrip(false);
+            chargeShareGRHit.m_ROE.IsLowVoltageStrip(false);
             chargeShareGRHit.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
             chargeShareGRHit.m_ROE.SetStripID(38);
             chargeShareGRHit.m_Energy = N.second;
@@ -739,7 +765,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           }
           else {
             MDEEStripHit chargeShareStrip;
-            chargeShareStrip.m_ROE.IsPositiveStrip(false);
+            chargeShareStrip.m_ROE.IsLowVoltageStrip(false);
             chargeShareStrip.m_ROE.SetStripID(N.first);
             chargeShareStrip.m_ROE.SetDetectorID(nSide.m_ROE.GetDetectorID());
             chargeShareStrip.m_Timing = nSide.m_Timing;
@@ -790,14 +816,14 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         int DetectorID = DetectorName.ToInt();
         
         MDEEStripHit GuardRingHitP;
-        GuardRingHitP.m_ROE.IsPositiveStrip(true);
+        GuardRingHitP.m_ROE.IsLowVoltageStrip(true);
         GuardRingHitP.m_ROE.SetDetectorID(DetectorID);
         GuardRingHitP.m_ROE.SetStripID(38); // ?
         GuardRingHitP.m_Energy = GR->GetEnergy();
         GuardRingHitP.m_Position = MVector(0, 0, 0); // <-- not important
         
         MDEEStripHit GuardRingHitN;
-        GuardRingHitN.m_ROE.IsPositiveStrip(false);
+        GuardRingHitN.m_ROE.IsLowVoltageStrip(false);
         GuardRingHitN.m_ROE.SetDetectorID(DetectorID);
         GuardRingHitN.m_ROE.SetStripID(38); // ?
         GuardRingHitN.m_Energy = GR->GetEnergy();
@@ -925,6 +951,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           EnergyOrig += SubHit.m_EnergyOrig;
         }
         
+        //cout<<"Merged energy: "<<Energy<<endl;
         Hit.m_Energy = Energy;
         Hit.m_EnergyOrig = EnergyOrig;
       }
@@ -942,8 +969,8 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           int stripID2 = (*sh2).m_ROE.GetStripID();
           int detID1 = (*sh1).m_ROE.GetDetectorID();
           int detID2 = (*sh2).m_ROE.GetDetectorID();
-          bool side1 = (*sh1).m_ROE.IsPositiveStrip();
-          bool side2 = (*sh2).m_ROE.IsPositiveStrip();
+          bool side1 = (*sh1).m_ROE.IsLowVoltageStrip();
+          bool side2 = (*sh2).m_ROE.IsLowVoltageStrip();
           if (abs(stripID1-stripID2) == 1 && side1 == side2 && detID1 == detID2){
             adjacent = true;
           }
@@ -967,7 +994,9 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
             double energy2 = (*sh2).m_Energy;
             double depth1 = (*sh1).m_Depth;
             double depth2 = (*sh2).m_Depth;
-            if (side1 && depth1 == depth2){
+            if (side1 && depth1 == depth2) {
+
+              //cout<<energy1<<":"<<energy2<<endl;
               vector<double> newEnergies = ApplyChargeLoss(energy1,energy2,detID1,0,depth1,depth2);
               (*sh1).m_Energy = newEnergies.at(0);
               (*sh2).m_Energy = newEnergies.at(1);
@@ -986,7 +1015,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
       int i2 = 0;
       while (i != MergedStripHits.end()) {
         int sdet = (*i).m_ROE.GetDetectorID();
-        bool bside = (*i).m_ROE.IsPositiveStrip();
+        bool bside = (*i).m_ROE.IsLowVoltageStrip();
         int sside = 0;
         if (bside == true) {sside = 1;}
         int sstrip = (*i).m_ROE.GetStripID();
@@ -998,6 +1027,8 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         sim_arr[i2][3] = sstrip;
         sim_arr[i2][4] = senergy;
         
+        //cout<<"Energy: "<<senergy<<endl;
+
         ++i;
         ++i2;
       }
@@ -1090,7 +1121,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
       while (j != MergedStripHits.end()) {
         int det = (*j).m_ROE.GetDetectorID();
         int stripID = (*j).m_ROE.GetStripID();
-        bool side_b = (*j).m_ROE.IsPositiveStrip();
+        bool side_b = (*j).m_ROE.IsLowVoltageStrip();
         int side = 0;
         if (side_b) {side = 1;}
         
@@ -1113,10 +1144,11 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         if (m_LLDThresholds.count((*k).m_ROE) == 0){
           ROE_map_key.SetDetectorID(12);
           ROE_map_key.SetStripID(0);
-          ROE_map_key.IsPositiveStrip(0);
+          ROE_map_key.IsLowVoltageStrip(0);
         }
         
         if ((*k).m_ADC < m_LLDThresholds[ROE_map_key]) {
+          //cout<<(*k).m_ADC<<" < "<<m_LLDThresholds[ROE_map_key]<<endl;
           k = MergedStripHits.erase(k);
         } else {
           double prob = m_Random.Rndm();
@@ -1127,6 +1159,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         }
       }
       
+
       
       // (4c) Take care of guard ring vetoes
       list<MDEEStripHit>::iterator gr = GuardRingHits.begin();
@@ -1169,7 +1202,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
       while (tr != MergedStripHits.end()) {
         int DetID = (*tr).m_ROE.GetDetectorID();
         if ((*tr).m_Timing != 0){
-          if ((*tr).m_ROE.IsPositiveStrip()){ xExists[DetID] = 1; }
+          if ((*tr).m_ROE.IsLowVoltageStrip()){ xExists[DetID] = 1; }
           else{ yExists[DetID] = 1; }
         }
         ++tr;
@@ -1222,6 +1255,10 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
     T = SimEvent->GetTime().GetAsSeconds();
   }
   */
+
+      if (MergedStripHits.size() == 0){
+        cout<<"Nothing left before 6.5"<<endl;
+      }
       
       
       //Step (6.5): Dead time
@@ -1384,7 +1421,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           double initialEnergy = SimEvent->GetIAById(initIA)->GetSecondaryEnergy();
           double finalEnergy = 0.0;
           for (list<MDEEStripHit>::iterator p=MergedStripHits.begin(); p!=MergedStripHits.end(); ++p){
-            if ((*p).m_ROE.IsPositiveStrip() == false && (*p).m_HitIndex == h){
+            if ((*p).m_ROE.IsLowVoltageStrip() == false && (*p).m_HitIndex == h){
               finalEnergy += (*p).m_EnergyOrig;
             }
           }
@@ -1440,7 +1477,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         // Sum up all energies:
         double TotalMeasuredEnergy = 0.0;
         for (list<MDEEStripHit>::iterator p = MergedStripHits.begin(); p != MergedStripHits.end(); ++p){
-          if ((*p).m_ROE.IsPositiveStrip() == false) {
+          if ((*p).m_ROE.IsLowVoltageStrip() == false) {
             TotalMeasuredEnergy += (*p).m_EnergyOrig;
           }
         }
@@ -1472,17 +1509,20 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
 
       } // End photo peak fudge factor
       
-      
+      //cout<<"Check is events left"<<endl;
+
       // Check if there are any strips left
       if (MergedStripHits.size() == 0){
         delete SimEvent;
         continue;
       }
+
+      //cout<<"yes"<<endl;
       
       double finalEventEnergy = 0;
       int nNStripHits = 0;
       for (MDEEStripHit Hit: MergedStripHits){
-        if (!Hit.m_ROE.IsPositiveStrip()){
+        if (!Hit.m_ROE.IsLowVoltageStrip()){
           finalEventEnergy += Hit.m_Energy;
           nNStripHits++;
         }
@@ -1495,7 +1535,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         }
         cout << "DEE STRIP HITS: " << endl;
         for (MDEEStripHit Hit: MergedStripHits){
-          if (!Hit.m_ROE.IsPositiveStrip()){
+          if (!Hit.m_ROE.IsLowVoltageStrip()){
             cout << Hit.m_Energy << endl;
           }
         }
@@ -1514,7 +1554,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
         MStripHit* SH = new MStripHit();
         SH->SetDetectorID(Hit.m_ROE.GetDetectorID());
         SH->SetStripID(Hit.m_ROE.GetStripID());
-        SH->IsXStrip(Hit.m_ROE.IsPositiveStrip());
+        SH->IsLowVoltageStrip(Hit.m_ROE.IsLowVoltageStrip());
         SH->SetADCUnits(Hit.m_ADC);
         SH->SetTiming(Hit.m_Timing);
         SH->SetPreampTemp(20);
@@ -1534,7 +1574,7 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
           m_Roa<<IAs[i]->ToSimString()<<endl;
         }
         for (MDEEStripHit Hit: MergedStripHits){
-          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsPositiveStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
+          m_Roa<<"UH "<<Hit.m_ROE.GetDetectorID()<<" "<<Hit.m_ROE.GetStripID()<<" "<<(Hit.m_ROE.IsLowVoltageStrip() ? "p" : "n")<<" "<<Hit.m_ADC<<" "<<Hit.m_Timing<<" "<<Hit.m_PreampTemp;
           
           MString Origins;
           for (int Origin: Hit.m_Origins) {
@@ -1623,7 +1663,7 @@ int MDetectorEffectsEngineBalloon::EnergyToADC(MDEEStripHit& Hit, double mean_en
   
   //get energy from gaussian around mean_energy with sigma=EnergyResolution
   //TRandom3 r(0);
-  double energy = m_Random.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
+   double energy = m_Random.Gaus(mean_energy,EnergyResolutionFWHM/2.35);
   //	double energy = mean_energy; 
   //  spectrum->Fill(energy);
   
@@ -1687,11 +1727,18 @@ double MDetectorEffectsEngineBalloon::NoiseShieldEnergy(double energy, MString s
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Calculate new summed energy of two strips affected by charge loss
-vector<double> MDetectorEffectsEngineBalloon::ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2){
-  
+vector<double> MDetectorEffectsEngineBalloon::ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2) 
+{  
+  vector<double> retEnergy;
+  if (energy1 == 0 && energy2 == 0) {
+    retEnergy.push_back(0);
+    retEnergy.push_back(0);
+    return retEnergy;
+  }
+
   double trueSum = energy1+energy2;
   double diff = abs(energy1-energy2);
-  
+
   //deal with depth
   //use average depth? or don't do charge loss if hits dont have the same depth?
   //	double Depth = (depth1+depth2)/2.;
@@ -1724,8 +1771,6 @@ vector<double> MDetectorEffectsEngineBalloon::ApplyChargeLoss(double energy1, do
   newE2 = energy2 - sumDiff/2.;
   
   m_ChargeLossHist->Fill(trueSum,sumDiff);
-  
-  vector<double> retEnergy;
   
   retEnergy.push_back(newE1);
   retEnergy.push_back(newE2);
@@ -1886,7 +1931,7 @@ bool MDetectorEffectsEngineBalloon::ParseGuardRingThresholdFile()
     MReadOutElementDoubleStrip R;
     R.SetDetectorID(detector);
     R.SetStripID(38);
-    R.IsPositiveStrip(side);
+    R.IsLowVoltageStrip(side);
     
     m_GuardRingThresholds[R] = threshold;
   }
@@ -1927,7 +1972,7 @@ bool MDetectorEffectsEngineBalloon::ParseThresholdFile()
     MReadOutElementDoubleStrip R;
     R.SetDetectorID(det);
     R.SetStripID(strip);
-    R.IsPositiveStrip(isPos);
+    R.IsLowVoltageStrip(isPos);
     
     double lldThresh = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(1);
     double functionMax = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(6);
@@ -1962,7 +2007,7 @@ bool MDetectorEffectsEngineBalloon::ParseThresholdFile()
   MReadOutElementDoubleStrip R;
   R.SetDetectorID(12);
   R.SetStripID(0);
-  R.IsPositiveStrip(0);
+  R.IsLowVoltageStrip(0);
   
   m_LLDThresholds[R] = lldAvg;
   
@@ -2006,7 +2051,7 @@ bool MDetectorEffectsEngineBalloon::ParseEnergyCalibrationFile()
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
         R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-        R.IsPositiveStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
+        R.IsLowVoltageStrip(Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p");
         
         if (Parser.GetTokenizerAt(i)->IsTokenAt(0,"CM") == true) {
           CM_ROEToLine[R] = i;

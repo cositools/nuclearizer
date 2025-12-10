@@ -1,5 +1,5 @@
 /*
- * MModuleTemplate.h
+ * MModuleDiagnostics.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,20 +9,27 @@
  */
 
 
-#ifndef __MModuleTemplate__
-#define __MModuleTemplate__
+#ifndef __MModuleDiagnostics__
+#define __MModuleDiagnostics__
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Standard libs:
+#include <fstream>
+using namespace std;
 
 // ROOT libs:
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
+#include "MFile.h"
+
+// Nuclearizer libs:
 #include "MModule.h"
+#include "MGUIExpoDiagnostics.h"
 
 // Forward declarations:
 
@@ -30,17 +37,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleTemplate : public MModule
+class MModuleDiagnostics : public MModule
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleTemplate();
+  MModuleDiagnostics();
   //! Default destructor
-  virtual ~MModuleTemplate();
+  virtual ~MModuleDiagnostics();
   
   //! Create a new object of this class 
-  virtual MModuleTemplate* Clone() { return new MModuleTemplate(); }
+  virtual MModuleDiagnostics* Clone() { return new MModuleDiagnostics(); }
+
+  //! Create the expos
+  virtual void CreateExpos();
 
   //! Initialize the module
   virtual bool Initialize();
@@ -50,36 +60,25 @@ class MModuleTemplate : public MModule
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
-
-  //! Show the options GUI
-  virtual void ShowOptionsGUI();
-
-  //! Read the configuration data from an XML node
-  virtual bool ReadXmlConfiguration(MXmlNode* Node);
-  //! Create an XML node tree from the configuration
-  virtual MXmlNode* CreateXmlConfiguration();
-
+  
   // protected methods:
  protected:
-
+  
   // private methods:
  private:
 
-
-
   // protected members:
  protected:
-
+  //! The display of debugging data
+  MGUIExpoDiagnostics* m_ExpoDiagnostics;
 
   // private members:
  private:
 
-
-
-
+  
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleTemplate, 0) // no description
+  ClassDef(MModuleDiagnostics, 0) // no description
 #endif
 
 };

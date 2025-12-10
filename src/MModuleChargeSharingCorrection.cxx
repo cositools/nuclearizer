@@ -135,7 +135,7 @@ bool MModuleChargeSharingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     {
       MStripHit *SH = H->GetStripHit(i_sh);
       //DetectorNumber = SH->GetDetectorID();
-      if (SH->IsXStrip() == true) { NXStripHits++; } else { NYStripHits++; }
+      if (SH->IsLowVoltageStrip() == true) { NXStripHits++; } else { NYStripHits++; }
     }
     
     //Check for 1 pixel event and sharing event..
@@ -144,7 +144,7 @@ bool MModuleChargeSharingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     {
       SHX = H->GetStripHit(0);
       SHY = H->GetStripHit(1);
-      if ( !SHX->IsXStrip() )
+      if ( !SHX->IsLowVoltageStrip() )
       {
         SHX = H->GetStripHit(1);
         SHY = H->GetStripHit(0);
@@ -170,7 +170,7 @@ bool MModuleChargeSharingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       // Get the X and Y strip numbers, and calculate the total energy for each side
       for (unsigned int i_s_hit=0; i_s_hit < NStripHits; i_s_hit++)
       {
-        if (H->GetStripHit(i_s_hit)->IsXStrip() == true)
+        if (H->GetStripHit(i_s_hit)->IsLowVoltageStrip() == true)
         {
           XStripID[i_sxhit] = H->GetStripHit(i_s_hit)->GetStripID();
 					XEnergy[i_sxhit] = H->GetStripHit(i_s_hit)->GetEnergy();

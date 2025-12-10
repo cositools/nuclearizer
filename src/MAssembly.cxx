@@ -68,11 +68,15 @@ using namespace std;
 #include "MModuleChargeSharingCorrection.h"
 #include "MModuleDepthCalibration.h"
 #include "MModuleDepthCalibrationB.h"
+#include "MModuleDepthCalibration2024.h"
 #include "MModuleStripPairingGreedy.h"
+#include "MModuleStripPairingChiSquare.h"
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
 #include "MModuleResponseGenerator.h"
 #include "MModuleRevan.h"
+#include "MModuleDiagnostics.h"
+#include "MModuleDiagnosticsEnergyPerStrip.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,9 +120,11 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
 
   m_Supervisor->AddAvailableModule(new MModuleStripPairingGreedy());
+  m_Supervisor->AddAvailableModule(new MModuleStripPairingChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleChargeSharingCorrection());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());
+  m_Supervisor->AddAvailableModule(new MModuleDepthCalibration2024());
 
   m_Supervisor->AddAvailableModule(new MModuleCrosstalkCorrection());  
   
@@ -126,6 +132,9 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
   m_Supervisor->AddAvailableModule(new MModuleRevan());
+
+  m_Supervisor->AddAvailableModule(new MModuleDiagnostics());
+  m_Supervisor->AddAvailableModule(new MModuleDiagnosticsEnergyPerStrip());
 
   m_Supervisor->Load();
   

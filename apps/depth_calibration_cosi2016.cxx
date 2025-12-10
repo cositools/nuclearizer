@@ -232,9 +232,9 @@ int main(int argc, char** argv)
 							double timing;
 							MStripHit *SHx, *SHy;
 
-							if( H->GetStripHit(0)->IsXStrip() && !H->GetStripHit(1)->IsXStrip() ){
+							if( H->GetStripHit(0)->IsLowVoltageStrip() && !H->GetStripHit(1)->IsLowVoltageStrip() ){
 								SHx = H->GetStripHit(0); SHy = H->GetStripHit(1);
-							} else if( H->GetStripHit(1)->IsXStrip() && !H->GetStripHit(0)->IsXStrip() ){
+							} else if( H->GetStripHit(1)->IsLowVoltageStrip() && !H->GetStripHit(0)->IsLowVoltageStrip() ){
 								SHx = H->GetStripHit(1); SHy = H->GetStripHit(0);
 							} else {
 								//we didn't have 1 x and 1 y strip, log this and continue...
@@ -324,9 +324,9 @@ int main(int argc, char** argv)
 
 					MStripHit_s *SHx, *SHy;
 
-					if( H->GetStripHit(0)->IsXStrip() && !H->GetStripHit(1)->IsXStrip() ){
+					if( H->GetStripHit(0)->IsLowVoltageStrip() && !H->GetStripHit(1)->IsLowVoltageStrip() ){
 						SHx = dynamic_cast<MStripHit_s*>(H->GetStripHit(0)); SHy = dynamic_cast<MStripHit_s*>(H->GetStripHit(1));
-					} else if( H->GetStripHit(1)->IsXStrip() && !H->GetStripHit(0)->IsXStrip() ){
+					} else if( H->GetStripHit(1)->IsLowVoltageStrip() && !H->GetStripHit(0)->IsLowVoltageStrip() ){
 						SHx = dynamic_cast<MStripHit_s*>(H->GetStripHit(1)); SHy = dynamic_cast<MStripHit_s*>(H->GetStripHit(0));
 					} else {
 						//we didn't have 1 x and 1 y strip, log this and continue...
@@ -575,8 +575,8 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MModuleEnergyCalibrationU
 		MDEEStripHit pSide;
 		MDEEStripHit nSide;
 
-		pSide.m_ROE.IsPositiveStrip(true);
-		nSide.m_ROE.IsPositiveStrip(false);
+		pSide.m_ROE.IsLowVoltageStrip(true);
+		nSide.m_ROE.IsLowVoltageStrip(false);
 
 		// Convert detector name in detector ID
 		pSide.m_ROE.SetDetectorID(DetectorID);
@@ -608,7 +608,7 @@ MReadOutAssembly* RealizeSimEvent(MSimEvent* simEvent, MModuleEnergyCalibrationU
 		MStripHit_s* YStrip = new MStripHit_s();
 		XStrip->SetDetectorID(DetectorID); YStrip->SetDetectorID(DetectorID);
 		XStrip->SetTiming(0.0); YStrip->SetTiming(0.0);
-		XStrip->IsXStrip(true); YStrip->IsXStrip(false);
+		XStrip->IsLowVoltageStrip(true); YStrip->IsLowVoltageStrip(false);
 		XStrip->SetStripID(xID); YStrip->SetStripID(yID);
 		XStrip->SetEnergy(HTEnergy); YStrip->SetEnergy(HTEnergy);
 		double XEnRes = Calibrator->LookupEnergyResolution( XStrip, HTEnergy ); XStrip->SetEnergyResolution(XEnRes);

@@ -562,7 +562,7 @@ bool MBinaryFlightDataParser::ParseData(vector<uint8_t> Received)
 		striphits = E->GetNStripHits();
 		for(int s = 0; s < striphits; s++) {
 			det = E->GetStripHit(s)->GetDetectorID();
-			side = E->GetStripHit(s)->IsXStrip() == true;
+			side = E->GetStripHit(s)->IsLowVoltageStrip() == true;
 			temp = (m_PreampTemps[det*2 + side]*0.0005/0.5)*2.471*100 - 273.0;
 			E->GetStripHit(s)->SetPreampTemp(temp);
 		}
@@ -1186,7 +1186,7 @@ bool MBinaryFlightDataParser::ConvertToMReadOutAssemblys( dataframe * DataIn, ve
 			StripHit->SetDetectorID(m_CCMap[T.CCId]);
 			//go from board channel, to side strip
 			if( T.Board >= 4 && T.Board < 8 ) PosSide = false; else if( T.Board >= 0 && T.Board < 4 ) PosSide = true; else {cout<<"bad trigger board = "<<T.Board<<endl; delete StripHit; continue;} 
-			StripHit->IsPositiveStrip(PosSide);
+			StripHit->IsLowVoltageStrip(PosSide);
 			if( T.Channel >= 0 && T.Channel < 10 ) StripHit->SetStripID(m_StripMap[T.Board][T.Channel]+1); else {cout<<"bad trigger channel = "<<T.Channel<<endl; delete StripHit; continue;}
 			if( T.HasADC ) StripHit->SetADCUnits((double)((uint16_t)T.ADCBytes & 0x1fff)); else StripHit->SetADCUnits(0.0);
 			if( T.HasTiming ) {

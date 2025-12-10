@@ -802,6 +802,8 @@ bool MReadOutAssembly::IsBad() const
   if (m_DepthCalibration_OutofRange == true) return true;
   if (m_EventReconstructionIncomplete == true) return true;
 
+  if (m_FilteredOut == true) return true;
+
   return false;
 }
 
