@@ -112,8 +112,9 @@ class MModuleDepthCalibration2024 : public MModule
   TSpline3* GetSpline(int DetID, int Grade);
   //! Normal distribution
   vector<double> norm_pdf(vector<double> x, double mu, double sigma);
-	//! Adds a Depth-to-CTD relation
-	bool AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints);
+  
+  //! Adds a Depth-to-CTD relation
+  bool AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints);
 
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);

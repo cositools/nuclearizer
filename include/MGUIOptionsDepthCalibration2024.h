@@ -77,7 +77,8 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
   //! Select mask metrology file to load. This gives the translation and rotation for each strip in the detector frame
   MGUIEFileSelector* m_MaskMetrologyFileSelector;
 
-  int m_UseMaskMetCorr;
+  bool m_UseMaskMetCorr;
+
   TGCheckButton* m_MaskMetModeCB;
   enum ButtonIDs {c_MetFile};
 
