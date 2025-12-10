@@ -281,28 +281,21 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
+        // Somewhat confusing notation: HVStrips run parallel to X-axis, so we calculate X position with LVStrips.
 	double Xpos, Ypos, Zpos;
-
         if ( m_MaskMetrologyEnabled ) {
           // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
-          
-
-          //TODO: Aldo's file has the HV strip ID flipped (as evident in the x,y position reported in the metrology files), so this is a placeholder until the files are fixed.
-          int HVStripID_flipped = 63 - HVStripID;
-          MStripHit* HVSH_flipped = HVSH;
-          HVSH_flipped->SetStripID(HVStripID_flipped);
           MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
-          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH_flipped->GetReadOutElement());
-
-          //find the intercept of the two dominate strips based on the mask metrology	  
+          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
+	  
           vector<double> inter = GetStripIntersection(R_LV, R_HV);
           Xpos = inter[0];
           Ypos = inter[1];
-
+	  //Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
+          //Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
+	
           Zpos = 0.0;
 	} else {
-          //If no metrology is used, define the strip positions based on the detector pitch and number of strip hits
-    
           Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
           Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
           Zpos = 0.0;
@@ -615,7 +608,7 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
 bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FName)
 {
   //Read the Mask Metrology File
-  // Det ID, Side (l,h), Strip ID (0-63), x_mm, y_mm, z_mm, roll_deg, pitch_deg, yaw_deg
+  // Det ID, Strip ID (0-63), Side (l,h), x_mm, y_mm, z_mm, roll_deg, pitch_deg, yaw_deg
   MFile F;
   if( F.Open(FName) == false ){
     cout << "ERROR in MModuleDepthCalibration2024::LoadMaskMetrologyFile: failed to open metrology file." << endl;
@@ -631,8 +624,8 @@ bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FName)
           //Define the readout element to track det ID, strip ID, and lv/hv
           MReadOutElementDoubleStrip R;
           R.SetDetectorID(Tokens[0].ToInt());
-          R.IsLowVoltageStrip((Tokens[1].ToString() == "p") || (Tokens[1].ToString() == "l"));
-          R.SetStripID(Tokens[2].ToInt());
+          R.SetStripID(Tokens[1].ToInt());
+          R.IsLowVoltageStrip((Tokens[2].ToString() == "p") || (Tokens[2].ToString() == "l"));
           double Strip_MetX = Tokens[3].ToDouble()/10; //convert to cm
           double Strip_MetY = Tokens[4].ToDouble()/10; //convert to cm
           double Strip_MetZ = Tokens[5].ToDouble()/10; //convert to cm
@@ -669,14 +662,14 @@ vector<double> MModuleDepthCalibration2024::GetStripIntersection(MReadOutElement
 
   //Find the x position of two lines represented by the dominate strips:
   //  LVstrip is centered at (x,y,z) = (lv_strip_met[0], lv_strip_met[1], lv_strip_met[2])
-  // and is approximately parallel to the y axis, but rotated at angle lv_strip_met[5] 
+  // and is approximately parallel to the y axis, but rotated at angle lv_strip_met[3] 
   // around the z axis of the detector
   // HVstrip is centered at (x,y,z) = (hv_strip_met[0], hv_strip_met[1], hv_strip_met[2])
-  // and is approximately parallel to the x axis, but rotated at angle (hv_strip_met[5] - pi/2) 
+  // and is approximately parallel to the x axis, but rotated at angle hv_strip_met[3] 
   // around the z axis of the detector
-  double x_intercept = (hv_strip_met[0]*tan((hv_strip_met[5]-90)*TMath::DegToRad()) - lv_strip_met[0]/tan(lv_strip_met[5]*TMath::DegToRad()) - lv_strip_met[1] + hv_strip_met[1])/(tan((hv_strip_met[5]-90)*TMath::DegToRad())-1/tan(lv_strip_met[5]*TMath::DegToRad()));
+  double x_intercept = (hv_strip_met[0]*tan(hv_strip_met[3]*TMath::DegToRad()) - lv_strip_met[0]/tan(lv_strip_met[3]*TMath::DegToRad()) - lv_strip_met[1] + hv_strip_met[1])/(tan(hv_strip_met[3]*TMath::DegToRad())-1/tan(lv_strip_met[3]*TMath::DegToRad()));
     
-  double y_intercept = (x_intercept - hv_strip_met[0])*tan((hv_strip_met[5]-90)*TMath::DegToRad()) + hv_strip_met[1];
+  double y_intercept = (x_intercept - hv_strip_met[0])*tan(hv_strip_met[3]*TMath::DegToRad()) + hv_strip_met[1];
 
   return {x_intercept, y_intercept};
 }
@@ -800,7 +793,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 
 bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints)
@@ -977,6 +970,10 @@ TSpline3* MModuleDepthCalibration2024::GetSpline(int DetID, int Grade)
   }
 }
 >>>>>>> 1899e35 (CHG: Update spline handling to ensure the full detector is sampled and the depth grid is evenly spaced)
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
 
 void MModuleDepthCalibration2024::ShowOptionsGUI()
 {
