@@ -61,7 +61,6 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
   m_XmlTag = "DepthCalibration2024";
 
   // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(MAssembly::c_EventLoader, true);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
   AddPreceedingModuleType(MAssembly::c_TACcut, true);
@@ -285,14 +284,8 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
         if ( m_MaskMetrologyEnabled ) {
           // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
-          
-
-          //TODO: Aldo's file has the HV strip ID flipped (as evident in the x,y position reported in the metrology files), so this is a placeholder until the files are fixed.
-          int HVStripID_flipped = 63 - HVStripID;
-          MStripHit* HVSH_flipped = HVSH;
-          HVSH_flipped->SetStripID(HVStripID_flipped);
           MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
-          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH_flipped->GetReadOutElement());
+          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
 
           //find the intercept of the two dominate strips based on the mask metrology	  
           vector<double> inter = GetStripIntersection(R_LV, R_HV);
@@ -300,11 +293,11 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           Ypos = inter[1];
 
           Zpos = 0.0;
+
 	} else {
           //If no metrology is used, define the strip positions based on the detector pitch and number of strip hits
-    
-          Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
-          Ypos = m_XPitches[DetID]*((m_NXStrips[DetID]/2.0) - ((double)HVStripID));
+          Xpos = m_YPitches[DetID]*(((m_NYStrips[DetID]-1)/2.0) - ((double)LVStripID));
+          Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
           Zpos = 0.0;
         }
 
@@ -390,6 +383,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
             Zsigma =  sqrt(depth_var/prob_sum);
             Zpos = mean_depth;
+            //Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
 
             // Add the depth to the GUI histogram.
             if (Event->IsStripPairingIncomplete()==false) {
