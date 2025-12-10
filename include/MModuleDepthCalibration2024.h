@@ -1,4 +1,4 @@
-/*:q
+/*
  * MModuleDepthCalibration2024.h
  *
  * Copyright (C) 2008-2008 by Andreas Zoglauer.

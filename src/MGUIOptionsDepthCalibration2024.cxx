@@ -88,11 +88,11 @@ void MGUIOptionsDepthCalibration2024::Create()
 //  TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
 
   m_MaskMetrologyFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetMaskMetrologyFileName());
-  m_MaskMetrologyFileSelector->SetFileType("metrology", "*.csv");
+  m_MaskMetrologyFileSelector->SetFileType("metrology", "*.metrology.csv");
   m_OptionsFrame->AddFrame(m_MaskMetrologyFileSelector, LabelLayout);
 
 
-  if (m_UseMaskMetCorr) {
+  if (m_UseMaskMetCorr == true) {
     m_MaskMetrologyFileSelector->SetEnabled(true);
   } else {
     m_MaskMetrologyFileSelector->SetEnabled(false);
@@ -127,10 +127,10 @@ bool MGUIOptionsDepthCalibration2024::ProcessMessage(long Message, long Paramete
       switch (Parameter1) {
         case c_MetFile:
           if (m_MaskMetModeCB->GetState() == kButtonDown) {
-            m_UseMaskMetCorr = 1;
+            m_UseMaskMetCorr = true;
             m_MaskMetrologyFileSelector->SetEnabled(true);
           } else if (m_MaskMetModeCB->GetState() == kButtonUp) {
-            m_UseMaskMetCorr = 0;
+            m_UseMaskMetCorr = false;
             m_MaskMetrologyFileSelector->SetEnabled(false);
           }
           break;
