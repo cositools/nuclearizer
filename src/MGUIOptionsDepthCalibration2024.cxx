@@ -75,8 +75,30 @@ void MGUIOptionsDepthCalibration2024::Create()
   m_SplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a splines file:",
       dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetSplinesFileName());
   m_SplinesFileSelector->SetFileType("splines", "*.csv");
-  TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_SplinesFileSelector, Label2Layout);
+//  TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_SplinesFileSelector, LabelLayout);
+
+  m_MaskMetModeCB = new TGCheckButton(m_OptionsFrame, "Enable mask metrology correction and read calibration from file:", c_MetFile);
+  m_MaskMetModeCB->SetState((dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetMaskMetrologyCorrection() == 1) ? kButtonDown : kButtonUp);
+  m_MaskMetModeCB->Associate(this);
+  m_OptionsFrame->AddFrame(m_MaskMetModeCB, LabelLayout);
+
+  m_UseMaskMetCorr = dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetMaskMetrologyCorrection();
+
+//  TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
+
+  m_MaskMetrologyFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetMaskMetrologyFileName());
+  m_MaskMetrologyFileSelector->SetFileType("metrology", "*.csv");
+  m_OptionsFrame->AddFrame(m_MaskMetrologyFileSelector, LabelLayout);
+
+
+  if (m_UseMaskMetCorr) {
+    m_MaskMetrologyFileSelector->SetEnabled(true);
+  } else {
+    m_MaskMetrologyFileSelector->SetEnabled(false);
+  }
+
+
 
   m_UCSDOverride = new TGCheckButton(m_OptionsFrame, "Check this box if you're using the card cage at UCSD", 1);
   m_UCSDOverride->SetOn(dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetUCSDOverride());
@@ -97,16 +119,28 @@ bool MGUIOptionsDepthCalibration2024::ProcessMessage(long Message, long Paramete
   bool Status = true;
 
   switch (GET_MSG(Message)) {
-    case kC_COMMAND:
-      switch (GET_SUBMSG(Message)) {
-        case kCM_BUTTON:
-          break;
-        default:
+  case kC_COMMAND:
+    switch (GET_SUBMSG(Message)) {
+    case kCM_BUTTON:
+      break;
+    case kCM_CHECKBUTTON:
+      switch (Parameter1) {
+        case c_MetFile:
+          if (m_MaskMetModeCB->GetState() == kButtonDown) {
+            m_UseMaskMetCorr = 1;
+            m_MaskMetrologyFileSelector->SetEnabled(true);
+          } else if (m_MaskMetModeCB->GetState() == kButtonUp) {
+            m_UseMaskMetCorr = 0;
+            m_MaskMetrologyFileSelector->SetEnabled(false);
+          }
           break;
       }
-      break;
     default:
       break;
+    }
+    break;
+  default:
+    break;
   }
 
   if (Status == false) {
@@ -127,6 +161,10 @@ bool MGUIOptionsDepthCalibration2024::OnApply()
 
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
+
+  if (dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->GetMaskMetrologyCorrection() != m_UseMaskMetCorr) dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->EnableMaskMetrologyCorrection(m_UseMaskMetCorr);
+
+  dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetMaskMetrologyFileName(m_MaskMetrologyFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration2024*>(m_Module)->SetUCSDOverride(m_UCSDOverride->IsOn());
 
   return true;
