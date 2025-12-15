@@ -90,6 +90,9 @@ MModuleDEESMEX::~MModuleDEESMEX()
 
 bool MModuleDEESMEX::Initialize()
 {
+  // Set the geometry to the SubModules using it
+  m_ChargeTransport.SetGeometry(m_Geometry);
+
   // Initialize the module 
 
   // Each Initialize() should handle its own error messaging
@@ -203,7 +206,6 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   // Step (11): Handle depth and timing noise
   m_DepthReadout.Clear();
   m_DepthReadout.AnalyzeEvent(Event);
-  cout<<"(11): # LV strips: "<<Event->GetNDEEStripHitsLV()<<endl;
 
 
   // Step (12): Global event time?
@@ -269,6 +271,7 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_ShieldTrigger.ReadXmlConfiguration(Node);
   m_ChargeTransport.ReadXmlConfiguration(Node);
   m_StripReadout.ReadXmlConfiguration(Node);
+  m_StripReadoutNoise.ReadXmlConfiguration(Node);
   m_StripTrigger.ReadXmlConfiguration(Node);
   m_DepthReadout.ReadXmlConfiguration(Node);
   m_Output.ReadXmlConfiguration(Node);
@@ -284,8 +287,19 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
 {
   //! Create an XML node tree from the configuration
   
-  MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
-  
+  MXmlNode* Node = new MXmlNode(0, m_XmlTag);
+  m_Intake.CreateXmlConfiguration(Node);
+  m_RandomCoincidence.CreateXmlConfiguration(Node);
+  m_ShieldEnergyCorrection.CreateXmlConfiguration(Node);
+  m_ShieldReadout.CreateXmlConfiguration(Node);
+  m_ShieldTrigger.CreateXmlConfiguration(Node);
+  m_ChargeTransport.CreateXmlConfiguration(Node);
+  m_StripReadout.CreateXmlConfiguration(Node);
+  m_StripReadoutNoise.CreateXmlConfiguration(Node);
+  m_StripTrigger.CreateXmlConfiguration(Node);
+  m_DepthReadout.CreateXmlConfiguration(Node);
+  m_Output.CreateXmlConfiguration(Node);
+
   return Node;
 }
 

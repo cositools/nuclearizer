@@ -43,8 +43,8 @@ ClassImp(MGUIOptionsEventSaver)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsEventSaver::MGUIOptionsEventSaver(MModule* Module) 
-  : MGUIOptions(Module)
+MGUIOptionsEventSaver::MGUIOptionsEventSaver(MModule* Module)
+    : MGUIOptions(Module)
 {
   // standard constructor
 }
@@ -55,7 +55,7 @@ MGUIOptionsEventSaver::MGUIOptionsEventSaver(MModule* Module)
 
 MGUIOptionsEventSaver::~MGUIOptionsEventSaver()
 {
-  // kDeepCleanup is activated 
+  // kDeepCleanup is activated
 }
 
 
@@ -66,91 +66,114 @@ void MGUIOptionsEventSaver::Create()
 {
   PreCreate();
 
-  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 10, 10);
-  TGLayoutHints* RoaCheckButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 2, 2);
+  m_MainTab = new TGTab(m_OptionsFrame, 300, 300);
+  TGLayoutHints* MainTabLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
+  m_OptionsFrame->AddFrame(m_MainTab, MainTabLayout);
 
-  m_Mode = new MGUIERBList(m_OptionsFrame, "Please select an output mode:");
-  m_Mode->Add("*.roa file to use with melinator");
-  m_Mode->Add("*.dat file containing all information");
+  TGCompositeFrame* TypeFrame = m_MainTab->AddTab("File");
+  TGCompositeFrame* GeneralFrame = m_MainTab->AddTab("General Options");
+  TGCompositeFrame* RoaFrame = m_MainTab->AddTab("Roa Options");
+  //TGCompositeFrame* Evtarame = m_MainTab->AddTab("Evta Options");
+
+
+  TGLayoutHints* FirstLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 20, 10);
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 0, 20);
+  TGLayoutHints* TightButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 0, 10);
+
+
+  // File type frame
+
+  m_Mode = new MGUIERBList(TypeFrame, "Please select an output file format:");
+  m_Mode->Add("*.roa file to use with melinator / nulcearizer");
+  m_Mode->Add("*.dat file containing all information for debugging");
   m_Mode->Add("*.evta file to use with revan");
   m_Mode->SetSelected(dynamic_cast<MModuleEventSaver*>(m_Module)->GetMode());
   m_Mode->Create();
-  m_OptionsFrame->AddFrame(m_Mode, LabelLayout);
+  TypeFrame->AddFrame(m_Mode, FirstLabelLayout);
 
-  
-  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an output file:",
-  dynamic_cast<MModuleEventSaver*>(m_Module)->GetFileName());
+
+  m_FileSelector = new MGUIEFileSelector(TypeFrame, "Please select an output file:",
+                                         dynamic_cast<MModuleEventSaver*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("roa file (read-out assemlies)", "*.roa");
   m_FileSelector->SetFileType("dat file (all info)", "*.dat");
   m_FileSelector->SetFileType("evta file (evta file)", "*.evta");
-  m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
+  TypeFrame->AddFrame(m_FileSelector, LabelLayout);
 
-  m_SaveBadEvents = new TGCheckButton(m_OptionsFrame, "Save events which are flagged bad (BD)", 1);
+
+  // General frame
+
+  m_SaveBadEvents = new TGCheckButton(GeneralFrame, "Save events which are flagged bad (BD)", 1);
   m_SaveBadEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveBadEvents());
-  m_OptionsFrame->AddFrame(m_SaveBadEvents, LabelLayout);
+  GeneralFrame->AddFrame(m_SaveBadEvents, FirstLabelLayout);
 
-  m_SaveVetoEvents = new TGCheckButton(m_OptionsFrame, "Save guard ring and shield veto events (Veto)", 1);
+  m_SaveVetoEvents = new TGCheckButton(GeneralFrame, "Save guard ring and shield veto events (Veto)", 1);
   m_SaveVetoEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveVetoEvents());
-  m_OptionsFrame->AddFrame(m_SaveVetoEvents, LabelLayout);
+  GeneralFrame->AddFrame(m_SaveVetoEvents, TightButtonLayout);
 
-  m_AddTimeTag = new TGCheckButton(m_OptionsFrame, "Add a unique time tag", 3);
+  m_AddTimeTag = new TGCheckButton(GeneralFrame, "Add a unique time tag", 3);
   m_AddTimeTag->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetAddTimeTag());
-  m_OptionsFrame->AddFrame(m_AddTimeTag, LabelLayout);
+  GeneralFrame->AddFrame(m_AddTimeTag, TightButtonLayout);
 
-  
-  m_SplitFile = new TGCheckButton(m_OptionsFrame, "Split the file", 2);
+
+  m_SplitFile = new TGCheckButton(GeneralFrame, "Split the file", 2);
   m_SplitFile->Associate(this);
   m_SplitFile->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSplitFile());
-  m_OptionsFrame->AddFrame(m_SplitFile, LabelLayout);
- 
-  TGLayoutHints* SplitFileTimeLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);  
-  m_SplitFileTime = new MGUIEEntry(m_OptionsFrame, "Split the file after this time [sec]:", false, 
-    dynamic_cast<MModuleEventSaver*>(m_Module)->GetSplitFileTime().GetAsSystemSeconds(), true, 0l);
-  if (m_SplitFile->IsOn() == false) m_SplitFileTime->SetEnabled(false);
-  m_OptionsFrame->AddFrame(m_SplitFileTime, SplitFileTimeLayout);
+  GeneralFrame->AddFrame(m_SplitFile, TightButtonLayout);
 
-  TGLabel* ROAOptionsLabel = new TGLabel(m_OptionsFrame, "Special options for roa files:");
-  m_OptionsFrame->AddFrame(ROAOptionsLabel, LabelLayout);
+  TGLayoutHints* SplitFileTimeLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 30, 10, 0, 10);
+  m_SplitFileTime = new MGUIEEntry(GeneralFrame, "Split the file after this time [sec]:", false,
+                                   dynamic_cast<MModuleEventSaver*>(m_Module)->GetSplitFileTime().GetAsSystemSeconds(), true, 0l);
+  if (m_SplitFile->IsOn() == false) {
+    m_SplitFileTime->SetEnabled(false);
+  }
+  GeneralFrame->AddFrame(m_SplitFileTime, SplitFileTimeLayout);
 
-  m_RoaWithADCs = new TGCheckButton(m_OptionsFrame, "Include ADCs", 3);
+
+  // Roa frame
+
+  TGLabel* ROAOptionsLabel = new TGLabel(RoaFrame, "Special options for roa files:");
+  RoaFrame->AddFrame(ROAOptionsLabel, FirstLabelLayout);
+
+  m_RoaWithADCs = new TGCheckButton(RoaFrame, "Include ADCs", 3);
   m_RoaWithADCs->Associate(this);
   m_RoaWithADCs->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithADCs());
-  m_OptionsFrame->AddFrame(m_RoaWithADCs, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithADCs, TightButtonLayout);
 
-  m_RoaWithTACs = new TGCheckButton(m_OptionsFrame, "Include TACs", 3);
+  m_RoaWithTACs = new TGCheckButton(RoaFrame, "Include TACs", 3);
   m_RoaWithTACs->Associate(this);
   m_RoaWithTACs->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithTACs());
-  m_OptionsFrame->AddFrame(m_RoaWithTACs, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithTACs, TightButtonLayout);
 
-  m_RoaWithEnergies = new TGCheckButton(m_OptionsFrame, "Include energies", 3);
+  m_RoaWithEnergies = new TGCheckButton(RoaFrame, "Include energies", 3);
   m_RoaWithEnergies->Associate(this);
   m_RoaWithEnergies->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithEnergies());
-  m_OptionsFrame->AddFrame(m_RoaWithEnergies, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithEnergies, TightButtonLayout);
 
-  m_RoaWithTimings = new TGCheckButton(m_OptionsFrame, "Include timings", 3);
+  m_RoaWithTimings = new TGCheckButton(RoaFrame, "Include timings", 3);
   m_RoaWithTimings->Associate(this);
   m_RoaWithTimings->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithTimings());
-  m_OptionsFrame->AddFrame(m_RoaWithTimings, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithTimings, TightButtonLayout);
 
-  m_RoaWithTemperatures = new TGCheckButton(m_OptionsFrame, "Include temperatures", 3);
+  m_RoaWithTemperatures = new TGCheckButton(RoaFrame, "Include temperatures", 3);
   m_RoaWithTemperatures->Associate(this);
   m_RoaWithTemperatures->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithTemperatures());
-  m_OptionsFrame->AddFrame(m_RoaWithTemperatures, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithTemperatures, TightButtonLayout);
 
-  m_RoaWithFlags = new TGCheckButton(m_OptionsFrame, "Include flags", 3);
+  m_RoaWithFlags = new TGCheckButton(RoaFrame, "Include flags", 3);
   m_RoaWithFlags->Associate(this);
   m_RoaWithFlags->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithFlags());
-  m_OptionsFrame->AddFrame(m_RoaWithFlags, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithFlags, TightButtonLayout);
 
-  m_RoaWithOrigins = new TGCheckButton(m_OptionsFrame, "Include origins", 3);
+  m_RoaWithOrigins = new TGCheckButton(RoaFrame, "Include origins", 3);
   m_RoaWithOrigins->Associate(this);
   m_RoaWithOrigins->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithOrigins());
-  m_OptionsFrame->AddFrame(m_RoaWithOrigins, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithOrigins, TightButtonLayout);
 
-  m_RoaWithNearestNeighbors = new TGCheckButton(m_OptionsFrame, "Include nearest neighbor Hits", 3);
+  m_RoaWithNearestNeighbors = new TGCheckButton(RoaFrame, "Include nearest neighbor Hits", 3);
   m_RoaWithNearestNeighbors->Associate(this);
   m_RoaWithNearestNeighbors->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithNearestNeighbors());
-  m_OptionsFrame->AddFrame(m_RoaWithNearestNeighbors, RoaCheckButtonLayout);
+  RoaFrame->AddFrame(m_RoaWithNearestNeighbors, TightButtonLayout);
+
 
   PostCreate();
 }
@@ -164,7 +187,7 @@ bool MGUIOptionsEventSaver::ProcessMessage(long Message, long Parameter1, long P
   // Modify here if you have more buttons
 
   bool Status = true;
-  
+
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -182,7 +205,7 @@ bool MGUIOptionsEventSaver::ProcessMessage(long Message, long Parameter1, long P
   default:
     break;
   }
-  
+
   if (Status == false) {
     return false;
   }

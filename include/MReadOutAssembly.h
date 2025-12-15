@@ -27,6 +27,8 @@
 #include "MAspect.h"
 #include "MStripHit.h"
 #include "MDEEStripHit.h"
+#include "MCrystalHit.h"
+#include "MDEECrystalHit.h"
 #include "MGuardringHit.h"
 #include "MHit.h"
 #include "MPhysicalEvent.h"
@@ -149,6 +151,15 @@ class MReadOutAssembly : public MReadOutSequence
   //! Remove a strip hit
   void RemoveStripHitTOnly(unsigned int i);
 
+  //! Return the number of crystal hits
+  unsigned int GetNCrystalHits() const { return m_CrystalHits.size(); }
+  //! Return crystal hit i
+  MCrystalHit* GetCrystalHit(unsigned int i);
+  //! Add a crystal hit
+  void AddCrystalHit(MCrystalHit* CrystalHit);
+  //! Remove a crystal hit
+  void RemoveCrystalHit(unsigned int i);
+
 
   //! Return the number of guardring hits
   unsigned int GetNGuardringHits() const { return m_GuardringHits.size(); }
@@ -207,6 +218,13 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get a reference to the list of strip hits for direct manipulation
   list<MDEEStripHit>& GetDEEStripHitHVListReference() { return m_DEEStripHitsHV; }
 
+  //! Return the number of crystal hits
+  unsigned int GetNDEECrystalHits() const { return m_DEECrystalHits.size(); }
+  //! Add a crystal hit
+  void AddDEECrystalHit(MDEECrystalHit DEECrystalHit) { return m_DEECrystalHits.push_back(DEECrystalHit); }
+  //! Get a reference to the list of crystal hits for direct manipulation
+  list<MDEECrystalHit>& GetDEECrystalHitListReference() { return m_DEECrystalHits; }
+
 
   //! Return the number of read outs
   //unsigned int GetNReadOuts() const { return m_ReadOuts.size(); }
@@ -243,6 +261,13 @@ class MReadOutAssembly : public MReadOutSequence
   void SetEnergyResolutionCalibrationIncomplete(bool Flag = true, MString Text = "") { m_EnergyResolutionCalibrationIncomplete = Flag; m_EnergyResolutionCalibrationIncompleteString = Text;}
   //! Get the energy resolution calibration incomplete flag
   bool IsEnergyResolutionCalibrationIncomplete() const { return m_EnergyResolutionCalibrationIncomplete; }
+  
+  //! set the Strip Hit Below Threshold flag
+  void SetStripHitBelowThreshold(bool Flag = true, MString Text = ""){
+    m_StripHitBelowThreshold = Flag; m_StripHitBelowThreshold = Text;}
+  //! get the Strip Hit Below Threshold flag
+  bool IsStripHitBelowThreshold() const { return m_StripHitBelowThreshold; }
+  
 
  //! Set the strip-pairing-incomplete flag
   void SetStripPairingIncomplete(bool Flag = true, MString Text = "") { m_StripPairingIncomplete = Flag;  m_StripPairingIncompleteString = Text; }
@@ -304,6 +329,10 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the MTime corresponding to absolute UTC time
   MTime GetAbsoluteTime() const {return m_EventTimeUTC; }
 
+  //! Set the Reduced Chi^2
+  void SetReducedChiSquare(double ReducedChiSquare) { m_ReducedChiSquare = ReducedChiSquare; }
+  //! Return the Reduced Chi^2
+  double GetReducedChiSquare() const { return m_ReducedChiSquare; }
 
   // protected methods:
  protected:
@@ -374,6 +403,9 @@ class MReadOutAssembly : public MReadOutSequence
   //! List of strip hits with timing only
   vector<MStripHit*> m_StripHitsTOnly;
 
+  //! List of crystal hits
+  vector<MCrystalHit*> m_CrystalHits;
+
   //! List of guardring hits
   vector<MGuardringHit*> m_GuardringHits;
 
@@ -391,9 +423,14 @@ class MReadOutAssembly : public MReadOutSequence
   list<MDEEStripHit> m_DEEStripHitsLV;
   //! A list of high voltage DEE strips hit - i.e. normal strip hits in the making from the simulated hits sorted by side
   list<MDEEStripHit> m_DEEStripHitsHV;
+  //! A list of crystal hit - i.e. normal crystal hits in the making from the simulated hits
+  list<MDEECrystalHit> m_DEECrystalHits;
 
   //! The physical event from event reconstruction
-  MPhysicalEvent* m_PhysicalEvent; 
+  MPhysicalEvent* m_PhysicalEvent;
+    
+  //! Reduced Chi^2 of the Strip Paired Event
+  double m_ReducedChiSquare;
 
   // Flags indicating the quality of the event
   bool m_AspectIncomplete;
@@ -413,7 +450,9 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_DepthCalibrationIncomplete;
   MString m_DepthCalibrationIncompleteString;
   bool m_DepthCalibration_OutofRange;
-  MString m_DepthCalibration_OutofRangeString;  
+  MString m_DepthCalibration_OutofRangeString;
+  bool m_StripHitBelowThreshold;
+  MString m_StripHitBelowThresholdString;
 
 
 

@@ -106,6 +106,14 @@ void MModuleStripPairingChiSquare::CreateExpos()
   m_ExpoStripPairing = new MGUIExpoStripPairing(this);
   m_ExpoStripPairing->SetEnergiesHistogramParameters(1500, 0, 1500);
   m_Expos.push_back(m_ExpoStripPairing);
+  
+  m_ExpoStripPairingHits = new MGUIExpoStripPairingHits(this);
+  m_ExpoStripPairingHits->SetHitsHistogramParameters(5, 0.5, 5.5);
+  m_Expos.push_back(m_ExpoStripPairingHits);
+
+  m_ExpoStripPairingStripHits = new MGUIExpoStripPairingStripHits(this);
+  m_ExpoStripPairingStripHits->SetStripHitsHistogramParameters(10, 0.5, 10.5);
+  m_Expos.push_back(m_ExpoStripPairingStripHits);
 }
 
 
@@ -480,7 +488,11 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
     double XEnergyTotal = 0;
     double YEnergyTotal = 0;
     double EnergyTotal = 0;
-
+      
+    // Create a list for plotting X and Y energies
+    vector<double> XEnergies;
+    vector<double> YEnergies;
+      
     for (unsigned int h = 0; h < min(BestXSideCombo.size(), BestYSideCombo.size()); ++h) {
       XPos = 0;
       YPos = 0;
@@ -515,9 +527,8 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
       }
       EnergyTotal += Energy;
 
-      if (HasExpos() == true) {
-        m_ExpoStripPairing->AddEnergies(XEnergy, YEnergy);
-      }
+      XEnergies.push_back(XEnergy);
+      YEnergies.push_back(YEnergy);
 
       MHit* Hit = new MHit();
       Hit->SetEnergy(Energy);
@@ -536,6 +547,25 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
+    else if (HasExpos() == true){
+          m_ExpoStripPairingHits->AddHits(Event->GetNHits());
+          for (unsigned int i = 0; i < XEnergies.size(); ++i){
+            m_ExpoStripPairing->AddEnergies(XEnergies[i], YEnergies[i]);
+          }
+          for (unsigned int h = 0; h<Event->GetNHits(); h++){
+            double HVStrips = 0;
+            double LVStrips = 0;
+            for (unsigned int sh=0; sh<Event->GetHit(h)->GetNStripHits(); sh++){
+              if (Event->GetHit(h)->GetStripHit(sh)->IsLowVoltageStrip()==true){
+                LVStrips++;
+              }
+              else{
+                HVStrips++;
+              }
+            }
+            m_ExpoStripPairingStripHits->AddStripHits(LVStrips, HVStrips);
+          }
+        }
 
     //
 

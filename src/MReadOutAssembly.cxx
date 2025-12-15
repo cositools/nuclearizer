@@ -76,6 +76,12 @@ MReadOutAssembly::~MReadOutAssembly()
   }
   m_StripHitsTOnly.clear();
 
+  // Delete all crystal hits
+  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
+    delete m_CrystalHits[h];
+  }
+  m_CrystalHits.clear();
+
   // Delete all hits
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     delete m_Hits[h];
@@ -97,6 +103,7 @@ MReadOutAssembly::~MReadOutAssembly()
 
   m_DEEStripHitsLV.clear();
   m_DEEStripHitsHV.clear();
+  m_DEECrystalHits.clear();
 
   delete m_SimEvent;
   delete m_PhysicalEvent;
@@ -120,6 +127,7 @@ void MReadOutAssembly::Clear()
   m_Time = 0;
   m_EventTimeUTC = 0;
   m_MJD = 0.0;
+  m_ReducedChiSquare = -1;
 
   m_ShieldVeto = false;
   m_GuardRingVeto = false;
@@ -139,6 +147,12 @@ void MReadOutAssembly::Clear()
     delete m_StripHitsTOnly[h];
   }
   m_StripHitsTOnly.clear();
+
+  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
+    delete m_CrystalHits[h];
+  }
+  m_CrystalHits.clear();
+
 
   // Delete all hits
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
@@ -175,7 +189,7 @@ void MReadOutAssembly::Clear()
   m_DepthCalibrationIncomplete = false;
   m_DepthCalibrationIncompleteString = "";
   m_DepthCalibration_OutofRange = false;
-  m_DepthCalibration_OutofRangeString = ""; 
+  m_DepthCalibration_OutofRangeString = "";
 
   m_FilteredOut = false;
 
@@ -184,6 +198,7 @@ void MReadOutAssembly::Clear()
 
   m_DEEStripHitsLV.clear();
   m_DEEStripHitsHV.clear();
+  m_DEECrystalHits.clear();
 
   delete m_SimEvent;
   m_SimEvent = nullptr;
@@ -319,6 +334,49 @@ void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
     vector<MStripHit*>::iterator it;
     it = m_StripHitsTOnly.begin()+i;
     m_StripHitsTOnly.erase(it);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MCrystalHit* MReadOutAssembly::GetCrystalHit(unsigned int i)
+{
+  //! Return strip hit i
+
+  if (i < m_CrystalHits.size()) {
+    return m_CrystalHits[i];
+  }
+
+  merr<<"Index out of bounds!"<<show;
+
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
+{
+  //! Add a strip hit
+  int DetectorID = CrystalHit->GetDetectorID();
+  if ( (DetectorID>=0) && (DetectorID<=11) ) {
+    m_InDetector[DetectorID]=true;
+  }
+  m_CrystalHits.push_back(CrystalHit);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::RemoveCrystalHit(unsigned int i)
+{
+  //! Remove a strip hit
+  if (i < m_CrystalHits.size()) {
+    vector<MCrystalHit*>::iterator it;
+    it = m_CrystalHits.begin()+i;
+    m_CrystalHits.erase(it);
   }
 }
 
@@ -474,7 +532,8 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   S<<"ID "<<m_ID<<endl;
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
-
+  S<<"QP "<<m_ReducedChiSquare<<endl; // Read out strip pairing qualiy factor
+    
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
   }
@@ -494,6 +553,10 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   } else if (Version == 2) {
     for (auto H : m_Hits) {
       H->StreamDat(S, 2);
+    }
+  } else if (Version == 3) {
+     for (auto H : m_Hits) {
+       H->StreamDat(S, 3);
     }
   }
 
@@ -549,7 +612,18 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   if (m_ShieldVeto == true) {
     S<<"BD Shield Veto"<<endl;
   }
-
+  for (auto H : m_Hits) {
+    if (H->GetStripHitMultipleTimesX()) {
+      S<<"BD Multiple Hits on LV Strip"<<endl;
+      break;
+    }
+  }
+  for (auto H : m_Hits) {
+    if (H->GetStripHitMultipleTimesY()) {
+      S<<"BD Multiple Hits on HV Strip"<<endl;
+      break;
+    }
+  }
   
   return true;
 }
@@ -638,7 +712,18 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   if (m_ShieldVeto == true) {
     S<<"BD Shield Veto"<<endl;
   }
-
+  for (auto H : m_Hits) {
+    if (H->GetStripHitMultipleTimesX()) {
+      S<<"BD Multiple Hits on LV Strip"<<endl;
+      break;
+    }
+  }
+  for (auto H : m_Hits) {
+    if (H->GetStripHitMultipleTimesY()) {
+      S<<"BD Multiple Hits on HV Strip"<<endl;
+      break;
+    }
+  }
 
 
 }
@@ -672,8 +757,12 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
     m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags);
     ++Counter;
   }
+  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
+    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithTemperatures, WithFlags);
+    ++Counter;
+  }
   if (Counter == 0) {
-    S<<"BD No strip hits"<<endl;;
+    S<<"BD No hits"<<endl;;
   }
   
   // Those are the only BD's relevant for the roa format

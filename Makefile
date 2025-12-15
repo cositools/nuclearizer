@@ -20,6 +20,7 @@ TOPLEVEL = $(shell pwd)
 IN = $(TOPLEVEL)/include
 LB = $(MEGALIB)/lib
 BN = $(MEGALIB)/bin
+HT = $(TOPLEVEL)/doc/html
 
 
 #----------------------------------------------------------------
@@ -29,7 +30,7 @@ BN = $(MEGALIB)/bin
 include $(MEGALIB)/config/Makefile.options
 include $(MEGALIB)/config/Makefile.config
 
-MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-rules --no-print-directory
 
 .SUFFIXES:
 #.SUFFIXES: .cxx .h .o .so
@@ -46,11 +47,11 @@ MAKEFLAGS += --no-builtin-rules
 H5CXXFLAGS =
 H5LIBS =
 ifeq ("$(shell pkg-config --exists hdf5 1>&2 2> /dev/null; echo $$?)", "0")
-        H5CXXFLAGS += $(shell pkg-config --cflags hdf5)
-        H5LIBS += $(shell pkg-config --libs hdf5)
-	H5LIBS += -lhdf5_cpp
+H5CXXFLAGS += $(shell pkg-config --cflags hdf5)
+H5LIBS += $(shell pkg-config --libs hdf5)
+H5LIBS += -lhdf5_cpp
 else
-	$(error "Unable to find HDF5 headers and libraries")
+$(error "Unable to find HDF5 headers and libraries")
 endif
 
 
@@ -128,6 +129,15 @@ clean:
 	@-rm -f *~ include/*~ src/*~
 	@$(MAKE) clean -C apps
 
+html: man
+doxygen: man
+doc: man
+
+man:
+	@rm -rf $(HT)
+	@sh resource/doxygen/doxy
+	@doxygen resource/doxygen/Doxyfile
+
 #----------------------------------------------------------------
 # Explicit rules & dependencies:
 #
@@ -146,7 +156,7 @@ $(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
 
 $(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
 	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -Wno-vla-cxx-extension -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
 	@echo "Generating LinkDef ..."

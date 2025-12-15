@@ -120,28 +120,54 @@ void MModuleEnergyCalibrationUniversal::CreateExpos()
 
 bool MModuleEnergyCalibrationUniversal::Initialize()
 {
-  // Initialize the module 
+  // Initialize the module
   
+  //Parse the Energy Calibration file
   MParser Parser;
   if (Parser.Open(m_FileName, MFile::c_Read) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open calibration file "<<m_FileName<<endl;
     return false;
   }
-
-  MParser Parser_Temp;
-  if (m_TemperatureEnabled ==true) {
-    if (Parser_Temp.Open(m_TempFileName, MFile::c_Read) == false) {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open Temperature calibration file "<<m_TempFileName<<endl;  
+  //Parse the slow Threshold file
+  MParser Parser_Threshold;
+  if (GetThresholdFileEnable() == true) {
+    if (Parser_Threshold.Open(m_ThresholdFileName, MFile::c_Read) == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open Threshold file "<<m_ThresholdFileName<<endl;
       return false;
     }
+    else{
+      MString Line; // each line of the threshold csv file
+      while (Parser_Threshold.ReadLine(Line)) {
+        if (!Line.BeginsWith("#")) {
+          std::vector<MString> Tokens = Line.Tokenize(","); // for each line, Create tokens seperated by commas
+          if (Tokens.size() == 6) {
+            int IndexOffset = Tokens.size() % 6; //index counter
+            int DetID = Tokens[1+IndexOffset].ToInt(); // Detector ID
+            MString Side = Tokens[2+IndexOffset].ToString(); // side is a string, either 'l' or 'h'
+            int StripID = Tokens[3+IndexOffset].ToInt(); // stripID
+            int ThresholdADC = Tokens[4+IndexOffset].ToInt(); // energy threshold in ADC
+            double ThresholdKeVFile = Tokens[5+IndexOffset].ToDouble(); //energy threshold in keV
+            
+            MReadOutElementDoubleStrip R;
+            R.SetDetectorID(DetID);
+            R.SetStripID(StripID);
+            R.IsLowVoltageStrip(Side == "l");
+            
+            // map detectorID, strip number, and voltage side to the threshold (keV)
+            m_ThresholdMap[R] = ThresholdKeVFile;
+            
+          }
+          
+        }
+      }
+    }
   }
-
+  // create other maps
   map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine; //Peak fits
   map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
   map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
-  map<MReadOutElementDoubleStrip, unsigned int> CT_ROEToLine; //Temperature Calibration Model
 
-
+  //tokenize ecal file
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
     if (NTokens < 2) continue;
@@ -149,6 +175,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
       Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true || Parser.GetTokenizerAt(i)->IsTokenAt(0,"CR") == true) {
       if (Parser.GetTokenizerAt(i)->IsTokenAt(1, "dss") == true) {
         
+        // input token values to map
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
         R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
@@ -166,24 +193,6 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
       }
     }
   }
-  
-  if (m_TemperatureEnabled) {
-    for (unsigned int i = 0; i < Parser_Temp.GetNLines(); ++i) {
-      unsigned int NTokens = Parser_Temp.GetTokenizerAt(i)->GetNTokens();
-      if (NTokens < 2) continue;
-      if (Parser_Temp.GetTokenizerAt(i)->IsTokenAt(0, "CT") == true) {
-        if (Parser_Temp.GetTokenizerAt(i)->IsTokenAt(1, "dss") == true) {
-          MReadOutElementDoubleStrip R;
-          R.SetDetectorID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
-          R.SetStripID(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-          R.IsLowVoltageStrip(Parser_Temp.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4) == 1);
-          CT_ROEToLine[R] = i;
-        }
-      }
-    }
-  }
-
-
 
   for (auto CM: CM_ROEToLine) {
     // If we have at least three data points, we store the calibration
@@ -316,21 +325,8 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
     }
   }
 
-
-  if (m_TemperatureEnabled == true) {
-    for (auto CT: CT_ROEToLine) {
-      unsigned int Pos = 5;
-      double f0 = Parser_Temp.GetTokenizerAt(CT.second)->GetTokenAtAsDouble(Pos);
-      double f1 = Parser_Temp.GetTokenizerAt(CT.second)->GetTokenAtAsDouble(++Pos);
-      TF1 * temperaturefit = new TF1("temperaturefit", "pol1", 0, 40);
-      temperaturefit->FixParameter(0, f0);
-      temperaturefit->FixParameter(1, f1);
-
-      m_TemperatureCalibration[CT.first] = temperaturefit;
-    }
-  }
-
   return MModule::Initialize();
+   
 }
 
 
@@ -347,34 +343,37 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
     
     TF1* Fit = m_Calibration[R];
     TF1* FitRes = m_ResolutionCalibration[R];
-    double temp, ADCMod, newADC;
+    double ADCMod, newADC;
 
     if (Fit == nullptr) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Energy-fit not found for read-out element "<<R<<endl;
       Event->SetEnergyCalibrationIncomplete_BadStrip(true);
-    } else {
+    }  else {
 
-      double Energy = 0;
-      if (m_TemperatureEnabled == true) {
-        TF1* FitTemp = m_TemperatureCalibration[R];
-        if (FitTemp == nullptr) {
-          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: temp-fit not found for read-out element "<<R<<endl;
-          Event->SetEnergyCalibrationIncomplete_BadStrip(true);
-        } else {
-          temp = SH->GetPreampTemp();
-          ADCMod = FitTemp->Eval(temp);
-          newADC = (SH->GetADCUnits())/ADCMod;
-          SH->SetADCUnits(newADC);
-        }
-      } 
-       
+      double Energy = 0; // declare energy variable
+
       Energy = Fit->Eval(SH->GetADCUnits());
-
-      if (Energy < 0) {
-        Energy = 0;
-        if (SH->GetADCUnits() > 100) { // TODO: That's a remaining COSI-balloon hack...
-          Event->SetEnergyCalibrationIncomplete(true);
+      double Threshold = 0; //declare threshold variable
+      
+      if (m_ThresholdValueEnabled == true) { //check if user input threshold is enabled (one value applied to all strips)
+        Threshold = m_ThresholdValue;
+      } else if (m_ThresholdFileEnabled == true) { //check if threshold file is enabled (unique value applied to each strip)
+        double Threshold_map = m_ThresholdMap[R]; // if file enabled, declare value from map
+        
+        if (Threshold_map == 0) {
+          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Threshold not found for read-out element "<<R<<endl;
+          Threshold = 15;   // set default threshold if threshold not found
+        } else {
+          Threshold = Threshold_map; // set threshold variable to value found in map
         }
+      }
+      
+      //! Remove SH for any energy value below the established threshold
+      if (Energy < Threshold) {
+        Event->RemoveStripHit(i);
+        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Strip Hit below threshold, deleting SH "<<endl;
+        Event->SetStripHitBelowThreshold(true);
+        return false;
       }
       
       SH->SetEnergy(Energy);
@@ -385,12 +384,11 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         double EnergyResolution = FitRes->Eval(Energy);
         SH->SetEnergyResolution(EnergyResolution);
       }
-      if (R.IsLowVoltageStrip() == true) {
+      if (R.IsLowVoltageStrip() == true) { // check voltage side
         if (HasExpos() == true) {
           m_ExpoEnergyCalibration->AddEnergy(Energy);
         }
       }
-      
       if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Energy: "<<SH->GetADCUnits()<<" adu --> "<<Energy<<" keV"<<endl;
     } 
   }
@@ -431,7 +429,7 @@ double MModuleEnergyCalibrationUniversal::GetADC(MReadOutElementDoubleStrip R, d
 {
   //! Return the ADC value for a given energy
 
-  TF1* Fit = m_Calibration[R];
+  TF1* Fit = m_Calibration[R]; // TF1* is a function to be applied
   if (Fit != nullptr) {
     return Fit->GetX(Energy);
   } else {
@@ -452,7 +450,6 @@ void MModuleEnergyCalibrationUniversal::Finalize()
 
   for (auto& F: m_Calibration) delete F.second;
   for (auto& F: m_ResolutionCalibration) delete F.second;
-  for (auto& F: m_TemperatureCalibration) delete F.second;
 
   return;
 }
@@ -479,20 +476,29 @@ bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
   //! Read the configuration data from an XML node
   
   MXmlNode* FileNameNode = Node->GetNode("FileName");
-  if (FileNameNode != 0) {
+  if (FileNameNode != nullptr) {
     m_FileName = FileNameNode->GetValue();
   }
-
-  MXmlNode* TempFileNameNode = Node->GetNode("TempFileName");
-  if (TempFileNameNode != 0) {
-    m_TempFileName = TempFileNameNode->GetValue();
+  
+  MXmlNode* ThresholdFileEnabledNode = Node->GetNode("ThresholdFileEnabled");
+  if (ThresholdFileEnabledNode != nullptr) {
+    m_ThresholdFileEnabled = ThresholdFileEnabledNode->GetValueAsBoolean();
+  }
+  MXmlNode* ThresholdFileNameNode = Node->GetNode("ThresholdFileName");
+  if (ThresholdFileNameNode != nullptr) {
+    m_ThresholdFileName = ThresholdFileNameNode->GetValue();
   }
   
-  MXmlNode* PreampTemperatureNode = Node->GetNode("PreampTemperature");
-  if( PreampTemperatureNode != NULL ){
-      m_TemperatureEnabled = (bool) PreampTemperatureNode->GetValueAsInt();
+  MXmlNode* ThresholdValueEnabledNode = Node->GetNode("ThresholdValueEnabled");
+  if (ThresholdValueEnabledNode != nullptr) {
+    m_ThresholdValueEnabled = ThresholdValueEnabledNode->GetValueAsBoolean();
   }
 
+  MXmlNode* ThresholdValueNode = Node->GetNode("ThresholdValue");
+  if (ThresholdValueNode != nullptr) {
+    m_ThresholdValue = ThresholdValueNode->GetValueAsDouble();
+  }
+  
   return true;
 }
 
@@ -506,8 +512,10 @@ MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
-  new MXmlNode(Node, "TempFileName", m_TempFileName);
-  new MXmlNode(Node, "PreampTemperature",(unsigned int) m_TemperatureEnabled);  
+  new MXmlNode(Node, "ThresholdFileEnabled", m_ThresholdFileEnabled);
+  new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
+  new MXmlNode(Node, "ThresholdValueEnabled", m_ThresholdValueEnabled);
+  new MXmlNode(Node, "ThresholdValue", m_ThresholdValue);
 
   return Node;
 }

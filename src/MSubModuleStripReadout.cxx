@@ -50,6 +50,8 @@ MSubModuleStripReadout::MSubModuleStripReadout() : MSubModule()
   // Construct an instance of MSubModuleStripReadout
 
   m_Name = "DEE strip readout module";
+
+  m_EnergyCalibrationFileName = "";
 }
 
 
@@ -125,12 +127,10 @@ bool MSubModuleStripReadout::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
-  /*
-  MXmlNode* SomeTagNode = Node->GetNode("SomeTag");
-  if (SomeTagNode != 0) {
-    m_SomeTagValue = SomeTagNode->GetValue();
+  MXmlNode* N = Node->GetNode("EnergyCalibrationFileName");
+  if (N != nullptr) {
+    m_EnergyCalibrationFileName = N->GetValue();
   }
-  */
 
   return true;
 }
@@ -143,9 +143,7 @@ MXmlNode* MSubModuleStripReadout::CreateXmlConfiguration(MXmlNode* Node)
 {
   //! Create an XML node tree from the configuration
   
-  /*
-  MXmlNode* SomeTagNode = new MXmlNode(Node, "SomeTag", "SomeValue");
-  */
+  new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
 
   return Node;
 }

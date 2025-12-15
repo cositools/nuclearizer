@@ -24,6 +24,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MReadOutElementDoubleStrip.h"
+#include "MGUIEEntry.h"
 
 // Neclearizer libe:
 #include "MModule.h"
@@ -48,16 +49,31 @@ class MModuleEnergyCalibrationUniversal : public MModule
   //! Create a new object of this class 
   virtual MModuleEnergyCalibrationUniversal* Clone() { return new MModuleEnergyCalibrationUniversal(); }
 
+  //! Enable/Disable soft threshold from File
+  void SetThresholdFileEnable(bool X) {m_ThresholdFileEnabled = X;}
+  //! Get threshold from file true/false
+  bool GetThresholdFileEnable() const { return m_ThresholdFileEnabled; }
+  
   //! Set the calibration file name
   void SetFileName(const MString& FileName) { m_FileName = FileName; }
   //! Get the calibration file name
   MString GetFileName() const { return m_FileName; }
  
-  //! Set the Temperature calibration file name
-  void SetTempFileName(const MString& TempFileName) {m_TempFileName = TempFileName; }
-  //! Get the Temperature calibration file name
-  MString GetTempFileName() const {return m_TempFileName; }
+  //! Set the threshold calibration file name
+  void SetThresholdFileName(const MString& ThresholdFileName) {m_ThresholdFileName = ThresholdFileName; }
+  //! Get the threshold calibration file name
+  MString GetThresholdFileName() const {return m_ThresholdFileName; }
  
+  //! Enable/Disable soft threshold value from GUI input
+  void SetThresholdValueEnable(bool X) {m_ThresholdValueEnabled = X;}
+  //! Get threshold value from GUI input true/false
+  bool GetThresholdValueEnable() const { return m_ThresholdValueEnabled; }
+  
+  //! Set the threshold value
+  void SetThresholdValue(double ThresholdValue) { m_ThresholdValue = ThresholdValue; }
+  //! Get the threshold value
+  double GetThresholdValue() const { return m_ThresholdValue; }
+
   //! Create the expos
   virtual void CreateExpos();
   
@@ -80,13 +96,7 @@ class MModuleEnergyCalibrationUniversal : public MModule
 
   //! Look up energy resolution
   double LookupEnergyResolution(MStripHit* SH, double Energy);
-
-  //! Enable/Disable Preamp Temp Correction
-  void EnablePreampTempCorrection(bool X) {m_TemperatureEnabled = X;}
-  //! Get coincidence merging true/false
-  bool GetPreampTempCorrection() const { return m_TemperatureEnabled; }
-
-
+  
 	//! Standalone function to return energy of certain strip given ADC
 	double GetEnergy(MReadOutElementDoubleStrip R, double ADC);
 	//! Standalone function to return ADC of certain strip given energy
@@ -95,13 +105,19 @@ class MModuleEnergyCalibrationUniversal : public MModule
 
   // protected methods:
  protected:
-  //! The calibration file name
+  //! The energy calibration file name
   MString m_FileName;
-  //! The Temperature calibration file name
-  MString m_TempFileName;
-  //! Preamp Temperature Correction
-  bool m_TemperatureEnabled;
-
+  
+  //! Threshold file enable boolean
+  bool m_ThresholdFileEnabled;
+  //! The threshold file name
+  MString m_ThresholdFileName;
+  
+  //! Threshold value enable boolean
+  bool m_ThresholdValueEnabled;
+  //! The threshold value
+  double m_ThresholdValue;
+  
 
   // private methods:
  private:
@@ -121,11 +137,11 @@ class MModuleEnergyCalibrationUniversal : public MModule
   //! Associated detector IDs
   vector<unsigned int> m_DetectorIDs;
   //! Calibration map between read-out element and fitted function
-  map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
+  map<MReadOutElementDoubleStrip, TF1*> m_Calibration; // TF1* is a function to be applied
   //! Resolution Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
   //! Temperature Calibration map between read-out element and fitted function
-  map<MReadOutElementDoubleStrip, TF1*> m_TemperatureCalibration;  
+  map<MReadOutElementDoubleStrip, double> m_ThresholdMap;
  
 #ifdef ___CLING___
  public:

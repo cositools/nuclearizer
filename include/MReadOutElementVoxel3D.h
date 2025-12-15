@@ -1,9 +1,8 @@
 /*
  * MReadOutElementVoxel3D.h
  *
- * Created by Valentina Fioretti (INAF OAS Bologna)
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Valentina Fioretti.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -38,10 +37,10 @@ class MReadOutElementVoxel3D : public MReadOutElement
  public:
   //! default constructor - Read out element of a voxel 3D
   MReadOutElementVoxel3D();
-    
+
   //! full constructor - Read out element of a voxel 3D
-  MReadOutElementVoxel3D(const MString& m_DetectorName, unsigned int m_VoxelXID, unsigned int m_VoxelYID, unsigned int m_VoxelZID);
-    
+  MReadOutElementVoxel3D(unsigned int m_DetectorID, unsigned int m_CrystalID, unsigned int m_VoxelXID, unsigned int m_VoxelYID, unsigned int m_VoxelZID);
+
   //! Simple default destructor
   virtual ~MReadOutElementVoxel3D();
 
@@ -62,24 +61,57 @@ class MReadOutElementVoxel3D : public MReadOutElement
   virtual MString GetType() const;
 
   //! Setters and getters
-  void SetDetectorName(const MString& Name) { m_DetectorName = Name; }
-  MString GetDetectorName() const { return m_DetectorName; }
+  void SetDetectorID(unsigned int DetectorID)
+  {
+    m_DetectorID = DetectorID;
+  }
+  unsigned int GetDetectorID() const
+  {
+    return m_DetectorID;
+  }
 
-  void SetVoxelXID(unsigned int VoxelXID) { m_VoxelXID = VoxelXID; }
-  unsigned int GetVoxelXID() const { return m_VoxelXID; }
+  void SetCrystalID(unsigned int CrystalID)
+  {
+    m_CrystalID = CrystalID;
+  }
+  unsigned int GetCrystalID() const
+  {
+    return m_CrystalID;
+  }
 
-  void SetVoxelYID(unsigned int VoxelYID) { m_VoxelYID = VoxelYID; }
-  unsigned int GetVoxelYID() const { return m_VoxelYID; }
+  void SetVoxelXID(unsigned int VoxelXID)
+  {
+    m_VoxelXID = VoxelXID;
+  }
+  unsigned int GetVoxelXID() const
+  {
+    return m_VoxelXID;
+  }
 
-  void SetVoxelZID(unsigned int VoxelZID) { m_VoxelZID = VoxelZID; }
-  unsigned int GetVoxelZID() const { return m_VoxelZID; }
+  void SetVoxelYID(unsigned int VoxelYID)
+  {
+    m_VoxelYID = VoxelYID;
+  }
+  unsigned int GetVoxelYID() const
+  {
+    return m_VoxelYID;
+  }
+
+  void SetVoxelZID(unsigned int VoxelZID)
+  {
+    m_VoxelZID = VoxelZID;
+  }
+  unsigned int GetVoxelZID() const
+  {
+    return m_VoxelZID;
+  }
 
   //! Return the number of parsable elements
-  virtual unsigned int GetNumberOfParsableElements() const;  
-  //! Parse the data from the tokenizer 
+  virtual unsigned int GetNumberOfParsableElements() const;
+  //! Parse the data from the tokenizer
   virtual bool Parse(const MTokenizer& T, unsigned int StartElement);
   //! Return the data as parsable string
-  virtual MString ToParsableString(bool WithDescriptor = false) const; 
+  virtual MString ToParsableString(bool WithDescriptor = false) const;
 
   //! Dump a string
   virtual MString ToString() const;
@@ -87,31 +119,23 @@ class MReadOutElementVoxel3D : public MReadOutElement
 
   // protected methods:
  protected:
-
   // private methods:
  private:
-
-
-
   // protected members:
  protected:
+  unsigned int m_DetectorID; //!< Detector ID
+  unsigned int m_CrystalID; //!< Crystal ID
 
-  MString m_DetectorName;   //!< Detector name
+  unsigned int m_VoxelXID; //!< Voxel index X
+  unsigned int m_VoxelYID; //!< Voxel index Y
+  unsigned int m_VoxelZID; //!< Voxel index Z
 
-  unsigned int m_VoxelXID;  //!< Voxel index X
-  unsigned int m_VoxelYID;  //!< Voxel index Y
-  unsigned int m_VoxelZID;  //!< Voxel index Z
-  
   // private members:
  private:
-
-
-
 #ifdef ___CLING___
  public:
   ClassDef(MReadOutElementVoxel3D, 0) // no description
 #endif
-
 };
 
 //! Streamify the read-out element

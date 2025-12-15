@@ -50,6 +50,9 @@ MSubModuleStripTrigger::MSubModuleStripTrigger() : MSubModule()
   // Construct an instance of MSubModuleStripTrigger
 
   m_Name = "DEE strip trigger module";
+
+  m_HasTrigger = false;
+  m_HasVeto = false;
 }
 
 
@@ -80,6 +83,9 @@ void MSubModuleStripTrigger::Clear()
 {
   // Clear for the next event
 
+  m_HasTrigger = false;
+  m_HasVeto = false;
+
   MSubModule::Clear();
 }
 
@@ -89,7 +95,10 @@ void MSubModuleStripTrigger::Clear()
 
 bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Main data analysis routine, which updates the event to a new level
+  // Main data analysis routine, which updates the event to a new level 
+
+  m_HasTrigger = true;
+
   return true;
 }
 

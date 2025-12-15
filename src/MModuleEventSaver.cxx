@@ -168,7 +168,7 @@ bool MModuleEventSaver::Initialize()
   ostringstream Header;
   if (m_Mode == c_DatFile) {
     Header<<endl;
-    Header<<"Version 1"<<endl;
+    Header<<"Version 3"<<endl;
     Header<<"Type DAT"<<endl;
     Header<<endl;
   } else if (m_Mode == c_EvtaFile) {
@@ -357,7 +357,7 @@ bool MModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
   if (m_Mode == c_EvtaFile) {
     Event->StreamEvta(Out);
   } else if (m_Mode == c_DatFile) {
-    Event->StreamDat(Out, 1);    
+    Event->StreamDat(Out, 3);
   } else if (m_Mode == c_RoaFile) {
     Event->StreamRoa(Out, m_RoaWithADCs, m_RoaWithTACs, m_RoaWithEnergies, m_RoaWithTimings, m_RoaWithTemperatures, m_RoaWithFlags, m_RoaWithOrigins, m_RoaWithNearestNeighbors);
   }

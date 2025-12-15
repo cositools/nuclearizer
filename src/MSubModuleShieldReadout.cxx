@@ -91,6 +91,13 @@ bool MSubModuleShieldReadout::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level 
 
+  // Dummy code:
+  list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
+  for (MDEECrystalHit& CH: Hits) {
+    CH.m_ADC = 2000 + 4*CH.m_Energy;
+    if (CH.m_ADC > 16383) CH.m_ADC = 16383;
+  }
+
   return true;
 }
 

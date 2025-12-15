@@ -52,6 +52,9 @@ using namespace std;
 #include "MFile.h"
 
 // Nuclearizer libs:
+#include "MFretalonRegistry.h"
+#include "MReadOutDataTAC.h"
+#include "MReadOutDataEnergy.h"
 #include "MReadOutAssembly.h"
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
@@ -68,6 +71,7 @@ using namespace std;
 #include "MModuleDepthCalibrationB.h"
 #include "MModuleDepthCalibration2024.h"
 #include "MModuleStripPairingGreedy.h"
+#include "MModuleStripPairingMultiRoundChiSquare.h"
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
@@ -77,6 +81,7 @@ using namespace std;
 #include "MModuleDiagnostics.h"
 #include "MModuleDiagnosticsEnergyPerStrip.h"
 #include "MModuleDEESMEX.h"
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,6 +104,14 @@ MAssembly::MAssembly()
   
   g_Verbosity = c_Error;
   
+  //! Register new read out data:
+  MReadOutDataTAC TAC;
+  MFretalonRegistry::Instance().Register(TAC);
+
+  MReadOutDataEnergy Energy;
+  MFretalonRegistry::Instance().Register(Energy);
+
+  // Create the supervisor
   m_Supervisor = MSupervisor::GetSupervisor();
   
   // Fixed seed to reproduce DEE results
@@ -123,6 +136,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
 
   m_Supervisor->AddAvailableModule(new MModuleStripPairingGreedy());
+  m_Supervisor->AddAvailableModule(new MModuleStripPairingMultiRoundChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleStripPairingChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());

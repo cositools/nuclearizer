@@ -317,9 +317,9 @@ double MDetectorEffectsEngineSMEX::dTimeGeDs(vector<int> channels) {
     // Only called if one channel is activated.
 
     double GeD_deadtime = 0;
-    int temp = 0;
-    int channelNext = 0;
-    int highestCountNear = 0;
+    //int temp = 0;
+    //int channelNext = 0;
+    //int highestCountNear = 0;
     double waitTime = 400e-9;
     double asic_deadtime = 1e-6;
     int channels_activated_count = 1;
@@ -1283,7 +1283,9 @@ bool MDetectorEffectsEngineSMEX::GetNextEvent(MReadOutAssembly* Event) {
       // (3c) Cross talk
       
       //Identify hits that need crosstalk
-      double sim_arr[MergedStripHits.size()][5];
+      // double sim_arr[MergedStripHits.size()][5]; // Variable-length arrays are not part of standard C++
+      vector<vector<double>> sim_arr(MergedStripHits.size(), vector<double>(5));
+
       list<MDEEStripHit>::iterator i = MergedStripHits.begin();
       int i2 = 0;
       while (i != MergedStripHits.end()) {

@@ -4,7 +4,7 @@
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
- * Please see the source-file for the copyright-notice.
+ * Please see the source-file for the copyright-notice.:q
  *
  */
 
@@ -31,6 +31,7 @@
 #include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
 #include "MGUIERBList.h"
+#include "MGUIEEntry.h"
 
 // Nuclearizer libs:
 #include "MModule.h"
@@ -74,14 +75,20 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
 
+  //! Select Threshold File to use
+  bool m_UseThresholdFile;
+  TGCheckButton* m_ThresholdFileCB;
+  MGUIEFileSelector* m_ThresholdFile;
 
-  int m_UseTempCal;
-  TGCheckButton* m_TempModeCB;
-  MGUIEFileSelector* m_TempFile;
+  //! Use Threshold cut
+  bool m_UseThresholdValue;
+  //! Check button to decide to use a threshold cut
+  TGCheckButton* m_ThresholdValueCB;
+  //! The threshold entry box
+  MGUIEEntry* m_SetThresholdValue;
 
-  enum ButtonIDs {c_TempFile};
-
-
+  //! IDs of check buttons
+  enum ButtonIDs { c_ThresholdFile = 1, c_Threshold };
 
 #ifdef ___CLING___
  public:

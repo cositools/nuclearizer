@@ -83,25 +83,12 @@ class MSubModuleShieldTrigger : public MSubModule
 
 
 
-
   // protected members:
  protected:
 
 
   // private members:
  private:
-
-  static const int nShieldPanels = 6;
-  vector<double> m_ShieldLastHitTime = vector<double>(nShieldPanels);
-  double m_ShieldVetoTime;
-  double m_ShieldDelayBefore;
-  double m_ShieldDelayAfter;
-  double m_ShieldVetoWindowSize;
-  bool m_IsShieldDead;
-  //! dead time on the shields
-  vector<double> m_ShieldDeadtime = vector<double>(nShieldPanels);
-  vector<double> m_TotalShieldDeadtime = vector<double>(nShieldPanels);
-
   //! Flag indicating that a trigger has been raised
   bool m_HasTrigger;
 

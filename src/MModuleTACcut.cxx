@@ -222,8 +222,19 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
         double DisableTime = m_TACCut[DetID][m_SideToIndex[Side]][StripID][2];
         double FlagToEnDelay = m_TACCut[DetID][m_SideToIndex[Side]][StripID][3];
         double FlagDelay = m_TACCut[DetID][m_SideToIndex[Side]][StripID][5];
-        double TotalOffset = ShapingOffset + DisableTime + FlagToEnDelay + FlagDelay;
-        if ((SHTiming > TotalOffset + CoincidenceWindow) || (SHTiming < TotalOffset) || (SHTiming < MaxTAC - CoincidenceWindow)) {
+        // double TotalOffset = ShapingOffset + DisableTime + FlagToEnDelay + FlagDelay; // Changing the total Offset based on data instead
+        // TotalOffset: Earliest time (in ns) after which valid timing hits can appear, start of the allowed timing window
+        constexpr double TotalOffset = 3000.0;
+        // TODO(@NicoleRodriguezCavero): Match TotalOffset with timing contributions from electronics, temporary number is a rough estimate
+        // HardCoincidenceWindow: Width of the valid coincidence region (after TotalOffset) during which multiple strip hits are considered part of the same event
+        constexpr double HardCoincidenceWindow = 600.0;
+        // TODO(@NicoleRodriguezCavero): Coincidence window subject to change pending more analysis
+        // if ((SHTiming > TotalOffset + CoincidenceWindow) || (SHTiming < TotalOffset) || (SHTiming < MaxTAC - CoincidenceWindow)) {
+        //   Passed = false;
+        // } else if (HasExpos()==true) {
+        //   m_ExpoTACcut->AddTAC(DetID, SHTiming);
+        // }
+        if ((SHTiming < TotalOffset) || (SHTiming < MaxTAC - HardCoincidenceWindow)) { //Eliminating the upper boundary condition and just using one cut based on the coincidence window
           Passed = false;
         } else if (HasExpos()==true) {
           m_ExpoTACcut->AddTAC(DetID, SHTiming);

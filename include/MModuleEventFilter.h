@@ -108,6 +108,17 @@ class MModuleEventFilter : public MModule
   void SetMaximumHits(double MaximumHits) { m_MaximumHits = MaximumHits; }
   //! Get the maximum number of hits
   double GetMaximumHits() const { return m_MaximumHits; }
+    
+    //! Set the maximum Reduced Chi Square
+    void SetMaximumReducedChiSquare(double MaximumReducedChiSquare) { m_MaximumReducedChiSquare = MaximumReducedChiSquare; }
+    //! Get the maximum Reduced Chi Square
+    double GetMaximumReducedChiSquare() const { return m_MaximumReducedChiSquare; }
+    
+    //! Set the minimum Reduced Chi Square
+    void SetMinimumReducedChiSquare(double MinimumReducedChiSquare) { m_MinimumReducedChiSquare = MinimumReducedChiSquare; }
+    //! Get the minimum Reduced Chi Square
+    double GetMinimumReducedChiSquare() const { return m_MinimumReducedChiSquare; }
+
 
   // protected methods:
  protected:
@@ -143,6 +154,12 @@ class MModuleEventFilter : public MModule
   unsigned int m_MinimumHits;
   //! The maximum number of hits
   unsigned int m_MaximumHits;
+    
+  //! Minimum reduced chi square (as calculated in strip pairing code)
+  double m_MinimumReducedChiSquare;
+    
+  //! Maximum reduced chi square (as calculated in strip pairing code)
+  double m_MaximumReducedChiSquare;
 
   
 #ifdef ___CLING___

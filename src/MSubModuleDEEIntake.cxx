@@ -47,7 +47,8 @@ ClassImp(MSubModuleDEEIntake)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSubModuleDEEIntake::MSubModuleDEEIntake() : MSubModule()
+MSubModuleDEEIntake::MSubModuleDEEIntake()
+    : MSubModule()
 {
   // Construct an instance of MSubModuleDEEIntake
 
@@ -91,7 +92,7 @@ void MSubModuleDEEIntake::Clear()
 
 bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Main data analysis routine, which updates the event to a new level 
+  // Main data analysis routine, which updates the event to a new level
 
   Event->SetID(Event->GetSimulatedEvent()->GetID());
   Event->SetTime(Event->GetSimulatedEvent()->GetTime());
@@ -102,12 +103,14 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
     MDVolumeSequence* VS = HT->GetVolumeSequence();
     MDDetector* Detector = VS->GetDetector();
     if (Detector == nullptr) {
-      if (g_Verbosity >= c_Error) cout<<m_Name<<": No detector found for this simulated hit"<<endl;
+      if (g_Verbosity >= c_Error)
+        cout << m_Name << ": No detector found for this simulated hit" << endl;
       continue;
     }
     MDVolume* SensitiveVolume = VS->GetSensitiveVolume();
     if (SensitiveVolume == nullptr) {
-      if (g_Verbosity >= c_Error) cout<<m_Name<<": No sensitive volume found for this simulated hit"<<endl;
+      if (g_Verbosity >= c_Error)
+        cout << m_Name << ": No sensitive volume found for this simulated hit" << endl;
       continue;
     }
     MDShapeBRIK* Shape = nullptr;
@@ -117,11 +120,13 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       if (dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA()->GetType() == "BRIK") {
         Shape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA());
       } else {
-        if (g_Verbosity >= c_Error) cout<<m_Name<<": No box-shaped sensitive volume found for this simulated hit"<<endl;
+        if (g_Verbosity >= c_Error)
+          cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
         continue;
       }
     } else {
-      if (g_Verbosity >= c_Error) cout<<m_Name<<": No box-shaped sensitive volume found for this simulated hit"<<endl;
+      if (g_Verbosity >= c_Error)
+        cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
       continue;
     }
     double DetectorDepth = Shape->GetSizeZ();
@@ -159,16 +164,16 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       LVHit.m_SimulatedPositionInDetector = PositionInDetector;
       HVHit.m_SimulatedPositionInDetector = PositionInDetector;
 
-      LVHit.m_SimulatedRelativeDepth = (LVHit.m_SimulatedPositionInDetector.Z() + 0.5*DetectorDepth)/DetectorDepth;
-      HVHit.m_SimulatedRelativeDepth = (HVHit.m_SimulatedPositionInDetector.Z() + 0.5*DetectorDepth)/DetectorDepth;
+      LVHit.m_SimulatedRelativeDepth = (LVHit.m_SimulatedPositionInDetector.Z() + 0.5 * DetectorDepth) / DetectorDepth;
+      HVHit.m_SimulatedRelativeDepth = (HVHit.m_SimulatedPositionInDetector.Z() + 0.5 * DetectorDepth) / DetectorDepth;
 
       // Assume not a guard ring - we only know after the charge transport
       LVHit.m_SimulatedIsGuardRing = false;
       HVHit.m_SimulatedIsGuardRing = false;
 
       // Add a unique identifiers
-      LVHit.m_ID = 1000+(2*h);
-      HVHit.m_ID = 1000+(2*h+1);
+      LVHit.m_ID = 1000 + (2 * h);
+      HVHit.m_ID = 1000 + (2 * h + 1);
 
       LVHit.m_OppositeSideID = HVHit.m_ID;
       HVHit.m_OppositeSideID = LVHit.m_ID;
@@ -181,15 +186,55 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
       // The rest will be filled in later
 
-      // Event will be responsible for deleting the event
-      cout<<"Adding LV hit"<<endl;
       Event->AddDEEStripHitLV(LVHit);
       Event->AddDEEStripHitHV(HVHit);
 
     } else if (DetectorName.BeginsWith("ACS_Crystal_") == true) {
-      // later
+      vector<MString> Tokens = DetectorName.Tokenize("_");
+
+      if (Tokens.size() != 4) {
+        cerr << "ERROR: Unexpected detector name format for the Shield"
+             << DetectorName << endl;
+        return false;
+      }
+      int DetectorID = Tokens[2].ToInt();
+      int CrystalID = Tokens[3].ToInt();
+
+      MDGridPoint P = VS->GetGridPoint();
+      MVector Voxel_ID;
+      Voxel_ID[0] = P.GetXGrid();
+      Voxel_ID[1] = P.GetYGrid();
+      Voxel_ID[2] = P.GetZGrid();
+
+      MDEECrystalHit CHit;
+      CHit.m_SimulatedEventID = Event->GetSimulatedEvent()->GetID();
+
+      CHit.m_DetectorID = DetectorID;
+      CHit.m_CrystalID = CrystalID;
+
+      CHit.m_VoxelInDetector = Voxel_ID;
+
+      CHit.m_SimulatedHitIndex = h;
+
+      // Sivan provides a vector and we want a list her (why??)
+      auto HTOrigins = HT->GetOrigins();
+      vector<int> Origins(HTOrigins.begin(), HTOrigins.end());
+      CHit.m_SimulatedOrigins = list<int>(Origins.begin(), Origins.end());
+
+      CHit.m_SimulatedPosition = HT->GetPosition();
+      CHit.m_SimulatedEnergy = HT->GetEnergy();
+
+      CHit.m_ID = 1000 + (2 * h);
+
+      CHit.m_ROE.SetDetectorID(DetectorID);
+
+      // The rest will be filled in later
+
+      Event->AddDEECrystalHit(CHit);
+
     } else {
-      if (g_Verbosity >= c_Error) cout<<m_Name<<": No GeD_ volumes found"<<endl;
+      if (g_Verbosity >= c_Error)
+        cout << m_Name << ": No GeD_ volumes found" << endl;
       continue;
     }
   }
@@ -203,7 +248,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
 void MSubModuleDEEIntake::Finalize()
 {
-  // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
+  // Finalize the analysis - do all cleanup, i.e., undo Initialize()
 
   MSubModule::Finalize();
 }

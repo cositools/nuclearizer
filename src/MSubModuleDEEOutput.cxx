@@ -99,6 +99,10 @@ bool MSubModuleDEEOutput::AnalyzeEvent(MReadOutAssembly* Event)
   for (MDEEStripHit& SH: HVHits) {
     Event->AddStripHit(SH.Convert());
   }
+  list<MDEECrystalHit>& CHits = Event->GetDEECrystalHitListReference();
+  for (MDEECrystalHit& CH: CHits) {
+    Event->AddCrystalHit(CH.Convert());
+  }
 
 
   return true;

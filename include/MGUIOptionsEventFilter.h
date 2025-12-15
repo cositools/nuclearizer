@@ -78,6 +78,9 @@ class MGUIOptionsEventFilter : public MGUIOptions
 
   //! The number of hits
   MGUIEMinMaxEntry* m_Hits;
+    
+  //! Reduced Chi Square Selection
+  MGUIEMinMaxEntry* m_ReducedChiSquareWindow;
 
   // private members:
  private:

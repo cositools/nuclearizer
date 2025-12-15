@@ -81,6 +81,18 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
   
   m_MinimumTotalEnergy = 0;
   m_MaximumTotalEnergy = 10000;
+
+  m_MinimumHVStrips = 0;
+  m_MaximumHVStrips = 20;
+
+  m_MinimumLVStrips = 0;
+  m_MaximumLVStrips = 20;
+
+  m_MinimumHits = 0;
+  m_MaximumHits = 100;
+    
+  m_MinimumReducedChiSquare = -1;
+  m_MaximumReducedChiSquare = numeric_limits<double>::max();
 }
 
 
@@ -145,6 +157,30 @@ bool MModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event)
     }   
   }
   
+  unsigned int NHVStrips = 0;
+  unsigned int NLVStrips = 0;
+  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) {
+    if (Event->GetStripHit(sh)->IsLowVoltageStrip() == true) {
+      ++NLVStrips;
+    } else {
+      ++NHVStrips;
+    }
+  }
+  if (NHVStrips < m_MinimumHVStrips || NHVStrips > m_MaximumHVStrips || NLVStrips < m_MinimumLVStrips || NLVStrips > m_MaximumLVStrips) {
+    FilteredOut = true;
+  }
+
+  if (Event->GetNHits() < m_MinimumHits || Event->GetNHits() > m_MaximumHits) {
+    FilteredOut = true;
+  }
+    
+  // Apply Chi^2 filter (as calculated in strip pairing)
+    
+    if (Event->GetReducedChiSquare() < m_MinimumReducedChiSquare || Event->GetReducedChiSquare() > m_MaximumReducedChiSquare) {
+        FilteredOut = true;
+    }
+
+
   if (FilteredOut == true) {
     Event->SetFilteredOut(true);
   }
@@ -185,6 +221,42 @@ bool MModuleEventFilter::ReadXmlConfiguration(MXmlNode* Node)
     m_MaximumTotalEnergy = MaximumTotalEnergyNode->GetValueAsDouble();
   }
 
+  MXmlNode* MinimumHVStripsNode = Node->GetNode("MinimumHVStrips");
+  if (MinimumHVStripsNode != 0) {
+    m_MinimumHVStrips = MinimumHVStripsNode->GetValueAsUnsignedInt();
+  }
+  MXmlNode* MaximumHVStripsNode = Node->GetNode("MaximumHVStrips");
+  if (MaximumHVStripsNode != 0) {
+    m_MaximumHVStrips = MaximumHVStripsNode->GetValueAsUnsignedInt();
+  }
+
+  MXmlNode* MinimumLVStripsNode = Node->GetNode("MinimumLVStrips");
+  if (MinimumLVStripsNode != 0) {
+    m_MinimumLVStrips = MinimumLVStripsNode->GetValueAsUnsignedInt();
+  }
+  MXmlNode* MaximumLVStripsNode = Node->GetNode("MaximumLVStrips");
+  if (MaximumLVStripsNode != 0) {
+    m_MaximumLVStrips = MaximumLVStripsNode->GetValueAsUnsignedInt();
+  }
+
+  MXmlNode* MinimumHitsNode = Node->GetNode("MinimumHits");
+  if (MinimumHitsNode != 0) {
+    m_MinimumHits = MinimumHitsNode->GetValueAsUnsignedInt();
+  }
+  MXmlNode* MaximumHitsNode = Node->GetNode("MaximumHits");
+  if (MaximumHitsNode != 0) {
+    m_MaximumHits = MaximumHitsNode->GetValueAsUnsignedInt();
+  }
+    
+  MXmlNode* MinimumReducedChiSquareNode = Node->GetNode("MinimumReducedChiSquare");
+  if (MinimumReducedChiSquareNode != 0) {
+    m_MinimumReducedChiSquare = MinimumReducedChiSquareNode->GetValueAsDouble();
+  }
+  MXmlNode* MaximumReducedChiSquareNode = Node->GetNode("MaximumReducedChiSquare");
+  if (MaximumReducedChiSquareNode != 0) {
+    m_MaximumReducedChiSquare = MaximumReducedChiSquareNode->GetValueAsDouble();
+  }
+
   return true;
 }
 
@@ -200,6 +272,18 @@ MXmlNode* MModuleEventFilter::CreateXmlConfiguration()
 
   new MXmlNode(Node, "MinimumTotalEnergy", m_MinimumTotalEnergy);
   new MXmlNode(Node, "MaximumTotalEnergy", m_MaximumTotalEnergy);
+
+  new MXmlNode(Node, "MinimumHVStrips", m_MinimumHVStrips);
+  new MXmlNode(Node, "MaximumHVStrips", m_MaximumHVStrips);
+
+  new MXmlNode(Node, "MinimumLVStrips", m_MinimumLVStrips);
+  new MXmlNode(Node, "MaximumLVStrips", m_MaximumLVStrips);
+
+  new MXmlNode(Node, "MinimumHits", m_MinimumHits);
+  new MXmlNode(Node, "MaximumHits", m_MaximumHits);
+    
+  new MXmlNode(Node, "MinimumReducedChiSquare", m_MinimumReducedChiSquare);
+  new MXmlNode(Node, "MaximumReducedChiSquare", m_MaximumReducedChiSquare);
 
   return Node;
 }

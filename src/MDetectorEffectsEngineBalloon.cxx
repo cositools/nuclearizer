@@ -1020,8 +1020,10 @@ bool MDetectorEffectsEngineBalloon::GetNextEvent(MReadOutAssembly* Event)
       
       // (3c) Cross talk
       
-      //Identify hits that need crosstalk
-      double sim_arr[MergedStripHits.size()][5];
+      // Identify hits that need crosstalk
+      // double sim_arr[MergedStripHits.size()][5]; // Variable-length arrays are not part of standard C++
+      vector<vector<double>> sim_arr(MergedStripHits.size(), vector<double>(5));
+
       list<MDEEStripHit>::iterator i = MergedStripHits.begin();
       int i2 = 0;
       while (i != MergedStripHits.end()) {

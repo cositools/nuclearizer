@@ -50,6 +50,9 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   // Construct an instance of MSubModuleShieldTrigger
 
   m_Name = "DEE shield trigger module";
+
+  m_HasTrigger = false;
+  m_HasVeto = false;
 }
 
 
@@ -80,6 +83,9 @@ void MSubModuleShieldTrigger::Clear()
 {
   // Clear for the next event
 
+  m_HasTrigger = false;
+  m_HasVeto = false;
+
   MSubModule::Clear();
 }
 
@@ -89,30 +95,10 @@ void MSubModuleShieldTrigger::Clear()
 
 bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  MSimEvent* SimEvent = nullptr;
-  SimEvent = Event->GetSimulatedEvent();
+  // Main data analysis routine, which updates the event to a new level 
 
-  MTime evt_time = SimEvent->GetTime();
+  m_HasTrigger = false;
 
-  int ShieldDetNum = 0;
-  double energy = 0;
-  int ShieldDetGroup;
-  m_HasVeto = false;
-
-  bool m_IsShieldDead = false;
-
-  for (unsigned int h=0; h<SimEvent->GetNHTs(); h++) {
-    MSimHT* HT = SimEvent->GetHTAt(h);
-
-    MDVolumeSequence* VS = HT->GetVolumeSequence();  // VF: to remove?
-    MDDetector* Detector = VS->GetDetector(); // VF: to remove?
-    MString DetName = Detector->GetName(); // VF: to remove?
-
-    if (HT->GetDetectorType() == 8) {
-      cout << "Shield Hit Detected" << endl;
-    }
-  }
-    
   return true;
 }
 
