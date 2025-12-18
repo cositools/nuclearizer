@@ -585,6 +585,11 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
     S<<endl;
   }
+  if (m_StripHitBelowThreshold == true) {
+    S<<"QA StripHitBelowThreshold";
+    if (m_StripHitBelowThresholdString != "") S<<" ("<<m_StripHitBelowThresholdString<<")";
+    S<<endl;
+  }
   if (m_StripPairingIncomplete == true) {
     S<<"BD StripPairingIncomplete";
     if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
@@ -683,6 +688,11 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   if (m_EnergyResolutionCalibrationIncomplete == true) {
     S<<"BD EnergyResolutionCalibrationIncomplete";
     if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
+    S<<endl;
+  }
+  if (m_StripHitBelowThreshold == true) {
+    S<<"QA StripHitBelowThreshold";
+    if (m_StripHitBelowThresholdString != "") S<<" ("<<m_StripHitBelowThresholdString<<")";
     S<<endl;
   }
   if (m_StripPairingIncomplete == true) {
@@ -808,7 +818,7 @@ bool MReadOutAssembly::IsGood() const
 
 bool MReadOutAssembly::IsBad() const
 {
-  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+  //! Returns true if none of the "bad" or "incomplete" flag has been set
 
   if (m_AspectIncomplete == true) return true;
   if (m_TimeIncomplete == true) return true;

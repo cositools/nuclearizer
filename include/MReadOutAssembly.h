@@ -263,8 +263,7 @@ class MReadOutAssembly : public MReadOutSequence
   bool IsEnergyResolutionCalibrationIncomplete() const { return m_EnergyResolutionCalibrationIncomplete; }
   
   //! set the Strip Hit Below Threshold flag
-  void SetStripHitBelowThreshold(bool Flag = true, MString Text = ""){
-    m_StripHitBelowThreshold = Flag; m_StripHitBelowThreshold = Text;}
+  void SetStripHitBelowThreshold(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold = Flag; m_StripHitBelowThresholdString = Text;}
   //! get the Strip Hit Below Threshold flag
   bool IsStripHitBelowThreshold() const { return m_StripHitBelowThreshold; }
   
@@ -432,7 +431,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! Reduced Chi^2 of the Strip Paired Event
   double m_ReducedChiSquare;
 
-  // Flags indicating the quality of the event
+  // Flags indicating the quality of the event: incomplete calibration
   bool m_AspectIncomplete;
   MString m_AspectIncompleteString;
   bool m_TimeIncomplete;
@@ -451,10 +450,12 @@ class MReadOutAssembly : public MReadOutSequence
   MString m_DepthCalibrationIncompleteString;
   bool m_DepthCalibration_OutofRange;
   MString m_DepthCalibration_OutofRangeString;
+
+
+  // Flags indicating the quality of the event: quality warning, but not to be filtered out
   bool m_StripHitBelowThreshold;
   MString m_StripHitBelowThresholdString;
-
-
+  
 
   //! True if event has been filtered out
   bool m_FilteredOut;
