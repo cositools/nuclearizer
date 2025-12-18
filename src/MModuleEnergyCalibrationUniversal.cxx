@@ -88,6 +88,11 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = true;
+
+  //
+  m_SlowThresholdCutMode = MSlowThresholdCutModes::e_Ignore;
+  m_SlowThresholdCutFixedValue = 35;
+  m_SlowThresholdCutFileName = "";
 }
 
 
@@ -129,10 +134,10 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
     return false;
   }
   //Parse the slow Threshold file
-  MParser Parser_Threshold;
-  if (GetThresholdFileEnable() == true) {
-    if (Parser_Threshold.Open(m_ThresholdFileName, MFile::c_Read) == false) {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open Threshold file "<<m_ThresholdFileName<<endl;
+  if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_File) {
+    MParser Parser_Threshold;
+    if (Parser_Threshold.Open(m_SlowThresholdCutFileName, MFile::c_Read) == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open Threshold file "<<m_SlowThresholdCutFileName<<endl;
       return false;
     }
     else{
@@ -353,11 +358,11 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       double Energy = 0; // declare energy variable
 
       Energy = Fit->Eval(SH->GetADCUnits());
-      double Threshold = 0; //declare threshold variable
+      double Threshold = 0; // 0 means ignore
       
-      if (m_ThresholdValueEnabled == true) { //check if user input threshold is enabled (one value applied to all strips)
-        Threshold = m_ThresholdValue;
-      } else if (m_ThresholdFileEnabled == true) { //check if threshold file is enabled (unique value applied to each strip)
+      if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_Fixed) { //check if user input threshold is enabled (one value applied to all strips)
+        Threshold = m_SlowThresholdCutFixedValue;
+      } else if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_File) { //check if threshold file is enabled (unique value applied to each strip)
         double Threshold_map = m_ThresholdMap[R]; // if file enabled, declare value from map
         
         if (Threshold_map == 0) {
@@ -480,23 +485,17 @@ bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
     m_FileName = FileNameNode->GetValue();
   }
   
-  MXmlNode* ThresholdFileEnabledNode = Node->GetNode("ThresholdFileEnabled");
-  if (ThresholdFileEnabledNode != nullptr) {
-    m_ThresholdFileEnabled = ThresholdFileEnabledNode->GetValueAsBoolean();
+  MXmlNode* SlowThresholdCutModeNode = Node->GetNode("SlowThresholdCutMode");
+  if (SlowThresholdCutModeNode != nullptr) {
+    m_SlowThresholdCutMode = static_cast<MSlowThresholdCutModes>(SlowThresholdCutModeNode->GetValueAsInt());
   }
-  MXmlNode* ThresholdFileNameNode = Node->GetNode("ThresholdFileName");
-  if (ThresholdFileNameNode != nullptr) {
-    m_ThresholdFileName = ThresholdFileNameNode->GetValue();
+  MXmlNode* SlowThresholdCutFixedValueNode = Node->GetNode("SlowThresholdCutFixedValue");
+  if (SlowThresholdCutFixedValueNode != nullptr) {
+    m_SlowThresholdCutFixedValue = SlowThresholdCutFixedValueNode->GetValueAsDouble();
   }
-  
-  MXmlNode* ThresholdValueEnabledNode = Node->GetNode("ThresholdValueEnabled");
-  if (ThresholdValueEnabledNode != nullptr) {
-    m_ThresholdValueEnabled = ThresholdValueEnabledNode->GetValueAsBoolean();
-  }
-
-  MXmlNode* ThresholdValueNode = Node->GetNode("ThresholdValue");
-  if (ThresholdValueNode != nullptr) {
-    m_ThresholdValue = ThresholdValueNode->GetValueAsDouble();
+  MXmlNode* SlowThresholdCutFileNameNode = Node->GetNode("SlowThresholdCutThresholdFileName");
+  if (SlowThresholdCutFileNameNode != nullptr) {
+    m_SlowThresholdCutFileName = SlowThresholdCutFileNameNode->GetValue();
   }
   
   return true;
@@ -512,10 +511,9 @@ MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
-  new MXmlNode(Node, "ThresholdFileEnabled", m_ThresholdFileEnabled);
-  new MXmlNode(Node, "ThresholdFileName", m_ThresholdFileName);
-  new MXmlNode(Node, "ThresholdValueEnabled", m_ThresholdValueEnabled);
-  new MXmlNode(Node, "ThresholdValue", m_ThresholdValue);
+  new MXmlNode(Node, "SlowThresholdCutMode", static_cast<int>(m_SlowThresholdCutMode));
+  new MXmlNode(Node, "SlowThresholdCutFixedValue", m_SlowThresholdCutFixedValue);
+  new MXmlNode(Node, "SlowThresholdCutThresholdFileName", m_SlowThresholdCutFileName);
 
   return Node;
 }
