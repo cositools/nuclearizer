@@ -1,3 +1,130 @@
+// /*
+//  * MSubModuleShieldTrigger.h
+//  *
+//  * Copyright (C) by Andreas Zoglauer.
+//  * All rights reserved.
+//  *
+//  * Please see the source-file for the copyright-notice.
+//  *
+//  */
+
+
+// #ifndef __MSubModuleShieldTrigger__
+// #define __MSubModuleShieldTrigger__
+
+
+// ////////////////////////////////////////////////////////////////////////////////
+
+
+// // Standard libs:
+
+// // ROOT libs:
+
+// // MEGAlib libs:
+// #include "MGlobal.h"
+// #include "MSubModule.h"
+
+// // Forward declarations:
+
+
+// ////////////////////////////////////////////////////////////////////////////////
+
+
+// class MSubModuleShieldTrigger : public MSubModule
+// {
+//   // public interface:
+//  public:
+//   //! Default constructor
+//   MSubModuleShieldTrigger();
+
+//   //! No copy constructor
+//   MSubModuleShieldTrigger(const MSubModuleShieldTrigger&) = delete;
+//   //! No copy assignment
+//   MSubModuleShieldTrigger& operator=(const MSubModuleShieldTrigger&) = delete;
+//   //! No move constructors
+//   MSubModuleShieldTrigger(MSubModuleShieldTrigger&&) = delete;
+//   //! No move operators
+//   MSubModuleShieldTrigger& operator=(MSubModuleShieldTrigger&&) = delete;
+
+//   //! Set shield energy correction file name
+//   void SetDeadtimeFileName(const MString& FileName)
+//   {
+//     m_DeadtimeFileName = FileName;
+//   }
+//   //! Get shield energy correction file name
+//   MString GetDeadtimeFileName() const
+//   {
+//     return m_DeadtimeFileName;
+//   }
+
+//   //! Default destructor
+//   virtual ~MSubModuleShieldTrigger();
+
+//   //! Initialize the module
+//   virtual bool Initialize();
+
+//   //! Clear event data from the module
+//   virtual void Clear();
+
+//   //! Main data analysis routine, which updates the event to a new level 
+//   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
+
+//   //! Return true if we have a trigger - filled after AnalyzeEvent
+//   bool HasTrigger() const { return m_HasTrigger; }
+
+//   //! Return true if we have a veto - filled after AnalyzeEvent
+//   bool HasVeto() const { return m_HasVeto; }
+
+//   //! Return the time when the dead time ends - filled after AnalyzeEvent
+//   MTime GetDeadTimeEnd() const { return m_DeadTimeEnd; }
+
+//   //! Finalize the module
+//   virtual void Finalize();
+
+//   //! Read the configuration data from an XML node
+//   virtual bool ReadXmlConfiguration(MXmlNode* Node);
+//   //! Create an XML node tree from the configuration
+//   virtual MXmlNode* CreateXmlConfiguration(MXmlNode* Node);
+
+//   // protected methods:
+//  protected:
+
+//   // private methods:
+//  private:
+
+
+
+//   // protected members:
+//  protected:
+//   //! Shield energy correction file name
+//   MString m_DeadtimeFileName;
+
+//   // private members:
+//  private:
+//   //! Flag indicating that a trigger has been raised
+//   bool m_HasTrigger;
+
+//   //! Flag indicating that a veto has been raised
+//   bool m_HasVeto;
+
+//   //! Time when the shield dead time ends
+//   MTime m_DeadTimeEnd;
+
+
+
+// #ifdef ___CLING___
+//  public:
+//   ClassDef(MSubModuleShieldTrigger, 0) // no description
+// #endif
+
+// };
+
+// #endif
+
+
+// ////////////////////////////////////////////////////////////////////////////////
+
+
 /*
  * MSubModuleShieldTrigger.h
  *
@@ -17,12 +144,18 @@
 
 
 // Standard libs:
+#include <vector>
+using namespace std;
 
 // ROOT libs:
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MSubModule.h"
+#include "MSimEvent.h"
+#include "MSimHT.h"
+#include "MDVolumeSequence.h"
+#include "MDDetector.h"
 
 // Forward declarations:
 
@@ -46,6 +179,7 @@ class MSubModuleShieldTrigger : public MSubModule
   //! No move operators
   MSubModuleShieldTrigger& operator=(MSubModuleShieldTrigger&&) = delete;
 
+
   //! Default destructor
   virtual ~MSubModuleShieldTrigger();
 
@@ -55,8 +189,11 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Clear event data from the module
   virtual void Clear();
 
-  //! Main data analysis routine, which updates the event to a new level 
+  //! Main data analysis routine
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
+
+  //! Set the Simulation Event (Required for checking BGO hits)
+  void SetSimEvent(MSimEvent* Event) { m_SimEvent = Event; }
 
   //! Return true if we have a trigger - filled after AnalyzeEvent
   bool HasTrigger() const { return m_HasTrigger; }
@@ -74,31 +211,41 @@ class MSubModuleShieldTrigger : public MSubModule
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration(MXmlNode* Node);
-
-  // protected methods:
- protected:
-
-  // private methods:
- private:
-
-
-
-  // protected members:
- protected:
-
-
   // private members:
  private:
+  //! Pointer to the current simulation event being processed
+  MSimEvent* m_SimEvent;
+
   //! Flag indicating that a trigger has been raised
   bool m_HasTrigger;
-
   //! Flag indicating that a veto has been raised
   bool m_HasVeto;
-
   //! Time when the shield dead time ends
   MTime m_DeadTimeEnd;
 
+  // Shield parameters
+  double m_ShieldThreshold;
+  double m_ShieldPulseDuration;
+  double m_ShieldDelayBefore;
+  double m_ShieldDelayAfter;
+  double m_ShieldVetoWindowSize;
+  
+  // Shield state tracking
+  int m_NumShieldHitCounts;
+  int m_ShieldVetoCounter;
+  int m_NumBGOHitsErased;
+  bool m_IsShieldDead;
+  double m_ShieldVetoTime;
 
+  static const int nShieldPanels = 6;
+  vector<double> m_ShieldLastHitTime;
+  vector<double> m_ShieldDeadtime;
+  vector<double> m_TotalShieldDeadtime;
+  
+  //! Group of shield numbers per panel
+  vector<vector<int>> m_ShieldPanelGroups;
+  //! Shield ID for particular hit
+  vector<vector<int>> m_ShieldHitID;
 
 #ifdef ___CLING___
  public:
