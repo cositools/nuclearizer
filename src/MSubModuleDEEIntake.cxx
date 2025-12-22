@@ -189,16 +189,20 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       Event->AddDEEStripHitLV(LVHit);
       Event->AddDEEStripHitHV(HVHit);
 
-    } else if (DetectorName.BeginsWith("ACS_Crystal_") == true) {
+    } else if (DetectorName.BeginsWith("BGO_") == true) {
       vector<MString> Tokens = DetectorName.Tokenize("_");
 
-      if (Tokens.size() != 4) {
+      if (Tokens.size() != 3) {
         cerr << "ERROR: Unexpected detector name format for the Shield"
              << DetectorName << endl;
         return false;
       }
-      int DetectorID = Tokens[2].ToInt();
-      int CrystalID = Tokens[3].ToInt();
+      MString DetID = Tokens[1]; 
+      DetID.ReplaceAll("X", "");  
+      DetID.ReplaceAll("Y", "");
+      DetID.ReplaceAll("Z", "");
+      int DetectorID = DetID.ToInt();
+      int CrystalID = Tokens[2].ToInt();
 
       MDGridPoint P = VS->GetGridPoint();
       MVector Voxel_ID;
