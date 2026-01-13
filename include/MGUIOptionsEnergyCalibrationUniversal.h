@@ -43,6 +43,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The user interface for the universal energy calibration
 class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
 {
   // public Session:
@@ -62,7 +63,10 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
+
+  //! Toggle the radio buttons
+  void ToggleRadioButtons(int WidgetID);
 
 
   // protected members:
@@ -71,28 +75,30 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
   // private members:
  private:
 
-
   //! Select which file to load
   MGUIEFileSelector* m_FileSelector;
 
-  //! Select Threshold File to use
-  bool m_UseThresholdFile;
-  TGCheckButton* m_ThresholdFileCB;
-  MGUIEFileSelector* m_ThresholdFile;
+  //! Radio button for ignoring the slow threshold cut
+  TGRadioButton* m_SlowThresholdCutRBIgnore;
 
-  //! Use Threshold cut
-  bool m_UseThresholdValue;
-  //! Check button to decide to use a threshold cut
-  TGCheckButton* m_ThresholdValueCB;
-  //! The threshold entry box
-  MGUIEEntry* m_SetThresholdValue;
+  //! Radio button for using a fixed slow threshold cut
+  TGRadioButton* m_SlowThresholdCutRBFixed;
+  //! The slow threshold cut entry box
+  MGUIEEntry* m_SlowThresholdCutFixedValue;
 
-  //! IDs of check buttons
-  enum ButtonIDs { c_ThresholdFile = 1, c_Threshold };
+  //! Radio button for reading slow threshold cuts from a file
+  TGRadioButton* m_SlowThresholdCutRBFile;
+  //! The slow threshold cut file selector
+  MGUIEFileSelector* m_SlowThresholdCutFileSelector;
+
+
+  //! IDs of radio buttons
+  //! The numbers should be identical to MSlowThresholdCutModes
+  enum RBButtonIDs { c_SlowThresholdIgnore = 0, c_SlowThresholdFixed, c_SlowThresholdFile };
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsEnergyCalibrationUniversal, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsEnergyCalibrationUniversal, 1)
 #endif
 
 };
