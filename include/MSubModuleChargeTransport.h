@@ -24,6 +24,7 @@
 #include "MGlobal.h"
 #include "MSubModule.h"
 #include "MDStrip3D.h"
+#include "MDVoxel3D.h"
 
 // Forward declarations:
 

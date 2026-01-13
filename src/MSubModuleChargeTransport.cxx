@@ -81,20 +81,32 @@ bool MSubModuleChargeTransport::Initialize()
 
     MDDetector* det = DetList[i];
     vector<string> DetectorNames;
-    if (det->GetTypeName() == "Strip3D") {
+    if (det->GetTypeName() == "Strip3D" || det->GetTypeName() == "Voxel3D") {
       if (det->GetNSensitiveVolumes() == 1) {
         MDVolume* vol = det->GetSensitiveVolume(0);
         string det_name = vol->GetName().GetString();
         if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
           DetectorNames.push_back(det_name);
           m_Thicknesses[DetID] = 2*(det->GetStructuralSize().GetZ());
-          MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
-          m_XPitches[DetID] = strip->GetPitchX();
-          m_YPitches[DetID] = strip->GetPitchY();
-          m_NXStrips[DetID] = strip->GetNStripsX();
-          m_NYStrips[DetID] = strip->GetNStripsY();
-          m_XWidths[DetID] = strip->GetWidthX();
-          m_YWidths[DetID] = strip->GetWidthY();
+          if (det->GetTypeName() == "Strip3D") {
+            MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
+            m_XPitches[DetID] = strip->GetPitchX();
+            m_YPitches[DetID] = strip->GetPitchY();
+            m_NXStrips[DetID] = strip->GetNStripsX();
+            m_NYStrips[DetID] = strip->GetNStripsY();
+            m_XWidths[DetID] = strip->GetWidthX();
+            m_YWidths[DetID] = strip->GetWidthY();
+          } else if (det->GetTypeName() == "Voxel3D") {
+            MDVoxel3D* voxel = dynamic_cast<MDVoxel3D*>(det);
+            m_XPitches[DetID] = voxel->GetVoxelSizeX();
+            m_YPitches[DetID] = voxel->GetVoxelSizeY();
+            m_NXStrips[DetID] = voxel->GetNVoxelsX();
+            m_NYStrips[DetID] = voxel->GetNVoxelsY();
+            m_XWidths[DetID] = voxel->GetWidthX();
+            m_YWidths[DetID] = voxel->GetWidthY();
+          } else {
+            cout << "ERROR in MSubModuleChargeTransport::Initialize: Expected Strip3D or Voxel3D detector, got " << det->GetTypeName() << endl;
+          }
 
           // Read the detector radius from the geometry (assuming it is the second shape of an intersection)
           if (vol->GetShape()->GetType() == "Intersection" && dynamic_cast<MDShapeIntersection*>(vol->GetShape())->GetShapeB()->GetType() == "TUBS") {
@@ -124,13 +136,13 @@ bool MSubModuleChargeTransport::Initialize()
           cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << det_name << endl;
         }
       } else {
-        cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
+        cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a " << det->GetTypeName() << " detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
       }
     }
   }
 
   if (m_DetectorIDs.size() == 0) {
-    cout<<"No Strip3D detectors were found."<<endl;
+    cout<<"No Strip3D or Voxel3D detectors were found."<<endl;
     return false; 
   }
 
