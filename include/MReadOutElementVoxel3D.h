@@ -2,7 +2,7 @@
  * MReadOutElementVoxel3D.h
  *
  *
- * Copyright (C) by Andreas Zoglauer, Valentina Fioretti.
+ * Copyright (C) by Andreas Zoglauer, Valentina Fioretti, Parshad Patel.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -39,7 +39,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
   MReadOutElementVoxel3D();
 
   //! full constructor - Read out element of a voxel 3D
-  MReadOutElementVoxel3D(unsigned int m_DetectorID, unsigned int m_CrystalID, unsigned int m_VoxelXID, unsigned int m_VoxelYID, unsigned int m_VoxelZID);
+  MReadOutElementVoxel3D(MString m_DetectorID, unsigned int m_CrystalID, unsigned int m_VoxelXID, unsigned int m_VoxelYID, unsigned int m_VoxelZID);
 
   //! Simple default destructor
   virtual ~MReadOutElementVoxel3D();
@@ -61,11 +61,11 @@ class MReadOutElementVoxel3D : public MReadOutElement
   virtual MString GetType() const;
 
   //! Setters and getters
-  void SetDetectorID(unsigned int DetectorID)
+  void SetDetectorID(MString DetectorID)
   {
     m_DetectorID = DetectorID;
   }
-  unsigned int GetDetectorID() const
+  MString GetDetectorID() const
   {
     return m_DetectorID;
   }
@@ -123,7 +123,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
  private:
   // protected members:
  protected:
-  unsigned int m_DetectorID; //!< Detector ID
+  MString m_DetectorID; //!< Detector ID
   unsigned int m_CrystalID; //!< Crystal ID
 
   unsigned int m_VoxelXID; //!< Voxel index X

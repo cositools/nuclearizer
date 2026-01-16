@@ -1,7 +1,7 @@
 /*
  * MReadOutElementVoxel3D.cxx
  *
- * Copyright (C) by Andreas Zoglauer, Valentina Fioretti.
+ * Copyright (C) by Andreas Zoglauer, Valentina Fioretti, Parshad Patel.
  * All rights reserved.
  *
  *
@@ -47,7 +47,7 @@ ClassImp(MReadOutElementVoxel3D)
 //! Default constructor
 MReadOutElementVoxel3D::MReadOutElementVoxel3D()
     : MReadOutElement(),
-      m_DetectorID(0),
+      m_DetectorID(""),
       m_CrystalID(0),
       m_VoxelXID(g_UnsignedIntNotDefined),
       m_VoxelYID(g_UnsignedIntNotDefined),
@@ -61,7 +61,7 @@ MReadOutElementVoxel3D::MReadOutElementVoxel3D()
 
 //! Parameterized constructor
 MReadOutElementVoxel3D::MReadOutElementVoxel3D(
-  unsigned int DetectorID,
+  MString DetectorID,
   unsigned int CrystalID,
   unsigned int VoxelXID,
   unsigned int VoxelYID,
@@ -105,7 +105,7 @@ MReadOutElementVoxel3D* MReadOutElementVoxel3D::Clone() const
 void MReadOutElementVoxel3D::Clear()
 {
   MReadOutElement::Clear();
-  m_DetectorID = g_UnsignedIntNotDefined;
+  m_DetectorID = "";
   m_CrystalID = g_UnsignedIntNotDefined;
   m_VoxelXID = g_UnsignedIntNotDefined;
   m_VoxelYID = g_UnsignedIntNotDefined;
@@ -219,7 +219,7 @@ bool MReadOutElementVoxel3D::Parse(const MTokenizer& T, unsigned int StartElemen
     return false;
   }
 
-  m_DetectorID = T.GetTokenAtAsUnsignedIntFast(StartElement);
+  m_DetectorID = T.GetTokenAtAsString(StartElement);
   m_CrystalID = T.GetTokenAtAsUnsignedIntFast(StartElement + 1);
   m_VoxelXID = T.GetTokenAtAsUnsignedIntFast(StartElement + 2);
   m_VoxelYID = T.GetTokenAtAsUnsignedIntFast(StartElement + 3);

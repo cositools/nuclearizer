@@ -2,7 +2,7 @@
  * MSubModuleShieldTrigger.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel.
  * All rights reserved.
  *
  *
@@ -60,7 +60,7 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_IsShieldDead = false;
 
   // Initialize shield parameters with default values
-  m_ShieldThreshold = 80.0;
+  m_ShieldThreshold = -1.0; // Need to change this value at some point
   m_ShieldPulseDuration = 1.7e-6;
   m_ShieldDelayBefore = 0.1e-6;
   m_ShieldDelayAfter = 0.4e-6;
@@ -85,12 +85,12 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   // Initialize shield panel groups (based on detector IDs)
   // These map crystal IDs to panel groups
   m_ShieldPanelGroups = {
-    { 0, 1, 2, 3 },      // Panel 0: Detectors 0-3
-    { 4, 5, 6, 7 },      // Panel 1: Detectors 4-7
-    { 8, 9, 10, 11 },    // Panel 2: Detectors 8-11
-    { 12, 13, 14, 15 },  // Panel 3: Detectors 12-15
-    { 16, 17, 18 },      // Panel 4: Detectors 16-18
-    { 19, 20, 21 }       // Panel 5: Detectors 19-21
+    { 0, 1, 2},      // Panel 0: Detectors 0-3
+    { 0, 1, 2},      // Panel 1: Detectors 4-7
+    { 0, 1, 2, 4 },    // Panel 2: Detectors 8-11
+    { 0, 1, 2, 4 },  // Panel 3: Detectors 12-15
+    { 0, 1, 2, 3 },      // Panel 4: Detectors 16-18
+    { 0, 1, 2, 3 }       // Panel 5: Detectors 19-21
   };
 }
 
@@ -197,32 +197,40 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
   for (MDEECrystalHit& CHit : CrystalHits) {
     m_NumShieldHitCounts += 1;
     
-    int DetectorID = CHit.m_DetectorID;
+    MString DetectorID = CHit.m_DetectorID;
     int CrystalID = CHit.m_CrystalID;
     double energy = CHit.m_Energy;
+
+    cout << energy << endl;
 
     if (energy > m_ShieldThreshold) {
       // Find which panel group this detector belongs to
       int ShieldDetGroup = -1;
-      bool found = false;
-      
-      for (size_t i = 0; i < m_ShieldPanelGroups.size(); ++i) {
-        for (size_t j = 0; j < m_ShieldPanelGroups[i].size(); ++j) {
-          if (m_ShieldPanelGroups[i][j] == DetectorID) {
-            ShieldDetGroup = i;
-            found = true;
-            break;
-          }
-        }
-        if (found) break;
-      }
 
-      if (ShieldDetGroup < 0) {
+      if (DetectorID == "Z0" && CrystalID == 4) {
+        ShieldDetGroup = 2;
+      }
+      else if (DetectorID == "Z1" && CrystalID == 4) {
+        ShieldDetGroup = 3;
+      }
+      else if (DetectorID == "X0") {
+        ShieldDetGroup = 0;
+      }
+      else if(DetectorID == "X1") {
+        ShieldDetGroup = 1;
+      }
+      else if (DetectorID == "Y0") {
+        ShieldDetGroup = 2;
+      }
+      else if(DetectorID == "Y1") {
+        ShieldDetGroup = 3;
+      }
+      else {
         if (g_Verbosity >= c_Warning) {
           cout << m_Name << ": Warning - shield detector " << DetectorID 
-               << " not found in any panel group" << endl;
+                << " not found in any panel group" << endl;
         }
-        continue;
+      continue;
       }
 
       // Check deadtime conditions

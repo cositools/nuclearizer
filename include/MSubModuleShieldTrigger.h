@@ -1,7 +1,7 @@
 /*
  * MSubModuleShieldTrigger.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.

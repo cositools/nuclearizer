@@ -2,7 +2,7 @@
  * MSubModuleStripTrigger.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel.
  * All rights reserved.
  *
  *

@@ -59,6 +59,9 @@ MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_EventTimeUTC(0)
 }
 
 
+// MReadOutAssembly.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -358,11 +361,12 @@ MCrystalHit* MReadOutAssembly::GetCrystalHit(unsigned int i)
 
 void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
 {
-  //! Add a strip hit
-  int DetectorID = CrystalHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) ) {
-    m_InDetector[DetectorID]=true;
-  }
+  //! Add a crystal hit
+  // Note: For ACS detectors, DetectorID is a string (e.g., "X0", "X1", "Y0", "Y1", "Z0", "Z1")
+  // so we can't use it with m_InDetector array which expects numeric indices 0-11.
+  // The m_InDetector tracking is primarily for GeD detectors which have numeric IDs.
+  // We skip the m_InDetector tracking for crystal hits.
+  
   m_CrystalHits.push_back(CrystalHit);
 }
 

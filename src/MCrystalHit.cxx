@@ -51,7 +51,7 @@ MCrystalHit::MCrystalHit()
 {
   // Construct an instance of MCrystalHit
 
-  m_ReadOutElement = new MReadOutElement();
+  m_ReadOutElement = new MReadOutElementVoxel3D();
   
   Clear();
 }

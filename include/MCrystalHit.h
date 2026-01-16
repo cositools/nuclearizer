@@ -24,7 +24,7 @@
 #include "MGlobal.h"
 
 // Nuclearizer libs
-#include "MReadOutElement.h"
+#include "MReadOutElementVoxel3D.h"
 
 // Forward declarations:
 
@@ -45,17 +45,17 @@ class MCrystalHit
   void Clear();
 
   //! Get the read-out element
-  MReadOutElement* GetReadOutElement() const { return m_ReadOutElement; }
+  MReadOutElementVoxel3D* GetReadOutElement() const { return m_ReadOutElement; }
 
   //! Set the Crystal ID
-  void SetCrystalID(int StripID) { m_ReadOutElement->SetDetectorID(StripID); }
+  void SetCrystalID(unsigned int CrystalID) { m_ReadOutElement->SetCrystalID(CrystalID); }
   //! Return the Crystal ID
-  int GetCrystalID() const { return m_ReadOutElement->GetDetectorID(); }
+  unsigned int GetCrystalID() const { return m_ReadOutElement->GetCrystalID(); }
 
   //! Set the Detector ID - this derived from the crystal ID
-  void SetDetectorID(int DetectorID) { m_ReadOutElement->SetDetectorID(DetectorID); }
+  void SetDetectorID(MString DetectorID) { m_ReadOutElement->SetDetectorID(DetectorID); }
   //! Return the Detector ID- this derived from the crystal ID
-  int GetDetectorID() const { return m_ReadOutElement->GetDetectorID(); }
+  MString GetDetectorID() const { return m_ReadOutElement->GetDetectorID(); }
 
   //! Set whether the crystal has triggered
   void HasTriggered(bool HasTriggered) { m_HasTriggered = HasTriggered; }
@@ -115,7 +115,7 @@ class MCrystalHit
   // private members:
  private:
   //! The read-out element with a single ID (representing the crystal ID)
-  MReadOutElement* m_ReadOutElement;
+  MReadOutElementVoxel3D* m_ReadOutElement;
   //! Crystal has triggered
   bool m_HasTriggered;
   //! Crystal has vetoed
