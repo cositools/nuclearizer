@@ -201,8 +201,6 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
     int CrystalID = CHit.m_CrystalID;
     double energy = CHit.m_Energy;
 
-    cout << energy << endl;
-
     if (energy > m_ShieldThreshold) {
       // Find which panel group this detector belongs to
       int ShieldDetGroup = -1;
@@ -264,7 +262,6 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
   for (int group = 0; group < nShieldPanels; group++) {
     if (!m_IsShieldDead) {
       m_ShieldDeadtime[group] = CalculateASICDeadtime(m_ShieldHitCrystalID[group]);
-      // cout << "m_ShieldDeadtime[group]" << m_ShieldDeadtime[group] << endl;
     }
   }
 
