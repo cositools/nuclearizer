@@ -2,7 +2,7 @@
  * MModuleSaverMeasurementsFITS.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
  *
  *
@@ -123,7 +123,7 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
   // Create the FITS file using CCfits
   try {
 
-    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Creating FITS file "<<string(FileName)<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Creating FITS file: "<<string(FileName)<<endl;
 
     // Create new FITS file (overwrite if exists)
     m_FITSFile = new FITS(string(FileName), RWmode::Write);
@@ -204,12 +204,12 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     m_ScienceTable->addKey("HDUCLAS1", "ARRAY", "hduclass1");
     m_ScienceTable->addKey("HDUCLAS2", "TOTAL", "hduclas2");
 
-    cout<<"FITS file created successfully"<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": FITS file created successfully"<<endl;
 
     return true;
 
   } catch (FitsException& e) {
-    cout<<"Error creating FITS file: "<<e.message()<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Error creating FITS file"<<e.message()<<endl;
     return false;
   }
 }
@@ -319,7 +319,7 @@ bool MModuleSaverMeasurementsFITS::FlushBatch()
     long lastRow = m_BatchStartRow + m_BatchEventCount - 1;
 
     if (g_Verbosity >= c_Info) {
-      cout<<"Writing batch: "<<m_BatchEventCount<<" events (rows "<<m_BatchStartRow<<" to "<<lastRow<<")"<<endl;
+      cout<< m_XmlTag <<": Writing batch: "<<m_BatchEventCount<<" events (rows "<<m_BatchStartRow<<" to "<<lastRow<<")"<<endl;
     }
 
     // Write scalar columns
@@ -377,7 +377,7 @@ bool MModuleSaverMeasurementsFITS::FlushBatch()
     return true;
 
   } catch (FitsException& e) {
-    cout<<"Error writing FITS batch: "<<e.message()<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Error writing FITS batch"<<e.message()<<endl;
     return false;
   }
 }
@@ -397,8 +397,10 @@ void MModuleSaverMeasurementsFITS::Finalize()
 
   MModule::Finalize();
 
-  cout<<"MModuleSaverMeasurementsFITS: "<<endl;
-  cout<<"  * total events written: "<<m_TotalEventsWritten<<endl;
+  if (g_Verbosity >= c_Info) {
+    cout<< m_XmlTag <<": MModuleSaverMeasurementsFITS"<<endl;
+    cout<< m_XmlTag <<":   * total events written: "<<m_TotalEventsWritten<<endl;
+  }
 
   // Close the FITS file (CCfits automatically closes on delete)
   if (m_FITSFile != nullptr) {

@@ -2,7 +2,7 @@
  * MGUIOptionsSaverMeasurementsFITS.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglaue, WingYeung Ma.
  * All rights reserved.
  *
  *

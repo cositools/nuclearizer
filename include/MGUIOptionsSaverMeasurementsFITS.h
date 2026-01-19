@@ -1,7 +1,7 @@
 /*
  * MGUIOptionsSaverMeasurementsFITS.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.

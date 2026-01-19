@@ -2,7 +2,7 @@
  * MModuleLoaderMeasurementsFITS.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
  *
  *
@@ -135,10 +135,13 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
     try {
       m_ComptonTable = &m_FITSFile->extension(1);
       if (g_Verbosity >= c_Info) {
-        cout<<"Opened extension at index 1: "<<m_ComptonTable->name()<<endl;
+        cout<<m_XmlTag<<": Opened extension at index 1: "<<m_ComptonTable->name()<<endl;
       }
     } catch (FitsException& e) {
-      cout<<"Failed to open extension by index 1, trying by name..."<<endl;
+      if (g_Verbosity >= c_Info) {
+        cout<<m_XmlTag<<": Failed to open extension by index 1, trying by name..."<<endl;
+      }
+      cout<<""<<endl;
       m_ComptonTable = &m_FITSFile->extension("Science Data Table 1st Extension");
     }
 
@@ -149,30 +152,33 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
     m_TotalRows = m_ComptonTable->rows();
     int nCols = m_ComptonTable->numCols();
 
-    cout<<"FITS table metadata:"<<endl;
-    cout<<"  Rows: "<<m_TotalRows<<endl;
-    cout<<"  Columns: "<<nCols<<endl;
+    if (g_Verbosity >= c_Info) {
+      cout << m_XmlTag << ": FITS table metadata" << endl;
+      cout << m_XmlTag << ":   Rows=" << m_TotalRows << endl;
+      cout << m_XmlTag << ":   Columns=" << nCols << endl;
+    }
 
     // Get all columns
     const ColMap& columns = m_ComptonTable->column();
 
     // Print column information to verify structure, can comment out
-    cout<<"  Column details:"<<endl;
-    for (auto& col : columns) {
-      cout<<"    - "<<col.first
-          <<" (type: "<<col.second->type()
-          <<", width: "<<col.second->width()
-          <<", repeat: "<<col.second->repeat()
-          <<")"<<endl;
-    }
+    // cout<<"  Column details:"<<endl;
+    // for (auto& col : columns) {
+    //   cout<<"    - "<<col.first
+    //       <<" (type: "<<col.second->type()
+    //       <<", width: "<<col.second->width()
+    //       <<", repeat: "<<col.second->repeat()
+    //       <<")"<<endl;
+    // }
 
-    cout<<"FITS file opened successfully"<<endl;
-    cout<<"Total rows: "<<m_TotalRows<<endl;
+    if (g_Verbosity >= c_Info) {
+      cout << m_XmlTag << ": FITS file opened successfully" << endl;
+    }
 
     return true;
 
   } catch (FitsException& e) {
-    cout<<"Error opening FITS file: "<<e.message()<<endl;
+    if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Error opening FITS file: " << e.message() << endl;
     return false;
   }
 }
@@ -249,7 +255,7 @@ bool MModuleLoaderMeasurementsFITS::ReadBatch()
       // }
 
     } catch (FitsException& e) {
-      cout<<"Error reading FITS batch: "<<e.message()<<endl;
+      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Error reading FITS batch: "<<e.message()<<endl;
       return false;
     }
   }
@@ -350,9 +356,11 @@ void MModuleLoaderMeasurementsFITS::Finalize()
 
   MModule::Finalize();
 
-  cout<<"MModuleLoaderMeasurementsFITS: "<<endl;
-  cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
-  cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
+  if (g_Verbosity >= c_Info) {
+    cout<< m_XmlTag <<": MModuleLoaderMeasurementsFITS"<<endl;
+    cout<< m_XmlTag <<":  * all events on file: "<<m_NEventsInFile<<endl;
+    cout<< m_XmlTag <<":  * good events on file: "<<m_NGoodEventsInFile<<endl;
+  }
 
   // Close the FITS file (CCfits automatically closes on delete)
   if (m_FITSFile != nullptr) {
