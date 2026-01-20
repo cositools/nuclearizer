@@ -209,7 +209,7 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     return true;
 
   } catch (FitsException& e) {
-    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Error creating FITS file"<<e.message()<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error creating FITS file: "<<e.message()<<endl;
     return false;
   }
 }
@@ -377,7 +377,7 @@ bool MModuleSaverMeasurementsFITS::FlushBatch()
     return true;
 
   } catch (FitsException& e) {
-    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Error writing FITS batch"<<e.message()<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error writing FITS batch"<<e.message()<<endl;
     return false;
   }
 }

@@ -122,7 +122,7 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
   // Open the FITS file using CCfits
   try {
     
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<"FITFileName "<<string(FileName)<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": FITFileName: "<<string(FileName)<<endl;
 
     // Open the FITS file in read-only, default: rwmode=Read, readDataFlag = false
     m_FITSFile = new FITS(string(FileName));
@@ -138,11 +138,30 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
         cout<<m_XmlTag<<": Opened extension at index 1: "<<m_ComptonTable->name()<<endl;
       }
     } catch (FitsException& e) {
-      if (g_Verbosity >= c_Info) {
+      if (g_Verbosity >= c_Error) {
         cout<<m_XmlTag<<": Failed to open extension by index 1, trying by name..."<<endl;
       }
       cout<<""<<endl;
       m_ComptonTable = &m_FITSFile->extension("Science Data Table 1st Extension");
+    }
+
+    // Validate the file by checking the 1st extension header keywords
+    string extName;
+    m_ComptonTable->readKey("EXTNAME", extName);
+    if (extName != "GED_L1A") {
+      if (g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": Invalid EXTNAME: expected 'GED_L1A', got '" << extName << "'" << endl;
+      }
+      return false;
+    }
+
+    string origin;
+    m_ComptonTable->readKey("ORIGIN", origin);
+    if (origin != "SSL") {
+      if (g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": Invalid ORIGIN: expected 'SSL', got '" << origin << "'" << endl;
+      }
+      return false;
     }
 
     //Nothing in the GTI Table now.
@@ -178,7 +197,7 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
     return true;
 
   } catch (FitsException& e) {
-    if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Error opening FITS file: " << e.message() << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Error opening FITS file: " << e.message() << endl;
     return false;
   }
 }
@@ -255,7 +274,7 @@ bool MModuleLoaderMeasurementsFITS::ReadBatch()
       // }
 
     } catch (FitsException& e) {
-      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Error reading FITS batch: "<<e.message()<<endl;
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error reading FITS batch: "<<e.message()<<endl;
       return false;
     }
   }
