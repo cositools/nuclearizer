@@ -262,11 +262,17 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the energy resolution calibration incomplete flag
   bool IsEnergyResolutionCalibrationIncomplete() const { return m_EnergyResolutionCalibrationIncomplete; }
   
-  //! set the Strip Hit Below Threshold flag
-  void SetStripHitBelowThreshold(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold = Flag; m_StripHitBelowThresholdString = Text;}
-  //! get the Strip Hit Below Threshold flag
-  bool IsStripHitBelowThreshold() const { return m_StripHitBelowThreshold; }
-  
+  //! Set the Strip Hit Below Threshold quality flag
+  void SetStripHitBelowThreshold_QualityFlag(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = Flag; m_StripHitBelowThresholdString_QualityFlag = Text;}
+  //! Get the Strip Hit Below Threshold quality flag
+  bool IsStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
+
+  //! Track the energy and number of strip hits removed through the threshold cut
+  void AddStripHitBelowThreshold(double Energy) { m_StripHitBelowThreshold_Energy = m_StripHitBelowThreshold_Energy + Energy; m_StripHitBelowThreshold_Number = m_StripHitBelowThreshold_Number + 1; }
+  //! Get total energy removed through threshold cut
+  double GetStripHitBelowThreshold_Energy() const { return m_StripHitBelowThreshold_Energy; }
+  //! Get total number of strip hits removed through threshold cut
+  int GetStripHitBelowThreshold_Number() const { return m_StripHitBelowThreshold_Number;}
 
  //! Set the strip-pairing-incomplete flag
   void SetStripPairingIncomplete(bool Flag = true, MString Text = "") { m_StripPairingIncomplete = Flag;  m_StripPairingIncompleteString = Text; }
@@ -453,9 +459,10 @@ class MReadOutAssembly : public MReadOutSequence
 
 
   // Flags indicating the quality of the event: quality warning, but not to be filtered out
-  bool m_StripHitBelowThreshold;
-  MString m_StripHitBelowThresholdString;
-  
+  bool m_StripHitBelowThreshold_QualityFlag;
+  MString m_StripHitBelowThresholdString_QualityFlag;
+  double m_StripHitBelowThreshold_Energy;
+  int m_StripHitBelowThreshold_Number;
 
   //! True if event has been filtered out
   bool m_FilteredOut;

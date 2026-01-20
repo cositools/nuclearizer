@@ -128,6 +128,7 @@ void MReadOutAssembly::Clear()
   m_EventTimeUTC = 0;
   m_MJD = 0.0;
   m_ReducedChiSquare = -1;
+  m_StripHitBelowThreshold_Energy = 0;
 
   m_ShieldVeto = false;
   m_GuardRingVeto = false;
@@ -585,9 +586,9 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
     S<<endl;
   }
-  if (m_StripHitBelowThreshold == true) {
+  if (m_StripHitBelowThreshold_QualityFlag == true) {
     S<<"QA StripHitBelowThreshold";
-    if (m_StripHitBelowThresholdString != "") S<<" ("<<m_StripHitBelowThresholdString<<")";
+    if (m_StripHitBelowThresholdString_QualityFlag != "") S<<" ("<<m_StripHitBelowThresholdString_QualityFlag<<")";
     S<<endl;
   }
   if (m_StripPairingIncomplete == true) {
@@ -690,9 +691,9 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
     S<<endl;
   }
-  if (m_StripHitBelowThreshold == true) {
+  if (m_StripHitBelowThreshold_QualityFlag == true) {
     S<<"QA StripHitBelowThreshold";
-    if (m_StripHitBelowThresholdString != "") S<<" ("<<m_StripHitBelowThresholdString<<")";
+    if (m_StripHitBelowThresholdString_QualityFlag != "") S<<" ("<<m_StripHitBelowThresholdString_QualityFlag<<")";
     S<<endl;
   }
   if (m_StripPairingIncomplete == true) {

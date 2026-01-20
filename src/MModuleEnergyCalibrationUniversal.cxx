@@ -89,12 +89,12 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = true;
 
-  //
+  // Initiate the Slow Threshold Cut variables
   m_SlowThresholdCutMode = MSlowThresholdCutModes::e_Ignore;
-  m_SlowThresholdCutFixedValue = 35;
+  m_SlowThresholdCutFixedValue = 15;
   m_SlowThresholdCutFileName = "";
-}
 
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -384,15 +384,16 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_Fixed) { //check if user input threshold is enabled (one value applied to all strips)
         Threshold = m_SlowThresholdCutFixedValue;
       } else if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_File) { //check if threshold file is enabled (unique value applied to each strip)
-        double Threshold_map = m_ThresholdMap[R]; // if file enabled, declare value from map
+        double ThresholdFromFile = m_ThresholdMap[R]; // if file enabled, declare value from map
 
-        if (Threshold_map == 0) {
+        if (ThresholdFromFile == 0) {
           if (g_Verbosity >= c_Error) {
             cout << m_XmlTag << ": Error: Threshold not found for read-out element " << R << endl;
           }
-          Threshold = 15; // set default threshold if threshold not found
+          const double DefaultSlowThreshold = 15.0;
+          Threshold = DefaultSlowThreshold; // set default threshold if threshold not found
         } else {
-          Threshold = Threshold_map; // set threshold variable to value found in map
+          Threshold = ThresholdFromFile; // set threshold variable to value found in map
         }
       }
 
@@ -401,7 +402,8 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         if (g_Verbosity >= c_Warning) {
           cout << m_XmlTag << ": Strip Hit below threshold, deleting SH with Energy " << Energy << " keV " << endl;
         }
-        Event->SetStripHitBelowThreshold(true, "with Energy " + to_string(Energy));
+        Event->AddStripHitBelowThreshold(Energy);
+        Event->SetStripHitBelowThreshold_QualityFlag(true, to_string(Event->GetStripHitBelowThreshold_Number()) + " SH(s) with total energy " + to_string(Event->GetStripHitBelowThreshold_Energy()));
         Event->RemoveStripHit(i);
         delete SH;
         continue; // continue to next SH without iterating i
