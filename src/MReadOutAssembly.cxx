@@ -191,6 +191,8 @@ void MReadOutAssembly::Clear()
   m_DepthCalibrationIncompleteString = "";
   m_DepthCalibration_OutofRange = false;
   m_DepthCalibration_OutofRangeString = "";
+  m_EventReconstructionIncomplete = false;
+  m_EventReconstructionIncompleteString = "";
 
   m_FilteredOut = false;
 
@@ -266,7 +268,9 @@ MStripHit* MReadOutAssembly::GetStripHit(unsigned int i)
   return 0;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 {
@@ -309,7 +313,9 @@ MStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i)
   return 0;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 void MReadOutAssembly::AddStripHitTOnly(MStripHit* StripHit)
 {
@@ -355,7 +361,9 @@ MCrystalHit* MReadOutAssembly::GetCrystalHit(unsigned int i)
   return 0;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
 {
@@ -561,6 +569,112 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     }
   }
 
+  StreamBDFlags(S);
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::StreamEvta(ostream& S)
+{
+  //! Stream the content in MEGAlib's evta format 
+
+  S<<"SE"<<endl;
+  S<<"ID "<<m_ID<<endl;
+  S<<"CL "<<m_Time<<endl;
+  S<<"TI "<<m_EventTimeUTC<<endl;
+
+  if (m_Aspect != 0) {
+    m_Aspect->StreamEvta(S);
+  }
+
+	if (m_HasSimAspectInfo){
+		S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
+		S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
+	}
+
+  for (MSimIA& IA: m_SimIAs) {
+    S<<IA.ToSimString()<<endl; 
+  }
+  
+  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+    m_Hits[h]->StreamEvta(S);  
+  }
+  
+  S<<"CC NStripHits "<<m_StripHits.size()<<endl;
+  
+  StreamBDFlags(S);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
+{
+  //! Stream the content in MEGAlib's evta format 
+
+  S<<"SE"<<endl;
+  S<<"ID "<<m_ID<<endl;
+  S<<"CL "<<m_Time<<endl;
+  S<<"TI "<<m_EventTimeUTC<<endl;
+
+  if (m_Aspect != nullptr) {
+    m_Aspect->StreamEvta(S);
+  }
+
+  for (MSimIA& IA: m_SimIAs) {
+    S<<IA.ToSimString()<<endl; 
+  }
+
+  unsigned int Counter = 0;
+  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+    if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
+      continue;
+    }
+    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags);
+    ++Counter;
+  }
+  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
+    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithTemperatures, WithFlags);
+    ++Counter;
+  }
+  if (Counter == 0) {
+    S<<"BD No hits"<<endl;;
+  }
+  
+  StreamBDFlags(S);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::StreamTra(ostream& S)
+{
+  //! Stream the content in MEGAlib's evta format
+
+  S<<"SE"<<endl;
+
+  if (m_PhysicalEvent != nullptr) {
+    S<<m_PhysicalEvent->ToTraString();
+  } else {
+    S<<"ID "<<m_ID<<endl;
+    StreamBDFlags(S);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::StreamBDFlags(ostream& S)
+{
+  // Stream the BD flags
+
   if (m_AspectIncomplete == true) {
     S<<"BD AspectIncomplete";
     if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
@@ -611,109 +725,9 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
     S<<endl;
   }
-
-  if (m_GuardRingVeto == true) {
-    S<<"BD GR Veto"<<endl;
-  }
-  if (m_ShieldVeto == true) {
-    S<<"BD Shield Veto"<<endl;
-  }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesX()) {
-      S<<"BD Multiple Hits on LV Strip"<<endl;
-      break;
-    }
-  }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesY()) {
-      S<<"BD Multiple Hits on HV Strip"<<endl;
-      break;
-    }
-  }
-  
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MReadOutAssembly::StreamEvta(ostream& S)
-{
-  //! Stream the content in MEGAlib's evta format 
-
-  S<<"SE"<<endl;
-  S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
-
-  if (m_Aspect != 0) {
-    m_Aspect->StreamEvta(S);
-  }
-
-	if (m_HasSimAspectInfo){
-		S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
-		S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
-	}
-
-  for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
-  }
-  
-  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    m_Hits[h]->StreamEvta(S);  
-  }
-  
-  S<<"CC NStripHits "<<m_StripHits.size()<<endl;
-  
-  if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete";
-    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete";
-    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) {
-    S<<"BD EnergyCalibrationIncomplete_BadStrip";
-    if (m_EnergyCalibrationIncomplete_BadStripString != "") S<<" ("<<m_EnergyCalibrationIncomplete_BadStripString<<")";
-    S<<endl;
-  }
-  if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete";
-    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_EnergyResolutionCalibrationIncomplete == true) {
-    S<<"BD EnergyResolutionCalibrationIncomplete";
-    if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_StripHitBelowThreshold_QualityFlag == true) {
-    S<<"QA StripHitBelowThreshold";
-    if (m_StripHitBelowThresholdString_QualityFlag != "") S<<" ("<<m_StripHitBelowThresholdString_QualityFlag<<")";
-    S<<endl;
-  }
-  if (m_StripPairingIncomplete == true) {
-    S<<"BD StripPairingIncomplete";
-    if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_LLDEvent == true) {
-    S<<"BD LLDEvent";
-    if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
-    S<<endl;
-  }
-  if (m_DepthCalibrationIncomplete == true) {
-    S<<"BD DepthCalibrationIncomplete";
-    if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_DepthCalibration_OutofRange == true) { 
-    S<<"BD DepthCalibration_OutofRange";
-    if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
+  if (m_EventReconstructionIncomplete == true) {
+    S<<"BD EventReconstructionIncomplete";
+    if (m_EventReconstructionIncompleteString != "") S<<" ("<<m_EventReconstructionIncompleteString<<")";
     S<<endl;
   }
 
@@ -734,58 +748,6 @@ void MReadOutAssembly::StreamEvta(ostream& S)
       S<<"BD Multiple Hits on HV Strip"<<endl;
       break;
     }
-  }
-
-
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
-{
-  //! Stream the content in MEGAlib's evta format 
-
-  S<<"SE"<<endl;
-  S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
-
-  if (m_Aspect != nullptr) {
-    m_Aspect->StreamEvta(S);
-  }
-
-  for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
-  }
-
-  unsigned int Counter = 0;
-  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
-      continue;
-    }
-    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags);
-    ++Counter;
-  }
-  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
-    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithTemperatures, WithFlags);
-    ++Counter;
-  }
-  if (Counter == 0) {
-    S<<"BD No hits"<<endl;;
-  }
-  
-  // Those are the only BD's relevant for the roa format
-  if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete";
-    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete";
-    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
-    S<<endl;
   }
 }
 
@@ -806,7 +768,7 @@ bool MReadOutAssembly::IsGood() const
   if (m_LLDEvent == true) return false;
   if (m_DepthCalibrationIncomplete == true) return false;
   if (m_DepthCalibration_OutofRange == true) return false;
-
+  if (m_EventReconstructionIncomplete == true) return false;
 
   if (m_FilteredOut == true) return false;
   
@@ -830,6 +792,7 @@ bool MReadOutAssembly::IsBad() const
   if (m_LLDEvent == true) return true;
   if (m_DepthCalibrationIncomplete == true) return true;
   if (m_DepthCalibration_OutofRange == true) return true;
+  if (m_EventReconstructionIncomplete == true) return true;
 
   if (m_FilteredOut == true) return true;
 
@@ -851,6 +814,7 @@ bool MReadOutAssembly::IsVeto() const
 
 
 //////////////////////////////////////////////////////////////////////////////
+
 
 bool MReadOutAssembly::ComputeAbsoluteTime()
 {
@@ -888,7 +852,6 @@ bool MReadOutAssembly::ComputeAbsoluteTime()
 	}
 
 }
-
 
 
 // MReadOutAssembly.cxx: the end...
