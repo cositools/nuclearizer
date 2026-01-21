@@ -217,11 +217,6 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the energy-calibration-Error flag
   bool IsEnergyCalibrationError() const { return m_EnergyCalibrationError; }
  
-  //! Set the Strip Hit Below Threshold quality flag
-  void SetStripHitBelowThreshold_QualityFlag(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = Flag; m_StripHitBelowThresholdString_QualityFlag = Text;}
-  //! Get the Strip Hit Below Threshold quality flag
-  bool IsStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
-
  //! Set the strip-pairing-Error flag
   void SetStripPairingError(bool Flag = true, MString Text = "") { m_StripPairingError = Flag;  m_StripPairingErrorString = Text; }
   //! Get the strip-pairing-Error flag
@@ -239,6 +234,11 @@ class MReadOutAssembly : public MReadOutSequence
 
   // Track Quality Flags
 
+  //! Set the Strip Hit Below Threshold quality flag
+  void SetStripHitBelowThreshold_QualityFlag(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = Flag; m_StripHitBelowThresholdString_QualityFlag = Text;}
+  //! Get the Strip Hit Below Threshold quality flag
+  bool IsStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
+
    //! Track the energy and number of strip hits removed through the threshold cut
   void AddStripHitBelowThreshold(double Energy) { m_StripHitBelowThreshold_Energy = m_StripHitBelowThreshold_Energy + Energy; m_StripHitBelowThreshold_Number = m_StripHitBelowThreshold_Number + 1; }
   //! Get total energy removed through threshold cut
@@ -252,6 +252,7 @@ class MReadOutAssembly : public MReadOutSequence
   double GetReducedChiSquare() const { return m_ReducedChiSquare; }
 
   //! Set the Quality of this Event used in Greedy Strip pairing module
+  //! TODO Change name of this variable to be more descriptive
   void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
   //!Return the Quality of this Event
   double GetEventQuality() const { return m_EventQuality; }
