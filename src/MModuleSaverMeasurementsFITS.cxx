@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <ctime>
 using namespace std;
 
 // ROOT libs:
@@ -132,10 +133,21 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     m_PrimaryHDU = &m_FITSFile->pHDU();
 
     // Add some keywords to primary HDU
-    m_PrimaryHDU->addKey("CREATOR", "Nuclearizer", "Software that created this file");
-    m_PrimaryHDU->addKey("ORIGIN", "UC Berkeley SSL", "Organization");
     m_PrimaryHDU->addKey("TELESCOP", "COSI", "Mission name");
     m_PrimaryHDU->addKey("INSTRUME", "GeD", "Instrument name");
+    m_PrimaryHDU->addKey("OBS_ID", "YYMMDD", "Observation ID"); //OBS_ID should have the same YYMMDD as the filename
+    m_PrimaryHDU->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date");  //DATE-OBS should have the start date and time of the data, and this should match the YYMMDD in the filename
+    m_PrimaryHDU->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date");   //DATE-END should have the stop time of the data, i.e. the last timestamp
+    m_PrimaryHDU->addKey("ORIGIN", "SSL", "Organization");
+
+    // Get current time for DATE keyword
+    time_t now = time(nullptr);
+    struct tm* utc = gmtime(&now);
+    char dateBuffer[32];
+    strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%dT%H:%M:%S", utc);
+    m_PrimaryHDU->addKey("DATE", string(dateBuffer), "File creation date (UTC)"); //DATE should have the date of the file creation
+
+    m_PrimaryHDU->addKey("CREATOR", "TBD", "Software that created this file");
 
     // Define columns for science data table per specification
     // PE(100) = variable-length single-precision float array (max 100)
@@ -181,13 +193,13 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     m_ScienceTable = m_FITSFile->addTable("Compton_L1b_1st_Ext", 0, colNames, colFormats, colUnits);
 
     // Add keywords to science table
-    m_ScienceTable->addKey("EXTNAME", "COMPTON_L1B", "name of this HDU");
+    m_ScienceTable->addKey("EXTNAME", "GED_L1B", "name of this HDU");
     m_ScienceTable->addKey("TELESCOP", "COSI", "Telescope mission name");
     m_ScienceTable->addKey("INSTRUME", "GED", "Instrument name");
-    m_ScienceTable->addKey("DATAMODE", "string", "Instrument datamode");
-    m_ScienceTable->addKey("OBSERVER", "string", "Principal Investigator");
-    m_ScienceTable->addKey("OBS_ID", "YYMMDD", "Observation ID");
-    m_ScienceTable->addKey("OBJECT", "string", "Object/Target name");
+    m_ScienceTable->addKey("DATAMODE", "TBD", "Instrument datamode");
+    // removed observer
+    m_ScienceTable->addKey("OBS_ID", "YYMMDD", "Observation ID"); //should match the YYMMDD of the filename
+    // removed object
     m_ScienceTable->addKey("MJDREFI", 60676, "MJD reference day 01 Jan 2025 00:00:00");
     m_ScienceTable->addKey("MJDREFF", 8.007407407407E-04, "MJD reference (fraction of day)");
     m_ScienceTable->addKey("TIMEREF", "LOCAL", "Reference Frame");
@@ -196,19 +208,27 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     m_ScienceTable->addKey("TIMEUNIT", "s", "Time unit for timing header keywords");
     m_ScienceTable->addKey("TIMEDEL", 0.0, "Integration time");
     m_ScienceTable->addKey("CLOCKAPP", false, "If clock corrections are applied (T/F)");
-    m_ScienceTable->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date");
-    m_ScienceTable->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date");
-    m_ScienceTable->addKey("TSTART", 0.0, "Start time");
-    m_ScienceTable->addKey("TSTOP", 0.0, "Stop time");
+    m_ScienceTable->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date"); //DATE-OBS and DATA-END should match the primary header
+    m_ScienceTable->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date"); //DATE-OBS and DATA-END should match the primary header
+    m_ScienceTable->addKey("TSTART", 0.0, "Start time"); //TSTART and TSTOP are the start and stop of the dataset written in seconds from the reference time
+    m_ScienceTable->addKey("TSTOP", 0.0, "Stop time"); //TSTART and TSTOP are the start and stop of the dataset written in seconds from the reference time
     m_ScienceTable->addKey("HDUCLASS", "OGIP", "format conforms to OGIP standard");
     m_ScienceTable->addKey("HDUCLAS1", "ARRAY", "hduclass1");
     m_ScienceTable->addKey("HDUCLAS2", "TOTAL", "hduclas2");
+    m_ScienceTable->addKey("CREATOR", "TBD", "Software that create 1st the file");
+    m_ScienceTable->addKey("PROCVER", "TBD", "Processing Version");
+    m_ScienceTable->addKey("CALDBVER", "TBD", "CALDB version");
+    m_ScienceTable->addKey("SEQPHUM", "TBD", "Times the dataset has been processed");
+    m_ScienceTable->addKey("ORIGIN", "SSL", "Origin of the FITS files");
+    m_ScienceTable->addKey("DATE", "TOTAL", "File creation date"); //DATE should have the date of the file creation (same as primary header)
+    //CHECKSUM
+    //DATESUM
 
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": FITS file created successfully"<<endl;
 
     return true;
 
-  } catch (FitsException& e) {
+  } catch (const CCfits::FitsException& e) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error creating FITS file: "<<e.message()<<endl;
     return false;
   }
@@ -376,7 +396,7 @@ bool MModuleSaverMeasurementsFITS::FlushBatch()
 
     return true;
 
-  } catch (FitsException& e) {
+  } catch (const CCfits::FitsException& e) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error writing FITS batch"<<e.message()<<endl;
     return false;
   }

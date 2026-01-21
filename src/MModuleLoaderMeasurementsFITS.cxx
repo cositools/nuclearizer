@@ -137,7 +137,7 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
       if (g_Verbosity >= c_Info) {
         cout<<m_XmlTag<<": Opened extension at index 1: "<<m_ComptonTable->name()<<endl;
       }
-    } catch (FitsException& e) {
+    } catch (const CCfits::FitsException& e) {
       if (g_Verbosity >= c_Error) {
         cout<<m_XmlTag<<": Failed to open extension by index 1, trying by name..."<<endl;
       }
@@ -162,6 +162,22 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
         cout << m_XmlTag << ": Invalid ORIGIN: expected 'SSL', got '" << origin << "'" << endl;
       }
       return false;
+    }
+
+    // Validate required columns exist
+    const vector<string> requiredColumns = {
+      "TIME", "EVENTTYPE", "NUMSTRIPHIT", "TYPEHIT", "DETID",
+      "STRIPID", "SIDEID", "FASTTIME", "PHA", "TAC"
+    };
+    
+    const ColMap& columns = m_ComptonTable->column();
+    for (const auto& colName : requiredColumns) {
+      if (columns.find(colName) == columns.end()) {
+        if (g_Verbosity >= c_Error) {
+          cout << m_XmlTag << ": Missing required column: " << colName << endl;
+        }
+        return false;
+      }
     }
 
     //Nothing in the GTI Table now.
@@ -196,7 +212,7 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
 
     return true;
 
-  } catch (FitsException& e) {
+  } catch (const CCfits::FitsException& e) {
     if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Error opening FITS file: " << e.message() << endl;
     return false;
   }
@@ -273,7 +289,7 @@ bool MModuleLoaderMeasurementsFITS::ReadBatch()
       //   cout<<endl;
       // }
 
-    } catch (FitsException& e) {
+    } catch (const CCfits::FitsException& e) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error reading FITS batch: "<<e.message()<<endl;
       return false;
     }
