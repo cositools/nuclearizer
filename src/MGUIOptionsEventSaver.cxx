@@ -87,6 +87,7 @@ void MGUIOptionsEventSaver::Create()
   m_Mode->Add("*.roa file to use with melinator / nulcearizer");
   m_Mode->Add("*.dat file containing all information for debugging");
   m_Mode->Add("*.evta file to use with revan");
+  m_Mode->Add("*.tra file to use with mimrec");
   m_Mode->SetSelected(dynamic_cast<MModuleEventSaver*>(m_Module)->GetMode());
   m_Mode->Create();
   TypeFrame->AddFrame(m_Mode, FirstLabelLayout);
@@ -96,7 +97,8 @@ void MGUIOptionsEventSaver::Create()
                                          dynamic_cast<MModuleEventSaver*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("roa file (read-out assemlies)", "*.roa");
   m_FileSelector->SetFileType("dat file (all info)", "*.dat");
-  m_FileSelector->SetFileType("evta file (evta file)", "*.evta");
+  m_FileSelector->SetFileType("evta file (not reconstructed events)", "*.evta");
+  m_FileSelector->SetFileType("tra file (reconstructed events)", "*.tra");
   TypeFrame->AddFrame(m_FileSelector, LabelLayout);
 
 

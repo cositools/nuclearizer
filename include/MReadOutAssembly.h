@@ -294,6 +294,12 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the filgtered-out flag
   bool IsFilteredOut() const { return m_FilteredOut; }
 
+  //! Set the event-reconstruction-incomplete flag
+  void SetEventReconstructionIncomplete(bool Flag = true, MString Text = "") { m_EventReconstructionIncomplete = Flag;  m_EventReconstructionIncompleteString = Text; }
+  //! Get the event-reconstruction-incomplete flag
+  bool IsEventReconstructionIncomplete() const { return m_EventReconstructionIncomplete; }
+
+
   //! Returns true if any of the "veto" flags have been set
   bool IsVeto() const;
 
@@ -308,20 +314,30 @@ class MReadOutAssembly : public MReadOutSequence
   bool HasAnalysisProgress(uint64_t Progress) const { return (m_AnalysisProgress & Progress) == Progress ? true : false; }
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
+
   //! Set the Quality of this Event
   void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
   //!Return the Quality of this Event
   double GetEventQuality() const { return m_EventQuality; }
+
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
+
   //! Steam the content in a way Nuclearizer can read it in again
   bool StreamDat(ostream& S, int Version = 1);
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
+  //! Stream the content in MEGAlib's evta format
+  void StreamTra(ostream& S);
   //! Stream the content in MEGAlib's roa format 
   void StreamRoa(ostream& S, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithTemperatures = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
+
+  //! Steam the BD flags
+  void StreamBDFlags(ostream& S);
+
   //! Build the next MReadoutAssemply from a .dat file
   bool GetNextFromDatFile(MFile &F);
+
   //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
   bool ComputeAbsoluteTime();
   //! Set the MTime corresponding to absolute UTC time
@@ -435,26 +451,35 @@ class MReadOutAssembly : public MReadOutSequence
   // Flags indicating the quality of the event
   bool m_AspectIncomplete;
   MString m_AspectIncompleteString;
+
   bool m_TimeIncomplete;
   MString m_TimeIncompleteString;
+
   bool m_EnergyCalibrationIncomplete_BadStrip;
   MString m_EnergyCalibrationIncomplete_BadStripString;
   bool m_EnergyCalibrationIncomplete;
   MString m_EnergyCalibrationIncompleteString;
+
   bool m_EnergyResolutionCalibrationIncomplete;
   MString m_EnergyResolutionCalibrationIncompleteString;
+
   bool m_StripPairingIncomplete;
   MString m_StripPairingIncompleteString;
+
   bool m_LLDEvent;
   MString m_LLDEventString;
+
   bool m_DepthCalibrationIncomplete;
   MString m_DepthCalibrationIncompleteString;
   bool m_DepthCalibration_OutofRange;
   MString m_DepthCalibration_OutofRangeString;
+
   bool m_StripHitBelowThreshold;
   MString m_StripHitBelowThresholdString;
 
-  
+  bool m_EventReconstructionIncomplete;
+  MString m_EventReconstructionIncompleteString;
+
   //! True if event has been filtered out
   bool m_FilteredOut;
 
