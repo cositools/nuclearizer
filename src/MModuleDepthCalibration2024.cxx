@@ -266,6 +266,19 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         int HVStripID = HVSH->GetStripID();
         int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
+        if (m_WeightedXY==true) {
+
+          // Try to calculate the energy-weighted strip positions. If that doesn't work, place the Hit in the middle of the dominant strips.
+          double WeightedLVStripID = 0;
+          double WeightedHVStripID = 0;
+          bool WeightedPosResult = CalculateEnergyWeightedPosition(LVStrips, HVStrips, WeightedLVStripID, WeightedHVStripID);
+          if (WeightedPosResult == true) {
+            LVStripID = WeightedLVStripID;
+            HVStripID = WeightedHVStripID;
+          }
+        
+        }
+
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
         // Somewhat confusing notation: HVStrips run parallel to X-axis, so we calculate X position with LVStrips.
         double Xpos = m_YPitches[DetID]*((m_NYStrips[DetID]/2.0) - ((double)LVStripID));
@@ -542,6 +555,43 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FName)
 
   return Result;
 
+}
+
+bool MModuleDepthCalibration2024::CalculateEnergyWeightedPosition(vector<MStripHit*> LVStrips, vector<MStripHit*> HVStrips, double& WeightedLVStripID, double& WeightedHVStripID) {
+  // Determine the weighted strip ID positions based on charge sharing.
+  WeightedLVStripID = 0;
+  WeightedHVStripID = 0;
+  double TotalLVEnergy = 0;
+  double TotalHVEnergy = 0;
+
+  // If one side or another doesn't have strips, abort.
+  if ( (LVStrips.size() == 0) || (HVStrips.size()==0) ) {
+    return false;
+  }
+
+  // Calculate the weighted values based on energy per strip.
+  for ( unsigned int i=0; i<LVStrips.size(); ++i ) {
+    double LVSHEnergy = LVStrips[i]->GetEnergy();
+    int LVSHID = LVStrips[i]->GetStripID();
+    TotalLVEnergy += LVSHEnergy;
+    WeightedLVStripID += LVSHEnergy*LVSHID;
+  }
+  for ( unsigned int i=0; i<HVStrips.size(); ++i ) {
+    double HVSHEnergy = HVStrips[i]->GetEnergy();
+    int HVSHID = HVStrips[i]->GetStripID();
+    TotalHVEnergy += HVSHEnergy;
+    WeightedHVStripID += HVSHEnergy*HVSHID;
+  }
+
+  // If one side or another doesn't have energy, abort.
+  if ( (TotalLVEnergy == 0) || (TotalHVEnergy == 0) ) {
+    return false;
+  }
+
+  WeightedLVStripID /= TotalLVEnergy;
+  WeightedHVStripID /= TotalHVEnergy;
+
+  return true;
 }
 
 int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
@@ -852,6 +902,11 @@ bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
       m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsInt();
   }
 
+  MXmlNode* WeightedXYNode = Node->GetNode("WeightedXY");
+  if( WeightedXYNode != NULL ){
+      m_WeightedXY = (bool) WeightedXYNode->GetValueAsInt();
+  }
+
   return true;
 }
 
@@ -866,6 +921,7 @@ MXmlNode* MModuleDepthCalibration2024::CreateXmlConfiguration()
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFile);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
   new MXmlNode(Node, "UCSDOverride",(unsigned int) m_UCSDOverride);  
+  new MXmlNode(Node, "WeightedXY",(unsigned int) m_WeightedXY);  
   
   return Node;
 }

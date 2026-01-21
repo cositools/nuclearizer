@@ -77,6 +77,10 @@ class MModuleDepthCalibration2024 : public MModule
   //! Get whether the data came from the card cage at UCSD
   bool GetUCSDOverride() const {return m_UCSDOverride;}
 
+  //! Set whether X and Y positions should be calculated by weighting strips by energy
+  void SetWeightedXY( bool WeightedXY ) {m_WeightedXY = WeightedXY;}
+  //! Get whether X and Y positions should be calculated by weighting strips by energy
+  bool GetWeightedXY() const {return m_WeightedXY;}
 
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
@@ -101,6 +105,8 @@ class MModuleDepthCalibration2024 : public MModule
   vector<double> norm_pdf(vector<double> x, double mu, double sigma);
 	//! Adds a Depth-to-CTD relation
 	bool AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints);
+  // Calculate the Energy-weighted X and Y strip position
+  bool CalculateEnergyWeightedPosition(vector<MStripHit*> LVStrips, vector<MStripHit*> HVStrips, double& WeightedLVStripID, double& WeightedHVStripID);
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
   //! Load in the specified coefficients file
@@ -153,6 +159,7 @@ class MModuleDepthCalibration2024 : public MModule
 
   // boolean for use with the card cage at UCSD since it tags all events as detector 11
   bool m_UCSDOverride;
+  bool m_WeightedXY;
 
 
 

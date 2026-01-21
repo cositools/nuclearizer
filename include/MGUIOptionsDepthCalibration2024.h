@@ -77,6 +77,8 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
   //! Check button if working with the Card Cage at UCSD
   TGCheckButton* m_UCSDOverride;
 
+  //! Check button if weighting X and Y by energy
+  TGCheckButton* m_WeightedXY;
 
 #ifdef ___CLING___
  public:
