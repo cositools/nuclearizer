@@ -272,14 +272,14 @@ bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Ev
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
       if (StripHits[d][side].size() > MaxStripHits) {
-        Event->SetStripPairingIncomplete(true, "More than 6 hit strips on one side");
+        Event->SetStripPairingError(true, "More than 6 hit strips on one side");
         Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
       }
 
       // Check if one side of the detector has no strip hits
       if (StripHits[d][side].size() == 0) {
-        Event->SetStripPairingIncomplete(true, "One detector side has no strip hits");
+        Event->SetStripPairingError(true, "One detector side has no strip hits");
         Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
       }
@@ -649,7 +649,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
     // If both HV and LV have multiple hits per strip, can't pair
     else if (AllAdjacentLV == false and AllAdjacentHV == false) {
-      Event->SetStripPairingIncomplete(true, "Strips not pairable. Multiple hits per strip on LV and HV sides");
+      Event->SetStripPairingError(true, "Strips not pairable. Multiple hits per strip on LV and HV sides");
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
@@ -660,7 +660,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
   // One last quality selection based on total event energies
   if ((EnergyTotal > max(LVEnergyTotal, HVEnergyTotal) + 2.5 * max(LVEnergyResTotal, HVEnergyResTotal) || EnergyTotal < min(LVEnergyTotal, HVEnergyTotal) - 2.5 * max(LVEnergyResTotal, HVEnergyResTotal))) {
-    Event->SetStripPairingIncomplete(true, "Strips not pairable wihin 2.5 sigma of measured energy");
+    Event->SetStripPairingError(true, "Strips not pairable wihin 2.5 sigma of measured energy");
     Event->SetAnalysisProgress(MAssembly::c_StripPairing);
     return false;
   }
@@ -695,7 +695,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
 
   // Check if there are actually any strip hits
   if (Event->GetNStripHits() == 0) {
-    Event->SetStripPairingIncomplete(true, "No strip hits");
+    Event->SetStripPairingError(true, "No strip hits");
     Event->SetAnalysisProgress(MAssembly::c_StripPairing);
     return false;
   }
@@ -759,13 +759,13 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
     // Check if chi^2 was ever actually updated
     if (BestChiSquare == numeric_limits<double>::max()) {
-      Event->SetStripPairingIncomplete(true, "Pairing did not find a single match");
+      Event->SetStripPairingError(true, "Pairing did not find a single match");
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
     // Flag events with a reduced chi square > 25
     else if (BestChiSquare > 25) {
-      Event->SetStripPairingIncomplete(true, "Best reduced chi square is not below 25");
+      Event->SetStripPairingError(true, "Best reduced chi square is not below 25");
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }

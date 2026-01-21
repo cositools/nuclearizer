@@ -53,7 +53,7 @@ MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_EventTimeUTC(0)
   m_PhysicalEvent = nullptr;
   m_SimEvent = nullptr;
   m_Aspect = nullptr;
- 	m_HasSimAspectInfo = false;
+  m_HasSimAspectInfo = false;
  
   Clear();
 }
@@ -76,6 +76,11 @@ MReadOutAssembly::~MReadOutAssembly()
   }
   m_StripHitsTOnly.clear();
 
+  // Delete all DEE Strip hits
+  m_DEEStripHitsLV.clear();
+  m_DEEStripHitsHV.clear();
+  m_DEECrystalHits.clear();
+
   // Delete all crystal hits
   for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
     delete m_CrystalHits[h];
@@ -94,17 +99,13 @@ MReadOutAssembly::~MReadOutAssembly()
   }
   m_HitsSim.clear();
 
-
   // Delete all guardring hits
   for (unsigned int h = 0; h < m_GuardringHits.size(); ++h) {
     delete m_GuardringHits[h];
   }
   m_GuardringHits.clear();
 
-  m_DEEStripHitsLV.clear();
-  m_DEEStripHitsHV.clear();
-  m_DEECrystalHits.clear();
-
+  // Delete all Events
   delete m_SimEvent;
   delete m_PhysicalEvent;
   delete m_Aspect;
@@ -127,8 +128,6 @@ void MReadOutAssembly::Clear()
   m_Time = 0;
   m_EventTimeUTC = 0;
   m_MJD = 0.0;
-  m_ReducedChiSquare = -1;
-  m_StripHitBelowThreshold_Energy = 0;
 
   m_ShieldVeto = false;
   m_GuardRingVeto = false;
@@ -173,26 +172,22 @@ void MReadOutAssembly::Clear()
   }
   m_GuardringHits.clear();
 
-  m_AspectIncomplete = false;
-  m_AspectIncompleteString = "";
-  m_TimeIncomplete = false;
-  m_TimeIncompleteString = "";
-  m_EnergyCalibrationIncomplete_BadStrip = false;
-  m_EnergyCalibrationIncomplete_BadStripString = "";
-  m_EnergyCalibrationIncomplete = false;
-  m_EnergyCalibrationIncompleteString = "";
-  m_EnergyResolutionCalibrationIncomplete = false;
-  m_EnergyResolutionCalibrationIncompleteString = "";
-  m_StripPairingIncomplete = false;
-  m_StripPairingIncompleteString = "";
-  m_LLDEvent = false;
-  m_LLDEventString = "";
-  m_DepthCalibrationIncomplete = false;
-  m_DepthCalibrationIncompleteString = "";
-  m_DepthCalibration_OutofRange = false;
-  m_DepthCalibration_OutofRangeString = "";
-  m_EventReconstructionIncomplete = false;
-  m_EventReconstructionIncompleteString = "";
+  // Delete all event flags and associated variables
+  m_EnergyCalibrationError = false;
+  m_EnergyCalibrationErrorString = "";
+  m_StripPairingError = false;
+  m_StripPairingErrorString = "";
+  m_DepthCalibrationError = false;
+  m_DepthCalibrationErrorString = "";
+  m_EventReconstructionError = false;
+  m_EventReconstructionErrorString = "";
+  
+  m_ReducedChiSquare = -1; 
+ 
+  m_StripHitBelowThreshold_QualityFlag = false;
+  m_StripHitBelowThresholdString_QualityFlag = "";
+  m_StripHitBelowThreshold_Energy = 0;
+  m_StripHitBelowThreshold_Number = 0;
 
   m_FilteredOut = false;
 
@@ -208,7 +203,7 @@ void MReadOutAssembly::Clear()
 
   delete m_Aspect;
   m_Aspect = nullptr;
-}
+}//
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -673,61 +668,32 @@ void MReadOutAssembly::StreamTra(ostream& S)
 
 void MReadOutAssembly::StreamBDFlags(ostream& S)
 {
-  // Stream the BD flags
+  // Stream the BD and QA flags
 
-  if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete";
-    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
+  if (m_EnergyCalibrationError == true) {
+    S<<"BD EnergyCalibrationError";
+    if (m_EnergyCalibrationErrorString != "") S<<" ("<<m_EnergyCalibrationErrorString<<")";
     S<<endl;
   }
-  if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete";
-    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
+   if (m_StripPairingError == true) {
+    S<<"BD StripPairingError";
+    if (m_StripPairingErrorString != "") S<<" ("<<m_StripPairingErrorString<<")";
     S<<endl;
   }
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) {
-    S<<"BD EnergyCalibrationIncomplete_BadStrip";
-    if (m_EnergyCalibrationIncomplete_BadStripString != "") S<<" ("<<m_EnergyCalibrationIncomplete_BadStripString<<")";
+  if (m_DepthCalibrationError == true) {
+    S<<"BD DepthCalibrationError";
+    if (m_DepthCalibrationErrorString != "") S<<" ("<<m_DepthCalibrationErrorString<<")";
     S<<endl;
   }
-  if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete";
-    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
+  if (m_EventReconstructionError == true) {
+    S<<"BD EventReconstructionError";
+    if (m_EventReconstructionErrorString != "") S<<" ("<<m_EventReconstructionErrorString<<")";
     S<<endl;
   }
-  if (m_EnergyResolutionCalibrationIncomplete == true) {
-    S<<"BD EnergyResolutionCalibrationIncomplete";
-    if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
-    S<<endl;
-  }
+
   if (m_StripHitBelowThreshold_QualityFlag == true) {
     S<<"QA StripHitBelowThreshold";
     if (m_StripHitBelowThresholdString_QualityFlag != "") S<<" ("<<m_StripHitBelowThresholdString_QualityFlag<<")";
-    S<<endl;
-  }
-  if (m_StripPairingIncomplete == true) {
-    S<<"BD StripPairingIncomplete";
-    if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_LLDEvent == true) {
-    S<<"BD LLDEvent";
-    if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
-    S<<endl;
-  }
-  if (m_DepthCalibrationIncomplete == true) {
-    S<<"BD DepthCalibrationIncomplete";
-    if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_DepthCalibration_OutofRange == true) {
-    S<<"BD DepthCalibration_OutofRange";
-    if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
-    S<<endl;
-  }
-  if (m_EventReconstructionIncomplete == true) {
-    S<<"BD EventReconstructionIncomplete";
-    if (m_EventReconstructionIncompleteString != "") S<<" ("<<m_EventReconstructionIncompleteString<<")";
     S<<endl;
   }
 
@@ -757,18 +723,12 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
 
 bool MReadOutAssembly::IsGood() const
 {
-  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+  //! Returns true if none of the "bad" or "Error" falgs has been set
 
-  if (m_AspectIncomplete == true) return false;
-  if (m_TimeIncomplete == true) return false;
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) return false;
-  if (m_EnergyCalibrationIncomplete == true) return false;
-  if (m_EnergyResolutionCalibrationIncomplete == true) return false;
-  if (m_StripPairingIncomplete == true) return false;
-  if (m_LLDEvent == true) return false;
-  if (m_DepthCalibrationIncomplete == true) return false;
-  if (m_DepthCalibration_OutofRange == true) return false;
-  if (m_EventReconstructionIncomplete == true) return false;
+  if (m_EnergyCalibrationError == true) return false;
+  if (m_StripPairingError == true) return false;
+  if (m_DepthCalibrationError == true) return false;
+  if (m_EventReconstructionError == true) return false;
 
   if (m_FilteredOut == true) return false;
   
@@ -781,18 +741,12 @@ bool MReadOutAssembly::IsGood() const
 
 bool MReadOutAssembly::IsBad() const
 {
-  //! Returns true if none of the "bad" or "incomplete" flag has been set
+  //! Returns true if none of the "bad" or "Error" flag has been set
 
-  if (m_AspectIncomplete == true) return true;
-  if (m_TimeIncomplete == true) return true;
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) return true;
-  if (m_EnergyCalibrationIncomplete == true) return true;
-  if (m_EnergyResolutionCalibrationIncomplete == true) return true;
-  if (m_StripPairingIncomplete == true) return true;
-  if (m_LLDEvent == true) return true;
-  if (m_DepthCalibrationIncomplete == true) return true;
-  if (m_DepthCalibration_OutofRange == true) return true;
-  if (m_EventReconstructionIncomplete == true) return true;
+  if (m_EnergyCalibrationError == true) return true;
+  if (m_StripPairingError == true) return true;
+  if (m_DepthCalibrationError == true) return true;
+  if (m_EventReconstructionError == true) return true;
 
   if (m_FilteredOut == true) return true;
 
@@ -804,7 +758,7 @@ bool MReadOutAssembly::IsBad() const
 
 bool MReadOutAssembly::IsVeto() const
 {
-  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+  //! Returns true if none of the "bad" or "Error" falgs has been set
 
   if (m_ShieldVeto == true) return true;
   if (m_GuardRingVeto == true) return true;
