@@ -98,7 +98,7 @@ class MSubModuleShieldTrigger : public MSubModule
   int GetShieldHitCounts() const { return m_NumShieldHitCounts; }
 
   //! Get shield veto counter
-  int GetShieldVetoCounter() const { return m_ShieldVetoCounter; }
+  int GetShieldVetoCounter() const { return m_NumShieldVetoCounts; }
 
   //! Get BGO hits erased
   int GetBGOHitsErased() const { return m_NumBGOHitsErased; }
@@ -149,9 +149,9 @@ class MSubModuleShieldTrigger : public MSubModule
   double m_ASICDeadTimePerChannel;
   
   // Shield state tracking
-  int m_NumShieldHitCounts;
-  int m_ShieldVetoCounter;
-  int m_NumBGOHitsErased;
+  unsigned long m_NumShieldHitCounts;
+  unsigned long m_NumShieldVetoCounts;
+  unsigned long m_NumBGOHitsErased;
   bool m_IsShieldDead;
   double m_ShieldVetoTime;
 

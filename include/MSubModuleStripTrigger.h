@@ -96,7 +96,7 @@ class MSubModuleStripTrigger : public MSubModule
 
   //! Get trigger rate for detector
   int GetTriggerRate(int det) const {
-    if (det >= 0 && det < nDets) return m_TriggerRates[det];
+    if (det >= 0 && det < nDets) return m_NumStripTriggers[det];
     return 0;
   }
 
@@ -147,11 +147,15 @@ class MSubModuleStripTrigger : public MSubModule
   //! Bool to store if ASIC is dead or not
   bool m_IsGeDDead;
 
-  //! Strip deadtime parameters
+  //! Strip readout coincidence window
   double m_StripCoincidenceWindow;
+  //! ADC deadtime per channel read out
   double m_ASICDeadTimePerChannel;
+  //! Strip delay before readout
   double m_StripDelayAfter1;
+  //! Strip delay for output to settle
   double m_StripDelayAfter2;
+  //! Total strip delay after readout
   double m_StripDelayAfter;
 
   double m_StripCoincidenceWindowFromFile;
@@ -175,7 +179,7 @@ class MSubModuleStripTrigger : public MSubModule
   double m_LastTime;
 
   //! Number of detectors
-  static const int nDets = 12;
+  static const int nDets = 16;
   //! Number of ASICs per detector
   static const int nASICs = 4;
 
@@ -188,11 +192,11 @@ class MSubModuleStripTrigger : public MSubModule
   //! Event times for particular hit in ASIC
   vector<vector<vector<double>>> m_TempEvtTimes;
 
-  //! Stores trigger rates (number of events) for each detector
-  vector<int> m_TriggerRates;
+  //! Stores trigger counts for each detector
+  vector<int> m_NumStripTriggers;
 
   //! Event times and strip IDs for counting
-  vector<double> m_EventTimes;
+  vector<double> m_EventStripTimes;
   vector<double> m_EventStripIDs;
 
 #ifdef ___CLING___

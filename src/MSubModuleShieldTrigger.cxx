@@ -69,7 +69,7 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_ShieldVetoTime = 0.0;
   
   m_NumShieldHitCounts = 0;
-  m_ShieldVetoCounter = 0;
+  m_NumShieldVetoCounts = 0;
   m_NumBGOHitsErased = 0;
 
   m_FirstTime = std::numeric_limits<double>::max();
@@ -113,6 +113,7 @@ bool MSubModuleShieldTrigger::Initialize()
 
   // Read deadtime parameters from file if provided
   if (m_DeadtimeFileName != "" && ParseDeadtimeFile() == false) {
+    if (g_Verbosity >= c_Error) cout<<"Error: Deadtime parameters file not found"<<endl;
     return false;
   }
 
@@ -228,15 +229,13 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
           cout << m_Name << ": Warning - shield detector " << DetectorID 
                 << " not found in any panel group" << endl;
         }
-      continue;
+        continue;
       }
 
+      // cout << m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] << " " << m_EventTime << endl;
       // Check deadtime conditions
-      if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] < m_EventTime) {
+      if (m_EventTime > (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup])) {
         // Event occurred after deadtime - start new veto window
-        // for (int group = 0; group < nShieldPanels; group++) {
-        //   m_ShieldHitCrystalID[group].clear();
-        // }
         m_ShieldHitCrystalID[ShieldDetGroup].clear();
         m_ShieldLastHitTime[ShieldDetGroup] = m_EventTime;
         m_ShieldVetoTime = m_EventTime;
@@ -244,13 +243,13 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
         m_HasVeto = true;
         m_TotalShieldDeadtime[ShieldDetGroup] += m_ShieldDeadtime[ShieldDetGroup];
       }
-      else if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDelayBefore > m_EventTime) {
+      else if (m_EventTime <= (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDelayBefore)) {
         // Event occurred within coincidence window - add to existing veto
         m_ShieldVetoTime = m_EventTime;
         m_ShieldHitCrystalID[ShieldDetGroup].push_back(CrystalID);
         m_HasVeto = true;
       }
-      else if (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] > m_EventTime) {
+      else {
         // Event occurred within deadtime
         m_IsShieldDead = true;
         m_NumBGOHitsErased += 1;
@@ -266,11 +265,11 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
   }
 
   // Check if event is within veto window
-  if (((m_ShieldVetoTime + m_ShieldVetoWindowSize) >= m_EventTime) && 
+  if ((m_EventTime <= (m_ShieldVetoTime + m_ShieldVetoWindowSize)) && 
       (m_EventTime >= m_ShieldVetoTime)) {
     m_HasVeto = true;
     if (Event->GetSimulatedEvent() != nullptr) {
-      m_ShieldVetoCounter += Event->GetSimulatedEvent()->GetNHTs();
+      m_NumShieldVetoCounts += Event->GetSimulatedEvent()->GetNHTs();
     }
   }
 
@@ -371,7 +370,7 @@ void MSubModuleShieldTrigger::Finalize()
   }
   
   cout << "BGO hits erased due to BGO being dead: " << m_NumBGOHitsErased << endl;
-  cout << "Shield vetoes: " << m_ShieldVetoCounter << endl;
+  cout << "Shield vetoes: " << m_NumShieldVetoCounts << endl;
   
   if (simTime > 0) {
     double rateAfterDT = (m_NumShieldHitCounts - m_NumBGOHitsErased) / simTime;
@@ -390,7 +389,7 @@ bool MSubModuleShieldTrigger::ReadXmlConfiguration(MXmlNode* Node)
   //! Read the configuration data from an XML node
 
   MXmlNode* DeadtimeFileNode = Node->GetNode("DeadtimeFileName");
-  if (DeadtimeFileNode != 0) {
+  if (DeadtimeFileNode != nullptr) {
     m_DeadtimeFileName = DeadtimeFileNode->GetValue();
   }
 

@@ -80,7 +80,7 @@ MSubModuleStripTrigger::MSubModuleStripTrigger() : MSubModule()
   m_ASICHitStripID = vector<vector<vector<int>>>(nDets, vector<vector<int>>(nASICs));
   m_ASICHitStripID_noDT = vector<vector<vector<int>>>(nDets, vector<vector<int>>(nASICs));
   m_TempEvtTimes = vector<vector<vector<double>>>(nDets, vector<vector<double>>(nASICs));
-  m_TriggerRates = vector<int>(nDets, 0);
+  m_NumStripTriggers = vector<int>(nDets, 0);
 }
 
 
@@ -102,6 +102,7 @@ bool MSubModuleStripTrigger::Initialize()
 
   // Read deadtime parameters from file
   if (m_DeadtimeFileName != "" && ParseDeadtimeFile() == false) {
+    if (g_Verbosity >= c_Error) cout<<"Error: Deadtime parameters file not found"<<endl;
     return false;
   }
 
@@ -137,8 +138,9 @@ void MSubModuleStripTrigger::Clear()
 double MSubModuleStripTrigger::CalculateASICDeadtime(vector<int> ASICChannels)
 {
   // Calculate deadtime for GeD ASICs including nearest neighbor readout
-  double deadtime = 0;
-  int countUnique = 0;
+
+  double deadtime = 0; // temporary deadtime variable
+  int countUnique = 0; // temporary unique channel counter
 
   if (ASICChannels.empty()) {
     return 0.0;
@@ -202,7 +204,7 @@ bool MSubModuleStripTrigger::CountRate(vector<int> ASICChannels, vector<double> 
   // Loop through each channel ID
   for (size_t i = 0; i < ASICChannels.size(); i++) {
     int ID = ASICChannels[i];
-    int temp_size = ASICChannelsSet.size();
+    size_t temp_size = ASICChannelsSet.size();
 
     if (ID == 64) {
       if (g_Verbosity >= c_Warning) {
@@ -221,7 +223,7 @@ bool MSubModuleStripTrigger::CountRate(vector<int> ASICChannels, vector<double> 
       ASICChannelsSet.insert(ID + 1);
     }
     
-    int new_size = ASICChannelsSet.size();
+    size_t new_size = ASICChannelsSet.size();
     for (size_t j = 0; j < (new_size - temp_size); j++) {
       CountTimeVec.push_back(CountTime[i]);
     }
@@ -230,7 +232,7 @@ bool MSubModuleStripTrigger::CountRate(vector<int> ASICChannels, vector<double> 
   int h = 0;
   for (int k : ASICChannelsSet) {
     m_EventStripIDs.push_back(k);
-    m_EventTimes.push_back(CountTimeVec[h]);
+    m_EventStripTimes.push_back(CountTimeVec[h]);
     h++;
   }
 
@@ -246,8 +248,8 @@ bool MSubModuleStripTrigger::CheckTriggerConditions(MReadOutAssembly* Event)
   // Check if at least one strip exists on each side of each detector
   // If not, remove remaining strips because they won't trigger detector
 
-  vector<int> xExists(nDets, 0);
-  vector<int> yExists(nDets, 0);
+  vector<bool> xExists(nDets, false);
+  vector<bool> yExists(nDets, false);
 
   // Check LV strips (x-direction)
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
@@ -255,7 +257,7 @@ bool MSubModuleStripTrigger::CheckTriggerConditions(MReadOutAssembly* Event)
     if (!Hit.m_IsGuardRing) {
       int DetID = Hit.m_ROE.GetDetectorID();
       if (DetID >= 0 && DetID < nDets) {
-        xExists[DetID] = 1;
+        xExists[DetID] = true;
       }
     }
   }
@@ -266,7 +268,7 @@ bool MSubModuleStripTrigger::CheckTriggerConditions(MReadOutAssembly* Event)
     if (!Hit.m_IsGuardRing) {
       int DetID = Hit.m_ROE.GetDetectorID();
       if (DetID >= 0 && DetID < nDets) {
-        yExists[DetID] = 1;
+        yExists[DetID] = true;
       }
     }
   }
@@ -275,7 +277,7 @@ bool MSubModuleStripTrigger::CheckTriggerConditions(MReadOutAssembly* Event)
   auto LVIter = LVHits.begin();
   while (LVIter != LVHits.end()) {
     int DetID = LVIter->m_ROE.GetDetectorID();
-    if (DetID >= 0 && DetID < nDets && (xExists[DetID] == 0 || yExists[DetID] == 0)) {
+    if (DetID >= 0 && DetID < nDets && (xExists[DetID] == false || yExists[DetID] == false)) {
       LVIter = LVHits.erase(LVIter);
     } else {
       ++LVIter;
@@ -285,7 +287,7 @@ bool MSubModuleStripTrigger::CheckTriggerConditions(MReadOutAssembly* Event)
   auto HVIter = HVHits.begin();
   while (HVIter != HVHits.end()) {
     int DetID = HVIter->m_ROE.GetDetectorID();
-    if (DetID >= 0 && DetID < nDets && (xExists[DetID] == 0 || yExists[DetID] == 0)) {
+    if (DetID >= 0 && DetID < nDets && (xExists[DetID] == false || yExists[DetID] == false)) {
       HVIter = HVHits.erase(HVIter);
     } else {
       ++HVIter;
@@ -312,7 +314,7 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
   list<MDEEStripHit>& HVHits = Event->GetDEEStripHitHVListReference();
 
-  // Process all hits and track deadtime
+  // Process all hits and track deadtime. Split accordingly between LV and HV hits, as they belong to different ASICs. Create a m_ASICHitStripID vector that is passed in to calculate deadtime for each ASIC later in the code. 3 cases for this, depending on whether the event is after deadtime, within coincidence window, or within deadtime.
   auto ProcessHits = [&](list<MDEEStripHit>& Hits) {
     auto HitIter = Hits.begin();
     while (HitIter != Hits.end()) {
@@ -337,6 +339,10 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
         ASICofDet = 2;
       } else if (!IsLV && StripID >= 32 && StripID <= 63) {
         ASICofDet = 3;
+      // } else if (!IsLV && StripID = 64) {
+      //   ASICofDet = 4;
+      // } else if (IsLV && StripID = 64) {
+      //   ASICofDet = 5;
       } else {
         if (g_Verbosity >= c_Warning) {
           cout << m_Name << ": Warning - Strip not associated with any ASIC" << endl;
@@ -346,7 +352,7 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
       }
 
       // Check deadtime status
-      if (m_ASICLastHitTime + m_StripsCurrentDeadtime < m_EventTime) {
+      if (m_EventTime > (m_ASICLastHitTime + m_StripsCurrentDeadtime)) {
         // Event occurred after deadtime - clear old data
         if (!ASICFirstHitAfterDead) {
           for (int d = 0; d < nDets; d++) {
@@ -365,13 +371,13 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
         m_ASICHitStripID_noDT[det][ASICofDet].push_back(StripID);
         m_TempEvtTimes[det][ASICofDet].push_back(m_EventTime);
       }
-      else if (m_ASICLastHitTime + m_StripCoincidenceWindow > m_EventTime) {
+      else if (m_EventTime <= (m_ASICLastHitTime + m_StripCoincidenceWindow)) {
         // Event occurred within coincidence window
         m_ASICHitStripID[det][ASICofDet].push_back(StripID);
         m_ASICHitStripID_noDT[det][ASICofDet].push_back(StripID);
         m_TempEvtTimes[det][ASICofDet].push_back(m_EventTime);
       }
-      else if (m_ASICLastHitTime + m_StripsCurrentDeadtime > m_EventTime) {
+      else {
         // Event occurred within deadtime - erase hit
         m_ASICHitStripID_noDT[det][ASICofDet].push_back(StripID);
         m_TempEvtTimes[det][ASICofDet].push_back(m_EventTime);
@@ -443,7 +449,7 @@ bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   for (int detID : detectorsHit) {
-    m_TriggerRates[detID]++;
+    m_NumStripTriggers[detID]++;
   }
 
   // We have a valid trigger
@@ -498,9 +504,9 @@ void MSubModuleStripTrigger::Finalize()
   
   cout << "Trigger rates (events per detector):" << endl;
   for (int i = 0; i < nDets; i++) {
-    cout << "  Detector " << i << ": " << m_TriggerRates[i] << " events";
+    cout << "  Detector " << i << ": " << m_NumStripTriggers[i] << " events";
     if (simTime > 0) {
-      cout << " (" << (m_TriggerRates[i] / simTime) << " Hz)";
+      cout << " (" << (m_NumStripTriggers[i] / simTime) << " Hz)";
     }
     cout << endl;
   }
@@ -544,7 +550,7 @@ bool MSubModuleStripTrigger::ReadXmlConfiguration(MXmlNode* Node)
   //! Read the configuration data from an XML node
 
   MXmlNode* DeadtimeFileNode = Node->GetNode("DeadtimeFileName");
-  if (DeadtimeFileNode != 0) {
+  if (DeadtimeFileNode != nullptr) {
     m_DeadtimeFileName = DeadtimeFileNode->GetValue();
   }
 
