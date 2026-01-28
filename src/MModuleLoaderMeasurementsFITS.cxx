@@ -194,7 +194,7 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
     }
 
     // Get all columns
-    const ColMap& columns = m_ComptonTable->column();
+    //const ColMap& columns = m_ComptonTable->column();
 
     // Print column information to verify structure, can comment out
     // cout<<"  Column details:"<<endl;
