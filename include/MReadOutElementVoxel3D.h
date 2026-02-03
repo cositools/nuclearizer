@@ -60,47 +60,56 @@ class MReadOutElementVoxel3D : public MReadOutElement
   //! Return the type of this read-out element
   virtual MString GetType() const;
 
-  //! Setters and getters
+  //! Set detector ID as string
   void SetDetectorID(MString DetectorID)
   {
     m_DetectorID = DetectorID;
   }
+  //! Get detector ID as string
   MString GetDetectorID() const
   {
     return m_DetectorID;
   }
 
+  //! Set crystal ID as int
   void SetCrystalID(unsigned int CrystalID)
   {
     m_CrystalID = CrystalID;
   }
+  //! Get crystal ID as int
   unsigned int GetCrystalID() const
   {
     return m_CrystalID;
   }
 
+  //! Set Voxel X ID as int
   void SetVoxelXID(unsigned int VoxelXID)
   {
     m_VoxelXID = VoxelXID;
   }
+  //! Get Voxel X ID as int
   unsigned int GetVoxelXID() const
   {
     return m_VoxelXID;
   }
 
+  //! Set Voxel Y ID as int
   void SetVoxelYID(unsigned int VoxelYID)
   {
     m_VoxelYID = VoxelYID;
   }
+  //! Set Voxel Y ID as int
   unsigned int GetVoxelYID() const
   {
     return m_VoxelYID;
   }
 
+  //! Set Voxel Z ID as int
   void SetVoxelZID(unsigned int VoxelZID)
   {
     m_VoxelZID = VoxelZID;
   }
+  //! Get Voxel Z ID as int
   unsigned int GetVoxelZID() const
   {
     return m_VoxelZID;
@@ -123,12 +132,17 @@ class MReadOutElementVoxel3D : public MReadOutElement
  private:
   // protected members:
  protected:
-  MString m_DetectorID; //!< Detector ID
-  unsigned int m_CrystalID; //!< Crystal ID
+  //! Detector ID as string e.g. "ACS_X0_0", "ACS_Y1_3"
+  MString m_DetectorID;
+  //! Crystal ID as int
+  unsigned int m_CrystalID;
 
-  unsigned int m_VoxelXID; //!< Voxel index X
-  unsigned int m_VoxelYID; //!< Voxel index Y
-  unsigned int m_VoxelZID; //!< Voxel index Z
+  //! Voxel index X as int
+  unsigned int m_VoxelXID;
+  //! Voxel index Y as int
+  unsigned int m_VoxelYID;
+  //! Voxel index Z as int
+  unsigned int m_VoxelZID;
 
   // private members:
  private:

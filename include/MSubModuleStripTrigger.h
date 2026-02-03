@@ -158,9 +158,13 @@ class MSubModuleStripTrigger : public MSubModule
   //! Total strip delay after readout
   double m_StripDelayAfter;
 
+  //! Strip coincidence window in seconds as set in file
   double m_StripCoincidenceWindowFromFile;
+  //! ASIC deadtime per channel read out in seconds as set in file
   double m_ASICDeadTimePerChannelFromFile;
+  //! Strip delay 1 before readout in seconds as set in file
   double m_StripDelayAfter1FromFile;
+  //! Strip delay 2 for output to settle in seconds as set in file
   double m_StripDelayAfter2FromFile;
 
   //! Stores current dead time of the instrument
@@ -174,8 +178,9 @@ class MSubModuleStripTrigger : public MSubModule
   //! Total strip hits counter
   int m_TotalStripHitsCounter;
 
-  //! First and last event times
+  //! First event time for statistics
   double m_FirstTime;
+  //! Last event time for statistics
   double m_LastTime;
 
   //! Number of detectors
@@ -195,8 +200,9 @@ class MSubModuleStripTrigger : public MSubModule
   //! Stores trigger counts for each detector
   vector<int> m_NumStripTriggers;
 
-  //! Event times and strip IDs for counting
+  //! Event strip times for counting (should be removed later)
   vector<double> m_EventStripTimes;
+  //! Event strip IDs for counting (should be removed later)
   vector<double> m_EventStripIDs;
 
 #ifdef ___CLING___

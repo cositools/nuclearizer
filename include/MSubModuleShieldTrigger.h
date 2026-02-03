@@ -140,30 +140,43 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Time when the shield dead time ends
   MTime m_DeadTimeEnd;
 
-  // Shield parameters
+  //! Shield threshold in keV
   double m_ShieldThreshold;
+  //! Shield pulse duration in seconds
   double m_ShieldPulseDuration;
+  //! Shield delay 1 before trigger in seconds
   double m_ShieldDelayBefore;
+  //! Shield delay 2 before trigger in seconds
   double m_ShieldDelayAfter;
+  //! Shield veto window size in seconds
   double m_ShieldVetoWindowSize;
+  //! Shield deadtime per channel read out in seconds
   double m_ASICDeadTimePerChannel;
   
-  // Shield state tracking
+  //! Number of shield hits before deadtime
   unsigned long m_NumShieldHitCounts;
+  //! Number of shield veto counts
   unsigned long m_NumShieldVetoCounts;
+  //! Number of BGO hits erased due to deadtime
   unsigned long m_NumBGOHitsErased;
+  //! Bool to store if corresponding shield ASIC is dead or not
   bool m_IsShieldDead;
+  //! Time of last shield veto hit (used for veto window calculation)
   double m_ShieldVetoTime;
 
-  //! First and last event times for statistics
+  //! First event time in seconds
   double m_FirstTime;
+  //! Last event time in seconds
   double m_LastTime;
 
   //! Number of shield panels
   static const int nShieldPanels = 6;
   
+  //! Last hit time for each shield panel
   vector<double> m_ShieldLastHitTime;
+  //! Current Deadtime for each shield panel
   vector<double> m_ShieldDeadtime;
+  //! Total Deadtime (added up over time) for each shield panel
   vector<double> m_TotalShieldDeadtime;
   
   //! Group of shield numbers per panel
