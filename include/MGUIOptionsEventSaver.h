@@ -91,7 +91,7 @@ class MGUIOptionsEventSaver : public MGUIOptions
   TGCheckButton* m_SplitFile;
   //! Entry field for the time after which to split the file
   MGUIEEntry* m_SplitFileTime;
-
+    
   //! Checkbutton to include or exclude ADCs in the roa file
   TGCheckButton* m_RoaWithADCs;
   //! Checkbutton to include or exclude TACs in the roa file

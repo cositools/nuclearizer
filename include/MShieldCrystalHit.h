@@ -1,5 +1,5 @@
 /*
- * MCrystalHit.h
+ * MShieldCrystalHit.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MCrystalHit__
-#define __MCrystalHit__
+#ifndef __MShieldCrystalHit__
+#define __MShieldCrystalHit__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -24,7 +24,8 @@
 #include "MGlobal.h"
 
 // Nuclearizer libs
-#include "MReadOutElementVoxel3D.h"
+#include "MReadOutElement.h"
+#include "MShieldCrystalHit.h"
 
 // Forward declarations:
 
@@ -32,30 +33,30 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MCrystalHit
+class MShieldCrystalHit
 {
   // public interface:
  public:
   //! Default constructor
-  MCrystalHit();
+  MShieldCrystalHit();
   //! Default destructor
-  virtual ~MCrystalHit();
+  virtual ~MShieldCrystalHit();
 
   //! Reset all data
   void Clear();
 
   //! Get the read-out element
-  MReadOutElementVoxel3D* GetReadOutElement() const { return m_ReadOutElement; }
+  MReadOutElement* GetReadOutElement() const { return m_ReadOutElement; }
 
   //! Set the Crystal ID
-  void SetCrystalID(unsigned int CrystalID) { m_ReadOutElement->SetCrystalID(CrystalID); }
+  void SetCrystalID(int StripID) { m_ReadOutElement->SetDetectorID(StripID); }
   //! Return the Crystal ID
-  unsigned int GetCrystalID() const { return m_ReadOutElement->GetCrystalID(); }
+  int GetCrystalID() const { return m_ReadOutElement->GetDetectorID(); }
 
   //! Set the Detector ID - this derived from the crystal ID
-  void SetDetectorID(MString DetectorID) { m_ReadOutElement->SetDetectorID(DetectorID); }
+  void SetDetectorID(int DetectorID) { m_ReadOutElement->SetDetectorID(DetectorID); }
   //! Return the Detector ID- this derived from the crystal ID
-  MString GetDetectorID() const { return m_ReadOutElement->GetDetectorID(); }
+  int GetDetectorID() const { return m_ReadOutElement->GetDetectorID(); }
 
   //! Set whether the crystal has triggered
   void HasTriggered(bool HasTriggered) { m_HasTriggered = HasTriggered; }
@@ -115,7 +116,7 @@ class MCrystalHit
   // private members:
  private:
   //! The read-out element with a single ID (representing the crystal ID)
-  MReadOutElementVoxel3D* m_ReadOutElement;
+  MReadOutElement* m_ReadOutElement;
   //! Crystal has triggered
   bool m_HasTriggered;
   //! Crystal has vetoed
@@ -134,7 +135,7 @@ class MCrystalHit
 
 #ifdef ___CLING___
  public:
-  ClassDef(MCrystalHit, 0) // no description
+  ClassDef(MShieldCrystalHit, 0) // no description
 #endif
 
 };
