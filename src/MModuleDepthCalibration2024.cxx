@@ -172,10 +172,10 @@ bool MModuleDepthCalibration2024::Initialize()
   }
 
   if (m_MaskMetrologyEnabled == true) {
-    cout << "\n  !!! Mask Metrology Enabled !!! \n" << endl;
+    if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
     m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFile);
     if (m_MaskMetrologyFile == false) {
-      cout << "Unable to open Metrology file" << endl;
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << "Unable to open Metrology file" << endl;
       return false;
     }
   }
@@ -672,13 +672,25 @@ vector<double> MModuleDepthCalibration2024::GetStripIntersection(MReadOutElement
   vector<double> LVStripMet = m_MaskMetrology[R_LVStrip];
   vector<double> HVStripMet = m_MaskMetrology[R_HVStrip];
 
-  //Find the x position of two lines represented by the dominate strips:
-  //  LVstrip is centered at (x,y,z) = (lv_strip_met[0], lv_strip_met[1], lv_strip_met[2])
+  // Find the x position of two lines represented by the dominate strips:
+  // LVstrip is centered at (x,y,z) = (lv_strip_met[0], lv_strip_met[1], lv_strip_met[2])
   // and is approximately parallel to the y axis, but rotated at angle lv_strip_met[5] 
   // around the z axis of the detector
   // HVstrip is centered at (x,y,z) = (hv_strip_met[0], hv_strip_met[1], hv_strip_met[2])
   // and is approximately parallel to the x axis, but rotated at angle (hv_strip_met[5] - pi/2) 
   // around the z axis of the detector
+ 
+
+  // Check for division by zero and return standard intersection without mask rotation in this case
+  double denominator1 = tan(LVStripMet[5]*TMath::DegToRad();
+  double denominator2 = tan((HVStripMet[5]-90)*TMath::DegToRad())-1/tan(LVStripMet[5]*TMath::DegToRad());
+  if (denominator1 == 0.0 || denominator2 == 0.0) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Strip Intersection gives divide by zero - returning unrotated hit position"<<endl;
+    double Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
+    double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
+    return {Xpos, Ypos}; 
+  }
+
   double XIntercept = (HVStripMet[0]*tan((HVStripMet[5]-90)*TMath::DegToRad()) - LVStripMet[0]/tan(LVStripMet[5]*TMath::DegToRad()) - LVStripMet[1] + HVStripMet[1])/(tan((HVStripMet[5]-90)*TMath::DegToRad())-1/tan(LVStripMet[5]*TMath::DegToRad()));
     
   double YIntercept = (XIntercept - HVStripMet[0])*tan((HVStripMet[5]-90)*TMath::DegToRad()) + HVStripMet[1];

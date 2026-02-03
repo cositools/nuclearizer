@@ -77,10 +77,12 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
   //! Select mask metrology file to load. This gives the translation and rotation for each strip in the detector frame
   MGUIEFileSelector* m_MaskMetrologyFileSelector;
 
-  bool m_UseMaskMetCorr;
-
+  //! Check button to use metrology correction
   TGCheckButton* m_MaskMetModeCB;
   enum ButtonIDs {c_MetFile};
+
+  //! Boolean for use of metrology correction
+  bool m_UseMaskMetCorr;
 
   //! Check button if working with the Card Cage at UCSD
   TGCheckButton* m_UCSDOverride;
