@@ -63,29 +63,30 @@ class MModuleDepthCalibration2024 : public MModule
   virtual void ShowOptionsGUI();
 
   //! Set filename for coefficients file
-  void SetCoeffsFileName( const MString& FileName) {m_CoeffsFile = FileName;}
+  void SetCoeffsFileName( const MString& FileName) { m_CoeffsFile = FileName; }
   //! Get filename for coefficients file
-  MString GetCoeffsFileName() const {return m_CoeffsFile;}
+  MString GetCoeffsFileName() const { return m_CoeffsFile; }
 
   //! Set filename for CTD->Depth splines
-  void SetSplinesFileName( const MString& FileName) {m_SplinesFile = FileName;}
+  void SetSplinesFileName( const MString& FileName) { m_SplinesFile = FileName; }
   //! Get filename for CTD->Depth splines
   MString GetSplinesFileName() const {return m_SplinesFile;}
 
-  //! Enable/Disable Preamp Temp Correction
-  void EnableMaskMetrologyCorrection(bool X) {m_MaskMetrologyEnabled = X;}
-  //! Get coincidence merging true/false
-  bool GetMaskMetrologyCorrection() const { return m_MaskMetrologyEnabled; }
+  //! Enable/Disable Mask Metrology Correction
+  void SetMaskMetrologyCorrectionEnable(bool X) { m_MaskMetrologyEnabled = X; }
+  //! Get enable/disable status of mask metrology correction
+  bool GetMaskMetrologyCorrectionEnable() const { return m_MaskMetrologyEnabled; }
 
   //! Set filename for mask metrology
-  void SetMaskMetrologyFileName( const MString& FileName) {m_MaskMetrologyFile = FileName;}
+  void SetMaskMetrologyFileName( const MString& FileName) { m_MaskMetrologyFile = FileName; }
   //! Get filename for CTD->Depth splines
-  MString GetMaskMetrologyFileName() const {return m_MaskMetrologyFile;}
+  MString GetMaskMetrologyFileName() const { return m_MaskMetrologyFile; }
 
+  //TODO Remove UCSD code here and place within it's own branch
   //! Set whether the data came from the card cage at UCSD
-  void SetUCSDOverride( bool Override ) {m_UCSDOverride = Override;}
+  void SetUCSDOverride( bool Override ) { m_UCSDOverride = Override; }
   //! Get whether the data came from the card cage at UCSD
-  bool GetUCSDOverride() const {return m_UCSDOverride;}
+  bool GetUCSDOverride() const { return m_UCSDOverride; }
 
 
   //! Read the XML configuration
