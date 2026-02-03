@@ -365,7 +365,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       if (g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Error: Energy-fit not found for read-out element " << R << endl;
       }
-      Event->SetEnergyCalibrationError(true, "calibration not found for " + R.ToString());
+      Event->SetEnergyCalibrationError("calibration not found for " + R.ToString());
       ++i; // iterate to next SH
       continue;
 
@@ -401,7 +401,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         if (g_Verbosity >= c_Warning) {
           cout << m_XmlTag << ": Strip Hit below threshold, deleting SH with Energy " << Energy << " keV " << endl;
         }
-        Event->SetStripHitBelowThreshold_QualityFlag(true, "Strip hit removed with energy " + to_string(Energy));
+        Event->SetStripHitBelowThreshold_QualityFlag("Strip hit removed with energy " + to_string(Energy));
         Event->RemoveStripHit(i);
         delete SH;
         continue; // continue to next SH without iterating i

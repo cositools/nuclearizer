@@ -186,8 +186,6 @@ void MReadOutAssembly::Clear()
  
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
-  m_StripHitBelowThreshold_Energy = 0;
-  m_StripHitBelowThreshold_Number = 0;
 
   m_FilteredOut = false;
 
@@ -203,7 +201,7 @@ void MReadOutAssembly::Clear()
 
   delete m_Aspect;
   m_Aspect = nullptr;
-}//
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -664,18 +662,6 @@ void MReadOutAssembly::StreamTra(ostream& S)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-//Overload << operator to readout vector elements in BD and QA error messages
-
-template <typename S>
-ostream& operator<<(ostream& os, const vector<S>& vector) {
-    //Printing all the elements using <<
-  for (auto i : vector) 
-    os << i << " ";
-  return os;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 
 void MReadOutAssembly::StreamBDFlags(ostream& S)
 {
@@ -683,28 +669,53 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
 
   if (m_EnergyCalibrationError == true) {
     S<<"BD EnergyCalibrationError";
-    if (m_EnergyCalibrationErrorString.empty() == false) S<<" ("<<m_EnergyCalibrationErrorString<<")";
+    if (m_EnergyCalibrationErrorString.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_EnergyCalibrationErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
     S<<endl;
   }
    if (m_StripPairingError == true) {
     S<<"BD StripPairingError";
-    if (m_StripPairingErrorString.empty() == false) S<<" ("<<m_StripPairingErrorString<<")";
+    if (m_StripPairingErrorString.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_StripPairingErrorString) { 
+        S<<" ("<<i<<")";
+      }
+    }
     S<<endl;
   }
   if (m_DepthCalibrationError == true) {
     S<<"BD DepthCalibrationError";
-    if (m_DepthCalibrationErrorString.empty() == false) S<<" ("<<m_DepthCalibrationErrorString<<")";
+    if (m_DepthCalibrationErrorString.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_DepthCalibrationErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
     S<<endl;
   }
   if (m_EventReconstructionError == true) {
     S<<"BD EventReconstructionError";
-    if (m_EventReconstructionErrorString.empty() == false) S<<" ("<<m_EventReconstructionErrorString<<")";
+    if (m_EventReconstructionErrorString.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_EventReconstructionErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
     S<<endl;
   }
 
   if (m_StripHitBelowThreshold_QualityFlag == true) {
     S<<"QA StripHitBelowThreshold";
-    if (m_StripHitBelowThresholdString_QualityFlag.empty() == false) S<<" ("<<m_StripHitBelowThresholdString_QualityFlag<<")";
+    if (m_StripHitBelowThresholdString_QualityFlag.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_StripHitBelowThresholdString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
     S<<endl;
   }
 

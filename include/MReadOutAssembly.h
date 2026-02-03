@@ -212,30 +212,30 @@ class MReadOutAssembly : public MReadOutSequence
 
   //Track BD Flags
 
-  //! Set the energy-calibration-Error flag
-  void SetEnergyCalibrationError(bool Flag = true, MString Text = "") { m_EnergyCalibrationError = Flag;  m_EnergyCalibrationErrorString.push_back(Text); }
-  //! Get the energy-calibration-Error flag
+  //! Set the energy calibration error flag
+  void SetEnergyCalibrationError(MString Text = "") { m_EnergyCalibrationError = true; if (Text != "") { m_EnergyCalibrationErrorString.push_back(Text); }}
+  //! Get the energy calibration error flag
   bool HasEnergyCalibrationError() const { return m_EnergyCalibrationError; }
  
- //! Set the strip-pairing-Error flag
-  void SetStripPairingError(bool Flag = true, MString Text = "") { m_StripPairingError = Flag;  m_StripPairingErrorString.push_back(Text); }
-  //! Get the strip-pairing-Error flag
+ //! Set the strip pairing error flag
+  void SetStripPairingError(MString Text = "") { m_StripPairingError = true; if (Text != "") { m_StripPairingErrorString.push_back(Text); }}
+  //! Get the strip pairing error flag
   bool HasStripPairingError() const { return m_StripPairingError; }
 
-  //! Set the depth-calibration-Error flag
-  void SetDepthCalibrationError(bool Flag = true, MString Text = "") { m_DepthCalibrationError = Flag;  m_DepthCalibrationErrorString.push_back(Text); }
-  //! Get the depth-calibration-Error flag
+  //! Set the depth calibration error flag
+  void SetDepthCalibrationError(MString Text = "") { m_DepthCalibrationError = true; if (Text != "") { m_DepthCalibrationErrorString.push_back(Text); }}
+  //! Get the depth calibration error flag
   bool HasDepthCalibrationError() const { return m_DepthCalibrationError; }
 
-  //! Set the event-reconstruction-Error flag
-  void SetEventReconstructionError(bool Flag = true, MString Text = "") { m_EventReconstructionError = Flag;  m_EventReconstructionErrorString.push_back(Text); }
-  //! Get the event-reconstruction-Error flag
+  //! Set the event reconstruction error flag
+  void SetEventReconstructionError(MString Text = "") { m_EventReconstructionError = true; if (Text != "") { m_EventReconstructionErrorString.push_back(Text); }}
+  //! Get the event reconstruction error flag
   bool HasEventReconstructionError() const { return m_EventReconstructionError; }
 
   // Track Quality Flags
 
   //! Set the Strip Hit Below Threshold quality flag
-  void SetStripHitBelowThreshold_QualityFlag(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = Flag; m_StripHitBelowThresholdString_QualityFlag.push_back(Text);}
+  void SetStripHitBelowThreshold_QualityFlag(MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = true; if (Text != "") { m_StripHitBelowThresholdString_QualityFlag.push_back(Text); }}
   //! Get the Strip Hit Below Threshold quality flag
   bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
 
@@ -391,23 +391,33 @@ class MReadOutAssembly : public MReadOutSequence
   MPhysicalEvent* m_PhysicalEvent;
     
   // Flags indicating bad events:
+
+  //! Energy calibration error flag
   bool m_EnergyCalibrationError;
+  //! Energy calibration error string
   vector<MString> m_EnergyCalibrationErrorString;
 
+  //! String pairing error flag
   bool m_StripPairingError;
+  //! Strip pairing error string
   vector<MString> m_StripPairingErrorString;
 
+  //! Depth calibration error flag
   bool m_DepthCalibrationError;
+  //! Depth calibration error string
   vector<MString> m_DepthCalibrationErrorString;
  
+  //! Event reconstruction error flag
   bool m_EventReconstructionError;
+  //! Event reconstruction error string
   vector<MString> m_EventReconstructionErrorString;
  
-  // Flags indicating the quality of the event: quality warning, but not to be filtered out
+  // Flags indicating the quality of the event: quality warning, but not to be filtered out:
+
+  //! Strip hit below threshold quality flag
   bool m_StripHitBelowThreshold_QualityFlag;
+  //! Strip hit below threshold quality string
   vector<MString> m_StripHitBelowThresholdString_QualityFlag;
-  double m_StripHitBelowThreshold_Energy;
-  int m_StripHitBelowThreshold_Number;
 
   //! Reduced Chi^2 of the Strip Paired Event
   double m_StripPairingReducedChiSquare;

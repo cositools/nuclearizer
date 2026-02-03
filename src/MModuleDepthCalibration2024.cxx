@@ -214,7 +214,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
   
   if (Event->GetGuardRingVeto()==true) {
     
-    Event->SetDepthCalibrationError(true, "GR Veto");
+    Event->SetDepthCalibrationError("GR Veto");
     return false;
   
   } else {
@@ -231,7 +231,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // GRADE=-1 is an error. Break from the loop and continue.
       if ( Grade < 0 ){
         H->SetNoDepth();
-        Event->SetDepthCalibrationError();
+        Event->SetDepthCalibrationError("Error in depth calibration");
         if (Grade == -1) {
           ++m_ErrorSH;
         } else if (Grade == -2) {
@@ -241,7 +241,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         }
       } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
         H->SetNoDepth();
-        Event->SetDepthCalibrationError(true, "Multiple hits on single strip");
+        Event->SetDepthCalibrationError("Multiple hits on single strip");
         if (Grade==5) {
           ++m_Error5;
         } else if (Grade==6) {
@@ -296,20 +296,20 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         if( Coeffs == nullptr ){
           //set the bad flag for depth
           H->SetNoDepth();
-          Event->SetDepthCalibrationError(true, "No calibration coefficients");
+          Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
         } else if (CTDVec.size() == 0) {
             cout << "Empty CTD vector" << endl;
             H->SetNoDepth();
-            Event->SetDepthCalibrationError(true, "No calibration coefficients");
+            Event->SetDepthCalibrationError("No calibration coefficients");
         } else if (DepthVec.size() == 0) {
             cout << "Empty Depth vector" << endl;
             H->SetNoDepth();
-            Event->SetDepthCalibrationError(true, "No calibration coefficients");
+            Event->SetDepthCalibrationError("No calibration coefficients");
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
             ++m_Error3;
             H->SetNoDepth();
-            Event->SetDepthCalibrationError(true, "No timing");
+            Event->SetDepthCalibrationError("No timing");
         } else {
           
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
@@ -327,7 +327,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           //if the CTD is out of range, check if we should reject the event.
           if( (CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise)) ){
             H->SetNoDepth();
-            Event->SetDepthCalibrationError(true, "Out of Range");
+            Event->SetDepthCalibrationError("Out of Range");
             ++m_Error2;
           }
 
