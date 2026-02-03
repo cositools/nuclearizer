@@ -292,8 +292,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
         double Zpos = 0.0;
 
-        cout<<"Initial position: Xpos "<<Xpos<<", Ypos: "<<Ypos<<endl;
-
         // TODO: Confirm X and Y implementation below with Aldo's new metrology files. His old files swapped these.
         if (m_MaskMetrologyEnabled == true) {
           // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
@@ -330,11 +328,11 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
         } else if (CTDVec.size() == 0) {
-            cout << "Empty CTD vector" << endl;
+            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
             H->SetNoDepth();
             Event->SetDepthCalibrationError("No calibration coefficients");
         } else if (DepthVec.size() == 0) {
-            cout << "Empty Depth vector" << endl;
+            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
             H->SetNoDepth();
             Event->SetDepthCalibrationError("No calibration coefficients");
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
@@ -501,7 +499,7 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FileName)
     if (Line.BeginsWith('#') == true) {
       std::vector<MString> Tokens = Line.Tokenize(" ");
       m_Coeffs_Energy = Tokens[5].ToDouble();
-      cout << "The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
+      if (g_Verbosity >= c_Info) cout << m_XmlTag << "The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
     } else {
       std::vector<MString> Tokens = Line.Tokenize(",");
       if (Tokens.size() == 5) {
@@ -697,7 +695,7 @@ vector<double> MModuleDepthCalibration2024::GetStripIntersection(MReadOutElement
   double denominator1 = tan(LVStripMet[5]*TMath::DegToRad());
   double denominator2 = tan((HVStripMet[5]-90)*TMath::DegToRad())-1/tan(LVStripMet[5]*TMath::DegToRad());
   if (denominator1 == 0.0 || denominator2 == 0.0) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Strip Intersection gives divide by zero - returning unrotated hit position"<<endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Strip Intersection gives divide by zero - returning unrotated hit position" << endl;
     double Xpos = m_YPitches[DetID]*((double)R_LVStrip.GetStripID() - ((m_NYStrips[DetID]-1)/2.0));
     double Ypos = m_XPitches[DetID]*((double)R_HVStrip.GetStripID() - ((m_NXStrips[DetID]-1)/2.0));
     return {Xpos, Ypos}; 
@@ -727,7 +725,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   }
   if (H->GetNStripHits() == 0) {
     // Error if no strip hits listed. Bad grade is returned
-    cout << "ERROR in MModuleDepthCalibration2024: HIT WITH NO STRIP HITS" << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration2024: HIT WITH NO STRIP HITS" << endl;
     return -1;
   }
    
@@ -738,8 +736,14 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   vector<int> HVStripIDs;
   for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
     MStripHit* SH = H->GetStripHit(j);
-    if (SH == nullptr ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got NULL strip hit :( " << endl; return -1;}
-    if (SH->GetEnergy() == 0 ) { cout << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got strip without energy :( " << endl; return -1;}
+    if (SH == nullptr ) { 
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got NULL strip hit :( " << endl;
+      return -1;
+    }
+    if (SH->GetEnergy() == 0 ) { 
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got strip without energy :( " << endl; 
+      return -1;
+    }
     if (SH->IsLowVoltageStrip()) {
       LVStrips.push_back(SH); 
       LVStripIDs.push_back(SH->GetStripID());
