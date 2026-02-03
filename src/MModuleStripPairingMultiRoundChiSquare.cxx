@@ -771,7 +771,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
 
     // Assign the best reduced chi square to the event
-    Event->SetReducedChiSquare(BestChiSquare);
+    Event->SetStripPairingReducedChiSquare(BestChiSquare);
 
     // Populate hits with best strip paired combination
     bool PopulateHits = CreateHits(d, Event, StripHits, BestLVSideCombo, BestHVSideCombo);

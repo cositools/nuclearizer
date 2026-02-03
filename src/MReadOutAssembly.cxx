@@ -174,18 +174,18 @@ void MReadOutAssembly::Clear()
 
   // Delete all event flags and associated variables
   m_EnergyCalibrationError = false;
-  m_EnergyCalibrationErrorString = "";
+  m_EnergyCalibrationErrorString.clear();
   m_StripPairingError = false;
-  m_StripPairingErrorString = "";
+  m_StripPairingErrorString.clear();
   m_DepthCalibrationError = false;
-  m_DepthCalibrationErrorString = "";
+  m_DepthCalibrationErrorString.clear();
   m_EventReconstructionError = false;
-  m_EventReconstructionErrorString = "";
+  m_EventReconstructionErrorString.clear();
   
-  m_ReducedChiSquare = -1; 
+  m_StripPairingReducedChiSquare = -1; 
  
   m_StripHitBelowThreshold_QualityFlag = false;
-  m_StripHitBelowThresholdString_QualityFlag = "";
+  m_StripHitBelowThresholdString_QualityFlag.clear();
   m_StripHitBelowThreshold_Energy = 0;
   m_StripHitBelowThreshold_Number = 0;
 
@@ -536,7 +536,7 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   S<<"ID "<<m_ID<<endl;
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
-  S<<"QP "<<m_ReducedChiSquare<<endl; // Read out strip pairing qualiy factor
+  S<<"QP "<<m_StripPairingReducedChiSquare<<endl; // Read out strip pairing qualiy factor
     
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
@@ -664,7 +664,18 @@ void MReadOutAssembly::StreamTra(ostream& S)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+//Overload << operator to readout vector elements in BD and QA error messages
 
+template <typename S>
+ostream& operator<<(ostream& os, const vector<S>& vector) {
+    //Printing all the elements using <<
+  for (auto i : vector) 
+    os << i << " ";
+  return os;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 void MReadOutAssembly::StreamBDFlags(ostream& S)
 {
@@ -672,28 +683,28 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
 
   if (m_EnergyCalibrationError == true) {
     S<<"BD EnergyCalibrationError";
-    if (m_EnergyCalibrationErrorString != "") S<<" ("<<m_EnergyCalibrationErrorString<<")";
+    if (m_EnergyCalibrationErrorString.empty() == false) S<<" ("<<m_EnergyCalibrationErrorString<<")";
     S<<endl;
   }
    if (m_StripPairingError == true) {
     S<<"BD StripPairingError";
-    if (m_StripPairingErrorString != "") S<<" ("<<m_StripPairingErrorString<<")";
+    if (m_StripPairingErrorString.empty() == false) S<<" ("<<m_StripPairingErrorString<<")";
     S<<endl;
   }
   if (m_DepthCalibrationError == true) {
     S<<"BD DepthCalibrationError";
-    if (m_DepthCalibrationErrorString != "") S<<" ("<<m_DepthCalibrationErrorString<<")";
+    if (m_DepthCalibrationErrorString.empty() == false) S<<" ("<<m_DepthCalibrationErrorString<<")";
     S<<endl;
   }
   if (m_EventReconstructionError == true) {
     S<<"BD EventReconstructionError";
-    if (m_EventReconstructionErrorString != "") S<<" ("<<m_EventReconstructionErrorString<<")";
+    if (m_EventReconstructionErrorString.empty() == false) S<<" ("<<m_EventReconstructionErrorString<<")";
     S<<endl;
   }
 
   if (m_StripHitBelowThreshold_QualityFlag == true) {
     S<<"QA StripHitBelowThreshold";
-    if (m_StripHitBelowThresholdString_QualityFlag != "") S<<" ("<<m_StripHitBelowThresholdString_QualityFlag<<")";
+    if (m_StripHitBelowThresholdString_QualityFlag.empty() == false) S<<" ("<<m_StripHitBelowThresholdString_QualityFlag<<")";
     S<<endl;
   }
 

@@ -213,49 +213,43 @@ class MReadOutAssembly : public MReadOutSequence
   //Track BD Flags
 
   //! Set the energy-calibration-Error flag
-  void SetEnergyCalibrationError(bool Flag = true, MString Text = "") { m_EnergyCalibrationError = Flag;  m_EnergyCalibrationErrorString = Text; }
+  void SetEnergyCalibrationError(bool Flag = true, MString Text = "") { m_EnergyCalibrationError = Flag;  m_EnergyCalibrationErrorString.push_back(Text); }
   //! Get the energy-calibration-Error flag
-  bool IsEnergyCalibrationError() const { return m_EnergyCalibrationError; }
+  bool HasEnergyCalibrationError() const { return m_EnergyCalibrationError; }
  
  //! Set the strip-pairing-Error flag
-  void SetStripPairingError(bool Flag = true, MString Text = "") { m_StripPairingError = Flag;  m_StripPairingErrorString = Text; }
+  void SetStripPairingError(bool Flag = true, MString Text = "") { m_StripPairingError = Flag;  m_StripPairingErrorString.push_back(Text); }
   //! Get the strip-pairing-Error flag
-  bool IsStripPairingError() const { return m_StripPairingError; }
+  bool HasStripPairingError() const { return m_StripPairingError; }
 
   //! Set the depth-calibration-Error flag
-  void SetDepthCalibrationError(bool Flag = true, MString Text = "") { m_DepthCalibrationError = Flag;  m_DepthCalibrationErrorString = Text; }
+  void SetDepthCalibrationError(bool Flag = true, MString Text = "") { m_DepthCalibrationError = Flag;  m_DepthCalibrationErrorString.push_back(Text); }
   //! Get the depth-calibration-Error flag
-  bool IsDepthCalibrationError() const { return m_DepthCalibrationError; }
+  bool HasDepthCalibrationError() const { return m_DepthCalibrationError; }
 
   //! Set the event-reconstruction-Error flag
-  void SetEventReconstructionError(bool Flag = true, MString Text = "") { m_EventReconstructionError = Flag;  m_EventReconstructionErrorString = Text; }
+  void SetEventReconstructionError(bool Flag = true, MString Text = "") { m_EventReconstructionError = Flag;  m_EventReconstructionErrorString.push_back(Text); }
   //! Get the event-reconstruction-Error flag
-  bool IsEventReconstructionError() const { return m_EventReconstructionError; }
+  bool HasEventReconstructionError() const { return m_EventReconstructionError; }
 
   // Track Quality Flags
 
   //! Set the Strip Hit Below Threshold quality flag
-  void SetStripHitBelowThreshold_QualityFlag(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = Flag; m_StripHitBelowThresholdString_QualityFlag = Text;}
+  void SetStripHitBelowThreshold_QualityFlag(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = Flag; m_StripHitBelowThresholdString_QualityFlag.push_back(Text);}
   //! Get the Strip Hit Below Threshold quality flag
-  bool IsStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
-
-   //! Track the energy and number of strip hits removed through the threshold cut
-  void AddStripHitBelowThreshold(double Energy) { m_StripHitBelowThreshold_Energy = m_StripHitBelowThreshold_Energy + Energy; m_StripHitBelowThreshold_Number = m_StripHitBelowThreshold_Number + 1; }
-  //! Get total energy removed through threshold cut
-  double GetStripHitBelowThreshold_Energy() const { return m_StripHitBelowThreshold_Energy; }
-  //! Get total number of strip hits removed through threshold cut
-  int GetStripHitBelowThreshold_Number() const { return m_StripHitBelowThreshold_Number;}
+  bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
 
   //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
-  void SetReducedChiSquare(double ReducedChiSquare) { m_ReducedChiSquare = ReducedChiSquare; }
+  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
   //! Return the Reduced Chi^2
-  double GetReducedChiSquare() const { return m_ReducedChiSquare; }
+  double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
   //! Set the Quality of this Event used in Greedy Strip pairing module
-  //! TODO Change name of this variable to be more descriptive
+  //! TODO Change name of this variable to be more descriptive or get rid of Greedy algorithim all together
   void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
   //!Return the Quality of this Event
   double GetEventQuality() const { return m_EventQuality; }
+
 
 
   // Track Vetos
@@ -398,28 +392,28 @@ class MReadOutAssembly : public MReadOutSequence
     
   // Flags indicating bad events:
   bool m_EnergyCalibrationError;
-  MString m_EnergyCalibrationErrorString;
+  vector<MString> m_EnergyCalibrationErrorString;
 
   bool m_StripPairingError;
-  MString m_StripPairingErrorString;
+  vector<MString> m_StripPairingErrorString;
 
   bool m_DepthCalibrationError;
-  MString m_DepthCalibrationErrorString;
+  vector<MString> m_DepthCalibrationErrorString;
  
   bool m_EventReconstructionError;
-  MString m_EventReconstructionErrorString;
+  vector<MString> m_EventReconstructionErrorString;
  
   // Flags indicating the quality of the event: quality warning, but not to be filtered out
   bool m_StripHitBelowThreshold_QualityFlag;
-  MString m_StripHitBelowThresholdString_QualityFlag;
+  vector<MString> m_StripHitBelowThresholdString_QualityFlag;
   double m_StripHitBelowThreshold_Energy;
   int m_StripHitBelowThreshold_Number;
 
   //! Reduced Chi^2 of the Strip Paired Event
-  double m_ReducedChiSquare;
+  double m_StripPairingReducedChiSquare;
 
   //! Quality of this event in Greedy strip pairing
-  //! TODO change variable name...
+  //! TODO change variable name or remove Greedy approach all together
   double m_EventQuality;
 
   //! True if event has been filtered out
