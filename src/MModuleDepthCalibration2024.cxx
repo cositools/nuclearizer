@@ -403,8 +403,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           }
         }
 
-      //cout << "Strip ID :" << LVStripID << " " << HVStripID << endl;
-      //cout << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
+      if (g_Verbosity >= c_Info) cout << m_XmlTag << "Strip ID :" << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
       MVector LocalPosition(Xpos, Ypos, Zpos);
       MVector LocalOrigin(0.0, 0.0, 0.0);
