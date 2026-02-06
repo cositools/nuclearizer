@@ -55,14 +55,8 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Delete Hits
   void DeleteHits();
-  
-  /*
-  //! Set the ID of this event
-  void SetID(unsigned long ID) { m_ID = ID; }
-  //! Return the ID of this event
-  unsigned long GetID() const { return m_ID; }
-  */
-  
+ 
+  //! TODO Scrub all clock/time variables for COSI SMEX 
   //! Set the Frame Counter of this event
   void SetFC(unsigned int FC) { m_FC = FC; }
   //! Return the Frame Counter of this event
@@ -76,12 +70,6 @@ class MReadOutAssembly : public MReadOutSequence
   void SetCL(uint64_t CL) { m_CL = CL;}
   uint64_t GetCL() const { return m_CL;}
 
-  /*
-  //! Set and get the Time of this event
-  void SetTime(MTime Time) { m_Time = Time; }
-  MTime GetTime() const { return m_Time; }
-  */
-  
   //! Set and get the Modified Julian Date of this event
   void SetMJD(double MJD) { m_MJD = MJD; }
   double GetMJD() const { return m_MJD; }
@@ -90,24 +78,25 @@ class MReadOutAssembly : public MReadOutSequence
   void SetTimeUTC(const MTime& TimeUTC) { m_EventTimeUTC = TimeUTC; }
   MTime GetTimeUTC() const { return m_EventTimeUTC; }
   
+  //! TODO Scrub Aspect in nuclearizer for COSI SMEX
   //! Set the aspect
   void SetAspect(MAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
   //! Get the aspect - will be zero if the aspect has not been set!
   MAspect* GetAspect() { return m_Aspect; }
   
-	//! Set and get simulation aspect information
-	void SetGalacticPointingXAxisTheta(double theta){ m_GalacticPointingXAxisTheta = theta; }
-	void SetGalacticPointingXAxisPhi(double phi){ m_GalacticPointingXAxisPhi = phi; }
-	void SetGalacticPointingZAxisTheta(double theta){ m_GalacticPointingZAxisTheta = theta; }
-	void SetGalacticPointingZAxisPhi(double phi){ m_GalacticPointingZAxisPhi = phi; }
+  //! Set and get simulation aspect information
+  void SetGalacticPointingXAxisTheta(double theta){ m_GalacticPointingXAxisTheta = theta; }
+  void SetGalacticPointingXAxisPhi(double phi){ m_GalacticPointingXAxisPhi = phi; }
+  void SetGalacticPointingZAxisTheta(double theta){ m_GalacticPointingZAxisTheta = theta; }
+  void SetGalacticPointingZAxisPhi(double phi){ m_GalacticPointingZAxisPhi = phi; }
 
-	double GetGalacticPointingXAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisTheta;} else{return 0;}}
-	double GetGalacticPointingXAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisPhi;} else{return 0;}}
-	double GetGalacticPointingZAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisTheta;} else{return 0;}}
-	double GetGalacticPointingZAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisPhi;} else{return 0;}}
+  double GetGalacticPointingXAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisTheta;} else{return 0;}}
+  double GetGalacticPointingXAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisPhi;} else{return 0;}}
+  double GetGalacticPointingZAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisTheta;} else{return 0;}}
+  double GetGalacticPointingZAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisPhi;} else{return 0;}}
 
-	void SetSimAspectInfo(bool TF){ m_HasSimAspectInfo = TF; }
-	bool HasSimAspectInfo(){ return m_HasSimAspectInfo; }
+  void SetSimAspectInfo(bool TF){ m_HasSimAspectInfo = TF; }
+  bool HasSimAspectInfo(){ return m_HasSimAspectInfo; }
 
 
   //! Find out if the event contains strip hits in a given detector
@@ -128,11 +117,6 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the trigger flag
   bool GetTrigger() const { return m_Trigger; }
 
-  //! Set the aspect good flag
-  void SetAspectGood(bool AspectGood = true) { m_AspectGood = AspectGood; }
-  //! Return the aspect good flag
-  bool GetAspectGood() const { return m_AspectGood; }
-
   //! Return the number of strip hits
   unsigned int GetNStripHits() const { return m_StripHits.size(); }
   //! Return strip hit i
@@ -143,6 +127,7 @@ class MReadOutAssembly : public MReadOutSequence
   void RemoveStripHit(unsigned int i);
 
   //! Return the number of T Only strip hits
+  //! TODO Is this a hold-over from balloon days?
   unsigned int GetNStripHitsTOnly() const { return m_StripHitsTOnly.size(); }
   //! Return strip hit i
   MStripHit* GetStripHitTOnly(unsigned int i);
@@ -159,7 +144,6 @@ class MReadOutAssembly : public MReadOutSequence
   void AddCrystalHit(MCrystalHit* CrystalHit);
   //! Remove a crystal hit
   void RemoveCrystalHit(unsigned int i);
-
 
   //! Return the number of guardring hits
   unsigned int GetNGuardringHits() const { return m_GuardringHits.size(); }
@@ -179,13 +163,13 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Return the number of simulation hits
   // TODO: Remove - part of m_SimEvent
-  unsigned int GetNHitsSim() const { return m_HitsSim.size(); }
+//  unsigned int GetNHitsSim() const { return m_HitsSim.size(); }
   //! Return simulation hit i
   // TODO: Remove - part of m_SimEvent
-  MHit* GetHitSim(unsigned int i);
+//  MHit* GetHitSim(unsigned int i);
   //! Move hits to simulation hits list
   // TODO: Why ??
-  void MoveHitsToSim() {m_HitsSim = m_Hits; m_Hits.clear();}
+//  void MoveHitsToSim() {m_HitsSim = m_Hits; m_Hits.clear();}
 
   /*
   //! Return the number of simulation interactions
@@ -226,91 +210,61 @@ class MReadOutAssembly : public MReadOutSequence
   list<MDEECrystalHit>& GetDEECrystalHitListReference() { return m_DEECrystalHits; }
 
 
-  //! Return the number of read outs
-  //unsigned int GetNReadOuts() const { return m_ReadOuts.size(); }
-  //! Return read out i - throws an exception of the index is not found
-  //MReadOut& GetReadOut(unsigned int i);
-  //! Add a read out
-  // void AddReadOut(MReadOut& ReadOut) {}
-  //! Remove a read out - does do nothing if the index is not found
-  //void RemoveReadOut(unsigned int i);
+  //Track BD Flags
 
+  //! Set the energy calibration error flag
+  void SetEnergyCalibrationError(MString Text = "") { m_EnergyCalibrationError = true; if (Text != "") { m_EnergyCalibrationErrorString.push_back(Text); }}
+  //! Get the energy calibration error flag
+  bool HasEnergyCalibrationError() const { return m_EnergyCalibrationError; }
+ 
+ //! Set the strip pairing error flag
+  void SetStripPairingError(MString Text = "") { m_StripPairingError = true; if (Text != "") { m_StripPairingErrorString.push_back(Text); }}
+  //! Get the strip pairing error flag
+  bool HasStripPairingError() const { return m_StripPairingError; }
 
+  //! Set the depth calibration error flag
+  void SetDepthCalibrationError(MString Text = "") { m_DepthCalibrationError = true; if (Text != "") { m_DepthCalibrationErrorString.push_back(Text); }}
+  //! Get the depth calibration error flag
+  bool HasDepthCalibrationError() const { return m_DepthCalibrationError; }
 
-  //! Set the aspect-incomplete flag
-  void SetAspectIncomplete(bool Flag = true, MString Text = "") { m_AspectIncomplete = Flag; m_AspectIncompleteString = Text; }
-  //! Get the aspect-incomplete flag
-  bool IsAspectIncomplete() const { return m_AspectIncomplete; }
+  //! Set the event reconstruction error flag
+  void SetEventReconstructionError(MString Text = "") { m_EventReconstructionError = true; if (Text != "") { m_EventReconstructionErrorString.push_back(Text); }}
+  //! Get the event reconstruction error flag
+  bool HasEventReconstructionError() const { return m_EventReconstructionError; }
 
-  //! Set the time-incomplete flag
-  void SetTimeIncomplete(bool Flag = true, MString Text = "") { m_TimeIncomplete = Flag;  m_TimeIncompleteString = Text; }
-  //! Get the time-incomplete flag
-  bool IsTimeIncomplete() const { return m_TimeIncomplete; }
-  
-   //! Set the energy-calibration-incomplete flag for strips without a calibration
-  void SetEnergyCalibrationIncomplete_BadStrip(bool Flag = true, MString Text = "") { m_EnergyCalibrationIncomplete_BadStrip = Flag;  m_EnergyCalibrationIncomplete_BadStripString = Text; }
-  //! Get the energy-calibration-incomplete flag for strips without a calibration
-  bool IsEnergyCalibrationIncomplete_BadStrip() const { return m_EnergyCalibrationIncomplete_BadStrip; }
+  // Track Quality Flags
 
-  //! Set the energy-calibration-incomplete flag
-  void SetEnergyCalibrationIncomplete(bool Flag = true, MString Text = "") { m_EnergyCalibrationIncomplete = Flag;  m_EnergyCalibrationIncompleteString = Text; }
-  //! Get the energy-calibration-incomplete flag
-  bool IsEnergyCalibrationIncomplete() const { return m_EnergyCalibrationIncomplete; }
-
-  //! Set the energy resolution calibration incomplete flag
-  void SetEnergyResolutionCalibrationIncomplete(bool Flag = true, MString Text = "") { m_EnergyResolutionCalibrationIncomplete = Flag; m_EnergyResolutionCalibrationIncompleteString = Text;}
-  //! Get the energy resolution calibration incomplete flag
-  bool IsEnergyResolutionCalibrationIncomplete() const { return m_EnergyResolutionCalibrationIncomplete; }
-  
   //! Set the Strip Hit Below Threshold quality flag
-  void SetStripHitBelowThreshold_QualityFlag(bool Flag = true, MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = Flag; m_StripHitBelowThresholdString_QualityFlag = Text;}
+  void SetStripHitBelowThreshold_QualityFlag(MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = true; if (Text != "") { m_StripHitBelowThresholdString_QualityFlag.push_back(Text); }}
   //! Get the Strip Hit Below Threshold quality flag
-  bool IsStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
+  bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
 
-  //! Track the energy and number of strip hits removed through the threshold cut
-  void AddStripHitBelowThreshold(double Energy) { m_StripHitBelowThreshold_Energy = m_StripHitBelowThreshold_Energy + Energy; m_StripHitBelowThreshold_Number = m_StripHitBelowThreshold_Number + 1; }
-  //! Get total energy removed through threshold cut
-  double GetStripHitBelowThreshold_Energy() const { return m_StripHitBelowThreshold_Energy; }
-  //! Get total number of strip hits removed through threshold cut
-  int GetStripHitBelowThreshold_Number() const { return m_StripHitBelowThreshold_Number;}
+  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
+  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
+  //! Return the Reduced Chi^2
+  double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
- //! Set the strip-pairing-incomplete flag
-  void SetStripPairingIncomplete(bool Flag = true, MString Text = "") { m_StripPairingIncomplete = Flag;  m_StripPairingIncompleteString = Text; }
-  //! Get the strip-pairing-incomplete flag
-  bool IsStripPairingIncomplete() const { return m_StripPairingIncomplete; }
+  //! Set the Quality of this Event used in Greedy Strip pairing module
+  //! TODO Change name of this variable to be more descriptive or get rid of Greedy algorithim all together
+  void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
+  //!Return the Quality of this Event
+  double GetEventQuality() const { return m_EventQuality; }
 
-  //! Set the LLD Event flag
-  void SetLLDEvent(bool Flag = true, MString Text = "") { m_LLDEvent = Flag; m_LLDEventString = Text; }
-  //! Get the LLD Event flag
-  bool IsLLDEvent() const {return m_LLDEvent;}
 
-  //! Set the depth-calibration-incomplete flag
-  void SetDepthCalibrationIncomplete(bool Flag = true, MString Text = "") { m_DepthCalibrationIncomplete = Flag;  m_DepthCalibrationIncompleteString = Text; }
-  //! Get the depth-calibration-incomplete flag
-  bool IsDepthCalibrationIncomplete() const { return m_DepthCalibrationIncomplete; }
+  // Track Vetos
 
-  //! Set the depth-calibration out of range flag
-  void SetDepthCalibration_OutofRange(bool Flag = true, MString Text = "") {m_DepthCalibration_OutofRange = Flag; m_DepthCalibration_OutofRangeString = Text; }
-  //! Get the depth calibration out of range flag
-  bool IsDepthCalibration_OutofRange() const { return m_DepthCalibration_OutofRange; }
+  //! Returns true if any of the "veto" flags have been set
+  bool IsVeto() const;
+
 
   //! Set the filtered-out flag
   void SetFilteredOut(bool Flag = true) { m_FilteredOut = Flag; }
   //! Get the filgtered-out flag
   bool IsFilteredOut() const { return m_FilteredOut; }
 
-  //! Set the event-reconstruction-incomplete flag
-  void SetEventReconstructionIncomplete(bool Flag = true, MString Text = "") { m_EventReconstructionIncomplete = Flag;  m_EventReconstructionIncompleteString = Text; }
-  //! Get the event-reconstruction-incomplete flag
-  bool IsEventReconstructionIncomplete() const { return m_EventReconstructionIncomplete; }
-
-
-  //! Returns true if any of the "veto" flags have been set
-  bool IsVeto() const;
-
-  //! Returns true if none of the "bad" or "incomplete" flags has been set and the event has not been filtered out or rejected
+  //! Returns true if none of the "bad" or "Error" flags has been set and the event has not been filtered out or rejected
   bool IsGood() const;
-  //! Returns true if any of the "bad" or "incomplete" flags has been set
+  //! Returns true if any of the "bad" or "Error" flags has been set
   bool IsBad() const;
 
   //! Set a specific analysis progress
@@ -319,11 +273,6 @@ class MReadOutAssembly : public MReadOutSequence
   bool HasAnalysisProgress(uint64_t Progress) const { return (m_AnalysisProgress & Progress) == Progress ? true : false; }
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
-
-  //! Set the Quality of this Event
-  void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
-  //!Return the Quality of this Event
-  double GetEventQuality() const { return m_EventQuality; }
 
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
@@ -350,11 +299,6 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the MTime corresponding to absolute UTC time
   MTime GetAbsoluteTime() const {return m_EventTimeUTC; }
 
-  //! Set the Reduced Chi^2
-  void SetReducedChiSquare(double ReducedChiSquare) { m_ReducedChiSquare = ReducedChiSquare; }
-  //! Return the Reduced Chi^2
-  double GetReducedChiSquare() const { return m_ReducedChiSquare; }
-
   // protected methods:
  protected:
   //MReadOutAssembly() {};
@@ -371,8 +315,6 @@ class MReadOutAssembly : public MReadOutSequence
 
   // private members:
  private:
-  //! ID of this event
-  // unsigned long m_ID; // in base class
 
   //! Frame Counter of this event
   unsigned int m_FC;
@@ -391,17 +333,14 @@ class MReadOutAssembly : public MReadOutSequence
   //! The aspect information - will be zero if not set!
   MAspect* m_Aspect;
 
-	//Added by Clio:
-	//! The aspect information from the simulation, only used in DEE
-	// (Simulation aspect information doesn't have everything in Aspect packet)
-	double m_GalacticPointingXAxisTheta;
-	double m_GalacticPointingXAxisPhi;
-	double m_GalacticPointingZAxisTheta;
-	double m_GalacticPointingZAxisPhi;
-	bool m_HasSimAspectInfo;
- 
-  //! Quality of this event
-  double m_EventQuality;
+  //Added by Clio:
+  //! The aspect information from the simulation, only used in DEE
+  // (Simulation aspect information doesn't have everything in Aspect packet)
+  double m_GalacticPointingXAxisTheta;
+  double m_GalacticPointingXAxisPhi;
+  double m_GalacticPointingZAxisTheta;
+  double m_GalacticPointingZAxisPhi;
+  bool m_HasSimAspectInfo;
 
   //! Guard ring veto flag
   bool m_GuardRingVeto;
@@ -416,7 +355,7 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_AspectGood;
 
   //! Whether event contains strip hits in given detector
-  bool m_InDetector[12];
+  bool m_InDetector[16];
 
   //! List of strip hits
   vector<MStripHit*> m_StripHits;
@@ -450,43 +389,41 @@ class MReadOutAssembly : public MReadOutSequence
   //! The physical event from event reconstruction
   MPhysicalEvent* m_PhysicalEvent;
     
-  //! Reduced Chi^2 of the Strip Paired Event
-  double m_ReducedChiSquare;
+  // Flags indicating bad events:
 
-  // Flags indicating the quality of the event: incomplete calibration
-  bool m_AspectIncomplete;
-  MString m_AspectIncompleteString;
+  //! Energy calibration error flag
+  bool m_EnergyCalibrationError;
+  //! Energy calibration error string
+  vector<MString> m_EnergyCalibrationErrorString;
 
-  bool m_TimeIncomplete;
-  MString m_TimeIncompleteString;
+  //! String pairing error flag
+  bool m_StripPairingError;
+  //! Strip pairing error string
+  vector<MString> m_StripPairingErrorString;
 
-  bool m_EnergyCalibrationIncomplete_BadStrip;
-  MString m_EnergyCalibrationIncomplete_BadStripString;
-  bool m_EnergyCalibrationIncomplete;
-  MString m_EnergyCalibrationIncompleteString;
+  //! Depth calibration error flag
+  bool m_DepthCalibrationError;
+  //! Depth calibration error string
+  vector<MString> m_DepthCalibrationErrorString;
+ 
+  //! Event reconstruction error flag
+  bool m_EventReconstructionError;
+  //! Event reconstruction error string
+  vector<MString> m_EventReconstructionErrorString;
+ 
+  // Flags indicating the quality of the event: quality warning, but not to be filtered out:
 
-  bool m_EnergyResolutionCalibrationIncomplete;
-  MString m_EnergyResolutionCalibrationIncompleteString;
-
-  bool m_StripPairingIncomplete;
-  MString m_StripPairingIncompleteString;
-
-  bool m_LLDEvent;
-  MString m_LLDEventString;
-
-  bool m_DepthCalibrationIncomplete;
-  MString m_DepthCalibrationIncompleteString;
-  bool m_DepthCalibration_OutofRange;
-  MString m_DepthCalibration_OutofRangeString;
-  
-  // Flags indicating the quality of the event: quality warning, but not to be filtered out
+  //! Strip hit below threshold quality flag
   bool m_StripHitBelowThreshold_QualityFlag;
-  MString m_StripHitBelowThresholdString_QualityFlag;
-  double m_StripHitBelowThreshold_Energy;
-  int m_StripHitBelowThreshold_Number;
+  //! Strip hit below threshold quality string
+  vector<MString> m_StripHitBelowThresholdString_QualityFlag;
 
-  bool m_EventReconstructionIncomplete;
-  MString m_EventReconstructionIncompleteString;
+  //! Reduced Chi^2 of the Strip Paired Event
+  double m_StripPairingReducedChiSquare;
+
+  //! Quality of this event in Greedy strip pairing
+  //! TODO change variable name or remove Greedy approach all together
+  double m_EventQuality;
 
   //! True if event has been filtered out
   bool m_FilteredOut;

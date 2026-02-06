@@ -153,7 +153,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
             int DetID = Tokens[1 + IndexOffset].ToInt(); // Detector ID
             MString Side = Tokens[2 + IndexOffset].ToString(); // side is a string, either 'l' or 'h'
             int StripID = Tokens[3 + IndexOffset].ToInt(); // stripID
-            int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
+            //int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
             double ThresholdKeVFile = Tokens[5 + IndexOffset].ToDouble(); //energy threshold in keV
 
             MReadOutElementDoubleStrip R;
@@ -360,13 +360,12 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
 
     TF1* Fit = m_Calibration[R];
     TF1* FitRes = m_ResolutionCalibration[R];
-    double ADCMod, newADC;
 
     if (Fit == nullptr) {
       if (g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Error: Energy-fit not found for read-out element " << R << endl;
       }
-      Event->SetEnergyCalibrationIncomplete_BadStrip(true);
+      Event->SetEnergyCalibrationError("calibration not found for " + R.ToString());
       ++i; // iterate to next SH
       continue;
 
@@ -402,8 +401,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         if (g_Verbosity >= c_Warning) {
           cout << m_XmlTag << ": Strip Hit below threshold, deleting SH with Energy " << Energy << " keV " << endl;
         }
-        Event->AddStripHitBelowThreshold(Energy);
-        Event->SetStripHitBelowThreshold_QualityFlag(true, to_string(Event->GetStripHitBelowThreshold_Number()) + " SH(s) with total energy " + to_string(Event->GetStripHitBelowThreshold_Energy()));
+        Event->SetStripHitBelowThreshold_QualityFlag("Strip hit removed with energy " + to_string(Energy));
         Event->RemoveStripHit(i);
         delete SH;
         continue; // continue to next SH without iterating i
@@ -417,7 +415,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
           if (g_Verbosity >= c_Error) {
             cout << m_XmlTag << ": Error: Energy Resolution fit not found for read-out element " << R << endl;
           }
-          Event->SetEnergyResolutionCalibrationIncomplete(true);
+	  // There is not expected to be a time in which the energy resolution calibration is not defined when the energy calibration itself is. Therefore, don't need a seperate BD flag for this.
         } else {
           double EnergyResolution = FitRes->Eval(Energy);
           SH->SetEnergyResolution(EnergyResolution);

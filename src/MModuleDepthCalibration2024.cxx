@@ -140,19 +140,26 @@ bool MModuleDepthCalibration2024::Initialize()
           m_YPitches[DetID] = strip->GetPitchY();
           m_NXStrips[DetID] = strip->GetNStripsX();
           m_NYStrips[DetID] = strip->GetNStripsY();
-          cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
-          cout << "Detector thickness: " << m_Thicknesses[DetID] << endl;
-          cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
-          cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
-          cout << "X strip pitch: " << m_XPitches[DetID] << endl;
-          cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
+
+          if (g_Verbosity >= c_Info) {
+            cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
+            cout << "Detector thickness: " << m_Thicknesses[DetID] << endl;
+            cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
+            cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
+            cout << "X strip pitch: " << m_XPitches[DetID] << endl;
+            cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
+          }
           m_DetectorIDs.push_back(DetID);
           m_Detectors[DetID] = det;
         } else {
-          cout<<"ERROR in MModuleDepthCalibration2024::Initialize: Found a duplicate detector: "<<det_name<<endl;
+          if (g_Verbosity >= c_Error) {
+            cout<<"ERROR in MModuleDepthCalibration2024::Initialize: Found a duplicate detector: "<<det_name<<endl;
+          }
         }
       } else {
-        cout<<"ERROR in MModuleDepthCalibration2024::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
+        if (g_Verbosity >= c_Error) {
+          cout<<"ERROR in MModuleDepthCalibration2024::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
+        }
       }
     }
   }
@@ -207,7 +214,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
   
   if (Event->GetGuardRingVeto()==true) {
     
-    Event->SetDepthCalibrationIncomplete();
+    Event->SetDepthCalibrationError("GR Veto");
     return false;
   
   } else {
@@ -224,7 +231,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
       // GRADE=-1 is an error. Break from the loop and continue.
       if ( Grade < 0 ){
         H->SetNoDepth();
-        Event->SetDepthCalibrationIncomplete();
+        Event->SetDepthCalibrationError("Error in depth calibration");
         if (Grade == -1) {
           ++m_ErrorSH;
         } else if (Grade == -2) {
@@ -234,7 +241,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         }
       } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
         H->SetNoDepth();
-        Event->SetDepthCalibrationIncomplete();
+        Event->SetDepthCalibrationError("Multiple hits on single strip");
         if (Grade==5) {
           ++m_Error5;
         } else if (Grade==6) {
@@ -285,24 +292,24 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         double LVTiming = LVSH->GetTiming();
         double HVTiming = HVSH->GetTiming();
 
-        // If there aren't coefficients loaded, then calibration is incomplete.
+        // If there aren't coefficients loaded, then report a depth calibration error.
         if( Coeffs == nullptr ){
           //set the bad flag for depth
           H->SetNoDepth();
-          Event->SetDepthCalibrationIncomplete();
+          Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
         } else if (CTDVec.size() == 0) {
             cout << "Empty CTD vector" << endl;
             H->SetNoDepth();
-            Event->SetDepthCalibrationIncomplete();
+            Event->SetDepthCalibrationError("No calibration coefficients");
         } else if (DepthVec.size() == 0) {
             cout << "Empty Depth vector" << endl;
             H->SetNoDepth();
-            Event->SetDepthCalibrationIncomplete();
+            Event->SetDepthCalibrationError("No calibration coefficients");
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
             ++m_Error3;
             H->SetNoDepth();
-            Event->SetDepthCalibrationIncomplete();
+            Event->SetDepthCalibrationError("No timing");
         } else {
           
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
@@ -320,7 +327,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           //if the CTD is out of range, check if we should reject the event.
           if( (CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise)) ){
             H->SetNoDepth();
-            Event->SetDepthCalibrationIncomplete();
+            Event->SetDepthCalibrationError("Out of Range");
             ++m_Error2;
           }
 
@@ -355,7 +362,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
             Zpos = mean_depth;
 
             // Add the depth to the GUI histogram.
-            if (Event->IsStripPairingIncomplete()==false) {
+            if (Event->HasStripPairingError()==false) {
               if (HasExpos() == true) {
                 m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
               }
@@ -475,7 +482,9 @@ std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int PixelCode)
     if( m_Coeffs.count(PixelCode) > 0 ){
       return &m_Coeffs[PixelCode];
     } else {
-      cout << "MModuleDepthCalibration2024::GetPixelCoeffs: cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
+      if (g_Verbosity >= c_Warning) {
+        cout << "MModuleDepthCalibration2024::GetPixelCoeffs: cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
+      }
       return nullptr;
     }
   } else {

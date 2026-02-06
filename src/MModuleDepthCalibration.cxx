@@ -301,7 +301,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
 			}
 */
-			//Event->SetDepthCalibrationIncomplete(); //AWL1x1
+			//Event->SetDepthCalibrationError(); //AWL1x1
 		
 		} else if( (XStrips.size() == 2) && (YStrips.size() == 2) ){
 			//in this case use depth from dominant strips but use weighted X and Y positions
@@ -328,7 +328,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			GlobalPosition = m_DetectorVolumes[DetID]->GetPositionInWorldVolume(LocalPosition);
 			H->SetPosition(GlobalPosition); H->SetPositionResolution(PositionResolution);
 
-			//Event->SetDepthCalibrationIncomplete(); //AWL1x1
+			//Event->SetDepthCalibrationError(); //AWL1x1
 
 		} else {
 			//set too many SH bad flag
@@ -339,24 +339,24 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 			//good
 			++m_NoError;
 		} else if( Error == 1 ){
-			Event->SetDepthCalibrationIncomplete();
+			Event->SetDepthCalibrationError();
 			++m_Error1;
 		} else if( Error == 2 ){
-			Event->SetDepthCalibrationIncomplete();
+			Event->SetDepthCalibrationError();
 			++m_Error2;
 		} else if( Error == 3){
 			//Hits that were missing timing information
 			//EHist->Fill(H->GetEnergy());
 			//don't set the globally bad flag
-			//Event->SetDepthCalibrationIncomplete();
-			//Event->SetDepthCalibrationIncomplete(); //AWL1x1
+			//Event->SetDepthCalibrationError();
+			//Event->SetDepthCalibrationError(); //AWL1x1
 			++m_Error3;
 		} else if( Error == 4){
 			//hit was bad because of StripHitMultipleTimes flag from strip pairing
 			++m_Error4;
-			Event->SetDepthCalibrationIncomplete();
+			Event->SetDepthCalibrationError();
 		} else if( Error == -1){
-			Event->SetDepthCalibrationIncomplete();
+			Event->SetDepthCalibrationError();
 			++m_ErrorSH;
 		}
 

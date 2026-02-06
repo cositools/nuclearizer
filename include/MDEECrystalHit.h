@@ -26,7 +26,8 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MCrystalHit.h"
-#include "MReadOutElement.h"
+// #include "MReadOutElement.h"
+#include "MReadOutElementVoxel3D.h"
 
 // Forward declarations:
 
@@ -55,8 +56,8 @@ struct MDEECrystalHit {
   MVector m_SimulatedPosition; // original: Position
   //! The simulated position in the detector
   MVector m_SimulatedPositionInDetector;
-  //! Detector ID  (1: -X, 2:+X, 3: -Y, 4:+Y, 5:Z )
-  unsigned int m_DetectorID;
+  //! Detector ID  (X0, X1, Y0, Y1, Z0, Z1)
+  MString m_DetectorID;
   //! Crystal ID
   unsigned int m_CrystalID;
   //! The simulated voxel (X, Y, Z) IDs
@@ -71,7 +72,7 @@ struct MDEECrystalHit {
   // The shield data - which can be in process of being created
 
   //! The read-out element
-  MReadOutElement m_ROE;
+  MReadOutElementVoxel3D m_ROE;
 
   //! A unique lookup ID of the crystal hit
   unsigned int m_ID;

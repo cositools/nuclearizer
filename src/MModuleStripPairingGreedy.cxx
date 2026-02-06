@@ -333,7 +333,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 	//flag hits without enough strips
 	for (int det=0; det<12; det++){
 		if (notEnoughStrips[det] == 1 || notEnoughStrips[det] == 2){
-			Event->SetStripPairingIncomplete(true,"bad number of strip hits");
+			Event->SetStripPairingError("bad number of strip hits");
 			break;
 		}
 	}
@@ -341,19 +341,19 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 
 	for (unsigned int h = 0; h < Event->GetNHits(); h++){
 		if (Event->GetHit(h)->GetStripHitMultipleTimesX() == true || Event->GetHit(h)->GetStripHitMultipleTimesY() == true){
-			Event->SetStripPairingIncomplete(true,"multiple hits per strip");
+			Event->SetStripPairingError("multiple hits per strip");
 		}
 /*
 		if (Event->GetHit(h)->GetChargeSharing() == true){
-			Event->SetStripPairingIncomplete(true,"charge sharing");
+			Event->SetStripPairingError("charge sharing");
 		}
 */
 /*			int detID = Event->GetHit(h)->GetStripHit(0)->GetDetectorID();
 			if (chi_sq[detID] <= 25){
-				Event->SetStripPairingIncomplete(true,"good pairing, multiple hits per strip");
+				Event->SetStripPairingError("good pairing, multiple hits per strip");
 			}
 			else {
-				Event->SetStripPairingIncomplete(true,"bad pairing, multiple hits per strip");
+				Event->SetStripPairingError("bad pairing, multiple hits per strip");
 			}
 */		
 	}
@@ -399,12 +399,12 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 */
     // Difference must be more than 10 keV for cross talk + 2 sigma energy resolution on *both* sides
 //		if (Event->GetHit(h)->GetStripHitMultipleTimes() == true){
-//			Event->SetStripPairingIncomplete(true,"multiple hits per strip");
+//			Event->SetStripPairingError("multiple hits per strip");
 //		}
 
     if (Difference > 2*pUncertainty + 2*nUncertainty + 20) {
 			if (Event->GetHit(h)->GetStripHitMultipleTimesX() == false && Event->GetHit(h)->GetStripHitMultipleTimesY() == false){
-		  	Event->SetStripPairingIncomplete(true, "bad pairing");
+		  	Event->SetStripPairingError("bad pairing");
 			}
 /*			if (nHits[0] != 0 && nHits[1] != 0){
 				PrintXYStripsHitOrig();
@@ -427,7 +427,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 
 //			}
 //			else{
-//				Event->SetStripPairingIncomplete(true,"multiple hits per strip");
+//				Event->SetStripPairingError("multiple hits per strip");
 //			}
 
 
@@ -438,7 +438,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
     }
 		//flag events with charge sharing
 //		if (Event->GetHit(h)->GetChargeSharing()){
-//			Event->SetStripPairingIncomplete(true,"charge sharing");
+//			Event->SetStripPairingError("charge sharing");
 //		}
   }
 //	}  
@@ -455,7 +455,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
   }
 
 /*
-	if (Event->GetNHits()==0 && Event->IsStripPairingIncomplete() == false){
+	if (Event->GetNHits()==0 && Event->IsStripPairingError() == false){
 		for (unsigned int sh=0; sh<Event->GetNStripHits(); sh++){
 			MStripHit* striphit = Event->GetStripHit(sh);
 			cout << striphit->GetDetectorID() << '\t';
@@ -468,7 +468,7 @@ bool MModuleStripPairingGreedy::AnalyzeEvent(MReadOutAssembly* Event){
 */
 
   if (m_StripPairingFailed != "") {
-    Event->SetStripPairingIncomplete(true, m_StripPairingFailed);
+    Event->SetStripPairingError(m_StripPairingFailed);
   }
 
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);

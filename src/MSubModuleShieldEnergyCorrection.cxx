@@ -96,39 +96,39 @@ void MSubModuleShieldEnergyCorrection::Clear()
 
 bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Main data analysis routine, which updates the event to a new level
+  // // Main data analysis routine, which updates the event to a new level
 
-  // Set the energy
-  list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
-  for (MDEECrystalHit& CH : Hits) {
+  // // Set the energy
+  // list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
+  // for (MDEECrystalHit& CH : Hits) {
 
-    double true_energy = CH.m_SimulatedEnergy;
-    int det_id = CH.m_DetectorID;
-    int crystal_id = CH.m_CrystalID;
+  //   double true_energy = CH.m_SimulatedEnergy;
+  //   int det_id = CH.m_DetectorID;
+  //   int crystal_id = CH.m_CrystalID;
 
-    MVector voxel_id = CH.m_VoxelInDetector;
+  //   MVector voxel_id = CH.m_VoxelInDetector;
 
-    double shield_corrected_centroid = NoiseShieldEnergyCentroid(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
-    double shield_FWHM_value = NoiseShieldEnergyFWHM(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
+  //   double shield_corrected_centroid = NoiseShieldEnergyCentroid(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
+  //   double shield_FWHM_value = NoiseShieldEnergyFWHM(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
 
-    double shield_sigma = shield_FWHM_value / 2.35;
-    double corrected_energy = m_Random.Gaus(shield_corrected_centroid, shield_sigma);
+  //   double shield_sigma = shield_FWHM_value / 2.35;
+  //   double corrected_energy = m_Random.Gaus(shield_corrected_centroid, shield_sigma);
 
-    CH.m_Energy = corrected_energy;
-  }
+  //   CH.m_Energy = corrected_energy;
+  // }
 
-  // Merge hits:
-  for (auto IterLV1 = Hits.begin(); IterLV1 != Hits.end(); ++IterLV1) {
-    auto IterLV2 = std::next(IterLV1);
-    while (IterLV2 != Hits.end()) {
-      if (IterLV1->m_ROE == IterLV2->m_ROE) {
-        IterLV1->m_Energy += IterLV2->m_Energy;
-        IterLV2 = Hits.erase(IterLV2);
-      } else {
-        ++IterLV2;
-      }
-    }
-  }
+  // // Merge hits:
+  // for (auto IterLV1 = Hits.begin(); IterLV1 != Hits.end(); ++IterLV1) {
+  //   auto IterLV2 = std::next(IterLV1);
+  //   while (IterLV2 != Hits.end()) {
+  //     if (IterLV1->m_ROE == IterLV2->m_ROE) {
+  //       IterLV1->m_Energy += IterLV2->m_Energy;
+  //       IterLV2 = Hits.erase(IterLV2);
+  //     } else {
+  //       ++IterLV2;
+  //     }
+  //   }
+  // }
 
   return true;
 }

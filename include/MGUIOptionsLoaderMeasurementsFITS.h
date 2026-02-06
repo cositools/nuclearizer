@@ -1,7 +1,7 @@
 /*
- * MGUIOptionsEventFilter.h
+ * MGUIOptionsLoaderMeasurementsFITS.h
  *
- * Copyright (C) 2008-2010 by Jau-Shian Liang.
+ * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsEventFilter__
-#define __MGUIOptionsEventFilter__
+#ifndef __MGUIOptionsLoaderMeasurementsFITS__
+#define __MGUIOptionsLoaderMeasurementsFITS__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -23,33 +23,33 @@
 #include <TObjArray.h>
 #include <TGFrame.h>
 #include <TGButton.h>
-#include <TGButtonGroup.h>
 #include <MString.h>
 #include <TGClient.h>
-#include <TGNumberEntry.h>
-#include <TGTextEntry.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MGUIERBList.h"
-#include "MModule.h"
+#include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
 
+// Nuclearizer libs:
+#include "MModule.h"
+
+
 // Forward declarations:
-class MGUIEFileSelector;
-class MGUIEMinMaxEntry;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsEventFilter : public MGUIOptions
+//! UI settings for the FITS measurements loader
+class MGUIOptionsLoaderMeasurementsFITS : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsEventFilter(MModule* Module);
+  MGUIOptionsLoaderMeasurementsFITS(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsEventFilter();
+  virtual ~MGUIOptionsLoaderMeasurementsFITS();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -66,29 +66,17 @@ class MGUIOptionsEventFilter : public MGUIOptions
 
   // protected members:
  protected:
-  //! The detector IDs as a string
-  TGTextEntry* m_Detectors;
-  //! The total energy selection
-  MGUIEMinMaxEntry* m_TotalEnergy;
-
-  //! The number of LV-strips
-  MGUIEMinMaxEntry* m_LVStrips;
-  //! The number of HV-strips
-  MGUIEMinMaxEntry* m_HVStrips;
-
-  //! The number of hits
-  MGUIEMinMaxEntry* m_Hits;
-    
-  //! Strip Pairing Reduced Chi Square Selection
-  MGUIEMinMaxEntry* m_StripPairingReducedChiSquareWindow;
 
   // private members:
  private:
+  //! Select which FITS file to load
+  MGUIEFileSelector* m_FileSelectorFITS;
+
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsEventFilter, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderMeasurementsFITS, 1) // basic class for dialog windows
 #endif
 
 };
