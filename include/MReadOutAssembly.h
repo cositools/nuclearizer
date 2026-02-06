@@ -251,7 +251,6 @@ class MReadOutAssembly : public MReadOutSequence
   double GetEventQuality() const { return m_EventQuality; }
 
 
-
   // Track Vetos
 
   //! Returns true if any of the "veto" flags have been set
