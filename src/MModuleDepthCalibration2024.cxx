@@ -297,7 +297,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
           MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
           MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
 
-          //find the intercept of the two dominate strips based on the mask metrology, and update Xpos and Ypos	  
+          // Find the intercept of the two dominate strips based on the mask metrology, and update Xpos and Ypos	  
           vector<double> inter = GetStripIntersection(R_LV, R_HV);
           Xpos = inter[0];
           Ypos = inter[1];
@@ -322,7 +322,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
         // If there aren't coefficients loaded, then report a depth calibration error.
         if( Coeffs == nullptr ){
-          //set the bad flag for depth
+          // Set the bad flag for depth
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
@@ -390,7 +390,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 
             Zsigma =  sqrt(depth_var/prob_sum);
             Zpos = mean_depth;
-            //Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
+            // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
 
             // Add the depth to the GUI histogram.
             if (Event->HasStripPairingError()==false) {
@@ -610,7 +610,7 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FileName)
 
   SplineFile.Close();
 
-  //make last spline
+  // Make last spline
   if (DepthVec.size() > 0) {
     Result &= AddDepthCTD(DepthVec, CTDArr, DetID, m_DepthGrid, m_CTDMap, m_SplineMap, 1000);
   }
@@ -625,7 +625,7 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FileName)
 
 bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FileName)
 {
-  //Read the Mask Metrology File
+  // Read the Mask Metrology File
   // Det ID, Side (l,h), Strip ID (0-63), x_mm, y_mm, z_mm, roll_deg, pitch_deg, yaw_deg
   MFile MetrologyFile;
   if (MetrologyFile.Open(FileName) == false) {
@@ -639,14 +639,14 @@ bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FileName)
     else {
       std::vector<MString> Tokens = Line.Tokenize(",");
       if (Tokens.size() == 9) {
-        //Define the readout element to track det ID, strip ID, and lv/hv
+        // Define the readout element to track det ID, strip ID, and lv/hv
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(Tokens[0].ToInt());
         R.IsLowVoltageStrip((Tokens[1].ToString() == "p") || (Tokens[1].ToString() == "l"));
         R.SetStripID(Tokens[2].ToInt());
-        double Strip_MetX = Tokens[3].ToDouble()/10; //convert to cm
-        double Strip_MetY = Tokens[4].ToDouble()/10; //convert to cm
-        double Strip_MetZ = Tokens[5].ToDouble()/10; //convert to cm
+        double Strip_MetX = Tokens[3].ToDouble()/10; // convert to cm
+        double Strip_MetY = Tokens[4].ToDouble()/10; // convert to cm
+        double Strip_MetZ = Tokens[5].ToDouble()/10; // convert to cm
         double Strip_Roll = Tokens[6].ToDouble();
         double Strip_Pitch = Tokens[7].ToDouble();
         double Strip_Yaw = Tokens[8].ToDouble();
@@ -654,7 +654,7 @@ bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FileName)
         maskmet.push_back(Strip_MetX); maskmet.push_back(Strip_MetY); maskmet.push_back(Strip_MetZ); 
         maskmet.push_back(Strip_Roll); maskmet.push_back(Strip_Pitch); maskmet.push_back(Strip_Yaw); 
 
-        //make the map that defines the metrology info for each readout element
+        // Make the map that defines the metrology info for each readout element
         m_MaskMetrology[R] = maskmet;
       } else {
         cout << "ERROR in MModuleDepthCalibration2024::LoadMaskMetrologyFile: incorrect number of tokens in the file." << endl;
@@ -752,7 +752,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
     }
   }
 
-  // if the same strip has multiple hits, this is a bad grade.
+  // If the same strip has multiple hits, this is a bad grade.
   bool MultiHitX = H->GetStripHitMultipleTimesX();
   bool MultiHitY = H->GetStripHitMultipleTimesY();
   if (MultiHitX || MultiHitY) {
@@ -904,7 +904,7 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
     vector<double> CTD = CTDArr[i];
     vector<double> NewCTD;
   
-    //first extrapolate the lower side
+    // First extrapolate the lower side
     double dy, m, b, newy;
     dy = CTD[1] - CTD[0];
     m = dy / dx_low;
@@ -912,7 +912,7 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
     newy = m*newx_low + b;
     CTD.insert(CTD.begin(), newy);
 
-    //next extrapolate the upper side
+    // Next extrapolate the upper side
     dy = CTD[N-1] - CTD[N-2];
     m = dy / dx_high;
     b = CTD[N-1] - m*Depth[N-2];
