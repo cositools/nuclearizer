@@ -47,6 +47,7 @@ using namespace std;
 #include "MCalibratorEnergyPointwiseLinear.h"
 #include "MGUIOptionsEnergyCalibrationUniversal.h"
 #include "MGUIExpoEnergyCalibration.h"
+#include "MGUIExpoPlotSpectrum.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,6 +94,9 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   m_SlowThresholdCutMode = MSlowThresholdCutModes::e_Ignore;
   m_SlowThresholdCutFixedValue = 15;
   m_SlowThresholdCutFileName = "";
+  
+  // Nearest Neighbor threshold (-1000 because we don't want to default to cut neg values) 
+  m_NearestNeighborThreshold = -1000.0;
 
 }
 
@@ -119,6 +123,12 @@ void MModuleEnergyCalibrationUniversal::CreateExpos()
   m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
   m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoEnergyCalibration);
+  
+  // Set the histogram display for updating plotting
+  m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
+  m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
+  m_Expos.push_back(m_ExpoSpectrum);
+  
 }
 
 
@@ -375,28 +385,34 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
       double Threshold = 0; // 0 means ignore
 
       Energy = Fit->Eval(SH->GetADCUnits());
-
-      if (Energy < 0) {
-        Energy = 0; // If the calibrated energy is less than 0, force it to be 0.
-      }
       
-      if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_Fixed) { //check if user input threshold is enabled (one value applied to all strips)
-        Threshold = m_SlowThresholdCutFixedValue;
-      } else if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_File) { //check if threshold file is enabled (unique value applied to each strip)
-        double ThresholdFromFile = m_ThresholdMap[R]; // if file enabled, declare value from map
+      // Determine the threshold to apply to the hit (either the nearest neighbor cut (for nearest neighbor hits) or the slow threshold cut (for strip hits)
+      if (SH->IsNearestNeighbor() == true) {
+        // Get the value user typed in the box (for example 6.0 keV)
+        // TODO(@RobinAnthonyPetersen): Nearest Neighbor threhsold cut subject to change pending more analysis
+        if (m_NearestNeighborCutMode == MNearestNeighborCutModes::e_Fixed) {
+          Threshold = m_NearestNeighborThreshold;
+        }
+      } else { // If not Nearest Neighbor, then it's a triggered strip
+        
+        if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_Fixed) { //check if user input threshold is enabled (one value applied to all strips)
+          Threshold = m_SlowThresholdCutFixedValue;
+        } else if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_File) { //check if threshold file is enabled (unique value applied to each strip)
+          double ThresholdFromFile = m_ThresholdMap[R]; // if file enabled, declare value from map
 
-        if (ThresholdFromFile == 0) {
-          if (g_Verbosity >= c_Error) {
-            cout << m_XmlTag << ": Error: Threshold not found for read-out element " << R << endl;
+          if (ThresholdFromFile == 0) {
+            if (g_Verbosity >= c_Error) {
+              cout << m_XmlTag << ": Error: Threshold not found for read-out element " << R << endl;
+            }
+            const double DefaultSlowThreshold = 15.0;
+            Threshold = DefaultSlowThreshold; // set default threshold if threshold not found
+          } else {
+            Threshold = ThresholdFromFile; // set threshold variable to value found in map
           }
-          const double DefaultSlowThreshold = 15.0;
-          Threshold = DefaultSlowThreshold; // set default threshold if threshold not found
-        } else {
-          Threshold = ThresholdFromFile; // set threshold variable to value found in map
         }
       }
 
-      //! Remove SH for any energy value below the established threshold (0 is default)
+      // Remove SH for any energy value below the established threshold (0 is default)
       if (Energy < Threshold) {
         if (g_Verbosity >= c_Warning) {
           cout << m_XmlTag << ": Strip Hit below threshold, deleting SH with Energy " << Energy << " keV " << endl;
@@ -423,6 +439,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         if (R.IsLowVoltageStrip() == true) { // check voltage side to plot only LV hits to the Expo histogram
           if (HasExpos() == true) {
             m_ExpoEnergyCalibration->AddEnergy(Energy);
+            m_ExpoSpectrum->AddEnergyAfter(Energy, SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
           }
         }
         if (g_Verbosity >= c_Info) {

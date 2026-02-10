@@ -90,11 +90,23 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
   TGRadioButton* m_SlowThresholdCutRBFile;
   //! The slow threshold cut file selector
   MGUIEFileSelector* m_SlowThresholdCutFileSelector;
+  
+  //! Radio button for ignoring the threshold cut for Nearest Neighbors
+  TGRadioButton* m_SlowThresholdCutNearestNeighborRBIgnore;
+  //! Radio button for using a fixed threshold cut for Nearest Neighbors
+  TGRadioButton* m_SlowThresholdCutNearestNeighborRBFixed;
+  //! The threshold cut entry box for Nearest Neighbors
+  MGUIEEntry* m_SlowThresholdCutNearestNeighborFixedValue;
 
 
   //! IDs of radio buttons
   //! The numbers should be identical to MSlowThresholdCutModes
-  enum RBButtonIDs { c_SlowThresholdIgnore = 0, c_SlowThresholdFixed, c_SlowThresholdFile };
+  enum RBButtonIDs { c_SlowThresholdIgnore = 0,
+    c_SlowThresholdFixed,
+    c_SlowThresholdFile,
+    c_SlowThresholdNearestNeighborIgnore = 100,
+    c_SlowThresholdNearestNeighborFixed};
+
 
 #ifdef ___CLING___
  public:

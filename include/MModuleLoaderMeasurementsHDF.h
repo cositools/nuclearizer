@@ -144,6 +144,11 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
+  
+  //! Enable/Disable including nearest neighbors
+  bool GetIncludeNearestNeighbor() const { return m_IncludeNearestNeighbor; }
+  //! Set nearest neighbor variable
+  void SetIncludeNearestNeighbor(bool Include) { m_IncludeNearestNeighbor = Include; }
 
 
   // protected methods:
@@ -225,6 +230,9 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   //! The strip map
   MStripMap m_StripMap;
+  
+  //! Variable that deteremines if the user wants to include Nearest Neighbors
+  bool m_IncludeNearestNeighbor;
 
 #ifdef ___CLING___
  public:

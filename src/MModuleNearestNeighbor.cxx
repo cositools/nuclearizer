@@ -78,6 +78,7 @@ MModuleNearestNeighbor::MModuleNearestNeighbor() : MModule()
 
   // Can we use multiple instances of this class
   m_AllowMultipleInstances = true;
+
 }
 
 
@@ -106,20 +107,9 @@ bool MModuleNearestNeighbor::Initialize()
 
 bool MModuleNearestNeighbor::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // For the time being remove all next neighbor hits
-
-  for (unsigned int i = 0; i < Event->GetNStripHits();) {
-    MStripHit* SH = Event->GetStripHit(i);
-    if (SH->IsNearestNeighbor() == true) {
-      Event->RemoveStripHit(i);
-      delete SH;
-    } else {
-      ++i;
-    }
-  }
-
-  Event->SetAnalysisProgress(MAssembly::c_NearestNeighbor);
-
+  // We used to process NN hits here.
+  // Now, the HDF loader handles this.
+  // We return true so the pipeline continues without doing anything.
   return true;
 }
 

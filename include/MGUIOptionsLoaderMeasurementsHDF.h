@@ -77,6 +77,9 @@ class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
 
   //! Select which file to load
   MGUIEFileSelector* m_FileSelectorStripMap;
+  
+  //! Check the button to include Nearest Neighbors
+  TGCheckButton* m_IncludeNearestNeighbor;
 
 
 

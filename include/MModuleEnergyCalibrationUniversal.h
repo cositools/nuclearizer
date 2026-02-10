@@ -30,6 +30,7 @@
 #include "MModule.h"
 #include "MCalibratorEnergy.h"
 #include "MGUIExpoEnergyCalibration.h"
+#include "MGUIExpoPlotSpectrum.h"
 
 // Forward declarations:
 
@@ -44,6 +45,13 @@ enum class MSlowThresholdCutModes : int
   e_Ignore = 0,
   e_Fixed = 1,
   e_File = 2
+};
+
+//! Definition of the Nearest Neighbor modes
+enum class MNearestNeighborCutModes : int
+{
+  e_Ignore = 100,
+  e_Fixed = 101
 };
 
 
@@ -82,8 +90,19 @@ class MModuleEnergyCalibrationUniversal : public MModule
   void SetSlowThresholdCutFileName(const MString& SlowThresholdCutFileName) { m_SlowThresholdCutFileName = SlowThresholdCutFileName; }
   //! Get the slow threshold cut calibration file name
   MString GetSlowThresholdCutFileName() const {return m_SlowThresholdCutFileName; }
- 
+  
+  // Nearest Neighbors
+  //! Set the Nearest Neighbor mode
+  void SetNearestNeighborCutMode(const MNearestNeighborCutModes& Mode) { m_NearestNeighborCutMode = Mode; }
+  //! Get the Nearest Neighbor mode
+  MNearestNeighborCutModes GetNearestNeighborCutMode() const { return m_NearestNeighborCutMode; }
 
+  //! Set the threshold value for Nearest Neighbors
+  void SetNearestNeighborThreshold(double Threshold) { m_NearestNeighborThreshold = Threshold; }
+  //! Get the threshold value for Nearest Neighbors
+  double GetNearestNeighborThreshold() const { return m_NearestNeighborThreshold; }
+ 
+ 
   //! Create the expos
   virtual void CreateExpos();
   
@@ -135,12 +154,21 @@ class MModuleEnergyCalibrationUniversal : public MModule
 
   //! The slow threshold cut file name
   MString m_SlowThresholdCutFileName;
+  
+  //! The Nearest Neighbor cut mode
+  MNearestNeighborCutModes m_NearestNeighborCutMode;
+    
+  //! The Nearest Neighbor threshold value
+  double m_NearestNeighborThreshold; 
 
 
   // private members:
  private:
   //! A GUI to display the final energy histogram
   MGUIExpoEnergyCalibration* m_ExpoEnergyCalibration;
+  
+  //! Updated GUI to display the energy histogram
+  MGUIExpoPlotSpectrum* m_ExpoSpectrum;
    
   //! Calibrators arranged by detectors
   //vector<vector<MCalibratorEnergy*> > m_Calibrators;
