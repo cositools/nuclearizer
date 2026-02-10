@@ -100,7 +100,7 @@ class MModuleLoaderMeasurementsFITS : public MModuleLoaderMeasurements
   long m_TotalRows;
 
   //! Batch size for reading FITS data
-  static const long m_BatchSize = 100;
+  const long m_BatchSize = 100;
 
   //! Current batch start row
   long m_BatchStartRow = 1;
