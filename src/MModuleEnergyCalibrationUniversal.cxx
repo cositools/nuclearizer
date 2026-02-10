@@ -95,6 +95,7 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   m_SlowThresholdCutFileName = "";
   
   // Nearest Neighbor threshold (-1000 because we don't want to default to cut neg values) 
+  m_NearestNeighborCutMode = MNearestNeighborCutModes::e_Ignore;
   m_NearestNeighborThreshold = -1000.0;
 
 }
@@ -375,19 +376,33 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
 
     } else {
 
-      double Energy = 0; // declare energy variable
-      double Threshold = 0; // 0 means ignore
+      double Energy = 0;
+      double Threshold; // No default value here, we set it below (different for strips and nearest neighbors)
 
       Energy = Fit->Eval(SH->GetADCUnits());
       
-      // Determine the threshold to apply to the hit (either the nearest neighbor cut (for nearest neighbor hits) or the slow threshold cut (for strip hits)
+      // TODO(@RobinAnthonyPetersen): Determine if we want to force negative energy values to be zero or not
+      // If the calibrated energy is less than 0, force it to be 0.
+      //if (Energy < 0) {
+      //  Energy = 0;
+      //}
+      
       if (SH->IsNearestNeighbor() == true) {
-        // Get the value user typed in the box (for example 6.0 keV)
-        // TODO(@RobinAnthonyPetersen): Nearest Neighbor threhsold cut subject to change pending more analysis
+        // If nothing is selected, we set thresholds to zero
+        // Threshold = 0.0; // But keeping negative values for now
+        // If nothing is selected, we keep negative nearest neighbors
+        Threshold = -100.0;
+        
+        // Otherwise, if the user inputs a value, we use that threshold
         if (m_NearestNeighborCutMode == MNearestNeighborCutModes::e_Fixed) {
+          // Get the value user typed in the box (for example 6.0 keV)
+          // TODO(@RobinAnthonyPetersen): Nearest Neighbor threhsold cut subject to change pending more analysis
           Threshold = m_NearestNeighborThreshold;
         }
       } else { // If not Nearest Neighbor, then it's a triggered strip
+        
+        // Set the default slow threshold
+        Threshold = 0.0;
         
         if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_Fixed) { //check if user input threshold is enabled (one value applied to all strips)
           Threshold = m_SlowThresholdCutFixedValue;
@@ -405,7 +420,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
           }
         }
       }
-
+  
       // Remove SH for any energy value below the established threshold (0 is default)
       if (Energy < Threshold) {
         if (g_Verbosity >= c_Warning) {
@@ -544,6 +559,14 @@ bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
   if (SlowThresholdCutFileNameNode != nullptr) {
     m_SlowThresholdCutFileName = SlowThresholdCutFileNameNode->GetValue();
   }
+  MXmlNode* NNCutModeNode = Node->GetNode("NearestNeighborCutMode");
+  if (NNCutModeNode != nullptr) {
+    m_NearestNeighborCutMode = static_cast<MNearestNeighborCutModes>(NNCutModeNode->GetValueAsInt());
+  }
+  MXmlNode* NearestNeighborThresholdNode = Node->GetNode("NearestNeighborThreshold");
+  if (NearestNeighborThresholdNode != nullptr) {
+    m_NearestNeighborThreshold = NearestNeighborThresholdNode->GetValueAsDouble();
+  }
 
   return true;
 }
@@ -561,6 +584,8 @@ MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   new MXmlNode(Node, "SlowThresholdCutMode", static_cast<int>(m_SlowThresholdCutMode));
   new MXmlNode(Node, "SlowThresholdCutFixedValue", m_SlowThresholdCutFixedValue);
   new MXmlNode(Node, "SlowThresholdCutThresholdFileName", m_SlowThresholdCutFileName);
+  new MXmlNode(Node, "NearestNeighborCutMode", static_cast<int>(m_NearestNeighborCutMode));
+  new MXmlNode(Node, "NearestNeighborThreshold", m_NearestNeighborThreshold);
 
   return Node;
 }
