@@ -292,7 +292,6 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
         double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
         double Zpos = 0.0;
 
-        // TODO: Confirm X and Y implementation below with Aldo's new metrology files. His old files swapped these.
         if (m_MaskMetrologyEnabled == true) {
           // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
           MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
