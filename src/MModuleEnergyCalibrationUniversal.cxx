@@ -46,7 +46,8 @@ using namespace std;
 #include "MCalibratorEnergy.h"
 #include "MCalibratorEnergyPointwiseLinear.h"
 #include "MGUIOptionsEnergyCalibrationUniversal.h"
-#include "MGUIExpoEnergyCalibration.h"
+//#include "MGUIExpoEnergyCalibration.h"
+#include "MGUIExpoPlotSpectrum.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,9 +120,14 @@ void MModuleEnergyCalibrationUniversal::CreateExpos()
   }
 
   // Set the histogram display
-  m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
-  m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
-  m_Expos.push_back(m_ExpoEnergyCalibration);
+  //m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
+  //m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
+  //m_Expos.push_back(m_ExpoEnergyCalibration);
+  
+  // Updated: Set the histogram display
+  m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
+  m_ExpoSpectrum->SetEnergyHistogramParameters(200, 0, 2000);
+  m_Expos.push_back(m_ExpoSpectrum);
   
 }
 
@@ -430,10 +436,9 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
           double EnergyResolution = FitRes->Eval(Energy);
           SH->SetEnergyResolution(EnergyResolution);
         }
-        if (R.IsLowVoltageStrip() == true) { // check voltage side to plot only LV hits to the Expo histogram
-          if (HasExpos() == true) {
-            m_ExpoEnergyCalibration->AddEnergy(Energy);
-          }
+        if (HasExpos() == true) {
+          //m_ExpoEnergyCalibration->AddEnergy(Energy);
+          m_ExpoSpectrum->AddEnergyFinal(Energy, SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
         }
         if (g_Verbosity >= c_Info) {
           cout << m_XmlTag << ": Energy: " << SH->GetADCUnits() << " adc --> " << Energy << " keV" << endl;

@@ -27,6 +27,7 @@
 #include "MGlobal.h"
 #include "MModule.h"
 #include "MGUIExpoTACcut.h"
+#include "MGUIExpoPlotSpectrum.h"
 
 
 // Forward declarations:
@@ -119,6 +120,8 @@ unordered_map<char, int> m_SideToIndex;
 vector<unsigned int> m_DetectorIDs;
 
 MGUIExpoTACcut* m_ExpoTACcut;
+
+  MGUIExpoPlotSpectrum* m_ExpoEnergySpectrum;
 
 
 #ifdef ___CLING___

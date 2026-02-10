@@ -29,7 +29,8 @@
 // Neclearizer libe:
 #include "MModule.h"
 #include "MCalibratorEnergy.h"
-#include "MGUIExpoEnergyCalibration.h"
+//#include "MGUIExpoEnergyCalibration.h"
+#include "MGUIExpoPlotSpectrum.h"
 
 // Forward declarations:
 
@@ -164,7 +165,10 @@ class MModuleEnergyCalibrationUniversal : public MModule
   // private members:
  private:
   //! A GUI to display the final energy histogram
-  MGUIExpoEnergyCalibration* m_ExpoEnergyCalibration;
+  //MGUIExpoEnergyCalibration* m_ExpoEnergyCalibration;
+  
+  //! Updated GUI to display the energy histogram
+  MGUIExpoPlotSpectrum* m_ExpoSpectrum;
    
   //! Calibrators arranged by detectors
   //vector<vector<MCalibratorEnergy*> > m_Calibrators;
