@@ -425,7 +425,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! TODO change variable name or remove Greedy approach all together
   double m_EventQuality;
 
-  //! True if event has been filtered out
+ //! True if event has been filtered out
   bool m_FilteredOut;
 
   //! The analysis progress 
