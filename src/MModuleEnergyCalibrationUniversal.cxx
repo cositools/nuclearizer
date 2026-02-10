@@ -47,7 +47,6 @@ using namespace std;
 #include "MCalibratorEnergyPointwiseLinear.h"
 #include "MGUIOptionsEnergyCalibrationUniversal.h"
 #include "MGUIExpoEnergyCalibration.h"
-#include "MGUIExpoPlotSpectrum.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -123,11 +122,6 @@ void MModuleEnergyCalibrationUniversal::CreateExpos()
   m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
   m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoEnergyCalibration);
-  
-  // Set the histogram display for updating plotting
-  m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
-  m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
-  m_Expos.push_back(m_ExpoSpectrum);
   
 }
 
@@ -439,7 +433,6 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         if (R.IsLowVoltageStrip() == true) { // check voltage side to plot only LV hits to the Expo histogram
           if (HasExpos() == true) {
             m_ExpoEnergyCalibration->AddEnergy(Energy);
-            m_ExpoSpectrum->AddEnergyAfter(Energy, SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
           }
         }
         if (g_Verbosity >= c_Info) {
