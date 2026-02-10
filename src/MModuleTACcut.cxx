@@ -204,11 +204,19 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
       MaxTAC = ns_timing;
     }
   }
+  
+  // 200ns appears to be the minimum acceptable timing value for Nearest Neighbor hits
+  constexpr double c_MinNearestNeighborTiming = 200.0;
 
   for (unsigned int i = 0; i < Event->GetNStripHits();) {
     MStripHit* SH = Event->GetStripHit(i);
     bool Passed = true;
-    if ((SH->HasCalibratedTiming() == true) && (SH->IsGuardRing()==false)) {
+    if ((SH->IsNearestNeighbor() == true) && (SH->HasCalibratedTiming() == false)) { // Nearest neighbor with slow timing
+      double SHTiming = SH->GetTiming();
+      if (SHTiming <= c_MinNearestNeighborTiming) {
+        Passed = false;
+      }
+    } else if ((SH->HasCalibratedTiming() == true) && (SH->IsGuardRing()==false)) {
       double SHTiming = SH->GetTiming();
       int DetID = SH->GetDetectorID();
       int StripID = SH->GetStripID();
