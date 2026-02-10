@@ -29,6 +29,7 @@
 // Standard libs:
 #include <algorithm>
 #include <cstring>
+#include <set>
 using namespace std;
 
 // ROOT libs:
@@ -157,11 +158,11 @@ void MModuleSaverMeasurementsL0::WriteCCSDSPrimaryHeader(uint16_t apid, uint16_t
   // Byte 2-3: SeqFlags 2 bits | SeqCount 14 bits
   // Byte 4-5: PacketDataLength 2 bytes
 
-  // Version: 0, Packet type: 0, secHdrFlag: 1, and APID
+  // Version: 0, Packet type: 0, secHdrFlag: 1, and APID (11bits)
   uint16_t word0 = 0x0800 | (apid & 0x7FF);
   WriteUInt16BE(word0);
 
-  // SeqFlags: 11 (standalone Pkt), and Sequence Count
+  // SeqFlags: 11 (standalone Pkt) (2 bits), and Sequence Count
   uint16_t word1 = 0xC000 | (seqCount & 0x3FFF);
   WriteUInt16BE(word1);
 
@@ -276,16 +277,124 @@ uint32_t MModuleSaverMeasurementsL0::EncodeGuardRingHit(int stripID, int energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+uint8_t MModuleSaverMeasurementsL0::GetEventType(MReadOutAssembly* Event)
+{
+  // Compute event type based on Table 32 from COSI-ICD-011-FEE PL-REV-A
+
+  // Event type depends on: number of detectors hit + veto status
+  // Type Value (hex) | Type Description
+  //     0x00         | Multi-detector Compton, no veto
+  //     0x01         | Single-detector Compton, no veto  
+  //     0x02         | Single-site, no veto
+  //     0x03         | Multi-detector event with GR veto
+  //     0x04         | Single-detector event with GR veto
+  //     0x05         | Single site with GR veto
+  //     0x06         | Multi-detector event with hard Shield veto
+  //     0x07         | Single-detector event with hard Shield veto
+  //     0x08         | Single site with hard Shield veto
+  //     0x09         | Multi-detector event with soft Shield veto
+  //     0x0A         | Single-detector event with soft Shield veto
+  //     0x0B         | Single site with soft Shield veto
+  //     0x0C         | GR event
+  //     0x0D         | FEE debug event
+
+  // Count unique detectors and collect strip IDs by side
+  set<int> uniqueDetectors;
+  vector<int> lvStrips;  // LV side strip IDs
+  vector<int> hvStrips;  // HV side strip IDs
+
+  unsigned int numHits = Event->GetNStripHits();
+  for (unsigned int i = 0; i < numHits; ++i) {
+    MStripHit* hit = Event->GetStripHit(i);
+    uniqueDetectors.insert(hit->GetDetectorID());
+
+    if (hit->IsLowVoltageStrip()) {
+      lvStrips.push_back(hit->GetStripID());
+    } else {
+      hvStrips.push_back(hit->GetStripID());
+    }
+  }
+  int nDetectors = uniqueDetectors.size();
+
+  // Determine detector category:
+  // 0 = multi-detector (Multi-detector Compton event is at least two simultaneous hits in different detectors, 
+  //     but not more than a programmable maximum number, nominally 20 (all hits, >20 is a shower))
+  // 1 = single-detector Compton (Single-detector Compton event is two triggered strips on one side of the detector that are 
+  //     separated by at least 2 (TBD, but programmable) strips, and at least 1 strip on the other side. Event type 0x15 counts 
+  //     events with multiple triggered strips on one detector that are not neighboring and also don’t meet the minimum separation.)
+  // 2 = single-site (Single-site is >=1 triggered strip on each side of a detector, multiple triggered strips are allowed if they’re neighboring)
+  // Note: 
+  //      * Soft Guard ring (GR) veto, any hit or event that has a simultaneous hit on the guard ring in any detector (no hard veto possible)
+  //      * Hard veto from shields, interrupts GeD data taking when simultaneous hit is measured in BGO
+  //      * Soft veto from shields, when at least one ACS ASIC is busy, any new GeD events are flagged to be filtered out
+
+  int detectorCategory;
+  if (nDetectors >= 2) {
+    detectorCategory = 0;  // Multi-detector
+  } else if (nDetectors == 1) {
+    // Check if any strips on same side are separated by >= 2
+    // Single-detector Compton: two triggered strips separated by at least 2 strips
+    // Single-site: all strips neighboring
+
+    bool hasComptonGap = false;
+
+    // Check LV side for gaps
+    if (lvStrips.size() >= 2) {
+      sort(lvStrips.begin(), lvStrips.end());
+      for (size_t i = 1; i < lvStrips.size(); ++i) {
+        if (lvStrips[i] - lvStrips[i-1] >= 2) {
+          hasComptonGap = true;
+          break;
+        }
+      }
+    }
+
+    // Check HV side for gaps
+    if (!hasComptonGap && hvStrips.size() >= 2) {
+      sort(hvStrips.begin(), hvStrips.end());
+      for (size_t i = 1; i < hvStrips.size(); ++i) {
+        if (hvStrips[i] - hvStrips[i-1] >= 2) {
+          hasComptonGap = true;
+          break;
+        }
+      }
+    }
+
+    detectorCategory = hasComptonGap ? 1 : 2;
+  } else {
+    detectorCategory = 2;  // detector == 0, default to single-site
+  }
+
+  // Determine veto status and return event type
+  if (Event->GetGuardRingVeto()) {
+    // GR veto: 0x03, 0x04, 0x05
+    return 0x03 + detectorCategory;
+  } else if (Event->GetShieldVeto()) {
+    // Shield veto (using soft veto codes): 0x09, 0x0A, 0x0B
+    return 0x09 + detectorCategory;
+  } else {
+    // No veto: 0x00, 0x01, 0x02
+    return 0x00 + detectorCategory;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Write this event as a DD packet
 
-  // Get event timing
-  uint64_t clockTick = Event->GetCL(); //TODO: What does GetCL actaully return?
+  // Get event timing (change from GetCL() to GetTime())
+  MTime eventTime = Event->GetTime();
+  uint32_t eventSeconds = (uint32_t)eventTime.GetAsSeconds();
+  uint32_t eventNanoseconds = eventTime.GetNanoSeconds();
 
-  // Convert clock tick to TRUNC_TIME format: 10 bits seconds + 22 bits 4MHz subseconds
-  uint32_t seconds10bit = clockTick & 0x3FF;  // 10-bit seconds
-  uint32_t truncTime = seconds10bit << 22;    // TODO: Need to confirm with Andreas, not sure is this the right way to do it.
+  // Convert to TRUNC_TIME format: 10 bits seconds + 22 bits 4MHz subseconds
+  uint32_t seconds10bit = eventSeconds & 0x3FF;
+  uint32_t subsec4MHz = (eventNanoseconds * 4) / 1000;
+  uint32_t truncTime = (seconds10bit << 22) | (subsec4MHz & 0x3FFFFF);
 
   // Collect all strip hits and pack them into a continuous bit stream
   unsigned int numHits = Event->GetNStripHits();
@@ -320,35 +429,32 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
   // get the length of hitData in bytes
   uint16_t hlen = (totalBits + 7) / 8;
 
-  // Build packet data: TRUNC_TIME: 4 bytes + NumHits: 6 bits, HLEN(Lenght of the hit data): 10 bits, ETYPE: 8 bits = 4 + 3 = 7 bytes + HLEN bytes
+  // Build packet data: TRUNC_TIME: 4 bytes + NumHits: 6 bits, HLEN(Lenght of the hit data): 10 bits, ETYPE: 8 bits 
+  //                    = 4 bytes + 3 bytes(6+10+8 bits) = 7 bytes + HLEN bytes
   uint8_t hits6 = numHits & 0x3F;  // 6 bits
   uint16_t hlen10 = hlen & 0x3FF;  // 10 bits
-  uint8_t etype = 0x00;            // Event type, TODO: placeholder for now, dont know how to get event type
+  uint8_t etype = GetEventType(Event);
 
   // Calculate total packet data length (after primary header)
   // = Secondary Header (8) + TRUNC_TIME (4) + HITS + HLEN + ETYPE (3) + HIT_DATA (hlen)
   uint16_t packetDataLength = 8 + 4 + 3 + hlen - 1;
-
-  // Get packet time for secondary header
-  uint32_t pktSeconds = (uint32_t)clockTick;  // Whole seconds
-  uint32_t pktSubseconds = 0;                  // TODO: Is there subsecond
 
   // Write CCSDS Primary Header
   WriteCCSDSPrimaryHeader(APID_DD, m_SequenceCount, packetDataLength);
   m_SequenceCount = (m_SequenceCount + 1) & 0x3FFF;
 
   // Write Secondary Header
-  WriteSecondaryHeader(pktSeconds, pktSubseconds);
+  WriteSecondaryHeader(eventSeconds, eventNanoseconds);
 
   // Write TRUNC_TIME (4 bytes)
   WriteUInt32BE(truncTime);
 
   // Write HITS (6 bits) + HLEN (10 bits) + ETYPE(8 bits) = 3 bytes
-  // Byte 0: HITS[5:0] HLEN[9:8]
+  // Byte 0: 6 bits from HITS, and first 2 bits from HLEN
   uint8_t byte0 = (hits6 << 2) | ((hlen10 >> 8) & 0x03);
-  // Byte 1: HLEN[7:0]
+  // Byte 1: the rest 8 bits from HLEN
   uint8_t byte1 = hlen10 & 0xFF;
-  // Byte 2: ETYPE[7:0]
+  // Byte 2: ETYPE
   uint8_t byte2 = etype;
 
   m_OutFile.write(reinterpret_cast<char*>(&byte0), 1);

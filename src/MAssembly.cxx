@@ -75,6 +75,8 @@ using namespace std;
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
+#include "MModuleSaverMeasurementsFITS.h"
+#include "MModuleSaverMeasurementsL0.h"
 #include "MModuleResponseGenerator.h"
 #include "MModuleRevan.h"
 #include "MModuleTACcut.h"
@@ -144,6 +146,8 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration2024());
   
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
+  m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS());
+  m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsL0());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
   m_Supervisor->AddAvailableModule(new MModuleRevan());

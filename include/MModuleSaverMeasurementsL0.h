@@ -83,6 +83,8 @@ class MModuleSaverMeasurementsL0 : public MModule
   uint64_t EncodeNeighborHit(int stripID, bool fastTiming, int energy, int timing);
   //! Encode a guard ring hit (Type 0x2) - returns 24 bits
   uint32_t EncodeGuardRingHit(int stripID, int energy);
+  //! Get event type based on detector count and veto status
+  uint8_t GetEventType(MReadOutAssembly* Event);
   //! Write 16-bit value in big-endian
   void WriteUInt16BE(uint16_t value);
   //! Write 32-bit value in big-endian
