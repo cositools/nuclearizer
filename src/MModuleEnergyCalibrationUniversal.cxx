@@ -421,6 +421,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
         }
       }
   
+
       // Remove SH for any energy value below the established threshold (0 is default)
       if (Energy < Threshold) {
         if (g_Verbosity >= c_Warning) {
