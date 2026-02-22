@@ -272,9 +272,7 @@ bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Ev
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
       if (StripHits[d][side].size() > MaxStripHits) {
-        Event->SetStripPairingError("More than 6 hit strips on one side");
-        Event->SetAnalysisProgress(MAssembly::c_StripPairing);
-        return false;
+        Event->SetStripPairing_QualityFlag("More than 6 hit strips on one side");
       }
 
       // Check if one side of the detector has no strip hits
@@ -360,9 +358,9 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
       unsigned int MinSize = min(Combinations[d][0][lv].size(), Combinations[d][1][hv].size());
 
       // Skip pairing if either side has more than 5 sets of strips
-      if (max(Combinations[d][0][lv].size(), Combinations[d][1][hv].size()) > MaxCombinations) {
-        continue;
-      }
+      //if (max(Combinations[d][0][lv].size(), Combinations[d][1][hv].size()) > MaxCombinations) {
+       // continue;
+     // }
 
       bool MorePermutations = true;
       while (MorePermutations == true) {
@@ -590,6 +588,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         Hit->SetLVEnergy(LVEnergy);
         Hit->SetHVEnergy(HVEnergy);
         Hit->SetStripHitMultipleTimesX(MultipleHitsOnLV);
+        Event->SetStripPairing_QualityFlag("Event contains multiple hits on single LV strip");
         Event->AddHit(Hit);
           
 
@@ -632,6 +631,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         Hit->SetLVEnergy(LVEnergy);
         Hit->SetHVEnergy(HVEnergy);
         Hit->SetStripHitMultipleTimesY(MultipleHitsOnHV);
+        Event->SetStripPairing_QualityFlag("Event contains multiple hits on single HV strip");
         Event->AddHit(Hit);
 
         HVEnergyTotal += HVEnergy;
@@ -660,9 +660,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
   // One last quality selection based on total event energies
   if ((EnergyTotal > max(LVEnergyTotal, HVEnergyTotal) + 2.5 * max(LVEnergyResTotal, HVEnergyResTotal) || EnergyTotal < min(LVEnergyTotal, HVEnergyTotal) - 2.5 * max(LVEnergyResTotal, HVEnergyResTotal))) {
-    Event->SetStripPairingError("Strips not pairable wihin 2.5 sigma of measured energy");
-    Event->SetAnalysisProgress(MAssembly::c_StripPairing);
-    return false;
+    Event->SetStripPairing_QualityFlag("Strips not pairable wihin 2.5 sigma of measured energy");
   }
   // Plot the good events
   else if ((HasExpos() == true) and Event->IsGood() == true) {
@@ -765,13 +763,16 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
     // Flag events with a reduced chi square > 25
     else if (BestChiSquare > 25) {
-      Event->SetStripPairingError("Best reduced chi square is not below 25");
-      Event->SetAnalysisProgress(MAssembly::c_StripPairing);
-      return false;
+      Event->SetStripPairing_QualityFlag("Best reduced chi square is not below 25");
     }
 
     // Assign the best reduced chi square to the event
     Event->SetStripPairingReducedChiSquare(BestChiSquare);
+    
+    // Check if size of LV or HV combination exceeds maximum
+    if (max(BestLVSideCombo.size(), BestHVSideCombo.size()) > MaxCombinations) {
+      Event->SetStripPairing_QualityFlag("Best strip pairing contains more than 5 strip grouping");
+    }
 
     // Populate hits with best strip paired combination
     bool PopulateHits = CreateHits(d, Event, StripHits, BestLVSideCombo, BestHVSideCombo);
