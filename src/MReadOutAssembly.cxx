@@ -189,6 +189,9 @@ void MReadOutAssembly::Clear()
  
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
+    
+  m_StripPairing_QualityFlag = false;
+  m_StripPairingString_QualityFlag.clear();
 
   m_FilteredOut = false;
 
