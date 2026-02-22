@@ -722,7 +722,18 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     }
     S<<endl;
   }
-
+    
+  if (m_StripPairing_QualityFlag == true) {
+    S<<"QA StripPairing";
+    if (m_StripPairingString_QualityFlag.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_StripPairingString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+    
   if (m_GuardRingVeto == true) {
     S<<"BD GR Veto"<<endl;
   }
