@@ -729,18 +729,6 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_ShieldVeto == true) {
     S<<"BD Shield Veto"<<endl;
   }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesX()) {
-      S<<"BD Multiple Hits on LV Strip"<<endl;
-      break;
-    }
-  }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesY()) {
-      S<<"BD Multiple Hits on HV Strip"<<endl;
-      break;
-    }
-  }
 }
 
 
