@@ -350,17 +350,8 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
 
   for (unsigned int lv = 0; lv < Combinations[d][0].size(); ++lv) { // Loop over combinations of lv-strips (lv represents a list of sets of strips,  and each set is a proposed Hit)
     for (unsigned int hv = 0; hv < Combinations[d][1].size(); ++hv) {
-      // Skip if lv and hv strip combos differ in size by more than one
-      if (abs(long(Combinations[d][0][lv].size()) - long(Combinations[d][1][hv].size())) > 1) {
-        continue;
-      }
-
+      
       unsigned int MinSize = min(Combinations[d][0][lv].size(), Combinations[d][1][hv].size());
-
-      // Skip pairing if either side has more than 5 sets of strips
-      //if (max(Combinations[d][0][lv].size(), Combinations[d][1][hv].size()) > MaxCombinations) {
-       // continue;
-     // }
 
       bool MorePermutations = true;
       while (MorePermutations == true) {
@@ -788,7 +779,12 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     
     // Check if size of LV or HV combination exceeds maximum
     if (max(BestLVSideCombo.size(), BestHVSideCombo.size()) > MaxCombinations) {
-      Event->SetStripPairing_QualityFlag("Best strip pairing contains more than 5 strip grouping");
+      Event->SetStripPairing_QualityFlag("Best strip pairing contains more than 5 strip groupings (hits)");
+    }
+    
+    // Flag event if more than one set of strips is left unpaired
+    if (abs(long(BestLVSideCombo.size()) - long(BestHVSideCombo.size())) > 1) {
+      Event->SetStripPairing_QualityFlag("Best strip pairing leaves more than one grouping of strips unpaired");
     }
 
     // Populate hits with best strip paired combination
