@@ -110,6 +110,8 @@ private:
   std::vector<double> m_DataBufferHVFinal;
   std::vector<double> m_DataBufferNearestNeighborLVFinal;
   std::vector<double> m_DataBufferNearestNeighborHVFinal;
+  
+  bool m_PlotSpectrum;
 
 #ifdef ___CLING___
 public:

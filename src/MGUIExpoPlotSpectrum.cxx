@@ -57,6 +57,8 @@ MGUIExpoPlotSpectrum::MGUIExpoPlotSpectrum(MModule* Module) : MGUIExpo(Module)
   //! You can also just plot the Initial or Final case, for example with the energy calibration you just want to plot the Final case
 
   // standard constructor
+  
+  m_PlotSpectrum = true;
 
   // Set the new title of the tab here:
   if (Module != nullptr) {
