@@ -352,6 +352,10 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
     for (unsigned int hv = 0; hv < Combinations[d][1].size(); ++hv) {
       
       unsigned int MinSize = min(Combinations[d][0][lv].size(), Combinations[d][1][hv].size());
+        
+      if (abs(long(Combinations[d][0][lv].size()) - long(Combinations[d][1][hv].size())) > 1) {
+        continue;
+      }
 
       bool MorePermutations = true;
       while (MorePermutations == true) {
