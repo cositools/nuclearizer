@@ -793,7 +793,16 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     if (PopulateHits == false) {
       return false;
     }
-
+      
+    // Check for any hits containing guard ring strips
+    for (unsigned int h = 0; h < Event->GetNHits(); h++) {
+      for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
+        if (Event->GetHit(h)->GetStripHit(sh)->GetStripID() == 64) {
+          Event->GetHit(h)->SetGuardRingHitFlag(true);
+        }
+      }
+    }
+      
   } // End Detector loop
 
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);

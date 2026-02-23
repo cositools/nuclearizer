@@ -93,6 +93,11 @@ class MHit
 	void SetCrossTalkFlag(bool PossibleCrossTalk) {m_PossibleCrossTalk = PossibleCrossTalk;}
 	//! get cross talk flag value
 	bool GetCrossTalkFlag() const { return m_PossibleCrossTalk; }
+    
+    //! Set guard ring hit flag
+    void SetGuardRingHitFlag(bool GuardRingHit) {m_GuardRingHit = GuardRingHit;}
+    //! Get guard ring hit flag
+    bool GetGuardRingHitFlag() const { return m_GuardRingHit; }
 
 	//! set charge loss flag
 	void SetChargeLossFlag(bool PossibleChargeLoss) {m_PossibleChargeLoss = PossibleChargeLoss;}
@@ -185,6 +190,8 @@ class MHit
 	bool m_PossibleCrossTalk;
 	//! Flag: possible charge loss
 	bool m_PossibleChargeLoss;
+    //! Flag: hit containing guard ring strip
+    bool m_GuardRingHit;
 
 	//! true if hit contains strip that was hit multiple times on X
 	bool m_StripHitMultipleTimesX = false;
