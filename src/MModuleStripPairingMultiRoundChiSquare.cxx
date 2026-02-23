@@ -558,6 +558,15 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
       for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
         Hit->AddStripHit(StripHits[d][1][BestHVSideCombo[h][sh]]);
       }
+      
+      // Check for charge sharing on either side
+      if (BestLVSideCombo[h].size() > 1) {
+        Hit->SetChargeSharingLV(true);
+      }
+      if (BestHVSideCombo[h].size() > 1) {
+        Hit->SetChargeSharingHV(true);
+      }
+      
     }
 
     // If there are non-adjacent strip groupings, then have to separate them out again to form multiple (physical) hits
@@ -603,6 +612,10 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
           Hit->AddStripHit(StripHits[d][0][BestLVSideCombo[h][sh]]);
         }
+        // Check if there's charge sharing on LV side (currently no way to tell if there's charge sharing on side that doesn't have multiple hits on single strip)
+        if (BestLVSideCombo[h].size() > 1) {
+          Hit->SetChargeSharingLV(true);
+        }
       }
     }
 
@@ -643,6 +656,10 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         Hit->AddStripHit(StripHits[d][0][BestLVSideCombo[h][sh]]);
         for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
           Hit->AddStripHit(StripHits[d][1][BestHVSideCombo[h][sh]]);
+        }
+        // Check if there's charge sharing on HV side (currently no way to tell if there's charge sharing on side that doesn't have multiple hits on single strip)
+        if (BestHVSideCombo[h].size() > 1) {
+          Hit->SetChargeSharingHV(true);
         }
       }
     }
