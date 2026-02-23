@@ -567,6 +567,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     if (AllAdjacentHV == false && AllAdjacentLV == true) {
       //cout<<"Multiple hits on single LV strip"<<endl;
       bool MultipleHitsOnLV = true;
+      Event->SetStripPairing_QualityFlag("Event contains multiple hits on single LV strip");
 
       // Assign hit energy based on energy measured on HV side
       for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
@@ -588,7 +589,6 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         Hit->SetLVEnergy(LVEnergy);
         Hit->SetHVEnergy(HVEnergy);
         Hit->SetStripHitMultipleTimesX(MultipleHitsOnLV);
-        Event->SetStripPairing_QualityFlag("Event contains multiple hits on single LV strip");
         Event->AddHit(Hit);
           
 
@@ -614,6 +614,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     else if (AllAdjacentLV == false && AllAdjacentHV == true) {
       // cout<<"Multiple hits on single HV strip"<<endl;
       bool MultipleHitsOnHV = true;
+      Event->SetStripPairing_QualityFlag("Event contains multiple hits on single HV strip");
 
       // Assign hit energy based on energy measured on LV side
       for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
@@ -635,7 +636,6 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         Hit->SetLVEnergy(LVEnergy);
         Hit->SetHVEnergy(HVEnergy);
         Hit->SetStripHitMultipleTimesY(MultipleHitsOnHV);
-        Event->SetStripPairing_QualityFlag("Event contains multiple hits on single HV strip");
         Event->AddHit(Hit);
 
         HVEnergyTotal += HVEnergy;
