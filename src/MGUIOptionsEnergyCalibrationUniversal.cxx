@@ -124,7 +124,7 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   m_SlowThresholdCutNearestNeighborRBFixed->Associate(this);
   m_OptionsFrame->AddFrame(m_SlowThresholdCutNearestNeighborRBFixed, RBLayout);
       
-  m_SlowThresholdCutNearestNeighborFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV] for Nearest Neighbors:", false, dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborThreshold(), true, 0.0);
+  m_SlowThresholdCutNearestNeighborFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV] for Nearest Neighbors:", false, dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborThreshold());
   m_OptionsFrame->AddFrame(m_SlowThresholdCutNearestNeighborFixedValue, RBOptionLayout);
   
   MNearestNeighborCutModes NearestNeighborCutMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborCutMode();
