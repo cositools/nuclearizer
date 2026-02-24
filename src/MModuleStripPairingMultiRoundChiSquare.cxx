@@ -272,7 +272,9 @@ bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Ev
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
       if (StripHits[d][side].size() > MaxStripHits) {
-        Event->SetStripPairing_QualityFlag("More than 6 hit strips on one side");
+        Event->SetStripPairingError("More than 6 hit strips on one side");
+        Event->SetAnalysisProgress(MAssembly::c_StripPairing);
+        return false;
       }
 
       // Check if one side of the detector has no strip hits
