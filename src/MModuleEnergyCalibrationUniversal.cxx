@@ -98,6 +98,9 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   // Nearest Neighbor threshold (-1000 because we don't want to default to cut neg values) 
   m_NearestNeighborCutMode = MNearestNeighborCutModes::e_Ignore;
   m_NearestNeighborThreshold = -1000.0;
+  
+  // Plot spectrum
+  m_PlotSpectrumMode = MPlotSpectrumModes::e_PlotNone;
 
 }
 
@@ -573,6 +576,10 @@ bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
   if (NearestNeighborThresholdNode != nullptr) {
     m_NearestNeighborThreshold = NearestNeighborThresholdNode->GetValueAsDouble();
   }
+  MXmlNode* PlotSpectrumModeNode = Node->GetNode("PlotSpectrumMode");
+  if (PlotSpectrumModeNode != nullptr) {
+    m_PlotSpectrumMode = static_cast<MPlotSpectrumModes>(PlotSpectrumModeNode->GetValueAsInt());
+  }
 
   return true;
 }
@@ -592,6 +599,7 @@ MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   new MXmlNode(Node, "SlowThresholdCutThresholdFileName", m_SlowThresholdCutFileName);
   new MXmlNode(Node, "NearestNeighborCutMode", static_cast<int>(m_NearestNeighborCutMode));
   new MXmlNode(Node, "NearestNeighborThreshold", m_NearestNeighborThreshold);
+  new MXmlNode(Node, "PlotSpectrumMode", static_cast<int>(m_PlotSpectrumMode));
 
   return Node;
 }

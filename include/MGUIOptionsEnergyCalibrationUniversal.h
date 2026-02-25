@@ -97,7 +97,11 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
   TGRadioButton* m_SlowThresholdCutNearestNeighborRBFixed;
   //! The threshold cut entry box for Nearest Neighbors
   MGUIEEntry* m_SlowThresholdCutNearestNeighborFixedValue;
-
+  
+  //! Radio button for plotting the spectrum with/without the buffer
+  TGRadioButton* m_PlotSpectrumNoneRB;
+  TGRadioButton* m_PlotSpectrumNoBufferRB;
+  TGRadioButton* m_PlotSpectrumWithBufferRB;
 
   //! IDs of radio buttons
   //! The numbers should be identical to MSlowThresholdCutModes
@@ -105,7 +109,10 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
     c_SlowThresholdFixed,
     c_SlowThresholdFile,
     c_SlowThresholdNearestNeighborIgnore = 100,
-    c_SlowThresholdNearestNeighborFixed};
+    c_SlowThresholdNearestNeighborFixed,
+    c_PlotSpectrumNone = 200,
+    c_PlotSpectrumNoBuffer,
+    c_PlotSpectrumWithBuffer};
 
 
 #ifdef ___CLING___

@@ -54,6 +54,14 @@ enum class MNearestNeighborCutModes : int
   e_Fixed = 101
 };
 
+//! Definition of the plot spectrum modes
+enum MPlotSpectrumModes : int
+{
+  e_PlotNone = 200,
+  e_PlotNoBuffer = 201,
+  e_PlotWithBuffer = 202
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -101,6 +109,12 @@ class MModuleEnergyCalibrationUniversal : public MModule
   void SetNearestNeighborThreshold(double Threshold) { m_NearestNeighborThreshold = Threshold; }
   //! Get the threshold value for Nearest Neighbors
   double GetNearestNeighborThreshold() const { return m_NearestNeighborThreshold; }
+  
+  // Spectrum plotting options
+  //! Set the plot spectrum mode
+  void SetPlotSpectrumMode(const MPlotSpectrumModes& Mode) { m_PlotSpectrumMode = Mode; }
+  //! Get the plot spectrum mode
+  MPlotSpectrumModes GetPlotSpectrumMode() const { return m_PlotSpectrumMode; }
  
  
   //! Create the expos
@@ -159,8 +173,12 @@ class MModuleEnergyCalibrationUniversal : public MModule
   MNearestNeighborCutModes m_NearestNeighborCutMode;
     
   //! The Nearest Neighbor threshold value
-  double m_NearestNeighborThreshold; 
-
+  double m_NearestNeighborThreshold;
+  
+  //! The spectrum plotting mode
+  MPlotSpectrumModes m_PlotSpectrumMode;
+  
+  
 
   // private members:
  private:
