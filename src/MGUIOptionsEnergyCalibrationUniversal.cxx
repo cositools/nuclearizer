@@ -233,6 +233,21 @@ void MGUIOptionsEnergyCalibrationUniversal::ToggleRadioButtons(int WidgetID)
       m_SlowThresholdCutNearestNeighborFixedValue->SetEnabled(true);
     }
   }
+  
+  // Plot spectrum
+  if (WidgetID == c_PlotSpectrumNone) {
+    m_PlotSpectrumNoneRB->SetState(kButtonDown);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonUp);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonUp);
+  } else if (WidgetID == c_PlotSpectrumNoBuffer) {
+    m_PlotSpectrumNoneRB->SetState(kButtonUp);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonDown);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonUp);
+  } else if (WidgetID == c_PlotSpectrumWithBuffer) {
+    m_PlotSpectrumNoneRB->SetState(kButtonUp);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonUp);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonDown);
+  }
 }
 
 
