@@ -118,21 +118,25 @@ MModuleEnergyCalibrationUniversal::~MModuleEnergyCalibrationUniversal()
 
 void MModuleEnergyCalibrationUniversal::CreateExpos()
 {
-  // If they are already created, return
+  // 1. If the window ALREADY exists from a previous run, just update the setting and return.
+  // (If they switched to "No Plot", the window will stay open but go to sleep).
   if (m_Expos.size() != 0) {
+    if (m_ExpoSpectrum != nullptr) {
+      m_ExpoSpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
+    }
     return;
   }
 
-  // Set the histogram display
-  //m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
-  //m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
-  //m_Expos.push_back(m_ExpoEnergyCalibration);
-  
-  // Updated: Set the histogram display
+  // 2. If it DOES NOT exist yet, and they selected "No Plot", skip creation entirely!
+  if (m_PlotSpectrumMode == MPlotSpectrumModes::e_PlotNone) {
+    return;
+  }
+
+  // 3. Otherwise, create it for the very first time!
   m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
+  m_ExpoSpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
   m_ExpoSpectrum->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoSpectrum);
-  
 }
 
 

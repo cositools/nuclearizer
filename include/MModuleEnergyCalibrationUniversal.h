@@ -55,6 +55,7 @@ enum class MNearestNeighborCutModes : int
 };
 
 //! Definition of the plot spectrum modes
+// Attention: The ints are also used in the Plot Spectrum Model! Thus don't change the numbers
 enum MPlotSpectrumModes : int
 {
   e_PlotNone = 200,

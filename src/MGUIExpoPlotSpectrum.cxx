@@ -58,7 +58,7 @@ MGUIExpoPlotSpectrum::MGUIExpoPlotSpectrum(MModule* Module) : MGUIExpo(Module)
 
   // standard constructor
   
-  m_PlotSpectrum = true;
+  m_PlotSpectrumMode = 200; // Default is to not make a plot (which also means not to buffer the data)
 
   // Set the new title of the tab here:
   if (Module != nullptr) {
@@ -241,9 +241,9 @@ void MGUIExpoPlotSpectrum::SetEnergyHistogramParameters(int NBins, double Min, d
 {
   //! Set the energy histogram parameters
 
-  // SAFETY FIX: Never allow 0 or negative bins. Default to 100 if something goes wrong.
+  // SAFETY FIX: Never allow 0 or negative bins. Default to 1 if something goes wrong.
   if (NBins <= 0) {
-    NBins = 100;
+    NBins = 1;
   }
   // SAFETY FIX: Ensure Max is actually greater than Min
   if (Max <= Min) {
@@ -291,9 +291,8 @@ void MGUIExpoPlotSpectrum::AddEnergyInitial(double Energy, bool IsNearestNeighbo
 {
   //! Add data to the energy histogram Initial
   
-  
   // First check if we want to plot the spectrum 
-  if (m_PlotSpectrum == false) {
+  if (m_PlotSpectrumMode == 200) {
     return;
   }
   
@@ -304,24 +303,32 @@ void MGUIExpoPlotSpectrum::AddEnergyInitial(double Energy, bool IsNearestNeighbo
       if (m_EnergyHistogramNearestNeighborLVInitial != nullptr) {
         m_EnergyHistogramNearestNeighborLVInitial->Fill(Energy);
       }
-      m_DataBufferNearestNeighborLVInitial.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferNearestNeighborLVInitial.push_back(Energy);
+      }
     } else {
       if (m_EnergyHistogramNearestNeighborHVInitial != nullptr) {
         m_EnergyHistogramNearestNeighborHVInitial->Fill(Energy);
       }
-      m_DataBufferNearestNeighborHVInitial.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferNearestNeighborHVInitial.push_back(Energy);
+      }
     }
   } else {
     if (IsLV == true) {
       if (m_EnergyHistogramLVInitial != nullptr) {
         m_EnergyHistogramLVInitial->Fill(Energy);
       }
-      m_DataBufferLVInitial.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferLVInitial.push_back(Energy);
+      }
     } else {
       if (m_EnergyHistogramHVInitial != nullptr) {
         m_EnergyHistogramHVInitial->Fill(Energy);
       }
-      m_DataBufferHVInitial.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferHVInitial.push_back(Energy);
+      }
     }
   }
     
@@ -336,8 +343,8 @@ void MGUIExpoPlotSpectrum::AddEnergyFinal(double Energy, bool IsNearestNeighbor,
 {
   //! Add data to the energy histogram Final
   
-  // First check if we want to plot the spectrum
-  if (m_PlotSpectrum == false) {
+  // First check if we want to plot the spectrum at all (200 = e_PlotNone)
+  if (m_PlotSpectrumMode == 200) {
     return;
   }
   
@@ -348,24 +355,32 @@ void MGUIExpoPlotSpectrum::AddEnergyFinal(double Energy, bool IsNearestNeighbor,
       if (m_EnergyHistogramNearestNeighborLVFinal != nullptr) {
         m_EnergyHistogramNearestNeighborLVFinal->Fill(Energy);
       }
-      m_DataBufferNearestNeighborLVFinal.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferNearestNeighborLVFinal.push_back(Energy);
+      }
     } else {
       if (m_EnergyHistogramNearestNeighborHVFinal != nullptr) {
         m_EnergyHistogramNearestNeighborHVFinal->Fill(Energy);
       }
-      m_DataBufferNearestNeighborHVFinal.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferNearestNeighborHVFinal.push_back(Energy);
+      }
     }
   } else {
     if (IsLV == true) {
       if (m_EnergyHistogramLVFinal != nullptr) {
         m_EnergyHistogramLVFinal->Fill(Energy);
       }
-      m_DataBufferLVFinal.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferLVFinal.push_back(Energy);
+      }
     } else {
       if (m_EnergyHistogramHVFinal != nullptr) {
         m_EnergyHistogramHVFinal->Fill(Energy);
       }
-      m_DataBufferHVFinal.push_back(Energy);
+      if (m_PlotSpectrumMode == 202) {
+        m_DataBufferHVFinal.push_back(Energy);
+      }
     }
   }
     
@@ -559,6 +574,13 @@ void MGUIExpoPlotSpectrum::OnUpdateRange()
 {
   //! Update the histogram range and binning
 
+  //! Update the histogram range and binning
+
+  // Safety fix: If we did not buffer the data (202), we cannot rebin/redraw!
+  //if (m_PlotSpectrumMode != 202) {
+  //  return;
+  //}
+  
   double Min = m_RangeMinEntry->GetAsDouble();
   double Max = m_RangeMaxEntry->GetAsDouble();
   double Width = m_BinWidthEntry->GetAsDouble();
