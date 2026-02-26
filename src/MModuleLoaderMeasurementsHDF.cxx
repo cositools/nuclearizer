@@ -171,11 +171,30 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<string(VS.string_col)<<endl<<"Please update this module."<<endl;
         return false;
       }
+    // Check for existence of HDFVersion in /Events/HDFVersion (HDF v2)
+    } else if (H5Lexists(m_HDFFile.getId(), "Events", H5P_DEFAULT) > 0) {
+      m_EventDataSet = m_HDFFile.openDataSet("/Events");
+      Attribute VersionAttribute = m_EventDataSet.openAttribute("HDFVersion");
+
+      // Read HDF5 version from Events/HDF5Version to a string
+      string VersionString;
+      VersionAttribute.read(VersionAttribute.getStrType(), VersionString);
+
+      if (VersionString == "2.2" || VersionString == "2.3") {
+        m_HDFStripHitVersion = MHDFStripHitVersion::V2_2;
+      } else {
+        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<VersionString<<endl<<"Please update this module."<<endl;
+        return false;
+      }
     }
     cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
 
     // Get the data set
-    m_HDFDataSet = m_HDFFile.openDataSet("/Hits");
+    if (m_HDFStripHitVersion == MHDFStripHitVersion::V2_2) {
+      m_HDFDataSet = m_HDFFile.openDataSet("/FEEHits");
+    } else {
+      m_HDFDataSet = m_HDFFile.openDataSet("/Hits");
+    }
 
     // Get the data space
     DataSpace DS = m_HDFDataSet.getSpace();
@@ -240,6 +259,36 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       m_HDFCompoundDataType.insertMember("BYTES",                 HOFFSET(MHDFStripHit_V1_2, m_Bytes),                  PredType::STD_U16LE);
       m_HDFCompoundDataType.insertMember("EVENT_TYPE",            HOFFSET(MHDFStripHit_V1_2, m_EventType),            PredType::STD_U8LE);
       m_HDFCompoundDataType.insertMember("CRC",                   HOFFSET(MHDFStripHit_V1_2, m_CRC),                   PredType::STD_U8LE);
+    } else if (m_HDFStripHitVersion == MHDFStripHitVersion::V2_2) {
+
+      // Create compound data type for reading detector hit information from /FEEHits
+      m_HDFCompoundDataType = CompType(sizeof(MHDFStripHit_V2_2));
+      m_HDFCompoundDataType.insertMember("event_index",           HOFFSET(MHDFStripHit_V2_2, m_EventIndex),        PredType::STD_U32LE);
+      m_HDFCompoundDataType.insertMember("hit_type",              HOFFSET(MHDFStripHit_V2_2, m_HitType),           PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("timing_type",           HOFFSET(MHDFStripHit_V2_2, m_TimingType),        PredType::STD_U8LE);
+      m_HDFCompoundDataType.insertMember("strip_id",              HOFFSET(MHDFStripHit_V2_2, m_StripID),           PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("energy",                HOFFSET(MHDFStripHit_V2_2, m_EnergyData),        PredType::STD_U16LE);
+      m_HDFCompoundDataType.insertMember("timing",                HOFFSET(MHDFStripHit_V2_2, m_TimingData),        PredType::STD_U16LE);
+
+      // Create compound data type for reading event information from /Events
+      m_EventCompoundDataType = CompType(sizeof(MHDFEvent_V2_2));
+      m_EventCompoundDataType.insertMember("event_id",            HOFFSET(MHDFEvent_V2_2, m_EventID),              PredType::STD_U16LE);
+      m_EventCompoundDataType.insertMember("timecode",            HOFFSET(MHDFEvent_V2_2, m_TimeCode),             PredType::STD_U64LE);
+      m_EventCompoundDataType.insertMember("gse_timecode",        HOFFSET(MHDFEvent_V2_2, m_GSETimeCode),          PredType::IEEE_F64LE);
+      m_EventCompoundDataType.insertMember("spw_timecode",        HOFFSET(MHDFEvent_V2_2, m_SPWTimeCode),          PredType::IEEE_F64LE);
+      m_EventCompoundDataType.insertMember("hits",                HOFFSET(MHDFEvent_V2_2, m_Hits),                 PredType::STD_U8LE);
+      m_EventCompoundDataType.insertMember("bytes",               HOFFSET(MHDFEvent_V2_2, m_Bytes),                PredType::STD_U16LE);
+      m_EventCompoundDataType.insertMember("event_type",          HOFFSET(MHDFEvent_V2_2, m_EventType),            PredType::STD_U8LE);
+      m_EventCompoundDataType.insertMember("crc",                 HOFFSET(MHDFEvent_V2_2, m_CRC),                  PredType::STD_U8LE);
+
+      // Read the event information from /Events
+      DataSpace EventDataSpace = m_EventDataSet.getSpace();
+      hsize_t dims[1];
+      EventDataSpace.getSimpleExtentDims(dims);
+      size_t n = dims[0];
+      m_EventData_2_2.resize(n);
+      m_EventDataSet.read(m_EventData_2_2.data(), m_EventCompoundDataType);
+
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
       return false;
@@ -254,7 +303,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
     }
 
   } catch (const H5::Exception& E) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": HDF5 initializion error: "<<E.getDetailMsg()<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": HDF5 initialization error: "<<E.getDetailMsg()<<endl;
     return false;
   }
 
@@ -278,6 +327,7 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
     if (m_CurrentBatchSize == 0) {
       m_Buffer_1_0.resize(0);
       m_Buffer_1_2.resize(0);
+      m_Buffer_2_2.resize(0);
       m_CurrentBatchIndex = 0;
       return false;
     }
@@ -300,11 +350,17 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
         m_Buffer_1_2.resize(m_CurrentBatchSize);
       }
       m_HDFDataSet.read(m_Buffer_1_2.data(), m_HDFCompoundDataType, MS, DS);
+    } else if (m_HDFStripHitVersion == MHDFStripHitVersion::V2_2) {
+      if (m_Buffer_2_2.size() != m_CurrentBatchSize) {
+        m_Buffer_2_2.resize(m_CurrentBatchSize);
+      }
+      m_HDFDataSet.read(m_Buffer_2_2.data(), m_HDFCompoundDataType, MS, DS);
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
       m_CurrentBatchSize = 0;
       m_Buffer_1_0.resize(0);
       m_Buffer_1_2.resize(0);
+      m_Buffer_2_2.resize(0);
       m_CurrentBatchIndex = 0;
       return false;
     }
@@ -316,6 +372,7 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
     m_CurrentBatchSize = 0;
     m_Buffer_1_0.resize(0);
     m_Buffer_1_2.resize(0);
+    m_Buffer_2_2.resize(0);
     m_CurrentBatchIndex = 0;
     return false;
   }
@@ -411,6 +468,25 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       HitType = Hit.m_HitType;
       TimingType = Hit.m_TimingType;
     
+    } else if (m_HDFStripHitVersion == MHDFStripHitVersion::V2_2) {
+      MHDFStripHit_V2_2& Hit = m_Buffer_2_2[m_CurrentBatchIndex];
+      ++m_CurrentBatchIndex;
+      ++m_CurrentHit;
+
+      StripID = Hit.m_StripID;
+      ADCs = Hit.m_EnergyData;
+      TACs = Hit.m_TimingData;
+      HitType = Hit.m_HitType;
+      TimingType = Hit.m_TimingType;
+
+      // Read the information about the event based on the EventIndex of the Hit
+      uint32_t EventIndex = Hit.m_EventIndex;
+      MHDFEvent_V2_2& HitEvent = m_EventData_2_2[EventIndex];
+      EventID = HitEvent.m_EventID;
+      TimeCode = HitEvent.m_GSETimeCode;
+      NumberOfHits = HitEvent.m_Hits;
+      // SPWTimeCode = HitEvent.m_SPWTimeCode;
+      
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
       return false;
@@ -425,8 +501,8 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       cout<<"  EnergyData: "<<ADCs<<endl;
       cout<<"  TimingData: "<<TACs<<endl;
       cout<<"  Hits: "<<(int) NumberOfHits<<endl;
-      cout<<" HitType: "<<HitType<<endl;
-      cout<<" TimingType: "<<TimingType<<endl;
+      cout<<"  HitType: "<<(int) HitType<<endl;
+      cout<<"  TimingType: "<<(int) TimingType<<endl;
     }
 
     // Catch a bug in the HDF5 data
@@ -456,6 +532,9 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     Event->SetID(LongEventID);
     if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
       Event->SetCL(TimeCode);
+    } else if (m_HDFStripHitVersion == MHDFStripHitVersion::V2_2)  {
+      Event->SetTI(TimeCode);
+      // Event->SetCL(SPWTimeCode);
     } else {
       Event->SetTI(TimeCode);
     }
