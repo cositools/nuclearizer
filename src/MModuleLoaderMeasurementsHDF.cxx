@@ -580,6 +580,9 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
 
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
 
+  m_NEventsInFile++;
+  m_NGoodEventsInFile++;
+
   return true;
 }
 
