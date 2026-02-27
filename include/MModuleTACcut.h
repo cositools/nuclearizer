@@ -32,6 +32,14 @@
 
 // Forward declarations:
 
+////////////////////////////////////////////////////////////////////////////////
+
+enum class MTACPlotSpectrumModes {
+  e_PlotNone = 200,
+  e_PlotNoBuffer = 201,
+  e_PlotWithBuffer = 202
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -86,6 +94,10 @@ class MModuleTACcut : public MModule
 
   //! Load the TAC cut file
   bool LoadTACCutFile(MString FName);
+  
+  //!  Mode for which to plot the spectrum (200 = not plot, 201 = plot no buffer, 202 = plot with buffer) 
+  void SetPlotSpectrumMode(MTACPlotSpectrumModes Mode) { m_PlotSpectrumMode = Mode; }
+  MTACPlotSpectrumModes GetPlotSpectrumMode() const { return m_PlotSpectrumMode; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
@@ -121,7 +133,8 @@ vector<unsigned int> m_DetectorIDs;
 
 MGUIExpoTACcut* m_ExpoTACcut;
 
-  MGUIExpoPlotSpectrum* m_ExpoEnergySpectrum;
+MGUIExpoPlotSpectrum* m_ExpoEnergySpectrum;
+MTACPlotSpectrumModes m_PlotSpectrumMode;
 
 
 #ifdef ___CLING___

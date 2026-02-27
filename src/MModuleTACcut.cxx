@@ -85,6 +85,9 @@ MModuleTACcut::MModuleTACcut() : MModule()
   m_AllowMultipleInstances = true;
 
   m_SideToIndex = {{'l', 0}, {'h', 1}, {'0', 0}, {'1', 1}, {'p', 0}, {'n', 1}};
+  
+  // For plotting the spectrum, default it to don't plot
+  m_PlotSpectrumMode = MTACPlotSpectrumModes::e_PlotNone;
 }
 
 
@@ -133,11 +136,15 @@ bool MModuleTACcut::Initialize()
 
 void MModuleTACcut::CreateExpos()
 {
-  // Create all expos
+  // If windows already exist, update the settings and exit
+  if (HasExpos() == true) {
+    if (m_ExpoEnergySpectrum != nullptr) {
+      m_ExpoEnergySpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
+    }
+    return;
+  }
 
-  if (HasExpos() == true) return;
-
-  // Set the histogram display
+  // TAC cut window
   m_ExpoTACcut = new MGUIExpoTACcut(this);
   m_ExpoTACcut->SetTACHistogramArrangement(m_DetectorIDs);
   for (unsigned int i = 0; i < m_DetectorIDs.size(); ++i) {
@@ -146,9 +153,13 @@ void MModuleTACcut::CreateExpos()
   }
   m_Expos.push_back(m_ExpoTACcut);
   
-  // Set the energy histogram display
-  m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
-  m_Expos.push_back(m_ExpoEnergySpectrum);
+  // spectrum plot
+  if (m_PlotSpectrumMode != MTACPlotSpectrumModes::e_PlotNone) {
+    m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
+    m_ExpoEnergySpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
+    m_ExpoEnergySpectrum->SetEnergyHistogramParameters(200, 0, 1000); // Adjust bounds as needed
+    m_Expos.push_back(m_ExpoEnergySpectrum);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -312,6 +323,14 @@ bool MModuleTACcut::ReadXmlConfiguration(MXmlNode* Node)
   if (TACCutFileNameNode != nullptr) {
     SetTACCutFileName(TACCutFileNameNode->GetValue());
   }
+  
+  // In ReadXmlConfiguration():
+  if (Node->GetName() == "PlotSpectrumMode") {
+    m_PlotSpectrumMode = static_cast<MTACPlotSpectrumModes>(Node->GetValueAsInt());
+  }
+
+  // In CreateXmlConfiguration():
+  new MXmlNode(Node, "PlotSpectrumMode", static_cast<int>(m_PlotSpectrumMode));
 
   return true;
 }

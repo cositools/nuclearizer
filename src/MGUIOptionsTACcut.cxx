@@ -85,6 +85,27 @@ void MGUIOptionsTACcut::Create()
   TGLayoutHints* TACCutLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_TACCutFileSelector, TACCutLayout);
   
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 10, 10, 10, 10);
+  TGLayoutHints* RBLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 40, 10, 2, 0);
+
+  TGLabel* PlotSpectrumLabel = new TGLabel(m_OptionsFrame, "Please choose a spectrum plotting and memory option:");
+  m_OptionsFrame->AddFrame(PlotSpectrumLabel, LabelLayout);
+      
+  m_PlotSpectrumNoneRB = new TGRadioButton(m_OptionsFrame, "Do not plot spectrum", c_PlotSpectrumNone);
+  m_PlotSpectrumNoneRB->Associate(this);
+  m_OptionsFrame->AddFrame(m_PlotSpectrumNoneRB, RBLayout);
+
+  m_PlotSpectrumNoBufferRB = new TGRadioButton(m_OptionsFrame, "Plot spectrum without buffering data", c_PlotSpectrumNoBuffer);
+  m_PlotSpectrumNoBufferRB->Associate(this);
+  m_OptionsFrame->AddFrame(m_PlotSpectrumNoBufferRB, RBLayout);
+      
+  m_PlotSpectrumWithBufferRB = new TGRadioButton(m_OptionsFrame, "Plot spectrum with buffered data", c_PlotSpectrumWithBuffer);
+  m_PlotSpectrumWithBufferRB->Associate(this);
+  m_OptionsFrame->AddFrame(m_PlotSpectrumWithBufferRB, RBLayout);
+
+  int PlotMode = static_cast<int>(dynamic_cast<MModuleTACcut*>(m_Module)->GetPlotSpectrumMode());
+  ToggleRadioButtons(PlotMode);
+  
   PostCreate();
 }
 
@@ -94,14 +115,15 @@ void MGUIOptionsTACcut::Create()
 
 bool MGUIOptionsTACcut::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
-  // Modify here if you have more buttons
-
   bool Status = true;
   
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
+      break;
+    case kCM_RADIOBUTTON:
+      ToggleRadioButtons(Parameter1);
       break;
     default:
       break;
@@ -115,7 +137,6 @@ bool MGUIOptionsTACcut::ProcessMessage(long Message, long Parameter1, long Param
     return false;
   }
 
-  // Call also base class
   return MGUIOptions::ProcessMessage(Message, Parameter1, Parameter2);
 }
 
@@ -128,8 +149,35 @@ bool MGUIOptionsTACcut::OnApply()
   // Store the data in the module
   dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
   dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCutFileName(m_TACCutFileSelector->GetFileName());
+  
+  if (m_PlotSpectrumNoneRB->GetState() == kButtonDown) {
+    dynamic_cast<MModuleTACcut*>(m_Module)->SetPlotSpectrumMode(MTACPlotSpectrumModes::e_PlotNone);
+  } else if (m_PlotSpectrumNoBufferRB->GetState() == kButtonDown) {
+    dynamic_cast<MModuleTACcut*>(m_Module)->SetPlotSpectrumMode(MTACPlotSpectrumModes::e_PlotNoBuffer);
+  } else if (m_PlotSpectrumWithBufferRB->GetState() == kButtonDown) {
+    dynamic_cast<MModuleTACcut*>(m_Module)->SetPlotSpectrumMode(MTACPlotSpectrumModes::e_PlotWithBuffer);
+  }
 
   return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void MGUIOptionsTACcut::ToggleRadioButtons(int WidgetID)
+{
+  if (WidgetID == c_PlotSpectrumNone) {
+    m_PlotSpectrumNoneRB->SetState(kButtonDown);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonUp);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonUp);
+  } else if (WidgetID == c_PlotSpectrumNoBuffer) {
+    m_PlotSpectrumNoneRB->SetState(kButtonUp);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonDown);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonUp);
+  } else if (WidgetID == c_PlotSpectrumWithBuffer) {
+    m_PlotSpectrumNoneRB->SetState(kButtonUp);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonUp);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonDown);
+  }
 }
 
 
