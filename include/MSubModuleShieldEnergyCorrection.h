@@ -87,8 +87,8 @@ class MSubModuleShieldEnergyCorrection : public MSubModule
   //! Read in and parse the Shield energy correction file (fwhm and centroid)
   bool ParseShieldEnergyCorrectionFile();
   //! noise shield energy
-  double NoiseShieldEnergyCentroid(double energy, int det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id);
-  double NoiseShieldEnergyFWHM(double energy, int det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id);
+  double NoiseShieldEnergyCentroid(double energy, MString det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id);
+  double NoiseShieldEnergyFWHM(double energy, MString det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id);
 
   // private methods:
  private:

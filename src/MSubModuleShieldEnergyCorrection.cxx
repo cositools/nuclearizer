@@ -96,39 +96,77 @@ void MSubModuleShieldEnergyCorrection::Clear()
 
 bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // // Main data analysis routine, which updates the event to a new level
+  // Main data analysis routine, which updates the event to a new level
 
-  // // Set the energy
-  // list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
-  // for (MDEECrystalHit& CH : Hits) {
+  if (Event == nullptr) {
+      if (g_Verbosity >= c_Error) cerr << "ERROR: AnalyzeEvent() received nullptr event" << endl;
+      return false;
+  }
+    
+  // DEE shield energy correction: for each voxel of the shield crystal, the deposited energy is corrected following a gaussian distribution. The energy centroid and the fwhm are computed using the formula in (Ciabattoni et al. 2025) using a set of 5 parameters, defined in the shield energy correction file. Each voxel has different parameters.
+  
+  // Energy correction
+  list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
+  for (MDEECrystalHit& CH : Hits) {
 
-  //   double true_energy = CH.m_SimulatedEnergy;
-  //   int det_id = CH.m_DetectorID;
-  //   int crystal_id = CH.m_CrystalID;
+     const double true_energy = CH.m_SimulatedEnergy;
+      
+     if (true_energy < 0) {
+        if (g_Verbosity >= c_Warning) cout << "WARNING: Negative simulated energy (" << true_energy
+              << ")" << endl;
+        CH.m_Energy = true_energy;
+        continue;
+     }
+     
+     MString det_id = CH.m_DetectorID;
+     int crystal_id = CH.m_CrystalID;
 
-  //   MVector voxel_id = CH.m_VoxelInDetector;
+     MVector voxel_id = CH.m_VoxelInDetector;
 
-  //   double shield_corrected_centroid = NoiseShieldEnergyCentroid(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
-  //   double shield_FWHM_value = NoiseShieldEnergyFWHM(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
+     const double shield_corrected_centroid = NoiseShieldEnergyCentroid(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
+     const double shield_FWHM_value = NoiseShieldEnergyFWHM(true_energy, det_id, crystal_id, voxel_id[0], voxel_id[1], voxel_id[2]);
 
-  //   double shield_sigma = shield_FWHM_value / 2.35;
-  //   double corrected_energy = m_Random.Gaus(shield_corrected_centroid, shield_sigma);
+     // If FWHM not available or invalid, do not smear
+     if (shield_FWHM_value <= 0) {
+        if (g_Verbosity >= c_Warning) cout << "WARNING: Non-positive FWHM (" << shield_FWHM_value << ") for DetectorID = " << det_id
+              << " CrystalID = " << crystal_id << " Voxel_ID = " << voxel_id << " -> using centroid only" << endl;
+        CH.m_Energy = shield_corrected_centroid;
+        continue;
+     }
+      
+     double shield_sigma = shield_FWHM_value / 2.35;
+     double corrected_energy = m_Random.Gaus(shield_corrected_centroid, shield_sigma);
 
-  //   CH.m_Energy = corrected_energy;
-  // }
+     if (corrected_energy < 0) {
+         if (g_Verbosity >= c_Warning) cout  << "WARNING: Corrected energy negative (" << corrected_energy
+              << ") from centroid = " << shield_corrected_centroid << " sigma=" << shield_sigma
+              << " -> clamping to 0" << endl;
+        CH.m_Energy = 0.0;
+        continue; 
+     }      
+      
+      if (g_Verbosity >= c_Info) { 
+          cout << "DEE shield energy correction:" << endl;
+          cout << "DetectorID: " << det_id << " CrystalID: " << crystal_id << " Voxel_ID: " << voxel_id << endl;   
+          cout << "Simulated energy: " << true_energy << endl;
+          cout << "Corrected energy: " << corrected_energy << endl;
+      }
+      
+     CH.m_Energy = corrected_energy;
+   }
 
-  // // Merge hits:
-  // for (auto IterLV1 = Hits.begin(); IterLV1 != Hits.end(); ++IterLV1) {
-  //   auto IterLV2 = std::next(IterLV1);
-  //   while (IterLV2 != Hits.end()) {
-  //     if (IterLV1->m_ROE == IterLV2->m_ROE) {
-  //       IterLV1->m_Energy += IterLV2->m_Energy;
-  //       IterLV2 = Hits.erase(IterLV2);
-  //     } else {
-  //       ++IterLV2;
-  //     }
-  //   }
-  // }
+   // Merge hits:
+   for (auto IterLV1 = Hits.begin(); IterLV1 != Hits.end(); ++IterLV1) {
+     auto IterLV2 = std::next(IterLV1);
+     while (IterLV2 != Hits.end()) {
+       if (IterLV1->m_ROE == IterLV2->m_ROE) {
+         IterLV1->m_Energy += IterLV2->m_Energy;
+         IterLV2 = Hits.erase(IterLV2);
+       } else {
+         ++IterLV2;
+       }
+     }
+   }
 
   return true;
 }
@@ -145,7 +183,7 @@ void MSubModuleShieldEnergyCorrection::Finalize()
 }
 
 //! centroid and fwhm for the gaussian noise
-double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyCentroid(double energy, int det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id)
+double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyCentroid(double energy, MString det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id)
 {
 
   MReadOutElementVoxel3D hit_V;
@@ -160,15 +198,18 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyCentroid(double energy
   auto it = m_Centroid.find(hit_V);
   if (it != m_Centroid.end()) {
     TF1* gauss_centroid = it->second;
+    if (gauss_centroid == nullptr) {
+        if (g_Verbosity >= c_Error) cerr << "ERROR: Null TF1 pointer for centroid map entry" << endl;
+    }
     corrected_centroid = gauss_centroid->Eval(energy);
   } else {
-    cout << "WARNING: Centroid correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+    if (g_Verbosity >= c_Error) cerr << "ERROR: Centroid correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
   }
 
   return corrected_centroid;
 }
 
-double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double energy, int det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id)
+double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double energy, MString det_id, int crystal_id, int voxelx_id, int voxely_id, int voxelz_id)
 {
 
   MReadOutElementVoxel3D hit_V;
@@ -184,10 +225,12 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double energy, in
 
   if (it_fwhm != m_FWHM.end()) {
     TF1* gauss_fwhm = it_fwhm->second;
-
+    if (gauss_fwhm == nullptr) {
+          if (g_Verbosity >= c_Error) cerr << "ERROR: Null TF1 pointer for fwhm map entry" << endl;
+    }
     FWHM_value = gauss_fwhm->Eval(energy); // E_true in keV
   } else {
-    cout << "WARNING: FWHM correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+    if (g_Verbosity >= c_Error) cerr << "ERROR: FWHM correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
   }
 
 
@@ -196,11 +239,20 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double energy, in
 
 bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
 {
+  
+  if (m_ShieldEnergyCorrectionFileName == "") {
+      if (g_Verbosity >= c_Error) cerr << "ERROR: Shield energy correction filename is empty." << endl;
+      return false;
+  }  
+  
   MParser Parser;
   if (Parser.Open(m_ShieldEnergyCorrectionFileName, MFile::c_Read) == false) {
-    cout << "Unable to open shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
+    if (g_Verbosity >= c_Error) cerr << "Unable to open shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
     return false;
   }
+    
+  unsigned int Parsed = 0;
+  unsigned int Skipped = 0;
 
   for (unsigned int i = 0; i < Parser.GetNLines(); i++) {
     unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
@@ -212,13 +264,16 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
       continue;
 
     if (NTokens != 12) {
-      continue;
+        if (g_Verbosity >= c_Warning) cout << "WARNING: Line " << i << ": expected 12 tokens, got " << NTokens
+            << " (skipping)" << endl;
+        ++Skipped;
+        continue;
     } //this shouldn't happen but just in case
 
     // For each voxel of the shield crystal, the deposited energy is corrected generating a random energy correction following a gaussian distribution. The energy centroid and the fwhm can be computed from the parameters below (Ciabattoni et al. 2025)
 
     // Detector ID
-    int det_id = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(0);
+    MString det_id = Parser.GetTokenizerAt(i)->GetTokenAtAsString(0);
     // Crystal ID
     int crystal_id = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
     // MEGAlib voxel X, Y, Z ID
@@ -242,19 +297,32 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
     V.SetVoxelYID(voxel_Y);
     V.SetVoxelZID(voxel_Z);
 
-    TF1* gauss_centroid = new TF1("centroid_" + MString(det_id) + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "[0]*x + [1]");
+    TF1* gauss_centroid = new TF1("centroid_" + det_id + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "[0]*x + [1]");
     gauss_centroid->SetParameter(0, m_par);
     gauss_centroid->SetParameter(1, q_par);
 
-    TF1* gauss_fwhm = new TF1("fwhm_" + MString(det_id) + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
+    TF1* gauss_fwhm = new TF1("fwhm_" + det_id + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
     gauss_fwhm->SetParameter(0, a_par);
     gauss_fwhm->SetParameter(1, b_par);
     gauss_fwhm->SetParameter(2, c_par);
 
     m_Centroid[V] = gauss_centroid;
     m_FWHM[V] = gauss_fwhm;
+    
+    ++Parsed;
   }
 
+  if (Parsed == 0) {
+      if (g_Verbosity >= c_Error) cerr << "ERROR: Parsed 0 valid correction lines from "
+           << m_ShieldEnergyCorrectionFileName << endl;
+      return false;
+  }
+
+  if (Skipped > 0) {
+      if (g_Verbosity >= c_Warning) cout << "WARNING: Skipped " << Skipped << " line(s) while parsing "
+            << m_ShieldEnergyCorrectionFileName << endl;
+  }
+  
   return true;
 }
 

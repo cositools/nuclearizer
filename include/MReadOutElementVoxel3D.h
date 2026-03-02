@@ -2,7 +2,7 @@
  * MReadOutElementVoxel3D.h
  *
  *
- * Copyright (C) by Andreas Zoglauer, Valentina Fioretti, Parshad Patel.
+ * Copyright (C) by Andreas Zoglauer, Valentina Fioretti.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -52,8 +52,6 @@ class MReadOutElementVoxel3D : public MReadOutElement
 
   //! Compare two read-out elements
   virtual bool operator==(const MReadOutElement& R) const;
-  //! Smaller than operator
-  virtual bool operator<(const MReadOutElement& R) const;
 
   //! Return true if this read-out element is of the given type
   virtual bool IsOfType(const MString& String) const;

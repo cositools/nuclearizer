@@ -1,7 +1,7 @@
 /*
  * MSubModuleDEEIntake.h
  *
- * Copyright (C) by Andreas Zoglauer, Parshad Patel.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel, Valentina Fioretti.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
