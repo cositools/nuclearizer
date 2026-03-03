@@ -153,6 +153,7 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
 
 
   // Step (6): the shield veto / trigger, handle pre-scalers, calculate dead-time, calculate random coincidence time
+  // Need to add a veto window size here
   m_ShieldTrigger.Clear();
   m_ShieldTrigger.AnalyzeEvent(Event);
   if (m_ShieldTrigger.HasVeto() == true) {
@@ -161,7 +162,7 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
     }
 
     // Clean up
-
+    
     Event->SetAnalysisProgress(MAssembly::c_DetectorEffectsEngine);
     return true;
   } else if (m_ShieldTrigger.HasTrigger() == true) { // = energy read out

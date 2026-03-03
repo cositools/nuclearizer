@@ -155,7 +155,7 @@ class MSubModuleShieldTrigger : public MSubModule
   
   //! Number of shield hits before deadtime
   unsigned long m_NumShieldHitCounts;
-  //! Number of shield veto counts
+  //! Number of hits in GeD that are vetoed due to shield hits
   unsigned long m_NumShieldVetoCounts;
   //! Number of BGO hits erased due to deadtime
   unsigned long m_NumBGOHitsErased;

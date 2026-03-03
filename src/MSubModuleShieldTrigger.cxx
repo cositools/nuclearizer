@@ -259,9 +259,7 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 
   // Calculate deadtime for each panel group after processing all hits
   for (int group = 0; group < nShieldPanels; group++) {
-    if (!m_IsShieldDead) {
       m_ShieldDeadtime[group] = CalculateASICDeadtime(m_ShieldHitCrystalID[group]);
-    }
   }
 
   // Check if event is within veto window

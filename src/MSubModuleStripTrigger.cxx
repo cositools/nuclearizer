@@ -69,8 +69,9 @@ MSubModuleStripTrigger::MSubModuleStripTrigger() : MSubModule()
   m_StripsCurrentDeadtime = 0.0;
   m_ASICLastHitTime = -10.0;
   m_StripsTotalDeadtime = 0.0;
-  m_StripHitsErased = 0;
+  // m_StripHitsErased = 0;
   m_TotalStripHitsCounter = 0;
+  m_TotalGRHitsCounter = 0;
 
   m_FirstTime = std::numeric_limits<double>::max();
   m_LastTime = 0.0;
@@ -154,10 +155,7 @@ double MSubModuleStripTrigger::CalculateASICDeadtime(vector<int> ASICChannels)
   // Loop through each channel ID and add nearest neighbors
   for (int ID : ASICChannels) {
     if (ID == 64) {
-      if (g_Verbosity >= c_Warning) {
-        cout << m_Name << ": Warning - Strip ID is 64; should not happen" << endl;
-      }
-      continue;
+      ASICChannelsSet.insert(ID);
     } else if (ID == 0 || ID == 32) {
       // Edge case: If ID is 0 or 32, add the channel and the next channel
       ASICChannelsSet.insert(ID);
@@ -207,10 +205,8 @@ bool MSubModuleStripTrigger::CountRate(vector<int> ASICChannels, vector<double> 
     size_t temp_size = ASICChannelsSet.size();
 
     if (ID == 64) {
-      if (g_Verbosity >= c_Warning) {
-        cout << m_Name << ": Warning - Strip ID is 64; should not happen" << endl;
-      }
-      continue;
+      // ASICChannelsSet.insert(ID);
+      continue; // Do not include GR hits in count rate calculation as it has its own readout and does not cause nearest neighbor readout
     } else if (ID == 0 || ID == 32) {
       ASICChannelsSet.insert(ID);
       ASICChannelsSet.insert(ID + 1);
@@ -339,10 +335,14 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
         ASICofDet = 2;
       } else if (!IsLV && StripID >= 32 && StripID <= 63) {
         ASICofDet = 3;
-      // } else if (!IsLV && StripID = 64) {
-      //   ASICofDet = 4;
-      // } else if (IsLV && StripID = 64) {
-      //   ASICofDet = 5;
+      } else if (!IsLV && StripID == 64) {
+        m_HasVeto = true;
+        m_TotalGRHitsCounter++;
+        ASICofDet = 4;
+      } else if (IsLV && StripID == 64) {
+        m_HasVeto = true;
+        m_TotalGRHitsCounter++;
+        ASICofDet = 5;
       } else {
         if (g_Verbosity >= c_Warning) {
           cout << m_Name << ": Warning - Strip not associated with any ASIC" << endl;
@@ -382,7 +382,7 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
         m_ASICHitStripID_noDT[det][ASICofDet].push_back(StripID);
         m_TempEvtTimes[det][ASICofDet].push_back(m_EventTime);
         m_IsGeDDead = true;
-        m_StripHitsErased++;
+        // m_StripHitsErased++;
         HitIter = Hits.erase(HitIter);
         continue;
       }
@@ -489,6 +489,7 @@ void MSubModuleStripTrigger::Finalize()
   }
   
   cout << "Total strip hits after charge sharing (before deadtime): " << m_TotalStripHitsCounter << endl;
+  cout << "Total GR hits (before deadtime): " << m_TotalGRHitsCounter << endl;
   cout << "Total dead time of the instrument: " << m_StripsTotalDeadtime << " seconds" << endl;
   
   if (simTime > 0) {
@@ -496,7 +497,7 @@ void MSubModuleStripTrigger::Finalize()
     cout << "Livetime fraction: " << liveFraction << endl;
   }
   
-  cout << "Hits erased due to detector being dead: " << m_StripHitsErased << endl;
+  // cout << "Hits erased due to detector being dead: " << m_StripHitsErased << endl;
   
   if (m_TotalStripHitsCounter > 0) {
     cout << "Avg deadtime per strip hit: " << m_StripsTotalDeadtime / m_TotalStripHitsCounter << " seconds" << endl;

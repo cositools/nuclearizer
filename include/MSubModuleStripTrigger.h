@@ -92,7 +92,7 @@ class MSubModuleStripTrigger : public MSubModule
   double GetStripsTotalDeadtime() const { return m_StripsTotalDeadtime; }
 
   //! Get number of strip hits erased
-  int GetStripHitsErased() const { return m_StripHitsErased; }
+  // int GetStripHitsErased() const { return m_StripHitsErased; }
 
   //! Get trigger rate for detector
   int GetTriggerRate(int det) const {
@@ -174,9 +174,11 @@ class MSubModuleStripTrigger : public MSubModule
   //! Stores total dead time of the instrument
   double m_StripsTotalDeadtime;
   //! Hits erased due to deadtime
-  int m_StripHitsErased;
+  // int m_StripHitsErased;
   //! Total strip hits counter
   int m_TotalStripHitsCounter;
+  //! Total GR hits counter
+  int m_TotalGRHitsCounter;
 
   //! First event time for statistics
   double m_FirstTime;
@@ -186,7 +188,7 @@ class MSubModuleStripTrigger : public MSubModule
   //! Number of detectors
   static const int nDets = 16;
   //! Number of ASICs per detector
-  static const int nASICs = 4;
+  static const int nASICs = 6;
 
   //! Stores dead time for each ASIC
   vector<vector<double>> m_ASICDeadTime;
