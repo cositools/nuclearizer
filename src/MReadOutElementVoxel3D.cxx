@@ -143,7 +143,7 @@ bool MReadOutElementVoxel3D::operator==(const MReadOutElement& R) const
 {
   const MReadOutElementVoxel3D* S = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
   if (S == nullptr)
-      if (g_Verbosity >= c_Error) cerr << "ERROR: Comparison with different read-out element type" << endl;
+      if (g_Verbosity >= c_Error) cout << "ERROR: Comparison with different read-out element type" << endl;
     return false;
 
   if (m_DetectorID != S->m_DetectorID)
@@ -179,7 +179,7 @@ unsigned int MReadOutElementVoxel3D::GetNumberOfParsableElements() const
 bool MReadOutElementVoxel3D::Parse(const MTokenizer& T, unsigned int StartElement)
 {
   if (T.GetNTokens() < StartElement + 5) {
-      if (g_Verbosity >= c_Error) cerr << "ERROR: Not enough elements to parse. Number of tokens is "<< T.GetNTokens() << " and less than 5" << endl;
+      if (g_Verbosity >= c_Error) cout << "ERROR: Not enough elements to parse. Number of tokens is "<< T.GetNTokens() << " and less than 5" << endl;
     return false;
   }
 

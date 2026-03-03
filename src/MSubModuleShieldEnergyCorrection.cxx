@@ -99,7 +99,7 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level
 
   if (Event == nullptr) {
-      if (g_Verbosity >= c_Error) cerr << "ERROR: AnalyzeEvent() received nullptr event" << endl;
+      if (g_Verbosity >= c_Error) cout << "ERROR: AnalyzeEvent() received nullptr event" << endl;
       return false;
   }
     
@@ -199,11 +199,11 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyCentroid(double energy
   if (it != m_Centroid.end()) {
     TF1* gauss_centroid = it->second;
     if (gauss_centroid == nullptr) {
-        if (g_Verbosity >= c_Error) cerr << "ERROR: Null TF1 pointer for centroid map entry" << endl;
+        if (g_Verbosity >= c_Error) cout << "ERROR: Null TF1 pointer for centroid map entry" << endl;
     }
     corrected_centroid = gauss_centroid->Eval(energy);
   } else {
-    if (g_Verbosity >= c_Error) cerr << "ERROR: Centroid correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+    if (g_Verbosity >= c_Error) cout << "ERROR: Centroid correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
   }
 
   return corrected_centroid;
@@ -226,11 +226,11 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double energy, MS
   if (it_fwhm != m_FWHM.end()) {
     TF1* gauss_fwhm = it_fwhm->second;
     if (gauss_fwhm == nullptr) {
-          if (g_Verbosity >= c_Error) cerr << "ERROR: Null TF1 pointer for fwhm map entry" << endl;
+          if (g_Verbosity >= c_Error) cout << "ERROR: Null TF1 pointer for fwhm map entry" << endl;
     }
     FWHM_value = gauss_fwhm->Eval(energy); // E_true in keV
   } else {
-    if (g_Verbosity >= c_Error) cerr << "ERROR: FWHM correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
+    if (g_Verbosity >= c_Error) cout << "ERROR: FWHM correction not found for shield " << det_id << ", " << crystal_id << " and voxel (" << voxelx_id << "," << voxely_id << "," << voxelz_id << ")" << endl;
   }
 
 
@@ -241,13 +241,13 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
 {
   
   if (m_ShieldEnergyCorrectionFileName == "") {
-      if (g_Verbosity >= c_Error) cerr << "ERROR: Shield energy correction filename is empty." << endl;
+      if (g_Verbosity >= c_Error) cout << "ERROR: Shield energy correction filename is empty." << endl;
       return false;
   }  
   
   MParser Parser;
   if (Parser.Open(m_ShieldEnergyCorrectionFileName, MFile::c_Read) == false) {
-    if (g_Verbosity >= c_Error) cerr << "Unable to open shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
+    if (g_Verbosity >= c_Error) cout << "Unable to open shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
     return false;
   }
     
@@ -313,7 +313,7 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
   }
 
   if (Parsed == 0) {
-      if (g_Verbosity >= c_Error) cerr << "ERROR: Parsed 0 valid correction lines from "
+      if (g_Verbosity >= c_Error) cout << "ERROR: Parsed 0 valid correction lines from "
            << m_ShieldEnergyCorrectionFileName << endl;
       return false;
   }

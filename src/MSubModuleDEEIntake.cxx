@@ -193,7 +193,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       vector<MString> Tokens = DetectorName.Tokenize("_");
         
       if (Tokens.size() != 3) {
-        if (g_Verbosity >= c_Error) cerr << "ERROR: Unexpected detector name format for the Shield"
+        if (g_Verbosity >= c_Error) cout << "ERROR: Unexpected detector name format for the Shield"
              << DetectorName << endl;
         return false;
       }
