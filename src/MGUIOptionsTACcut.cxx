@@ -165,6 +165,7 @@ bool MGUIOptionsTACcut::OnApply()
 
 void MGUIOptionsTACcut::ToggleRadioButtons(int WidgetID)
 {
+  // Plot spectrum
   if (WidgetID == c_PlotSpectrumNone) {
     m_PlotSpectrumNoneRB->SetState(kButtonDown);
     m_PlotSpectrumNoBufferRB->SetState(kButtonUp);

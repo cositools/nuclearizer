@@ -88,6 +88,7 @@ MModuleTACcut::MModuleTACcut() : MModule()
   
   // For plotting the spectrum, default it to don't plot
   m_PlotSpectrumMode = MTACPlotSpectrumModes::e_PlotNone;
+  m_ExpoEnergySpectrum = nullptr;
 }
 
 
@@ -136,10 +137,17 @@ bool MModuleTACcut::Initialize()
 
 void MModuleTACcut::CreateExpos()
 {
-  // If windows already exist, update the settings and exit
-  if (HasExpos() == true) {
+  // If the window already exists from a previous run, just update the setting and return
+  // If they switched to "No Plot", the window will stay open but go to sleep
+  if (m_Expos.size() != 0) {
     if (m_ExpoEnergySpectrum != nullptr) {
       m_ExpoEnergySpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
+    }
+    else if (m_PlotSpectrumMode != MTACPlotSpectrumModes::e_PlotNone) {
+      m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
+      m_ExpoEnergySpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
+      m_ExpoEnergySpectrum->SetEnergyHistogramParameters(200, 0, 1000);
+      m_Expos.push_back(m_ExpoEnergySpectrum);
     }
     return;
   }
@@ -157,7 +165,7 @@ void MModuleTACcut::CreateExpos()
   if (m_PlotSpectrumMode != MTACPlotSpectrumModes::e_PlotNone) {
     m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
     m_ExpoEnergySpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
-    m_ExpoEnergySpectrum->SetEnergyHistogramParameters(200, 0, 1000); // Adjust bounds as needed
+    m_ExpoEnergySpectrum->SetEnergyHistogramParameters(200, 0, 1000);
     m_Expos.push_back(m_ExpoEnergySpectrum);
   }
 }
@@ -176,7 +184,7 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
     char Side = SH->IsLowVoltageStrip() ? 'l' : 'h';
     
     // This captures every single hit before we delete any of them.
-    if (HasExpos()) {
+    if (HasExpos() && m_ExpoEnergySpectrum != nullptr) {
       m_ExpoEnergySpectrum->AddEnergyInitial(SH->GetEnergy(), SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
     }
 
@@ -265,9 +273,13 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
         // }
         if ((SHTiming < TotalOffset) || (SHTiming < MaxTAC - HardCoincidenceWindow)) { //Eliminating the upper boundary condition and just using one cut based on the coincidence window
           Passed = false;
+        
         } else if (HasExpos()==true) {
           m_ExpoTACcut->AddTAC(DetID, SHTiming);
-          m_ExpoEnergySpectrum->AddEnergyFinal(SH->GetEnergy(), SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
+          // Only plot the spectrum if the energy spectrum window was actually created
+          if (m_ExpoEnergySpectrum != nullptr) {
+            m_ExpoEnergySpectrum->AddEnergyFinal(SH->GetEnergy(), SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
+          }
         }
       }
     }
@@ -324,14 +336,11 @@ bool MModuleTACcut::ReadXmlConfiguration(MXmlNode* Node)
     SetTACCutFileName(TACCutFileNameNode->GetValue());
   }
   
-  // In ReadXmlConfiguration():
-  if (Node->GetName() == "PlotSpectrumMode") {
-    m_PlotSpectrumMode = static_cast<MTACPlotSpectrumModes>(Node->GetValueAsInt());
+  MXmlNode* PlotSpectrumModeNode = Node->GetNode("PlotSpectrumMode");
+  if (PlotSpectrumModeNode != nullptr) {
+    m_PlotSpectrumMode = static_cast<MTACPlotSpectrumModes>(PlotSpectrumModeNode->GetValueAsInt());
   }
-
-  // In CreateXmlConfiguration():
-  new MXmlNode(Node, "PlotSpectrumMode", static_cast<int>(m_PlotSpectrumMode));
-
+  
   return true;
 }
 
@@ -347,6 +356,7 @@ MXmlNode* MModuleTACcut::CreateXmlConfiguration()
   
   new MXmlNode(Node, "TACCalFileName", m_TACCalFile);
   new MXmlNode(Node, "TACCutFileName", m_TACCutFile);
+  new MXmlNode(Node, "PlotSpectrumMode", static_cast<int>(m_PlotSpectrumMode));
 
   return Node;
 }

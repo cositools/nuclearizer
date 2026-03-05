@@ -131,7 +131,7 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   ToggleRadioButtons(static_cast<int>(NearestNeighborCutMode));
   
   
-  // Plot spectrum
+  // Plot spectrum options 
   TGLabel* PlotSpectrumLabel = new TGLabel(m_OptionsFrame, "Please choose a spectrum plotting and memory option:");
   m_OptionsFrame->AddFrame(PlotSpectrumLabel, LabelLayout);
     
@@ -282,12 +282,12 @@ bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
   
   // Plot spectrum
   if (m_PlotSpectrumNoneRB->GetState() == kButtonDown) {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MPlotSpectrumModes::e_PlotNone);
-  } else if (m_PlotSpectrumNoBufferRB->GetState() == kButtonDown) {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MPlotSpectrumModes::e_PlotNoBuffer);
-  } else if (m_PlotSpectrumWithBufferRB->GetState() == kButtonDown) {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MPlotSpectrumModes::e_PlotWithBuffer);
-  }
+      dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MEnergyCalibrationPlotSpectrumModes::e_PlotNone);
+    } else if (m_PlotSpectrumNoBufferRB->GetState() == kButtonDown) {
+      dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MEnergyCalibrationPlotSpectrumModes::e_PlotNoBuffer);
+    } else if (m_PlotSpectrumWithBufferRB->GetState() == kButtonDown) {
+      dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MEnergyCalibrationPlotSpectrumModes::e_PlotWithBuffer);
+    }
 
   return true;
 }

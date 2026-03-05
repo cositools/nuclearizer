@@ -100,7 +100,7 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   m_NearestNeighborThreshold = -1000.0;
   
   // Plot spectrum
-  m_PlotSpectrumMode = MPlotSpectrumModes::e_PlotNone;
+  m_PlotSpectrumMode = MEnergyCalibrationPlotSpectrumModes::e_PlotNone;
 
 }
 
@@ -118,8 +118,8 @@ MModuleEnergyCalibrationUniversal::~MModuleEnergyCalibrationUniversal()
 
 void MModuleEnergyCalibrationUniversal::CreateExpos()
 {
-  // 1. If the window ALREADY exists from a previous run, just update the setting and return.
-  // (If they switched to "No Plot", the window will stay open but go to sleep).
+  // If the window already exists from a previous run, just update the setting and return
+  // If they switched to "No Plot", the window will stay open but go to sleep
   if (m_Expos.size() != 0) {
     if (m_ExpoSpectrum != nullptr) {
       m_ExpoSpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
@@ -127,12 +127,12 @@ void MModuleEnergyCalibrationUniversal::CreateExpos()
     return;
   }
 
-  // 2. If it DOES NOT exist yet, and they selected "No Plot", skip creation entirely!
-  if (m_PlotSpectrumMode == MPlotSpectrumModes::e_PlotNone) {
+  // If it the window does not exist yet, and they selected "No Plot", skip creating the plot entirely
+  if (m_PlotSpectrumMode == MEnergyCalibrationPlotSpectrumModes::e_PlotNone) {
     return;
   }
 
-  // 3. Otherwise, create it for the very first time!
+  // If window doesn't exist, create it for the very first time
   m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
   m_ExpoSpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
   m_ExpoSpectrum->SetEnergyHistogramParameters(200, 0, 2000);
@@ -582,7 +582,7 @@ bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
   }
   MXmlNode* PlotSpectrumModeNode = Node->GetNode("PlotSpectrumMode");
   if (PlotSpectrumModeNode != nullptr) {
-    m_PlotSpectrumMode = static_cast<MPlotSpectrumModes>(PlotSpectrumModeNode->GetValueAsInt());
+    m_PlotSpectrumMode = static_cast<MEnergyCalibrationPlotSpectrumModes>(PlotSpectrumModeNode->GetValueAsInt());
   }
 
   return true;

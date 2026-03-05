@@ -29,6 +29,7 @@
 #include <TCanvas.h>
 #include <TGButton.h>
 #include <THStack.h>
+#include <TLegend.h>
 
 // MEGAlib libs:
 #include "MStreams.h"
@@ -241,11 +242,11 @@ void MGUIExpoPlotSpectrum::SetEnergyHistogramParameters(int NBins, double Min, d
 {
   //! Set the energy histogram parameters
 
-  // SAFETY FIX: Never allow 0 or negative bins. Default to 1 if something goes wrong.
+  // Never allow 0 or negative bins. Default to 1 if something goes wrong.
   if (NBins <= 0) {
     NBins = 1;
   }
-  // SAFETY FIX: Ensure Max is actually greater than Min
+  // Make sure the max is actually greater than the min
   if (Max <= Min) {
     Max = Min + 100.0;
   }
@@ -291,7 +292,7 @@ void MGUIExpoPlotSpectrum::AddEnergyInitial(double Energy, bool IsNearestNeighbo
 {
   //! Add data to the energy histogram Initial
   
-  // First check if we want to plot the spectrum 
+  // First check if we want to plot the spectrum at all (200 = e_PlotNone)
   if (m_PlotSpectrumMode == 200) {
     return;
   }
@@ -343,7 +344,7 @@ void MGUIExpoPlotSpectrum::AddEnergyFinal(double Energy, bool IsNearestNeighbor,
 {
   //! Add data to the energy histogram Final
   
-  // First check if we want to plot the spectrum at all (200 = e_PlotNone)
+  // First check if we want to plot the spectrum
   if (m_PlotSpectrumMode == 200) {
     return;
   }
@@ -411,7 +412,9 @@ void MGUIExpoPlotSpectrum::Create()
   //! Add the GUI options here
 
   // Do not create it twice!
-  if (m_IsCreated == true) return;
+  if (m_IsCreated == true) {
+    return;
+  }
 
   m_Mutex.Lock();
   
@@ -467,8 +470,6 @@ void MGUIExpoPlotSpectrum::Create()
   
   // LV side
   m_EnergyCanvas->GetCanvas()->cd(1);
-  // Final
-  m_EnergyCanvas->GetCanvas()->cd(1);
   if (m_EnergyHistogramLVFinal != nullptr) {
     m_EnergyHistogramLVFinal->Draw("HIST");
   }
@@ -485,8 +486,6 @@ void MGUIExpoPlotSpectrum::Create()
 
   // HV side
   m_EnergyCanvas->GetCanvas()->cd(2);
-  // Final
-  m_EnergyCanvas->GetCanvas()->cd(2);
   if (m_EnergyHistogramHVFinal != nullptr) {
     m_EnergyHistogramHVFinal->Draw("HIST");
   }
@@ -500,6 +499,7 @@ void MGUIExpoPlotSpectrum::Create()
   if (m_EnergyHistogramNearestNeighborHVInitial != nullptr) {
     m_EnergyHistogramNearestNeighborHVInitial->Draw("HIST SAME");
   }
+
   
   m_EnergyCanvas->GetCanvas()->Update();
   
@@ -556,7 +556,54 @@ void MGUIExpoPlotSpectrum::Update()
   
   if (m_EnergyCanvas != nullptr && m_EnergyCanvas->GetCanvas() != nullptr) {
     TCanvas* C = m_EnergyCanvas->GetCanvas();
+    
+    C->cd(1);
+    TList* primsLV = gPad->GetListOfPrimitives();
+    TObject* objLV;
+    while ((objLV = primsLV->FindObject("TPave"))){
+      primsLV->Remove(objLV);
+      delete objLV;
+    }
+    
+    TLegend* legendLV = new TLegend(0.55, 0.65, 0.88, 0.88);
+    if (m_EnergyHistogramLVInitial != nullptr && m_EnergyHistogramLVInitial->GetEntries() > 0) {
+      legendLV->AddEntry(m_EnergyHistogramLVInitial, "Strips Initial", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborLVInitial != nullptr && m_EnergyHistogramNearestNeighborLVInitial->GetEntries() > 0) {
+      legendLV->AddEntry(m_EnergyHistogramNearestNeighborLVInitial, "Nearest Neighbor Initial", "f");
+    }
+    if (m_EnergyHistogramLVFinal != nullptr && m_EnergyHistogramLVFinal->GetEntries() > 0) {
+      legendLV->AddEntry(m_EnergyHistogramLVFinal, "Strips Final", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborLVFinal != nullptr && m_EnergyHistogramNearestNeighborLVFinal->GetEntries() > 0) {
+      legendLV->AddEntry(m_EnergyHistogramNearestNeighborLVFinal, "Nearest Neighbor Final", "f");
+    }
     if (C->GetPad(1)) C->GetPad(1)->Modified();
+    
+    C->cd(2);
+    TList* primsHV = gPad->GetListOfPrimitives();
+    TObject* objHV;
+    while((objHV = primsHV->FindObject("TPave"))) {
+      primsHV->Remove(objHV); delete objHV;
+    }
+    
+    TLegend* legendHV = new TLegend(0.55, 0.65, 0.88, 0.88);
+    if (m_EnergyHistogramHVInitial != nullptr && m_EnergyHistogramHVInitial->GetEntries() > 0) {
+      legendHV->AddEntry(m_EnergyHistogramHVInitial, "Strips Initial", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborHVInitial != nullptr && m_EnergyHistogramNearestNeighborHVInitial->GetEntries() > 0) {
+      legendHV->AddEntry(m_EnergyHistogramNearestNeighborHVInitial, "Nearest Neighbor Initial", "f");
+    }
+    if (m_EnergyHistogramHVFinal != nullptr && m_EnergyHistogramHVFinal->GetEntries() > 0) {
+      legendHV->AddEntry(m_EnergyHistogramHVFinal, "Strips Final", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborHVFinal != nullptr && m_EnergyHistogramNearestNeighborHVFinal->GetEntries() > 0) {
+      legendHV->AddEntry(m_EnergyHistogramNearestNeighborHVFinal, "Nearest Neighbor Final", "f");
+    }
+    legendHV->SetBorderSize(0);
+    if (legendHV->GetNRows() > 0) {
+      legendHV->Draw();
+    }
     if (C->GetPad(2)) C->GetPad(2)->Modified();
     
     C->Modified();
@@ -573,14 +620,8 @@ void MGUIExpoPlotSpectrum::Update()
 void MGUIExpoPlotSpectrum::OnUpdateRange()
 {
   //! Update the histogram range and binning
+  // This is the buffer part of the code
 
-  //! Update the histogram range and binning
-
-  // Safety fix: If we did not buffer the data (202), we cannot rebin/redraw!
-  //if (m_PlotSpectrumMode != 202) {
-  //  return;
-  //}
-  
   double Min = m_RangeMinEntry->GetAsDouble();
   double Max = m_RangeMaxEntry->GetAsDouble();
   double Width = m_BinWidthEntry->GetAsDouble();
@@ -589,7 +630,7 @@ void MGUIExpoPlotSpectrum::OnUpdateRange()
   if (Max <= Min) return;
   if (Width <= 0.0) return;
 
-  // If Log X is requested, Min cannot be <= 0. Bump it to a small positive number.
+  // If log x then min > 0 (has to be!) 
   if (m_LogXButton->IsOn() && Min <= 0.0) {
     Min = 0.1;
   }
@@ -597,14 +638,12 @@ void MGUIExpoPlotSpectrum::OnUpdateRange()
   // Calculate bins
   int NBins = (int)((Max - Min) / Width);
    
-  // SAFETY FIX: Ensure we have at least one bin
+  // Make sure we have at least one bin
   if (NBins < 1) NBins = 1;
 
   m_Mutex.Lock();
    
   // Rebin and refill all histograms
-
-  // Helper to refill histograms
   auto RefillHist = [&](TH1D* Hist, const std::vector<double>& Buffer) {
     if (Hist != nullptr) {
       Hist->SetBins(NBins, Min, Max);
@@ -637,8 +676,8 @@ void MGUIExpoPlotSpectrum::OnUpdateRange()
     
     // LV Side
     C->cd(1);
-    gPad->SetLogx(logX); // Apply Log X
-    gPad->SetLogy(logY); // Apply Log Y
+    gPad->SetLogx(logX);
+    gPad->SetLogy(logY);
     C->GetPad(1)->Clear();
     
     THStack* LVStack = new THStack("lvStack", "LV Energy Spectrum");
@@ -655,10 +694,52 @@ void MGUIExpoPlotSpectrum::OnUpdateRange()
       LVStack->Add(m_EnergyHistogramNearestNeighborLVFinal);
     }
 
-    // Scaling to the plot with the most data :)
+    // Scaling to the plot with the most data
+    // Calculate the max Y value based ONLY on the main strip data
+    // Otherwise it scales to the nearest neighbor peak which isn't useful if we want to look at peaks
+    // TODO: @RobinAnthonyPetersen when you rebin the data the y-axis scales to the nearest neighbors not the strips, this needs to be fixed
+    double maxLV = 0.0;
+    if (m_EnergyHistogramLVInitial != nullptr) {
+      double currentMax = m_EnergyHistogramLVInitial->GetMaximum();
+      if (currentMax > maxLV) {
+        maxLV = currentMax;
+      }
+    }
+    if (m_EnergyHistogramLVFinal != nullptr) {
+      double currentMax = m_EnergyHistogramLVFinal->GetMaximum();
+      if (currentMax > maxLV) {
+        maxLV = currentMax;
+      }
+    }
+    // Force the stack to use this max, adding headroom based on log scale
+    if (maxLV > 0) {
+      if (logY) {
+        LVStack->SetMaximum(maxLV * 10.0); // 1 decade of headroom for Log
+        LVStack->SetMinimum(0.1);          // No log (0)
+      } else {
+        LVStack->SetMaximum(maxLV * 1.10); // 10% headroom for linear scale
+      }
+    }
+
     LVStack->Draw("nostack hist");
     LVStack->GetXaxis()->SetTitle("Energy [keV]");
     LVStack->GetYaxis()->SetTitle("Counts");
+    
+    TLegend* updateLegendLV = new TLegend(0.55, 0.65, 0.88, 0.88);
+    if (m_EnergyHistogramLVInitial != nullptr) {
+      updateLegendLV->AddEntry(m_EnergyHistogramLVInitial, "Strips Initial", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborLVInitial != nullptr) {
+      updateLegendLV->AddEntry(m_EnergyHistogramNearestNeighborLVInitial, "Nearest Neighbor Initial", "f");
+    }
+    if (m_EnergyHistogramLVFinal != nullptr) {
+      updateLegendLV->AddEntry(m_EnergyHistogramLVFinal, "Strips Final", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborLVFinal != nullptr) {
+      updateLegendLV->AddEntry(m_EnergyHistogramNearestNeighborLVFinal, "Nearest Neighbor Final", "f");
+    }
+    updateLegendLV->SetBorderSize(0);
+    updateLegendLV->Draw();
 
     // HV
     C->cd(2);
@@ -681,10 +762,50 @@ void MGUIExpoPlotSpectrum::OnUpdateRange()
       HVStack->Add(m_EnergyHistogramNearestNeighborHVFinal);
     }
 
-    // Scaling to the plot with the most data :)
+    // Scaling to the plot with the most data, just like for the LV side
+    // TODO: @RobinAnthonyPetersen when you rebin the data the y-axis scales to the nearest neighbors not the strips, this needs to be fixed 
+    double maxHV = 0.0;
+    if (m_EnergyHistogramHVInitial != nullptr) {
+      double currentMax = m_EnergyHistogramHVInitial->GetMaximum();
+      if (currentMax > maxHV) {
+        maxHV = currentMax;
+      }
+    }
+    if (m_EnergyHistogramHVFinal != nullptr) {
+      double currentMax = m_EnergyHistogramHVFinal->GetMaximum();
+      if (currentMax > maxHV) {
+        maxHV = currentMax;
+      }
+    }
+    // Force the stack to use this max, adding headroom based on log scale
+    if (maxHV > 0) {
+      if (logY) {
+        HVStack->SetMaximum(maxHV * 10.0); // 1 decade of headroom for Log
+        HVStack->SetMinimum(0.1);          // make sure not log(0)
+      } else {
+        HVStack->SetMaximum(maxHV * 1.10); // 10% headroom for Linear
+      }
+    }
+
     HVStack->Draw("nostack hist");
     HVStack->GetXaxis()->SetTitle("Energy [keV]");
     HVStack->GetYaxis()->SetTitle("Counts");
+    
+    TLegend* updateLegendHV = new TLegend(0.55, 0.65, 0.88, 0.88);
+    if (m_EnergyHistogramHVInitial != nullptr) {
+      updateLegendHV->AddEntry(m_EnergyHistogramHVInitial, "Strips Initial", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborHVInitial != nullptr) {
+      updateLegendHV->AddEntry(m_EnergyHistogramNearestNeighborHVInitial, "Nearest Neighbor Initial", "f");
+    }
+    if (m_EnergyHistogramHVFinal != nullptr) {
+      updateLegendHV->AddEntry(m_EnergyHistogramHVFinal, "Strips Final", "f");
+    }
+    if (m_EnergyHistogramNearestNeighborHVFinal != nullptr) {
+      updateLegendHV->AddEntry(m_EnergyHistogramNearestNeighborHVFinal, "Nearest Neighbor Final", "f");
+    }
+    updateLegendHV->SetBorderSize(0);
+    updateLegendHV->Draw();
     
     C->Modified();
     C->Update();
