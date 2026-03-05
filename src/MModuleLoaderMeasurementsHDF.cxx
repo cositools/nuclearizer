@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <regex>
 using namespace std;
 
 // ROOT libs:
@@ -171,12 +172,13 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<string(VS.string_col)<<endl<<"Please update this module."<<endl;
         return false;
       }
+
     // Check for existence of HDFVersion in /Events/HDFVersion (HDF v2)
     } else if (H5Lexists(m_HDFFile.getId(), "Events", H5P_DEFAULT) > 0) {
       m_EventDataSet = m_HDFFile.openDataSet("/Events");
-      Attribute VersionAttribute = m_EventDataSet.openAttribute("HDFVersion");
 
       // Read HDF5 version from Events/HDF5Version to a string
+      Attribute VersionAttribute = m_EventDataSet.openAttribute("HDFVersion");
       string VersionString;
       VersionAttribute.read(VersionAttribute.getStrType(), VersionString);
 
@@ -185,6 +187,72 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       } else {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<VersionString<<endl<<"Please update this module."<<endl;
         return false;
+      }
+
+      // Determine ASIC polarities
+      Attribute Config = m_EventDataSet.openAttribute("Config");
+      string ConfigJSON;
+      Config.read(Config.getStrType(), ConfigJSON);
+
+      vector<map<string, vector<string>>> polarities;
+      string ASIC = "";
+
+      // Regex to match either "primary"/"secondary", or the polarity stored in "SP"
+      regex pattern(R"(\"(primary|secondary)\"|\"SP\"\s*:\s*(\d+))");
+      for (sregex_iterator i = sregex_iterator(ConfigJSON.begin(), ConfigJSON.end(), pattern); i != sregex_iterator(); ++i) {
+        
+        smatch match = *i;
+
+        // Check Group 1: Marker (primary/secondary)
+        if (match[1].matched) {
+
+          ASIC = match[1].str();
+
+          if (polarities.empty() || polarities.back().find(ASIC) != polarities.back().end()) {
+
+            // Check that the previous entry has both primary or secondary before creating a new one
+            if (!polarities.empty() && (
+                 polarities.back().find("primary") == polarities.back().end() || 
+                 polarities.back().find("secondary") == polarities.back().end())
+            ) {
+              if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Parsing ASIC polarities for detector "<<polarities.size()-1<<" unsuccessful"<<endl;
+                return false;
+            }
+
+            polarities.push_back(map<string, vector<string>>());
+          }
+
+          // Initialize the vector for this ASIC key if it doesn't exist
+          polarities.back()[ASIC] = vector<string>();
+        }
+        
+        // Check Group 2: SP value
+        else if (match[2].matched) {
+          if (ASIC.empty() || polarities.empty()) {
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": SP found without active ASIC section"<<endl;
+            return false;
+          }
+          
+          string val = match[2].str();
+          if (val != "0" && val != "1") {
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Cannot interpret polarity \""<<val<<"\" (allowed are \"0\" and \"1\")"<< endl;
+            return false;
+          }
+
+          polarities.back()[ASIC].push_back(val == "0" ? "HV" : "LV");
+        }
+      }
+
+      // Output results for verification
+      if (g_Verbosity >= c_Info) {
+        for (size_t i = 0; i < polarities.size(); ++i) {
+          cout << "Detector ID " << i << ":" << endl;
+          for (auto const& [key, val] : polarities[i]) {
+            cout << "  " << key << ": ";
+            for (const auto& s : val) cout << s << " ";
+            cout << endl;
+          }
+        }
       }
     }
     cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
