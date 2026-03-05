@@ -135,6 +135,11 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     return false;
   }
 
+  if (m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to update ASIC polarities based on the config JSON."<<endl;
+    return false;
+  }
+
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
     
@@ -189,13 +194,12 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         return false;
       }
 
-      // Determine ASIC IsLowVoltage
+
       Attribute Config = m_EventDataSet.openAttribute("Config");
       string ConfigJSON;
       Config.read(Config.getStrType(), ConfigJSON);
 
-      vector<map<string, vector<bool>>> IsLowVoltage;
-      string ASIC = "";
+      bool ASICIsPrimary;
 
       // Regex to match either "primary"/"secondary", or the polarity stored in "SP"
       regex pattern(R"(\"(primary|secondary)\"|\"SP\"\s*:\s*(\d+))");
@@ -206,29 +210,29 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         // Check Group 1: Marker (primary/secondary)
         if (match[1].matched) {
 
-          ASIC = match[1].str();
+          ASICIsPrimary = match[1].str() == "primary";
 
-          if (IsLowVoltage.empty() || IsLowVoltage.back().find(ASIC) != IsLowVoltage.back().end()) {
+          if (m_ASICPolarities.empty() || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
 
             // Check that the previous entry has both primary or secondary before creating a new one
-            if (!IsLowVoltage.empty() && (
-                 IsLowVoltage.back().find("primary") == IsLowVoltage.back().end() || 
-                 IsLowVoltage.back().find("secondary") == IsLowVoltage.back().end())
+            if (!m_ASICPolarities.empty() && (
+                 m_ASICPolarities.back().find(true) == m_ASICPolarities.back().end() || 
+                 m_ASICPolarities.back().find(false) == m_ASICPolarities.back().end())
             ) {
-              if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Parsing ASIC polarities for detector "<<IsLowVoltage.size()-1<<" unsuccessful"<<endl;
+              if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Parsing ASIC polarities for detector "<<m_ASICPolarities.size()-1<<" unsuccessful"<<endl;
                 return false;
             }
 
-            IsLowVoltage.push_back(map<string, vector<bool>>());
+            m_ASICPolarities.push_back(map<bool, vector<bool>>());
           }
 
           // Initialize the vector for this ASIC key if it doesn't exist
-          IsLowVoltage.back()[ASIC] = vector<bool>();
+          m_ASICPolarities.back()[ASICIsPrimary] = vector<bool>();
         }
         
         // Check Group 2: SP value
         else if (match[2].matched) {
-          if (ASIC.empty() || IsLowVoltage.empty()) {
+          if (m_ASICPolarities.empty()) {
             if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": SP found without active ASIC section"<<endl;
             return false;
           }
@@ -240,17 +244,17 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
           }
 
           // val == 1 <=> LV; val == 0 <=> HV
-          IsLowVoltage.back()[ASIC].push_back(val == "1");
+          m_ASICPolarities.back()[ASICIsPrimary].push_back(val == "1");
         }
       }
 
       // Output results for verification
       if (g_Verbosity >= c_Info) {
-        for (size_t i = 0; i < IsLowVoltage.size(); ++i) {
+        for (size_t i = 0; i < m_ASICPolarities.size(); ++i) {
           cout << "Detector ID " << i << ":" << endl;
-          for (auto const& [key, val] : IsLowVoltage[i]) {
-            cout << "  " << key << ": ";
-            for (const auto& s : val) cout << (s ? "LV" : "HV") << " ";
+          for (bool key : {true, false} ) {
+            cout << "  " << (key ? "Primary" : "Secondary") << ": ";
+            for (bool s : m_ASICPolarities[i][key]) cout << (s ? "LV" : "HV") << " ";
             cout << endl;
           }
         }

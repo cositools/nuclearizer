@@ -103,6 +103,16 @@ bool MStripMap::Open(MString FileName)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool MStripMap::UpdateASICPolarities(vector<map<bool, vector<bool>>> ASICPolarities) {
+  for (MSingleStripMapping s : m_StripMappings) {
+    s.m_IsLowVoltage = ASICPolarities[s.m_DetectorID][s.m_IsPrimary][s.m_ASICID];
+  }
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 //! Return true if the given read-out ID is on file
 bool MStripMap::HasReadOutID(unsigned int ROI) const
