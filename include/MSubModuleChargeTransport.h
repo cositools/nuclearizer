@@ -74,6 +74,9 @@ class MSubModuleChargeTransport : public MSubModule
   // protected methods:
  protected:
 
+  //! Calculate charge fraction on a strip in local strip coordinates based on self-repulsion (η) and diffusion (σ)
+  double CalculateChargeFraction(double x, double Eta, double Sigma);
+
   // private methods:
  private:
 

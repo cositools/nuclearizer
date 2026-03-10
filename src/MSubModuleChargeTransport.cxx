@@ -165,7 +165,7 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   constexpr double Epsilon0 = 8.85418781762039e-14; // unit: F/cm
   constexpr double EpsilonR = 16.0; // in germanium, unitless
 
-  // TODO: Read bias voltage and temperature of the detector from a file
+  // TODO: Read bias voltage and temperature of the detector from a database
   constexpr double BiasVoltage = 1050.0; // unit: V
   constexpr double Temperature = 87.0; // unit: K
 
@@ -188,15 +188,8 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     double Radius = m_Radii[DetID];
     int NXStrips = m_NXStrips[DetID];
 
-    // TODO: replace magic numbers for cross-talk by reading parameters from file
     double MeanElectricField = BiasVoltage / Thickness; // unit: V/cm
     double N = SH.m_SimulatedEnergy / IonizationEnergy;
-    // constexpr double A = 0.020898810806838582;
-    // constexpr double B1 = 0.2740445312420676;
-    // constexpr double B2 = 0.22725576252704122;
-    // constexpr double Z1 = -6.8702771019427935;
-    // constexpr double Z2 = -6.403253988164561;
-    // double CrossTalk = A * std::max(1.0 - std::exp(-B1 * (10.0 * Pos.Z() - Z1)), 1.0 - std::exp(B2 * (10.0 * Pos.Z() - Z2)));
 
     // Calculate LV strip ID by rounding down intentionally to avoid truncation towards zero
     int ID = static_cast<int>(std::floor((Pos.X() + XWidth/2.0) / XPitch));
@@ -208,28 +201,14 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
       // Apply charge sharing based on relative coordinate to the gap of that strip (0 <= X < XPitch)
       double XFromGap = std::fmod(Pos.X() + XWidth/2.0, XPitch);
 
-      // calculate σ and µ, assuming t = z / v = z / (µ * E)
+      // Charge transport based on Eq. (7) in https://doi.org/10.1016/j.nima.2023.168310
+      // calculate σ and η, assuming t = z / v = z / (µ * E)
       double SigmaX = std::sqrt(2.0 * kB * Temperature * (Pos.Z() + Thickness / 2.0) / (ElementaryCharge * MeanElectricField)); // in cm
       double EtaX   = std::cbrt(std::pow(InitialChargeCloudSize, 3) + 3.0 * N * ElementaryCharge * (Pos.Z() + Thickness / 2.0) / (4.0 * TMath::Pi() * Epsilon0 * EpsilonR * MeanElectricField)); // in cm
-      // cout << "X: " << Pos.X() << ", Y: " << Pos.Y() << ", Z: " << Pos.Z() << ", E: " << SH.m_SimulatedEnergy << endl;
-      // cout << "XPitch" << XPitch << ", SigmaX: " << SigmaX << ", EtaX: " << EtaX << endl;
-
-      auto Lambda = [&](double x) -> double {
-        double a = (x - EtaX) / (TMath::Sqrt2() * SigmaX);
-        double b = (x + EtaX) / (TMath::Sqrt2() * SigmaX);
-        return SH.m_SimulatedEnergy / (8.0 * std::pow(EtaX, 3)) * (
-          std::erf(b) * (2.0 * std::pow(EtaX, 3) + x * (3.0 * std::pow(EtaX, 2) - 3.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) + 
-          std::erf(a) * (2.0 * std::pow(EtaX, 3) - x * (3.0 * std::pow(EtaX, 2) - 3.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) + 
-          std::exp(- std::pow(b,2)) * std::sqrt(2.0 / TMath::Pi()) * SigmaX * (EtaX * x + (2.0 * std::pow(EtaX, 2) - 2.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) + 
-          std::exp(- std::pow(a,2)) * std::sqrt(2.0 / TMath::Pi()) * SigmaX * (EtaX * x - (2.0 * std::pow(EtaX, 2) - 2.0 * std::pow(SigmaX, 2) - std::pow(x, 2))) 
-        );
-      };
-
+      auto Lambda = [&](double x) -> double { return SH.m_SimulatedEnergy * CalculateChargeFraction(x, EtaX, SigmaX); };
       double MainStripEnergy    = Lambda(XPitch - XFromGap) - Lambda(-XFromGap);
       double NNLeftStripEnergy  = Lambda(-XFromGap) - Lambda(-XPitch - XFromGap);
       double NNRightStripEnergy = Lambda(2.0*XPitch - XFromGap) - Lambda(XPitch - XFromGap);
-
-      // cout << "Energy: " << SH.m_SimulatedEnergy << ", split into " << NNLeftStripEnergy << ", " << MainStripEnergy << " and " << NNRightStripEnergy << endl;
 
       // create entry for the main hit
       MDEEStripHit MainSH = SH;
@@ -298,15 +277,8 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     double Radius = m_Radii[DetID];
     int NYStrips = m_NYStrips[DetID];
 
-    // TODO: replace magic numbers for cross-talk by reading parameters from file
     double MeanElectricField = BiasVoltage / Thickness; // unit: V/cm
     double N = SH.m_SimulatedEnergy / IonizationEnergy;
-    // constexpr double A = 0.016119326831437686;
-    // constexpr double B1 = 0.12520563605264975;
-    // constexpr double B2 = 0.17122757421051746;
-    // constexpr double Z1 = 5.812039914491831;
-    // constexpr double Z2 = 6.710904485197925;
-    // double CrossTalk = A * std::max(1.0 - std::exp(-B1 * (10.0 * Pos.Z() - Z1)), 1.0 - std::exp(B2 * (10.0 * Pos.Z() - Z2)));
 
     // Calculate HV strip ID by rounding down intentionally to avoid truncation towards zero
     // TODO: Confirm the correct strip pitch based on SMEX detector models
@@ -319,21 +291,11 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
       // Apply charge sharing based on relative coordinate to the gap of that strip (0 <= Y < YPitch)
       double YFromGap = std::fmod(Pos.Y() + YWidth/2.0, YPitch);
 
-      // calculate σ and µ, assuming t = z / v = z / (µ * E)
+      // Charge transport based on Eq. (7) in https://doi.org/10.1016/j.nima.2023.168310
+      // calculate σ and η, assuming t = z / v = z / (µ * E)
       double SigmaY = std::sqrt(2.0 * kB * Temperature * (Thickness / 2.0 - Pos.Z()) / (ElementaryCharge * MeanElectricField)); // in cm
       double EtaY   = std::cbrt(std::pow(InitialChargeCloudSize, 3) + 3.0 * N * ElementaryCharge * (Thickness / 2.0 - Pos.Z()) / (4.0 * TMath::Pi() * Epsilon0 * EpsilonR * MeanElectricField)); // in cm
-
-      auto Lambda = [&](double y) -> double {
-        double a = (y - EtaY) / (TMath::Sqrt2() * SigmaY);
-        double b = (y + EtaY) / (TMath::Sqrt2() * SigmaY);
-        return SH.m_SimulatedEnergy / (8.0 * std::pow(EtaY, 3)) * (
-          std::erf(b) * (2.0 * std::pow(EtaY, 3) + y * (3.0 * std::pow(EtaY, 2) - 3.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) + 
-          std::erf(a) * (2.0 * std::pow(EtaY, 3) - y * (3.0 * std::pow(EtaY, 2) - 3.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) + 
-          std::exp(- std::pow(b,2)) * std::sqrt(2 / TMath::Pi()) * SigmaY * (EtaY * y + (2.0 * std::pow(EtaY, 2) - 2.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) + 
-          std::exp(- std::pow(a,2)) * std::sqrt(2 / TMath::Pi()) * SigmaY * (EtaY * y - (2.0 * std::pow(EtaY, 2) - 2.0 * std::pow(SigmaY, 2) - std::pow(y, 2))) 
-        );
-      };
-
+      auto Lambda = [&](double y) -> double { return SH.m_SimulatedEnergy * CalculateChargeFraction(y, EtaY, SigmaY); };
       double MainStripEnergy    = Lambda(YPitch - YFromGap) - Lambda(-YFromGap);
       double NNLeftStripEnergy  = Lambda(-YFromGap) - Lambda(-YPitch - YFromGap);
       double NNRightStripEnergy = Lambda(2.0*YPitch - YFromGap) - Lambda(YPitch - YFromGap);
@@ -416,6 +378,20 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MSubModuleChargeTransport::CalculateChargeFraction(double x, double Eta, double Sigma) {
+  double a = (x - Eta) / (TMath::Sqrt2() * Sigma);
+  double b = (x + Eta) / (TMath::Sqrt2() * Sigma);
+  return 1.0 / (8.0 * std::pow(Eta, 3)) * (
+    std::erf(b) * (2.0 * std::pow(Eta, 3) + x * (3.0 * std::pow(Eta, 2) - 3.0 * std::pow(Sigma, 2) - std::pow(x, 2))) + 
+    std::erf(a) * (2.0 * std::pow(Eta, 3) - x * (3.0 * std::pow(Eta, 2) - 3.0 * std::pow(Sigma, 2) - std::pow(x, 2))) + 
+    std::exp(- std::pow(b,2)) * std::sqrt(2 / TMath::Pi()) * Sigma * (Eta * x + (2.0 * std::pow(Eta, 2) - 2.0 * std::pow(Sigma, 2) - std::pow(x, 2))) + 
+    std::exp(- std::pow(a,2)) * std::sqrt(2 / TMath::Pi()) * Sigma * (Eta * x - (2.0 * std::pow(Eta, 2) - 2.0 * std::pow(Sigma, 2) - std::pow(x, 2))) 
+  );
 }
 
 
