@@ -75,7 +75,7 @@ class MSubModuleChargeTransport : public MSubModule
  protected:
 
   //! Calculate charge fraction on a strip in local strip coordinates based on self-repulsion (η) and diffusion (σ)
-  double CalculateChargeFraction(double x, double Eta, double Sigma);
+  void RunChargeTransportForHit(MDEEStripHit& SH, bool isLV);
 
   // private methods:
  private:
@@ -98,6 +98,8 @@ class MSubModuleChargeTransport : public MSubModule
   unordered_map<int, double> m_Radii;
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
+
+  list<MDEEStripHit> m_ChargeTransportHits;
 
 
   // private members:
