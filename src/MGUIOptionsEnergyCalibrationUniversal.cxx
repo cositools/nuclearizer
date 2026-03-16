@@ -129,7 +129,30 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   
   MNearestNeighborCutModes NearestNeighborCutMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborCutMode();
   ToggleRadioButtons(static_cast<int>(NearestNeighborCutMode));
+  
+  
+  // Plot spectrum options 
+  TGLabel* PlotSpectrumLabel = new TGLabel(m_OptionsFrame, "Please choose a spectrum plotting and memory option:");
+  m_OptionsFrame->AddFrame(PlotSpectrumLabel, LabelLayout);
     
+  // Don't plot
+  m_PlotSpectrumNoneRB = new TGRadioButton(m_OptionsFrame, "Do not plot spectrum", c_PlotSpectrumNone);
+  m_PlotSpectrumNoneRB->Associate(this);
+  m_OptionsFrame->AddFrame(m_PlotSpectrumNoneRB, RBLayout);
+
+  // Plot without the buffer
+  m_PlotSpectrumNoBufferRB = new TGRadioButton(m_OptionsFrame, "Plot spectrum without buffering data (uses less memory)", c_PlotSpectrumNoBuffer);
+  m_PlotSpectrumNoBufferRB->Associate(this);
+  m_OptionsFrame->AddFrame(m_PlotSpectrumNoBufferRB, RBLayout);
+    
+  // Plot with the buffer
+  m_PlotSpectrumWithBufferRB = new TGRadioButton(m_OptionsFrame, "Plot spectrum with buffered data (warning: uses x2 memory!)", c_PlotSpectrumWithBuffer);
+  m_PlotSpectrumWithBufferRB->Associate(this);
+  m_OptionsFrame->AddFrame(m_PlotSpectrumWithBufferRB, RBLayout);
+
+  int PlotMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetPlotSpectrumMode();
+  ToggleRadioButtons(PlotMode);
+  
 
   PostCreate();
 }
@@ -210,6 +233,21 @@ void MGUIOptionsEnergyCalibrationUniversal::ToggleRadioButtons(int WidgetID)
       m_SlowThresholdCutNearestNeighborFixedValue->SetEnabled(true);
     }
   }
+  
+  // Plot spectrum
+  if (WidgetID == c_PlotSpectrumNone) {
+    m_PlotSpectrumNoneRB->SetState(kButtonDown);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonUp);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonUp);
+  } else if (WidgetID == c_PlotSpectrumNoBuffer) {
+    m_PlotSpectrumNoneRB->SetState(kButtonUp);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonDown);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonUp);
+  } else if (WidgetID == c_PlotSpectrumWithBuffer) {
+    m_PlotSpectrumNoneRB->SetState(kButtonUp);
+    m_PlotSpectrumNoBufferRB->SetState(kButtonUp);
+    m_PlotSpectrumWithBufferRB->SetState(kButtonDown);
+  }
 }
 
 
@@ -241,6 +279,15 @@ bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
   }
 
   dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetNearestNeighborThreshold(m_SlowThresholdCutNearestNeighborFixedValue->GetAsDouble());
+  
+  // Plot spectrum
+  if (m_PlotSpectrumNoneRB->GetState() == kButtonDown) {
+      dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MEnergyCalibrationPlotSpectrumModes::e_PlotNone);
+    } else if (m_PlotSpectrumNoBufferRB->GetState() == kButtonDown) {
+      dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MEnergyCalibrationPlotSpectrumModes::e_PlotNoBuffer);
+    } else if (m_PlotSpectrumWithBufferRB->GetState() == kButtonDown) {
+      dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetPlotSpectrumMode(MEnergyCalibrationPlotSpectrumModes::e_PlotWithBuffer);
+    }
 
   return true;
 }

@@ -98,6 +98,9 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   // Nearest Neighbor threshold (-1000 because we don't want to default to cut neg values) 
   m_NearestNeighborCutMode = MNearestNeighborCutModes::e_Ignore;
   m_NearestNeighborThreshold = -1000.0;
+  
+  // Plot spectrum
+  m_PlotSpectrumMode = MEnergyCalibrationPlotSpectrumModes::e_PlotNone;
 
 }
 
@@ -115,21 +118,25 @@ MModuleEnergyCalibrationUniversal::~MModuleEnergyCalibrationUniversal()
 
 void MModuleEnergyCalibrationUniversal::CreateExpos()
 {
-  // If they are already created, return
+  // If the window already exists from a previous run, just update the setting and return
+  // If they switched to "No Plot", the window will stay open but go to sleep
   if (m_Expos.size() != 0) {
+    if (m_ExpoSpectrum != nullptr) {
+      m_ExpoSpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
+    }
     return;
   }
 
-  // Set the histogram display
-  //m_ExpoEnergyCalibration = new MGUIExpoEnergyCalibration(this);
-  //m_ExpoEnergyCalibration->SetEnergyHistogramParameters(200, 0, 2000);
-  //m_Expos.push_back(m_ExpoEnergyCalibration);
-  
-  // Updated: Set the histogram display
+  // If it the window does not exist yet, and they selected "No Plot", skip creating the plot entirely
+  if (m_PlotSpectrumMode == MEnergyCalibrationPlotSpectrumModes::e_PlotNone) {
+    return;
+  }
+
+  // If window doesn't exist, create it for the very first time
   m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
+  m_ExpoSpectrum->SetPlotMode(static_cast<int>(m_PlotSpectrumMode));
   m_ExpoSpectrum->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoSpectrum);
-  
 }
 
 
@@ -573,6 +580,10 @@ bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
   if (NearestNeighborThresholdNode != nullptr) {
     m_NearestNeighborThreshold = NearestNeighborThresholdNode->GetValueAsDouble();
   }
+  MXmlNode* PlotSpectrumModeNode = Node->GetNode("PlotSpectrumMode");
+  if (PlotSpectrumModeNode != nullptr) {
+    m_PlotSpectrumMode = static_cast<MEnergyCalibrationPlotSpectrumModes>(PlotSpectrumModeNode->GetValueAsInt());
+  }
 
   return true;
 }
@@ -592,6 +603,7 @@ MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
   new MXmlNode(Node, "SlowThresholdCutThresholdFileName", m_SlowThresholdCutFileName);
   new MXmlNode(Node, "NearestNeighborCutMode", static_cast<int>(m_NearestNeighborCutMode));
   new MXmlNode(Node, "NearestNeighborThreshold", m_NearestNeighborThreshold);
+  new MXmlNode(Node, "PlotSpectrumMode", static_cast<int>(m_PlotSpectrumMode));
 
   return Node;
 }

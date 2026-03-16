@@ -65,6 +65,9 @@ public:
 
   //! Update the frame
   virtual void Update();
+  
+  //! Set the plotting mode (200=None, 201=NoBuffer, 202=WithBuffer)
+  void SetPlotMode(int Mode) { m_PlotSpectrumMode = Mode; }
 
 
 protected:
@@ -111,7 +114,7 @@ private:
   std::vector<double> m_DataBufferNearestNeighborLVFinal;
   std::vector<double> m_DataBufferNearestNeighborHVFinal;
   
-  bool m_PlotSpectrum;
+  int m_PlotSpectrumMode;
 
 #ifdef ___CLING___
 public:

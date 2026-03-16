@@ -42,6 +42,14 @@ class MGUIEEntry;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+enum {
+  // ... your other UI IDs ...
+  c_PlotSpectrumNone = 200,
+  c_PlotSpectrumNoBuffer = 201,
+  c_PlotSpectrumWithBuffer = 202
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 class MGUIOptionsTACcut : public MGUIOptions
 {
@@ -63,6 +71,9 @@ class MGUIOptionsTACcut : public MGUIOptions
 
   //! Actions after the Apply or OK button has been pressed
   virtual bool OnApply();
+  
+  //! Toggle the radio buttons
+  void ToggleRadioButtons(int WidgetID);
 
 
   // protected members:
@@ -79,6 +90,17 @@ class MGUIOptionsTACcut : public MGUIOptions
 	
   // private members:
  private:
+  //! Radio buttons for the spectrum plots 
+  TGRadioButton* m_PlotSpectrumNoneRB;
+  TGRadioButton* m_PlotSpectrumNoBufferRB;
+  TGRadioButton* m_PlotSpectrumWithBufferRB;
+
+  //! IDs of radio buttons
+  //! The numbers should be identical to Plot spectrum module
+  enum RBButtonIDs {
+    c_PlotSpectrumNone = 200,
+    c_PlotSpectrumNoBuffer,
+    c_PlotSpectrumWithBuffer};
 
 
 #ifdef ___CLING___
