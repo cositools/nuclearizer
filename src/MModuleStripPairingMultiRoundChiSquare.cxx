@@ -773,7 +773,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
     // Flag events with a reduced chi square > 25
     else if (BestChiSquare > 25) {
-      Event->SetStripPairing_QualityFlag("Best reduced chi square is not below 25");
+      Event->SetStripPairing_QualityFlag("Best reduced chi square is not below 25 (" + to_string(BestChiSquare) + ")");
     }
 
     // Assign the best reduced chi square to the event
