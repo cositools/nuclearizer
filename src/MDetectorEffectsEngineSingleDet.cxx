@@ -445,6 +445,10 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
       continue;
     }
 
+    //   // Step (-1): Include aspect information
+    //   //		cout << SimEvent->GetGalacticPointingXAxis() << endl;
+    //   //		cout << SimEvent->GetGalacticPointingZAxis() << endl;
+
     bool HasOverflow = false;
 
     double eventInitialEnergy = 0.;
@@ -575,6 +579,25 @@ bool MDetectorEffectsEngineSingleDet::GetNextEvent(MReadOutAssembly* Event)
     for (unsigned int i = 0; i < SimEvent->GetNIAs(); i++) {
       MSimIA* ia = SimEvent->GetIAAt(i);
       IAs.push_back(ia);
+    }
+
+    // Step (0.5): Get aspect information
+    if (SimEvent->HasGalacticPointing()) {
+      Event->SetSimAspectInfo(true);
+
+      double phi = SimEvent->GetGalacticPointingXAxis().Phi() * c_Deg;
+      if (phi < 0.0) {
+        phi += 360;
+      }
+      Event->SetGalacticPointingXAxisPhi(phi);
+      Event->SetGalacticPointingXAxisTheta(SimEvent->GetGalacticPointingXAxis().Theta() * c_Deg - 90);
+
+      phi = SimEvent->GetGalacticPointingZAxis().Phi() * c_Deg;
+      if (phi < 0.0) {
+        phi += 360;
+      }
+      Event->SetGalacticPointingZAxisPhi(phi);
+      Event->SetGalacticPointingZAxisTheta(SimEvent->GetGalacticPointingZAxis().Theta() * c_Deg - 90);
     }
 
     // Step (1): Convert positions into strip hits

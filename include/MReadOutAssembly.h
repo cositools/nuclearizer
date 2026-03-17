@@ -24,6 +24,7 @@
 #include "MGlobal.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
+#include "MAspect.h"
 #include "MStripHit.h"
 #include "MDEEStripHit.h"
 #include "MCrystalHit.h"
@@ -54,6 +55,12 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Delete Hits
   void DeleteHits();
+ 
+  //! TODO Scrub all clock/time variables for COSI SMEX 
+  //! Set the Frame Counter of this event
+  void SetFC(unsigned int FC) { m_FC = FC; }
+  //! Return the Frame Counter of this event
+  unsigned int GetFC() const { return m_FC; }
 
   //! set and get Unix clock time
   void SetTI(unsigned long long TI) { m_TI = TI;}
@@ -71,6 +78,27 @@ class MReadOutAssembly : public MReadOutSequence
   void SetTimeUTC(const MTime& TimeUTC) { m_EventTimeUTC = TimeUTC; }
   MTime GetTimeUTC() const { return m_EventTimeUTC; }
   
+  //! TODO Scrub Aspect in nuclearizer for COSI SMEX
+  //! Set the aspect
+  void SetAspect(MAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
+  //! Get the aspect - will be zero if the aspect has not been set!
+  MAspect* GetAspect() { return m_Aspect; }
+  
+  //! Set and get simulation aspect information
+  void SetGalacticPointingXAxisTheta(double theta){ m_GalacticPointingXAxisTheta = theta; }
+  void SetGalacticPointingXAxisPhi(double phi){ m_GalacticPointingXAxisPhi = phi; }
+  void SetGalacticPointingZAxisTheta(double theta){ m_GalacticPointingZAxisTheta = theta; }
+  void SetGalacticPointingZAxisPhi(double phi){ m_GalacticPointingZAxisPhi = phi; }
+
+  double GetGalacticPointingXAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisTheta;} else{return 0;}}
+  double GetGalacticPointingXAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisPhi;} else{return 0;}}
+  double GetGalacticPointingZAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisTheta;} else{return 0;}}
+  double GetGalacticPointingZAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisPhi;} else{return 0;}}
+
+  void SetSimAspectInfo(bool TF){ m_HasSimAspectInfo = TF; }
+  bool HasSimAspectInfo(){ return m_HasSimAspectInfo; }
+
+
   //! Find out if the event contains strip hits in a given detector
   bool InDetector(int DetectorID);
 
@@ -135,13 +163,13 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Return the number of simulation hits
   // TODO: Remove - part of m_SimEvent
-  //unsigned int GetNHitsSim() const { return m_HitsSim.size(); }
+//  unsigned int GetNHitsSim() const { return m_HitsSim.size(); }
   //! Return simulation hit i
   // TODO: Remove - part of m_SimEvent
-  //MHit* GetHitSim(unsigned int i);
+//  MHit* GetHitSim(unsigned int i);
   //! Move hits to simulation hits list
   // TODO: Why ??
-  //void MoveHitsToSim() {m_HitsSim = m_Hits; m_Hits.clear();}
+//  void MoveHitsToSim() {m_HitsSim = m_Hits; m_Hits.clear();}
 
   /*
   //! Return the number of simulation interactions
@@ -264,6 +292,8 @@ class MReadOutAssembly : public MReadOutSequence
   //! Build the next MReadoutAssemply from a .dat file
   bool GetNextFromDatFile(MFile &F);
 
+  //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
+  bool ComputeAbsoluteTime();
   //! Set the MTime corresponding to absolute UTC time
   void SetAbsoluteTime(MTime T) {m_EventTimeUTC = T;}
   //! Get the MTime corresponding to absolute UTC time
@@ -286,6 +316,9 @@ class MReadOutAssembly : public MReadOutSequence
   // private members:
  private:
 
+  //! Frame Counter of this event
+  unsigned int m_FC;
+
   //! Clock tick (Unix and UHF)
   unsigned long long m_TI;
   uint64_t m_CL;
@@ -297,6 +330,18 @@ class MReadOutAssembly : public MReadOutSequence
   //! The time of the event in absolute UTC time
   MTime m_EventTimeUTC;
 
+  //! The aspect information - will be zero if not set!
+  MAspect* m_Aspect;
+
+  //Added by Clio:
+  //! The aspect information from the simulation, only used in DEE
+  // (Simulation aspect information doesn't have everything in Aspect packet)
+  double m_GalacticPointingXAxisTheta;
+  double m_GalacticPointingXAxisPhi;
+  double m_GalacticPointingZAxisTheta;
+  double m_GalacticPointingZAxisPhi;
+  bool m_HasSimAspectInfo;
+
   //! Guard ring veto flag
   bool m_GuardRingVeto;
 
@@ -305,6 +350,9 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Trigger flag of this event
   bool m_Trigger;
+
+  //! True if the aspect data of the event is good
+  bool m_AspectGood;
 
   //! Whether event contains strip hits in given detector
   bool m_InDetector[16];

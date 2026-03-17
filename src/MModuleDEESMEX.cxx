@@ -215,7 +215,7 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_Output.Clear();
   m_Output.AnalyzeEvent(Event);
 
-  // Step (14): Handle any other auxillary data
+  // Step (14): Handle Aspect and other auxillary data
 
   Event->SetAnalysisProgress(MAssembly::c_DetectorEffectsEngine);
   return true;
