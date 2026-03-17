@@ -483,7 +483,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     }
 
     // If there are no non-adjacent strip groupings, continue pairing as normal
-    if (AllAdjacent) {
+    if (AllAdjacent == true) {
 
       // Add up energy and energy resolution for each grouping of strips
       for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
