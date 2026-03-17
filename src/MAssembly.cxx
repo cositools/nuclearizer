@@ -66,7 +66,7 @@ using namespace std;
 #include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleLoaderMeasurementsFITS.h"
-#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleEnergyCalibration.h"
 #include "MModuleDepthCalibration.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
 #include "MModuleStripPairingChiSquare.h"
@@ -133,7 +133,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleDEESMEX());
 
   m_Supervisor->AddAvailableModule(new MModuleEventFilter());
-  m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
+  m_Supervisor->AddAvailableModule(new MModuleEnergyCalibration());
 
   m_Supervisor->AddAvailableModule(new MModuleStripPairingMultiRoundChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleStripPairingChiSquare());

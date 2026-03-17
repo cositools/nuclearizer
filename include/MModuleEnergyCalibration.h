@@ -1,5 +1,5 @@
 /*
- * MModuleEnergyCalibrationUniversal.h
+ * MModuleEnergyCalibration.h
  *
  * Copyright (C) by Andreas Zoglauer
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleEnergyCalibrationUniversal__
-#define __MModuleEnergyCalibrationUniversal__
+#ifndef __MModuleEnergyCalibration__
+#define __MModuleEnergyCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,17 +59,17 @@ enum class MNearestNeighborCutModes : int
 
 
 //! A universal energy calibrator
-class MModuleEnergyCalibrationUniversal : public MModule
+class MModuleEnergyCalibration : public MModule
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleEnergyCalibrationUniversal();
+  MModuleEnergyCalibration();
   //! Default destructor
-  virtual ~MModuleEnergyCalibrationUniversal();
+  virtual ~MModuleEnergyCalibration();
   
   //! Create a new object of this class 
-  virtual MModuleEnergyCalibrationUniversal* Clone() { return new MModuleEnergyCalibrationUniversal(); }
+  virtual MModuleEnergyCalibration* Clone() { return new MModuleEnergyCalibration(); }
 
   //! Set the calibration file name
   void SetFileName(const MString& FileName) { m_FileName = FileName; }
@@ -146,7 +146,7 @@ class MModuleEnergyCalibrationUniversal : public MModule
   //! The energy calibration file name
   MString m_FileName;
 
-  //! The slow threshold cut mode (see defnition of MModuleEnergyCalibrationUniversalSlowThresholdCutModes)
+  //! The slow threshold cut mode (see defnition of MModuleEnergyCalibrationSlowThresholdCutModes)
   MSlowThresholdCutModes m_SlowThresholdCutMode;
 
   //! The slow threshold cut value
@@ -183,7 +183,7 @@ class MModuleEnergyCalibrationUniversal : public MModule
  
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleEnergyCalibrationUniversal, 0) // no description
+  ClassDef(MModuleEnergyCalibration, 0) // no description
 #endif
 
 };

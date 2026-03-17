@@ -27,7 +27,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
-#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleEnergyCalibration.h"
 #include "MDStrip3D.h"
 #include "MDShapeBRIK.h"
 #include "MGUIExpoDepthCalibration.h"
@@ -170,7 +170,7 @@ class MModuleDepthCalibration : public MModule
   uint64_t m_ErrorNoE;
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
-  MModuleEnergyCalibrationUniversal* m_EnergyCalibration;
+  MModuleEnergyCalibration* m_EnergyCalibration;
   MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.

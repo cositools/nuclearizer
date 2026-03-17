@@ -60,7 +60,7 @@ using namespace ROOT::Minuit2;
 #include "MModuleLoaderMeasurements.h"
 #include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleLoaderMeasurementsHDF.h"
-#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleEnergyCalibration.h"
 #include "MModuleEventFilter.h"
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
@@ -427,7 +427,7 @@ bool TrappingCorrection::Analyze()
     
   	MModuleLoaderMeasurementsHDF* Loader;
   	MModuleTACcut* TACCalibrator;
-  	MModuleEnergyCalibrationUniversal* EnergyCalibrator;
+  	MModuleEnergyCalibration* EnergyCalibrator;
   	MModuleEventFilter* EventFilter;
 
     unsigned int MNumber = 0;
@@ -452,7 +452,7 @@ bool TrappingCorrection::Analyze()
     ++MNumber;
    
     cout<<"Creating energy calibrator"<<endl;
-    EnergyCalibrator = new MModuleEnergyCalibrationUniversal();
+    EnergyCalibrator = new MModuleEnergyCalibration();
     EnergyCalibrator->SetFileName(m_EcalFile);
     //EnergyCalibrator->EnablePreampTempCorrection(false);
     S->SetModule(EnergyCalibrator, MNumber);

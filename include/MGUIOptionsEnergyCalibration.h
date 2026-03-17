@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsEnergyCalibrationUniversal.h
+ * MGUIOptionsEnergyCalibration.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsEnergyCalibrationUniversal__
-#define __MGUIOptionsEnergyCalibrationUniversal__
+#ifndef __MGUIOptionsEnergyCalibration__
+#define __MGUIOptionsEnergyCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,14 +44,14 @@
 
 
 //! The user interface for the universal energy calibration
-class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
+class MGUIOptionsEnergyCalibration : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsEnergyCalibrationUniversal(MModule* Module);
+  MGUIOptionsEnergyCalibration(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsEnergyCalibrationUniversal();
+  virtual ~MGUIOptionsEnergyCalibration();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -110,7 +110,7 @@ class MGUIOptionsEnergyCalibrationUniversal : public MGUIOptions
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsEnergyCalibrationUniversal, 1)
+  ClassDef(MGUIOptionsEnergyCalibration, 1)
 #endif
 
 };

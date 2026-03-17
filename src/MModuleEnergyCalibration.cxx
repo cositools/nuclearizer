@@ -1,5 +1,5 @@
 /*
- * MModuleEnergyCalibrationUniversal.cxx
+ * MModuleEnergyCalibration.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer, Mark Bandstra, Carolyn Kierans.
@@ -18,7 +18,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleEnergyCalibrationUniversal
+// MModuleEnergyCalibration
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -29,7 +29,7 @@
 using namespace std;
 
 // Include the header:
-#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleEnergyCalibration.h"
 
 
 // ROOT libs:
@@ -43,7 +43,7 @@ using namespace std;
 // Nuclearizer libs:
 #include "MReadOutElement.h"
 #include "MReadOutElementDoubleStrip.h"
-#include "MGUIOptionsEnergyCalibrationUniversal.h"
+#include "MGUIOptionsEnergyCalibration.h"
 #include "MGUIExpoPlotSpectrum.h"
 
 
@@ -51,16 +51,16 @@ using namespace std;
 
 
 #ifdef ___CLING___
-ClassImp(MModuleEnergyCalibrationUniversal)
+ClassImp(MModuleEnergyCalibration)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule()
+MModuleEnergyCalibration::MModuleEnergyCalibration() : MModule()
 {
-  // Construct an instance of MModuleEnergyCalibrationUniversal
+  // Construct an instance of MModuleEnergyCalibration
 
   // Set all module relevant information
 
@@ -68,7 +68,7 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
   m_Name = "Universal energy calibrator";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "EnergyCalibrationUniversal";
+  m_XmlTag = "EnergyCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
@@ -101,16 +101,16 @@ MModuleEnergyCalibrationUniversal::MModuleEnergyCalibrationUniversal() : MModule
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleEnergyCalibrationUniversal::~MModuleEnergyCalibrationUniversal()
+MModuleEnergyCalibration::~MModuleEnergyCalibration()
 {
-  // Delete this instance of MModuleEnergyCalibrationUniversal
+  // Delete this instance of MModuleEnergyCalibration
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleEnergyCalibrationUniversal::CreateExpos()
+void MModuleEnergyCalibration::CreateExpos()
 {
   // If they are already created, return
   if (m_Expos.size() != 0) {
@@ -128,7 +128,7 @@ void MModuleEnergyCalibrationUniversal::CreateExpos()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleEnergyCalibrationUniversal::Initialize()
+bool MModuleEnergyCalibration::Initialize()
 {
   // Initialize the module
 
@@ -352,7 +352,7 @@ bool MModuleEnergyCalibrationUniversal::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
+bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level, i.e. takes the raw ADC value from the .roa file loaded through nuclearizer and converts it into energy units.
 
@@ -462,7 +462,7 @@ bool MModuleEnergyCalibrationUniversal::AnalyzeEvent(MReadOutAssembly* Event)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-double MModuleEnergyCalibrationUniversal::GetEnergy(MReadOutElementDoubleStrip R, double ADC)
+double MModuleEnergyCalibration::GetEnergy(MReadOutElementDoubleStrip R, double ADC)
 {
   //! Return the energy for a given ADC value or zero in case of error
 
@@ -485,7 +485,7 @@ double MModuleEnergyCalibrationUniversal::GetEnergy(MReadOutElementDoubleStrip R
 ///////////////////////////////////////////////////////////////////////////////
 
 
-double MModuleEnergyCalibrationUniversal::GetADC(MReadOutElementDoubleStrip R, double Energy)
+double MModuleEnergyCalibration::GetADC(MReadOutElementDoubleStrip R, double Energy)
 {
   //! Return the ADC value for a given energy
 
@@ -502,7 +502,7 @@ double MModuleEnergyCalibrationUniversal::GetADC(MReadOutElementDoubleStrip R, d
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleEnergyCalibrationUniversal::Finalize()
+void MModuleEnergyCalibration::Finalize()
 {
   // Finalize the calibrator and clean up
 
@@ -522,11 +522,11 @@ void MModuleEnergyCalibrationUniversal::Finalize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleEnergyCalibrationUniversal::ShowOptionsGUI()
+void MModuleEnergyCalibration::ShowOptionsGUI()
 {
   // Show the options GUI
 
-  MGUIOptionsEnergyCalibrationUniversal* Options = new MGUIOptionsEnergyCalibrationUniversal(this);
+  MGUIOptionsEnergyCalibration* Options = new MGUIOptionsEnergyCalibration(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }
@@ -535,7 +535,7 @@ void MModuleEnergyCalibrationUniversal::ShowOptionsGUI()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
+bool MModuleEnergyCalibration::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
@@ -572,7 +572,7 @@ bool MModuleEnergyCalibrationUniversal::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
+MXmlNode* MModuleEnergyCalibration::CreateXmlConfiguration()
 {
   //! Create an XML node tree from the configuration
 
@@ -590,7 +590,7 @@ MXmlNode* MModuleEnergyCalibrationUniversal::CreateXmlConfiguration()
 /////////////////////////////////////////////////////////////////////////////////
 
 
-double MModuleEnergyCalibrationUniversal::LookupEnergyResolution(MStripHit* SH, double Energy)
+double MModuleEnergyCalibration::LookupEnergyResolution(MStripHit* SH, double Energy)
 {
   //! Return the energy resolution or -1 in case of error
 
@@ -609,5 +609,5 @@ double MModuleEnergyCalibrationUniversal::LookupEnergyResolution(MStripHit* SH, 
 }
 
 
-// MModuleEnergyCalibrationUniversal.cxx: the end...
+// MModuleEnergyCalibration.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

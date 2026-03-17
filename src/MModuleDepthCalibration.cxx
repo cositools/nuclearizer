@@ -189,7 +189,7 @@ bool MModuleDepthCalibration::Initialize()
   }
 
   MSupervisor* S = MSupervisor::GetSupervisor();
-  m_EnergyCalibration = (MModuleEnergyCalibrationUniversal*) S->GetAvailableModuleByXmlTag("EnergyCalibrationUniversal");
+  m_EnergyCalibration = (MModuleEnergyCalibration*) S->GetAvailableModuleByXmlTag("EnergyCalibration");
   if (m_EnergyCalibration == nullptr) {
     cout << "MModuleDepthCalibration: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
     return false;
