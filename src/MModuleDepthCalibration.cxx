@@ -1,8 +1,9 @@
 /*
- * MModuleDepthCalibration2024.cxx
+ * MModuleDepthCalibration.cxx
  *
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) 2008-2008 by Andreas Zoglauer, Alex Lowell, 
+ * 				Sean Pike, Carolyn Kierans.
  * All rights reserved.
  *
  *
@@ -18,14 +19,14 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleDepthCalibration2024
+// MModuleDepthCalibration
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleDepthCalibration2024.h"
-#include "MGUIOptionsDepthCalibration2024.h"
+#include "MModuleDepthCalibration.h"
+#include "MGUIOptionsDepthCalibration.h"
 
 // Standard libs:
 
@@ -41,24 +42,24 @@
 
 
 #ifdef ___CLING___
-ClassImp(MModuleDepthCalibration2024)
+ClassImp(MModuleDepthCalibration)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
+MModuleDepthCalibration::MModuleDepthCalibration() : MModule()
 {
-  // Construct an instance of MModuleDepthCalibration2024
+  // Construct an instance of MModuleDepthCalibration
 
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Depth calibration 2024"; // - Determining the depth of each event (by Sean);
+  m_Name = "Depth Calibration for SMEX"; // - Determining the depth of each event (by Sean);
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "DepthCalibration2024";
+  m_XmlTag = "DepthCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
@@ -101,16 +102,16 @@ MModuleDepthCalibration2024::MModuleDepthCalibration2024() : MModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleDepthCalibration2024::~MModuleDepthCalibration2024()
+MModuleDepthCalibration::~MModuleDepthCalibration()
 {
-  // Delete this instance of MModuleDepthCalibration2024
+  // Delete this instance of MModuleDepthCalibration
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleDepthCalibration2024::Initialize()
+bool MModuleDepthCalibration::Initialize()
 {
 
   // The detectors need to be in the same order as DetIDs.
@@ -153,12 +154,12 @@ bool MModuleDepthCalibration2024::Initialize()
           m_Detectors[DetID] = det;
         } else {
           if (g_Verbosity >= c_Error) {
-            cout<<"ERROR in MModuleDepthCalibration2024::Initialize: Found a duplicate detector: "<<det_name<<endl;
+            cout<<"ERROR in MModuleDepthCalibration::Initialize: Found a duplicate detector: "<<det_name<<endl;
           }
         }
       } else {
         if (g_Verbosity >= c_Error) {
-          cout<<"ERROR in MModuleDepthCalibration2024::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
+          cout<<"ERROR in MModuleDepthCalibration::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
         }
       }
     }
@@ -190,7 +191,7 @@ bool MModuleDepthCalibration2024::Initialize()
   MSupervisor* S = MSupervisor::GetSupervisor();
   m_EnergyCalibration = (MModuleEnergyCalibrationUniversal*) S->GetAvailableModuleByXmlTag("EnergyCalibrationUniversal");
   if (m_EnergyCalibration == nullptr) {
-    cout << "MModuleDepthCalibration2024: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
+    cout << "MModuleDepthCalibration: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
     return false;
   }
 
@@ -200,14 +201,14 @@ bool MModuleDepthCalibration2024::Initialize()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MModuleDepthCalibration2024::CreateExpos()
+void MModuleDepthCalibration::CreateExpos()
 {
   // Create all expos
 
   if (HasExpos() == true) return;
 
   // Set the histogram display
-  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration2024(this);
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
   m_ExpoDepthCalibration->SetDepthHistogramArrangement(&m_DetectorIDs);
   for (unsigned int i = 0; i < m_DetectorIDs.size(); ++i){
     unsigned int DetID = m_DetectorIDs[i];
@@ -221,7 +222,7 @@ void MModuleDepthCalibration2024::CreateExpos()
 /////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event) 
+bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   
   if (Event->GetGuardRingVeto() == true) {
@@ -431,7 +432,7 @@ bool MModuleDepthCalibration2024::AnalyzeEvent(MReadOutAssembly* Event)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-MStripHit* MModuleDepthCalibration2024::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
+MStripHit* MModuleDepthCalibration::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
 {
   double MaxEnergy = -numeric_limits<double>::max(); // AZ: When both energies are zero (which shouldn't happen) we still pick one
   double TotalEnergy = 0.0;
@@ -458,7 +459,7 @@ MStripHit* MModuleDepthCalibration2024::GetDominantStrip(vector<MStripHit*>& Str
 /////////////////////////////////////////////////////////////////////////////////
 
 
-double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int PixelCode, double Energy)
+double MModuleDepthCalibration::GetTimingNoiseFWHM(int PixelCode, double Energy)
 {
   // Placeholder for determining the timing noise with energy, and possibly even on a pixel-by-pixel basis.
   // Should follow 1/E relation
@@ -479,7 +480,7 @@ double MModuleDepthCalibration2024::GetTimingNoiseFWHM(int PixelCode, double Ene
 /////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FileName)
+bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 {
   // Read in the stretch and offset file, which should have a header line with information on the measurements:
   // ### 800 V 80 K 59.5 keV
@@ -488,7 +489,7 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FileName)
 
   MFile CoeffsFile;
   if (CoeffsFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleDepthCalibration2024::LoadCoeffsFile: failed to open coefficients file." << endl;
+    cout << "ERROR in MModuleDepthCalibration::LoadCoeffsFile: failed to open coefficients file." << endl;
     return false;
   }
 
@@ -524,7 +525,7 @@ bool MModuleDepthCalibration2024::LoadCoeffsFile(MString FileName)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int PixelCode)
+std::vector<double>* MModuleDepthCalibration::GetPixelCoeffs(int PixelCode)
 {
   // Check to see if the stretch and offset have been loaded. If so, try to get the coefficients for the specified pixel.
   if (m_CoeffsFileIsLoaded == true) {
@@ -532,12 +533,12 @@ std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int PixelCode)
       return &m_Coeffs[PixelCode];
     } else {
       if (g_Verbosity >= c_Warning) {
-        cout << "MModuleDepthCalibration2024::GetPixelCoeffs: cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
+        cout << "MModuleDepthCalibration::GetPixelCoeffs: cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
       }
       return nullptr;
     }
   } else {
-    cout << "MModuleDepthCalibration2024::GetPixelCoeffs: cannot get stretch and offset; file has not yet been loaded." << endl;
+    cout << "MModuleDepthCalibration::GetPixelCoeffs: cannot get stretch and offset; file has not yet been loaded." << endl;
     return nullptr;
   }
 
@@ -547,7 +548,7 @@ std::vector<double>* MModuleDepthCalibration2024::GetPixelCoeffs(int PixelCode)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-vector<double> MModuleDepthCalibration2024::norm_pdf(vector<double> x, double mu, double sigma)
+vector<double> MModuleDepthCalibration::norm_pdf(vector<double> x, double mu, double sigma)
 {
   vector<double> result;
   for (unsigned int i=0; i<x.size(); ++i) {
@@ -561,7 +562,7 @@ vector<double> MModuleDepthCalibration2024::norm_pdf(vector<double> x, double mu
 /////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleDepthCalibration2024::LoadSplinesFile(MString FileName)
+bool MModuleDepthCalibration::LoadSplinesFile(MString FileName)
 {
   // Input spline files should have the following format:
   // ### DetID, HV, Temperature, Photopeak Energy (TODO: More? Fewer?)
@@ -569,7 +570,7 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FileName)
   // '' '' ''
   MFile SplineFile; 
   if (SplineFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleDepthCalibration2024::LoadSplinesFile: failed to open splines file." << endl;
+    cout << "ERROR in MModuleDepthCalibration::LoadSplinesFile: failed to open splines file." << endl;
     return false;
   }
 
@@ -623,13 +624,13 @@ bool MModuleDepthCalibration2024::LoadSplinesFile(MString FileName)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FileName)
+bool MModuleDepthCalibration::LoadMaskMetrologyFile(MString FileName)
 {
   // Read the Mask Metrology File
   // Det ID, Side (l,h), Strip ID (0-63), x_mm, y_mm, z_mm, roll_deg, pitch_deg, yaw_deg
   MFile MetrologyFile;
   if (MetrologyFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleDepthCalibration2024::LoadMaskMetrologyFile: failed to open metrology file." << endl;
+    cout << "ERROR in MModuleDepthCalibration::LoadMaskMetrologyFile: failed to open metrology file." << endl;
     return false;
   } 
 
@@ -657,7 +658,7 @@ bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FileName)
         // Make the map that defines the metrology info for each readout element
         m_MaskMetrology[R] = maskmet;
       } else {
-        cout << "ERROR in MModuleDepthCalibration2024::LoadMaskMetrologyFile: incorrect number of tokens in the file." << endl;
+        cout << "ERROR in MModuleDepthCalibration::LoadMaskMetrologyFile: incorrect number of tokens in the file." << endl;
         return false;
       }
     }
@@ -673,7 +674,7 @@ bool MModuleDepthCalibration2024::LoadMaskMetrologyFile(MString FileName)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-vector<double> MModuleDepthCalibration2024::GetStripIntersection(MReadOutElementDoubleStrip R_LVStrip, MReadOutElementDoubleStrip R_HVStrip){
+vector<double> MModuleDepthCalibration::GetStripIntersection(MReadOutElementDoubleStrip R_LVStrip, MReadOutElementDoubleStrip R_HVStrip){
   // Function to find the intersection between two strips based on the Mask Metrology
 
   // Find the x position of two lines represented by the dominate strips:
@@ -712,7 +713,7 @@ vector<double> MModuleDepthCalibration2024::GetStripIntersection(MReadOutElement
 /////////////////////////////////////////////////////////////////////////////////
 
 
-int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
+int MModuleDepthCalibration::GetHitGrade(MHit* H){
   // Function for choosing which Depth-to-CTD relation to use for a given event.
   // At time of writing, intention is to choose a CTD based on sub-pixel region determined via charge sharing (Event "grade").
   // 5 possible grades, and one Error Grade, -1. GRADE 4 is as yet uncategorized complicated geometry. GRADE 5 means multiple, presumably separated strip hits.
@@ -723,7 +724,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   }
   if (H->GetNStripHits() == 0) {
     // Error if no strip hits listed. Bad grade is returned
-    if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration2024: HIT WITH NO STRIP HITS" << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: HIT WITH NO STRIP HITS" << endl;
     return -1;
   }
    
@@ -735,11 +736,11 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
   for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
     MStripHit* SH = H->GetStripHit(j);
     if (SH == nullptr ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got NULL strip hit :( " << endl;
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: Depth Calibration: got NULL strip hit :( " << endl;
       return -1;
     }
     if (SH->GetEnergy() == 0 ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration2024: Depth Calibration: got strip without energy :( " << endl; 
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: Depth Calibration: got strip without energy :( " << endl; 
       return -1;
     }
     if (SH->IsLowVoltageStrip()) {
@@ -835,7 +836,7 @@ int MModuleDepthCalibration2024::GetHitGrade(MHit* H){
 
 /////////////////////////////////////////////////////////////////////////////////
 
-bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints)
+bool MModuleDepthCalibration::AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints)
 {
   // Saves a CTD array, basically allowing for multiple CTDs as a function of depth 
   // Depth: list of simulated depth values
@@ -852,7 +853,7 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
 
   for (unsigned int i = 0; i < CTDArr.size(); ++i) {
     if ((CTDArr[i].size() != Depth.size()) && (CTDArr[i].size() > 0)) {
-      cout<<"ERROR in MModuleDepthCalibration2024::AddDepthCTD: The number of values in the CTD list is not equal to the number of depth values."<<endl;
+      cout<<"ERROR in MModuleDepthCalibration::AddDepthCTD: The number of values in the CTD list is not equal to the number of depth values."<<endl;
       return false;
     }
   }
@@ -861,14 +862,14 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
   double MaxDepth = * std::max_element(Depth.begin(), Depth.end());
   double MinDepth = * std::min_element(Depth.begin(), Depth.end());
   if (fabs((MaxDepth-MinDepth) - m_Thicknesses[DetID]) > 0.01) {
-    cout<<"ERROR in MModuleDepthCalibration2024::AddDepthCTD: The thickness of detector "<<DetID<<" listed in the geometry file does not match the depth-CTD file."<<endl;
+    cout<<"ERROR in MModuleDepthCalibration::AddDepthCTD: The thickness of detector "<<DetID<<" listed in the geometry file does not match the depth-CTD file."<<endl;
     cout<<"Geometry file gives "<<m_Thicknesses[DetID]<<"cm, while the depth-CTD file gives "<<(MaxDepth-MinDepth)<<"cm."<<endl;
     return false;
   }
 
   // Check to make sure splines haven't already been loaded for this detector
   if (SplineMap.count(DetID)>0) {
-    cout<<"MModuleDepthCalibration2024::AddDepthCTD: Splines already added for DetID "<<DetID<<"."<<endl;
+    cout<<"MModuleDepthCalibration::AddDepthCTD: Splines already added for DetID "<<DetID<<"."<<endl;
     return false;
   } else {
     vector<TSpline3*> TempVec;
@@ -936,12 +937,12 @@ bool MModuleDepthCalibration2024::AddDepthCTD(vector<double> Depth, vector<vecto
 /////////////////////////////////////////////////////////////////////////////////
 
 
-vector<double> MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
+vector<double> MModuleDepthCalibration::GetCTD(int DetID, int Grade)
 {
   // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
 
   if (!m_SplinesFileIsLoaded) {
-    cout << "MModuleDepthCalibration2024::GetCTD: cannot return Depth to CTD relation because the file was not loaded." << endl;
+    cout << "MModuleDepthCalibration::GetCTD: cannot return Depth to CTD relation because the file was not loaded." << endl;
     return vector<double> ();
   }
   // If there is a CTD array for the given detector, return it.
@@ -953,7 +954,7 @@ vector<double> MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
       return (m_CTDMap[DetID][0]);
     }
   } else {
-    cout << "MModuleDepthCalibration2024::GetCTD: No CTD map is loaded for Det " << DetID << "." << endl;
+    cout << "MModuleDepthCalibration::GetCTD: No CTD map is loaded for Det " << DetID << "." << endl;
     return vector<double> ();
   }
 }
@@ -962,12 +963,12 @@ vector<double> MModuleDepthCalibration2024::GetCTD(int DetID, int Grade)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-vector<double> MModuleDepthCalibration2024::GetDepth(int DetID)
+vector<double> MModuleDepthCalibration::GetDepth(int DetID)
 {
   // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
 
   if (!m_SplinesFileIsLoaded) {
-    cout << "MModuleDepthCalibration2024::GetDepth: cannot return Depth grid because the file was not loaded." << endl;
+    cout << "MModuleDepthCalibration::GetDepth: cannot return Depth grid because the file was not loaded." << endl;
     return vector<double> ();
   }
 
@@ -976,7 +977,7 @@ vector<double> MModuleDepthCalibration2024::GetDepth(int DetID)
   if (m_DepthGrid.count(DetID) > 0){
     return m_DepthGrid[DetID];
     } else {
-      cout << "MModuleDepthCalibration2024::GetDepth: No Depth grid is loaded for Det " << DetID << "." << endl;
+      cout << "MModuleDepthCalibration::GetDepth: No Depth grid is loaded for Det " << DetID << "." << endl;
       return vector<double> ();
   }
 } 
@@ -984,12 +985,12 @@ vector<double> MModuleDepthCalibration2024::GetDepth(int DetID)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-TSpline3* MModuleDepthCalibration2024::GetSpline(int DetID, int Grade)
+TSpline3* MModuleDepthCalibration::GetSpline(int DetID, int Grade)
 {
   // Retrieves the appropriate depth->CTD spline given the Detector ID and Event Grade passed
 
   if( !m_SplinesFileIsLoaded ){
-    cout << "MModuleDepthCalibration2024::GetSpline: cannot return Depth to CTD spline because the file was not loaded." << endl;
+    cout << "MModuleDepthCalibration::GetSpline: cannot return Depth to CTD spline because the file was not loaded." << endl;
     return nullptr;
   }
 
@@ -1003,7 +1004,7 @@ TSpline3* MModuleDepthCalibration2024::GetSpline(int DetID, int Grade)
       return (m_SplineMap[DetID][0]);
     }
   } else {
-    cout << "MModuleDepthCalibration2024::GetSpline: No spline is loaded for Det " << DetID << "." << endl;
+    cout << "MModuleDepthCalibration::GetSpline: No spline is loaded for Det " << DetID << "." << endl;
     return nullptr;
   }
 }
@@ -1012,10 +1013,10 @@ TSpline3* MModuleDepthCalibration2024::GetSpline(int DetID, int Grade)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleDepthCalibration2024::ShowOptionsGUI()
+void MModuleDepthCalibration::ShowOptionsGUI()
 {
   // Show the options GUI - or do nothing
-  MGUIOptionsDepthCalibration2024* Options = new MGUIOptionsDepthCalibration2024(this);
+  MGUIOptionsDepthCalibration* Options = new MGUIOptionsDepthCalibration(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }
@@ -1024,7 +1025,7 @@ void MModuleDepthCalibration2024::ShowOptionsGUI()
 /////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
+bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
@@ -1059,7 +1060,7 @@ bool MModuleDepthCalibration2024::ReadXmlConfiguration(MXmlNode* Node)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-MXmlNode* MModuleDepthCalibration2024::CreateXmlConfiguration()
+MXmlNode* MModuleDepthCalibration::CreateXmlConfiguration()
 {
   //! Create an XML node tree from the configuration
 
@@ -1073,7 +1074,7 @@ MXmlNode* MModuleDepthCalibration2024::CreateXmlConfiguration()
   return Node;
 }
 
-void MModuleDepthCalibration2024::Finalize()
+void MModuleDepthCalibration::Finalize()
 {
 
   MModule::Finalize();
@@ -1108,5 +1109,5 @@ void MModuleDepthCalibration2024::Finalize()
 
 
 
-// MModuleDepthCalibration2024.cxx: the end...
+// MModuleDepthCalibration.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

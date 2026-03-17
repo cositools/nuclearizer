@@ -1,5 +1,5 @@
 /*
- * MModuleDepthCalibration2024.h
+ * MModuleDepthCalibration.h
  *
  * Copyright (C) 2008-2008 by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleDepthCalibration2024__
-#define __MModuleDepthCalibration2024__
+#ifndef __MModuleDepthCalibration__
+#define __MModuleDepthCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +30,7 @@
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MDStrip3D.h"
 #include "MDShapeBRIK.h"
-#include "MGUIExpoDepthCalibration2024.h"
+#include "MGUIExpoDepthCalibration.h"
 
 // Forward declarations:
 
@@ -38,17 +38,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleDepthCalibration2024 : public MModule
+class MModuleDepthCalibration : public MModule
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleDepthCalibration2024();
+  MModuleDepthCalibration();
   //! Default destructor
-  virtual ~MModuleDepthCalibration2024();
+  virtual ~MModuleDepthCalibration();
   
   //! Create a new object of this class 
-  virtual MModuleDepthCalibration2024* Clone() { return new MModuleDepthCalibration2024(); }
+  virtual MModuleDepthCalibration* Clone() { return new MModuleDepthCalibration(); }
 
   //! Initialize the module
   virtual bool Initialize();
@@ -171,7 +171,7 @@ class MModuleDepthCalibration2024 : public MModule
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibrationUniversal* m_EnergyCalibration;
-  MGUIExpoDepthCalibration2024* m_ExpoDepthCalibration;
+  MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   unordered_map<int, vector<vector<double>>> m_CTDMap;
@@ -199,7 +199,7 @@ class MModuleDepthCalibration2024 : public MModule
 
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleDepthCalibration2024, 0) // no description
+  ClassDef(MModuleDepthCalibration, 0) // no description
 #endif
 
 };

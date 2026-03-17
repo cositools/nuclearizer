@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsDepthCalibration2024__
-#define __MGUIOptionsDepthCalibration2024__
+#ifndef __MGUIOptionsDepthCalibration__
+#define __MGUIOptionsDepthCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,14 +41,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsDepthCalibration2024 : public MGUIOptions
+class MGUIOptionsDepthCalibration : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsDepthCalibration2024(MModule* Module);
+  MGUIOptionsDepthCalibration(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsDepthCalibration2024();
+  virtual ~MGUIOptionsDepthCalibration();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -89,7 +89,7 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsDepthCalibration2024, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsDepthCalibration, 1) // basic class for dialog windows
 #endif
 
 };

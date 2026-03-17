@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIExpoDepthCalibration2024__
-#define __MGUIExpoDepthCalibration2024__
+#ifndef __MGUIExpoDepthCalibration__
+#define __MGUIExpoDepthCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,14 +46,14 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIExpoDepthCalibration2024 : public MGUIExpo
+class MGUIExpoDepthCalibration : public MGUIExpo
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIExpoDepthCalibration2024(MModule* Module);
+  MGUIExpoDepthCalibration(MModule* Module);
   //! Default destructor
-  virtual ~MGUIExpoDepthCalibration2024();
+  virtual ~MGUIExpoDepthCalibration();
 
   //! The creation part which gets overwritten
   virtual void Create();
@@ -117,7 +117,7 @@ class MGUIExpoDepthCalibration2024 : public MGUIExpo
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIExpoDepthCalibration2024, 1) // basic class for dialog windows
+  ClassDef(MGUIExpoDepthCalibration, 1) // basic class for dialog windows
 #endif
 
 };

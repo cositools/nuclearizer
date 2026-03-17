@@ -1,5 +1,5 @@
 /*
- * MGUIExpoDepthCalibration2024.cxx
+ * MGUIExpoDepthCalibration.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIExpoDepthCalibration2024.h"
+#include "MGUIExpoDepthCalibration.h"
 
 // Standard libs:
 
@@ -37,14 +37,14 @@
 
 
 #ifdef ___CLING___
-ClassImp(MGUIExpoDepthCalibration2024)
+ClassImp(MGUIExpoDepthCalibration)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoDepthCalibration2024::MGUIExpoDepthCalibration2024(MModule* Module) : MGUIExpo(Module)
+MGUIExpoDepthCalibration::MGUIExpoDepthCalibration(MModule* Module) : MGUIExpo(Module)
 {
   // standard constructor
 
@@ -62,7 +62,7 @@ MGUIExpoDepthCalibration2024::MGUIExpoDepthCalibration2024(MModule* Module) : MG
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpoDepthCalibration2024::~MGUIExpoDepthCalibration2024()
+MGUIExpoDepthCalibration::~MGUIExpoDepthCalibration()
 {
   // kDeepCleanup is activated 
 }
@@ -71,7 +71,7 @@ MGUIExpoDepthCalibration2024::~MGUIExpoDepthCalibration2024()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::Reset()
+void MGUIExpoDepthCalibration::Reset()
 {
   //! Reset the data in the UI
 
@@ -86,7 +86,7 @@ void MGUIExpoDepthCalibration2024::Reset()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::SetDepthHistogramArrangement(vector<unsigned int>* DetIDs)
+void MGUIExpoDepthCalibration::SetDepthHistogramArrangement(vector<unsigned int>* DetIDs)
 {
   // Take in the list of detector IDs and determine the number in X and number in Y
   // Update the variable m_DetectorMap.
@@ -98,7 +98,7 @@ void MGUIExpoDepthCalibration2024::SetDepthHistogramArrangement(vector<unsigned 
   unsigned int max_columns = 4;
 
   unsigned int NDetectors = DetIDs->size();
-  cout<<"MGUIExpoDepthCalibration2024::SetDepthHistogramArrangement: Number of detectors:" << NDetectors<<endl;
+  cout<<"MGUIExpoDepthCalibration::SetDepthHistogramArrangement: Number of detectors:" << NDetectors<<endl;
 
   for ( unsigned int i=0; i< NDetectors; ++i ){
     // iterate over detector IDs, make the map from ID to plot position, and initialize the histograms
@@ -139,7 +139,7 @@ void MGUIExpoDepthCalibration2024::SetDepthHistogramArrangement(vector<unsigned 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::SetDepthHistogramParameters(unsigned int DetID, unsigned int NBins, double DepthMin, double DepthMax)
+void MGUIExpoDepthCalibration::SetDepthHistogramParameters(unsigned int DetID, unsigned int NBins, double DepthMin, double DepthMax)
 {
   // Set the energy histogram parameters 
 
@@ -158,7 +158,7 @@ void MGUIExpoDepthCalibration2024::SetDepthHistogramParameters(unsigned int DetI
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::SetDepthHistogramName(unsigned int DetID, MString Name) 
+void MGUIExpoDepthCalibration::SetDepthHistogramName(unsigned int DetID, MString Name) 
 {
   // Set the title of the histogram
   
@@ -175,7 +175,7 @@ void MGUIExpoDepthCalibration2024::SetDepthHistogramName(unsigned int DetID, MSt
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::AddDepth(unsigned int DetID, double Depth)
+void MGUIExpoDepthCalibration::AddDepth(unsigned int DetID, double Depth)
 {
   // Add data to the energy histogram
 
@@ -192,7 +192,7 @@ void MGUIExpoDepthCalibration2024::AddDepth(unsigned int DetID, double Depth)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::Create()
+void MGUIExpoDepthCalibration::Create()
 {
   // Add the GUI options here
 
@@ -228,7 +228,7 @@ void MGUIExpoDepthCalibration2024::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::Update()
+void MGUIExpoDepthCalibration::Update()
 {
   //! Update the frame
 
@@ -263,7 +263,7 @@ void MGUIExpoDepthCalibration2024::Update()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIExpoDepthCalibration2024::Export(const MString& FileName)
+void MGUIExpoDepthCalibration::Export(const MString& FileName)
 {
   // Add data to the energy histogram
 
@@ -285,5 +285,5 @@ void MGUIExpoDepthCalibration2024::Export(const MString& FileName)
 }
 
 
-// MGUIExpoDepthCalibration2024: the end...
+// MGUIExpoDepthCalibration: the end...
 ////////////////////////////////////////////////////////////////////////////////
