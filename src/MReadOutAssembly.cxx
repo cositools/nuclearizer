@@ -121,7 +121,6 @@ void MReadOutAssembly::Clear()
   m_ID = g_UnsignedIntNotDefined;
   m_TI = 0;
   m_CL = 0;
-  m_FC = 0;
   m_Time = 0;
   m_EventTimeUTC = 0;
   m_MJD = 0.0;
