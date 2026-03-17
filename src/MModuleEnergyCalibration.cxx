@@ -2,12 +2,14 @@
  * MModuleEnergyCalibration.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer, Mark Bandstra, Carolyn Kierans.
+ * Copyright (C) by Andreas Zoglauer, Mark Bandstra, Carolyn Kierans,
+ * Jackie Beechert, Robin Anthony-Peterson.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer, Mark Bandstra, Carolyn Kierans.
+ * Andreas Zoglauer, Mark Bandstra, Carolyn Kierans, 
+ * Jackie Beechert, Robin Anthony-Peterson
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,

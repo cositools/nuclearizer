@@ -2,12 +2,12 @@
  * MGUIExpoDepthCalibration.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Alex Lowell, Sean Pike.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * Andreas Zoglauer, Alex Lowell, Sean Pike.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,

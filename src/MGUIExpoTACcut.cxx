@@ -2,12 +2,12 @@
  * MGUIExpoTACcut.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Nicole Rodriquez Cavero.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * Andreas Zoglauer. Nicole Rodriguez Cavero.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
