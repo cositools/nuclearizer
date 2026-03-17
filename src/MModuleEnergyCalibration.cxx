@@ -67,7 +67,7 @@ MModuleEnergyCalibration::MModuleEnergyCalibration() : MModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Universal energy calibrator";
+  m_Name = "Energy calibrator";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "EnergyCalibration";
