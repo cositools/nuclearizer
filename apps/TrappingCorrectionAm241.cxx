@@ -58,8 +58,8 @@ using namespace std;
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleEventFilter.h"
-#include "MModuleStripPairingGreedy.h"
 #include "MModuleStripPairingChiSquare.h"
+#include "MModuleStripPairingMultiRoundChiSquare.h"
 #include "MModuleTACcut.h"
 #include "MAssembly.h"
 
@@ -112,7 +112,7 @@ private:
   MString m_OutFile;
   //! option to do a pixel-by-pixel calibration (instead of detector-by-detector)
   bool m_PixelCorrect;
-  bool m_GreedyPairing;
+  bool m_MultiRoundStripPairing;
   bool m_ExcludeNN;
   bool m_ContinueHDF5;
 
@@ -162,7 +162,7 @@ bool TrappingCorrectionAm241::ParseCommandLine(int argc, char** argv)
   Usage<<"         --tcut:   TAC cut file"<<endl;
   Usage<<"         -p:   do pixel-by-pixel correction"<<endl;
   Usage<<"         -m:   strip map file name (.map)"<<endl;
-  Usage<<"         -g:   greedy strip pairing (default is chi-square)"<<endl;
+  Usage<<"         -mr:   multi-round chi square strip pairing (default is chi-square)"<<endl;
   Usage<<"         -n:   exclude nearest neighbors"<<endl;
   Usage<<"         -o:   outfile (default YYYYMMDDHHMMSS)"<<endl;
   Usage<<"         --nocontinue:  Suppress continuous HDF5 loading"<<endl;
@@ -181,7 +181,7 @@ bool TrappingCorrectionAm241::ParseCommandLine(int argc, char** argv)
   }
 
   m_PixelCorrect = false;
-  m_GreedyPairing = false;
+  m_MultiRoundStripPairing = false;
   m_ContinueHDF5 = true;
   m_MinEnergy = 40;
   m_MaxEnergy = 70;
@@ -238,8 +238,8 @@ bool TrappingCorrectionAm241::ParseCommandLine(int argc, char** argv)
       cout<<"Accepting file name: "<<m_OutFile<<endl;
     } else if (Option == "-p") {
       m_PixelCorrect = true;
-    } else if (Option == "-g") {
-      m_GreedyPairing = true;
+    } else if (Option == "-mr") {
+      m_MultiRoundStripPairing = true;
     } else if (Option == "-n") {
       m_ExcludeNN = true;
     } else if (Option == "--nocontinue") {
@@ -394,8 +394,8 @@ bool TrappingCorrectionAm241::Analyze()
       
       cout<<"Creating strip pairing"<<endl;
       MModule* Pairing;
-      if (m_GreedyPairing == true) {
-        Pairing = new MModuleStripPairingGreedy();
+      if (m_MultiRoundStripPairing == true) {
+        Pairing = new MModuleStripPairingMultiRoundChiSquare();
       } else {
         Pairing = new MModuleStripPairingChiSquare();
       }

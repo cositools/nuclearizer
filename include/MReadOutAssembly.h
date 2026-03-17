@@ -250,12 +250,6 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the Reduced Chi^2
   double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
-  //! Set the Quality of this Event used in Greedy Strip pairing module
-  //! TODO Change name of this variable to be more descriptive or get rid of Greedy algorithim all together
-  void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
-  //!Return the Quality of this Event
-  double GetEventQuality() const { return m_EventQuality; }
-
 
   // Track Vetos
 
@@ -431,10 +425,6 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Reduced Chi^2 of the Strip Paired Event
   double m_StripPairingReducedChiSquare;
-
-  //! Quality of this event in Greedy strip pairing
-  //! TODO change variable name or remove Greedy approach all together
-  double m_EventQuality;
 
  //! True if event has been filtered out
   bool m_FilteredOut;

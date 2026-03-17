@@ -66,12 +66,8 @@ using namespace std;
 #include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleLoaderMeasurementsFITS.h"
-#include "MModuleEnergyCalibration.h"
 #include "MModuleEnergyCalibrationUniversal.h"
-#include "MModuleDepthCalibration.h"
-#include "MModuleDepthCalibrationB.h"
 #include "MModuleDepthCalibration2024.h"
-#include "MModuleStripPairingGreedy.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleEventFilter.h"
@@ -127,7 +123,6 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  // m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsBalloon());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSMEX());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSingleDet());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsCosima());
@@ -140,11 +135,8 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleEventFilter());
   m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
 
-  m_Supervisor->AddAvailableModule(new MModuleStripPairingGreedy());
   m_Supervisor->AddAvailableModule(new MModuleStripPairingMultiRoundChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleStripPairingChiSquare());
-  m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
-  m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration2024());
   
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
