@@ -180,8 +180,6 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 {
   // Process shield crystal hits to determine veto status
 
-  m_EventTime = Event->GetTime().GetAsSeconds();
-
   // Track which GeD detectors got hit (for later deadtime update)
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
   for (const MDEEStripHit& Hit : LVHits) {
@@ -297,8 +295,7 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   m_HasVeto = false;
   m_IsShieldDead = false;
 
-  // Update time tracking for statistics
-  double eventTime = Event->GetTime().GetAsSeconds();
+  m_EventTime = Event->GetTime().GetAsSeconds();
 
   // First: veto based on shield state from previous events
   for (int group = 0; group < nShieldPanels; ++group) {
@@ -314,11 +311,11 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   // Process shield hits and check for veto conditions
   ProcessShieldHits(Event);
 
-  if (eventTime < m_FirstTime) {
-    m_FirstTime = eventTime;
+  if (m_EventTime < m_FirstTime) {
+    m_FirstTime = m_EventTime;
   }
-  if (eventTime > m_LastTime) {
-    m_LastTime = eventTime;
+  if (m_EventTime > m_LastTime) {
+    m_LastTime = m_EventTime;
   }
 
   // If vetoed, set the dead time end
