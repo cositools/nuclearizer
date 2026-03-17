@@ -161,8 +161,6 @@ class MSubModuleShieldTrigger : public MSubModule
   unsigned long m_NumBGOHitsErased;
   //! Bool to store if corresponding shield ASIC is dead or not
   bool m_IsShieldDead;
-  //! Time of last shield veto hit (used for veto window calculation)
-  double m_ShieldVetoTime;
 
   //! First event time in seconds
   double m_FirstTime;

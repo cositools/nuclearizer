@@ -66,7 +66,6 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_ShieldDelayAfter = 0.4e-6;
   m_ShieldVetoWindowSize = 1.5e-6;
   m_ASICDeadTimePerChannel = 0.0;
-  m_ShieldVetoTime = 0.0;
   
   m_NumShieldHitCounts = 0;
   m_NumShieldVetoCounts = 0;
@@ -232,22 +231,17 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
         continue;
       }
 
-      // cout << m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] << " " << m_EventTime << endl;
       // Check deadtime conditions
       if (m_EventTime > (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup])) {
         // Event occurred after deadtime - start new veto window
         m_ShieldHitCrystalID[ShieldDetGroup].clear();
         m_ShieldLastHitTime[ShieldDetGroup] = m_EventTime;
-        m_ShieldVetoTime = m_EventTime;
         m_ShieldHitCrystalID[ShieldDetGroup].push_back(CrystalID);
-        m_HasVeto = true;
         m_TotalShieldDeadtime[ShieldDetGroup] += m_ShieldDeadtime[ShieldDetGroup];
       }
       else if (m_EventTime <= (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDelayBefore)) {
         // Event occurred within coincidence window - add to existing veto
-        m_ShieldVetoTime = m_EventTime;
         m_ShieldHitCrystalID[ShieldDetGroup].push_back(CrystalID);
-        m_HasVeto = true;
       }
       else {
         // Event occurred within deadtime
@@ -260,15 +254,6 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
   // Calculate deadtime for each panel group after processing all hits
   for (int group = 0; group < nShieldPanels; group++) {
       m_ShieldDeadtime[group] = CalculateASICDeadtime(m_ShieldHitCrystalID[group]);
-  }
-
-  // Check if event is within veto window
-  if ((m_EventTime <= (m_ShieldVetoTime + m_ShieldVetoWindowSize)) && 
-      (m_EventTime >= m_ShieldVetoTime)) {
-    m_HasVeto = true;
-    if (Event->GetSimulatedEvent() != nullptr) {
-      m_NumShieldVetoCounts += Event->GetSimulatedEvent()->GetNHTs();
-    }
   }
 
   return true;
@@ -312,11 +297,23 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   m_HasVeto = false;
   m_IsShieldDead = false;
 
+  // Update time tracking for statistics
+  double eventTime = Event->GetTime().GetAsSeconds();
+
+  // First: veto based on shield state from previous events
+  for (int group = 0; group < nShieldPanels; ++group) {
+    if (m_EventTime >= m_ShieldLastHitTime[group] &&
+        m_EventTime <= m_ShieldLastHitTime[group] + m_ShieldVetoWindowSize) {
+      m_HasVeto = true;
+      if (Event->GetSimulatedEvent() != nullptr) {
+        m_NumShieldVetoCounts += Event->GetSimulatedEvent()->GetNHTs();
+      }
+    }
+  }
+
   // Process shield hits and check for veto conditions
   ProcessShieldHits(Event);
 
-  // Update time tracking for statistics
-  double eventTime = Event->GetTime().GetAsSeconds();
   if (eventTime < m_FirstTime) {
     m_FirstTime = eventTime;
   }

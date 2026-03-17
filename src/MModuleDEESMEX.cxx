@@ -153,10 +153,10 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
 
 
   // Step (6): the shield veto / trigger, handle pre-scalers, calculate dead-time, calculate random coincidence time
-  // Need to add a veto window size here
   m_ShieldTrigger.Clear();
   m_ShieldTrigger.AnalyzeEvent(Event);
   if (m_ShieldTrigger.HasVeto() == true) {
+    Event->SetShieldVeto(true);
     if (m_ShieldTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
       m_DeadTimeEnd = m_ShieldTrigger.GetDeadTimeEnd();
     }
@@ -193,8 +193,7 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
     if (m_StripTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
       m_DeadTimeEnd = m_StripTrigger.GetDeadTimeEnd();
     }
-    // Clean up
-
+    Event->SetGuardRingVeto(true);   // <-- mark the event so EventSaver can filter it
     Event->SetAnalysisProgress(MAssembly::c_DetectorEffectsEngine);
     return true;
   }
