@@ -55,7 +55,6 @@ MGUIExpoReceiver::MGUIExpoReceiver(MModule* Module) : MGUIExpo(Module)
   m_BytesReceived = 0;
   m_RawFramesParsed = 0;
   m_ComptonFramesParsed = 0;
-  m_AspectFramesParsed = 0;
   m_OtherFramesParsed = 0;
   
   // use hierarchical cleaning
@@ -84,7 +83,6 @@ void MGUIExpoReceiver::Reset()
   m_BytesReceived = 0;
   m_RawFramesParsed = 0;
   m_ComptonFramesParsed = 0;
-  m_AspectFramesParsed = 0;
   m_OtherFramesParsed = 0;
   m_Mutex.UnLock();
 }
@@ -138,19 +136,6 @@ void MGUIExpoReceiver::SetComptonFramesParsed(long Frames)
 
   m_Mutex.Lock();
   m_ComptonFramesParsed = Frames;
-  m_Mutex.UnLock();   
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MGUIExpoReceiver::SetAspectFramesParsed(long Frames)
-{
-  //! Set the number of aspect data frames received
-
-  m_Mutex.Lock();
-  m_AspectFramesParsed = Frames;
   m_Mutex.UnLock();   
 }
 
@@ -213,12 +198,6 @@ void MGUIExpoReceiver::Create()
   //m_ComptonFramesLabel->ChangeOptions(kSunkenFrame);
   ModuleFrame->AddFrame(m_ComptonFramesLabel);
 
-  TGLabel* AspectFramesTextLabel = new TGLabel(ModuleFrame, "Aspect frames parsed: ");
-  ModuleFrame->AddFrame(AspectFramesTextLabel);
-  m_AspectFramesLabel = new TGLabel(ModuleFrame, "                              0                              ");
-  //m_AspectFramesLabel->ChangeOptions(kSunkenFrame);
-  ModuleFrame->AddFrame(m_AspectFramesLabel);
-
   TGLabel* OtherFramesTextLabel = new TGLabel(ModuleFrame, "Other frames parsed: ");
   ModuleFrame->AddFrame(OtherFramesTextLabel);
   m_OtherFramesLabel = new TGLabel(ModuleFrame, "                              0                              ");
@@ -255,10 +234,6 @@ void MGUIExpoReceiver::Update()
     Text.Clear();
     Text += m_ComptonFramesParsed;
     m_ComptonFramesLabel->SetText(Text);
-
-    Text.Clear();
-    Text += m_AspectFramesParsed;
-    m_AspectFramesLabel->SetText(Text);
 
     Text.Clear();
     Text += m_OtherFramesParsed;

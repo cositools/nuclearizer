@@ -59,7 +59,6 @@ using namespace std;
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
-#include "MModuleLoaderSimulationsBalloon.h"
 #include "MModuleLoaderSimulationsSMEX.h"
 #include "MModuleLoaderSimulationsSingleDet.h"
 #include "MModuleLoaderSimulationsCosima.h"
@@ -157,7 +156,7 @@ MAssembly::MAssembly()
   m_Supervisor->SetUIPicturePath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
   m_Supervisor->SetUISubTitle("The detector calibrator of the COmpton Spectrometer and Imager, COSI");
   m_Supervisor->SetUILeadAuthor("Andreas Zoglauer");
-  m_Supervisor->SetUICoAuthors("Alan Chiu, Alex Lowell, Andreas Zoglauer,\nAres Hernandez, Carolyn Kierans, Clio Sleator,\nDaniel Perez-Becker, Eric Bellm, Jau-Shian Liang,\nMark Bandstra");
+  m_Supervisor->SetUICoAuthors("Robin Anthony-Peterson, Mark Bandstra, Jackie Beechert, \nEric Bellm, Emily Broadbent, Alan Chiu, \nValentina Fioretti, Julian Gerber, Felix Hagemann, \nSophie Haight, Ares Hernandez, Carolyn Kierans, \nHadar Lazar, Jau-Shian Liang, Alex Lowell, \nParshad Patel, Daniel Perez-Becker, Jarred Roberts, \nNicole Rodriguez Cavero, Field Rogers, Clio Sleator");
 }
 
 

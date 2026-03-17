@@ -71,9 +71,6 @@ class MGUIExpoReceiver : public MGUIExpo
   //! Set the number of Compton data frames parsed
   void SetComptonFramesParsed(long Frames);
 
-  //! Set the number of aspect data frames parsed
-  void SetAspectFramesParsed(long Frames);
-
   //! Set thenumber of other data frames parsed
   void SetOtherFramesParsed(long Frames);
 
@@ -106,11 +103,6 @@ class MGUIExpoReceiver : public MGUIExpo
   long m_ComptonFramesParsed;
   //! The label showing the number of Compton data frames parsed
   TGLabel* m_ComptonFramesLabel;
-  
-  //! The total number of aspect data frames parsed
-  long m_AspectFramesParsed;
-  //! The label showing the number of aspect data frames parsed
-  TGLabel* m_AspectFramesLabel;
   
   //! The total number of other data frames parsed
   long m_OtherFramesParsed;
