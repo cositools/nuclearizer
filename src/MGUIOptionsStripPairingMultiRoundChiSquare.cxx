@@ -125,7 +125,7 @@ bool MGUIOptionsStripPairingMultiRoundChiSquare::ProcessMessage(long Message, lo
                                
 bool MGUIOptionsStripPairingMultiRoundChiSquare::OnApply()
 {
-  dynamic_cast<MModuleStripPairingMultiRoundChiSquare*>(m_Module)->SetMaximumStrips(m_MaximumStrips->GetAsInt());
+  dynamic_cast<MModuleStripPairingMultiRoundChiSquare*>(m_Module)->SetMaximumStrips(m_MaximumStrips->GetAsDouble());
     
   return true;
 }
