@@ -36,6 +36,7 @@
 // MEGAlib libs:
 #include "MModule.h"
 #include "MGUIOptionsStripPairing.h"
+#include "MGUIOptionsStripPairingMultiRoundChiSquare.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +52,8 @@ ClassImp(MModuleStripPairingMultiRoundChiSquare)
 //! Define constants to be used in strip pairing
 
 const unsigned int MaxCombinations = 5; // Defines maximum number of strip combinations allowed in pairing
-const unsigned int MaxStripHits = 6; // Define maximum number of strip hits on any one side
+// Now defined by user!
+// const unsigned int MaxStripHits = 6; // Define maximum number of strip hits on any one side
 const unsigned int ChiSquareThreshold = 100; // If strip pairing does not reach this threshold, it will enter round two
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,9 +84,11 @@ MModuleStripPairingMultiRoundChiSquare::MModuleStripPairingMultiRoundChiSquare()
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
-  m_HasOptionsGUI = false;
+  m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
+    
+  m_MaximumStrips = 6;
 
   // Can the program be run multi-threaded
   m_AllowMultiThreading = true;
@@ -271,8 +275,8 @@ bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Ev
   // Limit the number of strip hits on each side
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
-      if (StripHits[d][side].size() > MaxStripHits) {
-        Event->SetStripPairingError("More than 6 hit strips on one side");
+      if (StripHits[d][side].size() > m_MaximumStrips) {
+        Event->SetStripPairingError("More than maximum number of strip hits allowed on one side (" + to_string(StripHits[d][side].size()) + ")");
         Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
       }
@@ -852,7 +856,15 @@ void MModuleStripPairingMultiRoundChiSquare::ShowOptionsGUI()
 {
   //! Show the options GUI --- has to be overwritten!
 
-  MGUIOptionsStripPairing* Options = new MGUIOptionsStripPairing(this);
+  //MGUIOptionsStripPairing* Options = new MGUIOptionsStripPairing(this);
+  //Options->Create();
+  //gClient->WaitForUnmap(Options);
+    
+  // I don't believe the above options GUI (MGUIOptionsStripPairing) is actually being used here?
+    
+  // Show the options GUI for choosing maximum number of strip hits
+
+  MGUIOptionsStripPairingMultiRoundChiSquare* Options = new MGUIOptionsStripPairingMultiRoundChiSquare(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }

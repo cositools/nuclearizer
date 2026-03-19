@@ -72,6 +72,11 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
+    
+  //! Set the maximum number of strips
+  void SetMaximumStrips(double MaximumStrips) { m_MaximumStrips = MaximumStrips; }
+  //! Get the maximum number of strips
+  double GetMaximumStrips() const { return m_MaximumStrips; }
 
   // protected methods:
  protected:
@@ -113,7 +118,8 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
 
   // private members:
  private:
-
+  //! The maximum number of strips to pair
+  unsigned int m_MaximumStrips;
 
 
 
