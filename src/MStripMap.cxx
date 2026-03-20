@@ -105,8 +105,8 @@ bool MStripMap::Open(MString FileName)
 
 bool MStripMap::UpdateASICPolarities(vector<map<bool, vector<bool>>> ASICPolarities) {
   if (!m_StripMappings.empty()) {
-    for (MSingleStripMapping &s : m_StripMappings) {
-      s.m_IsLowVoltage = ASICPolarities[s.m_DetectorID][s.m_IsPrimary][s.m_ASICID];
+    for (MSingleStripMapping& S : m_StripMappings) {
+      S.m_IsLowVoltage = ASICPolarities[S.m_DetectorID][S.m_IsPrimary][S.m_ASICID];
     }
   }
   return true;

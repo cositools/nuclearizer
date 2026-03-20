@@ -112,7 +112,8 @@ struct MHDFStripHit_V2 {
 struct MHDFEvent_V2_0 {
   uint16_t m_EventID;
   uint64_t m_TimeCode;
-  double   m_GSETimeCode;
+  // Nanoseconds since epoch
+  uint64_t m_GSETimeCode;
   uint8_t  m_Hits;
   uint16_t m_Bytes;
   uint8_t  m_EventType;
@@ -123,8 +124,10 @@ struct MHDFEvent_V2_0 {
 struct MHDFEvent_V2_2 {
   uint16_t m_EventID;
   uint64_t m_TimeCode;
-  double   m_GSETimeCode;
-  double   m_SPWTimeCode;
+  // Nanoseconds since epoch
+  uint64_t m_GSETimeCode;
+  // Nanoseconds since start of acquisition
+  uint64_t m_SPWTimeCode;
   uint8_t  m_Hits;
   uint16_t m_Bytes;
   uint8_t  m_EventType;
@@ -278,7 +281,6 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   //! Current hit number in the file
   hsize_t m_CurrentHit;
-  unsigned int m_CurrentEvent;
 
   //! Number of event ID roll-overs:
   unsigned int m_NumberOfEventIDRollOvers;

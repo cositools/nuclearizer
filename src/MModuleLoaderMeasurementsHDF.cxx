@@ -379,7 +379,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       m_EventIndicesCompoundDataType.insertMember("acs_hits",            HOFFSET(MHDFEventIndices_V2, m_ACSHits),            uint32_pair);
       m_EventIndicesCompoundDataType.insertMember("hs",                  HOFFSET(MHDFEventIndices_V2, m_HS),                 uint32_pair);
       m_EventIndicesCompoundDataType.insertMember("singles_counts",      HOFFSET(MHDFEventIndices_V2, m_SinglesCounts),      uint32_pair);
-      m_EventIndicesCompoundDataType.insertMember("dib_coindicidence",   HOFFSET(MHDFEventIndices_V2, m_DIBCoincidence),     uint32_pair);
+      m_EventIndicesCompoundDataType.insertMember("dib_coincidence",     HOFFSET(MHDFEventIndices_V2, m_DIBCoincidence),     uint32_pair);
       m_EventIndicesCompoundDataType.insertMember("detector_hits",       HOFFSET(MHDFEventIndices_V2, m_DetectorHits),       uint32_pair);
       m_EventIndicesCompoundDataType.insertMember("detector_live_time",  HOFFSET(MHDFEventIndices_V2, m_DetectorLiveTime),   uint32_pair);
 
@@ -569,8 +569,11 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     // Extract the data we need
     uint16_t EventID;
     uint64_t TimeCode;
-    uint64_t SPWTimeCode = 0;
     uint8_t NumberOfHits;
+
+    // Setting SPWTimeCode default to 0, as it is defined only iin HDF version >= 2.2
+    uint64_t SPWTimeCode = 0;
+
 
     if (m_HDFStripHitVersion <= MHDFStripHitVersion::V1_2) {
 
@@ -696,7 +699,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
-      if (m_Buffer_2.data() == nullptr || m_Buffer_2.size() == 0) {
+      if (m_Buffer_2.empty()) {
         if (g_Verbosity >= c_Error) cout << "Buffer is empty or null!" << endl;
         return false;
       }
