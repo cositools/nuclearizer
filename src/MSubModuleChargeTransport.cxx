@@ -246,6 +246,7 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
   double ΔZ   = isLV ? Pos.Z() + Thickness / 2.0 : Thickness / 2.0 - Pos.Z();
 
   // Calculate strip ID by rounding down intentionally to avoid truncation towards zero
+  // TODO: Include mask metrology information when calculating the strip ID from the position.
   int ID = static_cast<int>(std::floor((P + PWidth/2.0) / Pitch));
 
   // Define physical constants
