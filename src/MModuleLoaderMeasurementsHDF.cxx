@@ -2,7 +2,7 @@
  * MModuleLoaderMeasurementsHDF.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Felix Hagemann.
  * All rights reserved.
  *
  *
