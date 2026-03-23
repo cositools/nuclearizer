@@ -68,7 +68,6 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_ASICDeadTimePerChannel = 0.0;
   
   m_NumShieldHitCounts = 0;
-  m_NumShieldVetoCounts = 0;
   m_NumBGOHitsErased = 0;
 
   m_FirstTime = std::numeric_limits<double>::max();
@@ -172,7 +171,6 @@ double MSubModuleShieldTrigger::CalculateASICDeadtime(vector<int> CrystalIDs)
   return deadtime;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -180,14 +178,14 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 {
   // Process shield crystal hits to determine veto status
 
-  // Track which GeD detectors got hit (for later deadtime update)
-  list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
-  for (const MDEEStripHit& Hit : LVHits) {
-    int DetID = Hit.m_ROE.GetDetectorID();
-    if (DetID >= 0 && DetID < nDets) {
-      m_DetectorsHitForShieldVeto[DetID] = 1;
-    }
-  }
+  // // Track which GeD detectors got hit (for later deadtime update)
+  // list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
+  // for (const MDEEStripHit& Hit : LVHits) {
+  //   int DetID = Hit.m_ROE.GetDetectorID();
+  //   if (DetID >= 0 && DetID < nDets) {
+  //     m_DetectorsHitForShieldVeto[DetID] = 1;
+  //   }
+  // }
 
   // Process shield crystal hits
   list<MDEECrystalHit>& CrystalHits = Event->GetDEECrystalHitListReference();
@@ -302,9 +300,6 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
     if (m_EventTime >= m_ShieldLastHitTime[group] &&
         m_EventTime <= m_ShieldLastHitTime[group] + m_ShieldVetoWindowSize) {
       m_HasVeto = true;
-      if (Event->GetSimulatedEvent() != nullptr) {
-        m_NumShieldVetoCounts += Event->GetSimulatedEvent()->GetNHTs();
-      }
     }
   }
 
@@ -362,7 +357,6 @@ void MSubModuleShieldTrigger::Finalize()
   }
   
   cout << "BGO hits erased due to BGO being dead: " << m_NumBGOHitsErased << endl;
-  cout << "Shield vetoes: " << m_NumShieldVetoCounts << endl;
   
   if (simTime > 0) {
     double rateAfterDT = (m_NumShieldHitCounts - m_NumBGOHitsErased) / simTime;

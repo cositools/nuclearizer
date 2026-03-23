@@ -97,9 +97,6 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Get shield hit counts
   int GetShieldHitCounts() const { return m_NumShieldHitCounts; }
 
-  //! Get shield veto counter
-  int GetShieldVetoCounter() const { return m_NumShieldVetoCounts; }
-
   //! Get BGO hits erased
   int GetBGOHitsErased() const { return m_NumBGOHitsErased; }
 
@@ -155,8 +152,6 @@ class MSubModuleShieldTrigger : public MSubModule
   
   //! Number of shield hits before deadtime
   unsigned long m_NumShieldHitCounts;
-  //! Number of hits in GeD that are vetoed due to shield hits
-  unsigned long m_NumShieldVetoCounts;
   //! Number of BGO hits erased due to deadtime
   unsigned long m_NumBGOHitsErased;
   //! Bool to store if corresponding shield ASIC is dead or not
