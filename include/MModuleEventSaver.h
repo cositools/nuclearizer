@@ -148,9 +148,9 @@ class MModuleEventSaver : public MModule
   static const unsigned int c_RoaFile  = 0;
   static const unsigned int c_DatFile  = 1;
   static const unsigned int c_EvtaFile = 2;
-  static const unsigned int c_SimFile  = 3;
-  static const unsigned int c_TraFile  = 4;
-  
+  static const unsigned int c_TraFile  = 3;
+  static const unsigned int c_SimFile  = 4;
+
   // protected methods:
  protected:
   //! Start a new sub-file

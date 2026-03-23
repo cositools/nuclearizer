@@ -65,6 +65,7 @@ using namespace std;
 #include "MModuleLoaderSimulationsCosima.h"
 #include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleLoaderMeasurementsHDF.h"
+#include "MModuleLoaderMeasurementsFITS.h"
 #include "MModuleEnergyCalibration.h"
 #include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleDepthCalibration.h"
@@ -75,9 +76,11 @@ using namespace std;
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleEventFilter.h"
 #include "MModuleEventSaver.h"
+#include "MModuleSaverMeasurementsFITS.h"
 #include "MModuleResponseGenerator.h"
+#include "MModuleRevan.h"
 #include "MModuleTACcut.h"
-#include "MModuleNearestNeighbor.h"
+// #include "MModuleNearestNeighbor.h"
 #include "MModuleDiagnostics.h"
 #include "MModuleDiagnosticsEnergyPerStrip.h"
 #include "MModuleDEESMEX.h"
@@ -129,7 +132,8 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsCosima());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsROA());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsHDF());
-  
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsFITS());
+
   m_Supervisor->AddAvailableModule(new MModuleDEESMEX());
 
   m_Supervisor->AddAvailableModule(new MModuleEventFilter());
@@ -143,10 +147,12 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration2024());
   
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
+  m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS());
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
+  m_Supervisor->AddAvailableModule(new MModuleRevan());
   m_Supervisor->AddAvailableModule(new MModuleTACcut());
-  m_Supervisor->AddAvailableModule(new MModuleNearestNeighbor());
+  // m_Supervisor->AddAvailableModule(new MModuleNearestNeighbor());
 
   m_Supervisor->AddAvailableModule(new MModuleDiagnostics());
   m_Supervisor->AddAvailableModule(new MModuleDiagnosticsEnergyPerStrip());

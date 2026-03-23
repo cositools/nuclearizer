@@ -54,17 +54,26 @@ else
 $(error "Unable to find HDF5 headers and libraries")
 endif
 
+CCFITSCXXFLAGS =
+CCFITSLIBS =
+ifeq ("$(shell pkg-config --exists CCfits 1>&2 2> /dev/null; echo $$?)", "0")
+CCFITSCXXFLAGS += $(shell pkg-config --cflags CCfits)
+CCFITSLIBS += $(shell pkg-config --libs CCfits)
+else
+$(error "Unable to find CCfits headers and libraries")
+endif
+
 
 #----------------------------------------------------------------
 # Definitions based on architecture and user options
 #
 
 CMD=""
-CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include $(H5CXXFLAGS)
+CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include $(H5CXXFLAGS) $(CCFITSCXXFLAGS)
 # Comment this line out if you want to accept warnings
 #CXXFLAGS += -Werror -Wno-unused-variable
 
-LIBS += $(H5LIBS)
+LIBS += $(H5LIBS) $(CCFITSLIBS)
 
 # Definitions
 NUCLEARIZER_DIR        := $(NUCLEARIZER)
@@ -162,7 +171,7 @@ $(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
 	@echo "Generating LinkDef ..."
 	@$(BN)/generatelinkdef -o $(NUCLEARIZER_LINKDEF) -i $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES)
 	@echo "Generating dictionary ..."
-	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include $(H5CXXFLAGS) -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
+	@rootcling -f $@ -I$(IN) -I$(MEGALIB)/include $(H5CXXFLAGS) $(CCFITSCXXFLAGS) -D___CLING___ -rmf $(NUCLEARIZER_ROOTMAP) -s libNuclearizer -c  $(NUCLEARIZER_H_FILES) $(FRETALON_H_FILES) $(NUCLEARIZER_LINKDEF)
 	@mv $(NUCLEARIZER_ROOTPCM) $(LB)
 
 $(NUCLEARIZER_DICT_LIB): $(NUCLEARIZER_DICT)

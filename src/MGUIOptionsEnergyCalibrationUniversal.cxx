@@ -110,6 +110,25 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   // Toggle the right button
   MSlowThresholdCutModes SlowThresholdCutMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetSlowThresholdCutMode();
   ToggleRadioButtons(static_cast<int>(SlowThresholdCutMode));
+  
+  
+  // Nearest Neighbor threshold cuts!
+  TGLabel* NearestNeighborLabel = new TGLabel(m_OptionsFrame, "Please choose how to handle the threshold cut for Nearest Neighbors:");
+  m_OptionsFrame->AddFrame(NearestNeighborLabel, LabelLayout);
+
+  m_SlowThresholdCutNearestNeighborRBIgnore = new TGRadioButton(m_OptionsFrame, "Do not apply a slow threshold cut to Nearest Neighbors", c_SlowThresholdNearestNeighborIgnore);
+  m_SlowThresholdCutNearestNeighborRBIgnore->Associate(this);
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutNearestNeighborRBIgnore, RBLayout);
+      
+  m_SlowThresholdCutNearestNeighborRBFixed = new TGRadioButton(m_OptionsFrame, "Use one uniform slow threshold cut for all Nearest Neighbors", c_SlowThresholdNearestNeighborFixed);
+  m_SlowThresholdCutNearestNeighborRBFixed->Associate(this);
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutNearestNeighborRBFixed, RBLayout);
+      
+  m_SlowThresholdCutNearestNeighborFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV] for Nearest Neighbors:", false, dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborThreshold());
+  m_OptionsFrame->AddFrame(m_SlowThresholdCutNearestNeighborFixedValue, RBOptionLayout);
+  
+  MNearestNeighborCutModes NearestNeighborCutMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborCutMode();
+  ToggleRadioButtons(static_cast<int>(NearestNeighborCutMode));
     
 
   PostCreate();
@@ -178,6 +197,19 @@ void MGUIOptionsEnergyCalibrationUniversal::ToggleRadioButtons(int WidgetID)
     m_SlowThresholdCutRBFile->SetState(kButtonDown);
     m_SlowThresholdCutFileSelector->SetEnabled(true);
   }
+  
+  // Nearest Neighbors
+  if (WidgetID == c_SlowThresholdNearestNeighborIgnore || WidgetID == c_SlowThresholdNearestNeighborFixed) {
+    if (WidgetID == c_SlowThresholdNearestNeighborIgnore) {
+      m_SlowThresholdCutNearestNeighborRBIgnore->SetState(kButtonDown);
+      m_SlowThresholdCutNearestNeighborRBFixed->SetState(kButtonUp);
+      m_SlowThresholdCutNearestNeighborFixedValue->SetEnabled(false);
+    } else if (WidgetID == c_SlowThresholdNearestNeighborFixed) {
+      m_SlowThresholdCutNearestNeighborRBIgnore->SetState(kButtonUp);
+      m_SlowThresholdCutNearestNeighborRBFixed->SetState(kButtonDown);
+      m_SlowThresholdCutNearestNeighborFixedValue->SetEnabled(true);
+    }
+  }
 }
 
 
@@ -200,6 +232,15 @@ bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
 
   dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutFixedValue(m_SlowThresholdCutFixedValue->GetAsDouble());
   dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutFileName(m_SlowThresholdCutFileSelector->GetFileName());
+  
+  // Nearest Neighbors
+  if (m_SlowThresholdCutNearestNeighborRBIgnore->GetState() == kButtonDown) {
+    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetNearestNeighborCutMode(MNearestNeighborCutModes::e_Ignore);
+  } else {
+    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetNearestNeighborCutMode(MNearestNeighborCutModes::e_Fixed);
+  }
+
+  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetNearestNeighborThreshold(m_SlowThresholdCutNearestNeighborFixedValue->GetAsDouble());
 
   return true;
 }

@@ -35,6 +35,7 @@
 #include "MModule.h"
 #include "MGUIOptionsTACcut.h"
 #include "MGUIExpoTACcut.h"
+#include "MGUIExpoPlotSpectrum.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -144,6 +145,10 @@ void MModuleTACcut::CreateExpos()
     m_ExpoTACcut->SetTACHistogramParameters(DetID, 200, 0, 6000);
   }
   m_Expos.push_back(m_ExpoTACcut);
+  
+  // Set the energy histogram display
+  m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
+  m_Expos.push_back(m_ExpoEnergySpectrum);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -158,6 +163,11 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
     int DetID = SH->GetDetectorID();
     int StripID = SH->GetStripID();
     char Side = SH->IsLowVoltageStrip() ? 'l' : 'h';
+    
+    // This captures every single hit before we delete any of them.
+    if (HasExpos()) {
+      m_ExpoEnergySpectrum->AddEnergyInitial(SH->GetEnergy(), SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
+    }
 
     if (DetID >= m_TACCal.size()) {
       cout<<m_XmlTag<<": Error: DetID "<<DetID<<" is not in TACCal (max det ID: "<<m_TACCal.size()-1<<") - skipping event"<<endl;
@@ -204,11 +214,19 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
       MaxTAC = ns_timing;
     }
   }
+  
+  // 200ns appears to be the minimum acceptable timing value for Nearest Neighbor hits
+  constexpr double c_MinNearestNeighborTiming = 200.0;
 
   for (unsigned int i = 0; i < Event->GetNStripHits();) {
     MStripHit* SH = Event->GetStripHit(i);
     bool Passed = true;
-    if ((SH->HasCalibratedTiming() == true) && (SH->IsGuardRing()==false)) {
+    if ((SH->IsNearestNeighbor() == true) && (SH->HasCalibratedTiming() == false)) { // Nearest neighbor with slow timing
+      double SHTiming = SH->GetTiming();
+      if (SHTiming <= c_MinNearestNeighborTiming) {
+        Passed = false;
+      }
+    } else if ((SH->HasCalibratedTiming() == true) && (SH->IsGuardRing()==false)) {
       double SHTiming = SH->GetTiming();
       int DetID = SH->GetDetectorID();
       int StripID = SH->GetStripID();
@@ -238,6 +256,7 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
           Passed = false;
         } else if (HasExpos()==true) {
           m_ExpoTACcut->AddTAC(DetID, SHTiming);
+          m_ExpoEnergySpectrum->AddEnergyFinal(SH->GetEnergy(), SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
         }
       }
     }

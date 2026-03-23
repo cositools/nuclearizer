@@ -75,6 +75,8 @@ MModuleLoaderMeasurementsHDF::MModuleLoaderMeasurementsHDF() : MModuleLoaderMeas
 
   m_LoadContinuationFiles = false;
   m_FileNameStripMap = "";
+  
+  m_IncludeNearestNeighbor = true;
 }
 
 
@@ -472,8 +474,19 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       if (H->IsGuardRing() == true) {
         Event->SetGuardRingVeto(true);
       }
+      
       H->IsNearestNeighbor(HitType == 1);
       H->HasFastTiming(TimingType == 1);
+      
+      // If the user does not want to include Nearest Neighbors in the data, then this is where we remove them
+      // NOTE: at some point we will want to remove this code and always include nearest neighbor data
+      if (m_IncludeNearestNeighbor == false && HitType == 1) {
+        delete H; // Clean up the memory we just allocated
+        // Increase counters
+        NStripHits = static_cast<unsigned int>(NumberOfHits);
+        StripHitIndex++;
+        continue;
+      }
         
       Event->AddStripHit(H);
        
@@ -530,6 +543,11 @@ bool MModuleLoaderMeasurementsHDF::ReadXmlConfiguration(MXmlNode* Node)
   if (FileNameStripMapNode != nullptr) {
     m_FileNameStripMap = FileNameStripMapNode->GetValue();
   }
+  
+  MXmlNode* IncludeNearestNeighborNode = Node->GetNode("IncludeNearestNeighbor");
+  if (IncludeNearestNeighborNode != nullptr) {
+    m_IncludeNearestNeighbor = IncludeNearestNeighborNode->GetValueAsBoolean();
+  }
 
   return true;
 }
@@ -546,6 +564,7 @@ MXmlNode* MModuleLoaderMeasurementsHDF::CreateXmlConfiguration()
   new MXmlNode(Node, "FileNameHDF5", m_FileName);
   new MXmlNode(Node, "LoadContinuationFiles", m_LoadContinuationFiles);
   new MXmlNode(Node, "FileNameStripMap", m_FileNameStripMap);
+  new MXmlNode(Node, "IncludeNearestNeighbor", m_IncludeNearestNeighbor);
 
   return Node;
 }

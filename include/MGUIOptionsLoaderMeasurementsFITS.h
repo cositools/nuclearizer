@@ -1,7 +1,7 @@
 /*
- * MGUIOptionsLoaderMeasurementsHDF.h
+ * MGUIOptionsLoaderMeasurementsFITS.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsLoaderMeasurementsHDF__
-#define __MGUIOptionsLoaderMeasurementsHDF__
+#ifndef __MGUIOptionsLoaderMeasurementsFITS__
+#define __MGUIOptionsLoaderMeasurementsFITS__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,15 +41,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! UI settings for the HDF measurements loader
-class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
+//! UI settings for the FITS measurements loader
+class MGUIOptionsLoaderMeasurementsFITS : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsLoaderMeasurementsHDF(MModule* Module);
+  MGUIOptionsLoaderMeasurementsFITS(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsLoaderMeasurementsHDF();
+  virtual ~MGUIOptionsLoaderMeasurementsFITS();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -69,23 +69,14 @@ class MGUIOptionsLoaderMeasurementsHDF : public MGUIOptions
 
   // private members:
  private:
-  //! Select which file to load
-  MGUIEFileSelector* m_FileSelectorHDF;
-
-  //! Check button for switch between loading continuation files or not
-  TGCheckButton* m_LoadContinuationFiles;
-
-  //! Select which file to load
-  MGUIEFileSelector* m_FileSelectorStripMap;
-  
-  //! Check the button to include Nearest Neighbors
-  TGCheckButton* m_IncludeNearestNeighbor;
+  //! Select which FITS file to load
+  MGUIEFileSelector* m_FileSelectorFITS;
 
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsLoaderMeasurementsHDF, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderMeasurementsFITS, 1) // basic class for dialog windows
 #endif
 
 };
