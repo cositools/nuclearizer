@@ -114,6 +114,20 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_NumberOfEventIDRollOvers = 0;
   m_LastEventID = 0;
 
+  // Clear all data buffers and related variables
+  m_Buffer_1_0.clear();
+  m_Buffer_1_2.clear();
+  m_Buffer_2.clear();
+  m_EventIndices_2.clear();
+  m_EventData_2_0.clear();
+  m_EventData_2_2.clear();
+  m_CurrentBatchSize = 0;
+  m_CurrentBatchIndex = 0;
+  m_MinHitIndex = 0;
+
+  // Clear ASIC polarities (relevant in HDFv2)
+  m_ASICPolarities.clear();
+
   if (MFile::Exists(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileName<<" does not exist."<<endl;
     return false;
