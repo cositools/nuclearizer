@@ -311,6 +311,7 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
   m_IsGeDDead = false;
 
   // Get merged strip hits from the event
+  // TODO: check if the strip merging should happen here instead of MSubModuleChargeTransport
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
   list<MDEEStripHit>& HVHits = Event->GetDEEStripHitHVListReference();
 
