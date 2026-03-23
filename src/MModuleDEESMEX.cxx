@@ -121,14 +121,14 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   // Step (1):
   // Handle dead times - needs to happen in main DEE class
 
+  // Step (2): Fill the MDEEStripHits of the event
+  m_Intake.Clear();
+  m_Intake.AnalyzeEvent(Event);
+
   if (Event->GetTime() < m_DeadTimeEnd) {
     // Flag event for deletion
     return true;
   }
-
-  // Step (2): Fill the MDEEStripHits of the event
-  m_Intake.Clear();
-  m_Intake.AnalyzeEvent(Event);
 
   // Step (3): Merge coincident events
 

@@ -185,10 +185,10 @@ bool MModuleRevan::AnalyzeEvent(MReadOutAssembly* Event)
       MPhysicalEvent* PE = BestRawEvent->GetPhysicalEvent();
       Event->SetPhysicalEvent(PE);
     } else {
-      Event->SetEventReconstructionIncomplete(true);
+      Event->SetEventReconstructionError(true);
     }
   } else {
-    Event->SetEventReconstructionIncomplete(true);
+    Event->SetEventReconstructionError(true);
   }
 
   Event->SetAnalysisProgress(MAssembly::c_EventReconstruction);

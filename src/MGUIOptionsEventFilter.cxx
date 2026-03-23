@@ -126,18 +126,18 @@ void MGUIOptionsEventFilter::Create()
                                 true, 0.0);
   m_OptionsFrame->AddFrame(m_Hits, SecondariesLayout);
     
-  TGLabel* ReducedChiSquareLabel = new TGLabel(m_OptionsFrame,
+  TGLabel* StripPairingReducedChiSquareLabel = new TGLabel(m_OptionsFrame,
       "Reduced Chi Squared Window (as calculated in strip pairing)\n"
       "This requires that Strip Pairing has been done.");
-    m_OptionsFrame->AddFrame(ReducedChiSquareLabel, FirstLayout);
+    m_OptionsFrame->AddFrame(StripPairingReducedChiSquareLabel, FirstLayout);
 
-    m_ReducedChiSquareWindow = new MGUIEMinMaxEntry(m_OptionsFrame,
+    m_StripPairingReducedChiSquareWindow = new MGUIEMinMaxEntry(m_OptionsFrame,
                                   "Choose the minimum and maximum Reduced Chi Square (inclusive):",
                                   false,
-                                  dynamic_cast<MModuleEventFilter*>(m_Module)->GetMinimumReducedChiSquare(),
-                                  dynamic_cast<MModuleEventFilter*>(m_Module)->GetMaximumReducedChiSquare(),
+                                  dynamic_cast<MModuleEventFilter*>(m_Module)->GetMinimumStripPairingReducedChiSquare(),
+                                  dynamic_cast<MModuleEventFilter*>(m_Module)->GetMaximumStripPairingReducedChiSquare(),
                                   true, 0.0);
-    m_OptionsFrame->AddFrame(m_ReducedChiSquareWindow, SecondariesLayout);
+    m_OptionsFrame->AddFrame(m_StripPairingReducedChiSquareWindow, SecondariesLayout);
     
 
   PostCreate();
@@ -194,8 +194,8 @@ bool MGUIOptionsEventFilter::OnApply()
   dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumHits(m_Hits->GetMinValue());
   dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumHits(m_Hits->GetMaxValue());
     
-  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumReducedChiSquare(m_ReducedChiSquareWindow->GetMinValue());
-  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumReducedChiSquare(m_ReducedChiSquareWindow->GetMaxValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMinimumStripPairingReducedChiSquare(m_StripPairingReducedChiSquareWindow->GetMinValue());
+  dynamic_cast<MModuleEventFilter*>(m_Module)->SetMaximumStripPairingReducedChiSquare(m_StripPairingReducedChiSquareWindow->GetMaxValue());
 
   return true;
 }

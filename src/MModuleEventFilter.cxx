@@ -91,8 +91,8 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
   m_MinimumHits = 0;
   m_MaximumHits = 100;
     
-  m_MinimumReducedChiSquare = -1;
-  m_MaximumReducedChiSquare = numeric_limits<double>::max();
+  m_MinimumStripPairingReducedChiSquare = -1;
+  m_MaximumStripPairingReducedChiSquare = numeric_limits<double>::max();
 }
 
 
@@ -176,7 +176,7 @@ bool MModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event)
     
   // Apply Chi^2 filter (as calculated in strip pairing)
     
-    if (Event->GetReducedChiSquare() < m_MinimumReducedChiSquare || Event->GetReducedChiSquare() > m_MaximumReducedChiSquare) {
+    if (Event->GetStripPairingReducedChiSquare() < m_MinimumStripPairingReducedChiSquare || Event->GetStripPairingReducedChiSquare() > m_MaximumStripPairingReducedChiSquare) {
         FilteredOut = true;
     }
 
@@ -248,13 +248,13 @@ bool MModuleEventFilter::ReadXmlConfiguration(MXmlNode* Node)
     m_MaximumHits = MaximumHitsNode->GetValueAsUnsignedInt();
   }
     
-  MXmlNode* MinimumReducedChiSquareNode = Node->GetNode("MinimumReducedChiSquare");
-  if (MinimumReducedChiSquareNode != 0) {
-    m_MinimumReducedChiSquare = MinimumReducedChiSquareNode->GetValueAsDouble();
+  MXmlNode* MinimumStripPairingReducedChiSquareNode = Node->GetNode("MinimumStripPairingReducedChiSquare");
+  if (MinimumStripPairingReducedChiSquareNode != 0) {
+    m_MinimumStripPairingReducedChiSquare = MinimumStripPairingReducedChiSquareNode->GetValueAsDouble();
   }
-  MXmlNode* MaximumReducedChiSquareNode = Node->GetNode("MaximumReducedChiSquare");
-  if (MaximumReducedChiSquareNode != 0) {
-    m_MaximumReducedChiSquare = MaximumReducedChiSquareNode->GetValueAsDouble();
+  MXmlNode* MaximumStripPairingReducedChiSquareNode = Node->GetNode("MaximumStripPairingReducedChiSquare");
+  if (MaximumStripPairingReducedChiSquareNode != 0) {
+    m_MaximumStripPairingReducedChiSquare = MaximumStripPairingReducedChiSquareNode->GetValueAsDouble();
   }
 
   return true;
@@ -282,8 +282,8 @@ MXmlNode* MModuleEventFilter::CreateXmlConfiguration()
   new MXmlNode(Node, "MinimumHits", m_MinimumHits);
   new MXmlNode(Node, "MaximumHits", m_MaximumHits);
     
-  new MXmlNode(Node, "MinimumReducedChiSquare", m_MinimumReducedChiSquare);
-  new MXmlNode(Node, "MaximumReducedChiSquare", m_MaximumReducedChiSquare);
+  new MXmlNode(Node, "MinimumStripPairingReducedChiSquare", m_MinimumStripPairingReducedChiSquare);
+  new MXmlNode(Node, "MaximumStripPairingReducedChiSquare", m_MaximumStripPairingReducedChiSquare);
 
   return Node;
 }

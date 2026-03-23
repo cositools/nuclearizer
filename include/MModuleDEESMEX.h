@@ -113,6 +113,17 @@ class MModuleDEESMEX : public MModule
     return m_ShieldEnergyCorrection.GetShieldEnergyCorrectionFileName();
   }
 
+  //! Set shield energy correction file name
+  void SetDeadtimeFileName(const MString& FileName)
+  {
+    m_StripTrigger.SetDeadtimeFileName(FileName);
+  }
+  //! Set energy calibration file name
+  MString GetDeadtimeFileName() const
+  {
+    return m_StripTrigger.GetDeadtimeFileName();
+  }
+
   // protected methods:
  protected:
   // private methods:
