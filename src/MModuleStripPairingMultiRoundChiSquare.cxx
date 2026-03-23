@@ -785,14 +785,31 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     
     // Check if size of LV or HV combination exceeds maximum
     if (max(BestLVSideCombo.size(), BestHVSideCombo.size()) > MaxCombinations) {
-      Event->SetStripPairing_QualityFlag("Best strip pairing contains more than 5 strip groupings (hits)");
+      Event->SetStripPairing_QualityFlag("Best strip pairing contains more than 5 strip groupings on one side");
     }
     
     // Flag event if more than one set of strips is left unpaired
-    if (abs(long(BestLVSideCombo.size()) - long(BestHVSideCombo.size())) > 1) {
-      Event->SetStripPairing_QualityFlag("Best strip pairing leaves more than one grouping of strips unpaired");
+    double UnpairedEnergy = 0;
+    if (BestLVSideCombo.size() > BestHVSideCombo.size()) { // LV strips unpaired
+      int index = BestHVSideCombo.size();
+      for (unsigned int h = index; h < BestLVSideCombo.size(); h++) {
+        for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
+          UnpairedEnergy += StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
+        }
+      }
+      Event->SetStripPairing_QualityFlag("Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: " + to_string(UnpairedEnergy) + ")");
     }
-
+    
+    if (BestHVSideCombo.size() > BestLVSideCombo.size()) { // HV strips unpaired
+      int index = BestLVSideCombo.size();
+      for (unsigned int h = index; h < BestHVSideCombo.size(); h++) {
+        for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
+          UnpairedEnergy += StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
+        }
+      }
+      Event->SetStripPairing_QualityFlag("Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: " + to_string(UnpairedEnergy) + ")");
+    }
+    
     // Populate hits with best strip paired combination
     bool PopulateHits = CreateHits(d, Event, StripHits, BestLVSideCombo, BestHVSideCombo);
 
