@@ -189,6 +189,9 @@ void MReadOutAssembly::Clear()
  
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
+    
+  m_StripPairing_QualityFlag = false;
+  m_StripPairingString_QualityFlag.clear();
 
   m_FilteredOut = false;
 
@@ -722,24 +725,23 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     }
     S<<endl;
   }
-
+    
+  if (m_StripPairing_QualityFlag == true) {
+    S<<"QA StripPairing";
+    if (m_StripPairingString_QualityFlag.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_StripPairingString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+    
   if (m_GuardRingVeto == true) {
     S<<"BD GR Veto"<<endl;
   }
   if (m_ShieldVeto == true) {
     S<<"BD Shield Veto"<<endl;
-  }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesX()) {
-      S<<"BD Multiple Hits on LV Strip"<<endl;
-      break;
-    }
-  }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesY()) {
-      S<<"BD Multiple Hits on HV Strip"<<endl;
-      break;
-    }
   }
 }
 

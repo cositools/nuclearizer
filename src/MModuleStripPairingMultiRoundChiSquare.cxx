@@ -36,6 +36,7 @@
 // MEGAlib libs:
 #include "MModule.h"
 #include "MGUIOptionsStripPairing.h"
+#include "MGUIOptionsStripPairingMultiRoundChiSquare.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +52,8 @@ ClassImp(MModuleStripPairingMultiRoundChiSquare)
 //! Define constants to be used in strip pairing
 
 const unsigned int MaxCombinations = 5; // Defines maximum number of strip combinations allowed in pairing
-const unsigned int MaxStripHits = 6; // Define maximum number of strip hits on any one side
+// Now defined by user!
+// const unsigned int MaxStripHits = 6; // Define maximum number of strip hits on any one side
 const unsigned int ChiSquareThreshold = 100; // If strip pairing does not reach this threshold, it will enter round two
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,9 +84,11 @@ MModuleStripPairingMultiRoundChiSquare::MModuleStripPairingMultiRoundChiSquare()
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
-  m_HasOptionsGUI = false;
+  m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
+    
+  m_MaximumStrips = 6;
 
   // Can the program be run multi-threaded
   m_AllowMultiThreading = true;
@@ -271,8 +275,8 @@ bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Ev
   // Limit the number of strip hits on each side
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
-      if (StripHits[d][side].size() > MaxStripHits) {
-        Event->SetStripPairingError("More than 6 hit strips on one side");
+      if (StripHits[d][side].size() > m_MaximumStrips) {
+        Event->SetStripPairingError("More than maximum number of strip hits allowed on one side (" + to_string(StripHits[d][side].size()) + ")");
         Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
       }
@@ -352,17 +356,8 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
 
   for (unsigned int lv = 0; lv < Combinations[d][0].size(); ++lv) { // Loop over combinations of lv-strips (lv represents a list of sets of strips,  and each set is a proposed Hit)
     for (unsigned int hv = 0; hv < Combinations[d][1].size(); ++hv) {
-      // Skip if lv and hv strip combos differ in size by more than one
-      if (abs(long(Combinations[d][0][lv].size()) - long(Combinations[d][1][hv].size())) > 1) {
-        continue;
-      }
-
+      
       unsigned int MinSize = min(Combinations[d][0][lv].size(), Combinations[d][1][hv].size());
-
-      // Skip pairing if either side has more than 5 sets of strips
-      if (max(Combinations[d][0][lv].size(), Combinations[d][1][hv].size()) > MaxCombinations) {
-        continue;
-      }
 
       bool MorePermutations = true;
       while (MorePermutations == true) {
@@ -492,7 +487,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     }
 
     // If there are no non-adjacent strip groupings, continue pairing as normal
-    if (AllAdjacent) {
+    if (AllAdjacent == true) {
 
       // Add up energy and energy resolution for each grouping of strips
       for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
@@ -560,6 +555,15 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
       for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
         Hit->AddStripHit(StripHits[d][1][BestHVSideCombo[h][sh]]);
       }
+      
+      // Check for charge sharing on either side
+      if (BestLVSideCombo[h].size() > 1) {
+        Hit->SetChargeSharingLV(true);
+      }
+      if (BestHVSideCombo[h].size() > 1) {
+        Hit->SetChargeSharingHV(true);
+      }
+      
     }
 
     // If there are non-adjacent strip groupings, then have to separate them out again to form multiple (physical) hits
@@ -569,6 +573,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     if (AllAdjacentHV == false && AllAdjacentLV == true) {
       //cout<<"Multiple hits on single LV strip"<<endl;
       bool MultipleHitsOnLV = true;
+      Event->SetStripPairing_QualityFlag("Event contains multiple hits on a single strip");
 
       // Assign hit energy based on energy measured on HV side
       for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
@@ -604,6 +609,10 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
           Hit->AddStripHit(StripHits[d][0][BestLVSideCombo[h][sh]]);
         }
+        // Check if there's charge sharing on LV side (currently no way to tell if there's charge sharing on side that doesn't have multiple hits on single strip)
+        if (BestLVSideCombo[h].size() > 1) {
+          Hit->SetChargeSharingLV(true);
+        }
       }
     }
 
@@ -611,6 +620,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     else if (AllAdjacentLV == false && AllAdjacentHV == true) {
       // cout<<"Multiple hits on single HV strip"<<endl;
       bool MultipleHitsOnHV = true;
+      Event->SetStripPairing_QualityFlag("Event contains multiple hits on a single strip");
 
       // Assign hit energy based on energy measured on LV side
       for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
@@ -644,6 +654,10 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
           Hit->AddStripHit(StripHits[d][1][BestHVSideCombo[h][sh]]);
         }
+        // Check if there's charge sharing on HV side (currently no way to tell if there's charge sharing on side that doesn't have multiple hits on single strip)
+        if (BestHVSideCombo[h].size() > 1) {
+          Hit->SetChargeSharingHV(true);
+        }
       }
     }
 
@@ -660,9 +674,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
   // One last quality selection based on total event energies
   if ((EnergyTotal > max(LVEnergyTotal, HVEnergyTotal) + 2.5 * max(LVEnergyResTotal, HVEnergyResTotal) || EnergyTotal < min(LVEnergyTotal, HVEnergyTotal) - 2.5 * max(LVEnergyResTotal, HVEnergyResTotal))) {
-    Event->SetStripPairingError("Strips not pairable wihin 2.5 sigma of measured energy");
-    Event->SetAnalysisProgress(MAssembly::c_StripPairing);
-    return false;
+    Event->SetStripPairing_QualityFlag("Strips not pairable wihin 2.5 sigma of measured energy");
   }
   // Plot the good events
   else if ((HasExpos() == true) and Event->IsGood() == true) {
@@ -765,21 +777,56 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
     // Flag events with a reduced chi square > 25
     else if (BestChiSquare > 25) {
-      Event->SetStripPairingError("Best reduced chi square is not below 25");
-      Event->SetAnalysisProgress(MAssembly::c_StripPairing);
-      return false;
+      Event->SetStripPairing_QualityFlag("Best reduced chi square is not below 25 (" + to_string(BestChiSquare) + ")");
     }
 
     // Assign the best reduced chi square to the event
     Event->SetStripPairingReducedChiSquare(BestChiSquare);
-
+    
+    // Check if size of LV or HV combination exceeds maximum
+    if (max(BestLVSideCombo.size(), BestHVSideCombo.size()) > MaxCombinations) {
+      Event->SetStripPairing_QualityFlag("Best strip pairing contains more than 5 strip groupings on one side");
+    }
+    
+    // Flag event if more than one set of strips is left unpaired
+    double UnpairedEnergy = 0;
+    if (BestLVSideCombo.size() > BestHVSideCombo.size()) { // LV strips unpaired
+      int index = BestHVSideCombo.size();
+      for (unsigned int h = index; h < BestLVSideCombo.size(); h++) {
+        for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
+          UnpairedEnergy += StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
+        }
+      }
+      Event->SetStripPairing_QualityFlag("Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: " + to_string(UnpairedEnergy) + ")");
+    }
+    
+    if (BestHVSideCombo.size() > BestLVSideCombo.size()) { // HV strips unpaired
+      int index = BestLVSideCombo.size();
+      for (unsigned int h = index; h < BestHVSideCombo.size(); h++) {
+        for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
+          UnpairedEnergy += StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
+        }
+      }
+      Event->SetStripPairing_QualityFlag("Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: " + to_string(UnpairedEnergy) + ")");
+    }
+    
     // Populate hits with best strip paired combination
     bool PopulateHits = CreateHits(d, Event, StripHits, BestLVSideCombo, BestHVSideCombo);
 
     if (PopulateHits == false) {
       return false;
     }
-
+      
+    // Check for any hits containing guard ring strips
+    for (unsigned int h = 0; h < Event->GetNHits(); h++) {
+      for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
+        if (Event->GetHit(h)->GetStripHit(sh)->GetStripID() == 64) {
+          Event->GetHit(h)->SetGuardRingHitFlag(true);
+          Event->SetStripPairing_QualityFlag("GR Hit: Detector ID " + to_string(d) + " and Energy " + to_string(Event->GetHit(h)->GetEnergy()));
+        }
+      }
+    }
+      
   } // End Detector loop
 
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
@@ -827,7 +874,15 @@ void MModuleStripPairingMultiRoundChiSquare::ShowOptionsGUI()
 {
   //! Show the options GUI --- has to be overwritten!
 
-  MGUIOptionsStripPairing* Options = new MGUIOptionsStripPairing(this);
+  //MGUIOptionsStripPairing* Options = new MGUIOptionsStripPairing(this);
+  //Options->Create();
+  //gClient->WaitForUnmap(Options);
+    
+  // I don't believe the above options GUI (MGUIOptionsStripPairing) is actually being used here?
+    
+  // Show the options GUI for choosing maximum number of strip hits
+
+  MGUIOptionsStripPairingMultiRoundChiSquare* Options = new MGUIOptionsStripPairingMultiRoundChiSquare(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
 }

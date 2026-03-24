@@ -238,6 +238,12 @@ class MReadOutAssembly : public MReadOutSequence
   void SetStripHitBelowThreshold_QualityFlag(MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = true; if (Text != "") { m_StripHitBelowThresholdString_QualityFlag.push_back(Text); }}
   //! Get the Strip Hit Below Threshold quality flag
   bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
+    
+  //! Set the Strip Pairing quality flag
+  void SetStripPairing_QualityFlag(MString Text = ""){ m_StripPairing_QualityFlag = true;
+      if (Text != "") { m_StripPairingString_QualityFlag.push_back(Text); }}
+  //! Get the Strip Pairing quality flag
+  bool HasStripPairing_QualityFlag() const { return m_StripPairing_QualityFlag; }
 
   //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
   void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
@@ -417,6 +423,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_StripHitBelowThreshold_QualityFlag;
   //! Strip hit below threshold quality string
   vector<MString> m_StripHitBelowThresholdString_QualityFlag;
+    
+  //! Strip pairing quality flag
+  bool m_StripPairing_QualityFlag;
+  //! Strip pairing quality string
+  vector<MString> m_StripPairingString_QualityFlag;
 
   //! Reduced Chi^2 of the Strip Paired Event
   double m_StripPairingReducedChiSquare;

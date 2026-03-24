@@ -93,6 +93,11 @@ class MHit
 	void SetCrossTalkFlag(bool PossibleCrossTalk) {m_PossibleCrossTalk = PossibleCrossTalk;}
 	//! get cross talk flag value
 	bool GetCrossTalkFlag() const { return m_PossibleCrossTalk; }
+    
+    //! Set guard ring hit flag
+    void SetGuardRingHitFlag(bool GuardRingHit) {m_GuardRingHit = GuardRingHit;}
+    //! Get guard ring hit flag
+    bool GetGuardRingHitFlag() const { return m_GuardRingHit; }
 
 	//! set charge loss flag
 	void SetChargeLossFlag(bool PossibleChargeLoss) {m_PossibleChargeLoss = PossibleChargeLoss;}
@@ -108,10 +113,18 @@ class MHit
 	//! get m_StripHitMultipleTimesY
 	bool GetStripHitMultipleTimesY() const { return m_StripHitMultipleTimesY; }
 
-	//! set charge sharing flag
-	void SetChargeSharing(bool chargeSharing) {m_ChargeSharing = chargeSharing; }
-	//! get m_ChargeSharing
-	bool GetChargeSharing() const { return m_ChargeSharing; }
+	//! set charge sharing flag for LV side
+	void SetChargeSharingLV(bool chargeSharingLV) {m_ChargeSharingLV = chargeSharingLV; }
+	//! get m_ChargeSharingLV
+	bool GetChargeSharingLV() const { return m_ChargeSharingLV; }
+    //! set charge sharing flag for HV side
+    void SetChargeSharingHV(bool chargeSharingHV) {m_ChargeSharingHV = chargeSharingHV; }
+    //! get m_ChargeSharingHV
+    bool GetChargeSharingHV() const { return m_ChargeSharingHV; }
+    //! Keeping general charge sharing flags because Greedy strip pairing relies on it
+    void SetChargeSharing(bool chargeSharing) {m_ChargeSharing = chargeSharing; }
+    //! get m_ChargeSharing
+    bool GetChargeSharing() const { return m_ChargeSharing; }
 	//! set m_NoDepth
 	void SetNoDepth(bool X = true) { m_NoDepth = X;}
 	//! get m_NoDepth
@@ -177,6 +190,8 @@ class MHit
 	bool m_PossibleCrossTalk;
 	//! Flag: possible charge loss
 	bool m_PossibleChargeLoss;
+    //! Flag: hit containing guard ring strip
+    bool m_GuardRingHit;
 
 	//! true if hit contains strip that was hit multiple times on X
 	bool m_StripHitMultipleTimesX = false;
@@ -184,7 +199,9 @@ class MHit
 	bool m_StripHitMultipleTimesY = false;
 
 	//! true if hit contains charge sharing
-	bool m_ChargeSharing;
+    bool m_ChargeSharing;
+	bool m_ChargeSharingLV;
+    bool m_ChargeSharingHV;
 
 	//! true if depth is invalid, either because the pixel depth was uncalibrated, the hit was mapped too far out of the detector,or there was no timing data
 	bool m_NoDepth;
