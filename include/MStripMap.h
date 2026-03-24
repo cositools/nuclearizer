@@ -1,7 +1,7 @@
 /*
  * MStripMap.h
  *
- * Copyright (C) by Andreas Zoglauer
+ * Copyright (C) by Andreas Zoglauer, Felix Hagemann.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -44,6 +44,9 @@ class MStripMap
 
   //! Load a strip map - return false on error
   bool Open(MString FileName);
+
+  //! Update which ASICs are LV/HV depending on their polarities
+  bool UpdateASICPolarities(vector<map<bool, vector<bool>>> ASICPolarities);
 
   //! Check if we have a certain read-out ID
   bool HasReadOutID(unsigned int ROI) const;
