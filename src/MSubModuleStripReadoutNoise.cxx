@@ -91,6 +91,9 @@ bool MSubModuleStripReadoutNoise::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level 
 
+  // TODO: Update this to take energy resolution into account
+  
+  /*
   // Dummy code:
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
   for (MDEEStripHit& SH: LVHits) {
@@ -102,6 +105,7 @@ bool MSubModuleStripReadoutNoise::AnalyzeEvent(MReadOutAssembly* Event)
     SH.m_ADC = 2000 + 4*SH.m_Energy;
     if (SH.m_ADC > 16383) SH.m_ADC = 16383;
   }
+  */
 
   return true;
 }
