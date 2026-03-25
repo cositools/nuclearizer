@@ -185,51 +185,29 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
 
-  // Get low voltage hits
-  list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
-  for (MDEEStripHit& SH: LVHits) {
+  // Get low-voltage and high-voltage hits
+  for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
     
-    // Look up the fit using the ecal
-    TF1* Fit = m_Calibration[SH.m_ROE];
-
-    if (Fit != nullptr) {
-      // Run it in reverse, using ROOT's poly inverter (keV -> ADC)
-      double calculatedADC = Fit->GetX(SH.m_Energy);
-      
-      // Apply hardware limits
-      if (calculatedADC > m_MaxADCRange) calculatedADC = m_MaxADCRange;
-      if (calculatedADC < 0) calculatedADC = 0;
-      
-      SH.m_ADC = static_cast<unsigned int>(calculatedADC);
-      
-    } else {
-      // If no calibration exists in the .ecal file for this strip set it to ADC value of 0
-      if (g_Verbosity >= c_Warning) cout << m_Name << ": No inverse calibration found for LV element " << SH.m_ROE << endl;
-      SH.m_ADC = 0;
-    }
-  }
-
-  // Now do high voltage strips
-  list<MDEEStripHit>& HVHits = Event->GetDEEStripHitHVListReference();
-  for (MDEEStripHit& SH: HVHits) {
+    for (MDEEStripHit& SH : *Hits) {
     
-    // Find the fit
-    TF1* Fit = m_Calibration[SH.m_ROE];
+      // Look up the fit using the ecal
+      TF1* Fit = m_Calibration[SH.m_ROE];
 
-    if (Fit != nullptr) {
-      // keV -> ADC
-      double calculatedADC = Fit->GetX(SH.m_Energy);
-      
-      // Apply hardware limits
-      if (calculatedADC > m_MaxADCRange) calculatedADC = m_MaxADCRange;
-      if (calculatedADC < 0) calculatedADC = 0;
-      
-      SH.m_ADC = static_cast<unsigned int>(calculatedADC);
-      
-    } else {
-      // If no calibration exists in the .ecal file for this strip set it to ADC value of 0
-      if (g_Verbosity >= c_Warning) cout << m_Name << ": No inverse calibration found for HV element " << SH.m_ROE << endl;
-      SH.m_ADC = 0;
+      if (Fit != nullptr) {
+        // Run it in reverse, using ROOT's poly inverter (keV -> ADC), in the allowed ADC range
+        double calculatedADC = Fit->GetX(SH.m_Energy, 0., m_MaxADCRange);
+        
+        // Apply hardware limits
+        if (calculatedADC > m_MaxADCRange) calculatedADC = m_MaxADCRange;
+        if (calculatedADC < 0) calculatedADC = 0;
+        
+        SH.m_ADC = static_cast<unsigned int>(calculatedADC);
+        
+      } else {
+        // If no calibration exists in the .ecal file for this strip set it to ADC value of 0
+        if (g_Verbosity >= c_Warning) cout << m_Name << ": No inverse calibration found for element " << SH.m_ROE << endl;
+        SH.m_ADC = 0;
+      }
     }
   }
 
