@@ -2,7 +2,7 @@
  * MSubModuleStripReadout.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Robin Anthony-Petersen.
  * All rights reserved.
  *
  *
@@ -29,13 +29,9 @@
 // Standard libs:
 
 // ROOT libs:
-#include "TF1.h"
-#include <map>
 
 // MEGAlib libs:
-#include "MSubModule.h"
 #include "MParser.h"
-#include "MReadOutElementDoubleStrip.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +82,7 @@ bool MSubModuleStripReadout::Initialize()
     return false;
   }
 
-  // Opoen ecal file
+  // Open ecal file
   MParser Parser;
   if (Parser.Open(m_EnergyCalibrationFileName, MFile::c_Read) == false) {
     if (g_Verbosity >= c_Error) {
@@ -95,10 +91,10 @@ bool MSubModuleStripReadout::Initialize()
     return false;
   }
 
-  // Create the map (smae as the Universal Energy Calibrator)
+  // Create the map (same as the Universal Energy Calibrator)
   map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine;
 
-  // Add case for double wide strips
+  // Add case to handle shorted strips
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     if (Parser.GetTokenizerAt(i)->GetNTokens() < 2) continue;
 
@@ -115,7 +111,7 @@ bool MSubModuleStripReadout::Initialize()
     }
   }
 
-  // Get the parameters and use ROOTs built in TF1 to invert the polynomials
+  // Get the parameters and store the energy calibration fit function as ROOT's built-in TF1 
   for (auto CM : CM_ROEToLine) {
     unsigned int Pos = 5;
     MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
@@ -130,8 +126,7 @@ bool MSubModuleStripReadout::Initialize()
       melinatorfit->FixParameter(1, a1);
 
       m_Calibration[CM.first] = melinatorfit;
-    }
-    else if (CalibratorType == "poly2") {
+    } else if (CalibratorType == "poly2") {
       double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
@@ -142,8 +137,7 @@ bool MSubModuleStripReadout::Initialize()
       melinatorfit->FixParameter(2, a2);
 
       m_Calibration[CM.first] = melinatorfit;
-    }
-    else if (CalibratorType == "poly3") {
+    } else if (CalibratorType == "poly3") {
       double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
       double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
@@ -156,16 +150,18 @@ bool MSubModuleStripReadout::Initialize()
       melinatorfit->FixParameter(3, a3);
 
       m_Calibration[CM.first] = melinatorfit;
+    } else {
+      // TODO: Add all the other types of fits melinator can do
+      // So far, only added these ones because these are the ones we use for the ecals
+      if (g_Verbosity >= c_Error) {
+        cout<<m_Name<<": Unhandled CalibratorType: "<<CalibratorType<<endl<<"Please update this module."<<endl;
+      }
+      return false;
     }
-    //TODO: @RobinAnthonyPetersen add all the other types of fits melinator can do
-    // So far only added these ones because these are the ones we use for the ecals
   }
 
   return MSubModule::Initialize();
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +177,7 @@ void MSubModuleStripReadout::Clear()
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
@@ -194,7 +191,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       TF1* Fit = m_Calibration[SH.m_ROE];
 
       if (Fit != nullptr) {
-        // Run it in reverse, using ROOT's poly inverter (keV -> ADC), in the allowed ADC range
+        // Apply the inverse energy calibration using ROOT's poly inverter (keV -> ADC) in the allowed ADC range
         double calculatedADC = Fit->GetX(SH.m_Energy, 0., m_MaxADCRange);
         
         // Apply hardware limits
@@ -213,8 +210,6 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 
   return true;
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////
