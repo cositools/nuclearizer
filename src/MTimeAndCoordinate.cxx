@@ -94,28 +94,6 @@ MTimeAndCoordinate::~MTimeAndCoordinate()
 vector<double> MTimeAndCoordinate::Equatorial2Galactic(vector<double> radec)
 {
 
-  MVector dir;
-  dir.SetMagThetaPhi(1, D2R(ELV2Zenith(radec[1])), D2R(radec[0]));
-  dir.RotateZ(-D2R(c_GAngle1));
-  dir.RotateX(-D2R(c_GAngle2));
-  dir.RotateZ(-D2R(c_GAngle3));
-  
-  vector<double> galactic;
-  galactic.push_back( R2D(dir.Phi()) );
-  if(galactic[0]>=360.0)galactic[0]-=360.0;
-  if(galactic[0]<0.0)galactic[0]+=360.0;  
-  galactic.push_back( Zenith2ELV(R2D(dir.Theta())) );
-  //cout << R2D(dir.Phi()) << ' ' << Zenith2ELV(R2D(dir.Theta())) <<'\n';
-
-  return galactic;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-//Different conversion written by Carolyn Kierans August 2016 - give more precise results vs. above
-vector<double> MTimeAndCoordinate::Equatorial2Galactic2(vector<double> radec)
-{
-
 	double gal_lat = R2D(asin( sin(D2R(radec[1]))*sin(D2R(c_dec_g)) + cos(D2R(radec[1]))*cos(D2R(c_dec_g))*cos(D2R(c_RA_g-radec[0]))));
 	double J = (sin(D2R(radec[1]))*cos(D2R(c_dec_g)) - cos(D2R(radec[1]))*sin(D2R(c_dec_g))*cos(D2R(radec[0]-c_RA_g)))/cos(D2R(gal_lat));
 	double K = R2D(asin( cos(D2R(radec[1]))*sin(D2R(radec[0]-c_RA_g))/cos(D2R(gal_lat))));
@@ -140,27 +118,6 @@ vector<double> MTimeAndCoordinate::Equatorial2Galactic2(vector<double> radec)
 ////////////////////////////////////////////////////////////////////////////////
 
 vector<double> MTimeAndCoordinate::Horizon2Equatorial(double azi, double alt)
-{
-  double local_sidereal_time = LAST_degrees();
-  MVector dir;
-
-  dir.SetMagThetaPhi(1, D2R(ELV2Zenith(alt)), D2R(PositiveDegree(180-azi)));
-  dir.RotateY( D2R(ELV2Zenith(m_Latitude)) );
-
-  vector<double> radec;
-  radec.push_back( local_sidereal_time + R2D(dir.Phi()) );
-  if(radec[0]>=360.0)radec[0]-=360.0;
-  if(radec[0]<0.0)radec[0]+=360.0;
-  radec.push_back( Zenith2ELV(R2D(dir.Theta())) );
-
-  //cout << local_sidereal_time + R2D(dir.Phi()) << ' ' << D2R(ELV2Zenith(alt)) << ' ' << ' ' << (R2D(dir.Theta())) <<'\n';
-  return radec;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-//Different converion written by Carolyn Kierans August 2016 - gives idential results as above
-vector<double> MTimeAndCoordinate::Horizon2Equatorial2(double azi, double alt)
 {
 	double local_sidereal_time = LAST_degrees();
 	double A = PositiveDegree(180-azi);//Convention to measure westward from *south*

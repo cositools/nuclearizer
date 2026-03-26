@@ -59,7 +59,6 @@ using namespace std;
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
-#include "MModuleLoaderSimulationsBalloon.h"
 #include "MModuleLoaderSimulationsSMEX.h"
 #include "MModuleLoaderSimulationsSingleDet.h"
 #include "MModuleLoaderSimulationsCosima.h"
@@ -67,11 +66,7 @@ using namespace std;
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleLoaderMeasurementsFITS.h"
 #include "MModuleEnergyCalibration.h"
-#include "MModuleEnergyCalibrationUniversal.h"
 #include "MModuleDepthCalibration.h"
-#include "MModuleDepthCalibrationB.h"
-#include "MModuleDepthCalibration2024.h"
-#include "MModuleStripPairingGreedy.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleEventFilter.h"
@@ -127,7 +122,6 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  // m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsBalloon());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSMEX());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSingleDet());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsCosima());
@@ -138,14 +132,11 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleDEESMEX());
 
   m_Supervisor->AddAvailableModule(new MModuleEventFilter());
-  m_Supervisor->AddAvailableModule(new MModuleEnergyCalibrationUniversal());
+  m_Supervisor->AddAvailableModule(new MModuleEnergyCalibration());
 
-  m_Supervisor->AddAvailableModule(new MModuleStripPairingGreedy());
   m_Supervisor->AddAvailableModule(new MModuleStripPairingMultiRoundChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleStripPairingChiSquare());
   m_Supervisor->AddAvailableModule(new MModuleDepthCalibration());
-  m_Supervisor->AddAvailableModule(new MModuleDepthCalibrationB());
-  m_Supervisor->AddAvailableModule(new MModuleDepthCalibration2024());
   
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsL0());
@@ -165,7 +156,7 @@ MAssembly::MAssembly()
   m_Supervisor->SetUIPicturePath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
   m_Supervisor->SetUISubTitle("The detector calibrator of the COmpton Spectrometer and Imager, COSI");
   m_Supervisor->SetUILeadAuthor("Andreas Zoglauer");
-  m_Supervisor->SetUICoAuthors("Alan Chiu, Alex Lowell, Andreas Zoglauer,\nAres Hernandez, Carolyn Kierans, Clio Sleator,\nDaniel Perez-Becker, Eric Bellm, Jau-Shian Liang,\nMark Bandstra");
+  m_Supervisor->SetUICoAuthors("Robin Anthony-Petersen, Mark Bandstra, Jackie Beechert, \nEric Bellm, Emily Broadbent, Alan Chiu, \nValentina Fioretti, Julian Gerber, Felix Hagemann, \nSophie Haight, Ares Hernandez, Carolyn Kierans, \nHadar Lazar, Jau-Shian Liang, Alex Lowell, \nParshad Patel, Daniel Perez-Becker, Sean Pike \nJarred Roberts, Nicole Rodriguez Cavero, \nField Rogers, Clio Sleator");
 }
 
 

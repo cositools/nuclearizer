@@ -36,6 +36,10 @@
 // NuSTAR libs
 #include "MGUIExpo.h"
 
+// Standard libs
+#include <unordered_map>
+using namespace std;
+
 // Forward declarations:
 
 
@@ -67,19 +71,19 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   //!  0    1    2    3 
   //!  4    5    6    7
   //!  8    9   10   11
-  void SetDepthHistogramArrangement(unsigned int NDetectorsX, unsigned int NDetectorsY);
+  void SetDepthHistogramArrangement(vector<unsigned int>* DetIDs);
   
   //! Set the energy histogram parameters 
-  void SetDepthHistogramParameters(unsigned int NBins, double DepthMin, double DepthMax);
+  void SetDepthHistogramParameters(unsigned int DetID, unsigned int NBins, double DepthMin, double DepthMax);
   
   //! Set the energy histogram parameters 
-  void SetDepthHistogramName(unsigned int Detector, MString Name);
+  void SetDepthHistogramName(unsigned int DetID, MString Name);
 
   //! Add data to the depth histogram
   //!  0    1    2    3 
   //!  4    5    6    7
   //!  8    9   10   11
-  void AddDepth(unsigned int Detector, double Depth);
+  void AddDepth(unsigned int DetID, double Depth);
 
   // protected methods:
  protected:
@@ -91,21 +95,24 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   // private members:
  private:
   //! Depth canvas
-  vector<TRootEmbeddedCanvas*> m_DepthCanvases;
+  unordered_map<unsigned int, TRootEmbeddedCanvas*> m_DepthCanvases;
   //! Depth vs detector ID histogram
-  vector<TH1D*> m_DepthHistograms;
+  unordered_map<unsigned int, TH1D*> m_DepthHistograms;
 
   //! Detectors in x direction
-  unsigned int m_NDetectorsX;
+  unsigned int m_NColumns;
   //! Detectors in y direction
-  unsigned int m_NDetectorsY;
+  unsigned int m_NRows;
+
+  // Map the detector ID to the x,y position of histograms.
+  vector<vector<unsigned int>> m_DetectorMap;
   
   //! The number of bins of the histogram
-  int m_NBins;
+  unordered_map<unsigned int, unsigned int> m_NBins;
   //! The minimum depth
-  double m_Min;
+  unordered_map<unsigned int, double> m_Min;
   //! The maximum depth
-  double m_Max;
+  unordered_map<unsigned int, double> m_Max;
   
 
 #ifdef ___CLING___

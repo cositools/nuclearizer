@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsEnergyCalibrationUniversal.cxx
+ * MGUIOptionsEnergyCalibration.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsEnergyCalibrationUniversal.h"
+#include "MGUIOptionsEnergyCalibration.h"
 
 // Standard libs:
 
@@ -30,21 +30,21 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MModule.h"
-#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleEnergyCalibration.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsEnergyCalibrationUniversal)
+ClassImp(MGUIOptionsEnergyCalibration)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsEnergyCalibrationUniversal::MGUIOptionsEnergyCalibrationUniversal(MModule* Module) 
+MGUIOptionsEnergyCalibration::MGUIOptionsEnergyCalibration(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -54,7 +54,7 @@ MGUIOptionsEnergyCalibrationUniversal::MGUIOptionsEnergyCalibrationUniversal(MMo
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsEnergyCalibrationUniversal::~MGUIOptionsEnergyCalibrationUniversal()
+MGUIOptionsEnergyCalibration::~MGUIOptionsEnergyCalibration()
 {
   // kDeepCleanup is activated 
 }
@@ -63,7 +63,7 @@ MGUIOptionsEnergyCalibrationUniversal::~MGUIOptionsEnergyCalibrationUniversal()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsEnergyCalibrationUniversal::Create()
+void MGUIOptionsEnergyCalibration::Create()
 {
   PreCreate();
 
@@ -72,7 +72,7 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
 
   // File loader for energy calibration file
   m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetFileName());
+    dynamic_cast<MModuleEnergyCalibration*>(m_Module)->GetFileName());
   m_FileSelector->SetFileType("Energy calibration file", "*.ecal");
   m_OptionsFrame->AddFrame(m_FileSelector, FileSelectorLayout);
 
@@ -94,7 +94,7 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   m_SlowThresholdCutRBFixed->Associate(this);
   m_OptionsFrame->AddFrame(m_SlowThresholdCutRBFixed, RBLayout);
 
-  m_SlowThresholdCutFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV]:", false, dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetSlowThresholdCutFixedValue(), true, 0.0);
+  m_SlowThresholdCutFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV]:", false, dynamic_cast<MModuleEnergyCalibration*>(m_Module)->GetSlowThresholdCutFixedValue(), true, 0.0);
   m_OptionsFrame->AddFrame(m_SlowThresholdCutFixedValue, RBOptionLayout);
 
 
@@ -102,13 +102,13 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   m_SlowThresholdCutRBFile->Associate(this);
   m_OptionsFrame->AddFrame(m_SlowThresholdCutRBFile, RBLayout);
 
-  m_SlowThresholdCutFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetSlowThresholdCutFileName());
+  m_SlowThresholdCutFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleEnergyCalibration*>(m_Module)->GetSlowThresholdCutFileName());
   m_SlowThresholdCutFileSelector->SetFileType("Slow threshold cut per strip file", "*.csv");
   m_OptionsFrame->AddFrame(m_SlowThresholdCutFileSelector, RBOptionStretchLayout);
 
 
   // Toggle the right button
-  MSlowThresholdCutModes SlowThresholdCutMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetSlowThresholdCutMode();
+  MSlowThresholdCutModes SlowThresholdCutMode = dynamic_cast<MModuleEnergyCalibration*>(m_Module)->GetSlowThresholdCutMode();
   ToggleRadioButtons(static_cast<int>(SlowThresholdCutMode));
   
   
@@ -124,10 +124,10 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
   m_SlowThresholdCutNearestNeighborRBFixed->Associate(this);
   m_OptionsFrame->AddFrame(m_SlowThresholdCutNearestNeighborRBFixed, RBLayout);
       
-  m_SlowThresholdCutNearestNeighborFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV] for Nearest Neighbors:", false, dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborThreshold());
+  m_SlowThresholdCutNearestNeighborFixedValue = new MGUIEEntry(m_OptionsFrame, "Set threshold value [keV] for Nearest Neighbors:", false, dynamic_cast<MModuleEnergyCalibration*>(m_Module)->GetNearestNeighborThreshold());
   m_OptionsFrame->AddFrame(m_SlowThresholdCutNearestNeighborFixedValue, RBOptionLayout);
   
-  MNearestNeighborCutModes NearestNeighborCutMode = dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetNearestNeighborCutMode();
+  MNearestNeighborCutModes NearestNeighborCutMode = dynamic_cast<MModuleEnergyCalibration*>(m_Module)->GetNearestNeighborCutMode();
   ToggleRadioButtons(static_cast<int>(NearestNeighborCutMode));
     
 
@@ -138,7 +138,7 @@ void MGUIOptionsEnergyCalibrationUniversal::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsEnergyCalibration::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -174,7 +174,7 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsEnergyCalibrationUniversal::ToggleRadioButtons(int WidgetID)
+void MGUIOptionsEnergyCalibration::ToggleRadioButtons(int WidgetID)
 {
   // Toggle the radio buttons and the entry fields
 
@@ -216,35 +216,35 @@ void MGUIOptionsEnergyCalibrationUniversal::ToggleRadioButtons(int WidgetID)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
+bool MGUIOptionsEnergyCalibration::OnApply()
 {
  // Modify this to store the data in the module!
 
-  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
+  dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 
   if (m_SlowThresholdCutRBIgnore->GetState() == kButtonDown) {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Ignore);
+    dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Ignore);
   } else if (m_SlowThresholdCutRBFixed->GetState() == kButtonDown) {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Fixed);
+    dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Fixed);
   }  if (m_SlowThresholdCutRBFile->GetState() == kButtonDown) {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_File);
+    dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_File);
   }
 
-  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutFixedValue(m_SlowThresholdCutFixedValue->GetAsDouble());
-  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetSlowThresholdCutFileName(m_SlowThresholdCutFileSelector->GetFileName());
+  dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetSlowThresholdCutFixedValue(m_SlowThresholdCutFixedValue->GetAsDouble());
+  dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetSlowThresholdCutFileName(m_SlowThresholdCutFileSelector->GetFileName());
   
   // Nearest Neighbors
   if (m_SlowThresholdCutNearestNeighborRBIgnore->GetState() == kButtonDown) {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetNearestNeighborCutMode(MNearestNeighborCutModes::e_Ignore);
+    dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetNearestNeighborCutMode(MNearestNeighborCutModes::e_Ignore);
   } else {
-    dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetNearestNeighborCutMode(MNearestNeighborCutModes::e_Fixed);
+    dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetNearestNeighborCutMode(MNearestNeighborCutModes::e_Fixed);
   }
 
-  dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetNearestNeighborThreshold(m_SlowThresholdCutNearestNeighborFixedValue->GetAsDouble());
+  dynamic_cast<MModuleEnergyCalibration*>(m_Module)->SetNearestNeighborThreshold(m_SlowThresholdCutNearestNeighborFixedValue->GetAsDouble());
 
   return true;
 }
 
 
-// MGUIOptionsEnergyCalibrationUniversal: the end...
+// MGUIOptionsEnergyCalibration: the end...
 ////////////////////////////////////////////////////////////////////////////////
