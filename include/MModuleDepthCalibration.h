@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <vector>
 #include <numeric>
-#include <math.h>
+#include <cmath>
 
 // ROOT libs:
 
