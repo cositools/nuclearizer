@@ -133,7 +133,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
     MString DetectorName = Detector->GetName();
     if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing")) {
-      DetectorName.RemoveAllInPlace("GuardRingDetector_"); // Remove prefix GuardRing if existent
+      DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // Remove prefix GuardRing if existent
       DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
       int DetectorID = DetectorName.ToInt();
 
@@ -199,29 +199,6 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
         return false;
       }
       
-      // int DetectorID = -1;
-      // if (Tokens[1] == "X0") {
-      //   DetectorID = 0;
-      // }
-      // else if (Tokens[1] ==  "X1") {
-      //   DetectorID = 1;
-      // }
-      // else if (Tokens[1] ==  "Y0") {
-      //   DetectorID = 2;
-      // }
-      // else if (Tokens[1] == "Y1") {
-      //   DetectorID = 3;
-      // }
-      // else if (Tokens[1] == "Z0") {
-      //   DetectorID = 4;      
-      // }
-      // else if (Tokens[1] == "Z1") {
-      //   DetectorID = 5;
-      // }
-      // else {
-      //   cerr << "ERROR: Detector name does not correspond to any panel " << Tokens[1] << endl;
-      //   return false;
-      // }
       MString DetectorID = Tokens[1];
       int CrystalID = Tokens[2].ToInt();
 
