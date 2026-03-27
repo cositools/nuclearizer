@@ -1,2 +1,4 @@
-CoincidenceWindow (s); DeadtimePerStrip (s); delayAfter1 (s); delayAfter2 (s)
-1.4e-6		       1e-6	             0.2e-6	      0.2e-6
+CoincidenceWindow (s); StripDeadtimePerStrip (s); delayAfter1 (s); delayAfter2 (s)
+1.4e-6		       1e-6	                  0.2e-6	   0.2e-6
+ShieldDeadtimePerStrip (s); ShieldVetoWindow (s); ShieldPulseDuration (s); ShieldDelayBefore (s); ShieldDelayAfter (s)
+1e-6                        1.5e-6                1.7e-6                   0.1e-6                 0.4e-6

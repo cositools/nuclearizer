@@ -65,7 +65,7 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_ShieldDelayBefore = 0.1e-6;
   m_ShieldDelayAfter = 0.4e-6;
   m_ShieldVetoWindowSize = 1.5e-6;
-  m_ASICDeadTimePerChannel = 0.0;
+  m_ASICDeadTimePerChannel = 1e-6;
   
   m_NumShieldHitCounts = 0;
   m_NumBGOHitsErased = 0;
@@ -262,7 +262,11 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 bool MSubModuleShieldTrigger::ParseDeadtimeFile()
 {
   // Read in deadtime parameters file
-  // Format: StripCoincidenceWindow ASICDeadTimePerChannel StripDelayAfter1 StripDelayAfter2
+  // Format:
+  //   Row 1: strip trigger header
+  //   Row 2: strip trigger parameters
+  //   Row 3: shield trigger header
+  //   Row 4: shield trigger parameters
 
   MParser Parser;
   if (Parser.Open(m_DeadtimeFileName) == false) {
@@ -270,13 +274,22 @@ bool MSubModuleShieldTrigger::ParseDeadtimeFile()
     return false;
   }
 
-  if (Parser.GetNLines() < 2) {
+  if (Parser.GetNLines() < 4) {
     cout << m_Name << ": Deadtime file does not have enough data" << endl;
     return false;
   }
 
-  // We only need the ASICDeadTimePerChannel (second value) for shield
-  m_ASICDeadTimePerChannel = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(1);
+  MTokenizer* ShieldTokenizer = Parser.GetTokenizerAt(3);
+  if (ShieldTokenizer->GetNTokens() < 5) {
+    cout << m_Name << ": Shield deadtime row does not have enough data" << endl;
+    return false;
+  }
+
+  m_ASICDeadTimePerChannel = ShieldTokenizer->GetTokenAtAsDouble(0);
+  m_ShieldVetoWindowSize = ShieldTokenizer->GetTokenAtAsDouble(1);
+  m_ShieldPulseDuration = ShieldTokenizer->GetTokenAtAsDouble(2);
+  m_ShieldDelayBefore = ShieldTokenizer->GetTokenAtAsDouble(3);
+  m_ShieldDelayAfter = ShieldTokenizer->GetTokenAtAsDouble(4);
 
   return true;
 }
