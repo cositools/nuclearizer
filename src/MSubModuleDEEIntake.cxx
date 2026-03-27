@@ -133,6 +133,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
     MString DetectorName = Detector->GetName();
     if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing")) {
+      DetectorName.RemoveAllInPlace("GuardRingDetector_"); // Remove prefix GuardRing if existent
       DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
       int DetectorID = DetectorName.ToInt();
 
