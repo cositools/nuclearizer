@@ -274,13 +274,16 @@ bool TrappingCorrectionAm241::Analyze()
   // Store the HV and LV input files
   vector<MString> FileNames;
   FileNames.push_back(m_HVFileName);
+  cout<<"HV file names stored"<<endl;
   FileNames.push_back(m_LVFileName);
+  cout<<"LV file names stored"<<endl;
 
   // Map the side integer to HV and LV labels
   // i.e. 0=HV, 1=LV
   vector<MString> IllumSide;
   IllumSide.push_back(MString("HV"));
   IllumSide.push_back(MString("LV"));
+  cout<<"HV and LV integers mapped"<<endl;
 
   // Make a directory in which to store the pixel-level data 
   MString PixelDir = m_OutFile + MString("_pixeldata");
@@ -317,6 +320,7 @@ bool TrappingCorrectionAm241::Analyze()
     // Read in the input files and make a list of hdf5 files to calibrate
     if ((InputFile.GetSubString(InputFile.Length() - 4)) == "hdf5") {
       HDFNames.push_back(InputFile);
+      cout<<"hdf names loaded correctly"<<endl;
     } else if ((InputFile.GetSubString(InputFile.Length() - 3)) == "txt") {
       cout<<"Reading input file "<<InputFile<<endl;
       cout<<"WARNING: When passing a list of files, ensure that you have chosen the correct HDF5 continuous reading mode. Use the --nocontinue option to suppress continuous file reading."<<endl;
