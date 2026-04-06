@@ -175,11 +175,17 @@ bool MModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event)
   }
     
   // Apply Chi^2 filter (as calculated in strip pairing)
+  
+  // Make sure there are actually reduced chi squares to filter on
+  if (Event->GetStripPairingReducedChiSquare().size() > 0) {
+    double Maximum = *max_element(Event->GetStripPairingReducedChiSquare().begin(), Event->GetStripPairingReducedChiSquare().end());
+    double Minimum = *min_element(Event->GetStripPairingReducedChiSquare().begin(), Event->GetStripPairingReducedChiSquare().end());
     
-    if (Event->GetStripPairingReducedChiSquare() < m_MinimumStripPairingReducedChiSquare || Event->GetStripPairingReducedChiSquare() > m_MaximumStripPairingReducedChiSquare) {
-        FilteredOut = true;
+    // Filter based on the minimum and maximum reduced chi square in list
+    if (Minimum < m_MinimumStripPairingReducedChiSquare || Maximum > m_MaximumStripPairingReducedChiSquare) {
+      FilteredOut = true;
     }
-
+  }
 
   if (FilteredOut == true) {
     Event->SetFilteredOut(true);

@@ -245,10 +245,10 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the Strip Pairing quality flag
   bool HasStripPairing_QualityFlag() const { return m_StripPairing_QualityFlag; }
 
-  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
-  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
-  //! Return the Reduced Chi^2
-  double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
+  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module (one for each detector)
+  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare.push_back(StripPairingReducedChiSquare); }
+  //! Return all the Reduced Chi^2 (for each detector)
+  vector<double> GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
   //! Set the Quality of this Event used in Greedy Strip pairing module
   //! TODO Change name of this variable to be more descriptive or get rid of Greedy algorithim all together
@@ -430,7 +430,7 @@ class MReadOutAssembly : public MReadOutSequence
   vector<MString> m_StripPairingString_QualityFlag;
 
   //! Reduced Chi^2 of the Strip Paired Event
-  double m_StripPairingReducedChiSquare;
+  vector<double> m_StripPairingReducedChiSquare;
 
   //! Quality of this event in Greedy strip pairing
   //! TODO change variable name or remove Greedy approach all together

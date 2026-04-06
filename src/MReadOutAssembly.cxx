@@ -185,7 +185,7 @@ void MReadOutAssembly::Clear()
   m_EventReconstructionError = false;
   m_EventReconstructionErrorString.clear();
   
-  m_StripPairingReducedChiSquare = -1; 
+  m_StripPairingReducedChiSquare.clear();
  
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
@@ -541,7 +541,12 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   S<<"ID "<<m_ID<<endl;
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
-  S<<"QP "<<m_StripPairingReducedChiSquare<<endl; // Read out strip pairing qualiy factor
+  S<<"QP";
+  // iterate through the vectorized strip pairing reduced chi squares
+  for (auto i : m_StripPairingReducedChiSquare) {
+    S<<" "<<i;
+  }
+  S<<endl;
     
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
