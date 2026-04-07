@@ -40,13 +40,13 @@ ClassImp(MGUIOptionsDepthCalibration)
 #endif
 
 
-	////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////
 
 
-	MGUIOptionsDepthCalibration::MGUIOptionsDepthCalibration(MModule* Module) 
+  MGUIOptionsDepthCalibration::MGUIOptionsDepthCalibration(MModule* Module) 
 : MGUIOptions(Module)
 {
-	// standard constructor
+  // standard constructor
 }
 
 
@@ -55,7 +55,7 @@ ClassImp(MGUIOptionsDepthCalibration)
 
 MGUIOptionsDepthCalibration::~MGUIOptionsDepthCalibration()
 {
-	// kDeepCleanup is activated 
+  // kDeepCleanup is activated 
 }
 
 
@@ -64,24 +64,48 @@ MGUIOptionsDepthCalibration::~MGUIOptionsDepthCalibration()
 
 void MGUIOptionsDepthCalibration::Create()
 {
-	PreCreate();
+  PreCreate();
 
-	//ummmm might need to load a detector map so that we can look at calibration data from palestine
+  m_CoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a coefficients file:",
+      dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetCoeffsFileName());
+  m_CoeffsFileSelector->SetFileType("coeffs", "*.csv");
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_CoeffsFileSelector, LabelLayout);
 
-	m_CoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a coefficients file:",
-			dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetCoeffsFileName());
-	m_CoeffsFileSelector->SetFileType("coeffs", "*.txt");
-	TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-	m_OptionsFrame->AddFrame(m_CoeffsFileSelector, LabelLayout);
+  m_SplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a splines file:",
+      dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetSplinesFileName());
+  m_SplinesFileSelector->SetFileType("splines", "*.csv");
+//  TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_SplinesFileSelector, LabelLayout);
 
-	m_SplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a splines file:",
-			dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetSplinesFileName());
-	m_SplinesFileSelector->SetFileType("splines", "*.ctd");
-	TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-	m_OptionsFrame->AddFrame(m_SplinesFileSelector, Label2Layout);
+  m_MaskMetModeCB = new TGCheckButton(m_OptionsFrame, "Enable mask metrology correction and read calibration from file:", c_MetrologyFile);
+  m_MaskMetModeCB->SetState((dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable() == true) ? kButtonDown : kButtonUp);
+  m_MaskMetModeCB->Associate(this);
+  m_OptionsFrame->AddFrame(m_MaskMetModeCB, LabelLayout);
+
+  m_UseMaskMetCorr = dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable();
+
+  TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
+
+  m_MaskMetrologyFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyFileName());
+  m_MaskMetrologyFileSelector->SetFileType("metrology", "*.metrology.csv");
+  m_OptionsFrame->AddFrame(m_MaskMetrologyFileSelector, LabelLayout);
 
 
-	PostCreate();
+  if (m_UseMaskMetCorr == true) {
+    m_MaskMetrologyFileSelector->SetEnabled(true);
+  } else {
+    m_MaskMetrologyFileSelector->SetEnabled(false);
+  }
+
+
+
+  m_UCSDOverride = new TGCheckButton(m_OptionsFrame, "Check this box if you're using the card cage at UCSD", 1);
+  m_UCSDOverride->SetOn(dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetUCSDOverride());
+  TGLayoutHints* Label4Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+  m_OptionsFrame->AddFrame(m_UCSDOverride, Label4Layout);
+
+  PostCreate();
 }
 
 
@@ -90,29 +114,41 @@ void MGUIOptionsDepthCalibration::Create()
 
 bool MGUIOptionsDepthCalibration::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
-	// Modify here if you have more buttons
+  // Modify here if you have more buttons
 
-	bool Status = true;
+  bool Status = true;
 
-	switch (GET_MSG(Message)) {
-		case kC_COMMAND:
-			switch (GET_SUBMSG(Message)) {
-				case kCM_BUTTON:
-					break;
-				default:
-					break;
-			}
-			break;
-		default:
-			break;
-	}
+  switch (GET_MSG(Message)) {
+  case kC_COMMAND:
+    switch (GET_SUBMSG(Message)) {
+    case kCM_BUTTON:
+      break;
+    case kCM_CHECKBUTTON:
+      switch (Parameter1) {
+        case c_MetrologyFile:
+          if (m_MaskMetModeCB->GetState() == kButtonDown) {
+            m_UseMaskMetCorr = true;
+            m_MaskMetrologyFileSelector->SetEnabled(true);
+          } else if (m_MaskMetModeCB->GetState() == kButtonUp) {
+            m_UseMaskMetCorr = false;
+            m_MaskMetrologyFileSelector->SetEnabled(false);
+          }
+          break;
+      }
+    default:
+      break;
+    }
+    break;
+  default:
+    break;
+  }
 
-	if (Status == false) {
-		return false;
-	}
+  if (Status == false) {
+    return false;
+  }
 
-	// Call also base class
-	return MGUIOptions::ProcessMessage(Message, Parameter1, Parameter2);
+  // Call also base class
+  return MGUIOptions::ProcessMessage(Message, Parameter1, Parameter2);
 }
 
 
@@ -121,12 +157,17 @@ bool MGUIOptionsDepthCalibration::ProcessMessage(long Message, long Parameter1, 
 
 bool MGUIOptionsDepthCalibration::OnApply()
 {
-	// Modify this to store the data in the module!
+  // Modify this to store the data in the module!
 
-	dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
-	dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
 
-	return true;
+  if (dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable() != m_UseMaskMetCorr) dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetMaskMetrologyCorrectionEnable(m_UseMaskMetCorr);
+
+  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetMaskMetrologyFileName(m_MaskMetrologyFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetUCSDOverride(m_UCSDOverride->IsOn());
+
+  return true;
 }
 
 

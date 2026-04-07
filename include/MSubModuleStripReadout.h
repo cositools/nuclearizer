@@ -17,12 +17,15 @@
 
 
 // Standard libs:
+#include <map>
 
 // ROOT libs:
+#include "TF1.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MSubModule.h"
+#include "MReadOutElementDoubleStrip.h"
 
 // Forward declarations:
 
@@ -87,6 +90,12 @@ class MSubModuleStripReadout : public MSubModule
  private:
   //! Energy calibration file name
   MString m_EnergyCalibrationFileName;
+  
+  //! Name of the strip map
+  std::map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
+  
+  //! Make value of the ADC units
+  double m_MaxADCRange;
 
 
 

@@ -208,7 +208,7 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
     SH->SetStripID(Strip->GetStripID());
     
     if (Timing != nullptr) {
-      SH->SetTAC(Timing->GetTiming());
+      SH->SetTiming(Timing->GetTiming());
     }
     if (TAC != nullptr) {
       SH->SetTAC(TAC->GetTAC());

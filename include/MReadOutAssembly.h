@@ -24,7 +24,6 @@
 #include "MGlobal.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
-#include "MAspect.h"
 #include "MStripHit.h"
 #include "MDEEStripHit.h"
 #include "MCrystalHit.h"
@@ -55,13 +54,8 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Delete Hits
   void DeleteHits();
- 
-  //! TODO Scrub all clock/time variables for COSI SMEX 
-  //! Set the Frame Counter of this event
-  void SetFC(unsigned int FC) { m_FC = FC; }
-  //! Return the Frame Counter of this event
-  unsigned int GetFC() const { return m_FC; }
 
+  //! TODO Scrub all clock/time variables for COSI SMEX 
   //! set and get Unix clock time
   void SetTI(unsigned long long TI) { m_TI = TI;}
   unsigned long long GetTI() const { return m_TI;}
@@ -77,12 +71,6 @@ class MReadOutAssembly : public MReadOutSequence
   //! Set and get the UTC time of this event
   void SetTimeUTC(const MTime& TimeUTC) { m_EventTimeUTC = TimeUTC; }
   MTime GetTimeUTC() const { return m_EventTimeUTC; }
-  
-  //! TODO Scrub Aspect in nuclearizer for COSI SMEX
-  //! Set the aspect
-  void SetAspect(MAspect* Aspect) { if (m_Aspect != 0) delete m_Aspect;  m_Aspect = Aspect; }
-  //! Get the aspect - will be zero if the aspect has not been set!
-  MAspect* GetAspect() { return m_Aspect; }
   
   //! Set and get simulation aspect information
   void SetGalacticPointingXAxisTheta(double theta){ m_GalacticPointingXAxisTheta = theta; }
@@ -238,17 +226,17 @@ class MReadOutAssembly : public MReadOutSequence
   void SetStripHitBelowThreshold_QualityFlag(MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = true; if (Text != "") { m_StripHitBelowThresholdString_QualityFlag.push_back(Text); }}
   //! Get the Strip Hit Below Threshold quality flag
   bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
+    
+  //! Set the Strip Pairing quality flag
+  void SetStripPairing_QualityFlag(MString Text = ""){ m_StripPairing_QualityFlag = true;
+      if (Text != "") { m_StripPairingString_QualityFlag.push_back(Text); }}
+  //! Get the Strip Pairing quality flag
+  bool HasStripPairing_QualityFlag() const { return m_StripPairing_QualityFlag; }
 
   //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
   void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
   //! Return the Reduced Chi^2
   double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
-
-  //! Set the Quality of this Event used in Greedy Strip pairing module
-  //! TODO Change name of this variable to be more descriptive or get rid of Greedy algorithim all together
-  void SetEventQuality(double EventQuality){ m_EventQuality = EventQuality; }
-  //!Return the Quality of this Event
-  double GetEventQuality() const { return m_EventQuality; }
 
 
   // Track Vetos
@@ -316,9 +304,6 @@ class MReadOutAssembly : public MReadOutSequence
   // private members:
  private:
 
-  //! Frame Counter of this event
-  unsigned int m_FC;
-
   //! Clock tick (Unix and UHF)
   unsigned long long m_TI;
   uint64_t m_CL;
@@ -330,12 +315,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! The time of the event in absolute UTC time
   MTime m_EventTimeUTC;
 
-  //! The aspect information - will be zero if not set!
-  MAspect* m_Aspect;
-
-  //Added by Clio:
   //! The aspect information from the simulation, only used in DEE
-  // (Simulation aspect information doesn't have everything in Aspect packet)
   double m_GalacticPointingXAxisTheta;
   double m_GalacticPointingXAxisPhi;
   double m_GalacticPointingZAxisTheta;
@@ -350,9 +330,6 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Trigger flag of this event
   bool m_Trigger;
-
-  //! True if the aspect data of the event is good
-  bool m_AspectGood;
 
   //! Whether event contains strip hits in given detector
   bool m_InDetector[16];
@@ -417,13 +394,14 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_StripHitBelowThreshold_QualityFlag;
   //! Strip hit below threshold quality string
   vector<MString> m_StripHitBelowThresholdString_QualityFlag;
+    
+  //! Strip pairing quality flag
+  bool m_StripPairing_QualityFlag;
+  //! Strip pairing quality string
+  vector<MString> m_StripPairingString_QualityFlag;
 
   //! Reduced Chi^2 of the Strip Paired Event
   double m_StripPairingReducedChiSquare;
-
-  //! Quality of this event in Greedy strip pairing
-  //! TODO change variable name or remove Greedy approach all together
-  double m_EventQuality;
 
  //! True if event has been filtered out
   bool m_FilteredOut;

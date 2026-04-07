@@ -2040,7 +2040,7 @@ bool MDetectorEffectsEngineSingleDet::ParseDeadtimeFile()
 
 
 //! Convert energy to ADC value by reversing energy calibration done in
-//! MModuleEnergyCalibrationUniversal.cxx
+//! MModuleEnergyCalibration.cxx
 int MDetectorEffectsEngineSingleDet::EnergyToADC(MDEEStripHit& Hit, double mean_energy)
 {
   //first, need to simulate energy spread

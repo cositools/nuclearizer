@@ -1,8 +1,8 @@
 /*
- * MGUIOptionsStripPairing.cxx
+ * MGUIOptionsSaverMeasurementsL0.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
  *
  *
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsStripPairing.h"
+#include "MGUIOptionsSaverMeasurementsL0.h"
 
 // Standard libs:
 
@@ -29,20 +29,21 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MModuleSaverMeasurementsL0.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsStripPairing)
+ClassImp(MGUIOptionsSaverMeasurementsL0)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsStripPairing::MGUIOptionsStripPairing(MModule* Module) 
+MGUIOptionsSaverMeasurementsL0::MGUIOptionsSaverMeasurementsL0(MModule* Module)
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -52,53 +53,53 @@ MGUIOptionsStripPairing::MGUIOptionsStripPairing(MModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsStripPairing::~MGUIOptionsStripPairing()
+MGUIOptionsSaverMeasurementsL0::~MGUIOptionsSaverMeasurementsL0()
 {
-  // kDeepCleanup is activated 
+  // kDeepCleanup is activated
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsStripPairing::Create()
+void MGUIOptionsSaverMeasurementsL0::Create()
 {
   PreCreate();
 
-  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);  
-  
-  m_Mode = new MGUIERBList(m_OptionsFrame, "Please select a strip pairing mode:");
-  m_Mode->Add("Andreas's algorithm");
-  m_Mode->Add("Multi Round Chi Square - Julian");
-  m_Mode->Create();
-  m_OptionsFrame->AddFrame(m_Mode, LabelLayout);
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 
-   PostCreate();
+  // Output file selector
+  m_FileSelectorOutput = new MGUIEFileSelector(m_OptionsFrame, "Please select output L0 binary file:",
+    dynamic_cast<MModuleSaverMeasurementsL0*>(m_Module)->GetFileName());
+  m_FileSelectorOutput->SetFileType("Binary file", "*.bin");
+  m_OptionsFrame->AddFrame(m_FileSelectorOutput, LabelLayout);
+
+  PostCreate();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsStripPairing::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsSaverMeasurementsL0::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
   bool Status = true;
-  
+
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       break;
-    default:
+     default:
       break;
     }
     break;
   default:
     break;
   }
-  
+
   if (Status == false) {
     return false;
   }
@@ -111,15 +112,15 @@ bool MGUIOptionsStripPairing::ProcessMessage(long Message, long Parameter1, long
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsStripPairing::OnApply()
+bool MGUIOptionsSaverMeasurementsL0::OnApply()
 {
   // Modify this to store the data in the module!
 
-//  dynamic_cast<MModuleStripPairingGreedy*>(m_Module)->SetMode(m_Mode->GetSelected());
-  
+  dynamic_cast<MModuleSaverMeasurementsL0*>(m_Module)->SetFileName(m_FileSelectorOutput->GetFileName());
+
   return true;
 }
 
 
-// MGUIOptionsStripPairing: the end...
+// MGUIOptionsSaverMeasurementsL0: the end...
 ////////////////////////////////////////////////////////////////////////////////

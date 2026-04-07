@@ -18,14 +18,19 @@
 
 // Standard libs:
 #include <unordered_map>
+#include <vector>
+#include <numeric>
+#include <cmath>
 
 // ROOT libs:
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
-#include "MModuleEnergyCalibrationUniversal.h"
-#include "MDepthCalibrator.h"
+#include "MModuleEnergyCalibration.h"
+#include "MDStrip3D.h"
+#include "MDShapeBRIK.h"
+#include "MGUIExpoDepthCalibration.h"
 
 // Forward declarations:
 
@@ -48,6 +53,9 @@ class MModuleDepthCalibration : public MModule
   //! Initialize the module
   virtual bool Initialize();
 
+  //! Create the expos
+  virtual void CreateExpos();
+
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
@@ -55,25 +63,37 @@ class MModuleDepthCalibration : public MModule
   virtual void ShowOptionsGUI();
 
   //! Set filename for coefficients file
-  void SetCoeffsFileName( const MString& FileName) {m_CoeffsFile = FileName;}
+  void SetCoeffsFileName( const MString& FileName) { m_CoeffsFile = FileName; }
   //! Get filename for coefficients file
-  MString GetCoeffsFileName() const {return m_CoeffsFile;}
+  MString GetCoeffsFileName() const { return m_CoeffsFile; }
 
   //! Set filename for CTD->Depth splines
-  void SetSplinesFileName( const MString& FileName) {m_SplinesFile = FileName;}
+  void SetSplinesFileName( const MString& FileName) { m_SplinesFile = FileName; }
   //! Get filename for CTD->Depth splines
   MString GetSplinesFileName() const {return m_SplinesFile;}
+
+  //! Enable/Disable Mask Metrology Correction
+  void SetMaskMetrologyCorrectionEnable(bool X) { m_MaskMetrologyEnabled = X; }
+  //! Get enable/disable status of mask metrology correction
+  bool GetMaskMetrologyCorrectionEnable() const { return m_MaskMetrologyEnabled; }
+
+  //! Set filename for mask metrology
+  void SetMaskMetrologyFileName( const MString& FileName) { m_MaskMetrologyFile = FileName; }
+  //! Get filename for CTD->Depth splines
+  MString GetMaskMetrologyFileName() const { return m_MaskMetrologyFile; }
+
+  //TODO Remove UCSD code here and place within it's own branch
+  //! Set whether the data came from the card cage at UCSD
+  void SetUCSDOverride( bool Override ) { m_UCSDOverride = Override; }
+  //! Get whether the data came from the card cage at UCSD
+  bool GetUCSDOverride() const { return m_UCSDOverride; }
+
 
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
 
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
-
-  //! Set the global timing FWHM noise
-  void SetTimingNoiseFWHM(const double Time) {m_TimingNoiseFWHM = Time;}
-  //! Get the global timing FWHM noise
-  double GetTimingNoiseFWHM() const {return m_TimingNoiseFWHM;}
 
   //! Finalize
   void Finalize();
@@ -82,40 +102,93 @@ class MModuleDepthCalibration : public MModule
  protected:
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
   MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
-  //! Calculates the XYZ position of the hit.  Returns 0 if all is OK.
-  int CalculateLocalPosition(MStripHit* XSH, MStripHit* YSH, MVector& GlobalPosition, MVector& PositionResolution, bool BadDepth);
-  //! Converts the FWHM timing noise to FWHM depth noise
-  double GetZFWHM(double CTD_s, int DetID, double Noise);
-  //! Reads in spline data to convert CTD->Depth
-	bool GetDepthSplines(MString fname, std::unordered_map<int, TSpline3*>& SplineMap, bool invert);
+  
+  //! Retrieve the appropriate Depth values given the DetID
+  vector<double> GetDepth(int DetID);
+  
+  //! Retrieve the appropriate CTD values given the DetID and Grade
+  vector<double> GetCTD(int DetID, int Grade);
 
-	//! Adds a spline
-	void AddSpline(vector<double>& xvec, vector<double>& yvec, unordered_map<int, TSpline3*>& SplineMap, int DetID, bool invert);
+  //! Retrieve the appropriate depth-to-CTD spline given the DetID and Grade
+  TSpline3* GetSpline(int DetID, int Grade);
+  //! Normal distribution
+  vector<double> norm_pdf(vector<double> x, double mu, double sigma);
+  
+  //! Adds a Depth-to-CTD relation
+  bool AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints);
 
-  // private methods:
- private:
+  //! Determine the Grade (geometry of charge sharing) of the Hit
+  int GetHitGrade(MHit* H);
 
+  //! Load in the specified coefficients file
+  bool LoadCoeffsFile(MString FName);
+
+  //! Return the coefficients for a pixel
+  vector<double>* GetPixelCoeffs(int PixelCode);
+
+  //! Load the splines file
+  bool LoadSplinesFile(MString FName);
+
+  //! Mask Metrology Correction
+  bool m_MaskMetrologyEnabled;
+  
+  //! Load the metrology mask file
+  bool LoadMaskMetrologyFile(MString FName);
+
+  //! Get the x, y position of the intersection of two strips based on the Metrology Mask  
+  vector<double> GetStripIntersection(MReadOutElementDoubleStrip LVStrip, MReadOutElementDoubleStrip HVStrip);
+
+  //! Get the timing FWHM noise for the specified pixel and Energy
+  double GetTimingNoiseFWHM(int PixelCode, double Energy);
+
+
+  // private methods
+  private:
 
 
   // protected members:
  protected:
 
-  std::unordered_map<int, std::vector<double>*> m_Coeffs;
-  std::unordered_map<int, TSpline3*> m_Splines;   
+  unordered_map<int, vector<double>> m_Coeffs;
+  double m_Coeffs_Energy;
   MString m_CoeffsFile;
   MString m_SplinesFile;
-  std::vector<MString> m_DetectorNames;
-  std::vector<double> m_Thicknesses;
+  unordered_map<int, double> m_Thicknesses;
+  unordered_map<int, int> m_NXStrips;
+  unordered_map<int, int> m_NYStrips;
+  unordered_map<int, double> m_XPitches;
+  unordered_map<int, double> m_YPitches;
   uint64_t m_NoError;
   uint64_t m_Error1;
   uint64_t m_Error2;
   uint64_t m_Error3;
   uint64_t m_Error4;
+  uint64_t m_Error5;
+  uint64_t m_Error6;
   uint64_t m_ErrorSH;
-  double m_TimingNoiseFWHM;
-  vector<MDVolume*> m_DetectorVolumes;
-  MModuleEnergyCalibrationUniversal* m_EnergyCalibration;
-  MDepthCalibrator* m_DepthCalibrator;
+  uint64_t m_ErrorNullSH;
+  uint64_t m_ErrorNoE;
+  unordered_map<int, MDDetector*> m_Detectors;
+  vector<unsigned int> m_DetectorIDs;
+  MModuleEnergyCalibration* m_EnergyCalibration;
+  MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
+
+  // The CTD Map maps each detector (int) to a 2D array of CTD values.
+  unordered_map<int, vector<vector<double>>> m_CTDMap;
+  unordered_map<int, vector<double>> m_DepthGrid;
+  unordered_map<int, vector<TSpline3*>> m_SplineMap;
+  bool m_SplinesFileIsLoaded;
+  bool m_CoeffsFileIsLoaded;
+  bool m_MaskMetrologyFileIsLoaded;
+
+  // The Mask Metrology
+  MString m_MaskMetrologyFile;
+  map<MReadOutElementDoubleStrip, vector<double>> m_MaskMetrology;
+
+
+  // boolean for use with the card cage at UCSD since it tags all events as detector 11
+  bool m_UCSDOverride;
+
 
 
   // private members:
