@@ -185,7 +185,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
   
     // Skip the depth calibration for Hits that have a GR Strip Hit
     if (H->GetGuardRingHitFlag() == true) {
-      cout<<"Found GR Hit"<<endl;
       continue;
     }
 
