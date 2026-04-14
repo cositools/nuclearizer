@@ -813,6 +813,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
 
     Event->SetID(LongEventID);
+
     if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
       TimeUTC.Set(TimeCode,0);
       Event->SetTimeUTC(TimeUTC);
