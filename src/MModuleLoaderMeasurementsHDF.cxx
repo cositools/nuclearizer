@@ -813,14 +813,14 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
 
     Event->SetID(LongEventID);
     if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
-      Event->SetCL(TimeCode);
+      Event->SetTimeUTC(TimeCode);
     } else if (m_HDFStripHitVersion >= MHDFStripHitVersion::V2_0)  {
-      Event->SetTI(TimeCode);
+      Event->SetTimeUTC(TimeCode);
       if (m_HDFStripHitVersion >= MHDFStripHitVersion::V2_2) {
-        Event->SetCL(SPWTimeCode);
+        Event->SetTimeUTC(SPWTimeCode);
       }
     } else {
-      Event->SetTI(TimeCode);
+      Event->SetTimeUTC(TimeCode);
     }
   }
 

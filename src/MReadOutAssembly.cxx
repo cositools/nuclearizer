@@ -126,11 +126,8 @@ void MReadOutAssembly::Clear()
   MReadOutSequence::Clear();
   
   m_ID = g_UnsignedIntNotDefined;
-  m_TI = 0;
-  m_CL = 0;
-  m_Time = 0;
+  m_EventTimeRST = 0;
   m_EventTimeUTC = 0;
-  m_MJD = 0.0;
 
   m_ShieldVeto = false;
   m_GuardRingVeto = false;
@@ -425,13 +422,6 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
   // Handles SE, TI, RO, IA
   if (MReadOutSequence::Parse(Line) == true) return true;
   
-  /* In base class
-  if (Line.BeginsWith("SE")) return true;
-  if (Line.BeginsWith("TI")) {
-    m_Time.Set(Line);
-    return true;
-  }
-  */
   if (Line.BeginsWith("HT")) {
     MHit* h = new MHit();
     if( h->Parse(Line,1) ){
@@ -535,7 +525,6 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
     
   for (MSimIA& IA: m_SimIAs) {
@@ -575,7 +564,6 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
 
   if (m_HasSimAspectInfo){
@@ -606,7 +594,6 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
 
   for (MSimIA& IA: m_SimIAs) {

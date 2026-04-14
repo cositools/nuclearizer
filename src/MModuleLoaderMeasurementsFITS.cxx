@@ -323,7 +323,7 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
 
   // Set event-level properties
   // Event->SetID();  // TODO: No EventID
-  Event->SetCL(eventTime);     // Mission time in seconds
+  Event->SetTimeRTS(eventTime);     // Mission time in seconds since Jan 1, 2025
 
   // Loop through strip hits and create MStripHit objects
   for (uint8_t hitIdx = 0; hitIdx < numStripHit; ++hitIdx) {

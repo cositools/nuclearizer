@@ -56,18 +56,10 @@ class MReadOutAssembly : public MReadOutSequence
   //! Delete Hits
   void DeleteHits();
 
-  //! TODO Scrub all clock/time variables for COSI SMEX 
-  //! set and get Unix clock time
-  void SetTI(unsigned long long TI) { m_TI = TI;}
-  unsigned long long GetTI() const { return m_TI;}
-
-  //! set and get clock tick
-  void SetCL(uint64_t CL) { m_CL = CL;}
-  uint64_t GetCL() const { return m_CL;}
-
-  //! Set and get the Modified Julian Date of this event
-  void SetMJD(double MJD) { m_MJD = MJD; }
-  double GetMJD() const { return m_MJD; }
+  //! Set and get the Reference Time System for this event
+  //! The RTS is mission time in seconds since Jan 1, 2025 in TT
+  void SetTimeRTS(double TimeRTS) { m_EventTimeRTS = TimeRTS; }
+  double GetTimeRTS() const { return m_EventTimeRTS; }
   
   //! Set and get the UTC time of this event
   void SetTimeUTC(const MTime& TimeUTC) { m_EventTimeUTC = TimeUTC; }
@@ -284,11 +276,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool GetNextFromDatFile(MFile &F);
 
   //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
-  bool ComputeAbsoluteTime();
+  bool ComputeAbsoluteUTCTime();
   //! Set the MTime corresponding to absolute UTC time
-  void SetAbsoluteTime(MTime T) {m_EventTimeUTC = T;}
+  void SetAbsoluteUTCTime(MTime T) {m_EventTimeUTC = T;}
   //! Get the MTime corresponding to absolute UTC time
-  MTime GetAbsoluteTime() const {return m_EventTimeUTC; }
+  MTime GetAbsoluteUTCTime() const {return m_EventTimeUTC; }
 
   // protected methods:
  protected:
@@ -313,13 +305,8 @@ class MReadOutAssembly : public MReadOutSequence
   //! Unique assembly identifier
   unsigned long m_AssemblyID;
 
-  //! Clock tick (Unix and UHF)
-  unsigned long long m_TI;
-  uint64_t m_CL;
-
-  //! Time and MJD of this event
-  double m_MJD;
-  // MTime m_Time; // in base class
+  //! The time of the event in COSI Reference Time System (seconds since Jan 1, 2025) in TT
+  double m_EventTimeRTS;
 
   //! The time of the event in absolute UTC time
   MTime m_EventTimeUTC;
