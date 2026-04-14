@@ -173,6 +173,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 
     MFile::ExpandFileName(FileName);
     m_HDFFile = H5File(FileName, H5F_ACC_RDONLY);
+    string ConfigJSON;
 
     // ToDo: Check for version.
     m_HDFStripHitVersion = MHDFStripHitVersion::V1_0;
@@ -194,6 +195,16 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         return false;
       }
 
+      DataSet ConfigDataset = m_HDFFile.openDataSet("/Config");
+
+      CompType ConfigType(sizeof(MHDFConfigString));
+      StrType ConfigStringType(PredType::C_S1, 1048576);
+      ConfigType.insertMember("string_col", HOFFSET(MHDFConfigString, string_col), StringType);
+
+      MHDFConfigString CS;
+      ConfigDataset.read(&CS, ConfigType);
+      ConfigJSON = string(CS.string_col);
+
     // Check for existence of HDFVersion in /Events/HDFVersion (HDF v2)
     } else if (H5Lexists(m_HDFFile.getId(), "Events", H5P_DEFAULT) > 0 && H5Lexists(m_HDFFile.getId(), "EventIndices", H5P_DEFAULT) > 0) {
       m_EventDataSet = m_HDFFile.openDataSet("/Events");
@@ -214,9 +225,10 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       }
 
       Attribute Config = m_EventDataSet.openAttribute("Config");
-      string ConfigJSON;
       Config.read(Config.getStrType(), ConfigJSON);
+    }
 
+    if (!ConfigJSON.empty()) {
       bool ASICIsPrimary;
 
       // Regex to match either "primary"/"secondary", or the polarity stored in "SP"

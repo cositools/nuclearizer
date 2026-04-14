@@ -150,6 +150,11 @@ struct MHDFStripHitVersionString {
   char string_col[256];
 };
 
+//! The config string
+struct MHDFConfigString {
+  char string_col[1048576];
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
