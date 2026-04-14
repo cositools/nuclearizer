@@ -149,9 +149,11 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     return false;
   }
 
-  if (m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to update ASIC polarities based on the config JSON."<<endl;
-    return false;
+  if (m_HDFStripHitVersion >= MHDFStripHitVersion::V2_0) {
+    if (m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to update ASIC polarities based on the config JSON."<<endl;
+      return false;
+    }
   }
 
   m_NEventsInFile = 0;
