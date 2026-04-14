@@ -503,8 +503,6 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
       std::vector<MString> Tokens = Line.Tokenize(",");
       if (Tokens.size() == 5) {
         int PixelCode = Tokens[0].ToInt();
-        double Stretch = Tokens[1].ToDouble();
-        double Offset = Tokens[2].ToDouble();
         double CTD_FWHM = Tokens[3].ToDouble() * 2.355;
         double Chi2 = Tokens[4].ToDouble();
         // Previous iteration of depth calibration read in "Scale" instead of ctd resolution.

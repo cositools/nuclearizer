@@ -249,6 +249,8 @@ class MReadOutAssembly : public MReadOutSequence
   bool IsGood() const;
   //! Returns true if any of the "bad" or "Error" flags has been set
   bool IsBad() const;
+  //! Returns true if any of the Quality flags have been set
+  bool IsPoorQuality() const;
 
   //! Set a specific analysis progress
   void SetAnalysisProgress(uint64_t Progress) { m_AnalysisProgress |= Progress; }
