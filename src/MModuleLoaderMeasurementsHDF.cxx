@@ -611,6 +611,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     uint16_t EventID;
     uint64_t TimeCode;
     uint8_t NumberOfHits;
+    MTime TimeUTC;
 
     // Setting SPWTimeCode default to 0, as it is defined only iin HDF version >= 2.2
     uint64_t SPWTimeCode = 0;
@@ -813,14 +814,17 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
 
     Event->SetID(LongEventID);
     if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
-      Event->SetTimeUTC(TimeCode);
+      TimeUTC.Set(TimeCode,0);
+      Event->SetTimeUTC(TimeUTC);
     } else if (m_HDFStripHitVersion >= MHDFStripHitVersion::V2_0)  {
-      Event->SetTimeUTC(TimeCode);
-      if (m_HDFStripHitVersion >= MHDFStripHitVersion::V2_2) {
-        Event->SetTimeUTC(SPWTimeCode);
-      }
+      TimeUTC.Set(TimeCode,0);
+      Event->SetTimeUTC(TimeUTC);
+    } else if (m_HDFStripHitVersion >= MHDFStripHitVersion::V2_2) {
+      TimeUTC.Set(TimeCode,0);
+      Event->SetTimeUTC(TimeUTC);
     } else {
-      Event->SetTimeUTC(TimeCode);
+      TimeUTC.Set(TimeCode,0);
+      Event->SetTimeUTC(TimeUTC);
     }
   }
 

@@ -126,7 +126,7 @@ void MReadOutAssembly::Clear()
   MReadOutSequence::Clear();
   
   m_ID = g_UnsignedIntNotDefined;
-  m_EventTimeRST = 0;
+  m_EventTimeRTS = 0;
   m_EventTimeUTC = 0;
 
   m_ShieldVeto = false;

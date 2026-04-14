@@ -243,7 +243,7 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   // Add this event to the batch, write batch when full
 
   // Extract event-level data
-  double time = Event->GetCL();
+  double time = Event->GetTimeRTS();
   unsigned int numHits = Event->GetNHits();
 
   // Event-level metadata (placeholders for now - can be filled in later)
