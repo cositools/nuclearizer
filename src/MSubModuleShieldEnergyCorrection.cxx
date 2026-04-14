@@ -207,12 +207,12 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyCentroid(double Energy
 
   auto it = m_Centroid.find(hit_V);
   if (it != m_Centroid.end()) {
-    TF1* gauss_centroid = it->second;
-    if (gauss_centroid == nullptr) {
+    TF1* GaussCentroid = it->second;
+    if (GaussCentroid == nullptr) {
       if (g_Verbosity >= c_Error)
         cout << "ERROR: Null TF1 pointer for centroid map entry" << endl;
     }
-    CorrectedCentroid = gauss_centroid->Eval(Energy);
+    CorrectedCentroid = GaussCentroid->Eval(Energy);
   } else {
     if (g_Verbosity >= c_Error)
       cout << "ERROR: Centroid correction not found for shield " << DetectorID << ", " << CrystalID << " and voxel (" << VoxelXID << "," << VoxelYID << "," << VoxelZID << ")" << endl;
@@ -236,12 +236,12 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double Energy, MS
   auto it_fwhm = m_FWHM.find(hit_V);
 
   if (it_fwhm != m_FWHM.end()) {
-    TF1* gauss_fwhm = it_fwhm->second;
-    if (gauss_fwhm == nullptr) {
+    TF1* GaussFWHM = it_fwhm->second;
+    if (GaussFWHM == nullptr) {
       if (g_Verbosity >= c_Error)
         cout << "ERROR: Null TF1 pointer for fwhm map entry" << endl;
     }
-    FWHM_value = gauss_fwhm->Eval(Energy); // E_true in keV
+    FWHM_value = GaussFWHM->Eval(Energy); // E_true in keV
   } else {
     if (g_Verbosity >= c_Error)
       cout << "ERROR: FWHM correction not found for shield " << DetectorID << ", " << CrystalID << " and voxel (" << VoxelXID << "," << VoxelYID << "," << VoxelZID << ")" << endl;
@@ -290,41 +290,41 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
     // For each voxel of the shield crystal, the deposited energy is corrected generating a random energy correction following a gaussian distribution. The energy centroid and the fwhm can be computed from the parameters below (Ciabattoni et al. 2025)
 
     // Detector ID
-    MString det_id = Parser.GetTokenizerAt(i)->GetTokenAtAsString(0);
+    MString DetectorID = Parser.GetTokenizerAt(i)->GetTokenAtAsString(0);
     // Crystal ID
-    int crystal_id = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
+    int CrystalID = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
     // MEGAlib voxel X, Y, Z ID
-    int voxel_X = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2);
-    int voxel_Y = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(3);
-    int voxel_Z = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(4);
+    int VoxelXID = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2);
+    int VoxelYID = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(3);
+    int VoxelZID = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(4);
     // model parameters
     // centroid: E_measured = m*E_true + q
-    double m_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(7);
-    double q_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(8);
+    double Par_m = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(7);
+    double Par_q = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(8);
     // FWHM = sqrt(a^2 + b^2*E_true + c^2*E_true^2)
-    double a_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(9);
-    double b_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(10);
-    double c_par = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(11);
+    double Par_a = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(9);
+    double Par_b = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(10);
+    double Par_c = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(11);
 
     MReadOutElementVoxel3D V;
 
-    V.SetDetectorID(det_id);
-    V.SetCrystalID(crystal_id);
-    V.SetVoxelXID(voxel_X);
-    V.SetVoxelYID(voxel_Y);
-    V.SetVoxelZID(voxel_Z);
+    V.SetDetectorID(DetectorID);
+    V.SetCrystalID(CrystalID);
+    V.SetVoxelXID(VoxelXID);
+    V.SetVoxelYID(VoxelYID);
+    V.SetVoxelZID(VoxelZID);
 
-    TF1* gauss_centroid = new TF1("centroid_" + det_id + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "[0]*x + [1]");
-    gauss_centroid->SetParameter(0, m_par);
-    gauss_centroid->SetParameter(1, q_par);
+    TF1* GaussCentroid = new TF1("centroid_" + DetectorID + "_" + MString(CrystalID) + "_" + MString(VoxelXID) + MString(VoxelYID) + MString(VoxelZID), "[0]*x + [1]");
+    GaussCentroid->SetParameter(0, Par_m);
+    GaussCentroid->SetParameter(1, Par_q);
 
-    TF1* gauss_fwhm = new TF1("fwhm_" + det_id + "_" + MString(crystal_id) + "_" + MString(voxel_X) + MString(voxel_Y) + MString(voxel_Z), "sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
-    gauss_fwhm->SetParameter(0, a_par);
-    gauss_fwhm->SetParameter(1, b_par);
-    gauss_fwhm->SetParameter(2, c_par);
+    TF1* GaussFWHM = new TF1("fwhm_" + DetectorID + "_" + MString(CrystalID) + "_" + MString(VoxelXID) + MString(VoxelYID) + MString(VoxelZID), "sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
+    GaussFWHM->SetParameter(0, Par_a);
+    GaussFWHM->SetParameter(1, Par_b);
+    GaussFWHM->SetParameter(2, Par_c);
 
-    m_Centroid[V] = gauss_centroid;
-    m_FWHM[V] = gauss_fwhm;
+    m_Centroid[V] = GaussCentroid;
+    m_FWHM[V] = GaussFWHM;
 
     ++Parsed;
   }
