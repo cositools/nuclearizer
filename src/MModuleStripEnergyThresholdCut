@@ -1,0 +1,156 @@
+#include <iostream>
+#include <signal.h>
+
+#include "MGlobal.h"
+#include "MSupervisor.h"
+#include "MReadOutAssembly.h"
+
+#include "MModuleLoaderMeasurementsHDF.h"
+#include "MModuleEnergyCalibrationUniversal.h"
+#include "MModuleTACcut.h"
+#include "MModuleEventFilter.h"
+
+#include "MModuleStripEnergyThresholdCut.h"
+
+using namespace std;
+
+class StripEnergyThresholdApp
+{
+public:
+  StripEnergyThresholdApp() : m_Interrupt(false) {}
+  ~StripEnergyThresholdApp() {}
+
+  bool ParseCommandLine(int argc, char** argv);
+  bool Analyze();
+  void Interrupt() { m_Interrupt = true; }
+
+private:
+  bool m_Interrupt;
+
+  MString m_InputFile;
+  MString m_EcalFile;
+  MString m_TACCalFile;
+  MString m_TACCutFile;
+  MString m_ThresholdFile;
+  MString m_StripMapFile;
+};
+
+
+bool StripEnergyThresholdApp::ParseCommandLine(int argc, char** argv)
+{
+  for (int i = 1; i < argc; ++i) {
+
+    string opt = argv[i];
+
+    if (opt == "-i") {
+      m_InputFile = argv[++i];
+    }
+    else if (opt == "-e") {
+      m_EcalFile = argv[++i];
+    }
+    else if (opt == "--tcal") {
+      m_TACCalFile = argv[++i];
+    }
+    else if (opt == "--tcut") {
+      m_TACCutFile = argv[++i];
+    }
+    else if (opt == "-t") {
+      m_ThresholdFile = argv[++i];
+    }
+    else if (opt == "-m") {
+      m_StripMapFile = argv[++i];
+    }
+    else if (opt == "-h") {
+      cout << "Usage:\n";
+      cout << "./StripEnergyThresholdApp "
+           << "-i input.hdf5 "
+           << "-e energy.ecal "
+           << "--tcal tac.cal "
+           << "--tcut tac.cut "
+           << "-m strip.map "
+           << "-t thresholds.txt\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+bool StripEnergyThresholdApp::Analyze()
+{
+  MSupervisor* S = MSupervisor::GetSupervisor();
+
+  unsigned int MNumber = 0;
+
+  auto Loader = new MModuleLoaderMeasurementsHDF();
+  Loader->SetFileName(m_InputFile);
+  Loader->SetFileNameStripMap(m_StripMapFile);
+  S->SetModule(Loader, MNumber++);
+
+  auto TAC = new MModuleTACcut();
+  TAC->SetTACCalFileName(m_TACCalFile);
+  TAC->SetTACCutFileName(m_TACCutFile);
+  S->SetModule(TAC, MNumber++);
+
+  auto EnergyCal = new MModuleEnergyCalibrationUniversal();
+  EnergyCal->SetFileName(m_EcalFile);
+  S->SetModule(EnergyCal, MNumber++);
+
+  auto ThresholdCut = new MModuleStripEnergyThresholdCut();
+  ThresholdCut->SetThresholdFileName(m_ThresholdFile);
+  S->SetModule(ThresholdCut, MNumber++);
+
+  if (!Loader->Initialize()) return false;
+  if (!TAC->Initialize()) return false;
+  if (!EnergyCal->Initialize()) return false;
+  if (!ThresholdCut->Initialize()) return false;
+
+  MReadOutAssembly* Event = new MReadOutAssembly();
+
+  bool Finished = false;
+
+  while (!Finished && !m_Interrupt) {
+
+    Event->Clear();
+
+    if (Loader->IsReady()) {
+
+      Loader->AnalyzeEvent(Event);
+      TAC->AnalyzeEvent(Event);
+      EnergyCal->AnalyzeEvent(Event);
+      ThresholdCut->AnalyzeEvent(Event);
+    }
+
+    Finished = Loader->IsFinished();
+  }
+
+  ThresholdCut->Finalize();
+
+  return true;
+}
+
+
+StripEnergyThresholdApp* g_Prg = nullptr;
+
+void CatchSignal(int)
+{
+  if (g_Prg) g_Prg->Interrupt();
+}
+
+
+int main(int argc, char** argv)
+{
+  signal(SIGINT, CatchSignal);
+
+  MGlobal::Initialize("Standalone", "Strip threshold analysis");
+
+  g_Prg = new StripEnergyThresholdApp();
+
+  if (!g_Prg->ParseCommandLine(argc, argv)) return -1;
+  if (!g_Prg->Analyze()) return -2;
+
+  cout << "Program exited normally\n";
+
+  return 0;
+}
