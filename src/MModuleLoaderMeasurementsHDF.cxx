@@ -206,7 +206,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 
         // Create compound type for reading the JSON config string
         CompType ConfigType(sizeof(MHDFJSONConfigString));
-        ConfigType.insertMember("string_col", HOFFSET(MHDFJSONConfigString, string_col), StringType);
+        ConfigType.insertMember("string_col", HOFFSET(MHDFJSONConfigString, string_col), ConfigStringType);
 
         MHDFJSONConfigString CS;
         ConfigDataset.read(&CS, ConfigType);
