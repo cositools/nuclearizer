@@ -123,6 +123,12 @@ class MModuleDEESMEX : public MModule
   {
     return m_StripTrigger.GetDeadtimeFileName();
   }
+  
+  //! Button to add noise
+  bool GetAddNoise() const { return m_AddNoise; }
+  void SetAddNoise(bool AddNoise) {
+    m_AddNoise = AddNoise;
+  }
 
   // protected methods:
  protected:
@@ -167,6 +173,9 @@ class MModuleDEESMEX : public MModule
 
   //! The sub module handling the output of the DEE in to the standard nuclearizer classes
   MSubModuleDEEOutput m_Output;
+  
+  //! Option to add noise
+  bool m_AddNoise;
 
 
 #ifdef ___CLING___

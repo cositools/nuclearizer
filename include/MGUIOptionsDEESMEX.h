@@ -25,6 +25,7 @@
 #include <TGButton.h>
 #include <MString.h>
 #include <TGClient.h>
+#include <TGButton.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -97,6 +98,9 @@ class MGUIOptionsDEESMEX : public MGUIOptions
   MGUIEFileSelector* m_ShieldEnergyCorrectionFileSelector;
   //! Select deadtime constants file
   MGUIEFileSelector* m_DeadtimeFileSelector;
+  
+  //! Button to toggle noise addition
+  TGCheckButton* m_AddNoiseButton;
 
 
 #ifdef ___CLING___
