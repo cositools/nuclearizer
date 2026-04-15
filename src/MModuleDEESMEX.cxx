@@ -105,6 +105,7 @@ bool MModuleDEESMEX::Initialize()
   if (m_ShieldReadout.Initialize() == false) return false;
   if (m_ShieldTrigger.Initialize() == false) return false;
   if (m_ChargeTransport.Initialize() == false) return false;
+  if (m_StripReadoutNoise.Initialize() == false) return false;
   if (m_StripReadout.Initialize() == false) return false;
   if (m_StripTrigger.Initialize() == false) return false;
   if (m_DepthReadout.Initialize() == false) return false;
@@ -240,6 +241,7 @@ void MModuleDEESMEX::Finalize()
   m_ShieldReadout.Finalize();
   m_ShieldTrigger.Finalize();
   m_ChargeTransport.Finalize();
+  m_StripReadoutNoise.Finalize();
   m_StripReadout.Finalize();
   m_StripTrigger.Finalize();
   m_DepthReadout.Finalize();
