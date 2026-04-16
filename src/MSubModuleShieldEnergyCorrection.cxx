@@ -74,8 +74,9 @@ bool MSubModuleShieldEnergyCorrection::Initialize()
 
   //! load shield energy correction file
   if (!ParseShieldEnergyCorrectionFile()) {
-    if (g_Verbosity >= c_Error)
+    if (g_Verbosity >= c_Error) {
       cout << "ERROR: Failed to parse shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
+    }
     return false;
   }
 
@@ -102,8 +103,9 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   //! Main data analysis routine, which updates the event to a new level
 
   if (Event == nullptr) {
-    if (g_Verbosity >= c_Error)
+    if (g_Verbosity >= c_Error) {
       cout << "ERROR: AnalyzeEvent() received nullptr event" << endl;
+    }    
     return false;
   }
 
@@ -116,9 +118,7 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     const double SimulatedEnergy = CH.m_SimulatedEnergy;
 
     if (SimulatedEnergy < 0) {
-      if (g_Verbosity >= c_Error)
-        cout << "<ERROR>: Negative simulated energy (" << SimulatedEnergy
-             << ")" << endl;
+      if (g_Verbosity >= c_Error) cout << "<ERROR>: Negative simulated energy (" << SimulatedEnergy << ")" << endl;
       return false;
     }
 
@@ -135,22 +135,21 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     const double SigmaNoiseDefault = 10;
     double CorrectedEnergyDefault = 0;
     if (ShieldFWHMValue <= 0) {
-      if (g_Verbosity >= c_Warning)
-        cout << "WARNING: Non-positive FWHM (" << ShieldFWHMValue << ") for DetectorID = " << DetectorID
-             << " CrystalID = " << CrystalID << " Voxel_ID = " << VoxelInDetector[0] << "," << VoxelInDetector[1] << "," << VoxelInDetector[2] << " -> applying default" << endl;
+      if (g_Verbosity >= c_Warning) {
+        cout << "WARNING: Non-positive FWHM (" << ShieldFWHMValue << ") for DetectorID = " << DetectorID << " CrystalID = " << CrystalID << " Voxel_ID = " << VoxelInDetector[0] << "," << VoxelInDetector[1] << "," << VoxelInDetector[2] << " -> applying default" << endl;
+      }
       CorrectedEnergyDefault = m_Random.Gaus(SimulatedEnergy, SigmaNoiseDefault);
       CH.m_Energy = CorrectedEnergyDefault;
       continue;
     }
 
-    double ShieldSigma = ShieldFWHMValue / 2.35;
+    double ShieldSigma = ShieldFWHMValue / FWHM_TO_SIGMA;
     double CorrectedEnergy = m_Random.Gaus(ShieldCorrectedCentroid, ShieldSigma);
 
     if (CorrectedEnergy < 0) {
-      if (g_Verbosity >= c_Warning)
-        cout << "WARNING: Corrected energy negative (" << CorrectedEnergy
-             << ") from centroid = " << ShieldCorrectedCentroid << " sigma=" << ShieldSigma
-             << " -> setting to 0 keV" << endl;
+      if (g_Verbosity >= c_Warning) {
+        cout << "WARNING: Corrected energy negative (" << CorrectedEnergy << ") from centroid = " << ShieldCorrectedCentroid << " sigma=" << ShieldSigma << " -> setting to 0 keV" << endl;
+      }
       CH.m_Energy = 0.0;
       continue;
     }
@@ -207,15 +206,20 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyCentroid(double Energy
 
   auto it = m_Centroid.find(hit_V);
   if (it != m_Centroid.end()) {
-    TF1* GaussCentroid = it->second;
+    TF1* GaussCentroid = it->second.get();
     if (GaussCentroid == nullptr) {
-      if (g_Verbosity >= c_Error)
-        cout << "ERROR: Null TF1 pointer for centroid map entry" << endl;
+        if (g_Verbosity >= c_Error) {
+            cout << "ERROR: Null TF1 pointer for centroid map entry" << endl;
+        }
+        return Energy;
+    } else {
+        CorrectedCentroid = GaussCentroid->Eval(Energy);
     }
-    CorrectedCentroid = GaussCentroid->Eval(Energy);
   } else {
-    if (g_Verbosity >= c_Error)
-      cout << "ERROR: Centroid correction not found for shield " << DetectorID << ", " << CrystalID << " and voxel (" << VoxelXID << "," << VoxelYID << "," << VoxelZID << ")" << endl;
+      if (g_Verbosity >= c_Error) {
+          cout << "ERROR: Centroid correction not found for shield " << DetectorID << ", " << CrystalID << " and voxel (" << VoxelXID << "," << VoxelYID << "," << VoxelZID << ")" << endl;
+      }
+      return Energy;
   }
 
   return CorrectedCentroid;
@@ -234,17 +238,25 @@ double MSubModuleShieldEnergyCorrection::NoiseShieldEnergyFWHM(double Energy, MS
   double FWHM_value = 0.0;
 
   auto it_fwhm = m_FWHM.find(hit_V);
-
+  // default value, in keV, for the sigma of the gaussian noise if FWHM is not available or invalid
+  const double SigmaNoiseDefault = 10;
+  // converting from Sigma to FWHM
+  const double FWHMNoiseDefault = SigmaNoiseDefault * FWHM_TO_SIGMA;
+    
   if (it_fwhm != m_FWHM.end()) {
-    TF1* GaussFWHM = it_fwhm->second;
+    TF1* GaussFWHM = it_fwhm->second.get();
     if (GaussFWHM == nullptr) {
-      if (g_Verbosity >= c_Error)
-        cout << "ERROR: Null TF1 pointer for fwhm map entry" << endl;
+        if (g_Verbosity >= c_Error) {
+            cout << "ERROR: Null TF1 pointer for fwhm map entry" << endl;
+        }
+        return FWHMNoiseDefault;
     }
-    FWHM_value = GaussFWHM->Eval(Energy); // E_true in keV
+    FWHM_value = GaussFWHM->Eval(Energy); 
   } else {
-    if (g_Verbosity >= c_Error)
-      cout << "ERROR: FWHM correction not found for shield " << DetectorID << ", " << CrystalID << " and voxel (" << VoxelXID << "," << VoxelYID << "," << VoxelZID << ")" << endl;
+      if (g_Verbosity >= c_Error) {
+          cout << "ERROR: FWHM correction not found for shield " << DetectorID << ", " << CrystalID << " and voxel (" << VoxelXID << "," << VoxelYID << "," << VoxelZID << ")" << endl;
+      }
+      return FWHMNoiseDefault;
   }
 
 
@@ -255,15 +267,13 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
 {
 
   if (m_ShieldEnergyCorrectionFileName == "") {
-    if (g_Verbosity >= c_Error)
-      cout << "ERROR: Shield energy correction filename is empty." << endl;
+    if (g_Verbosity >= c_Error) cout << "ERROR: Shield energy correction filename is empty." << endl;
     return false;
   }
 
   MParser Parser;
   if (Parser.Open(m_ShieldEnergyCorrectionFileName, MFile::c_Read) == false) {
-    if (g_Verbosity >= c_Error)
-      cout << "Unable to open shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
+    if (g_Verbosity >= c_Error) cout << "Unable to open shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
     return false;
   }
 
@@ -280,9 +290,9 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
       continue;
 
     if (NTokens != 12) {
-      if (g_Verbosity >= c_Warning)
-        cout << "WARNING: Line " << i << ": expected 12 tokens, got " << NTokens
-             << " (skipping)" << endl;
+      if (g_Verbosity >= c_Warning) {
+        cout << "WARNING: Line " << i << ": expected 12 tokens, got " << NTokens << " (skipping)" << endl;
+      }
       ++Skipped;
       continue;
     } // this shouldn't happen but just in case
@@ -314,32 +324,31 @@ bool MSubModuleShieldEnergyCorrection::ParseShieldEnergyCorrectionFile()
     V.SetVoxelYID(VoxelYID);
     V.SetVoxelZID(VoxelZID);
 
-    TF1* GaussCentroid = new TF1("centroid_" + DetectorID + "_" + MString(CrystalID) + "_" + MString(VoxelXID) + MString(VoxelYID) + MString(VoxelZID), "[0]*x + [1]");
+    //TF1* GaussCentroid = new TF1("centroid_" + DetectorID + "_" + MString(CrystalID) + "_" + MString(VoxelXID) + "_" +MString(VoxelYID)  + "_" + MString(VoxelZID), "[0]*x + [1]");
+      
+    auto GaussCentroid = make_unique<TF1>("centroid_" + DetectorID + "_" + MString(CrystalID) + "_" + MString(VoxelXID) + "_" + MString(VoxelYID) + "_" + MString(VoxelZID), "[0]*x + [1]");  
+    
     GaussCentroid->SetParameter(0, Par_m);
     GaussCentroid->SetParameter(1, Par_q);
 
-    TF1* GaussFWHM = new TF1("fwhm_" + DetectorID + "_" + MString(CrystalID) + "_" + MString(VoxelXID) + MString(VoxelYID) + MString(VoxelZID), "sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
+    auto GaussFWHM = make_unique<TF1>("fwhm_" + DetectorID + "_" + MString(CrystalID) + "_" + MString(VoxelXID)  + "_" + MString(VoxelYID)  + "_" + MString(VoxelZID), "sqrt([0]**2 + ([1]**2)*x + ([2]**2)*(x**2))");
     GaussFWHM->SetParameter(0, Par_a);
     GaussFWHM->SetParameter(1, Par_b);
     GaussFWHM->SetParameter(2, Par_c);
 
-    m_Centroid[V] = GaussCentroid;
-    m_FWHM[V] = GaussFWHM;
+    m_Centroid[V] = move(GaussCentroid);
+    m_FWHM[V] = move(GaussFWHM);
 
     ++Parsed;
   }
 
   if (Parsed == 0) {
-    if (g_Verbosity >= c_Error)
-      cout << "ERROR: Parsed 0 valid correction lines from "
-           << m_ShieldEnergyCorrectionFileName << endl;
+    if (g_Verbosity >= c_Error) cout << "ERROR: Parsed 0 valid correction lines from " << m_ShieldEnergyCorrectionFileName << endl;
     return false;
   }
 
   if (Skipped > 0) {
-    if (g_Verbosity >= c_Warning)
-      cout << "WARNING: Skipped " << Skipped << " line(s) while parsing "
-           << m_ShieldEnergyCorrectionFileName << endl;
+    if (g_Verbosity >= c_Warning) cout << "WARNING: Skipped " << Skipped << " line(s) while parsing " << m_ShieldEnergyCorrectionFileName << endl;
   }
 
   return true;

@@ -138,8 +138,9 @@ bool MReadOutElementVoxel3D::operator==(const MReadOutElement& R) const
 {
   const MReadOutElementVoxel3D* Other = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
   if (Other == nullptr) {
-    if (g_Verbosity >= c_Error)
-      cout << "ERROR: Comparison with different read-out element type" << endl;
+      if (g_Verbosity >= c_Error) {
+          cout << "ERROR: Comparison with different read-out element type" << endl;
+      }
     return false;
   }
 
@@ -176,8 +177,9 @@ unsigned int MReadOutElementVoxel3D::GetNumberOfParsableElements() const
 bool MReadOutElementVoxel3D::Parse(const MTokenizer& T, unsigned int StartElement)
 {
   if (T.GetNTokens() < StartElement + GetNumberOfParsableElements()) {
-    if (g_Verbosity >= c_Error)
-      cout << "ERROR: Not enough elements to parse. Number of tokens is " << T.GetNTokens() << " and less than 5" << endl;
+      if (g_Verbosity >= c_Error) {
+          cout << "ERROR: Not enough elements to parse. Number of tokens is " << T.GetNTokens() << " and less than 5" << endl;
+      }
     return false;
   }
 
@@ -240,8 +242,9 @@ MString MReadOutElementVoxel3D::ToString() const
 {
 
   if (m_DetectorID == "") {
-    if (g_Verbosity >= c_Warning)
-      cout << "WARNING: called an element with empty DetectorID" << endl;
+      if (g_Verbosity >= c_Warning) {
+          cout << "WARNING: called an element with empty DetectorID" << endl;
+      }
   }
 
   if (m_CrystalID == g_UnsignedIntNotDefined ||
@@ -249,12 +252,13 @@ MString MReadOutElementVoxel3D::ToString() const
       m_VoxelYID == g_UnsignedIntNotDefined ||
       m_VoxelZID == g_UnsignedIntNotDefined) {
 
-    if (g_Verbosity >= c_Warning)
-      cout << "WARNING: called undefined ID(s): "
-           << "Crystal = " << m_CrystalID
-           << " Vx = " << m_VoxelXID
-           << " Vy = " << m_VoxelYID
-           << " Vz = " << m_VoxelZID << endl;
+      if (g_Verbosity >= c_Warning) {
+          cout << "WARNING: called undefined ID(s): "
+          << "Crystal = " << m_CrystalID
+          << " Vx = " << m_VoxelXID
+          << " Vy = " << m_VoxelYID
+          << " Vz = " << m_VoxelZID << endl;
+      }
   }
 
   ostringstream OS;

@@ -38,6 +38,10 @@ class MSubModuleShieldEnergyCorrection : public MSubModule
 {
   // public interface:
  public:
+    
+  //! Constant definition
+  static inline constexpr double FWHM_TO_SIGMA = 2.354820045;
+  
   //! Default constructor
   MSubModuleShieldEnergyCorrection();
 
@@ -100,8 +104,8 @@ class MSubModuleShieldEnergyCorrection : public MSubModule
   // private members:
  private:
   //! Calibration map between Voxel3D read-out element and the energy resolution parameters
-  map<MReadOutElementVoxel3D, TF1*> m_Centroid;
-  map<MReadOutElementVoxel3D, TF1*> m_FWHM;
+  map<MReadOutElementVoxel3D, unique_ptr<TF1>> m_Centroid;
+  map<MReadOutElementVoxel3D, unique_ptr<TF1>> m_FWHM;
 
   //! The DEE internal random number generator
   TRandom3 m_Random;
