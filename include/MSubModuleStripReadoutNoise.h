@@ -52,6 +52,11 @@ class MSubModuleStripReadoutNoise : public MSubModule
   //! Default destructor
   virtual ~MSubModuleStripReadoutNoise();
 
+  //! Set energy calibration file name
+  void SetEnergyCalibrationFileName(const MString& FileName) { m_EnergyCalibrationFileName = FileName; }
+  //! Set energy calibration file name
+  MString GetEnergyCalibrationFileName() const { return m_EnergyCalibrationFileName; }
+
   //! Initialize the module
   virtual bool Initialize();
 

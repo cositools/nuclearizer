@@ -48,10 +48,6 @@ ClassImp(MSubModuleStripReadout)
 MSubModuleStripReadout::MSubModuleStripReadout() : MSubModule()
 {
   // Construct an instance of MSubModuleStripReadout
-  
-  // Set all modules, which have to be done before this module
-  //TODO: @RobinAnthonyPetersen, need to make sure the strip noise gets added first! 
-  //AddPreceedingModuleType(MAssembly::c_StripReadoutNoise, true);
 
   m_Name = "DEE strip readout module";
 

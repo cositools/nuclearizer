@@ -25,7 +25,6 @@
 #include <TGButton.h>
 #include <MString.h>
 #include <TGClient.h>
-#include <TGButton.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"

@@ -95,6 +95,7 @@ class MModuleDEESMEX : public MModule
   void SetEnergyCalibrationFileName(const MString& FileName)
   {
     m_StripReadout.SetEnergyCalibrationFileName(FileName);
+    m_StripReadoutNoise.SetEnergyCalibrationFileName(FileName);
   }
   //! Set energy calibration file name
   MString GetEnergyCalibrationFileName() const

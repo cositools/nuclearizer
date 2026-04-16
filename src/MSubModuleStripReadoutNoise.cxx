@@ -52,7 +52,7 @@ MSubModuleStripReadoutNoise::MSubModuleStripReadoutNoise() : MSubModule()
 {
   // Construct an instance of MSubModuleStripReadoutNoise
 
-  m_Name = "DEE strip readout module";
+  m_Name = "DEE strip readout noise module";
   m_EnergyCalibrationFileName = "";
 }
 
@@ -91,9 +91,10 @@ bool MSubModuleStripReadoutNoise::Initialize()
   }
 
   // Look for the CR lines
+  m_ResolutionCalibration.clear();
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     MTokenizer* T = Parser.GetTokenizerAt(i);
-    if (T->GetNTokens() < 5) continue;
+    if (T->GetNTokens() < 6) continue;
 
     if (T->IsTokenAt(0, "CR") == true && T->IsTokenAt(1, "dss") == true) {
       
@@ -185,7 +186,7 @@ bool MSubModuleStripReadoutNoise::AnalyzeEvent(MReadOutAssembly* Event)
         // Smear the hit energy using a Gaussian distribution
         SH.m_Energy = gRandom->Gaus(SH.m_Energy, sigma);
         
-        // If enegry is lower than zero now, floor it to zero
+        // If energy is lower than zero now, floor it to zero
         if (SH.m_Energy < 0) SH.m_Energy = 0;
       }
     }
@@ -215,6 +216,12 @@ bool MSubModuleStripReadoutNoise::AnalyzeEvent(MReadOutAssembly* Event)
 void MSubModuleStripReadoutNoise::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
+
+  // Clean up the memory 
+  for (auto& F : m_ResolutionCalibration) {
+    delete F.second;
+  }
+  m_ResolutionCalibration.clear();
 
   MSubModule::Finalize();
 }

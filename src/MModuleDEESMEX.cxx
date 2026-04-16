@@ -180,7 +180,7 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_ChargeTransport.Clear();
   m_ChargeTransport.AnalyzeEvent(Event);
   
-  // Step (8)): Simulate micro-phonics random noise for triggered strips & next neighbors
+  // Step (8): Simulate micro-phonics random noise
   // Do this before energy -> ADCs because the FWHMs from the ecal are in keV
   if (m_AddNoise == true) {
     m_StripReadoutNoise.Clear();
