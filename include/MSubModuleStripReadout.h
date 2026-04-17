@@ -94,7 +94,13 @@ class MSubModuleStripReadout : public MSubModule
   //! Name of the strip map
   std::map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
   
-  //! Make value of the ADC units
+  //! Flag to determine if resolution calibration should be applied
+  bool m_ApplyResolutionCalibration;
+  
+  //! Map storing the FWHM fits for each strip
+  std::map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
+  
+  //! Max value of the ADC units
   double m_MaxADCRange;
 
 

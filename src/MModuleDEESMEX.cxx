@@ -75,7 +75,7 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
   m_HasOptionsGUI = true;
   
   // Default to adding noise to the sim data
-  m_AddNoise = true;
+  m_ResolutionCalibration = true;
 }
 
 
@@ -180,16 +180,16 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_ChargeTransport.Clear();
   m_ChargeTransport.AnalyzeEvent(Event);
   
-  // Step (8): Simulate micro-phonics random noise
-  // Do this before energy -> ADCs because the FWHMs from the ecal are in keV
-  if (m_AddNoise == true) {
+  // Step (8): Handle the strip readout: energy -> ADCs
+  // Also includes user selected energy resolution with the FWHM values from the ecal 
+  m_StripReadout.Clear();
+  m_StripReadout.AnalyzeEvent(Event);
+  
+  // Step (9): Simulate micro-phonics random noise
+  if (m_ResolutionCalibration == true) {
     m_StripReadoutNoise.Clear();
     m_StripReadoutNoise.AnalyzeEvent(Event);
   }
-
-  // Step (9): Handle the strip readout: energy -> ADCs
-  m_StripReadout.Clear();
-  m_StripReadout.AnalyzeEvent(Event);
 
   // Step (10): Handles triggers and guard ring vetoes, pre-scalers, calculate dead-time, add nearest neighbor noise, calculate random coincidence time
   m_StripTrigger.Clear();
@@ -284,9 +284,9 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_Output.ReadXmlConfiguration(Node);
   
   // Add noise button
-  MXmlNode* AddNoiseNode = Node->GetNode("AddNoise");
-  if (AddNoiseNode != nullptr) {
-    m_AddNoise = AddNoiseNode->GetValueAsBoolean();
+  MXmlNode* ResolutionCalibrationNode = Node->GetNode("ResolutionCalibration");
+  if (ResolutionCalibrationNode != nullptr) {
+    m_ResolutionCalibration  = ResolutionCalibrationNode->GetValueAsBoolean();
   }
 
   return true;
@@ -314,7 +314,7 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
   m_Output.CreateXmlConfiguration(Node);
   
   // Add noise button
-  new MXmlNode(Node, "AddNoise", m_AddNoise);
+  new MXmlNode(Node, "ResolutionCalibration", m_ResolutionCalibration);
 
   return Node;
 }

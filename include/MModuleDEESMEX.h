@@ -95,7 +95,6 @@ class MModuleDEESMEX : public MModule
   void SetEnergyCalibrationFileName(const MString& FileName)
   {
     m_StripReadout.SetEnergyCalibrationFileName(FileName);
-    m_StripReadoutNoise.SetEnergyCalibrationFileName(FileName);
   }
   //! Set energy calibration file name
   MString GetEnergyCalibrationFileName() const
@@ -125,10 +124,10 @@ class MModuleDEESMEX : public MModule
     return m_StripTrigger.GetDeadtimeFileName();
   }
   
-  //! Button to add noise
-  bool GetAddNoise() const { return m_AddNoise; }
-  void SetAddNoise(bool AddNoise) {
-    m_AddNoise = AddNoise;
+  //! Button to apply  the FWHM energy resolution to the enegries 
+  bool GetResolutionCalibration() const { return m_ResolutionCalibration; }
+  void SetResolutionCalibration(bool ResolutionCalibration) {
+    m_ResolutionCalibration = ResolutionCalibration;
   }
 
   // protected methods:
@@ -176,7 +175,7 @@ class MModuleDEESMEX : public MModule
   MSubModuleDEEOutput m_Output;
   
   //! Option to add noise
-  bool m_AddNoise;
+  bool m_ResolutionCalibration; 
 
 
 #ifdef ___CLING___
