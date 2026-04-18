@@ -1,0 +1,132 @@
+name: Nuclearizer Tests for develop/em
+on:
+  push:
+    branches:
+      - develop/em
+    tags: '*'
+  pull_request:
+    branches:
+      - develop/em
+  release:
+
+jobs:
+  build:
+    name: Ubuntu
+    runs-on: ubuntu-latest
+    env:
+      MEGALIB: ${{ github.workspace }}/megalib
+      NUCLEARIZER: ${{ github.workspace }}
+
+      # ccache settings (cache directory is in the workspace so actions/cache can persist it)
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPRESS: true
+      CCACHE_COMPILERCHECK: content
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_MAXSIZE: 2G
+
+    steps:
+      - name: Setup Conda Environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-name: cosi-env
+          channels: conda-forge
+          create-args: >-
+            root=6.32 geant4=11.2 healpix_cxx
+            pkg-config make cmake cxx-compiler ccache
+            ccfits=2.6 cfitsio=4.3 hdf5=1.14
+          cache-environment: true
+
+      - name: Fail fast -- pkg-config sanity (before MEGAlib build)
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+
+          echo -e "prefix=$CONDA_PREFIX\nexec_prefix=\${prefix}\nlibdir=\${exec_prefix}/lib\nincludedir=\${prefix}/include\n\nName: hdf5\nDescription: HDF5\nVersion: 1.14\nLibs: -L\${libdir} -lhdf5 -lhdf5_cpp\nCflags: -I\${includedir}" > "$CONDA_PREFIX/lib/pkgconfig/hdf5.pc"
+          echo -e "prefix=$CONDA_PREFIX\nexec_prefix=\${prefix}\nlibdir=\${exec_prefix}/lib\nincludedir=\${prefix}/include\n\nName: CCfits\nDescription: CCfits\nVersion: 2.6\nLibs: -L\${libdir} -lCCfits\nCflags: -I\${includedir}" > "$CONDA_PREFIX/lib/pkgconfig/CCfits.pc"
+
+          export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+
+          echo
+          echo "== pkg-config exists? =="
+          pkg-config --print-errors --exists hdf5
+          pkg-config --print-errors --exists CCfits
+
+          echo
+          echo "== pkg-config libs (should include -L$CONDA_PREFIX/lib at least) =="
+          echo "--libs hdf5:"; pkg-config --libs hdf5
+          echo "--libs CCfits:"; pkg-config --libs CCfits
+
+      - name: Checkout Nuclearizer
+        uses: actions/checkout@v6
+
+      - name: Checkout MEGAlib
+        uses: actions/checkout@v6
+        with:
+          repository: zoglauer/megalib
+          ref: develop-cosi
+          path: megalib
+
+      - name: Cache MEGAlib build outputs
+        id: cache-megalib
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/megalib/lib
+            ${{ github.workspace }}/megalib/bin
+            ${{ github.workspace }}/megalib/include
+            ${{ github.workspace }}/megalib/config
+          key: ${{ runner.os }}-megalib-develop-cosi-${{ hashFiles('megalib/src/**', 'megalib/configure') }}
+
+      - name: Build MEGAlib
+        if: steps.cache-megalib.outputs.cache-hit != 'true'
+        shell: micromamba-shell {0}
+        run: |
+          cd "$MEGALIB"
+          ./configure
+          make -j"$(nproc)"
+
+      - name: Cache Nuclearizer
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ${{ runner.os }}-ccache-nuclearizer-v1-${{ hashFiles('src/**', 'include/**', 'Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-nuclearizer-v1-
+
+      - name: Configure build environment
+        shell: micromamba-shell {0}
+        run: |
+          mkdir -p "$CONDA_PREFIX/lib/pkgconfig"
+
+          export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+          export LD_LIBRARY_PATH="$MEGALIB/lib:$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
+          export CXX="ccache g++"
+          export CC="ccache gcc"
+
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "LDFLAGS=-L$CONDA_PREFIX/lib -Wl,-rpath,$CONDA_PREFIX/lib ${LDFLAGS:-}" >> "$GITHUB_ENV"
+          echo "CXX=$CXX" >> "$GITHUB_ENV"
+          echo "CC=$CC" >> "$GITHUB_ENV"
+
+          ccache --zero-stats || true
+
+      - name: Build Nuclearizer
+        shell: micromamba-shell {0}
+        run: |
+          cd "$NUCLEARIZER"
+          make -j"$(nproc)"
+
+      - name: Test Nuclearizer
+        shell: micromamba-shell {0}
+        run: |
+          cd "$NUCLEARIZER"
+          make test -j"$(nproc)"
+
+      - name: Upload Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-logs
+          path: ${{ github.workspace }}/nuclearizer/*.log
