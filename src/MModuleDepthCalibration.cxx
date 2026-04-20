@@ -182,7 +182,7 @@ bool MModuleDepthCalibration::Initialize()
   if (m_MaskMetrologyEnabled == true) {
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
     m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFile);
-    if (m_MaskMetrologyFile == false) {
+    if (m_MaskMetrologyFileIsLoaded == false) {
       if (g_Verbosity >= c_Error) cout << m_XmlTag << "Unable to open Metrology file" << endl;
       return false;
     }
