@@ -150,6 +150,11 @@ struct MHDFStripHitVersionString {
   char string_col[256];
 };
 
+//! The JSON config string
+struct MHDFJSONConfigString {
+  char string_col[262144];
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
