@@ -2,7 +2,7 @@
  * MSubModuleDEEIntake.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer, Parshad Patel.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel, Valentina Fioretti.
  * All rights reserved.
  *
  *
@@ -193,34 +193,12 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       vector<MString> Tokens = DetectorName.Tokenize("_");
 
       if (Tokens.size() != 3) {
-        cerr << "ERROR: Unexpected detector name format for the Shield"
-             << DetectorName << endl;
+        if (g_Verbosity >= c_Error)
+          cout << "ERROR: Unexpected detector name format for the Shield"
+               << DetectorName << endl;
         return false;
       }
-      
-      // int DetectorID = -1;
-      // if (Tokens[1] == "X0") {
-      //   DetectorID = 0;
-      // }
-      // else if (Tokens[1] ==  "X1") {
-      //   DetectorID = 1;
-      // }
-      // else if (Tokens[1] ==  "Y0") {
-      //   DetectorID = 2;
-      // }
-      // else if (Tokens[1] == "Y1") {
-      //   DetectorID = 3;
-      // }
-      // else if (Tokens[1] == "Z0") {
-      //   DetectorID = 4;      
-      // }
-      // else if (Tokens[1] == "Z1") {
-      //   DetectorID = 5;
-      // }
-      // else {
-      //   cerr << "ERROR: Detector name does not correspond to any panel " << Tokens[1] << endl;
-      //   return false;
-      // }
+
       MString DetectorID = Tokens[1];
       int CrystalID = Tokens[2].ToInt();
 
@@ -258,7 +236,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
     } else {
       if (g_Verbosity >= c_Error)
-        cout << m_Name << ": No GeD_ volumes found" << endl;
+        cout << m_Name << ": No GeD_ and no ACS_ volumes found" << endl;
       continue;
     }
   }
