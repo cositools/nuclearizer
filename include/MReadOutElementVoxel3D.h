@@ -2,7 +2,7 @@
  * MReadOutElementVoxel3D.h
  *
  *
- * Copyright (C) by Andreas Zoglauer, Valentina Fioretti, Parshad Patel.
+ * Copyright (C) by Andreas Zoglauer, Valentina Fioretti.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -39,7 +39,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
   MReadOutElementVoxel3D();
 
   //! full constructor - Read out element of a voxel 3D
-  MReadOutElementVoxel3D(MString m_DetectorID, unsigned int m_CrystalID, unsigned int m_VoxelXID, unsigned int m_VoxelYID, unsigned int m_VoxelZID);
+  MReadOutElementVoxel3D(const MString& DetectorID, unsigned int CrystalID, unsigned int VoxelXID, unsigned int VoxelYID, unsigned int VoxelZID);
 
   //! Simple default destructor
   virtual ~MReadOutElementVoxel3D();
@@ -52,8 +52,6 @@ class MReadOutElementVoxel3D : public MReadOutElement
 
   //! Compare two read-out elements
   virtual bool operator==(const MReadOutElement& R) const;
-  //! Smaller than operator
-  virtual bool operator<(const MReadOutElement& R) const;
 
   //! Return true if this read-out element is of the given type
   virtual bool IsOfType(const MString& String) const;
@@ -61,7 +59,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
   virtual MString GetType() const;
 
   //! Set detector ID as string
-  void SetDetectorID(MString DetectorID)
+  void SetDetectorID(const MString& DetectorID)
   {
     m_DetectorID = DetectorID;
   }

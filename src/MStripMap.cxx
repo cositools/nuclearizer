@@ -2,7 +2,7 @@
  * MStripMap.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, Felix Hagemann.
  * All rights reserved.
  *
  *
@@ -115,6 +115,18 @@ bool MStripMap::Open(MString FileName)
   // Sort by m_ReadOutID:
   sort(m_StripMappings.begin(), m_StripMappings.end(), [](const MSingleStripMapping& A, const MSingleStripMapping& B) { return A.m_ReadOutID < B.m_ReadOutID; });
 
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool MStripMap::UpdateASICPolarities(vector<map<bool, vector<bool>>> ASICPolarities) {
+  if (!m_StripMappings.empty()) {
+    for (MSingleStripMapping& S : m_StripMappings) {
+      S.m_IsLowVoltage = ASICPolarities[S.m_DetectorID][S.m_IsPrimary][S.m_ASICID];
+    }
+  }
   return true;
 }
 

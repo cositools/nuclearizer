@@ -52,15 +52,11 @@ MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_EventTimeUTC(0)
 
   m_PhysicalEvent = nullptr;
   m_SimEvent = nullptr;
-  m_Aspect = nullptr;
   m_HasSimAspectInfo = false;
  
   Clear();
 }
 
-
-// MReadOutAssembly.cxx: the end...
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -111,7 +107,6 @@ MReadOutAssembly::~MReadOutAssembly()
   // Delete all Events
   delete m_SimEvent;
   delete m_PhysicalEvent;
-  delete m_Aspect;
 }
 
 
@@ -127,7 +122,6 @@ void MReadOutAssembly::Clear()
   m_ID = g_UnsignedIntNotDefined;
   m_TI = 0;
   m_CL = 0;
-  m_FC = 0;
   m_Time = 0;
   m_EventTimeUTC = 0;
   m_MJD = 0.0;
@@ -189,6 +183,9 @@ void MReadOutAssembly::Clear()
  
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
+    
+  m_StripPairing_QualityFlag = false;
+  m_StripPairingString_QualityFlag.clear();
 
   m_FilteredOut = false;
 
@@ -202,8 +199,6 @@ void MReadOutAssembly::Clear()
   delete m_SimEvent;
   m_SimEvent = nullptr;
 
-  delete m_Aspect;
-  m_Aspect = nullptr;
 }
 
 
@@ -431,7 +426,6 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
     return true;
   }
   */
-  // skipping aspect for now
   if (Line.BeginsWith("HT")) {
     MHit* h = new MHit();
     if( h->Parse(Line,1) ){
@@ -513,7 +507,6 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 		} else if( Line.BeginsWith("BD") ){
 			SetFilteredOut(true);
 		}
-		//ignoring ASPECT info for right now
 
   }
 
@@ -542,10 +535,6 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
-  }
-  
-  if (m_Aspect != 0) {
-    m_Aspect->StreamDat(S, Version);
   }
   
   if (Version == 1) {
@@ -584,14 +573,10 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
 
-  if (m_Aspect != 0) {
-    m_Aspect->StreamEvta(S);
+  if (m_HasSimAspectInfo){
+    S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
+    S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
   }
-
-	if (m_HasSimAspectInfo){
-		S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
-		S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
-	}
 
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
@@ -618,10 +603,6 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
   S<<"ID "<<m_ID<<endl;
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
-
-  if (m_Aspect != nullptr) {
-    m_Aspect->StreamEvta(S);
-  }
 
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
@@ -722,24 +703,23 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     }
     S<<endl;
   }
-
+    
+  if (m_StripPairing_QualityFlag == true) {
+    S<<"QA StripPairing";
+    if (m_StripPairingString_QualityFlag.empty() == false) {
+      // iterate through the vectorized error message
+      for (auto i : m_StripPairingString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+    
   if (m_GuardRingVeto == true) {
     S<<"BD GR Veto"<<endl;
   }
   if (m_ShieldVeto == true) {
     S<<"BD Shield Veto"<<endl;
-  }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesX()) {
-      S<<"BD Multiple Hits on LV Strip"<<endl;
-      break;
-    }
-  }
-  for (auto H : m_Hits) {
-    if (H->GetStripHitMultipleTimesY()) {
-      S<<"BD Multiple Hits on HV Strip"<<endl;
-      break;
-    }
   }
 }
 
@@ -792,46 +772,6 @@ bool MReadOutAssembly::IsVeto() const
   return false;
 }
 
-
-//////////////////////////////////////////////////////////////////////////////
-
-
-bool MReadOutAssembly::ComputeAbsoluteTime()
-{
-
-	//the following code assumes that the clock board oscillator is exactly 10 MHz.
-	//in reality there is a +/- 25 ppm tolerance on the frequency, so worst case this
-	//would give an absolute timing error of 25 us.  This can be corrected for by 
-	//comparing the difference between PPS values from sample to sample. The GPS
-	//PPS timing error is much smaller (it is specd at 200 ns )
-
-	/*
-
-	int64_t dt = m_CL - PPS;
-	MTime dT;
-	dT.Set((int)(dt/10000000),(int)((dt % 10000000)*100));
-	MTime UTC(UTCSecond,(long int)0);
-	UTC += dT; //dT can be positive or negative, += operator calls Normalize()
-	m_EventTimeUTC.Set(UTC);
-	return true;
-
-	*/
-
-	if(m_Aspect != 0){
-		int64_t dt = m_CL - m_Aspect->GetPPS();
-		MTime dT;
-		dT.Set((int)(dt/10000000),(int)((dt % 10000000)*100));
-		MTime UTCTimeTrunc = m_Aspect->GetUTCTime();
-		UTCTimeTrunc.Set(UTCTimeTrunc.GetAsSystemSeconds(), (long int)0);
-		UTCTimeTrunc += dT; //dT can be positive or negative, += operator calls Normalize()
-		m_EventTimeUTC.Set(UTCTimeTrunc);
-		//cout << "m_Time = " << m_Time << ", m_EventTimeUTC = " << m_EventTimeUTC << ", dT = " << dT << endl;
-		return true;
-	} else {
-		return false;
-	}
-
-}
 
 
 // MReadOutAssembly.cxx: the end...

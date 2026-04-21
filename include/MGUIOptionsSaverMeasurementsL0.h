@@ -1,7 +1,7 @@
 /*
- * MGUIOptionsDepthCalibrationB.h
+ * MGUIOptionsSaverMeasurementsL0.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsDepthCalibrationB__
-#define __MGUIOptionsDepthCalibrationB__
+#ifndef __MGUIOptionsSaverMeasurementsL0__
+#define __MGUIOptionsSaverMeasurementsL0__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,14 +41,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsDepthCalibrationB : public MGUIOptions
+//! UI settings for the L0 measurements saver
+class MGUIOptionsSaverMeasurementsL0 : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsDepthCalibrationB(MModule* Module);
+  MGUIOptionsSaverMeasurementsL0(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsDepthCalibrationB();
+  virtual ~MGUIOptionsSaverMeasurementsL0();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -60,7 +61,7 @@ class MGUIOptionsDepthCalibrationB : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -68,14 +69,14 @@ class MGUIOptionsDepthCalibrationB : public MGUIOptions
 
   // private members:
  private:
-  //! Select which file to load the lookup tables from
-  MGUIEFileSelector* m_FileSelector;
+  //! Select which output file to save to
+  MGUIEFileSelector* m_FileSelectorOutput;
 
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsDepthCalibrationB, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsSaverMeasurementsL0, 1) // basic class for dialog windows
 #endif
 
 };

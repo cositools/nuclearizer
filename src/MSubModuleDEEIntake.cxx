@@ -2,7 +2,7 @@
  * MSubModuleDEEIntake.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer, Parshad Patel.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel, Valentina Fioretti.
  * All rights reserved.
  *
  *
@@ -194,11 +194,12 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       vector<MString> Tokens = DetectorName.Tokenize("_");
 
       if (Tokens.size() != 3) {
-        cerr << "ERROR: Unexpected detector name format for the Shield"
-             << DetectorName << endl;
+        if (g_Verbosity >= c_Error)
+          cout << "ERROR: Unexpected detector name format for the Shield"
+               << DetectorName << endl;
         return false;
       }
-      
+
       MString DetectorID = Tokens[1];
       int CrystalID = Tokens[2].ToInt();
 
@@ -236,7 +237,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
     } else {
       if (g_Verbosity >= c_Error)
-        cout << m_Name << ": No GeD_ volumes found" << endl;
+        cout << m_Name << ": No GeD_ and no ACS_ volumes found" << endl;
       continue;
     }
   }

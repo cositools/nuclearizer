@@ -55,8 +55,8 @@ using namespace std;
 //#include "MReadOutDataADCValueWithTiming.h"
 #include "MSupervisor.h"
 #include "MModuleLoaderMeasurementsROA.h"
-#include "MModuleEnergyCalibrationUniversal.h"
-#include "MModuleStripPairingGreedy.h"
+#include "MModuleEnergyCalibration.h"
+#include "MModuleStripPairingChiSquare.h"
 #include "MAssembly.h"
 
 
@@ -231,11 +231,11 @@ bool CrossTalkOffsets::Analyze()
   Loader->SetFileName(m_FileName);
   S->SetModule(Loader, 0);
    
-  MModuleEnergyCalibrationUniversal* EnergyCalibrator = new MModuleEnergyCalibrationUniversal();
+  MModuleEnergyCalibration* EnergyCalibrator = new MModuleEnergyCalibration();
   EnergyCalibrator->SetFileName("$(NUCLEARIZER)/resource/calibration/COSI16/Wanaka/EnergyCalibration_053018.ecal");
   S->SetModule(EnergyCalibrator, 1);
   
-  MModuleStripPairingGreedy* Pairing = new MModuleStripPairingGreedy();
+  MModuleStripPairingChiSquare* Pairing = new MModuleStripPairingChiSquare();
   //Pairing->SetMode(0);
   S->SetModule(Pairing, 2);
 
