@@ -541,12 +541,6 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
   S<<"ID "<<m_ID<<endl;
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
-  S<<"QP";
-  // iterate through the vectorized strip pairing reduced chi squares
-  for (auto i : m_StripPairingReducedChiSquare) {
-    S<<" "<<i;
-  }
-  S<<endl;
     
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
@@ -748,6 +742,13 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_ShieldVeto == true) {
     S<<"BD Shield Veto"<<endl;
   }
+  
+  S<<"PQ";
+  // iterate through the vectorized strip pairing reduced chi squares
+  for (auto i : m_StripPairingReducedChiSquare) {
+    S<<" "<<i;
+  }
+  S<<endl;
 }
 
 
