@@ -104,7 +104,7 @@ bool MSubModuleStripReadout::Initialize()
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     MTokenizer* T = Parser.GetTokenizerAt(i);
     
-    // IFF user wants it, get the fits to smear the energies based on the FWHM from the ecal
+    // If user wants it, get the fits to smear the energies based on the FWHM from the ecal
     if (m_ApplyResolutionCalibration == true) {
       
       if (T->GetNTokens() >= 6 && T->IsTokenAt(0, "CR") == true && T->IsTokenAt(1, "dss") == true) {
@@ -241,7 +241,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
   
-  static const double FWHMtoSigma = 2.0 * TMath::Sqrt(2.0 * TMath::Log(2.0));
+  constexpr double FWHMtoSigma = 2.0 * TMath::Sqrt(2.0 * TMath::Log(2.0));
 
   // Get low-voltage and high-voltage hits
   for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
