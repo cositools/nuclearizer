@@ -33,7 +33,6 @@
 #include "TMath.h"
 
 // MEGAlib libs:
-#include "MSubModule.h"
 #include "MParser.h"
 
 
@@ -106,7 +105,7 @@ bool MSubModuleStripReadout::Initialize()
     MTokenizer* T = Parser.GetTokenizerAt(i);
     
     // IFF user wants it, get the fits to smear the energies based on the FWHM from the ecal
-    if (m_ApplyResolutionCalibration) {
+    if (m_ApplyResolutionCalibration == true) {
       
       if (T->GetNTokens() >= 6 && T->IsTokenAt(0, "CR") == true && T->IsTokenAt(1, "dss") == true) {
         MReadOutElementDoubleStrip R;
@@ -160,7 +159,7 @@ bool MSubModuleStripReadout::Initialize()
     }
     
     
-    // Get enegry calirbation fits second
+    // Get enegry calibration fits second
     if (T->GetNTokens() >= 2 && T->IsTokenAt(0, "CM") == true && T->IsTokenAt(1, "dss") == true) {
       
       MReadOutElementDoubleStrip R;
@@ -242,16 +241,16 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
   
-  double FWHMtoSigma = 2.0 * TMath::Sqrt(2.0 * TMath::Log(2.0));
+  static const double FWHMtoSigma = 2.0 * TMath::Sqrt(2.0 * TMath::Log(2.0));
 
   // Get low-voltage and high-voltage hits
   for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
     
     for (MDEEStripHit& SH : *Hits) {
       
-      // IFF the user wants it applied, apply the FWHM Guassian energy resolution
+      // If the user wants it applied, apply the FWHM Guassian energy resolution
       
-      if (m_ApplyResolutionCalibration) {
+      if (m_ApplyResolutionCalibration == true) {
         // Look up the FWHM fit for this strip
         if (m_ResolutionCalibration.count(SH.m_ROE) > 0) {
           
@@ -265,7 +264,16 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
           SH.m_Energy = gRandom->Gaus(SH.m_Energy, sigma);
           
           // If energy is lower than zero now, floor it to zero
-          if (SH.m_Energy < 0) SH.m_Energy = 0;
+          if (SH.m_Energy < 0) {
+            SH.m_Energy = 0;
+          }
+          
+        } else {
+          // The fit wasn't found! Handle the error
+          if (g_Verbosity >= c_Warning) {
+          cout << m_Name << ": Warning - No resolution calibration fit found for strip ID " << SH.m_ROE.GetStripID() << endl;
+          }
+          // Note, if there is not calibration found then the energy remains unsmeared
         }
       }
       

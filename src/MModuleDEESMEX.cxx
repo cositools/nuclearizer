@@ -186,10 +186,8 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_StripReadout.AnalyzeEvent(Event);
   
   // Step (9): Simulate micro-phonics random noise
-  if (m_ResolutionCalibration == true) {
-    m_StripReadoutNoise.Clear();
-    m_StripReadoutNoise.AnalyzeEvent(Event);
-  }
+  m_StripReadoutNoise.Clear();
+  m_StripReadoutNoise.AnalyzeEvent(Event);
 
   // Step (10): Handles triggers and guard ring vetoes, pre-scalers, calculate dead-time, add nearest neighbor noise, calculate random coincidence time
   m_StripTrigger.Clear();
