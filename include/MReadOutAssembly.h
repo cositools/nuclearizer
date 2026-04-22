@@ -233,10 +233,10 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the Strip Pairing quality flag
   bool HasStripPairing_QualityFlag() const { return m_StripPairing_QualityFlag; }
 
-  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
-  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
-  //! Return the Reduced Chi^2
-  double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
+  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module (one for each detector)
+  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare.push_back(StripPairingReducedChiSquare); }
+  //! Return all the Reduced Chi^2 (for each detector)
+  vector<double> GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
 
   // Track Vetos
@@ -401,7 +401,7 @@ class MReadOutAssembly : public MReadOutSequence
   vector<MString> m_StripPairingString_QualityFlag;
 
   //! Reduced Chi^2 of the Strip Paired Event
-  double m_StripPairingReducedChiSquare;
+  vector<double> m_StripPairingReducedChiSquare;
 
  //! True if event has been filtered out
   bool m_FilteredOut;
