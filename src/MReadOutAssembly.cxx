@@ -557,8 +557,13 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
-    
+  
+  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  } else {
+    S<<"TI "<<m_EventTimeUTC<<endl;
+  }
+
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
   }
@@ -596,7 +601,12 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
+
+  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  } else {
+    S<<"TI "<<m_EventTimeUTC<<endl;
+  }
 
   if (m_HasSimAspectInfo){
     S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
@@ -626,7 +636,12 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
+
+  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  } else {
+    S<<"TI "<<m_EventTimeUTC<<endl;
+  }
 
   for (MSimIA& IA: m_SimIAs) {
     S<<IA.ToSimString()<<endl; 
