@@ -75,7 +75,7 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
   m_HasOptionsGUI = true;
   
   // Default to adding noise to the sim data
-  m_ResolutionCalibration = true;
+  m_ApplyResolutionCalibration = true;
 }
 
 
@@ -95,6 +95,7 @@ bool MModuleDEESMEX::Initialize()
 {
   // Set the geometry to the SubModules using it
   m_ChargeTransport.SetGeometry(m_Geometry);
+  m_StripReadout.SetApplyResolutionCalibration(m_ApplyResolutionCalibration);
 
   // Initialize the module 
 
@@ -179,7 +180,7 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   // Step (7): Handle GeD charge transport to grid and voxelation into strips
   m_ChargeTransport.Clear();
   m_ChargeTransport.AnalyzeEvent(Event);
-  
+
   // Step (8): Handle the strip readout: energy -> ADCs
   // Also includes user selected energy resolution with the FWHM values from the ecal 
   m_StripReadout.Clear();
@@ -239,8 +240,8 @@ void MModuleDEESMEX::Finalize()
   m_ShieldReadout.Finalize();
   m_ShieldTrigger.Finalize();
   m_ChargeTransport.Finalize();
-  m_StripReadoutNoise.Finalize();
   m_StripReadout.Finalize();
+  m_StripReadoutNoise.Finalize();
   m_StripTrigger.Finalize();
   m_DepthReadout.Finalize();
   m_Output.Finalize();
@@ -282,9 +283,9 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_Output.ReadXmlConfiguration(Node);
   
   // Add noise button
-  MXmlNode* ResolutionCalibrationNode = Node->GetNode("ResolutionCalibration");
+  MXmlNode* ResolutionCalibrationNode = Node->GetNode("ApplyResolutionCalibration");
   if (ResolutionCalibrationNode != nullptr) {
-    m_ResolutionCalibration  = ResolutionCalibrationNode->GetValueAsBoolean();
+    m_ApplyResolutionCalibration  = ResolutionCalibrationNode->GetValueAsBoolean();
   }
 
   return true;
@@ -312,7 +313,7 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
   m_Output.CreateXmlConfiguration(Node);
   
   // Add noise button
-  new MXmlNode(Node, "ResolutionCalibration", m_ResolutionCalibration);
+  new MXmlNode(Node, "ApplyResolutionCalibration", m_ApplyResolutionCalibration);
 
   return Node;
 }

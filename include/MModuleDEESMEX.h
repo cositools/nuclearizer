@@ -124,10 +124,10 @@ class MModuleDEESMEX : public MModule
     return m_StripTrigger.GetDeadtimeFileName();
   }
   
-  //! Button to apply  the FWHM energy resolution to the enegries 
-  bool GetResolutionCalibration() const { return m_ResolutionCalibration; }
-  void SetResolutionCalibration(bool ResolutionCalibration) {
-    m_ResolutionCalibration = ResolutionCalibration;
+  //! Button to apply the FWHM energy resolution to the enegries 
+  bool GetApplyResolutionCalibration() const { return m_ApplyResolutionCalibration; }
+  void SetApplyResolutionCalibration(bool ApplyResolutionCalibration) {
+    m_ApplyResolutionCalibration = ApplyResolutionCalibration;
   }
 
   // protected methods:
@@ -175,7 +175,7 @@ class MModuleDEESMEX : public MModule
   MSubModuleDEEOutput m_Output;
   
   //! Option to add noise
-  bool m_ResolutionCalibration; 
+  bool m_ApplyResolutionCalibration; 
 
 
 #ifdef ___CLING___

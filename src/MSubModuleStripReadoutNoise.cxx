@@ -31,7 +31,6 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MSubModule.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +103,7 @@ bool MSubModuleStripReadoutNoise::AnalyzeEvent(MReadOutAssembly* Event)
     if (SH.m_ADC > 16383) SH.m_ADC = 16383;
   }
   */
- 
+
   return true;
 }
 
@@ -114,7 +113,7 @@ bool MSubModuleStripReadoutNoise::AnalyzeEvent(MReadOutAssembly* Event)
 
 void MSubModuleStripReadoutNoise::Finalize()
 {
-  // Finalize the analysis - do all cleanup, i.e., undo Initialize()
+  // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
 
   MSubModule::Finalize();
 }
@@ -133,7 +132,7 @@ bool MSubModuleStripReadoutNoise::ReadXmlConfiguration(MXmlNode* Node)
     m_SomeTagValue = SomeTagNode->GetValue();
   }
   */
-  
+
   return true;
 }
 
@@ -148,7 +147,7 @@ MXmlNode* MSubModuleStripReadoutNoise::CreateXmlConfiguration(MXmlNode* Node)
   /*
   MXmlNode* SomeTagNode = new MXmlNode(Node, "SomeTag", "SomeValue");
   */
-  
+
   return Node;
 }
 
