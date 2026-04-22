@@ -17,15 +17,12 @@
 
 
 // Standard libs:
-#include <map>
 
 // ROOT libs:
-#include "TF1.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MSubModule.h"
-#include "MReadOutElementDoubleStrip.h"
 
 // Forward declarations:
 
@@ -83,6 +80,7 @@ class MSubModuleStripReadoutNoise : public MSubModule
 
   // private members:
  private:
+
 
 
 

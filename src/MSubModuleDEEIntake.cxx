@@ -132,9 +132,10 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
     double DetectorDepth = Shape->GetSizeZ();
 
     MString DetectorName = Detector->GetName();
-    if (DetectorName.BeginsWith("GeD") == true) {
-      DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
-      int DetectorID = DetectorName.ToInt();
+    if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing") == true) {
+      // DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
+      // int DetectorID = DetectorName.ToInt();
+      int DetectorID = 0;
 
       MDEEStripHit LVHit;
       MDEEStripHit HVHit;

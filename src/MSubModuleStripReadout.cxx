@@ -75,7 +75,7 @@ MSubModuleStripReadout::~MSubModuleStripReadout()
 bool MSubModuleStripReadout::Initialize()
 {
   // Initialize the module
-  
+
   // Check if we have a file
   if (m_EnergyCalibrationFileName == "") {
     if (g_Verbosity >= c_Error) {
@@ -92,7 +92,7 @@ bool MSubModuleStripReadout::Initialize()
     }
     return false;
   }
-  
+
   // Create the map to store line numbers
   map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine;
     
@@ -100,7 +100,7 @@ bool MSubModuleStripReadout::Initialize()
   m_ResolutionCalibration.clear();
   m_Calibration.clear();
 
-    
+  
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     MTokenizer* T = Parser.GetTokenizerAt(i);
     
@@ -241,7 +241,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
   
-  constexpr double FWHMtoSigma = 2.0 * TMath::Sqrt(2.0 * TMath::Log(2.0));
+  static const double FWHMtoSigma = 2.0 * TMath::Sqrt(2.0 * TMath::Log(2.0));
 
   // Get low-voltage and high-voltage hits
   for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
@@ -249,7 +249,6 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
     for (MDEEStripHit& SH : *Hits) {
       
       // If the user wants it applied, apply the FWHM Guassian energy resolution
-      
       if (m_ApplyResolutionCalibration == true) {
         // Look up the FWHM fit for this strip
         if (m_ResolutionCalibration.count(SH.m_ROE) > 0) {
