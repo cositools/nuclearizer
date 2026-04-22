@@ -58,8 +58,8 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Set and get the Reference Time System for this event
   //! The RTS is mission time in seconds since Jan 1, 2025 in TT
-  void SetTimeRTS(double TimeRTS) { m_EventTimeRTS = TimeRTS; }
-  double GetTimeRTS() const { return m_EventTimeRTS; }
+  void SetTimeRTS(const MTime& TimeRTS) { m_EventTimeRTS = TimeRTS; }
+  MTime GetTimeRTS() const { return m_EventTimeRTS; }
   
   //! Set and get the UTC time of this event
   void SetTimeUTC(const MTime& TimeUTC) { m_EventTimeUTC = TimeUTC; }
@@ -275,12 +275,10 @@ class MReadOutAssembly : public MReadOutSequence
   //! Build the next MReadoutAssemply from a .dat file
   bool GetNextFromDatFile(MFile &F);
 
-  //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
-  bool ComputeAbsoluteUTCTime();
-  //! Set the MTime corresponding to absolute UTC time
-  void SetAbsoluteUTCTime(MTime T) {m_EventTimeUTC = T;}
-  //! Get the MTime corresponding to absolute UTC time
-  MTime GetAbsoluteUTCTime() const {return m_EventTimeUTC; }
+  //! Compute the RTS time from known UTC time
+  MTime ComputeRTSfromUTCTime(MTime UTCTime);
+  //! Compute the UTC time from known RTS
+  MTime ComputeUTCfromRTSTime(MTime RTSTime);
 
   // protected methods:
  protected:
@@ -306,7 +304,7 @@ class MReadOutAssembly : public MReadOutSequence
   unsigned long m_AssemblyID;
 
   //! The time of the event in COSI Reference Time System (seconds since Jan 1, 2025) in TT
-  double m_EventTimeRTS;
+  MTime m_EventTimeRTS;
 
   //! The time of the event in absolute UTC time
   MTime m_EventTimeUTC;

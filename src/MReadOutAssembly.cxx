@@ -417,6 +417,38 @@ void MReadOutAssembly::RemoveHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MTime MReadOutAssembly::ComputeRTSfromUTCTime(MTime UTCTime)
+{
+  //! Compute the RTS time if the event only has UTC time defined
+  //! RTS is elapsed time since Jan 1, 2025 in TT
+  //! TT = UTC + 37 + 32.184
+  MTime RTS_Unix = MTime(2025,1,1,0,0,0,0);
+  MTime RTS_TT = UTCTime - RTS_Unix + 37 + 32.184;
+  
+  return RTS_TT;
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime)
+{
+  //! Compute the UTC time if the event only has RTS time defined
+  //! RTS is elapsed time since Jan 1, 2025 in TT
+  //! TT = UTC + 37 + 32.184
+  MTime RTS_Unix = MTime(2025,1,1,0,0,0,0);
+  MTime UTCTime = RTSTime + RTS_Unix - 37 - 32.184;
+
+  return UTCTime;
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {  
   // Handles SE, TI, RO, IA
