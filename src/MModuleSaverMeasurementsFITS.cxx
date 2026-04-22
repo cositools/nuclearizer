@@ -244,15 +244,13 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
 
   // Extract event-level data
   double time = 0;
-  if (Event->GetTimeRTS() != 0) {
-    time = Event->GetTimeRTS().GetAsDouble();
-  } else if (Event->GetTimeRTS() == 0 && Event->GetTimeUTC() != 0) {
+  if (Event->GetTimeRTS() == 0 && Event->GetTimeUTC() != 0) {
     // If UTC time is defined, calculate RTS
     MTime RTS = Event->ComputeRTSfromUTCTime(Event->GetTimeUTC());
     Event->SetTimeRTS(RTS);
     time = RTS.GetAsDouble();
   } else {
-    //if verbosity
+    time = Event->GetTimeRTS().GetAsDouble();
   }
   unsigned int numHits = Event->GetNHits();
 
