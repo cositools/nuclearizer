@@ -58,6 +58,16 @@ class MSubModuleDepthReadout : public MSubModule
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
+  //! Set filename for coefficients file
+  void SetDepthCoefficientsFileName( const MString& FileName) { m_DepthCoefficientsFile = FileName; }
+  //! Get filename for coefficients file
+  MString GetDepthCoefficientsFileName() const { return m_DepthCoefficientsFile; }
+
+  //! Set filename for CTD->Depth splines
+  void SetDepthSplinesFileName( const MString& FileName) { m_DepthSplinesFile = FileName; }
+  //! Get filename for CTD->Depth splines
+  MString GetDepthSplinesFileName() const {return m_DepthSplinesFile;}
+
   //! Finalize the module
   virtual void Finalize();
 
@@ -76,6 +86,11 @@ class MSubModuleDepthReadout : public MSubModule
 
   // protected members:
  protected:
+
+  //! Filename of the depth coefficients (stretch, offset, timing noise, ...)
+  MString m_DepthCoefficientsFile;
+  //! Filename of CTD->Depth splines
+  MString m_DepthSplinesFile;
 
 
   // private members:

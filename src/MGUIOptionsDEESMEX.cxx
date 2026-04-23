@@ -113,21 +113,22 @@ void MGUIOptionsDEESMEX::Create()
   m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.log");
   m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
 
-  m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationCoeffsFileName());
-  m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.txt");
-  m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
-
   m_DepthCalibrationTACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a TAC calibration parameters file:",
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationTACCalFileName());
   m_DepthCalibrationTACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
   m_OptionsFrame->AddFrame(m_DepthCalibrationTACCalFileSelector, LabelLayout);
-
-  m_DepthCalibrationSplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration splines file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationSplinesFileName());
-  m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.ctd");
-  m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
   */
+
+  // inverse depth calibration files
+  m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthCoefficientsFileName());
+  m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
+  
+  m_DepthCalibrationSplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration splines file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthSplinesFileName());
+  m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
 
   // shield energy correction file
   m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
@@ -191,6 +192,8 @@ bool MGUIOptionsDEESMEX::OnApply()
 
   // GeD options:
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthCoefficientsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
 
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   

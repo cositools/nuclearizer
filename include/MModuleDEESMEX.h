@@ -96,10 +96,32 @@ class MModuleDEESMEX : public MModule
   {
     m_StripReadout.SetEnergyCalibrationFileName(FileName);
   }
-  //! Set energy calibration file name
+  //! Get energy calibration file name
   MString GetEnergyCalibrationFileName() const
   {
     return m_StripReadout.GetEnergyCalibrationFileName();
+  }
+
+  //! Set depth coefficients file name
+  void SetDepthCoefficientsFileName(const MString& FileName)
+  {
+    m_DepthReadout.SetDepthCoefficientsFileName(FileName);
+  }
+  //! Get depth coefficients file name
+  MString GetDepthCoefficientsFileName() const
+  {
+    return m_DepthReadout.GetDepthCoefficientsFileName();
+  }
+
+  //! Set depth splines file name
+  void SetDepthSplinesFileName(const MString& FileName)
+  {
+    m_DepthReadout.SetDepthSplinesFileName(FileName);
+  }
+  //! Get depth splines file name
+  MString GetDepthSplinesFileName() const
+  {
+    return m_DepthReadout.GetDepthSplinesFileName();
   }
 
   //! Set shield energy correction file name
@@ -107,18 +129,18 @@ class MModuleDEESMEX : public MModule
   {
     m_ShieldEnergyCorrection.SetShieldEnergyCorrectionFileName(FileName);
   }
-  //! Set energy calibration file name
+  //! Get shield energy correction file name
   MString GetShieldEnergyCorrectionFileName() const
   {
     return m_ShieldEnergyCorrection.GetShieldEnergyCorrectionFileName();
   }
 
-  //! Set shield energy correction file name
+  //! Set dead time file name
   void SetDeadtimeFileName(const MString& FileName)
   {
     m_StripTrigger.SetDeadtimeFileName(FileName);
   }
-  //! Set energy calibration file name
+  //! Get dead time file name
   MString GetDeadtimeFileName() const
   {
     return m_StripTrigger.GetDeadtimeFileName();
