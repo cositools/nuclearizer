@@ -201,27 +201,32 @@ bool MSubModuleDepthReadout::LoadSplinesFile()
     return false;
   }
 
-  // For now assume just one detector
-  // TODO: Extend this logic to multiple detectors
-  int DetID = 0;
+  // Populate these vectors for each detector
+  int DetID = -1;
   vector<double> DepthVector;
   vector<double> CTDVector;
   vector<double> ElectronDriftTimeVector;
   vector<double> HoleDriftTimeVector;
-  
-  m_DepthGrid[DetID] = DepthVector;
-  m_CTDMap[DetID] = CTDVector;
-  m_ElectronDriftTimes[DetID] = ElectronDriftTimeVector;
-  m_HoleDriftTimes[DetID] = HoleDriftTimeVector;
 
   MString Line;
   while (SplineFile.ReadLine(Line) == true) {
     if (Line.Length() != 0) {
       if (Line.BeginsWith("#") == true) {
-        // Get the Detector ID from the first commented line in that file
-        // vector<MString> Tokens = Line.Tokenize(" ");
-        // DetID = Tokens[1].ToInt();
-        continue;
+
+        if (DetID != -1 && DepthVector.size() > 0) {
+          m_DepthGrid[DetID] = DepthVector;
+          m_CTDMap[DetID] = CTDVector;
+          m_ElectronDriftTimes[DetID] = ElectronDriftTimeVector;
+          m_HoleDriftTimes[DetID] = HoleDriftTimeVector;
+        }
+
+        // Get the Detector ID from the commented lines
+        vector<MString> Tokens = Line.Tokenize(" ");
+        DetID = Tokens[1].ToInt();
+        DepthVector.clear();
+        CTDVector.clear();
+        ElectronDriftTimeVector.clear();
+        HoleDriftTimeVector.clear();
 
       } else {
         vector<MString> Tokens = Line.Tokenize(",");
@@ -238,6 +243,13 @@ bool MSubModuleDepthReadout::LoadSplinesFile()
         }
       }
     }
+  }
+
+  if (DetID == -1 || m_DepthGrid.size() == 0) {
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MSubModuleDepthReadout::LoadSplinesFile: No depth splines recovered from the file." << endl;
+    }
+    return false;
   }
 
   SplineFile.Close();
