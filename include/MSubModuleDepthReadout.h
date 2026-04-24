@@ -58,6 +58,9 @@ class MSubModuleDepthReadout : public MSubModule
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
+  //! Set geometry
+  void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
+
   //! Set filename for coefficients file
   void SetDepthCoefficientsFileName( const MString& FileName) { m_DepthCoefficientsFile = FileName; }
   //! Get filename for coefficients file
@@ -79,6 +82,13 @@ class MSubModuleDepthReadout : public MSubModule
   // protected methods:
  protected:
 
+  //! Load in the specified coefficients file
+  bool LoadCoeffsFile();
+
+  //! Load the splines file
+  bool LoadSplinesFile();
+
+
   // private methods:
  private:
 
@@ -87,10 +97,24 @@ class MSubModuleDepthReadout : public MSubModule
   // protected members:
  protected:
 
+  //! The geometry
+  MDGeometryQuest* m_Geometry;
+
+  //! The detector dimensions
+  unordered_map<int, double> m_Thicknesses;
+
   //! Filename of the depth coefficients (stretch, offset, timing noise, ...)
   MString m_DepthCoefficientsFile;
   //! Filename of CTD->Depth splines
   MString m_DepthSplinesFile;
+
+  //! CTD-to-depth splines
+  // TODO: allow for multiple CTD-to-depth splines per detector
+  // unordered_map<int, TSpline3*> m_DepthSplineMap;
+  unordered_map<int, vector<double>> m_DepthGrid;
+  unordered_map<int, vector<double>> m_CTDMap;
+  unordered_map<int, vector<double>> m_ElectronDriftTimes;
+  unordered_map<int, vector<double>> m_HoleDriftTimes;
 
 
   // private members:

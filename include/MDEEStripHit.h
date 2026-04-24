@@ -84,8 +84,10 @@ struct MDEEStripHit
   unsigned int m_ADC;
   //! Is this a guard ring
   bool m_HasTriggered;
-  //! The measured TAC value;
+  //! The measured TAC value in ADC units
   unsigned int m_TAC;
+  //! The calibrated timing in ns
+  double m_Timing;
   //! The measured temperature value
   double m_Temperature;
 
