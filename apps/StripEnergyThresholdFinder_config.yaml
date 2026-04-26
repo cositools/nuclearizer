@@ -1,0 +1,18 @@
+input:
+  data_files:
+    - /path/to/data/file.hdf5
+
+  calibration_file: /path/to/calibration/file.ecal
+  tac_calibration_file: /path/to/tac/calibration/file.csv
+  strip_map: /path/to/strip/map/file.map
+
+analysis:
+  min_entries: 10 # number of skipped strips with minum statistics
+  fallback_threshold_keV: 20 # If a threshold cannot be determined set threshold to default value
+  # limit for locating the low-energy noise peak
+  # most noise peaks should be between 100 and 250
+  # Worst case the ADC max should be set to ~1000  
+  noise_search_max_adc: 1800 # Limits peak search to a specific reagion before gamma peaks
+  
+output:
+  prefix: output_file_prefix
