@@ -145,23 +145,27 @@ bool MModuleStripPairingMultiRoundChiSquare::Initialize()
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Function returns new combinations of strips based on seed combinations
-vector<vector<vector<unsigned int>>> MModuleStripPairingMultiRoundChiSquare::FindNewCombinations(vector<vector<vector<unsigned int>>> OldOnes, vector<MStripHit*> StripHits, bool RoundTwo)
+vector<vector<vector<unsigned int>>> MModuleStripPairingMultiRoundChiSquare::FindNewCombinations(const vector<vector<vector<unsigned int>>>& OldOnes, const vector<MStripHit*>& StripHits, bool RoundTwo)
 {
   // Define new vector of ints NewOnes
   vector<vector<vector<unsigned int>>> NewOnes; // <list> of <combinations> of <combined strips>
 
   for (unsigned int listspot = 0; listspot < OldOnes.size(); ++listspot) { // Iterate over set of seed combinations
     // New single merges
-    for (unsigned int combi1 = 0; combi1 < OldOnes[listspot].size(); ++combi1) { // Iterate over individual combos within set
-      for (unsigned int combi2 = combi1 + 1; combi2 < OldOnes[listspot].size(); ++combi2) { // Iterate through all the combos AFTER combi1
-        vector<unsigned int> NewCombinedStrips;
-        NewCombinedStrips.insert(NewCombinedStrips.end(), OldOnes[listspot][combi1].begin(), OldOnes[listspot][combi1].end());
-        NewCombinedStrips.insert(NewCombinedStrips.end(), OldOnes[listspot][combi2].begin(), OldOnes[listspot][combi2].end());
-        sort(NewCombinedStrips.begin(), NewCombinedStrips.end());
+      for (unsigned int combi1 = 0; combi1 < OldOnes[listspot].size(); ++combi1) { // Iterate over individual combos within set
+        for (unsigned int combi2 = combi1 + 1; combi2 < OldOnes[listspot].size(); ++combi2) { // Iterate through all the combos AFTER combi1
+          vector<unsigned int> NewCombinedStrips;
+          // Reserve once since this temporary vector is rebuilt in the innermost hot loop.
+          NewCombinedStrips.reserve(OldOnes[listspot][combi1].size() + OldOnes[listspot][combi2].size());
+          NewCombinedStrips.insert(NewCombinedStrips.end(), OldOnes[listspot][combi1].begin(), OldOnes[listspot][combi1].end());
+          NewCombinedStrips.insert(NewCombinedStrips.end(), OldOnes[listspot][combi2].begin(), OldOnes[listspot][combi2].end());
+          sort(NewCombinedStrips.begin(), NewCombinedStrips.end());
 
         // The above combines each combination with all the subsequent combinations in order to produce new combinations of strips
 
         vector<unsigned int> NewCombinedAsIDs;
+        // Reserve once since this temporary vector mirrors NewCombinedStrips in size.
+        NewCombinedAsIDs.reserve(NewCombinedStrips.size());
         for (unsigned int s = 0; s < NewCombinedStrips.size(); ++s) {
           NewCombinedAsIDs.push_back(StripHits[NewCombinedStrips[s]]->GetStripID()); // Translates the hit number to the actual strip ID
         }
@@ -211,7 +215,7 @@ vector<vector<vector<unsigned int>>> MModuleStripPairingMultiRoundChiSquare::Fin
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Apply a charge trapping correction to each potential pair of LV/HV strips
-float MModuleStripPairingMultiRoundChiSquare::ChargeTrappingCorrection(unsigned int d, vector<vector<MStripHit*>> StripHits)
+float MModuleStripPairingMultiRoundChiSquare::ChargeTrappingCorrection(unsigned int d, const vector<vector<MStripHit*>>& StripHits)
 {
 
   // Dummy Function
@@ -269,7 +273,7 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Read in strip hits on each side for each detector and perform quality selections
-bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Event, vector<vector<vector<MStripHit*>>> StripHits)
+bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits)
 {
 
   // Limit the number of strip hits on each side
@@ -296,7 +300,7 @@ bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Ev
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Find all strip combinations for each detector on LV and HV sides given seed combinations
-vector<vector<vector<vector<vector<unsigned int>>>>> MModuleStripPairingMultiRoundChiSquare::FindAllCombinations(unsigned int d, vector<vector<vector<vector<vector<unsigned int>>>>> Combinations, vector<vector<vector<MStripHit*>>> StripHits, bool RoundTwo)
+void MModuleStripPairingMultiRoundChiSquare::FindAllCombinations(unsigned int d, vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& StripHits, bool RoundTwo)
 {
 
   for (unsigned int side = 0; side <= 1; ++side) { // Side loop (LV and HV)
@@ -310,44 +314,48 @@ vector<vector<vector<vector<vector<unsigned int>>>>> MModuleStripPairingMultiRou
       NewCombinations = FindNewCombinations(Combinations[d][side], StripHits[d][side], RoundTwo);
       //cout<<"Size: "<<NewCombinations.size()<<endl;
 
-      // Find equal combinations and eliminate them from the new list
+      // Remove combinations that are already known from earlier iterations.
       for (unsigned int c = 0; c < Combinations[d][side].size(); ++c) {
         auto Iter = NewCombinations.begin();
         while (Iter != NewCombinations.end()) {
+          // std::vector already performs a deep comparison here, so no second manual walk is needed.
           if (Combinations[d][side][c] == (*Iter)) {
-            bool Equal = true;
-            for (unsigned int deep = 0; deep < Combinations[d][side][c].size(); ++deep) {
-              if (Combinations[d][side][c][deep] != (*Iter)[deep]) {
-                Equal = false;
-                break;
-              }
-            }
-            if (Equal == true) {
-              Iter = NewCombinations.erase(Iter);
-            } else {
-              Iter++;
-            }
+            Iter = NewCombinations.erase(Iter);
           } else {
-            Iter++;
+            ++Iter;
           }
         }
       }
+
+      // The same grouping can be created through different merge orders inside one batch.
+      // Keep only one copy here so EvaluateAllCombinations does not redo identical work.
+      auto Outer = NewCombinations.begin();
+      while (Outer != NewCombinations.end()) {
+        auto Inner = Outer + 1;
+        while (Inner != NewCombinations.end()) {
+          if (*Outer == *Inner) {
+            Inner = NewCombinations.erase(Inner);
+          } else {
+            ++Inner;
+          }
+        }
+        ++Outer;
+      }
       // If there are new combinations left, add them, and restart
-      if (NewCombinations.size() > 0) {
+      if (NewCombinations.empty() == false) {
         //cout<<NewCombinations.size()<<" new combinations found"<<endl;
-        for (auto C : NewCombinations) {
+        // Avoid copying each nested combination again while appending to the master list.
+        for (const auto& C : NewCombinations) {
           Combinations[d][side].push_back(C);
         }
         CombinationsAdded = true; //keep going until no more combos added
       }
     }
   } // End Side loop
-
-  return Combinations;
 }
 
 //! Evaluate the reduced chi square for all possible strip pairings
-tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModuleStripPairingMultiRoundChiSquare::EvaluateAllCombinations(unsigned int d, vector<vector<vector<vector<vector<unsigned int>>>>> Combinations, vector<vector<vector<MStripHit*>>> StripHits)
+tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModuleStripPairingMultiRoundChiSquare::EvaluateAllCombinations(unsigned int d, const vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& StripHits)
 {
 
   double BestChiSquare = numeric_limits<double>::max();
@@ -356,8 +364,10 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
 
   for (unsigned int lv = 0; lv < Combinations[d][0].size(); ++lv) { // Loop over combinations of lv-strips (lv represents a list of sets of strips,  and each set is a proposed Hit)
     for (unsigned int hv = 0; hv < Combinations[d][1].size(); ++hv) {
-      
-      unsigned int MinSize = min(Combinations[d][0][lv].size(), Combinations[d][1][hv].size());
+      // Copy only the current LV/HV combination that will be permuted below instead of the full 5D combinations tree.
+      vector<vector<unsigned int>> LVSideCombo = Combinations[d][0][lv];
+      vector<vector<unsigned int>> HVSideCombo = Combinations[d][1][hv];
+      unsigned int MinSize = min(LVSideCombo.size(), HVSideCombo.size());
 
       bool MorePermutations = true;
       while (MorePermutations == true) {
@@ -376,24 +386,24 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
           double LVResolution = 0;
 
           // Add up LV energy and energy resolution for grouping of strips
-          for (unsigned int entry = 0; entry < Combinations[d][0][lv][en].size(); ++entry) { // Entry is on the strip level
-            LVEnergy += StripHits[d][0][Combinations[d][0][lv][en][entry]]->GetEnergy();
-            LVResolution += pow(StripHits[d][0][Combinations[d][0][lv][en][entry]]->GetEnergyResolution(), 2);
+          for (unsigned int entry = 0; entry < LVSideCombo[en].size(); ++entry) { // Entry is on the strip level
+            LVEnergy += StripHits[d][0][LVSideCombo[en][entry]]->GetEnergy();
+            LVResolution += pow(StripHits[d][0][LVSideCombo[en][entry]]->GetEnergyResolution(), 2);
 
             // Add strip to current hit pairing
-            CurrentHitPairing[0].push_back(StripHits[d][0][Combinations[d][0][lv][en][entry]]);
+            CurrentHitPairing[0].push_back(StripHits[d][0][LVSideCombo[en][entry]]);
           }
 
           // Repeats for HV side
           double HVEnergy = 0;
           double HVResolution = 0;
 
-          for (unsigned int entry = 0; entry < Combinations[d][1][hv][ep].size(); ++entry) {
-            HVEnergy += StripHits[d][1][Combinations[d][1][hv][ep][entry]]->GetEnergy();
-            HVResolution += pow(StripHits[d][1][Combinations[d][1][hv][ep][entry]]->GetEnergyResolution(), 2);
+          for (unsigned int entry = 0; entry < HVSideCombo[ep].size(); ++entry) {
+            HVEnergy += StripHits[d][1][HVSideCombo[ep][entry]]->GetEnergy();
+            HVResolution += pow(StripHits[d][1][HVSideCombo[ep][entry]]->GetEnergyResolution(), 2);
 
             // Add strip to current hit pairing
-            CurrentHitPairing[1].push_back(StripHits[d][1][Combinations[d][1][hv][ep][entry]]);
+            CurrentHitPairing[1].push_back(StripHits[d][1][HVSideCombo[ep][entry]]);
           }
 
           // Apply charge trapping correction for each LV/HV pairing
@@ -410,15 +420,15 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
 
         if (ChiSquare < BestChiSquare) {
           BestChiSquare = ChiSquare;
-          BestLVSideCombo = Combinations[d][0][lv];
-          BestHVSideCombo = Combinations[d][1][hv];
+          BestLVSideCombo = LVSideCombo;
+          BestHVSideCombo = HVSideCombo;
         }
 
         // Cycle through all permutations to reach every possible strip pairing
-        if (Combinations[d][1][hv].size() > Combinations[d][0][lv].size()) {
-          MorePermutations = next_permutation(Combinations[d][1][hv].begin(), Combinations[d][1][hv].end());
+        if (HVSideCombo.size() > LVSideCombo.size()) {
+          MorePermutations = next_permutation(HVSideCombo.begin(), HVSideCombo.end());
         } else {
-          MorePermutations = next_permutation(Combinations[d][0][lv].begin(), Combinations[d][0][lv].end());
+          MorePermutations = next_permutation(LVSideCombo.begin(), LVSideCombo.end());
         }
       }
     }
@@ -429,7 +439,7 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Create hits
-bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOutAssembly* Event, vector<vector<vector<MStripHit*>>> StripHits, vector<vector<unsigned int>> BestLVSideCombo, vector<vector<unsigned int>> BestHVSideCombo)
+bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits, const vector<vector<unsigned int>>& BestLVSideCombo, const vector<vector<unsigned int>>& BestHVSideCombo)
 {
 
 
@@ -704,7 +714,6 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 //! Main data analysis routine, which updates the event to a new level
 bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 {
-
   // Check if there are actually any strip hits
   if (Event->GetNStripHits() == 0) {
     Event->SetStripPairingError("No strip hits");
@@ -750,7 +759,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     bool RoundTwo = false;
 
     // Find all possible combinations based on the above seed combination
-    Combinations = FindAllCombinations(d, Combinations, StripHits, RoundTwo);
+    FindAllCombinations(d, Combinations, StripHits, RoundTwo);
 
     // Evaluate reduced chi square for all combinations and select best LV/HV combinations
     auto [BestLVSideCombo, BestHVSideCombo, BestChiSquare] = EvaluateAllCombinations(d, Combinations, StripHits);
@@ -759,7 +768,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
       RoundTwo = true;
 
       // Repeat strip pairing, now allowing groupings of non adjacent strips
-      Combinations = FindAllCombinations(d, Combinations, StripHits, RoundTwo);
+      FindAllCombinations(d, Combinations, StripHits, RoundTwo);
       auto [BestLVSideComboRoundTwo, BestHVSideComboRoundTwo, BestChiSquareRoundTwo] = EvaluateAllCombinations(d, Combinations, StripHits);
 
       // Update best LV/HV combos if a better pairing is found
