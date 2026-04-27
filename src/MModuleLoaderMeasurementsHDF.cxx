@@ -711,6 +711,17 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<StripID<<" not found in strip map"<<endl;
         return false;
       }
+
+      // Remove incomplete events (fewer strip hits than what is listed in HITS)
+      if (StripHitIndex > 0 && NumberOfHits != NStripHits) {
+        if (g_Verbosity >= c_Error) {
+          cout<<m_XmlTag<<": Event "<<Event->GetID()<<" had fewer strip hits ("<<StripHitIndex<<") than expected ("<<NStripHits<<"). Ignoring event."<<endl;
+        }
+        // Reduce the batch index and current hit counter to still process the hit from the next event
+        m_CurrentBatchIndex--;
+        m_CurrentHit--;
+        return false;
+      }
       
     } else if (m_HDFStripHitVersion <= MHDFStripHitVersion::V2_2) {
 
@@ -779,17 +790,6 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       }
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
-      return false;
-    }
-
-    // Remove incomplete events (fewer strip hits than what is listed in HITS)
-    if (StripHitIndex > 0 && NumberOfHits != NStripHits) {
-      if (g_Verbosity >= c_Error) {
-        cout<<m_XmlTag<<": Event "<<Event->GetID()<<" had fewer strip hits ("<<StripHitIndex<<") than expected according to the HDF5 file ("<<NStripHits<<")."<<endl;
-      }
-      // Reduce the batch index and current hit counter to still process the hit from the next event
-      m_CurrentBatchIndex--;
-      m_CurrentHit--;
       return false;
     }
 
