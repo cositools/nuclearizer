@@ -812,6 +812,11 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     StripHitIndex++;
   }
 
+  // Remove all Events with no (valid) strip hits
+  if (Event->GetNStripHits() == 0){
+    return false;
+  }
+
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
 
   m_NEventsInFile++;
