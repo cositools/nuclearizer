@@ -725,6 +725,10 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         m_CurrentHit--;
         return false;
       }
+
+      // Increase counters
+      NStripHits = static_cast<unsigned int>(NumberOfHits);
+      StripHitIndex++;
       
     } else if (m_HDFStripHitVersion <= MHDFStripHitVersion::V2_2) {
 
@@ -791,6 +795,9 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
           if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<Hit.m_StripID<<" not found in strip map"<<endl;
           return false;
         }
+
+        // Use StripIndex here (without updating NStripHits) to exit the while-loop after finalizing the Event
+        StripHitIndex++;
       }
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
@@ -815,8 +822,6 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     } else {
       Event->SetTI(TimeCode);
     }
-    NStripHits = static_cast<unsigned int>(NumberOfHits);
-    StripHitIndex++;
   }
 
   // Remove all Events with no (valid) strip hits
