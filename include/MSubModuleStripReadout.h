@@ -52,9 +52,14 @@ class MSubModuleStripReadout : public MSubModule
   //! Default destructor
   virtual ~MSubModuleStripReadout();
 
+  //! Set if energies should be smeared based on FWHM
+  void SetApplyResolutionCalibration(bool ApplyResolutionCalibration) { m_ApplyResolutionCalibration = ApplyResolutionCalibration; }
+  //! Get if energies should be smeared based on FWHM
+  bool GetApplyResolutionCalibration() { return m_ApplyResolutionCalibration; }
+
   //! Set energy calibration file name
   void SetEnergyCalibrationFileName(const MString& FileName) { m_EnergyCalibrationFileName = FileName; }
-  //! Set energy calibration file name
+  //! Get energy calibration file name
   MString GetEnergyCalibrationFileName() const { return m_EnergyCalibrationFileName; }
 
   //! Initialize the module
@@ -94,8 +99,14 @@ class MSubModuleStripReadout : public MSubModule
   //! Name of the strip map
   std::map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
   
-  //! Make value of the ADC units
-  double m_MaxADCRange;
+  //! Flag to determine if resolution calibration should be applied
+  bool m_ApplyResolutionCalibration;
+  
+  //! Map storing the FWHM fits for each strip
+  std::map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
+  
+  //! Max value of the ADC units
+  static constexpr double m_MaxADCRange = 16383;
 
 
 

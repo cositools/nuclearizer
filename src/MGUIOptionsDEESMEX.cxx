@@ -72,6 +72,10 @@ void MGUIOptionsDEESMEX::Create()
                                                           dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnergyCalibrationFileName());
   m_EnergyCalibrationFileSelector->SetFileType("Ecal file", "*.ecal");
   m_OptionsFrame->AddFrame(m_EnergyCalibrationFileSelector, LabelLayout);
+  
+  m_ResolutionCalibrationButton = new TGCheckButton(m_OptionsFrame, "Smear energies based on FWHM");
+  m_ResolutionCalibrationButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetApplyResolutionCalibration());
+  m_OptionsFrame->AddFrame(m_ResolutionCalibrationButton, LabelLayout);
 
   m_DeadtimeFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a deadtime parameters file:",
                                                           dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDeadtimeFileName());
@@ -189,6 +193,8 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
 
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
+  
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyResolutionCalibration(m_ResolutionCalibrationButton->IsOn());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());

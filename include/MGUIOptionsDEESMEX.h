@@ -97,6 +97,9 @@ class MGUIOptionsDEESMEX : public MGUIOptions
   MGUIEFileSelector* m_ShieldEnergyCorrectionFileSelector;
   //! Select deadtime constants file
   MGUIEFileSelector* m_DeadtimeFileSelector;
+  
+  //! Button to toggle noise addition
+  TGCheckButton* m_ResolutionCalibrationButton;
 
 
 #ifdef ___CLING___
