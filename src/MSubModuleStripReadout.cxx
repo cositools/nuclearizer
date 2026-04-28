@@ -54,9 +54,7 @@ MSubModuleStripReadout::MSubModuleStripReadout() : MSubModule()
   m_Name = "DEE strip readout module";
 
   m_EnergyCalibrationFileName = "";
-  
-  // Max value for the ADC range (14-bit ADC maximum)
-  m_MaxADCRange = 16383;
+
 }
 
 
@@ -151,8 +149,9 @@ bool MSubModuleStripReadout::Initialize()
         } else {
           // TODO: @RobinAnthonyPetersen add all the other types of fits melinator can do
           // So far, only added these ones because these are the ones we use for the ecals
-          if (g_Verbosity >= c_Warning) {
+          if (g_Verbosity >= c_Error) {
             cout << m_Name << ": Unknown FWHM calibrator type: " << ResolutionCalibrationType << endl;
+            return false;
           }
         }
       }
@@ -251,7 +250,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       // If the user wants it applied, apply the FWHM Guassian energy resolution
       if (m_ApplyResolutionCalibration == true) {
         // Look up the FWHM fit for this strip
-        if (m_ResolutionCalibration.count(SH.m_ROE) > 0) {
+        if (m_ResolutionCalibration.count(SH.m_ROE) == 1) {
           
           // Calculate FWHM (keV) at this energy
           double fwhm = m_ResolutionCalibration[SH.m_ROE]->Eval(SH.m_Energy);

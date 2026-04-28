@@ -106,7 +106,7 @@ class MSubModuleStripReadout : public MSubModule
   std::map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
   
   //! Max value of the ADC units
-  double m_MaxADCRange;
+  static constexpr double m_MaxADCRange = 16383;
 
 
 
