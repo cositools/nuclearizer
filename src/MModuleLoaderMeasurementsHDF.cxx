@@ -321,14 +321,17 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
     if (PropertyList.getLayout() == H5D_CHUNKED) {
       hsize_t ChunkDims[H5S_MAX_RANK];
       PropertyList.getChunk(Rank, ChunkDims);
-
-      cout<<"Chunk dimensions: ";
-      for (int i = 0; i < Rank; ++i) {
-        cout<<ChunkDims[i]<<" ";
+      if (g_Verbosity > c_Info) {
+        cout<<"Chunk dimensions: ";
+        for (int i = 0; i < Rank; ++i) {
+          cout<<ChunkDims[i]<<" ";
+        }
+        cout<<endl;
       }
-      cout<<endl;
     } else {
-      cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
+      if (g_Verbosity > c_Info) {
+        cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
+      }
     }
 
     if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
@@ -752,11 +755,12 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       // Create objects for all hits that belong to that event
       for (uint32_t i = EventIndices.m_FEEHits[0]; i < EventIndices.m_FEEHits[1]; i++) {
 
-        uint32_t IndexInBatch = i - m_MinHitIndex;
         if (i < m_MinHitIndex || i >= (m_MinHitIndex + m_Buffer_2.size())) {
           if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Entry " << i << " is NOT in the current FEEHits buffer!" << endl;
           return false;
         } 
+
+        uint32_t IndexInBatch = i - m_MinHitIndex;
         
         MHDFStripHit_V2& Hit = m_Buffer_2[IndexInBatch];
         if (m_StripMap.HasReadOutID(Hit.m_StripID) == true) {
