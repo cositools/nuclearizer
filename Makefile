@@ -34,7 +34,7 @@ MAKEFLAGS += --no-builtin-rules --no-print-directory
 
 .SUFFIXES:
 #.SUFFIXES: .cxx .h .o .so
-.PHONY: all n nuclearizer megalib apps clean
+.PHONY: all n nuclearizer megalib apps clean test
 .EXPORT_ALL_VARIABLES:
 #.NOTPARALLEL: megalib
 .SILENT:
@@ -94,6 +94,14 @@ FRETALON_H_FILES      := $(filter-out $(FRETALON_DIR)/inc/MAssembly.h $(FRETALON
 FRETALON_LIBS         := $(addprefix $(LB)/,$(notdir $(FRETALON_CXX_FILES:.cxx=.o)))
 FRETALON_DEP_FILES    := $(FRETALON_LIBS:.o=.d)
 
+# Unit testing definitions
+TEST_DIR              := $(NUCLEARIZER)/test
+TEST_BUILD            := $(TEST_DIR)/build
+TEST_MAIN             := $(TEST_DIR)/unit_tests.cpp
+TEST_PRG              := $(TEST_BUILD)/unit_tests
+CATCH_H               := $(TEST_DIR)/catch.hpp
+CATCH_URL             := https://raw.githubusercontent.com/catchorg/Catch2/v2.x/single_include/catch2/catch.hpp
+
 # The shared library
 NUCLEARIZER_SHARED_LIB = $(LB)/libNuclearizer.$(DLL)
 
@@ -147,6 +155,13 @@ man:
 	@sh resource/doxygen/doxy
 	@doxygen resource/doxygen/Doxyfile
 
+test: 
+	# Remove old build directory if existent
+	@if [ -d "$(TEST_BUILD)" ]; then rm -r "$(TEST_BUILD)"; fi
+	@mkdir -p $(TEST_BUILD)
+	@$(MAKE) $(TEST_PRG)
+	@$(TEST_PRG)
+
 #----------------------------------------------------------------
 # Explicit rules & dependencies:
 #
@@ -180,12 +195,21 @@ $(NUCLEARIZER_DICT_LIB): $(NUCLEARIZER_DICT)
 
 $(NUCLEARIZER_SHARED_LIB): $(NUCLEARIZER_DICT_LIB) $(FRETALON_LIBS) $(NUCLEARIZER_LIBS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_DICT_LIB) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
+	@$(CXX) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_DICT_LIB) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
 
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
 
+$(CATCH_H):
+	@mkdir -p $(TEST_DIR)
+	@wget $(CATCH_URL) -O $(CATCH_H)
+
+$(TEST_PRG): $(NUCLEARIZER_SHARED_LIB) $(CATCH_H) $(TEST_MAIN)
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) \
+	  -Wl,-rpath,$(CONDA_PREFIX)/lib \
+	  -Wl,-rpath,$(MEGALIB)/lib \
+	  $(TEST_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(TEST_PRG)
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(NUCLEARIZER_DEP_FILES)
