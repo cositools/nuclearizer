@@ -120,15 +120,19 @@ void MGUIOptionsDEESMEX::Create()
   */
 
   // inverse depth calibration files
-  m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
-    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthCoefficientsFileName());
-  m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.csv");
-  m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
-  
   m_DepthCalibrationSplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration splines file:",
     dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthSplinesFileName());
   m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.csv");
   m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
+
+  m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthCoefficientsFileName());
+  m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
+
+  m_TimingResolutionCalibrationButton = new TGCheckButton(m_OptionsFrame, "Smear timing values based on FWHM");
+  m_TimingResolutionCalibrationButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetApplyTimingResolutionCalibration());
+  m_OptionsFrame->AddFrame(m_TimingResolutionCalibrationButton, LabelLayout);  
 
   // shield energy correction file
   m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
@@ -198,6 +202,7 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyResolutionCalibration(m_ResolutionCalibrationButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyTimingResolutionCalibration(m_TimingResolutionCalibrationButton->IsOn());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());

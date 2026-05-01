@@ -29,7 +29,8 @@
 // Standard libs:
 
 // ROOT libs:
-#include <TMath.h>
+#include "TRandom.h"
+#include "TMath.h"
 
 // MEGAlib libs:
 
@@ -154,11 +155,22 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
           vector<double> Coeffs = m_Coeffs[PixelCode];
           double Stretch = Coeffs[0];
           double Offset = Coeffs[1];
+          double CTD_Sigma = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
           double HoleDriftTime = (HoleSpline.Eval(Z) + Offset) * Stretch;
 
           // Convert drift time to timing by subtracting 4500ns (for now)
           // TODO: Improve determining the timing from drift times
           SH.m_Timing = 4500.0 - HoleDriftTime;
+
+          // Smear the timing value based on the given CTD resolution
+          // --> divide by √2 to obtain TAC resolution from CTD resolution
+
+          // Smear the timing value based on the given CTD resolution
+          // --> divide by √2 to obtain TAC resolution from CTD resolution
+          if (m_ApplyTimingResolutionCalibration == true) {
+            SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
+          }
+
           // TODO: Apply the inverse TAC cal to obtain TAC in ADC units
           SH.m_TAC = SH.m_Timing;
           if (SH.m_TAC > 16383) SH.m_TAC = 16383;
@@ -193,11 +205,19 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
         if (m_Coeffs.count(PixelCode) == 1){
           vector<double> Coeffs = m_Coeffs[PixelCode];
           double Stretch = Coeffs[0];
+          double CTD_Sigma = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
           double ElectronDriftTime = ElectronSpline.Eval(Z) * Stretch;
 
           // Convert drift time to timing by subtracting 4500ns (for now)
           // TODO: Improve determining the timing from drift times
           SH.m_Timing = 4500.0 - ElectronDriftTime;
+
+          // Smear the timing value based on the given CTD resolution
+          // --> divide by √2 to obtain TAC resolution from CTD resolution
+          if (m_ApplyTimingResolutionCalibration == true) {
+            SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
+          }
+
           // TODO: Apply the inverse TAC cal to obtain TAC in ADC units
           SH.m_TAC = SH.m_Timing;
           if (SH.m_TAC > 16383) SH.m_TAC = 16383;

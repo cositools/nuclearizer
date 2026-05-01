@@ -146,10 +146,16 @@ class MModuleDEESMEX : public MModule
     return m_StripTrigger.GetDeadtimeFileName();
   }
   
-  //! Button to apply the FWHM energy resolution to the enegries 
+  //! Button to apply the FWHM energy resolution to the energies
   bool GetApplyResolutionCalibration() const { return m_ApplyResolutionCalibration; }
   void SetApplyResolutionCalibration(bool ApplyResolutionCalibration) {
     m_ApplyResolutionCalibration = ApplyResolutionCalibration;
+  }
+
+  //! Button to apply the FWHM timing resolution to the timing values
+  bool GetApplyTimingResolutionCalibration() const { return m_ApplyTimingResolutionCalibration; }
+  void SetApplyTimingResolutionCalibration(bool ApplyTimingResolutionCalibration) {
+    m_ApplyTimingResolutionCalibration = ApplyTimingResolutionCalibration;
   }
 
   // protected methods:
@@ -196,9 +202,11 @@ class MModuleDEESMEX : public MModule
   //! The sub module handling the output of the DEE in to the standard nuclearizer classes
   MSubModuleDEEOutput m_Output;
   
-  //! Option to add noise
+  //! Option to add noise to the strip energies
   bool m_ApplyResolutionCalibration; 
 
+  //! Option to add noise to the strip timing values
+  bool m_ApplyTimingResolutionCalibration;
 
 #ifdef ___CLING___
  public:

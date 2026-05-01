@@ -98,8 +98,11 @@ class MGUIOptionsDEESMEX : public MGUIOptions
   //! Select deadtime constants file
   MGUIEFileSelector* m_DeadtimeFileSelector;
   
-  //! Button to toggle noise addition
+  //! Button to toggle noise addition to strip energies
   TGCheckButton* m_ResolutionCalibrationButton;
+
+  //! Button to toggle noise addition to strip timings
+  TGCheckButton* m_TimingResolutionCalibrationButton;
 
 
 #ifdef ___CLING___

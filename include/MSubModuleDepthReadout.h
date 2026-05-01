@@ -71,6 +71,11 @@ class MSubModuleDepthReadout : public MSubModule
   //! Get filename for CTD->Depth splines
   MString GetDepthSplinesFileName() const {return m_DepthSplinesFile;}
 
+  //! Set if timing values should be smeared based on FWHM
+  void SetApplyTimingResolutionCalibration(bool ApplyTimingResolutionCalibration) { m_ApplyTimingResolutionCalibration = ApplyTimingResolutionCalibration; }
+  //! Get if timing values should be smeared based on FWHM
+  bool GetApplyTimingResolutionCalibration() { return m_ApplyTimingResolutionCalibration; }
+
   //! Finalize the module
   virtual void Finalize();
 
@@ -122,6 +127,9 @@ class MSubModuleDepthReadout : public MSubModule
 
   // private members:
  private:
+
+  //! Flag to determine if timing resolution calibration should be applied
+  bool m_ApplyTimingResolutionCalibration;
 
 
 

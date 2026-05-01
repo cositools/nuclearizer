@@ -74,8 +74,11 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
   
   m_HasOptionsGUI = true;
   
-  // Default to adding noise to the sim data
+  // Default to adding noise to the simulated energies
   m_ApplyResolutionCalibration = true;
+
+  // Default to adding noise to the simulated timing values
+  m_ApplyTimingResolutionCalibration = true;
 }
 
 
@@ -98,6 +101,7 @@ bool MModuleDEESMEX::Initialize()
   m_ChargeTransport.SetGeometry(m_Geometry);
   
   m_StripReadout.SetApplyResolutionCalibration(m_ApplyResolutionCalibration);
+  m_DepthReadout.SetApplyTimingResolutionCalibration(m_ApplyTimingResolutionCalibration);
 
   // Initialize the module 
 
@@ -284,10 +288,16 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_DepthReadout.ReadXmlConfiguration(Node);
   m_Output.ReadXmlConfiguration(Node);
   
-  // Add noise button
+  // Add noise button for energies
   MXmlNode* ResolutionCalibrationNode = Node->GetNode("ApplyResolutionCalibration");
   if (ResolutionCalibrationNode != nullptr) {
     m_ApplyResolutionCalibration  = ResolutionCalibrationNode->GetValueAsBoolean();
+  }
+
+  // Add noise button for timing values
+  MXmlNode* TimingResolutionCalibrationNode = Node->GetNode("ApplyTimingResolutionCalibration");
+  if (TimingResolutionCalibrationNode != nullptr) {
+    m_ApplyTimingResolutionCalibration  = TimingResolutionCalibrationNode->GetValueAsBoolean();
   }
 
   return true;
@@ -314,8 +324,11 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
   m_DepthReadout.CreateXmlConfiguration(Node);
   m_Output.CreateXmlConfiguration(Node);
   
-  // Add noise button
+  // Add noise button for energies
   new MXmlNode(Node, "ApplyResolutionCalibration", m_ApplyResolutionCalibration);
+
+  // Add noise button for timing values
+  new MXmlNode(Node, "ApplyTimingResolutionCalibration", m_ApplyTimingResolutionCalibration);
 
   return Node;
 }
