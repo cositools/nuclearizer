@@ -41,6 +41,7 @@ using namespace std;
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
+#include "MTime.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -325,7 +326,7 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
 
   // Set event-level properties
   // Event->SetID();  // TODO: No EventID
-  Event->SetCL(eventTime);     // Mission time in seconds
+  Event->SetTime(MTime(eventTime));     // Typed MTime object built from seconds
 
   // Loop through strip hits and create MStripHit objects
   for (uint8_t hitIdx = 0; hitIdx < numStripHit; ++hitIdx) {
