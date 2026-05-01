@@ -68,37 +68,6 @@ MSubModuleDepthReadout::~MSubModuleDepthReadout()
 
 bool MSubModuleDepthReadout::Initialize()
 {
-  // The detectors need to be in the same order as DetIDs.
-  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
-  vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
-
-  // Look through the Geometry and get the names and thicknesses of all the detectors.
-  for(unsigned int i = 0; i < DetList.size(); ++i){
-
-    unsigned int DetID = i;
-
-    MDDetector* det = DetList[i];
-    vector<string> DetectorNames;
-    if (det->GetTypeName() == "Strip3D") {
-      if (det->GetNSensitiveVolumes() == 1) {
-        MDVolume* vol = det->GetSensitiveVolume(0);
-        string det_name = vol->GetName().GetString();
-        if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
-          DetectorNames.push_back(det_name);
-          m_Thicknesses[DetID] = 2*(det->GetStructuralSize().GetZ());
-        } else {
-          cout << "ERROR in MSubModuleDepthReadout::Initialize: Found a duplicate detector: " << det_name << endl;
-        }
-      } else {
-        cout << "ERROR in MSubModuleDepthReadout::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
-      }
-    }
-  }
-
-  if (m_Thicknesses.size() == 0) {
-    cout<<"No Strip3D detectors were found."<<endl;
-    return false; 
-  }
 
   m_DepthGrid.clear();
   m_CTDMap.clear();
@@ -446,8 +415,6 @@ bool MSubModuleDepthReadout::LoadTACCalFile()
 void MSubModuleDepthReadout::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize()
-  m_Thicknesses.clear();
-
   m_DepthGrid.clear();
   m_CTDMap.clear();
   m_ElectronDriftTimes.clear();

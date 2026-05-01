@@ -58,9 +58,6 @@ class MSubModuleDepthReadout : public MSubModule
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
-  //! Set geometry
-  void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
-
   //! Set filename for coefficients file
   void SetDepthCoefficientsFileName( const MString& FileName) { m_DepthCoefficientsFile = FileName; }
   //! Get filename for coefficients file
@@ -109,12 +106,6 @@ class MSubModuleDepthReadout : public MSubModule
 
   // protected members:
  protected:
-
-  //! The geometry
-  MDGeometryQuest* m_Geometry;
-
-  //! The detector dimensions
-  unordered_map<int, double> m_Thicknesses;
 
   //! Filename of the depth coefficients (stretch, offset, timing noise, ...)
   MString m_DepthCoefficientsFile;
