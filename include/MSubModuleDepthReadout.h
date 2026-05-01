@@ -105,6 +105,9 @@ class MSubModuleDepthReadout : public MSubModule
 
   //! Filename of the depth coefficients (stretch, offset, timing noise, ...)
   MString m_DepthCoefficientsFile;
+  unordered_map<int, vector<double>> m_Coeffs;
+  double m_Coeffs_Energy;
+
   //! Filename of CTD->Depth splines
   MString m_DepthSplinesFile;
 
