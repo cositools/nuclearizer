@@ -124,6 +124,18 @@ class MModuleDEESMEX : public MModule
     return m_DepthReadout.GetDepthSplinesFileName();
   }
 
+  //! Set TAC calibration file name
+  void SetTACCalFileName(const MString& FileName)
+  {
+    m_DepthReadout.SetTACCalFileName(FileName);
+  }
+  //! Get TAC calibration file name
+  MString GetTACCalFileName() const
+  {
+    return m_DepthReadout.GetTACCalFileName();
+  }
+
+
   //! Set shield energy correction file name
   void SetShieldEnergyCorrectionFileName(const MString& FileName)
   {

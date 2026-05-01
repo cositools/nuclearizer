@@ -132,7 +132,12 @@ void MGUIOptionsDEESMEX::Create()
 
   m_TimingResolutionCalibrationButton = new TGCheckButton(m_OptionsFrame, "Smear timing values based on FWHM");
   m_TimingResolutionCalibrationButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetApplyTimingResolutionCalibration());
-  m_OptionsFrame->AddFrame(m_TimingResolutionCalibrationButton, LabelLayout);  
+  m_OptionsFrame->AddFrame(m_TimingResolutionCalibrationButton, LabelLayout);
+
+  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a TAC calibration file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetTACCalFileName());
+  m_TACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
+  m_OptionsFrame->AddFrame(m_TACCalFileSelector, LabelLayout);
 
   // shield energy correction file
   m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
@@ -198,6 +203,7 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthCoefficientsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
 
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   

@@ -71,6 +71,11 @@ class MSubModuleDepthReadout : public MSubModule
   //! Get filename for CTD->Depth splines
   MString GetDepthSplinesFileName() const {return m_DepthSplinesFile;}
 
+  //! Set filename for TAC calibration
+  void SetTACCalFileName( const MString& FileName) { m_TACCalFile = FileName; }
+  //! Get filename for TAC calibration
+  MString GetTACCalFileName() const {return m_TACCalFile;}
+
   //! Set if timing values should be smeared based on FWHM
   void SetApplyTimingResolutionCalibration(bool ApplyTimingResolutionCalibration) { m_ApplyTimingResolutionCalibration = ApplyTimingResolutionCalibration; }
   //! Get if timing values should be smeared based on FWHM
@@ -92,6 +97,9 @@ class MSubModuleDepthReadout : public MSubModule
 
   //! Load the splines file
   bool LoadSplinesFile();
+
+  //! Load the TACcal file
+  bool LoadTACCalFile();
 
 
   // private methods:
@@ -123,6 +131,10 @@ class MSubModuleDepthReadout : public MSubModule
   unordered_map<int, vector<double>> m_CTDMap;
   unordered_map<int, vector<double>> m_ElectronDriftTimes;
   unordered_map<int, vector<double>> m_HoleDriftTimes;
+
+  //! Filename of the TAC calibration file
+  MString m_TACCalFile;
+  unordered_map<int, vector<double>> m_TACCal;
 
 
   // private members:
