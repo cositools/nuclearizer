@@ -74,7 +74,7 @@ struct MDEEStripHit
 
   //! A unique lookup ID of the strip hit
   unsigned int m_ID;
-  //! The ID of the strip on the opposite side
+  //! The ID of the strip hit on the opposite side
   unsigned int m_OppositeSideID;
   //! Is this a guard ring
   bool m_IsGuardRing;
@@ -82,7 +82,7 @@ struct MDEEStripHit
   double m_Energy;
   //! The measured ADC value
   unsigned int m_ADC;
-  //! Is this a guard ring
+  //! If the strip exceeds thresholds
   bool m_HasTriggered;
   //! The measured TAC value in ADC units
   unsigned int m_TAC;
@@ -101,7 +101,7 @@ struct MDEEStripHit
   // vector<MDEEStripHit> m_OppositeStripID;  // <--- Check if needed
 
   //! The
-  // int m_OppositeStrip;  // <--- Check if needed
+  int m_OppositeStripID;  // <--- Check if needed
 
 
 
