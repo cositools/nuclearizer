@@ -406,7 +406,13 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
     MStripHit* hit = Event->GetStripHit(i);
 
     // Get strip info
-    int stripID = hit->GetStripID();
+    // custom encoding 11-bit strip ID: [detectorID:4][side:1][stripNumber:6]
+    // GetStripID() dont actually return 0-2079 in simulation... Cannot map through the mapping file
+    // TODO: figure out exactly what to do in the future, but now this is a workaround
+    int detID = hit->GetDetectorID() & 0xF;     // 4 bits (0-15)
+    int side = hit->IsLowVoltageStrip() ? 0 : 1; // 1 bit
+    int stripNum = hit->GetStripID() & 0x3F;     // 6 bits (0-63)
+    int stripID = (detID << 7) | (side << 6) | stripNum;
     bool fastTiming = hit->HasFastTiming();
     int energy = (int)hit->GetADCUnits();
     int timing = (int)hit->GetTAC();

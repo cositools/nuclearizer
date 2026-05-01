@@ -74,6 +74,17 @@ void MGUIOptionsSaverMeasurementsFITS::Create()
   m_FileSelectorFITS->SetFileType("FITS file", "*.fit");
   m_OptionsFrame->AddFrame(m_FileSelectorFITS, LabelLayout);
 
+  // Output level selector: L1b or L2
+  TGLabel* LevelLabel = new TGLabel(m_OptionsFrame, "Output Level:");
+  m_OptionsFrame->AddFrame(LevelLabel, LabelLayout);
+
+  m_OutputLevelCombo = new TGComboBox(m_OptionsFrame);
+  m_OutputLevelCombo->AddEntry("L1b (all events, with BAD_FLAG)", 0);
+  m_OutputLevelCombo->AddEntry("L2 (screened, no BAD_FLAG)", 1);
+  m_OutputLevelCombo->Select(dynamic_cast<MModuleSaverMeasurementsFITS*>(m_Module)->GetOutputLevel());
+  m_OutputLevelCombo->Resize(300, 25);
+  m_OptionsFrame->AddFrame(m_OutputLevelCombo, LabelLayout);
+
   PostCreate();
 }
 
@@ -117,6 +128,7 @@ bool MGUIOptionsSaverMeasurementsFITS::OnApply()
   // Modify this to store the data in the module!
 
   dynamic_cast<MModuleSaverMeasurementsFITS*>(m_Module)->SetFileName(m_FileSelectorFITS->GetFileName());
+  dynamic_cast<MModuleSaverMeasurementsFITS*>(m_Module)->SetOutputLevel(m_OutputLevelCombo->GetSelected());
 
   return true;
 }
