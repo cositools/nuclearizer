@@ -74,6 +74,14 @@ int g_LVStrips = 64;
 
 double g_CsPhotopeak = 661.7;
 
+const int NCTDBins = 10;
+double CTDBinWidth = (CTDmax - CTDmin) / NCTDBins;
+
+int GetCTDBin(double CTD) {
+  if (CTD < CTDmin || CTD >= CTDmax) return -1;
+  return int((CTD - CTDmin) / CTDBinWidth);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -315,9 +323,9 @@ bool TrappingCorrectionCs137::Analyze()
 
   TH1::SetDefaultSumw2();
 
-  map<int, TH1D*> CTDHistograms;
-  map<int, TH1D*> HVEnergyHistograms;
-  map<int, TH1D*> LVEnergyHistograms;
+  map<int, map<int, TH1D*>> CTDHistograms;      
+  map<int, map<int, TH1D*>> HVEnergyHistograms;
+  map<int, map<int, TH1D*>> LVEnergyHistograms;
 
   // Read in the input files and make a list of hdf5 files to calibrate
   if ((InputFile.GetSubString(InputFile.Length() - 4)) == "hdf5") {
@@ -425,24 +433,18 @@ bool TrappingCorrectionCs137::Analyze()
     cout<<"Analyzing..."<<endl;
     while ((IsFinished == false) && (m_Interrupt == false)) {
       Event->Clear();
-      cout<<"event is clear??"<<endl;
       if (Loader->IsReady()) {
-        cout<<"loader is ready"<<endl;
 
         // Load Event from HDF5 file, then do TAC cut/calibration, energy calibration, and filtering
         Loader->AnalyzeEvent(Event);
-        cout<<"event loaded"<<endl;
         TACCalibrator->AnalyzeEvent(Event);
-        cout<<"TAc cal loaded"<<endl;
         EnergyCalibrator->AnalyzeEvent(Event);
-        cout<<"ecal loaded"<<endl;
         bool Unfiltered = EventFilter->AnalyzeEvent(Event);
 
         if (Unfiltered == true) {
           
           // Pair strips
           Pairing->AnalyzeEvent(Event);
-          cout<<"pairing events"<<endl;
 
           // Only look at events with 1 Hit since we're interested in the 60keV photopeak.
           if ((Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true) && (Unfiltered==true) ) {
@@ -489,6 +491,8 @@ bool TrappingCorrectionCs137::Analyze()
                 if ((LVSH->HasCalibratedTiming()==true) && (HVSH->HasCalibratedTiming()==true)) {
                   
                   double CTD = LVSH->GetTiming() - HVSH->GetTiming();
+                  int CTDBin = GetCTDBin(CTD);
+                  if (CTDBin < 0) continue;
                   
                   int PixelID = (10000*DetID) + (100*LVSH->GetStripID()) + (HVSH->GetStripID());
 
@@ -502,31 +506,31 @@ bool TrappingCorrectionCs137::Analyze()
                     Endpoints[PixelID].push_back(tempLVvec);
                   }
 
-                  TH1D* CTDHist = CTDHistograms[PixelID];
-                  TH1D* HVHist = HVEnergyHistograms[PixelID];
-                  TH1D* LVHist = LVEnergyHistograms[PixelID];
+                  TH1D* CTDHist = CTDHistograms[CTDBin][PixelID];
+                  TH1D* HVHist  = HVEnergyHistograms[CTDBin][PixelID];
+                  TH1D* LVHist  = LVEnergyHistograms[CTDBin][PixelID];
                   
                   // If we didnt find an entry for the CTD and energy histograms, make new ones
                   if (CTDHist == nullptr) {
-                    char name[64]; sprintf(name,"CTD: PixelID %d  ",PixelID,PixelDir.Data());
+                    char name[128]; sprintf(name,"CTD: PixelID %d CTDbin %d", PixelID,CTDBin);
                     CTDHist = new TH1D(name, name, (g_MaxCTD - g_MinCTD)/2, g_MinCTD, g_MaxCTD);
                     CTDHist->SetXTitle("CTD (ns)");
                     CTDHist->SetYTitle("Hits");
-                    CTDHistograms[PixelID] = CTDHist;
+                    CTDHistograms[CTDBin][PixelID] = CTDHist;
                   }
                   if (HVHist == nullptr) {
-                    char name[64]; sprintf(name,"HV energy: PixelID %d  ",PixelID,PixelDir.Data());
+                    char name[128]; sprintf(name,"HV energy: PixelID %d  ",PixelID,CTDBin);
                     HVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy)*2, m_MinEnergy, m_MaxEnergy);
                     HVHist->SetXTitle("HV Energy (keV)");
                     HVHist->SetYTitle("Hits");
-                    HVEnergyHistograms[PixelID] = HVHist;
+                    HVEnergyHistograms[CTDBin][PixelID] = HVHist;
                   }
                   if (LVHist == nullptr) {
-                    char name[64]; sprintf(name,"LV energy: PixelID %d  ",PixelID,PixelDir.Data());
+                    char name[128]; sprintf(name,"LV energy: PixelID %d  ",PixelID,CTDBin);
                     LVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy)*2, m_MinEnergy, m_MaxEnergy);
                     LVHist->SetXTitle("LV Energy (keV)");
                     LVHist->SetYTitle("Hits");
-                    LVEnergyHistograms[PixelID] = LVHist;
+                    LVEnergyHistograms[CTDBin][PixelID] = LVHist;
                   }
 
                   // Add the data to the histograms
@@ -543,234 +547,246 @@ bool TrappingCorrectionCs137::Analyze()
     }
   }
   
-  map<int, TH1D*> FullDetCTDHistograms;
-  map<int, TH1D*> FullDetHVEnergyHistograms;
-  map<int, TH1D*> FullDetLVEnergyHistograms;
+  map<int, map<int, TH1D*>> FullDetCTDHistograms;
+  map<int, map<int, TH1D*>> FullDetHVEnergyHistograms;
+  map<int, map<int, TH1D*>> FullDetLVEnergyHistograms;
   
   // Loop over all pixels for which there are pixel-level histograms and sum to get full detector histograms
   // Fit to the pixel-level histograms and record the results
-  for (auto H: CTDHistograms) {
+  for (int c = 0; c < NCTDBins; ++c) {
+
+    cout << "Processing CTD bin " << c << endl;
+  
+    for (auto H : CTDHistograms[c]) {
+  
+      int PixelID = H.first;
+      TH1D* CTDHist = H.second;
+      TH1D* HVHist  = HVEnergyHistograms[c][PixelID];
+      TH1D* LVHist  = LVEnergyHistograms[c][PixelID];
     
-    int PixelID = H.first;
-    int DetID = (PixelID-(PixelID%10000))/10000;
+      int PixelID = H.first;
+      int DetID = (PixelID-(PixelID%10000))/10000;
 
-    // If this DetID hasn't been encountered yet, make an entry for it in Endpoints
-    if (FullDetEndpoints.find(DetID)==FullDetEndpoints.end()) {
-      vector<double> tempHVvec;
-      vector<double> tempLVvec;
-      vector<vector<double>> tempvec;
-      FullDetEndpoints[DetID] = tempvec;
-      FullDetEndpoints[DetID].push_back(tempHVvec);
-      FullDetEndpoints[DetID].push_back(tempLVvec);
-    }
-
-    TH1D* CTDHist = FullDetCTDHistograms[DetID];
-    TH1D* HVHist = FullDetHVEnergyHistograms[DetID];
-    TH1D* LVHist = FullDetLVEnergyHistograms[DetID];
-
-    
-    // If we didnt find an entry for the CTD and energy histograms, make new ones
-    if (CTDHist == nullptr) {
-      char name[64]; sprintf(name,"CTD: DetID %d  ",DetID,PixelDir.Data());
-      CTDHist = new TH1D(name, name, (g_MaxCTD - g_MinCTD)/2, g_MinCTD, g_MaxCTD);
-      CTDHist->SetXTitle("CTD (ns)");
-      CTDHist->SetYTitle("Hits");
-      FullDetCTDHistograms[DetID] = CTDHist;
-    }
-    if (HVHist == nullptr) {
-      char name[64]; sprintf(name,"HV energy: DetID %d  ",DetID,PixelDir.Data());
-      HVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy)*2, m_MinEnergy, m_MaxEnergy);
-      HVHist->SetXTitle("HV Energy (keV)");
-      HVHist->SetYTitle("Hits");
-      FullDetHVEnergyHistograms[DetID] = HVHist;
-    }
-    if (LVHist == nullptr) {
-      char name[64]; sprintf(name,"LV energy: DetID %d  ",DetID,PixelDir.Data());
-      LVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy)*2, m_MinEnergy, m_MaxEnergy);
-      LVHist->SetXTitle("LV Energy (keV)");
-      LVHist->SetYTitle("Hits");
-      FullDetLVEnergyHistograms[DetID] = LVHist;
-    }
-
-    CTDHist->Add(CTDHist, H.second);
-    HVHist->Add(HVHist, HVEnergyHistograms[PixelID]);
-    LVHist->Add(LVHist, LVEnergyHistograms[PixelID]);
-
-    if (m_PixelCorrect==true) {
-
-      // Fit histograms and save the results
-      // Only perform fits if the total counts in each is above the threshold given by g_MinCounts
-      cout<<H.second->Integral()<<" counts in CTD histogram for Pixel ID "<<PixelID<<endl;
-      cout<<HVEnergyHistograms[PixelID]->Integral()<<" counts in HV energy histogram for Pixel ID "<<PixelID<<endl;
-      cout<<LVEnergyHistograms[PixelID]->Integral()<<" counts in LV energy histogram for Pixel ID "<<PixelID<<endl;
-
-      if ((H.second->Integral() > g_MinCounts) && (HVEnergyHistograms[PixelID]->Integral() > g_MinCounts) && (LVEnergyHistograms[PixelID]->Integral() > g_MinCounts)) {
-        
-        // Initialize and run the CTD fit
-        double CTDGuess = H.second->GetBinCenter(H.second->GetMaximumBin());
-        TF1* CTDFunction = GenerateCTDFunction(CTDFitMin, CTDFitMax, CTDGuess);
-        TFitResultPtr CTDFit = H.second->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
-
-        // Save the results of the CTD fit
-        ofstream CTDFitFile(PixelDir +MString("/") + PixelID+MString("_CTDFitResult_")+ MString(".txt"));
-        streambuf* coutbuf = cout.rdbuf();
-        cout.rdbuf(CTDFitFile.rdbuf());
-        if (CTDFit >= 0) {
-            CTDFit->Print();
-        }
-        cout.rdbuf(coutbuf);
-        CTDFitFile.close();
-        
-        // Initialize and run the HV photopeak fit
-        TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
-        TFitResultPtr HVFit = HVEnergyHistograms[PixelID]->Fit(PhotopeakFunctionHV, "SQ", "", 642, 682);
-
-        // Save the results of the HV photopeak fit
-        ofstream HVFitFile(PixelDir +MString("/") + PixelID+MString("_HVEnergyFitResult_")+ MString(".txt"));
-        coutbuf = cout.rdbuf();
-        cout.rdbuf(HVFitFile.rdbuf());
-        if (HVFit >= 0) {
-            HVFit->Print();
-        }
-        cout.rdbuf(coutbuf);
-        HVFitFile.close();
-
-        // Initialize and run the LV photopeak fit
-        TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
-        TFitResultPtr LVFit = LVEnergyHistograms[PixelID]->Fit(PhotopeakFunctionLV, "SQ", "", 642, 682);
-        
-        // Save the results of the LV photopeak fit
-        ofstream LVFitFile(PixelDir +MString("/") + PixelID+MString("_LVEnergyFitResult_")+ MString(".txt"));
-        coutbuf = cout.rdbuf();
-        cout.rdbuf(LVFitFile.rdbuf());
-        if (LVFit >= 0) {
-            LVFit->Print();
-        }
-        cout.rdbuf(coutbuf);
-        LVFitFile.close();
-
-        // Save the resulting HV and LV photopeak centroids and CTD centroids to the Endpoints map.
-        // Only save these values if the fits ran successfully and if their reduced chi-square is less than 5
-        if ((CTDFit >= 0) && (HVFit >= 0) && (LVFit >= 0)) { 
-          if (((CTDFit->Chi2()/CTDFit->Ndf()) < 25) && ((HVFit->Chi2()/HVFit->Ndf()) < 25) && ((LVFit->Chi2()/LVFit->Ndf()) < 25)) {
-            Endpoints[PixelID][0].push_back(CTDFit->Parameter(2));
-            Endpoints[PixelID][0].push_back(HVFit->Parameter(1));
-            Endpoints[PixelID][0].push_back(LVFit->Parameter(1));
-          } else {
-            cout<<"Fits for Pixel "<<PixelID<<" did not pass the chi2 cut"<<endl; 
-          }
-        } else {
-          cout<<"Fits failed for Pixel "<<PixelID<<endl;
-        }
-      } else {
-        cout<<"Fewer than "<<g_MinCounts<<" counts in Pixel ID "<<PixelID<<endl;
+      // If this DetID hasn't been encountered yet, make an entry for it in Endpoints
+      if (FullDetEndpoints.find(DetID)==FullDetEndpoints.end()) {
+        vector<double> tempHVvec;
+        vector<double> tempLVvec;
+        vector<vector<double>> tempvec;
+        FullDetEndpoints[DetID] = tempvec;
+        FullDetEndpoints[DetID].push_back(tempHVvec);
+        FullDetEndpoints[DetID].push_back(tempLVvec);
       }
 
-      TFile CTDHistFile(PixelDir+MString("/")+PixelID+MString("_CTDHist_") + MString("Illum.root"),"recreate");
-      H.second->Write();
-      CTDHistFile.Close();
+      TH1D* CTDHist = FullDetCTDHistograms[DetID];
+      TH1D* HVHist = FullDetHVEnergyHistograms[DetID];
+      TH1D* LVHist = FullDetLVEnergyHistograms[DetID];
 
-      TFile HVHistFile(PixelDir+MString("/")+PixelID+MString("_HVEnergyHist_") + MString("Illum.root"),"recreate");
-      HVEnergyHistograms[PixelID]->Write();
-      HVHistFile.Close();
+      
+      // If we didnt find an entry for the CTD and energy histograms, make new ones
+      if (CTDHist == nullptr) {
+        char name[64]; sprintf(name,"CTD: DetID %d  ",DetID,PixelDir.Data());
+        CTDHist = new TH1D(name, name, (g_MaxCTD - g_MinCTD)/2, g_MinCTD, g_MaxCTD);
+        CTDHist->SetXTitle("CTD (ns)");
+        CTDHist->SetYTitle("Hits");
+        FullDetCTDHistograms[DetID] = CTDHist;
+      }
+      if (HVHist == nullptr) {
+        char name[64]; sprintf(name,"HV energy: DetID %d  ",DetID,PixelDir.Data());
+        HVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy)*2, m_MinEnergy, m_MaxEnergy);
+        HVHist->SetXTitle("HV Energy (keV)");
+        HVHist->SetYTitle("Hits");
+        FullDetHVEnergyHistograms[DetID] = HVHist;
+      }
+      if (LVHist == nullptr) {
+        char name[64]; sprintf(name,"LV energy: DetID %d  ",DetID,PixelDir.Data());
+        LVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy)*2, m_MinEnergy, m_MaxEnergy);
+        LVHist->SetXTitle("LV Energy (keV)");
+        LVHist->SetYTitle("Hits");
+        FullDetLVEnergyHistograms[DetID] = LVHist;
+      }
 
-      TFile LVHistFile(PixelDir+MString("/")+PixelID+MString("_LVEnergyHist_") + MString("Illum.root"),"recreate");
-      LVEnergyHistograms[PixelID]->Write();
-      LVHistFile.Close();
+      CTDHist->Add(CTDHist, H.second);
+      HVHist->Add(HVHist, HVEnergyHistograms[PixelID]);
+      LVHist->Add(LVHist, LVEnergyHistograms[PixelID]);
 
+      if (m_PixelCorrect==true) {
+
+        // Fit histograms and save the results
+        // Only perform fits if the total counts in each is above the threshold given by g_MinCounts
+        cout<<H.second->Integral()<<" counts in CTD histogram for Pixel ID "<<PixelID<<endl;
+        cout<<HVEnergyHistograms[PixelID]->Integral()<<" counts in HV energy histogram for Pixel ID "<<PixelID<<endl;
+        cout<<LVEnergyHistograms[PixelID]->Integral()<<" counts in LV energy histogram for Pixel ID "<<PixelID<<endl;
+
+        if ((H.second->Integral() > g_MinCounts) && (HVEnergyHistograms[PixelID]->Integral() > g_MinCounts) && (LVEnergyHistograms[PixelID]->Integral() > g_MinCounts)) {
+          
+          // Initialize and run the CTD fit
+          double CTDGuess = H.second->GetBinCenter(H.second->GetMaximumBin());
+          TF1* CTDFunction = GenerateCTDFunction(CTDFitMin, CTDFitMax, CTDGuess);
+          TFitResultPtr CTDFit = H.second->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
+
+          // Save the results of the CTD fit
+          ofstream CTDFitFile(PixelDir + MString("/") + PixelID + MString("_CTDbin_") + c + MString("_CTDFitResult.txt"));
+          streambuf* coutbuf = cout.rdbuf();
+          cout.rdbuf(CTDFitFile.rdbuf());
+          if (CTDFit >= 0) {
+              CTDFit->Print();
+          }
+          cout.rdbuf(coutbuf);
+          CTDFitFile.close();
+          
+          // Initialize and run the HV photopeak fit
+          TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
+          TFitResultPtr HVFit = HVEnergyHistograms[PixelID]->Fit(PhotopeakFunctionHV, "SQ", "", 642, 682);
+
+          // Save the results of the HV photopeak fit
+          ofstream HVFitFile(PixelDir +MString("/") + PixelID+ + MString("_CTDbin_") + c + MString("_HVEnergyFitResult_")+ MString(".txt"));
+          coutbuf = cout.rdbuf();
+          cout.rdbuf(HVFitFile.rdbuf());
+          if (HVFit >= 0) {
+              HVFit->Print();
+          }
+          cout.rdbuf(coutbuf);
+          HVFitFile.close();
+
+          // Initialize and run the LV photopeak fit
+          TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
+          TFitResultPtr LVFit = LVEnergyHistograms[PixelID]->Fit(PhotopeakFunctionLV, "SQ", "", 642, 682);
+          
+          // Save the results of the LV photopeak fit
+          ofstream LVFitFile(PixelDir +MString("/") + PixelID + MString("_CTDbin_") + c + MString("_LVEnergyFitResult_")+ MString(".txt"));
+          coutbuf = cout.rdbuf();
+          cout.rdbuf(LVFitFile.rdbuf());
+          if (LVFit >= 0) {
+              LVFit->Print();
+          }
+          cout.rdbuf(coutbuf);
+          LVFitFile.close();
+
+          // Save the resulting HV and LV photopeak centroids and CTD centroids to the Endpoints map.
+          // Only save these values if the fits ran successfully and if their reduced chi-square is less than 5
+          if ((CTDFit >= 0) && (HVFit >= 0) && (LVFit >= 0)) { 
+            if (((CTDFit->Chi2()/CTDFit->Ndf()) < 25) && ((HVFit->Chi2()/HVFit->Ndf()) < 25) && ((LVFit->Chi2()/LVFit->Ndf()) < 25)) {
+              Endpoints[PixelID][0].push_back(CTDFit->Parameter(2));
+              Endpoints[PixelID][0].push_back(HVFit->Parameter(1));
+              Endpoints[PixelID][0].push_back(LVFit->Parameter(1));
+            } else {
+              cout<<"Fits for Pixel "<<PixelID<<" did not pass the chi2 cut"<<endl; 
+            }
+          } else {
+            cout<<"Fits failed for Pixel "<<PixelID<<endl;
+          }
+        } else {
+          cout<<"Fewer than "<<g_MinCounts<<" counts in Pixel ID "<<PixelID<<endl;
+        }
+
+        TFile CTDHistFile(PixelDir+MString("/")+PixelID+  MString("_CTDbin_") + c +MString("_CTDHist_") + MString("Illum.root"),"recreate");
+        H.second->Write();
+        CTDHistFile.Close();
+
+        TFile HVHistFile(PixelDir+MString("/")+PixelID+ MString("_CTDbin_") + c +MString("_HVEnergyHist_") + MString("Illum.root"),"recreate");
+        HVEnergyHistograms[PixelID]->Write();
+        HVHistFile.Close();
+
+        TFile LVHistFile(PixelDir+MString("/")+PixelID+ MString("_CTDbin_") + c + MString("_LVEnergyHist_") + MString("Illum.root"),"recreate");
+        LVEnergyHistograms[PixelID]->Write();
+        LVHistFile.Close();
+
+      }
     }
   }
 
   // Do the same function fitting and recording as above, but for the full detectors rather than pixel-by-pixel
-  for (auto H: FullDetCTDHistograms) {
+  for (int c = 0; c < NCTDBins; ++c) {
+    for (auto H : FullDetCTDHistograms[c]) {
 
-    cout<<"Analyzing Full Detector Histograms"<<endl;
+      cout<<"Analyzing Full Detector Histograms"<<endl;
 
-    int DetID = H.first;
+      int DetID = H.first;
 
-    cout<<"full detector HV counts"<<FullDetHVEnergyHistograms[DetID]->Integral()<<endl;
-    cout<<"full detector LV counts"<<FullDetLVEnergyHistograms[DetID]->Integral()<<endl;
-    cout<<"full detector CTD counts"<<FullDetCTDHistograms[DetID]->Integral()<<endl;
-    
-    if ((H.second->Integral() > g_MinCounts) && (FullDetHVEnergyHistograms[DetID]->Integral() > g_MinCounts) && (FullDetLVEnergyHistograms[DetID]->Integral() > g_MinCounts)) {
+      cout<<"full detector HV counts"<<FullDetHVEnergyHistograms[DetID]->Integral()<<endl;
+      cout<<"full detector LV counts"<<FullDetLVEnergyHistograms[DetID]->Integral()<<endl;
+      cout<<"full detector CTD counts"<<FullDetCTDHistograms[DetID]->Integral()<<endl;
+      
+      if ((H.second->Integral() > g_MinCounts) && (FullDetHVEnergyHistograms[DetID]->Integral() > g_MinCounts) && (FullDetLVEnergyHistograms[DetID]->Integral() > g_MinCounts)) {
 
-      double CTDGuess = H.second->GetBinCenter(H.second->GetMaximumBin());
-      TF1* CTDFunction = GenerateCTDFunction(CTDFitMin, CTDFitMax, CTDGuess);
-      TFitResultPtr CTDFit = H.second->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
+        double CTDGuess = H.second->GetBinCenter(H.second->GetMaximumBin());
+        TF1* CTDFunction = GenerateCTDFunction(CTDFitMin, CTDFitMax, CTDGuess);
+        TFitResultPtr CTDFit = H.second->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
 
-      TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
-      TFitResultPtr HVFit = FullDetHVEnergyHistograms[DetID]->Fit(PhotopeakFunctionHV, "SQ", "", 642, 682);
+        TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
+        TFitResultPtr HVFit = FullDetHVEnergyHistograms[DetID]->Fit(PhotopeakFunctionHV, "SQ", "", 642, 682);
 
-      TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
-      TFitResultPtr LVFit = FullDetLVEnergyHistograms[DetID]->Fit(PhotopeakFunctionLV, "SQ", "", 642, 682);
+        TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
+        TFitResultPtr LVFit = FullDetLVEnergyHistograms[DetID]->Fit(PhotopeakFunctionLV, "SQ", "", 642, 682);
 
-      if ((CTDFit >= 0) && (HVFit >= 0) && (LVFit >= 0)) {
-        FullDetEndpoints[DetID][0].push_back(CTDFit->Parameter(2));
-        FullDetEndpoints[DetID][0].push_back(HVFit->Parameter(1));
-        FullDetEndpoints[DetID][0].push_back(LVFit->Parameter(1));
+        if ((CTDFit >= 0) && (HVFit >= 0) && (LVFit >= 0)) {
+          FullDetEndpoints[DetID][0].push_back(CTDFit->Parameter(2));
+          FullDetEndpoints[DetID][0].push_back(HVFit->Parameter(1));
+          FullDetEndpoints[DetID][0].push_back(LVFit->Parameter(1));
 
-        ofstream CTDFitFile(DetID+MString("_CTDFitResult_")+ MString(".txt"));
-        streambuf* coutbuf = cout.rdbuf();
-        cout.rdbuf(CTDFitFile.rdbuf());
-        if (CTDFit >= 0) {
-            CTDFit->Print();
+          ofstream CTDFitFile(DetID+MString("_CTDFitResult_")+ MString(".txt"));
+          streambuf* coutbuf = cout.rdbuf();
+          cout.rdbuf(CTDFitFile.rdbuf());
+          if (CTDFit >= 0) {
+              CTDFit->Print();
+          }
+          cout.rdbuf(coutbuf);
+          CTDFitFile.close();
+
+          ofstream HVFitFile(DetID +  MString("_CTDbin_") + c +MString("_HVEnergyFitResult_")+ MString(".txt"));
+          coutbuf = cout.rdbuf();
+          cout.rdbuf(HVFitFile.rdbuf());
+          if (HVFit >= 0) {
+              HVFit->Print();
+          }
+          cout.rdbuf(coutbuf);
+          HVFitFile.close();
+          
+          ofstream LVFitFile(DetID+ MString("_CTDbin_") + c +MString("_LVEnergyFitResult_")+ MString(".txt"));
+          coutbuf = cout.rdbuf();
+          cout.rdbuf(LVFitFile.rdbuf());
+          if (LVFit >= 0) {
+              LVFit->Print();
+          }
+          cout.rdbuf(coutbuf);
+          LVFitFile.close();
+
+          TFile CTDFile(m_OutFile+MString("_Det")+DetID+  MString("_CTDbin_") + c +MString("_CTDHist_") + MString("Illum.root"),"recreate");
+
+          TCanvas* CTDCanvas = new TCanvas();
+          CTDCanvas->cd();
+          H.second->Draw("hist");
+          CTDFunction->Draw("same");
+
+          H.second->Write();
+          CTDFile.Close();
+
+          TFile HVHistFile(m_OutFile+MString("_Det")+DetID+  MString("_CTDbin_") + c +MString("_HVEnergyHist_") + MString("Illum.root"),"recreate");
+
+          TCanvas* HVHistCanvas = new TCanvas();
+          HVHistCanvas->cd();
+          FullDetHVEnergyHistograms[DetID]->Draw("hist");
+          PhotopeakFunctionHV->Draw("same");
+
+          FullDetHVEnergyHistograms[DetID]->Write();
+          HVHistFile.Close();
+
+          TFile LVHistFile(m_OutFile+MString("_Det")+DetID+  MString("_CTDbin_") + c +MString("_LVEnergyHist_") + MString("Illum.root"),"recreate");
+
+          TCanvas* LVHistCanvas = new TCanvas();
+          LVHistCanvas->cd();
+          FullDetLVEnergyHistograms[DetID]->Draw("hist");
+          PhotopeakFunctionLV->Draw("same");
+
+          FullDetLVEnergyHistograms[DetID]->Write();
+          LVHistFile.Close();
+
+        } else {
+          cout<<"Fits failed for Det "<<DetID<<endl;
         }
-        cout.rdbuf(coutbuf);
-        CTDFitFile.close();
-
-        ofstream HVFitFile(DetID+MString("_HVEnergyFitResult_")+ MString(".txt"));
-        coutbuf = cout.rdbuf();
-        cout.rdbuf(HVFitFile.rdbuf());
-        if (HVFit >= 0) {
-            HVFit->Print();
-        }
-        cout.rdbuf(coutbuf);
-        HVFitFile.close();
-        
-        ofstream LVFitFile(DetID+MString("_LVEnergyFitResult_")+ MString(".txt"));
-        coutbuf = cout.rdbuf();
-        cout.rdbuf(LVFitFile.rdbuf());
-        if (LVFit >= 0) {
-            LVFit->Print();
-        }
-        cout.rdbuf(coutbuf);
-        LVFitFile.close();
-
-        TFile CTDFile(m_OutFile+MString("_Det")+DetID+MString("_CTDHist_") + MString("Illum.root"),"recreate");
-
-        TCanvas* CTDCanvas = new TCanvas();
-        CTDCanvas->cd();
-        H.second->Draw("hist");
-        CTDFunction->Draw("same");
-
-        H.second->Write();
-        CTDFile.Close();
-
-        TFile HVHistFile(m_OutFile+MString("_Det")+DetID+MString("_HVEnergyHist_") + MString("Illum.root"),"recreate");
-
-        TCanvas* HVHistCanvas = new TCanvas();
-        HVHistCanvas->cd();
-        FullDetHVEnergyHistograms[DetID]->Draw("hist");
-        PhotopeakFunctionHV->Draw("same");
-
-        FullDetHVEnergyHistograms[DetID]->Write();
-        HVHistFile.Close();
-
-        TFile LVHistFile(m_OutFile+MString("_Det")+DetID+MString("_LVEnergyHist_") + MString("Illum.root"),"recreate");
-
-        TCanvas* LVHistCanvas = new TCanvas();
-        LVHistCanvas->cd();
-        FullDetLVEnergyHistograms[DetID]->Draw("hist");
-        PhotopeakFunctionLV->Draw("same");
-
-        FullDetLVEnergyHistograms[DetID]->Write();
-        LVHistFile.Close();
-
       } else {
-        cout<<"Fits failed for Det "<<DetID<<endl;
+        cout<<"Fewer than "<<g_MinCounts<<" counts in Det "<<DetID<<endl;
       }
-    } else {
-      cout<<"Fewer than "<<g_MinCounts<<" counts in Det "<<DetID<<endl;
     }
   }
 
@@ -778,7 +794,7 @@ bool TrappingCorrectionCs137::Analyze()
   //setup parameter file
   ofstream OutputCalFile;
   OutputCalFile.open(m_OutFile+MString("_parameters.txt"));
-  OutputCalFile<<"# Det ID"<<'\t'<<"HV Strip ID"<<'\t'<<"LV Strip ID"<<'\t'<<"HV Illum CTD"<<'\t'<<"LV Illum CTD"<<'\t'<<"HV Illum. HV Centroid"<<'\t'<<"LV Illum. HV Centroid"<<'\t'<<"HV Illum. LV Centroid"<<'\t'<<"LV Illum. LV Centroid"<<endl<<endl;
+  OutputCalFile<<"CTD bin" << '\t'<< "# Det ID"<<'\t'<<"HV Strip ID"<<'\t'<<"LV Strip ID"<<'\t'<<"HV Illum CTD"<<'\t'<<"LV Illum CTD"<<'\t'<<"HV Illum. HV Centroid"<<'\t'<<"LV Illum. HV Centroid"<<'\t'<<"HV Illum. LV Centroid"<<'\t'<<"LV Illum. LV Centroid"<<endl<<endl;
 
   // map<int, TH2D*> DeltaHVMap;
   // map<int, TH2D*> DeltaLVMap;
@@ -945,7 +961,7 @@ bool TrappingCorrectionCs137::Analyze()
 TF1* TrappingCorrectionCs137::GeneratePhotopeakFunction()
 {
   // Gaussian with a low-E shelf
-  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", "gaus(0) + [0]*[3]*(1 - erf((x-[1])/(sqrt(2)*[2])))", 650, 670);
+  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", "gaus(0) + [0]*[3]*(1 - erf((x-[1])/(sqrt(2)*[2])))", 635, 675);
 
   PhotopeakFunction->SetParName(0, "Gauss norm");
   PhotopeakFunction->SetParName(1, "Mu");
