@@ -147,7 +147,7 @@ class MModuleDEESMEX : public MModule
   //! The sub module handling the shield readout
   MSubModuleShieldReadout m_ShieldReadout;
 
-  //! The sub module handling the shield veto
+  //! The sub module handling the shield deadtime and veto
   MSubModuleShieldTrigger m_ShieldTrigger;
 
   //! The sub module handling charge transport to grid and voxelation into strips

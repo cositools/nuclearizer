@@ -82,8 +82,8 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Return true if we have a trigger - filled after AnalyzeEvent
   bool HasTrigger() const { return m_HasTrigger; }
 
-  //! Return true if we have a veto - filled after AnalyzeEvent
-  bool HasVeto() const { return m_HasVeto; }
+  //! Return true if we have a shield veto - filled after AnalyzeEvent
+  bool HasShieldVeto() const { return m_HasShieldVeto; }
 
   //! Return the time when the dead time ends - filled after AnalyzeEvent
   MTime GetDeadTimeEnd() const { return m_DeadTimeEnd; }
@@ -132,8 +132,8 @@ class MSubModuleShieldTrigger : public MSubModule
 
   //! Flag indicating that a trigger has been raised
   bool m_HasTrigger;
-  //! Flag indicating that a veto has been raised
-  bool m_HasVeto;
+  //! Flag indicating that a shield veto has been raised
+  bool m_HasShieldVeto;
   //! Time when the shield dead time ends
   MTime m_DeadTimeEnd;
 

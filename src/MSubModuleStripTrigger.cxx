@@ -56,15 +56,8 @@ MSubModuleStripTrigger::MSubModuleStripTrigger() : MSubModule()
 
   m_EventTime = 0.0;
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasGRVeto = false;
   m_IsGeDDead = false;
-
-  // Initialize deadtime parameters
-  m_StripCoincidenceWindow = 0.0;
-  m_ASICDeadTimePerChannel = 0.0;
-  m_StripDelayAfter1 = 0.0;
-  m_StripDelayAfter2 = 0.0;
-  m_StripDelayAfter = 0.0;
 
   m_StripsCurrentDeadtime = 0.0;
   m_ASICLastHitTime = -10.0;
@@ -126,7 +119,7 @@ void MSubModuleStripTrigger::Clear()
   // Clear for the next event
 
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasGRVeto = false;
   m_DeadTimeEnd = MTime(0.0);
 
   MSubModule::Clear();
@@ -337,11 +330,11 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
       } else if (!IsLV && StripID >= 32 && StripID <= 63) {
         ASICofDet = 3;
       } else if (!IsLV && StripID == 64) {
-        m_HasVeto = true;
+        m_HasGRVeto = true;
         m_TotalGRHitsCounter++;
         ASICofDet = 4;
       } else if (IsLV && StripID == 64) {
-        m_HasVeto = true;
+        m_HasGRVeto = true;
         m_TotalGRHitsCounter++;
         ASICofDet = 5;
       } else {
@@ -426,7 +419,7 @@ bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine for strip trigger
 
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasGRVeto = false;
 
   // Process strip hits and calculate deadtime
   ProcessStripHits(Event);

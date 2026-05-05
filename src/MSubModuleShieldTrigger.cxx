@@ -56,16 +56,11 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
 
   m_EventTime = 0.0;
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasShieldVeto = false;
   m_IsShieldDead = false;
 
   // Initialize shield parameters with default values
   m_ShieldThreshold = -1.0; // Need to change this value at some point
-  m_ShieldPulseDuration = 1.7e-6;
-  m_ShieldDelayBefore = 0.1e-6;
-  m_ShieldDelayAfter = 0.4e-6;
-  m_ShieldVetoWindowSize = 1.5e-6;
-  m_ASICDeadTimePerChannel = 1e-6;
   
   m_NumShieldHitCounts = 0;
   m_NumBGOHitsErased = 0;
@@ -127,7 +122,7 @@ void MSubModuleShieldTrigger::Clear()
   // Clear for the next event
 
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasShieldVeto = false;
   m_IsShieldDead = false;
   m_DeadTimeEnd = MTime(0.0);
   
@@ -303,7 +298,7 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine for shield trigger and veto
 
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasShieldVeto = false;
   m_IsShieldDead = false;
 
   m_EventTime = Event->GetTime().GetAsSeconds();
@@ -312,7 +307,7 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   for (int group = 0; group < nShieldPanels; ++group) {
     if (m_EventTime >= m_ShieldLastHitTime[group] &&
         m_EventTime <= m_ShieldLastHitTime[group] + m_ShieldVetoWindowSize) {
-      m_HasVeto = true;
+      m_HasShieldVeto = true;
     }
   }
 
@@ -327,7 +322,7 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // If vetoed, set the dead time end
-  if (m_HasVeto) {
+  if (m_HasShieldVeto) {
     // Calculate the maximum deadtime end across all panels
     double maxDeadTimeEnd = 0.0;
     for (int i = 0; i < nShieldPanels; i++) {
