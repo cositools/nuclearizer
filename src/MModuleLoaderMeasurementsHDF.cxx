@@ -321,14 +321,17 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
     if (PropertyList.getLayout() == H5D_CHUNKED) {
       hsize_t ChunkDims[H5S_MAX_RANK];
       PropertyList.getChunk(Rank, ChunkDims);
-
-      cout<<"Chunk dimensions: ";
-      for (int i = 0; i < Rank; ++i) {
-        cout<<ChunkDims[i]<<" ";
+      if (g_Verbosity > c_Info) {
+        cout<<"Chunk dimensions: ";
+        for (int i = 0; i < Rank; ++i) {
+          cout<<ChunkDims[i]<<" ";
+        }
+        cout<<endl;
       }
-      cout<<endl;
     } else {
-      cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
+      if (g_Verbosity > c_Info) {
+        cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
+      }
     }
 
     if (m_HDFStripHitVersion == MHDFStripHitVersion::V1_0) {
@@ -704,17 +707,28 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         // NOTE: at some point we will want to remove this code and always include nearest neighbor data
         if (m_IncludeNearestNeighbor == false && HitType == 1) {
           delete H; // Clean up the memory we just allocated
-          // Increase counters
-          NStripHits = static_cast<unsigned int>(NumberOfHits);
-          StripHitIndex++;
-          continue;
+        } else {
+          Event->AddStripHit(H);
         }
-          
-        Event->AddStripHit(H);
       } else {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<StripID<<" not found in strip map"<<endl;
         return false;
       }
+
+      // Remove incomplete events (fewer strip hits than what is listed in HITS)
+      if (StripHitIndex > 0 && NumberOfHits != NStripHits) {
+        if (g_Verbosity >= c_Error) {
+          cout<<m_XmlTag<<": Event "<<Event->GetID()<<" had fewer strip hits ("<<StripHitIndex<<") than expected ("<<NStripHits<<"). Ignoring event."<<endl;
+        }
+        // Reduce the batch index and current hit counter to still process the hit from the next event
+        m_CurrentBatchIndex--;
+        m_CurrentHit--;
+        return false;
+      }
+
+      // Increase counters
+      NStripHits = static_cast<unsigned int>(NumberOfHits);
+      StripHitIndex++;
       
     } else if (m_HDFStripHitVersion <= MHDFStripHitVersion::V2_2) {
 
@@ -745,11 +759,12 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       // Create objects for all hits that belong to that event
       for (uint32_t i = EventIndices.m_FEEHits[0]; i < EventIndices.m_FEEHits[1]; i++) {
 
-        uint32_t IndexInBatch = i - m_MinHitIndex;
         if (i < m_MinHitIndex || i >= (m_MinHitIndex + m_Buffer_2.size())) {
           if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Entry " << i << " is NOT in the current FEEHits buffer!" << endl;
           return false;
         } 
+
+        uint32_t IndexInBatch = i - m_MinHitIndex;
         
         MHDFStripHit_V2& Hit = m_Buffer_2[IndexInBatch];
         if (m_StripMap.HasReadOutID(Hit.m_StripID) == true) {
@@ -773,17 +788,16 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
           // NOTE: at some point we will want to remove this code and always include nearest neighbor data
           if (m_IncludeNearestNeighbor == false && Hit.m_HitType == 1) {
             delete H; // Clean up the memory we just allocated
-            // Increase counters
-            NStripHits = static_cast<unsigned int>(NumberOfHits);
-            StripHitIndex++;
-            continue;
+          } else {
+            Event->AddStripHit(H);
           }
-            
-          Event->AddStripHit(H);
         } else {
           if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<Hit.m_StripID<<" not found in strip map"<<endl;
           return false;
         }
+
+        // Use StripIndex here (without updating NStripHits) to exit the while-loop after finalizing the Event
+        StripHitIndex++;
       }
     } else {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unhandled HDF hit version found: "<<m_HDFStripHitVersion<<endl<<"Please update this module."<<endl;
@@ -808,8 +822,14 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     } else {
       Event->SetTI(TimeCode);
     }
-    NStripHits = static_cast<unsigned int>(NumberOfHits);
-    StripHitIndex++;
+  }
+
+  // Remove all Events with no (valid) strip hits
+  if (Event->GetNStripHits() == 0){
+    if (g_Verbosity >= c_Error) {
+      cout<<m_XmlTag<<": Event had no (valid) strip hits"<< endl;
+    }
+    return false;
   }
 
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);

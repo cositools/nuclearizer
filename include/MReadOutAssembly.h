@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <atomic>
 
 // ROOT libs:
 
@@ -233,10 +234,10 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the Strip Pairing quality flag
   bool HasStripPairing_QualityFlag() const { return m_StripPairing_QualityFlag; }
 
-  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
-  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
-  //! Return the Reduced Chi^2
-  double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
+  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module (one for each detector)
+  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare.push_back(StripPairingReducedChiSquare); }
+  //! Return all the Reduced Chi^2 (for each detector)
+  vector<double> GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
 
   // Track Vetos
@@ -249,6 +250,8 @@ class MReadOutAssembly : public MReadOutSequence
   void SetFilteredOut(bool Flag = true) { m_FilteredOut = Flag; }
   //! Get the filgtered-out flag
   bool IsFilteredOut() const { return m_FilteredOut; }
+  //! Return the unique assembly identifier
+  unsigned long GetAssemblyID() const { return m_AssemblyID; }
 
   //! Returns true if none of the "bad" or "Error" flags has been set and the event has not been filtered out or rejected
   bool IsGood() const;
@@ -303,6 +306,12 @@ class MReadOutAssembly : public MReadOutSequence
 
   // private members:
  private:
+
+  //! Unique assembly identifier counter
+  static atomic<unsigned long> s_NextAssemblyID;
+
+  //! Unique assembly identifier
+  unsigned long m_AssemblyID;
 
   //! Clock tick (Unix and UHF)
   unsigned long long m_TI;
@@ -401,7 +410,7 @@ class MReadOutAssembly : public MReadOutSequence
   vector<MString> m_StripPairingString_QualityFlag;
 
   //! Reduced Chi^2 of the Strip Paired Event
-  double m_StripPairingReducedChiSquare;
+  vector<double> m_StripPairingReducedChiSquare;
 
  //! True if event has been filtered out
   bool m_FilteredOut;
