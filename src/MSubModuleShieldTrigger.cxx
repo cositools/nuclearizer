@@ -345,30 +345,33 @@ void MSubModuleShieldTrigger::Finalize()
 {
   // Finalize the analysis - do all cleanup
 
-  cout << "###################" << endl
-       << "SHIELD TRIGGER MODULE STATISTICS" << endl
-       << "###################" << endl;
-  
-  double simTime = m_LastTime - m_FirstTime;
-  if (simTime > 0) {
-    cout << "Simulation time: " << simTime << " seconds" << endl;
-  }
-  
-  cout << "Total BGO hits before BGO deadtime: " << m_NumShieldHitCounts << endl;
-  
-  for (int i = 0; i < nShieldPanels; i++) {
-    cout << "Shield Panel " << i << " dead time: " << m_TotalShieldDeadtime[i] << " seconds" << endl;
+  // Print shield trigger module diagnostics
+  if (g_Verbosity >= c_Info) {
+    cout << "###################" << endl
+        << "SHIELD TRIGGER MODULE STATISTICS" << endl
+        << "###################" << endl;
+    
+    double simTime = m_LastTime - m_FirstTime;
     if (simTime > 0) {
-      double liveFraction = 1.0 - (m_TotalShieldDeadtime[i] / simTime);
-      cout << "  Livetime fraction: " << liveFraction << endl;
+      cout << "Simulation time: " << simTime << " seconds" << endl;
     }
-  }
-  
-  cout << "BGO hits erased due to BGO being dead: " << m_NumBGOHitsErased << endl;
-  
-  if (simTime > 0) {
-    double rateAfterDT = (m_NumShieldHitCounts - m_NumBGOHitsErased) / simTime;
-    cout << "Shield rate after deadtime: " << rateAfterDT << " cps" << endl;
+    
+    cout << "Total BGO hits before BGO deadtime: " << m_NumShieldHitCounts << endl;
+    
+    for (int i = 0; i < nShieldPanels; i++) {
+      cout << "Shield Panel " << i << " dead time: " << m_TotalShieldDeadtime[i] << " seconds" << endl;
+      if (simTime > 0) {
+        double liveFraction = 1.0 - (m_TotalShieldDeadtime[i] / simTime);
+        cout << "  Livetime fraction: " << liveFraction << endl;
+      }
+    }
+    
+    cout << "BGO hits erased due to BGO being dead: " << m_NumBGOHitsErased << endl;
+    
+    if (simTime > 0) {
+      double rateAfterDT = (m_NumShieldHitCounts - m_NumBGOHitsErased) / simTime;
+      cout << "Shield rate after deadtime: " << rateAfterDT << " cps" << endl;
+    }
   }
 
   MSubModule::Finalize();

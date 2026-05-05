@@ -473,37 +473,40 @@ void MSubModuleStripTrigger::Finalize()
 {
   // Finalize the analysis
 
-  cout << "###################" << endl
-       << "STRIP TRIGGER MODULE STATISTICS" << endl
-       << "###################" << endl;
-  
-  double simTime = m_LastTime - m_FirstTime;
-  if (simTime > 0) {
-    cout << "Simulation time: " << simTime << " seconds" << endl;
-  }
-  
-  cout << "Total strip hits after charge sharing (before deadtime): " << m_TotalStripHitsCounter << endl;
-  cout << "Total GR hits (before deadtime): " << m_TotalGRHitsCounter << endl;
-  cout << "Total dead time of the instrument: " << m_StripsTotalDeadtime << " seconds" << endl;
-  
-  if (simTime > 0) {
-    double liveFraction = 1.0 - (m_StripsTotalDeadtime / simTime);
-    cout << "Livetime fraction: " << liveFraction << endl;
-  }
-  
-  // cout << "Hits erased due to detector being dead: " << m_StripHitsErased << endl;
-  
-  if (m_TotalStripHitsCounter > 0) {
-    cout << "Avg deadtime per strip hit: " << m_StripsTotalDeadtime / m_TotalStripHitsCounter << " seconds" << endl;
-  }
-  
-  cout << "Trigger rates (events per detector):" << endl;
-  for (int i = 0; i < nDets; i++) {
-    cout << "  Detector " << i << ": " << m_NumStripTriggers[i] << " events";
+  // Print strip trigger module diagnostics
+  if (g_Verbosity >= c_Info) {
+    cout << "###################" << endl
+        << "STRIP TRIGGER MODULE STATISTICS" << endl
+        << "###################" << endl;
+    
+    double simTime = m_LastTime - m_FirstTime;
     if (simTime > 0) {
-      cout << " (" << (m_NumStripTriggers[i] / simTime) << " Hz)";
+      cout << "Simulation time: " << simTime << " seconds" << endl;
     }
-    cout << endl;
+    
+    cout << "Total strip hits after charge sharing (before deadtime): " << m_TotalStripHitsCounter << endl;
+    cout << "Total GR hits (before deadtime): " << m_TotalGRHitsCounter << endl;
+    cout << "Total dead time of the instrument: " << m_StripsTotalDeadtime << " seconds" << endl;
+    
+    if (simTime > 0) {
+      double liveFraction = 1.0 - (m_StripsTotalDeadtime / simTime);
+      cout << "Livetime fraction: " << liveFraction << endl;
+    }
+    
+    // cout << "Hits erased due to detector being dead: " << m_StripHitsErased << endl;
+    
+    if (m_TotalStripHitsCounter > 0) {
+      cout << "Avg deadtime per strip hit: " << m_StripsTotalDeadtime / m_TotalStripHitsCounter << " seconds" << endl;
+    }
+    
+    cout << "Trigger rates (events per detector):" << endl;
+    for (int i = 0; i < nDets; i++) {
+      cout << "  Detector " << i << ": " << m_NumStripTriggers[i] << " events";
+      if (simTime > 0) {
+        cout << " (" << (m_NumStripTriggers[i] / simTime) << " Hz)";
+      }
+      cout << endl;
+    }
   }
 
   MSubModule::Finalize();
