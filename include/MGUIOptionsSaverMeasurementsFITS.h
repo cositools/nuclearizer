@@ -30,6 +30,7 @@
 #include "MGlobal.h"
 #include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
+#include <TGComboBox.h>
 
 // Nuclearizer libs:
 #include "MModule.h"
@@ -71,6 +72,9 @@ class MGUIOptionsSaverMeasurementsFITS : public MGUIOptions
  private:
   //! Select which FITS file to save to
   MGUIEFileSelector* m_FileSelectorFITS;
+
+  //! Select output level: L1b or L2
+  TGComboBox* m_OutputLevelCombo;
 
 
 

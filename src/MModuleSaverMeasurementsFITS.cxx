@@ -37,6 +37,9 @@ using namespace std;
 // MEGAlib libs:
 #include "MGUIOptionsSaverMeasurementsFITS.h"
 #include "MHit.h"
+#include "MPhysicalEvent.h"
+#include "MComptonEvent.h"
+#include "MPhotoEvent.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -57,7 +60,7 @@ MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS() : MModule()
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Save events to FITS files (L1b)";
+  m_Name = "Save events to FITS files (L1b/L2)";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagSaverMeasurementsFITS";
@@ -80,8 +83,13 @@ MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS() : MModule()
   m_PrimaryHDU = nullptr;
   m_ScienceTable = nullptr;
   m_TotalEventsWritten = 0;
+  m_TotalEventsSkipped = 0;
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
+  m_OutputLevel = 0; // 0 = L1b (default), 1 = L2
+  m_FirstEventTime = 0.0;
+  m_LastEventTime = 0.0;
+  m_HasEvents = false;
 }
 
 
@@ -124,7 +132,8 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
   // Create the FITS file using CCfits
   try {
 
-    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Creating FITS file: "<<string(FileName)<<endl;
+    string levelStr = (m_OutputLevel == 1) ? "L2" : "L1b";
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Creating "<<levelStr<<" FITS file: "<<string(FileName)<<endl;
 
     // Create new FITS file (overwrite if exists)
     m_FITSFile = new FITS(string(FileName), RWmode::Write);
@@ -153,12 +162,13 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     // PE(100) = variable-length single-precision float array (max 100)
     // 4E = fixed-length array of 4 single-precision floats
     // 3E = fixed-length array of 3 single-precision floats
+    // L1b has BAD_FLAG, L2 does not (per spec: L2 removes bad events and BAD_FLAG column)
     std::vector<string> colNames = {
       "TIME", "EVENTTYPE", "EVENTCLASS", "NUMHIT", "SEQHIT",
       "STATTEST", "RECOILDIR", "RECOILDIR_ERR",
       "X", "Y", "Z",
       "X_ERR", "Y_ERR", "Z_ERR",
-      "ENERGY", "ENERGY_ERR", "BAD_FLAG"
+      "ENERGY", "ENERGY_ERR"
     };
 
     std::vector<string> colFormats = {
@@ -167,8 +177,8 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
       "1B",      // EVENTCLASS - scalar byte
       "1B",      // NUMHIT - scalar byte
       "1B",      // SEQHIT - scalar byte
-      "4E",      // STATTEST 
-      "3E",      // RECOILDIR 
+      "4E",      // STATTEST
+      "3E",      // RECOILDIR
       "3E",      // RECOILDIR_ERR
       "PE(100)", // X - variable-length float array
       "PE(100)", // Y
@@ -177,23 +187,30 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
       "PE(100)", // Y_ERR
       "PE(100)", // Z_ERR
       "PE(100)", // ENERGY
-      "PE(100)", // ENERGY_ERR
-      "PE(100)"  // BAD_FLAG
+      "PE(100)"  // ENERGY_ERR
     };
 
     std::vector<string> colUnits = {
       "s", "", "", "", "",
-      "", "unit", "unit",
-      "cm", "unit", "unit",
+      "", "", "",
+      "cm", "cm", "cm",
       "unit", "unit", "unit",
-      "keV", "unit", ""
+      "keV", "unit"
     };
 
+    // L1b includes BAD_FLAG column, L2 does not
+    if (m_OutputLevel == 0) {
+      colNames.push_back("BAD_FLAG");
+      colFormats.push_back("PE(100)");
+      colUnits.push_back("");
+    }
+
     // Create binary table extension
-    m_ScienceTable = m_FITSFile->addTable("Compton_L1b_1st_Ext", 0, colNames, colFormats, colUnits);
+    string extName = (m_OutputLevel == 1) ? "GED_L2" : "GED_L1B";
+    m_ScienceTable = m_FITSFile->addTable(extName, 0, colNames, colFormats, colUnits);
 
     // Add keywords to science table
-    m_ScienceTable->addKey("EXTNAME", "GED_L1B", "name of this HDU");
+    m_ScienceTable->addKey("EXTNAME", extName, "name of this HDU");
     m_ScienceTable->addKey("TELESCOP", "COSI", "Telescope mission name");
     m_ScienceTable->addKey("INSTRUME", "GED", "Instrument name");
     m_ScienceTable->addKey("DATAMODE", "TBD", "Instrument datamode");
@@ -208,10 +225,10 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     m_ScienceTable->addKey("TIMEUNIT", "s", "Time unit for timing header keywords");
     m_ScienceTable->addKey("TIMEDEL", 0.0, "Integration time");
     m_ScienceTable->addKey("CLOCKAPP", false, "If clock corrections are applied (T/F)");
-    m_ScienceTable->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date"); //DATE-OBS and DATA-END should match the primary header
-    m_ScienceTable->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date"); //DATE-OBS and DATA-END should match the primary header
-    m_ScienceTable->addKey("TSTART", 0.0, "Start time"); //TSTART and TSTOP are the start and stop of the dataset written in seconds from the reference time
-    m_ScienceTable->addKey("TSTOP", 0.0, "Stop time"); //TSTART and TSTOP are the start and stop of the dataset written in seconds from the reference time
+    m_ScienceTable->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date"); //placeholder, this will be wroten after we read through all the event
+    m_ScienceTable->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date"); // 
+    m_ScienceTable->addKey("TSTART", 0.0, "Start time"); //placeholder, this will be wroten after we read through all the event
+    m_ScienceTable->addKey("TSTOP", 0.0, "Stop time"); //
     m_ScienceTable->addKey("HDUCLASS", "OGIP", "format conforms to OGIP standard");
     m_ScienceTable->addKey("HDUCLAS1", "ARRAY", "hduclass1");
     m_ScienceTable->addKey("HDUCLAS2", "TOTAL", "hduclas2");
@@ -242,21 +259,83 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Add this event to the batch, write batch when full
 
+  // L2 mode: skip bad events (screening)
+  if (m_OutputLevel == 1 && Event->IsBad()) {
+    m_TotalEventsSkipped++;
+    Event->SetAnalysisProgress(MAssembly::c_EventSaver);
+    return true;
+  }
+
   // Extract event-level data
-  double time = Event->GetCL();
+  MTime eventTime = Event->GetTime();
+  //Get the seconds since epoch in double format
+  double time = eventTime.GetAsSeconds();
   unsigned int numHits = Event->GetNHits();
 
-  // Event-level metadata (placeholders for now - can be filled in later)
+  // loop through all event, and record the start and end time for TSTART/TSTOP
+  if (!m_HasEvents) {
+    m_FirstEventTime = time;
+    m_LastEventTime = time;
+    m_HasEvents = true;
+  } else {
+    if (time < m_FirstEventTime) m_FirstEventTime = time;
+    if (time > m_LastEventTime) m_LastEventTime = time;
+  }
+
+  // Event-level metadata defaults
   uint8_t eventType = 0;    // 0 = unknown/default
-  uint8_t eventClass = 0;   // 0 = unknown (can check for Compton/photoabsorption later)
-  uint8_t seqHit = 0;       // 0 = first/only sequence
+  uint8_t eventClass = 2;   // 2 = unreconstructed
+  uint8_t seqHit = 0;
 
   // Fixed-length arrays for event-level data (initialize to zeros)
-  std::valarray<float> statTest(0.0f, 4);         // 4 statistical test values
-  std::valarray<float> recoilDir(0.0f, 3);        // Recoil electron direction (x,y,z)
-  std::valarray<float> recoilDirErr(0.0f, 3);     // Recoil direction error
+  std::valarray<float> statTest(0.0f, 4);
+  std::valarray<float> recoilDir(0.0f, 3);
+  std::valarray<float> recoilDirErr(0.0f, 3);
 
-  // Resize arrays for this event's hits (using float to match PE format)
+  // Extract revan reconstruction data if available
+  MPhysicalEvent* PE = Event->GetPhysicalEvent();
+  if (PE != nullptr) {
+    int peType = PE->GetType();
+
+    if (peType == MPhysicalEvent::c_Compton) {
+      eventClass = 0;  // 0 = Compton
+
+      MComptonEvent* CE = dynamic_cast<MComptonEvent*>(PE);
+      if (CE != nullptr) {
+        seqHit = (uint8_t)CE->SequenceLength();
+
+        MVector de = CE->De();
+        recoilDir[0] = (float)de.X();
+        recoilDir[1] = (float)de.Y();
+        recoilDir[2] = (float)de.Z();
+
+        MVector dde = CE->dDe();
+        recoilDirErr[0] = (float)dde.X();
+        recoilDirErr[1] = (float)dde.Y();
+        recoilDirErr[2] = (float)dde.Z();
+
+        // TODO: Statistical test values (spec TBD) 
+        statTest[0] = (float)CE->Phi();
+        statTest[1] = (float)CE->DeltaTheta();
+        statTest[2] = (float)CE->MinLeverArm();
+        statTest[3] = 0.0f;
+      }
+
+    } else if (peType == MPhysicalEvent::c_Photo) {
+      eventClass = 1;  // 1 = photoabsorption
+      seqHit = 1;
+
+    } else {
+      eventClass = 2;  // 2 = unreconstructed
+    }
+  }
+
+  // Override eventClass for bad events (per spec: 3 = bad)
+  if (Event->IsBad()) {
+    eventClass = 3;
+  }
+
+  // Hit-level arrays
   std::valarray<float> x(numHits);
   std::valarray<float> y(numHits);
   std::valarray<float> z(numHits);
@@ -265,25 +344,28 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   std::valarray<float> z_err(numHits);
   std::valarray<float> energy(numHits);
   std::valarray<float> energy_err(numHits);
-  std::valarray<float> bad_flag(0.0f, numHits);   // Initialize flags to 0
+  std::valarray<float> bad_flag(0.0f, numHits);
+
+  // TODO: Set bad flag if event failed any calibration step (L1b only)
+  // Detail TBD, for now setting bad_flag based on IsBad()
+  if (m_OutputLevel == 0 && Event->IsBad()) {
+    bad_flag = 1.0f;
+  }
 
   // Extract hit-level data
   for (unsigned int i = 0; i < numHits; ++i) {
     MHit* hit = Event->GetHit(i);
 
-    // Get position
     MVector position = hit->GetPosition();
     x[i] = (float)position.X();
     y[i] = (float)position.Y();
     z[i] = (float)position.Z();
 
-    // Get position errors
     MVector positionResolution = hit->GetPositionResolution();
     x_err[i] = (float)positionResolution.X();
     y_err[i] = (float)positionResolution.Y();
     z_err[i] = (float)positionResolution.Z();
 
-    // Get energy
     energy[i] = (float)hit->GetEnergy();
     energy_err[i] = (float)hit->GetEnergyResolution();
   }
@@ -305,7 +387,9 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   m_BatchZ_ERR.push_back(z_err);
   m_BatchENERGY.push_back(energy);
   m_BatchENERGY_ERR.push_back(energy_err);
-  m_BatchBAD_FLAG.push_back(bad_flag);
+  if (m_OutputLevel == 0) {
+    m_BatchBAD_FLAG.push_back(bad_flag);
+  }
 
   m_BatchEventCount++;
 
@@ -363,7 +447,9 @@ bool MModuleSaverMeasurementsFITS::FlushBatch()
     m_ScienceTable->column("Z_ERR").writeArrays(m_BatchZ_ERR, m_BatchStartRow);
     m_ScienceTable->column("ENERGY").writeArrays(m_BatchENERGY, m_BatchStartRow);
     m_ScienceTable->column("ENERGY_ERR").writeArrays(m_BatchENERGY_ERR, m_BatchStartRow);
-    m_ScienceTable->column("BAD_FLAG").writeArrays(m_BatchBAD_FLAG, m_BatchStartRow);
+    if (m_OutputLevel == 0) {
+      m_ScienceTable->column("BAD_FLAG").writeArrays(m_BatchBAD_FLAG, m_BatchStartRow);
+    }
 
     // Update tracking
     m_TotalEventsWritten += m_BatchEventCount;
@@ -415,11 +501,57 @@ void MModuleSaverMeasurementsFITS::Finalize()
     FlushBatch();
   }
 
+  // Update time-related header keywords with actual values from event data: TSTART, TSTOP, DATE-OBS, DATE-END
+  if (m_HasEvents && m_ScienceTable != nullptr && m_PrimaryHDU != nullptr) {
+    try {
+      // Mission epoch is 2025-01-01 00:00:00 UTC
+      const time_t MISSION_EPOCH_UNIX = 1735689600;
+
+      time_t startUnix = MISSION_EPOCH_UNIX + (time_t)m_FirstEventTime;
+      time_t stopUnix = MISSION_EPOCH_UNIX + (time_t)m_LastEventTime;
+
+      //convert to ISO string
+      char startBuf[32], stopBuf[32];
+      strftime(startBuf, sizeof(startBuf), "%Y-%m-%dT%H:%M:%S", gmtime(&startUnix));
+      strftime(stopBuf, sizeof(stopBuf), "%Y-%m-%dT%H:%M:%S", gmtime(&stopUnix));
+
+      // Update primary HDU
+      m_PrimaryHDU->addKey("DATE-OBS", string(startBuf), "Start Date");
+      m_PrimaryHDU->addKey("DATE-END", string(stopBuf), "Stop Date");
+
+      // Update science table HDU
+      m_ScienceTable->addKey("DATE-OBS", string(startBuf), "Start Date");
+      m_ScienceTable->addKey("DATE-END", string(stopBuf), "Stop Date");
+      m_ScienceTable->addKey("TSTART", m_FirstEventTime, "Start time");
+      m_ScienceTable->addKey("TSTOP", m_LastEventTime, "Stop time");
+
+      // Also update OBS_ID to match the start date (YYMMDD format)
+      char obsIdBuf[8];
+      strftime(obsIdBuf, sizeof(obsIdBuf), "%y%m%d", gmtime(&startUnix));
+      m_PrimaryHDU->addKey("OBS_ID", string(obsIdBuf), "Observation ID");
+      m_ScienceTable->addKey("OBS_ID", string(obsIdBuf), "Observation ID");
+
+      if (g_Verbosity >= c_Info) {
+        cout<<m_XmlTag<<": Updated time headers — DATE-OBS="<<startBuf
+            <<", DATE-END="<<stopBuf<<", TSTART="<<m_FirstEventTime
+            <<", TSTOP="<<m_LastEventTime<<endl;
+      }
+    } catch (const CCfits::FitsException& e) {
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Error updating time headers: "<<e.message()<<endl;
+      }
+    }
+  }
+
   MModule::Finalize();
 
   if (g_Verbosity >= c_Info) {
-    cout<< m_XmlTag <<": MModuleSaverMeasurementsFITS"<<endl;
+    string levelStr = (m_OutputLevel == 1) ? "L2" : "L1b";
+    cout<< m_XmlTag <<": MModuleSaverMeasurementsFITS ("<<levelStr<<")"<<endl;
     cout<< m_XmlTag <<":   * total events written: "<<m_TotalEventsWritten<<endl;
+    if (m_OutputLevel == 1) {
+      cout<< m_XmlTag <<":   * total events skipped (screening): "<<m_TotalEventsSkipped<<endl;
+    }
   }
 
   // Close the FITS file (CCfits automatically closes on delete)
@@ -442,6 +574,16 @@ bool MModuleSaverMeasurementsFITS::ReadXmlConfiguration(MXmlNode* Node)
     m_FileName = FileNameNode->GetValue();
   }
 
+  MXmlNode* OutputLevelNode = Node->GetNode("OutputLevel");
+  if (OutputLevelNode != nullptr) {
+    MString Level = OutputLevelNode->GetValue();
+    if (Level == "L2" || Level == "l2") {
+      m_OutputLevel = 1;
+    } else {
+      m_OutputLevel = 0;
+    }
+  }
+
   return true;
 }
 
@@ -455,6 +597,7 @@ MXmlNode* MModuleSaverMeasurementsFITS::CreateXmlConfiguration()
 
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
+  new MXmlNode(Node, "OutputLevel", (m_OutputLevel == 1) ? "L2" : "L1b");
 
   return Node;
 }

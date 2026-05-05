@@ -72,6 +72,11 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Get the output file name
   MString GetFileName() const { return m_FileName; }
 
+  //! Set the output level: 0 = L1b, 1 = L2
+  void SetOutputLevel(int Level) { m_OutputLevel = Level; }
+  //! Get the output level
+  int GetOutputLevel() const { return m_OutputLevel; }
+
 
   // protected methods:
  protected:
@@ -94,6 +99,9 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Output file name
   MString m_FileName;
 
+  //! Output level: 0 = L1b (all events, with BAD_FLAG), 1 = L2 (screened, no BAD_FLAG)
+  int m_OutputLevel;
+
   //! The FITS file object pointer
   FITS* m_FITSFile;
 
@@ -105,6 +113,18 @@ class MModuleSaverMeasurementsFITS : public MModule
 
   //! Total number of events written
   long m_TotalEventsWritten;
+
+  //! Total number of events skipped (L2 screening)
+  long m_TotalEventsSkipped;
+
+  //! First event time seen (mission seconds since 2025-01-01)
+  double m_FirstEventTime;
+
+  //! Last event time seen (mission seconds since 2025-01-01)
+  double m_LastEventTime;
+
+  //! Whether any events have been processed yet
+  bool m_HasEvents;
 
   //! Batch size for writing FITS data
   static const long m_BatchSize = 100;
