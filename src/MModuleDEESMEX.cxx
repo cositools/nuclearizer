@@ -160,13 +160,14 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   // Step (6): the shield veto / trigger, handle pre-scalers, calculate dead-time, calculate random coincidence time
   m_ShieldTrigger.Clear();
   m_ShieldTrigger.AnalyzeEvent(Event);
-  if (m_ShieldTrigger.HasVeto() == true) {
+  if (m_ShieldTrigger.HasShieldVeto() == true) {
+    Event->SetShieldVeto(true);
     if (m_ShieldTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
       m_DeadTimeEnd = m_ShieldTrigger.GetDeadTimeEnd();
     }
 
     // Clean up
-
+    
     Event->SetAnalysisProgress(MAssembly::c_DetectorEffectsEngine);
     return true;
   } else if (m_ShieldTrigger.HasTrigger() == true) { // = energy read out
@@ -193,12 +194,11 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   // Step (10): Handles triggers and guard ring vetoes, pre-scalers, calculate dead-time, add nearest neighbor noise, calculate random coincidence time
   m_StripTrigger.Clear();
   m_StripTrigger.AnalyzeEvent(Event);
-  if (m_StripTrigger.HasVeto() == true) {
+  if (m_StripTrigger.HasGRVeto() == true) {
     if (m_StripTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
       m_DeadTimeEnd = m_StripTrigger.GetDeadTimeEnd();
     }
-    // Clean up
-
+    Event->SetGuardRingVeto(true);   // <-- mark the event so EventSaver can filter it
     Event->SetAnalysisProgress(MAssembly::c_DetectorEffectsEngine);
     return true;
   }

@@ -56,20 +56,13 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
 
   m_EventTime = 0.0;
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasShieldVeto = false;
   m_IsShieldDead = false;
 
   // Initialize shield parameters with default values
   m_ShieldThreshold = -1.0; // Need to change this value at some point
-  m_ShieldPulseDuration = 1.7e-6;
-  m_ShieldDelayBefore = 0.1e-6;
-  m_ShieldDelayAfter = 0.4e-6;
-  m_ShieldVetoWindowSize = 1.5e-6;
-  m_ASICDeadTimePerChannel = 0.0;
-  m_ShieldVetoTime = 0.0;
   
   m_NumShieldHitCounts = 0;
-  m_NumShieldVetoCounts = 0;
   m_NumBGOHitsErased = 0;
 
   m_FirstTime = std::numeric_limits<double>::max();
@@ -129,7 +122,7 @@ void MSubModuleShieldTrigger::Clear()
   // Clear for the next event
 
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasShieldVeto = false;
   m_IsShieldDead = false;
   m_DeadTimeEnd = MTime(0.0);
   
@@ -173,7 +166,6 @@ double MSubModuleShieldTrigger::CalculateASICDeadtime(vector<int> CrystalIDs)
   return deadtime;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -181,16 +173,14 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 {
   // Process shield crystal hits to determine veto status
 
-  m_EventTime = Event->GetTime().GetAsSeconds();
-
-  // Track which GeD detectors got hit (for later deadtime update)
-  list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
-  for (const MDEEStripHit& Hit : LVHits) {
-    int DetID = Hit.m_ROE.GetDetectorID();
-    if (DetID >= 0 && DetID < nDets) {
-      m_DetectorsHitForShieldVeto[DetID] = 1;
-    }
-  }
+  // // Track which GeD detectors got hit (for later deadtime update)
+  // list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
+  // for (const MDEEStripHit& Hit : LVHits) {
+  //   int DetID = Hit.m_ROE.GetDetectorID();
+  //   if (DetID >= 0 && DetID < nDets) {
+  //     m_DetectorsHitForShieldVeto[DetID] = 1;
+  //   }
+  // }
 
   // Process shield crystal hits
   list<MDEECrystalHit>& CrystalHits = Event->GetDEECrystalHitListReference();
@@ -232,22 +222,17 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
         continue;
       }
 
-      // cout << m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup] << " " << m_EventTime << endl;
       // Check deadtime conditions
       if (m_EventTime > (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup])) {
         // Event occurred after deadtime - start new veto window
         m_ShieldHitCrystalID[ShieldDetGroup].clear();
         m_ShieldLastHitTime[ShieldDetGroup] = m_EventTime;
-        m_ShieldVetoTime = m_EventTime;
         m_ShieldHitCrystalID[ShieldDetGroup].push_back(CrystalID);
-        m_HasVeto = true;
         m_TotalShieldDeadtime[ShieldDetGroup] += m_ShieldDeadtime[ShieldDetGroup];
       }
       else if (m_EventTime <= (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDelayBefore)) {
         // Event occurred within coincidence window - add to existing veto
-        m_ShieldVetoTime = m_EventTime;
         m_ShieldHitCrystalID[ShieldDetGroup].push_back(CrystalID);
-        m_HasVeto = true;
       }
       else {
         // Event occurred within deadtime
@@ -259,18 +244,7 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 
   // Calculate deadtime for each panel group after processing all hits
   for (int group = 0; group < nShieldPanels; group++) {
-    if (!m_IsShieldDead) {
       m_ShieldDeadtime[group] = CalculateASICDeadtime(m_ShieldHitCrystalID[group]);
-    }
-  }
-
-  // Check if event is within veto window
-  if ((m_EventTime <= (m_ShieldVetoTime + m_ShieldVetoWindowSize)) && 
-      (m_EventTime >= m_ShieldVetoTime)) {
-    m_HasVeto = true;
-    if (Event->GetSimulatedEvent() != nullptr) {
-      m_NumShieldVetoCounts += Event->GetSimulatedEvent()->GetNHTs();
-    }
   }
 
   return true;
@@ -283,7 +257,11 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 bool MSubModuleShieldTrigger::ParseDeadtimeFile()
 {
   // Read in deadtime parameters file
-  // Format: StripCoincidenceWindow ASICDeadTimePerChannel StripDelayAfter1 StripDelayAfter2
+  // Format:
+  //   Row 1: strip trigger header
+  //   Row 2: strip trigger parameters
+  //   Row 3: shield trigger header
+  //   Row 4: shield trigger parameters
 
   MParser Parser;
   if (Parser.Open(m_DeadtimeFileName) == false) {
@@ -291,13 +269,22 @@ bool MSubModuleShieldTrigger::ParseDeadtimeFile()
     return false;
   }
 
-  if (Parser.GetNLines() < 2) {
+  if (Parser.GetNLines() < 4) {
     cout << m_Name << ": Deadtime file does not have enough data" << endl;
     return false;
   }
 
-  // We only need the ASICDeadTimePerChannel (second value) for shield
-  m_ASICDeadTimePerChannel = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(1);
+  MTokenizer* ShieldTokenizer = Parser.GetTokenizerAt(3);
+  if (ShieldTokenizer->GetNTokens() < 5) {
+    cout << m_Name << ": Shield deadtime row does not have enough data" << endl;
+    return false;
+  }
+
+  m_ASICDeadTimePerChannel = ShieldTokenizer->GetTokenAtAsDouble(0);
+  m_ShieldVetoWindowSize = ShieldTokenizer->GetTokenAtAsDouble(1);
+  m_ShieldPulseDuration = ShieldTokenizer->GetTokenAtAsDouble(2);
+  m_ShieldDelayBefore = ShieldTokenizer->GetTokenAtAsDouble(3);
+  m_ShieldDelayAfter = ShieldTokenizer->GetTokenAtAsDouble(4);
 
   return true;
 }
@@ -311,23 +298,31 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine for shield trigger and veto
 
   m_HasTrigger = false;
-  m_HasVeto = false;
+  m_HasShieldVeto = false;
   m_IsShieldDead = false;
+
+  m_EventTime = Event->GetTime().GetAsSeconds();
+
+  // First: veto based on shield state from previous events
+  for (int group = 0; group < nShieldPanels; ++group) {
+    if (m_EventTime >= m_ShieldLastHitTime[group] &&
+        m_EventTime <= m_ShieldLastHitTime[group] + m_ShieldVetoWindowSize) {
+      m_HasShieldVeto = true;
+    }
+  }
 
   // Process shield hits and check for veto conditions
   ProcessShieldHits(Event);
 
-  // Update time tracking for statistics
-  double eventTime = Event->GetTime().GetAsSeconds();
-  if (eventTime < m_FirstTime) {
-    m_FirstTime = eventTime;
+  if (m_EventTime < m_FirstTime) {
+    m_FirstTime = m_EventTime;
   }
-  if (eventTime > m_LastTime) {
-    m_LastTime = eventTime;
+  if (m_EventTime > m_LastTime) {
+    m_LastTime = m_EventTime;
   }
 
   // If vetoed, set the dead time end
-  if (m_HasVeto) {
+  if (m_HasShieldVeto) {
     // Calculate the maximum deadtime end across all panels
     double maxDeadTimeEnd = 0.0;
     for (int i = 0; i < nShieldPanels; i++) {
@@ -370,7 +365,6 @@ void MSubModuleShieldTrigger::Finalize()
   }
   
   cout << "BGO hits erased due to BGO being dead: " << m_NumBGOHitsErased << endl;
-  cout << "Shield vetoes: " << m_NumShieldVetoCounts << endl;
   
   if (simTime > 0) {
     double rateAfterDT = (m_NumShieldHitCounts - m_NumBGOHitsErased) / simTime;

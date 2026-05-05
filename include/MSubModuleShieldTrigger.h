@@ -82,8 +82,8 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Return true if we have a trigger - filled after AnalyzeEvent
   bool HasTrigger() const { return m_HasTrigger; }
 
-  //! Return true if we have a veto - filled after AnalyzeEvent
-  bool HasVeto() const { return m_HasVeto; }
+  //! Return true if we have a shield veto - filled after AnalyzeEvent
+  bool HasShieldVeto() const { return m_HasShieldVeto; }
 
   //! Return the time when the dead time ends - filled after AnalyzeEvent
   MTime GetDeadTimeEnd() const { return m_DeadTimeEnd; }
@@ -96,9 +96,6 @@ class MSubModuleShieldTrigger : public MSubModule
 
   //! Get shield hit counts
   int GetShieldHitCounts() const { return m_NumShieldHitCounts; }
-
-  //! Get shield veto counter
-  int GetShieldVetoCounter() const { return m_NumShieldVetoCounts; }
 
   //! Get BGO hits erased
   int GetBGOHitsErased() const { return m_NumBGOHitsErased; }
@@ -135,8 +132,8 @@ class MSubModuleShieldTrigger : public MSubModule
 
   //! Flag indicating that a trigger has been raised
   bool m_HasTrigger;
-  //! Flag indicating that a veto has been raised
-  bool m_HasVeto;
+  //! Flag indicating that a shield veto has been raised
+  bool m_HasShieldVeto;
   //! Time when the shield dead time ends
   MTime m_DeadTimeEnd;
 
@@ -155,14 +152,10 @@ class MSubModuleShieldTrigger : public MSubModule
   
   //! Number of shield hits before deadtime
   unsigned long m_NumShieldHitCounts;
-  //! Number of shield veto counts
-  unsigned long m_NumShieldVetoCounts;
   //! Number of BGO hits erased due to deadtime
   unsigned long m_NumBGOHitsErased;
   //! Bool to store if corresponding shield ASIC is dead or not
   bool m_IsShieldDead;
-  //! Time of last shield veto hit (used for veto window calculation)
-  double m_ShieldVetoTime;
 
   //! First event time in seconds
   double m_FirstTime;
