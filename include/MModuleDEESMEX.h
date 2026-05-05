@@ -96,38 +96,78 @@ class MModuleDEESMEX : public MModule
   {
     m_StripReadout.SetEnergyCalibrationFileName(FileName);
   }
-  //! Set energy calibration file name
+  //! Get energy calibration file name
   MString GetEnergyCalibrationFileName() const
   {
     return m_StripReadout.GetEnergyCalibrationFileName();
   }
+
+  //! Set depth coefficients file name
+  void SetDepthCoefficientsFileName(const MString& FileName)
+  {
+    m_DepthReadout.SetDepthCoefficientsFileName(FileName);
+  }
+  //! Get depth coefficients file name
+  MString GetDepthCoefficientsFileName() const
+  {
+    return m_DepthReadout.GetDepthCoefficientsFileName();
+  }
+
+  //! Set depth splines file name
+  void SetDepthSplinesFileName(const MString& FileName)
+  {
+    m_DepthReadout.SetDepthSplinesFileName(FileName);
+  }
+  //! Get depth splines file name
+  MString GetDepthSplinesFileName() const
+  {
+    return m_DepthReadout.GetDepthSplinesFileName();
+  }
+
+  //! Set TAC calibration file name
+  void SetTACCalFileName(const MString& FileName)
+  {
+    m_DepthReadout.SetTACCalFileName(FileName);
+  }
+  //! Get TAC calibration file name
+  MString GetTACCalFileName() const
+  {
+    return m_DepthReadout.GetTACCalFileName();
+  }
+
 
   //! Set shield energy correction file name
   void SetShieldEnergyCorrectionFileName(const MString& FileName)
   {
     m_ShieldEnergyCorrection.SetShieldEnergyCorrectionFileName(FileName);
   }
-  //! Set energy calibration file name
+  //! Get shield energy correction file name
   MString GetShieldEnergyCorrectionFileName() const
   {
     return m_ShieldEnergyCorrection.GetShieldEnergyCorrectionFileName();
   }
 
-  //! Set shield energy correction file name
+  //! Set dead time file name
   void SetDeadtimeFileName(const MString& FileName)
   {
     m_StripTrigger.SetDeadtimeFileName(FileName);
   }
-  //! Set energy calibration file name
+  //! Get dead time file name
   MString GetDeadtimeFileName() const
   {
     return m_StripTrigger.GetDeadtimeFileName();
   }
   
-  //! Button to apply the FWHM energy resolution to the enegries 
+  //! Button to apply the FWHM energy resolution to the energies
   bool GetApplyResolutionCalibration() const { return m_ApplyResolutionCalibration; }
   void SetApplyResolutionCalibration(bool ApplyResolutionCalibration) {
     m_ApplyResolutionCalibration = ApplyResolutionCalibration;
+  }
+
+  //! Button to apply the FWHM timing resolution to the timing values
+  bool GetApplyTimingResolutionCalibration() const { return m_ApplyTimingResolutionCalibration; }
+  void SetApplyTimingResolutionCalibration(bool ApplyTimingResolutionCalibration) {
+    m_ApplyTimingResolutionCalibration = ApplyTimingResolutionCalibration;
   }
 
   // protected methods:
@@ -174,9 +214,11 @@ class MModuleDEESMEX : public MModule
   //! The sub module handling the output of the DEE in to the standard nuclearizer classes
   MSubModuleDEEOutput m_Output;
   
-  //! Option to add noise
+  //! Option to add noise to the strip energies
   bool m_ApplyResolutionCalibration; 
 
+  //! Option to add noise to the strip timing values
+  bool m_ApplyTimingResolutionCalibration;
 
 #ifdef ___CLING___
  public:
