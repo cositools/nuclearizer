@@ -71,9 +71,11 @@ MSubModuleShieldEnergyCorrection::~MSubModuleShieldEnergyCorrection()
 bool MSubModuleShieldEnergyCorrection::Initialize()
 {
   // Initialize the module
+  m_Centroid.clear();
+  m_FWHM.clear();
 
   //! load shield energy correction file
-  if (!ParseShieldEnergyCorrectionFile()) {
+  if (ParseShieldEnergyCorrectionFile() == false) {
     if (g_Verbosity >= c_Error) {
       cout << "ERROR: Failed to parse shield energy correction file " << m_ShieldEnergyCorrectionFileName << endl;
     }
@@ -187,6 +189,8 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 void MSubModuleShieldEnergyCorrection::Finalize()
 {
   //! Finalize the analysis - do all cleanup, i.e., undo Initialize()
+  m_Centroid.clear();
+  m_FWHM.clear();
 
   MSubModule::Finalize();
 }
