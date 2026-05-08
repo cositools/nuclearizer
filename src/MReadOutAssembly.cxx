@@ -632,13 +632,7 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   }
 
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    // Don't print Guard Ring hits as normal strip hits as they don't have positions defined
-    // the corresponding energy is saved in the StripPairing QA message
-    if (m_Hits[h]->GetGuardRingHitFlag() == true) {
-	continue;
-    } else {
-      m_Hits[h]->StreamEvta(S);  
-    }
+    m_Hits[h]->StreamEvta(S);  
   }
 
   S<<"CC NStripHits "<<m_StripHits.size()<<endl;

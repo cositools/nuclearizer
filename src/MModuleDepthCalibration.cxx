@@ -1,6 +1,4 @@
-/*
- * MModuleDepthCalibration.cxx
- *
+ /*
  *
  * Copyright (C) 2008-2008 by Andreas Zoglauer, Alex Lowell, 
  * 				Sean Pike, Carolyn Kierans.
@@ -182,15 +180,47 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     // H is a pointer to an instance of the MHit class. Each Hit has activated strips, represented by
     // instances of the MStripHit class.
     MHit* H = Event->GetHit(i);
-  
-    // Skip the depth calibration for Hits that have a GR Strip Hit
+
+    //Initalize position variables:
+    double Xpos = 0;
+    double Ypos = 0;
+    double Zpos = 0;
+    double Xsigma = 0;
+    double Ysigma = 0;
+    double Zsigma = 0;
+
+
+    // First, check for GR Hits
     if (H->GetGuardRingHitFlag() == true) {
+      // Skip the depth calibration for Hits that have a GR Strip Hit. Define position
+      // to be anywhere within the GR volume to pass through to revan
+
+      int GRDetID = H->GetStripHit(0)->GetDetectorID();
+      // Find unique/random position within the GR volume to assign as the hit position, as revan expects
+      MVector GRPosition = m_Geometry->GetDetector(m_GRDetectors[GRDetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
+
+      Xpos = GRPosition[0];
+      Ypos = GRPosition[1];
+      Zpos = GRPosition[2];      
+
+      if (g_Verbosity >= c_Info) cout << m_XmlTag << "GR Hit :" << GRDetID << ", " << "set hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
+
+      MVector GlobalPositionGR = m_GRDetectors[GRDetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(GRPosition);
+      MVector GRResolution(0.1, 0.1, 0.1);
+      
+      H->SetPosition(GlobalPositionGR); 
+      H->SetPositionResolution(GRResolution);
+
+      // Skip past the rest of the calibration and move to next Hit
       continue;
-    }
+ 
+    } 
+    // If not a GR Hit, perform the depth/position calibration...
 
+
+    //TODO Rename Grade variables
+    // The event "Grade" is the sub-pixel region determined via charge sharing
     int Grade = GetHitGrade(H);
-
-    // Handle different grades differently    
     // GRADE=-1 is an error. Break from the loop and continue.
     if (Grade < 0){
       H->SetNoDepth();
@@ -212,7 +242,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       }
     } else { // If the Grade is 0-4, we can handle it.
 
-      // Calculate the position. If error is thrown, record and no depth.
+
       // Take a Hit and separate its activated X- and Y-strips into separate vectors.
       vector<MStripHit*> LVStrips;
       vector<MStripHit*> HVStrips;
@@ -227,20 +257,19 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
       MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-      double CTD_s = 0.0;
-
-      //now try and get z position
       int DetID = LVSH->GetDetectorID();
       int LVStripID = LVSH->GetStripID();
       int HVStripID = HVSH->GetStripID();
       int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
-      //Define the X/Y positions based on the detector pitch and number of strip hits
+
+      // TODO: Calculate X and Y positions more rigorously using charge sharing.
+
+      // Define the X/Y positions based on the detector pitch and number of strip hits
       // LV strip 0 is in -ve X direction, HV strip 0 is in -ve Y direction.
       // Confusingly, the strips parallel to the Y axis determines the X position, and the "X strips" determine the Y position
-      double Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
-      double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
-      double Zpos = 0.0;
+      Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
+      Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
 
       if (m_MaskMetrologyEnabled == true) {
         // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
@@ -253,15 +282,15 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         Ypos = inter[1];
       }
 
+      Xsigma = m_YPitches[DetID]/sqrt(12.0);
+      Ysigma = m_XPitches[DetID]/sqrt(12.0);
+      Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
 
-      // TODO: Calculate X and Y positions more rigorously using charge sharing.
 
-      double Xsigma = m_YPitches[DetID]/sqrt(12.0);
-      double Ysigma = m_XPitches[DetID]/sqrt(12.0);
-      double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
+      // Now try and get z position
+      double CTD_s = 0.0;
 
       vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
-
       vector<double> CTDVec = GetCTD(DetID, Grade);
       vector<double> DepthVec = GetDepth(DetID);
 
@@ -290,8 +319,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           
         // If there are coefficients and timing information is loaded, try calculating the CTD and depth
         double CTD = (HVTiming - LVTiming);
-
-        // Confirmed that this matches SP's python code.
         CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
 
         double Xmin = * std::min_element(CTDVec.begin(), CTDVec.end());
@@ -361,7 +388,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     MVector GlobalResolution = ((m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(PositionResolution)) - (m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalOrigin))).Abs();
       
     H->SetPosition(GlobalPosition); 
-
     H->SetPositionResolution(GlobalResolution);
 
 
@@ -505,6 +531,9 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
 
   return true;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
 
 
 bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
@@ -1139,6 +1168,7 @@ void MModuleDepthCalibration::Finalize()
   m_XPitches.clear();
   m_YPitches.clear();
   m_Detectors.clear();
+  m_GRDetectors.clear();
   m_CTDMap.clear();
   m_DepthGrid.clear();
   m_SplineMap.clear();

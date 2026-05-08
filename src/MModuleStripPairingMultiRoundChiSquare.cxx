@@ -833,9 +833,6 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
           Event->GetHit(h)->SetGuardRingHitFlag(true);
         }
       }
-      if (Event->GetHit(h)->GetGuardRingHitFlag() == true) {
-        Event->SetStripPairing_QualityFlag("GR Hit: Detector ID " + to_string(d) + " and Energy " + to_string(Event->GetHit(h)->GetEnergy()));
-      }
     }
       
   } // End Detector loop
