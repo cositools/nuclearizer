@@ -82,6 +82,18 @@ void MHit::Clear()
 
   m_StripHits.clear();
   m_Origins.clear();
+
+  m_HitQuality = 0.0;
+  m_PossibleCrossTalk = false;
+  m_PossibleChargeLoss = false;
+  m_GuardRingHit = false;
+  m_StripHitMultipleTimesX = false;
+  m_StripHitMultipleTimesY = false;
+  m_ChargeSharing = false;
+  m_ChargeSharingLV = false;
+  m_ChargeSharingHV = false;
+  m_NoDepth = false;
+  m_IsNonDominantNeighborStrip = false;
 }
 
 
@@ -151,9 +163,10 @@ bool MHit::StreamDat(ostream& S, int Version)
       for( auto SH : m_StripHits ){
           SH->StreamDat(S,0);
       }
+  } else {
+    return false;
   }
 
- 
   return true;
 }
 
@@ -220,39 +233,35 @@ void MHit::StreamEvta(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MHit::Parse(MString &Line, int Version){
+bool MHit::Parse(MString &Line, int Version)
+{
+  if (Line.Length() < 3) return false;
+  if (Line.BeginsWith("HT") == false) return false;
+  if (Version < 1 || Version > 3) return false;
 
-	//check that line begins with HT
-	const char* line = Line.Data();
-	if( line[0] == 'H' && line[1] == 'T' ){
-		float X,Y,Z,E;
-		sscanf(&line[3],"%f %f %f %f",&X, &Y, &Z, &E);
-		m_Position.SetX(X);
-		m_Position.SetY(Y);
-		m_Position.SetZ(Z);
-		m_Energy = E;
-		return true;
-	} else {
-		return false;
-	}
-	
-	/*
-	if( Line.BeginsWith("HT") ){
-		vector<MString> tokens = Line.Tokenize(" ");
-		if( tokens.size() >= 5 ){
-			m_Position.SetX( tokens.at(1).ToDouble() );
-			m_Position.SetY( tokens.at(2).ToDouble() );
-			m_Position.SetZ( tokens.at(3).ToDouble() );
-			m_Energy = tokens.at(4).ToDouble();
-			return true;
-		} else {
-			return false;
-		}
-	} else {
-		return false;
-	}
-	*/
+  Clear();
 
+  if (Version == 3) {
+    double X, Y, Z, E, LVE, HVE;
+    int N = sscanf(Line.Data() + 3, "%lf %lf %lf %lf %lf %lf", &X, &Y, &Z, &E, &LVE, &HVE);
+    if (N != 6) return false;
+    m_Position.SetX(X);
+    m_Position.SetY(Y);
+    m_Position.SetZ(Z);
+    m_Energy = E;
+    m_LVEnergy = LVE;
+    m_HVEnergy = HVE;
+  } else {
+    double X, Y, Z, E;
+    int N = sscanf(Line.Data() + 3, "%lf %lf %lf %lf", &X, &Y, &Z, &E);
+    if (N != 4) return false;
+    m_Position.SetX(X);
+    m_Position.SetY(Y);
+    m_Position.SetZ(Z);
+    m_Energy = E;
+  }
+
+  return true;
 }
 
 
