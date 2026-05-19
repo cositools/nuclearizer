@@ -33,12 +33,14 @@
 
 // MEGAlib libs:
 #include "MGUIOptionsTemplate.h"
+#include "MGUIOptionsLoaderMeasurements.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -195,7 +197,7 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
     SH->SetStripID(Strip->GetStripID());
     
     if (Timing != nullptr) {
-      SH->SetTiming(Timing->GetTiming());
+      SH->SetTAC(Timing->GetTiming());
     } else {
       cout<<m_Name<<": Warning: Event without timing found"<<endl;
     }
@@ -245,6 +247,19 @@ MXmlNode* MModuleLoaderMeasurementsROA::CreateXmlConfiguration()
   new MXmlNode(Node, "FileName", m_FileName);
   
   return Node;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleLoaderMeasurementsROA::ShowOptionsGUI()
+{
+  //! Show the options GUI
+
+  MGUIOptionsLoaderMeasurements* Options = new MGUIOptionsLoaderMeasurements(this, "roa");
+  Options->Create();
+  gClient->WaitForUnmap(Options);
 }
 
 

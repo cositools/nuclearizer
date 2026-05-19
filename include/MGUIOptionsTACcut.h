@@ -1,7 +1,7 @@
 /*
- * MGUIOptionsDepthCalibration.h
+ * MGUIOptionsTACcut.h
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) 2008-2010 by Jau-Shian Liang.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsDepthCalibration2024__
-#define __MGUIOptionsDepthCalibration2024__
+#ifndef __MGUIOptionsTACcut__
+#define __MGUIOptionsTACcut__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -23,32 +23,34 @@
 #include <TObjArray.h>
 #include <TGFrame.h>
 #include <TGButton.h>
+#include <TGButtonGroup.h>
 #include <MString.h>
 #include <TGClient.h>
+#include <TGNumberEntry.h>
+#include <TGTextEntry.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MGUIEFileSelector.h"
+#include "MGUIERBList.h"
+#include "MModule.h"
 #include "MGUIOptions.h"
 
-// Nuclearizer libs:
-#include "MModule.h"
-
-
 // Forward declarations:
-
+class MGUIEFileSelector;
+class MGUIEMinMaxEntry;
+class MGUIEEntry;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsDepthCalibration2024 : public MGUIOptions
+class MGUIOptionsTACcut : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsDepthCalibration2024(MModule* Module);
+  MGUIOptionsTACcut(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsDepthCalibration2024();
+  virtual ~MGUIOptionsTACcut();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -60,27 +62,28 @@ class MGUIOptionsDepthCalibration2024 : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
  protected:
+  //! The detector IDs as a string
+  TGTextEntry* m_Detectors;
 
+  //! Select TAC Calibration file to load, converts readout timing to nanoseconds
+  MGUIEFileSelector* m_TACCalFileSelector;
+
+  //! Select TAC Cut file to load, which specifies the parameters for removing strip hits
+  MGUIEFileSelector* m_TACCutFileSelector;
+
+	
   // private members:
  private:
-  //! Select which coefficients file (stretching factors and offsets) to load
-  MGUIEFileSelector* m_CoeffsFileSelector;
-
-  //! Select spline file to load, splines will convert CTD->Depth
-  MGUIEFileSelector* m_SplinesFileSelector;
-
-  //! Check button if working with the Card Cage at UCSD
-  TGCheckButton* m_UCSDOverride;
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsDepthCalibration2024, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsTACcut, 1) // basic class for dialog windows
 #endif
 
 };

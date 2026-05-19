@@ -95,18 +95,5 @@ bool MModuleLoaderMeasurements::AnalyzeEvent(MReadOutAssembly* Event)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-
-
-void MModuleLoaderMeasurements::ShowOptionsGUI()
-{
-  //! Show the options GUI
-
-  MGUIOptionsLoaderMeasurements* Options = new MGUIOptionsLoaderMeasurements(this);
-  Options->Create();
-  gClient->WaitForUnmap(Options);
-}
-
-
 // MModuleLoaderMeasurements.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

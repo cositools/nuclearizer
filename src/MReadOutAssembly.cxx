@@ -125,7 +125,8 @@ void MReadOutAssembly::Clear()
   m_EventTimeUTC = 0;
   m_MJD = 0.0;
 
-  m_Veto = false;
+  m_ShieldVeto = false;
+  m_GuardRingVeto = false;
   m_Trigger = true;
 
   for (int DetectorID = 0; DetectorID <= 11; DetectorID++) {
@@ -541,6 +542,12 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
     S<<endl;
   }
 
+  if (m_GuardRingVeto == true) {
+    S<<"BD GR Veto"<<endl;
+  }
+  if (m_ShieldVeto == true) {
+    S<<"BD Shield Veto"<<endl;
+  }
 
   
   return true;
@@ -623,13 +630,23 @@ void MReadOutAssembly::StreamEvta(ostream& S)
     if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
     S<<endl;
   }
+
+  if (m_GuardRingVeto == true) {
+    S<<"BD GR Veto"<<endl;
+  }
+  if (m_ShieldVeto == true) {
+    S<<"BD Shield Veto"<<endl;
+  }
+
+
+
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MReadOutAssembly::StreamRoa(ostream& S, bool)
+void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
 {
   //! Stream the content in MEGAlib's evta format 
 
@@ -638,7 +655,7 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
   S<<"CL "<<m_Time<<endl;
   S<<"TI "<<m_EventTimeUTC<<endl;
 
-  if (m_Aspect != 0) {
+  if (m_Aspect != nullptr) {
     m_Aspect->StreamEvta(S);
   }
 
@@ -646,8 +663,16 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
     S<<IA.ToSimString()<<endl; 
   }
 
+  unsigned int Counter = 0;
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    m_StripHits[h]->StreamRoa(S);  
+    if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
+      continue;
+    }
+    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags);
+    ++Counter;
+  }
+  if (Counter == 0) {
+    S<<"BD No strip hits"<<endl;;
   }
   
   // Those are the only BD's relevant for the roa format
@@ -709,7 +734,23 @@ bool MReadOutAssembly::IsBad() const
 
   return false;
 }
-  
+ 
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool MReadOutAssembly::IsVeto() const
+{
+  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+
+  if (m_ShieldVeto == true) return true;
+  if (m_GuardRingVeto == true) return true;
+
+  return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
 bool MReadOutAssembly::ComputeAbsoluteTime()
 {
 

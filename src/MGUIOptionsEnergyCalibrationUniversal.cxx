@@ -105,8 +105,8 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
 {
   // Modify here if you have more buttons
 
-	bool Status = true;
-	
+  bool Status = true;
+
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -123,7 +123,7 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
             m_TempFile->SetEnabled(false);
           }
           break;
-	}
+      }
     default:
       break;
     }
@@ -146,17 +146,14 @@ bool MGUIOptionsEnergyCalibrationUniversal::ProcessMessage(long Message, long Pa
 
 bool MGUIOptionsEnergyCalibrationUniversal::OnApply()
 {
-	// Modify this to store the data in the module!
+ // Modify this to store the data in the module!
 
   dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
   dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->SetTempFileName(m_TempFile->GetFileName());
 
-	
   if (dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->GetPreampTempCorrection() != m_UseTempCal) dynamic_cast<MModuleEnergyCalibrationUniversal*>(m_Module)->EnablePreampTempCorrection(m_UseTempCal);
 
-
-
-	return true;
+  return true;
 }
 
 

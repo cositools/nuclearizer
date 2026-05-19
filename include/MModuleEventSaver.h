@@ -58,10 +58,15 @@ class MModuleEventSaver : public MModule
   //! Set the file name
   void SetFileName(const MString& Name) { m_FileName = Name; }
   
-  //! Get the file name
+  //! Return true if the Bad events should be saved
   bool GetSaveBadEvents() const { return m_SaveBadEvents; }
-  //! Set the file name
+  //! Set whether the Bad events should be saved
   void SetSaveBadEvents(bool SaveBadEvents) { m_SaveBadEvents = SaveBadEvents; }
+
+  //! Return true if the Veto events should be saved
+  bool GetSaveVetoEvents() const { return m_SaveVetoEvents; }
+  //! Set whether the Veto events should be saved
+  void SetSaveVetoEvents(bool SaveVetoEvents) {m_SaveVetoEvents = SaveVetoEvents; }
   
   //! Get the add time tag flag
   bool GetAddTimeTag() const { return m_AddTimeTag; }
@@ -77,7 +82,47 @@ class MModuleEventSaver : public MModule
   MTime GetSplitFileTime() const { return m_SplitFileTime; }
   //! Set the time after which the file should be split
   void SetSplitFileTime(MTime SplitFileTime) { m_SplitFileTime = SplitFileTime; }
-  
+
+  //! Return whether ADCs should be included in the roa file
+  bool GetRoaWithADCs() const { return m_RoaWithADCs; }
+  //! Set whether ADCs should be included in the roa file
+  void SetRoaWithADCs(bool Flag) { m_RoaWithADCs = Flag; }
+
+  //! Return whether TACs should be included in the roa file
+  bool GetRoaWithTACs() const { return m_RoaWithTACs; }
+  //! Set whether TACs should be included in the roa file
+  void SetRoaWithTACs(bool Flag) { m_RoaWithTACs = Flag; }
+
+  //! Return whether energies should be included in the roa file
+  bool GetRoaWithEnergies() const { return m_RoaWithEnergies; }
+  //! Set whether energies should be included in the roa file
+  void SetRoaWithEnergies(bool Flag) { m_RoaWithEnergies = Flag; }
+
+  //! Return whether timings should be included in the roa file
+  bool GetRoaWithTimings() const { return m_RoaWithTimings; }
+  //! Set whether timings should be included in the roa file
+  void SetRoaWithTimings(bool Flag) { m_RoaWithTimings = Flag; }
+
+  //! Return whether temperatures should be included in the roa file
+  bool GetRoaWithTemperatures() const { return m_RoaWithTemperatures; }
+  //! Set whether temperatures should be included in the roa file
+  void SetRoaWithTemperatures(bool Flag) { m_RoaWithTemperatures = Flag; }
+
+  //! Return whether flags should be included in the roa file
+  bool GetRoaWithFlags() const { return m_RoaWithFlags; }
+  //! Set whether flags should be included in the roa file
+  void SetRoaWithFlags(bool Flag) { m_RoaWithFlags = Flag; }
+
+  //! Return whether origins should be included in the roa file
+  bool GetRoaWithOrigins() const { return m_RoaWithOrigins; }
+  //! Set whether origins should be included in the roa file
+  void SetRoaWithOrigins(bool Flag) { m_RoaWithOrigins = Flag; }
+
+  //! Return whether nearest neighbors should be included in the roa file
+  bool GetRoaWithNearestNeighbors() const { return m_RoaWithNearestNeighbors; }
+  //! Set whether nearest neighbors should be included in the roa file
+  void SetRoaWithNearestNeighbors(bool Flag) { m_RoaWithNearestNeighbors = Flag; }
+
   //! Set the start area of the far field simulation if there was any
   void SetStartAreaFarField(double Area) { m_StartAreaFarField = Area; } 
   //! Set the number if simulated events
@@ -148,6 +193,9 @@ class MModuleEventSaver : public MModule
   //! Save bad events
   bool m_SaveBadEvents;
 
+  //! Save Veto events
+  bool m_SaveVetoEvents;
+
   //! Add a time tag to the file
   bool m_AddTimeTag;
   
@@ -158,6 +206,25 @@ class MModuleEventSaver : public MModule
   bool m_SplitFile;
   //! If we split the file, this is the time in seconds after which we split
   MTime m_SplitFileTime;
+
+  // Roa options
+
+  //! If true write ADC values to the roa file
+  bool m_RoaWithADCs;
+  //! If true write TAC values to the roa file
+  bool m_RoaWithTACs;
+  //! If true write energy values to the roa file
+  bool m_RoaWithEnergies;
+  //! If true write timing values to the roa file
+  bool m_RoaWithTimings;
+  //! If true write temperature values to the roa file
+  bool m_RoaWithTemperatures;
+  //! If true write flags to the roa file
+  bool m_RoaWithFlags;
+  //! If true write origins to the roa file
+  bool m_RoaWithOrigins;
+  //! True if we should include next neighbors in the data stream
+  bool m_RoaWithNearestNeighbors;
   
   //! Main output stream for file
   MFile m_Out;
