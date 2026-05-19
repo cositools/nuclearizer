@@ -116,6 +116,7 @@ bool MModuleDepthCalibration::Initialize()
     return false;
   }
 
+  // Check for issues with geometry or file loading, and return appropriate errors
   if (m_DetectorIDs.size() == 0) {
     cout<<"No Strip3D detectors were found."<<endl;
     return false; 
@@ -176,24 +177,20 @@ void MModuleDepthCalibration::CreateExpos()
 bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
 
-  for (unsigned int i = 0; i < Event->GetNHits(); ++i ){
+  for (unsigned int i = 0; i < Event->GetNHits(); ++i ) {
     // H is a pointer to an instance of the MHit class. Each Hit has activated strips, represented by
     // instances of the MStripHit class.
     MHit* H = Event->GetHit(i);
+    int DetID = H->GetStripHit(0)->GetDetectorID();
 
     //Initalize position variables:
-    double Xpos = 0;
-    double Ypos = 0;
-    double Zpos = 0;
-    double Xsigma = 0;
-    double Ysigma = 0;
-    double Zsigma = 0;
+    double Xpos = 0.0, Ypos = 0.0, Zpos = 0.0;
+    double Xsigma = 0.0, Ysigma = 0.0, Zsigma = 0.0;
 
 
     // First, check for GR Hits
     if (H->GetGuardRingHitFlag() == true) {
-      // Skip the depth calibration for Hits that have a GR Strip Hit. Define position
-      // to be anywhere within the GR volume to pass through to revan
+      // For GR Hit, define position to be anywhere within the GR volume to pass through to revan
 
       int GRDetID = H->GetStripHit(0)->GetDetectorID();
       // Find unique/random position within the GR volume to assign as the hit position, as revan expects
@@ -206,19 +203,15 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       if (g_Verbosity >= c_Info) cout << m_XmlTag << "GR Hit :" << GRDetID << ", " << "set hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
       MVector GlobalPositionGR = m_GRDetectors[GRDetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(GRPosition);
-      MVector GRResolution(0.1, 0.1, 0.1);
-      
       H->SetPosition(GlobalPositionGR); 
-      H->SetPositionResolution(GRResolution);
 
       // Skip past the rest of the calibration and move to next Hit
       continue;
  
-    } 
-    // If not a GR Hit, perform the depth/position calibration...
+    } // If not a GR Hit, perform the depth/position calibration...
 
 
-    //TODO Rename Grade variables
+    //TODO: Rename Grade variables
     // The event "Grade" is the sub-pixel region determined via charge sharing
     int Grade = GetHitGrade(H);
     // GRADE=-1 is an error. Break from the loop and continue.
@@ -234,7 +227,10 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       }
     } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
       H->SetNoDepth();
-      Event->SetDepthCalibrationError("Multiple hits on single strip");
+      if (Event->HasDepthCalibrationError() == false) {
+        // Check if the DepthCalibrationError is already define for the Event before duplciating it
+        Event->SetDepthCalibrationError("Multiple hits on single strip");
+      }
       if (Grade==5) {
         ++m_Error5;
       } else if (Grade==6) {
@@ -257,7 +253,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
       MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-      int DetID = LVSH->GetDetectorID();
       int LVStripID = LVSH->GetStripID();
       int HVStripID = HVSH->GetStripID();
       int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
@@ -298,7 +293,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       double HVTiming = HVSH->GetTiming();
 
       // If there aren't coefficients loaded, then report a depth calibration error.
-      if( Coeffs == nullptr ){
+      if (Coeffs == nullptr) {
         // Set the bad flag for depth
         H->SetNoDepth();
         Event->SetDepthCalibrationError("No calibration coefficients");
@@ -321,64 +316,73 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         double CTD = (HVTiming - LVTiming);
         CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
 
-        double Xmin = * std::min_element(CTDVec.begin(), CTDVec.end());
-        double Xmax = * std::max_element(CTDVec.begin(), CTDVec.end());
+        double CTDmin = * std::min_element(CTDVec.begin(), CTDVec.end());
+        double CTDmax = * std::max_element(CTDVec.begin(), CTDVec.end());
 
         double noise = GetTimingNoiseFWHM(PixelCode, H->GetEnergy());
 
-        //if the CTD is out of range, check if we should reject the event.
-        if ((CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise))) {
+        // If the CTD is not crazy out of range, stick it on the edge of the detector and report a QA flag:
+        if ((CTD_s < CTDmin) && (CTD_s > (CTDmin - 5.0*noise))) {
+          CTD_s = CTDmin;
+          Event->SetDepthCalibrationError("Forced to edge");
+        } else if ((CTD_s > CTDmax) && (CTD_s < (CTDmax + 5.0*noise))) {
+          CTD_s = CTDmax;
+          Event->SetDepthCalibrationError("Forced to edge");
+        } else if ((CTD_s < (CTDmin - 5.0*noise)) || (CTD_s > (CTDmax + 5.0*noise))) {
+          // If the CTD is >5 sigma away from the max/min CTD, then don't calibrate this hit and return an error
           H->SetNoDepth();
           Event->SetDepthCalibrationError("Out of Range");
           ++m_Error2;
         }
 
-        // If the CTD is in range, calculate the depth
+        // Now, calculate the depth
         // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
         // This way we can avoid problems like non-monotonicity or assigning depth to events "outside" the detector 
         // Note that this requires that we don't massively overestimate the timing noise
-        else {
-          // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
-          // Utlize symmetry of the normal distribution.
-          vector<double> prob_dist = norm_pdf(CTDVec, CTD_s, noise/2.355);
+        // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
+        // Utlize symmetry of the normal distribution.
+        vector<double> prob_dist = norm_pdf(CTDVec, CTD_s, noise/2.355);
             
-          // Weight the depth by probability
-          double prob_sum = 0.0;
-          for (unsigned int k=0; k < prob_dist.size(); ++k) {
-       	    prob_sum += prob_dist[k];
-          }
-          double weighted_depth = 0.0;
-
-          for (unsigned int k = 0; k < DepthVec.size(); ++k) {
-            weighted_depth += prob_dist[k] * DepthVec[k];
-          }
-
-          // Calculate the expectation value of the depth
-          double mean_depth = weighted_depth/prob_sum;
-
-          // Calculate the standard deviation of the depth
-          double depth_var = 0.0;
-
-          for (unsigned int k=0; k < DepthVec.size(); ++k) {
-            depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0);
-          }
-
-          Zsigma =  sqrt(depth_var/prob_sum);
-          Zpos = mean_depth;
-          // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
-
-          // Add the depth to the GUI histogram.
-          if (Event->HasStripPairingError()==false) {
-            if (HasExpos() == true) {
-              m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
-            }
-          }
-          m_NoError+=1;
+        // Weight the depth by probability
+        double prob_sum = 0.0;
+        for (unsigned int k=0; k < prob_dist.size(); ++k) {     
+          prob_sum += prob_dist[k];
         }
+        double weighted_depth = 0.0;
+
+        for (unsigned int k = 0; k < DepthVec.size(); ++k) {
+          weighted_depth += prob_dist[k] * DepthVec[k];
+        }
+
+        // Calculate the expectation value of the depth
+        double mean_depth = weighted_depth/prob_sum;
+
+        // Calculate the standard deviation of the depth
+        double depth_var = 0.0;
+
+        for (unsigned int k=0; k < DepthVec.size(); ++k) {
+          depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0); 
+        }
+
+        Zsigma =  sqrt(depth_var/prob_sum);
+        Zpos = mean_depth;
+        // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
+
+        // Add the depth to the GUI histogram.
+        if (Event->HasStripPairingError()==false) {
+          if (HasExpos() == true) {
+            m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+          }
+        }
+        
+        m_NoError+=1;
+      
       }
+    
+      if (g_Verbosity >= c_Info) cout << m_XmlTag << "Strip ID :" << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
-    if (g_Verbosity >= c_Info) cout << m_XmlTag << "Strip ID :" << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
-
+    }
+    
     MVector LocalPosition(Xpos, Ypos, Zpos);
     MVector LocalOrigin(0.0, 0.0, 0.0);
     MVector GlobalPosition = m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalPosition);
@@ -390,14 +394,20 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     H->SetPosition(GlobalPosition); 
     H->SetPositionResolution(GlobalResolution);
 
-
-
+    // For events that have NoDepth, these can be passed through revan with an XE flag and any position within the detector
+    if (H->GetNoDepth() == true) {
+      DetID = H->GetStripHit(0)->GetDetectorID();
+      MVector XEPosition = m_Geometry->GetDetector(m_Detectors[DetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
+      
+      MVector GlobalPositionXE = m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(XEPosition);
+      H->SetPosition(GlobalPositionXE);
     }
+
   }
-
+    
   Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
-
   return true;
+
 }
 
 

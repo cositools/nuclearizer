@@ -244,11 +244,10 @@ void MHit::StreamEvta(ostream& S)
     }
     S<<endl;
 
-  } else if {
-    S<<"GR ;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
-      <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"
-      <<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution; 
+  } else if (m_GuardRingHit == true) {
+    S<<"GR "<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy;   
     S<<endl;
+
   } else if (m_NoDepth == true) {
     S<<"XE "<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy;
     S<<endl;
@@ -260,6 +259,60 @@ void MHit::StreamEvta(ostream& S)
 
 
 bool MHit::Parse(MString& Line, int Version)
+
+  //check that line begins with HT
+  const char* line = Line.Data();
+
+  if( line[0] == 'H' && line[1] == 'T' ) {
+    float X,Y,Z,E;
+    sscanf(&line[3],"%f %f %f %f",&X, &Y, &Z, &E);
+    m_Position.SetX(X);
+    m_Position.SetY(Y);
+    m_Position.SetZ(Z);
+    m_Energy = E;
+    return true;
+
+  } else if (line[0] == 'G' && line[1] == 'R' ) {
+    float X,Y,Z,E;
+    sscanf(&line[2],"%f %f %f %f",&X, &Y, &Z, &E);
+    m_Position.SetX(X);
+    m_Position.SetY(Y);
+    m_Position.SetZ(Z);
+    m_Energy = E;
+    m_GuardRingHit = true;
+    return true;
+
+  } else {
+    return false;
+  }
+
+	
+  /*
+  if( Line.BeginsWith("HT") ){
+    vector<MString> tokens = Line.Tokenize(" ");
+    if( tokens.size() >= 5 ){
+      m_Position.SetX( tokens.at(1).ToDouble() );
+      m_Position.SetY( tokens.at(2).ToDouble() );
+      m_Position.SetZ( tokens.at(3).ToDouble() );
+      m_Energy = tokens.at(4).ToDouble();
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  */
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the origins from the simulations (take care of duplicates)
+void MHit::AddOrigins(vector<int> Origins)
+>>>>>>> 5a54288 (Include GR and XE hits in evta)
 {
   // Parse a hit in Nuclearizer's DAT format
 
