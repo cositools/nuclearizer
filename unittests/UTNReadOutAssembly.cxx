@@ -736,6 +736,16 @@ bool UTNReadOutAssembly::TestParse()
                       R.GetNHits(), (unsigned int) 1) && Passed;
   }
 
+  // --- TI line sets the read-out assembly UTC event time -------------------
+  {
+    MReadOutAssembly R;
+    MString TILine("TI 123456789.123456789");
+    Passed = EvaluateTrue("Parse()", "TI line", "Parse() returns true for a TI line",
+                          R.Parse(TILine)) && Passed;
+    Passed = EvaluateTrue("Parse()", "TI sets UTC event time", "Parse() of a TI line updates GetTimeUTC()",
+                          R.GetTimeUTC() == MTime(123456789, 123456789)) && Passed;
+  }
+
   // --- SH line attaches a strip hit to the last hit and is owned by the ROA -
   {
     MReadOutAssembly R;
