@@ -1,4 +1,4 @@
-# Simplified mass model for COSI STTC HP52542-2
+# Simplified mass model for COSI STTC HP52542-1
 # Single germanium detector: active wafer + guard ring only.
 
 SurroundingSphere 20 0.0 0.0 0.0 20
