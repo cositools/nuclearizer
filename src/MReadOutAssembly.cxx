@@ -503,6 +503,14 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
   // HT/SH/BD are handled here; a malformed HT/SH line returns false.
 
+  if (Line.BeginsWith("TI")) {
+    MTime T(0);
+    if (T.Set(Line) == false) return false;
+    SetTime(T);
+    SetTimeUTC(T);
+    return true;
+  }
+
   if (Line.BeginsWith("HT")) {
     MHit* h = new MHit();
     if (h->Parse(Line, Version) == true) {
