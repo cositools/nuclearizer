@@ -82,7 +82,7 @@ bool UTNEndToEnd_406_1::TestHDF5ToTra()
 
   MString NuclearizerDir(NuclearizerEnv);
   MString DataDir       = NuclearizerDir + "/resource/unittestdata/406-1";
-  MString ConfigFile    = DataDir + "/hdf5_to_tra.nuclearizer.cfg";
+  MString ConfigFile    = DataDir + "/hdf5-to-tra.nuclearizer.cfg";
   MString OutputFile    = MString("/tmp/UTNEndToEnd_406-1_") + (unsigned int) getpid() + ".tra";
   MString ReferenceFile = DataDir + "/hdf5-to-tra.reference.tra";
   MString TestConfigFile = MString("/tmp/UTNEndToEnd_406-1_") + (unsigned int) getpid() + ".cfg";
