@@ -176,21 +176,21 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the number of low-voltage DEE strip hits
   unsigned int GetNDEEStripHitsLV() const { return m_DEEStripHitsLV.size(); }
   //! Return low-voltage DEE Strip hit at position i
-  void AddDEEStripHitLV(MDEEStripHit& DEEStripHit) { m_DEEStripHitsLV.push_back(DEEStripHit); }
+  void AddDEEStripHitLV(const MDEEStripHit& DEEStripHit) { m_DEEStripHitsLV.push_back(DEEStripHit); }
   //! Get a reference to the list of strip hits for direct manipulation
   list<MDEEStripHit>& GetDEEStripHitLVListReference() { return m_DEEStripHitsLV; }
 
   //! Return the number of high-voltage DEE strip hits
   unsigned int GetNDEEStripHitsHV() const { return m_DEEStripHitsHV.size(); }
   //! Add a high-voltage DEE Strip hit
-  void AddDEEStripHitHV(MDEEStripHit DEEStripHit) { m_DEEStripHitsHV.push_back(DEEStripHit); }
+  void AddDEEStripHitHV(const MDEEStripHit& DEEStripHit) { m_DEEStripHitsHV.push_back(DEEStripHit); }
   //! Get a reference to the list of strip hits for direct manipulation
   list<MDEEStripHit>& GetDEEStripHitHVListReference() { return m_DEEStripHitsHV; }
 
   //! Return the number of crystal hits
   unsigned int GetNDEECrystalHits() const { return m_DEECrystalHits.size(); }
   //! Add a crystal hit
-  void AddDEECrystalHit(MDEECrystalHit DEECrystalHit) { m_DEECrystalHits.push_back(DEECrystalHit); }
+  void AddDEECrystalHit(const MDEECrystalHit& DEECrystalHit) { m_DEECrystalHits.push_back(DEECrystalHit); }
   //! Get a reference to the list of crystal hits for direct manipulation
   list<MDEECrystalHit>& GetDEECrystalHitListReference() { return m_DEECrystalHits; }
 

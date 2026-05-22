@@ -384,7 +384,7 @@ bool UTNReadOutAssembly::TestStripHitManagement()
   Passed = EvaluateTrue("GetStripHit()", "pointer identity index 1", "GetStripHit(1) returns the pointer passed in the second AddStripHit()",
                         R.GetStripHit(1) == SH1) && Passed;
 
-  // InDetector tracking: AddStripHit updates m_InDetector for IDs 0-11
+  // InDetector tracking: AddStripHit updates m_InDetector for IDs 0-15
   Passed = EvaluateTrue("InDetector()", "detector 3 hit", "InDetector(3) returns true after adding a strip hit with DetectorID 3",
                         R.InDetector(3) == true) && Passed;
   Passed = EvaluateTrue("InDetector()", "detector 14 hit", "InDetector(14) returns true after adding a strip hit with DetectorID 14",

@@ -129,7 +129,7 @@ bool MStripHit::Parse(MString& Line, int Version)
     SetDetectorID(det_id);
     IsLowVoltageStrip(pos_strip == 'l');
     SetStripID(strip_id);
-    has_triggered == 0 ? HasTriggered(false) : HasTriggered(true);
+    HasTriggered(has_triggered != 0);
     SetTiming(timing);
     SetUncorrectedADCUnits(un_adc);
     SetADCUnits(adc);

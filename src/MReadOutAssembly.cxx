@@ -139,7 +139,7 @@ void MReadOutAssembly::Clear()
   m_GuardRingVeto = false;
   m_Trigger = true;
 
-  for (int DetectorID = 0; DetectorID <= 15; DetectorID++) {
+  for (unsigned int DetectorID = 0; DetectorID < 16; ++DetectorID) {
     m_InDetector[DetectorID] = false;
   }
 
@@ -307,7 +307,7 @@ void MReadOutAssembly::RemoveStripHit(unsigned int i)
     m_StripHits.erase(it);
 
     // Recompute the per-detector flags from the remaining strip hits
-    for (unsigned int DetectorID = 0; DetectorID <= 15; ++DetectorID) {
+    for (unsigned int DetectorID = 0; DetectorID < 16; ++DetectorID) {
       m_InDetector[DetectorID] = false;
     }
     for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
@@ -345,13 +345,6 @@ void MReadOutAssembly::AddStripHitTOnly(MStripHit* StripHit)
   //! Add a strip hit
   if (StripHit == nullptr) return;
 
-	//comment this out for now since it might mess with other stuff
-	/*
-  int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) )
-    {
-      m_InDetector[DetectorID]=true;
-    }*/
   m_StripHitsTOnly.push_back(StripHit);
 }
 
@@ -396,7 +389,7 @@ void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
   if (CrystalHit == nullptr) return;
 
   // Note: For ACS detectors, DetectorID is a string (e.g., "X0", "X1", "Y0", "Y1", "Z0", "Z1")
-  // so we can't use it with m_InDetector array which expects numeric indices 0-11.
+  // so we can't use it with m_InDetector array which expects numeric indices 0-15.
   // The m_InDetector tracking is primarily for GeD detectors which have numeric IDs.
   // We skip the m_InDetector tracking for crystal hits.
   
@@ -578,7 +571,7 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 				SetID( ID );
 				EventRead = true;
 			} else {
-				mout<<"MReadOutAssembly::GetNextFromDatFile(): Error parsing ID line"<<endl;
+				cout<<"MReadOutAssembly::GetNextFromDatFile(): Error parsing ID line"<<endl;
 			}
 		} else if( Line.BeginsWith("TI") ){
 			EventRead = true;
@@ -614,7 +607,7 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
   }
 
   if( i == MaxIter ){
-    mout<<"MReadOutAssembly::GetNextFromDatFile(): reached MaxIter"<<endl;
+    cout<<"MReadOutAssembly::GetNextFromDatFile(): reached MaxIter"<<endl;
     return false;
   }
 
