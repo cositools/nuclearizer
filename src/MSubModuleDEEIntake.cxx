@@ -101,7 +101,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
     MSimHT* HT = Event->GetSimulatedEvent()->GetHTAt(h);
     if (HT->GetEnergy() <= 0) {
       if (g_Verbosity >= c_Warning) {
-        cout << m_Name << ": Skipping hit with simulated energy of 0." << endl;
+        cout << m_Name << ": Skipping simulated hit with non-positive energy." << endl;
       }
       continue;
     }
