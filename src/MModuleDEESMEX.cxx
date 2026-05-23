@@ -63,8 +63,8 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
   m_IsStartModule = false;
   
   // Allow the use of multiple threads and instances
-  m_AllowMultiThreading = false;
-  m_AllowMultipleInstances = false;
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = true;
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoaderSimulation);
