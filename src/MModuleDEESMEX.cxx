@@ -50,6 +50,9 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
 {
   // Construct an instance of MModuleDEESMEX
 
+  // Set geometry to nullptr to explicitly check that it was set in Initialize
+  m_Geometry = nullptr;
+
   // Set the module name --- has to be unique
   m_Name = "Detector effects engine for COSI SMEX";
   
@@ -96,6 +99,14 @@ MModuleDEESMEX::~MModuleDEESMEX()
 
 bool MModuleDEESMEX::Initialize()
 {
+
+  if (m_Geometry == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MModuleDEESMEX::Initialize: m_Geometry is a nullptr" << endl;
+    }
+    return false;
+  }
+
   // Set the geometry to the SubModules using it
   m_ChargeTransport.SetGeometry(m_Geometry);
   m_DepthReadout.SetGeometry(m_Geometry);

@@ -55,7 +55,9 @@ class MModuleDEESMEX : public MModule
   //! Create a new object of this class
   virtual MModuleDEESMEX* Clone()
   {
-    return new MModuleDEESMEX();
+    MModuleDEESMEX* M = new MModuleDEESMEX();
+    M->SetGeometry(m_Geometry);
+    return M;
   }
 
   //! Set the geometry
