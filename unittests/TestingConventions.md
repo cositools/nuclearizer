@@ -25,7 +25,7 @@ Then state the task.  Example prompts:
 Add a unit test for a class:
 
 ```
-Add a unit test for the class in src/MModuleTBD.cxx to the unittests directory,
+Add a unit test for the class in src/MFoo.cxx to the unittests directory,
 following the same rules and style as the existing unit tests. Cover the whole
 public API and work through the checklist in section "Test Completeness".
 ```
