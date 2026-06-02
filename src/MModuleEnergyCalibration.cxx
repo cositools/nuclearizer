@@ -134,216 +134,15 @@ bool MModuleEnergyCalibration::Initialize()
 {
   // Initialize the module
 
-  //Parse the Energy Calibration file
-  MParser Parser;
-  if (Parser.Open(m_FileName, MFile::c_Read) == false) {
-    if (g_Verbosity >= c_Error) {
-      cout << m_XmlTag << ": Unable to open calibration file " << m_FileName << endl;
-    }
+  // Parse the energy calibration file
+  if (ReadEnergyCalibrationFile(m_FileName) == false) {
     return false;
   }
-  //Parse the slow Threshold file
+
+  // Parse the slow threshold file
   if (m_SlowThresholdCutMode == MSlowThresholdCutModes::e_File) {
-    MParser Parser_Threshold;
-    if (Parser_Threshold.Open(m_SlowThresholdCutFileName, MFile::c_Read) == false) {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open Threshold file "<<m_SlowThresholdCutFileName<<endl;
+    if (ReadSlowThresholdCutFile(m_SlowThresholdCutFileName) == false) {
       return false;
-    } else {
-      MString Line; // each line of the threshold csv file
-      while (Parser_Threshold.ReadLine(Line)) {
-        if (!Line.BeginsWith("#")) {
-          std::vector<MString> Tokens = Line.Tokenize(","); // for each line, Create tokens seperated by commas
-          if (Tokens.size() == 6) {
-            int IndexOffset = Tokens.size() % 6; //index counter
-            int DetID = Tokens[1 + IndexOffset].ToInt(); // Detector ID
-            MString Side = Tokens[2 + IndexOffset].ToString(); // side is a string, either 'l' or 'h'
-            int StripID = Tokens[3 + IndexOffset].ToInt(); // stripID
-            //int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
-            double ThresholdKeVFile = Tokens[5 + IndexOffset].ToDouble(); //energy threshold in keV
-
-            MReadOutElementDoubleStrip R;
-            R.SetDetectorID(DetID);
-            R.SetStripID(StripID);
-            R.IsLowVoltageStrip(Side == "l");
-
-            // map detectorID, strip number, and voltage side to the threshold (keV)
-            m_ThresholdMap[R] = ThresholdKeVFile;
-          }
-        }
-      }
-    }
-  }
-  // create other maps
-  map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine; //Peak fits
-  map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
-  map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
-
-  //tokenize ecal file
-  for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
-    unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
-    if (NTokens < 2) {
-      continue;
-    }
-    if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true ||
-        Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true || Parser.GetTokenizerAt(i)->IsTokenAt(0, "CR") == true) {
-      if (Parser.GetTokenizerAt(i)->IsTokenAt(1, "dss") == true) {
-
-        // input token values to map
-        MReadOutElementDoubleStrip R;
-        R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
-        R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
-        R.IsLowVoltageStrip((Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p") || (Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "l"));
-        if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true) {
-          CP_ROEToLine[R] = i;
-        } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
-          CM_ROEToLine[R] = i;
-        } else {
-          CR_ROEToLine[R] = i;
-        }
-      } else {
-        if (g_Verbosity >= c_Error) {
-          cout << m_XmlTag << ": Line parser: Unknown read-out element (" << Parser.GetTokenizerAt(i)->GetTokenAt(1) << ")" << endl;
-        }
-        return false;
-      }
-    }
-  }
-
-  for (auto CM : CM_ROEToLine) {
-    // If we have at least three data points, we store the calibration
-
-    if (CP_ROEToLine.find(CM.first) != CP_ROEToLine.end()) {
-      unsigned int i = CP_ROEToLine[CM.first];
-      if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == false) {
-        if (g_Verbosity >= c_Warning) {
-          cout << m_XmlTag << ": Unknown calibration point descriptor found: " << Parser.GetTokenizerAt(i)->GetTokenAt(5) << endl;
-        }
-        continue;
-      }
-    } else {
-      if (g_Verbosity >= c_Warning) {
-        cout << m_XmlTag << ": No good calibration for the following strip found: " << CM.first << endl;
-      }
-      continue;
-    }
-
-    // Read the calibrator, i.e. read the fit function from the .ecal Melinator file.
-
-    unsigned int Pos = 5;
-    MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
-    CalibratorType.ToLower();
-
-    // Below inclusion of poly1zero written by J. Beechert on 2019/11/15
-    if (CalibratorType == "poly1zero") {
-      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-
-      //From the fit parameters I just extracted from the .ecal file, I can define a function
-      TF1* melinatorfit = new TF1("poly1zero", "0. + [0]*x", 0., 8191.);
-      melinatorfit->FixParameter(0, a0);
-
-      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-      m_Calibration[CM.first] = melinatorfit;
-
-    }
-
-    // Below inclusion of poly1 and poly2 written by J. Beechert on 2019/10/24
-    else if (CalibratorType == "poly1") {
-      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-
-      //From the fit parameters I just extracted from the .ecal file, I can define a function
-      TF1* melinatorfit = new TF1("poly1", "[0] + [1]*x", 0., 8191.);
-      melinatorfit->FixParameter(0, a0);
-      melinatorfit->FixParameter(1, a1);
-
-      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-      m_Calibration[CM.first] = melinatorfit;
-
-    } else if (CalibratorType == "poly2") {
-      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-
-      //From the fit parameters I just extracted from the .ecal file, I can define a function
-      TF1* melinatorfit = new TF1("poly2", "[0] + [1]*x + [2]*x^2", 0., 8191.);
-      melinatorfit->FixParameter(0, a0);
-      melinatorfit->FixParameter(1, a1);
-      melinatorfit->FixParameter(2, a2);
-
-      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-      m_Calibration[CM.first] = melinatorfit;
-
-    }
-    //Eventually, I'll be including other possible fits, but for now, we've just include poly3 and poly4
-    else if (CalibratorType == "poly3") {
-      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-
-      //From the fit parameters I just extracted from the .ecal file, I can define a function
-      TF1* melinatorfit = new TF1("poly3", "[0] + [1]*x + [2]*x^2 + [3]*x^3", 0., 8191.);
-      melinatorfit->FixParameter(0, a0);
-      melinatorfit->FixParameter(1, a1);
-      melinatorfit->FixParameter(2, a2);
-      melinatorfit->FixParameter(3, a3);
-
-      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-      m_Calibration[CM.first] = melinatorfit;
-
-    } else if (CalibratorType == "poly4") {
-      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-      double a4 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
-
-      //From the fit parameters I just extracted from the .ecal file, I can define a function
-      TF1* melinatorfit = new TF1("poly4", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 0., 8191.);
-      melinatorfit->FixParameter(0, a0);
-      melinatorfit->FixParameter(1, a1);
-      melinatorfit->FixParameter(2, a2);
-      melinatorfit->FixParameter(3, a3);
-      melinatorfit->FixParameter(4, a4);
-
-      //Define the map by saving the fit function I just created as a map to the current ReadOutElement
-      m_Calibration[CM.first] = melinatorfit;
-
-    } else {
-      if (g_Verbosity >= c_Error) {
-        cout << m_XmlTag << ": Line parser: Unknown calibrator type (" << CalibratorType << ") for strip" << CM.first << endl;
-      }
-      continue;
-    }
-  }
-
-  for (auto CR : CR_ROEToLine) {
-
-    unsigned int Pos = 5;
-    MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
-    CalibratorType.ToLower();
-    if (CalibratorType == "p1" || CalibratorType == "poly1") {
-      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-      TF1* resolutionfit = new TF1("P1", "([0]+[1]*x) / 2.355", 0., 2000.);
-      resolutionfit->FixParameter(0, f0);
-      resolutionfit->FixParameter(1, f1);
-
-      m_ResolutionCalibration[CR.first] = resolutionfit;
-    } else if (CalibratorType == "p2" || CalibratorType == "poly2") {
-      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-      double f2 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
-      TF1* resolutionfit = new TF1("P2", "([0]+[1]*x+[2]*x*x) / 2.355", 0., 2000.);
-      resolutionfit->FixParameter(0, f0);
-      resolutionfit->FixParameter(1, f1);
-      resolutionfit->FixParameter(2, f2);
-      m_ResolutionCalibration[CR.first] = resolutionfit;
-    } else {
-      if (g_Verbosity >= c_Error) {
-        cout << m_XmlTag << ": Line parser: Unknown resolution calibrator type (" << CalibratorType << ") for strip" << CR.first << endl;
-      }
-      continue;
     }
   }
 
@@ -518,6 +317,238 @@ void MModuleEnergyCalibration::Finalize()
   }
 
   return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleEnergyCalibration::ReadEnergyCalibrationFile(MString FileName) {
+
+  // Parse the Energy Calibration file
+  MParser Parser;
+  if (Parser.Open(FileName, MFile::c_Read) == false) {
+    if (g_Verbosity >= c_Error) {
+      cout << m_XmlTag << ": Unable to open energy calibration file " << FileName << endl;
+    }
+    return false;
+  }
+
+  // create other maps
+  map<MReadOutElementDoubleStrip, unsigned int> CP_ROEToLine; //Peak fits
+  map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine; //Energy Calibration Model
+  map<MReadOutElementDoubleStrip, unsigned int> CR_ROEToLine; //Energy Resolution Calibration Model
+
+  // tokenize ecal file
+  for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
+    unsigned int NTokens = Parser.GetTokenizerAt(i)->GetNTokens();
+    if (NTokens < 2) {
+      continue;
+    }
+    if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true ||
+        Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true || Parser.GetTokenizerAt(i)->IsTokenAt(0, "CR") == true) {
+      if (Parser.GetTokenizerAt(i)->IsTokenAt(1, "dss") == true) {
+
+        // input token values to map
+        MReadOutElementDoubleStrip R;
+        R.SetDetectorID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2));
+        R.SetStripID(Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(3));
+        R.IsLowVoltageStrip((Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "p") || (Parser.GetTokenizerAt(i)->GetTokenAtAsString(4) == "l"));
+        if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CP") == true) {
+          CP_ROEToLine[R] = i;
+        } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "CM") == true) {
+          CM_ROEToLine[R] = i;
+        } else {
+          CR_ROEToLine[R] = i;
+        }
+      } else {
+        if (g_Verbosity >= c_Error) {
+          cout << m_XmlTag << ": Line parser: Unknown read-out element (" << Parser.GetTokenizerAt(i)->GetTokenAt(1) << ")" << endl;
+        }
+        return false;
+      }
+    }
+  }
+
+  for (auto CM : CM_ROEToLine) {
+    // If we have at least three data points, we store the calibration
+
+    if (CP_ROEToLine.find(CM.first) != CP_ROEToLine.end()) {
+      unsigned int i = CP_ROEToLine[CM.first];
+      if (Parser.GetTokenizerAt(i)->IsTokenAt(5, "pakw") == false) {
+        if (g_Verbosity >= c_Warning) {
+          cout << m_XmlTag << ": Unknown calibration point descriptor found: " << Parser.GetTokenizerAt(i)->GetTokenAt(5) << endl;
+        }
+        continue;
+      }
+    } else {
+      if (g_Verbosity >= c_Warning) {
+        cout << m_XmlTag << ": No good calibration for the following strip found: " << CM.first << endl;
+      }
+      continue;
+    }
+
+    // Read the calibrator, i.e. read the fit function from the .ecal Melinator file.
+
+    unsigned int Pos = 5;
+    MString CalibratorType = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsString(Pos);
+    CalibratorType.ToLower();
+
+    // Below inclusion of poly1zero written by J. Beechert on 2019/11/15
+    if (CalibratorType == "poly1zero") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+
+      // From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly1zero", "0. + [0]*x", 0., m_MaxADCRange);
+      melinatorfit->FixParameter(0, a0);
+
+      // Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+
+    }
+
+    // Below inclusion of poly1 and poly2 written by J. Beechert on 2019/10/24
+    else if (CalibratorType == "poly1") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+
+      // From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly1", "[0] + [1]*x", 0., m_MaxADCRange);
+      melinatorfit->FixParameter(0, a0);
+      melinatorfit->FixParameter(1, a1);
+
+      // Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+
+    } else if (CalibratorType == "poly2") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+
+      // From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly2", "[0] + [1]*x + [2]*x^2", 0., m_MaxADCRange);
+      melinatorfit->FixParameter(0, a0);
+      melinatorfit->FixParameter(1, a1);
+      melinatorfit->FixParameter(2, a2);
+
+      // Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+
+    }
+    // Eventually, I'll be including other possible fits, but for now, we've just include poly3 and poly4
+    else if (CalibratorType == "poly3") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+
+      // From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly3", "[0] + [1]*x + [2]*x^2 + [3]*x^3", 0., m_MaxADCRange);
+      melinatorfit->FixParameter(0, a0);
+      melinatorfit->FixParameter(1, a1);
+      melinatorfit->FixParameter(2, a2);
+      melinatorfit->FixParameter(3, a3);
+
+      // Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+
+    } else if (CalibratorType == "poly4") {
+      double a0 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a1 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a2 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a3 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+      double a4 = Parser.GetTokenizerAt(CM.second)->GetTokenAtAsDouble(++Pos);
+
+      // From the fit parameters I just extracted from the .ecal file, I can define a function
+      TF1* melinatorfit = new TF1("poly4", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 0., m_MaxADCRange);
+      melinatorfit->FixParameter(0, a0);
+      melinatorfit->FixParameter(1, a1);
+      melinatorfit->FixParameter(2, a2);
+      melinatorfit->FixParameter(3, a3);
+      melinatorfit->FixParameter(4, a4);
+
+      // Define the map by saving the fit function I just created as a map to the current ReadOutElement
+      m_Calibration[CM.first] = melinatorfit;
+
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": Line parser: Unknown calibrator type (" << CalibratorType << ") for strip" << CM.first << endl;
+      }
+      continue;
+    }
+  }
+
+  for (auto CR : CR_ROEToLine) {
+
+    unsigned int Pos = 5;
+    MString CalibratorType = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsString(Pos);
+    CalibratorType.ToLower();
+    if (CalibratorType == "p1" || CalibratorType == "poly1") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P1", "([0]+[1]*x) / 2.355", 0., 2000.);
+      resolutionfit->FixParameter(0, f0);
+      resolutionfit->FixParameter(1, f1);
+
+      m_ResolutionCalibration[CR.first] = resolutionfit;
+    } else if (CalibratorType == "p2" || CalibratorType == "poly2") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f2 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P2", "([0]+[1]*x+[2]*x*x) / 2.355", 0., 2000.);
+      resolutionfit->FixParameter(0, f0);
+      resolutionfit->FixParameter(1, f1);
+      resolutionfit->FixParameter(2, f2);
+      m_ResolutionCalibration[CR.first] = resolutionfit;
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": Line parser: Unknown resolution calibrator type (" << CalibratorType << ") for strip" << CR.first << endl;
+      }
+      continue;
+    }
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleEnergyCalibration::ReadSlowThresholdCutFile(MString FileName) {
+
+  MParser Parser;
+  if (Parser.Open(FileName, MFile::c_Read) == false) {
+    if (g_Verbosity >= c_Error) {
+      cout<<m_XmlTag<<": Unable to open Threshold file "<<FileName<<endl;
+    }
+    return false;
+  }
+
+  MString Line; // each line of the threshold csv file
+  while (Parser.ReadLine(Line) == true) {
+    if (Line.BeginsWith("#") == false) {
+      std::vector<MString> Tokens = Line.Tokenize(","); // for each line, Create tokens seperated by commas
+      if (Tokens.size() == 6) {
+        int IndexOffset = Tokens.size() % 6; //index counter
+        int DetID = Tokens[1 + IndexOffset].ToInt(); // Detector ID
+        MString Side = Tokens[2 + IndexOffset].ToString(); // side is a string, either 'l' or 'h'
+        int StripID = Tokens[3 + IndexOffset].ToInt(); // stripID
+        //int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
+        double ThresholdKeVFile = Tokens[5 + IndexOffset].ToDouble(); //energy threshold in keV
+
+        MReadOutElementDoubleStrip R;
+        R.SetDetectorID(DetID);
+        R.SetStripID(StripID);
+        R.IsLowVoltageStrip(Side == "l");
+
+        // map detectorID, strip number, and voltage side to the threshold (keV)
+        m_ThresholdMap[R] = ThresholdKeVFile;
+      }
+    }
+  }
+
+  return true;
 }
 
 

@@ -34,7 +34,7 @@ MAKEFLAGS += --no-builtin-rules --no-print-directory
 
 .SUFFIXES:
 #.SUFFIXES: .cxx .h .o .so
-.PHONY: all n nuclearizer megalib apps clean
+.PHONY: all n nuclearizer megalib apps clean unittests
 .EXPORT_ALL_VARIABLES:
 #.NOTPARALLEL: megalib
 .SILENT:
@@ -76,6 +76,7 @@ CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include $(H5CXXFLAGS) $(CC
 LIBS += $(H5LIBS) $(CCFITSLIBS)
 
 # Definitions
+NUCLEARIZER            := $(TOPLEVEL)
 NUCLEARIZER_DIR        := $(NUCLEARIZER)
 NUCLEARIZER_PRG        := $(BN)/nuclearizer
 NUCLEARIZER_CXX_MAIN   := $(NUCLEARIZER_DIR)/src/MNuclearizerMain.cxx
@@ -105,6 +106,10 @@ NUCLEARIZER_CXX_MAIN := $(NUCLEARIZER)/src/MNuclearizerMain.cxx
 ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
 
 
+CXX_UT := $(wildcard $(NUCLEARIZER_DIR)/unittests/*.cxx)
+EXE_UT := $(patsubst %.cxx,%,$(CXX_UT))
+EXE_UT := $(patsubst $(NUCLEARIZER_DIR)/unittests/%,$(BN)/%,$(EXE_UT))
+
 NUCLEARIZER_DICT_NAME=Nuclearizer_Dictionary
 NUCLEARIZER_DICT=$(LB)/$(NUCLEARIZER_DICT_NAME).cxx
 NUCLEARIZER_DICT_LIB=$(LB)/$(NUCLEARIZER_DICT_NAME).o
@@ -129,7 +134,10 @@ apps:
 	@$(MAKE) $(NUCLEARIZER_SHARED_LIB)
 	@$(MAKE) -C apps
 
+unittests: $(NUCLEARIZER_SHARED_LIB) $(EXE_UT)
+
 clean:
+	@-rm -f $(EXE_UT)
 	@-rm -f $(MEGALIB)/include/MAssembly.h $(MEGALIB)/include/MReadOutAssembly.h
 	@-rm -f $(FRETALON_LIBS) $(FRETALON_DEP_FILES)
 	@-rm -f $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DEP_FILES)
@@ -185,6 +193,10 @@ $(NUCLEARIZER_SHARED_LIB): $(NUCLEARIZER_DICT_LIB) $(FRETALON_LIBS) $(NUCLEARIZE
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
 	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
+
+$(EXE_UT): $(BN)/%: $(NUCLEARIZER_DIR)/unittests/%.cxx $(NUCLEARIZER_SHARED_LIB)
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $@
 
 
 ifneq ($(MAKECMDGOALS),clean)

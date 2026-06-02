@@ -147,11 +147,6 @@ class MHit
   //! Parse some content from a line
   bool Parse(MString &Line, int Version = 1);
 
-  // protected methods:
- protected:
-  //MHit() {};
-  //MHit(const MHit& NCTHit) {};
-
   // private methods:
  private:
 
@@ -194,9 +189,9 @@ class MHit
     bool m_GuardRingHit;
 
 	//! true if hit contains strip that was hit multiple times on X
-	bool m_StripHitMultipleTimesX = false;
+	bool m_StripHitMultipleTimesX;
     //! true if hit contains strip that was hit multiple times on Y
-	bool m_StripHitMultipleTimesY = false;
+	bool m_StripHitMultipleTimesY;
 
 	//! true if hit contains charge sharing
     bool m_ChargeSharing;

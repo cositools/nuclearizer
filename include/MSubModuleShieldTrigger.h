@@ -86,7 +86,9 @@ class MSubModuleShieldTrigger : public MSubModule
   bool HasShieldVeto() const { return m_HasShieldVeto; }
 
   //! Return the time when the dead time ends - filled after AnalyzeEvent
-  MTime GetDeadTimeEnd() const { return m_DeadTimeEnd; }
+  MTime GetShieldDeadTimeEnd() const { return m_DeadTimeEnd; }
+  //! Return the shield hit time that caused the current veto
+  MTime GetShieldVetoTime() const { return MTime(m_ShieldVetoTime); }
 
   //! Get total shield deadtime for a panel
   double GetTotalShieldDeadtime(int panel) const { 
@@ -119,7 +121,7 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Calculate ASIC deadtime for shield
   double CalculateASICDeadtime(vector<int> CrystalIDs);
 
-  //! Process shield hits and determine veto status
+  //! Process shield hits and update shield deadtime state
   bool ProcessShieldHits(MReadOutAssembly* Event);
 
   // private members:
@@ -136,6 +138,8 @@ class MSubModuleShieldTrigger : public MSubModule
   bool m_HasShieldVeto;
   //! Time when the shield dead time ends
   MTime m_DeadTimeEnd;
+  //! Shield hit time that caused the current veto
+  double m_ShieldVetoTime;
 
   //! Shield threshold in keV
   double m_ShieldThreshold;
@@ -145,8 +149,8 @@ class MSubModuleShieldTrigger : public MSubModule
   double m_ShieldDelayBefore;
   //! Shield delay 2 before trigger in seconds
   double m_ShieldDelayAfter;
-  //! Shield veto window size in seconds
-  double m_ShieldVetoWindowSize;
+  //! Adjustment to shield veto window in seconds
+  double m_ShieldVetoWindowDelta;
   //! Shield deadtime per channel read out in seconds
   double m_ASICDeadTimePerChannel;
   

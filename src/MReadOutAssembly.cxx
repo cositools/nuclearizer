@@ -129,11 +129,17 @@ void MReadOutAssembly::Clear()
   m_EventTimeRTS = 0;
   m_EventTimeUTC = 0;
 
+  m_HasSimAspectInfo = false;
+  m_GalacticPointingXAxisTheta = 0.0;
+  m_GalacticPointingXAxisPhi = 0.0;
+  m_GalacticPointingZAxisTheta = 0.0;
+  m_GalacticPointingZAxisPhi = 0.0;
+
   m_ShieldVeto = false;
   m_GuardRingVeto = false;
   m_Trigger = true;
 
-  for (int DetectorID = 0; DetectorID <= 11; DetectorID++) {
+  for (unsigned int DetectorID = 0; DetectorID < 16; ++DetectorID) {
     m_InDetector[DetectorID] = false;
   }
 
@@ -191,6 +197,7 @@ void MReadOutAssembly::Clear()
   m_StripPairingString_QualityFlag.clear();
 
   m_FilteredOut = false;
+  m_AnalysisProgress = 0;
 
   delete m_PhysicalEvent;
   m_PhysicalEvent = nullptr;
@@ -223,7 +230,7 @@ void MReadOutAssembly::DeleteHits()
 bool MReadOutAssembly::InDetector(int DetectorID)
 {
   //! Find out if the event contains strip hits in a given detector
-  if ( (DetectorID>=0) && (DetectorID<=11) )
+  if ( (DetectorID>=0) && (DetectorID<=15) )
     {
       return m_InDetector[DetectorID];
     }
@@ -242,7 +249,16 @@ void MReadOutAssembly::SetPhysicalEvent(MPhysicalEvent* Event)
   //! Set the physical event from event reconstruction
   // We make our own local copy here
 
-  m_PhysicalEvent = Event->Duplicate();
+  // Guard against self-assignment: deleting m_PhysicalEvent first would leave
+  // Event dangling before Duplicate() could be called on it
+  if (Event == m_PhysicalEvent) return;
+
+  delete m_PhysicalEvent;
+  if (Event != nullptr) {
+    m_PhysicalEvent = Event->Duplicate();
+  } else {
+    m_PhysicalEvent = nullptr;
+  }
 }
 
 
@@ -269,9 +285,11 @@ MStripHit* MReadOutAssembly::GetStripHit(unsigned int i)
 void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 {
   //! Add a strip hit
-  int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) ) {
-    m_InDetector[DetectorID]=true;
+  if (StripHit == nullptr) return;
+
+  unsigned int DetectorID = StripHit->GetDetectorID();
+  if (DetectorID <= 15) {
+    m_InDetector[DetectorID] = true;
   }
   m_StripHits.push_back(StripHit);
 }
@@ -287,6 +305,17 @@ void MReadOutAssembly::RemoveStripHit(unsigned int i)
     vector<MStripHit*>::iterator it;
     it = m_StripHits.begin()+i;
     m_StripHits.erase(it);
+
+    // Recompute the per-detector flags from the remaining strip hits
+    for (unsigned int DetectorID = 0; DetectorID < 16; ++DetectorID) {
+      m_InDetector[DetectorID] = false;
+    }
+    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+      unsigned int DetectorID = m_StripHits[h]->GetDetectorID();
+      if (DetectorID <= 15) {
+        m_InDetector[DetectorID] = true;
+      }
+    }
   }
 }
 
@@ -314,13 +343,8 @@ MStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i)
 void MReadOutAssembly::AddStripHitTOnly(MStripHit* StripHit)
 {
   //! Add a strip hit
-	//comment this out for now since it might mess with other stuff
-	/*
-  int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) )
-    {
-      m_InDetector[DetectorID]=true;
-    }*/
+  if (StripHit == nullptr) return;
+
   m_StripHitsTOnly.push_back(StripHit);
 }
 
@@ -362,8 +386,10 @@ MCrystalHit* MReadOutAssembly::GetCrystalHit(unsigned int i)
 void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
 {
   //! Add a crystal hit
+  if (CrystalHit == nullptr) return;
+
   // Note: For ACS detectors, DetectorID is a string (e.g., "X0", "X1", "Y0", "Y1", "Z0", "Z1")
-  // so we can't use it with m_InDetector array which expects numeric indices 0-11.
+  // so we can't use it with m_InDetector array which expects numeric indices 0-15.
   // The m_InDetector tracking is primarily for GeD detectors which have numeric IDs.
   // We skip the m_InDetector tracking for crystal hits.
   
@@ -388,7 +414,24 @@ void MReadOutAssembly::RemoveCrystalHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MHit* MReadOutAssembly::GetHit(unsigned int i) 
+MGuardringHit* MReadOutAssembly::GetGuardringHit(unsigned int i)
+{
+  //! Return guardring hit i
+
+  if (i < m_GuardringHits.size()) {
+    return m_GuardringHits[i];
+  }
+
+  merr<<"Index out of bounds!"<<show;
+
+  return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MHit* MReadOutAssembly::GetHit(unsigned int i)
 { 
   //! Return hit i
   
@@ -450,32 +493,38 @@ MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime)
 
 
 bool MReadOutAssembly::Parse(MString& Line, int Version)
-{  
-  // Handles SE, TI, RO, IA
-  if (MReadOutSequence::Parse(Line) == true) return true;
-  
+{
+  // HT/SH/BD are handled here; a malformed HT/SH line returns false.
+
+  if (Line.BeginsWith("TI")) {
+    MTime T(0);
+    if (T.Set(Line) == false) return false;
+    SetTime(T);
+    SetTimeUTC(T);
+    return true;
+  }
+
   if (Line.BeginsWith("HT")) {
     MHit* h = new MHit();
-    if( h->Parse(Line,1) ){
+    if (h->Parse(Line, Version) == true) {
       AddHit(h);
       return true;
     } else {
+      delete h;
       return false;
     }
   }
   if (Line.BeginsWith("SH")) {
     // assuming that the SHs belong to the last read hit
+    if (m_Hits.empty() == true) return false;
     MHit* h = m_Hits.back();
-    if (h != nullptr) {
-      MStripHit* SH = new MStripHit();
-      if (SH->Parse(Line, 2)) {
-        h->AddStripHit(SH);
-        return true;
-      } else {
-        delete SH;
-        return false;
-      }
+    MStripHit* SH = new MStripHit();
+    if (SH->Parse(Line, 2) == true) {
+      AddStripHit(SH);
+      h->AddStripHit(SH);
+      return true;
     } else {
+      delete SH;
       return false;
     }
   }
@@ -486,8 +535,9 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
     return true;
   }
 
-
-  return false;
+  // Everything else (SE, TI, ID, IA, ...) goes to the tolerant base parser,
+  // which also consumes unrecognized lines and returns true
+  return MReadOutSequence::Parse(Line);
 }
 
 
@@ -499,11 +549,15 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
   MString Line;
   int i;
   int MaxIter = 1000;
+  bool EventRead = false;
 
 	Clear();
 	for( i = 0; i < MaxIter; i++ ){
 		//try 1000 times to get the complete event
-		F.ReadLine(Line);
+		if( F.ReadLine(Line) == false ){
+			//end of file reached
+			break;
+		}
 		const char* line = Line.Data();
 		//vector<MString> tokens = Line.Tokenize(" ");
 		if( Line.BeginsWith("SE") ){
@@ -513,37 +567,51 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 			}
 		}else if( Line.BeginsWith("ID") ){
 			unsigned int ID;
-			sscanf(&line[3],"%u",&ID);
-			SetID( ID );
+			if( sscanf(&line[3],"%u",&ID) == 1 ){
+				SetID( ID );
+				EventRead = true;
+			} else {
+				cout<<"MReadOutAssembly::GetNextFromDatFile(): Error parsing ID line"<<endl;
+			}
 		} else if( Line.BeginsWith("TI") ){
+			EventRead = true;
 			MTime T = MTime();
 			T.Set(Line);
-			SetTime( T );
+			SetTimeUTC( T );
 		} else if( Line.BeginsWith("HT") ){
 			MHit* h = new MHit();
-			h->Parse(Line);
-			AddHit(h);
+			if( h->Parse(Line) == true ){
+				AddHit(h);
+				EventRead = true;
+			} else {
+				delete h;
+			}
 		} else if( Line.BeginsWith("SH") ){
 			MStripHit* sh = new MStripHit();
-			sh->Parse(Line);
-			AddStripHit(sh);
-			if( m_Hits.size() > 0 ){
-				//add this SH to the last read in HT
-				MHit* h = m_Hits.back();
-				h->AddStripHit(sh);
+			if( sh->Parse(Line) == true ){
+				AddStripHit(sh);
+				EventRead = true;
+				if( m_Hits.size() > 0 ){
+					//add this SH to the last read in HT
+					MHit* h = m_Hits.back();
+					h->AddStripHit(sh);
+				}
+			} else {
+				delete sh;
 			}
 		} else if( Line.BeginsWith("BD") ){
+			EventRead = true;
 			SetFilteredOut(true);
 		}
 
   }
 
   if( i == MaxIter ){
-    cout<<"MReadoutAssembly::GetNextFromFile(): reached MaxIter"<<endl;
+    cout<<"MReadOutAssembly::GetNextFromDatFile(): reached MaxIter"<<endl;
     return false;
-  } else {
-    return true;
   }
+
+  return EventRead;
 
 }
 
@@ -553,42 +621,46 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 
 bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 {
-  //! Stream the content to an ASCII file 
+  //! Stream the content to an ASCII file
 
-  S<<"SE"<<endl;
-  S<<"ID "<<m_ID<<endl;
-  
-  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
-    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  if (Version >= 1 && Version <= 3) {
+    S<<"SE"<<endl;
+    S<<"ID "<<m_ID<<endl;
+
+    if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+      S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+    } else {
+      S<<"TI "<<m_EventTimeUTC<<endl;
+    }
+
+    for (MSimIA& IA: m_SimIAs) {
+      S<<IA.ToSimString()<<endl;
+    }
+
+    if (Version == 1) {
+      for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+        m_StripHits[h]->StreamDat(S, Version);
+      }
+
+      for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+        m_Hits[h]->StreamDat(S, Version);
+      }
+    } else if (Version == 2) {
+      for (auto H : m_Hits) {
+        H->StreamDat(S, 2);
+      }
+    } else if (Version == 3) {
+      for (auto H : m_Hits) {
+        H->StreamDat(S, 3);
+      }
+    }
+
+    StreamBDFlags(S);
+
+    return true;
   } else {
-    S<<"TI "<<m_EventTimeUTC<<endl;
+    return false;
   }
-
-  for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
-  }
-  
-  if (Version == 1) {
-    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-      m_StripHits[h]->StreamDat(S, Version);  
-    }
-
-    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-      m_Hits[h]->StreamDat(S, Version);  
-    }
-  } else if (Version == 2) {
-    for (auto H : m_Hits) {
-      H->StreamDat(S, 2);
-    }
-  } else if (Version == 3) {
-     for (auto H : m_Hits) {
-       H->StreamDat(S, 3);
-    }
-  }
-
-  StreamBDFlags(S);
-  
-  return true;
 }
 
 
@@ -652,11 +724,11 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
     if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
       continue;
     }
-    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags);
+    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags, WithOrigins);
     ++Counter;
   }
   for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
-    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithTemperatures, WithFlags);
+    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithFlags, WithOrigins);
     ++Counter;
   }
   if (Counter == 0) {

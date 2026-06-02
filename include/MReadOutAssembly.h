@@ -50,6 +50,10 @@ class MReadOutAssembly : public MReadOutSequence
   //! Default destructor
   virtual ~MReadOutAssembly();
 
+  //! Copying is disabled - the assembly owns raw pointers
+  MReadOutAssembly(const MReadOutAssembly&) = delete;
+  MReadOutAssembly& operator=(const MReadOutAssembly&) = delete;
+
   //! Reset all data
   virtual void Clear();
 
@@ -131,14 +135,14 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return guardring hit i
   MGuardringHit* GetGuardringHit(unsigned int i);
   //! Add a guardring hit
-  void AddGuardringHit(MGuardringHit* GuardringHit) { return m_GuardringHits.push_back(GuardringHit); }
+  void AddGuardringHit(MGuardringHit* GuardringHit) { if (GuardringHit != nullptr) m_GuardringHits.push_back(GuardringHit); }
 
   //! Return the number of hits
   unsigned int GetNHits() const { return m_Hits.size(); }
   //! Return hit i
   MHit* GetHit(unsigned int i);
   //! Add a hit
-  void AddHit(MHit* Hit) { return m_Hits.push_back(Hit); }
+  void AddHit(MHit* Hit) { if (Hit != nullptr) m_Hits.push_back(Hit); }
   //! Remove a hit
   void RemoveHit(unsigned int i);
 
@@ -164,29 +168,29 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the physical event
   MPhysicalEvent* GetPhysicalEvent() { return m_PhysicalEvent; }
 
-  //! Set the physical event from event reconstruction
-  void SetSimulatedEvent(MSimEvent* Event) { m_SimEvent = Event; }
+  //! Set the simulated event; the ROA takes ownership of the pointer and deletes it
+  void SetSimulatedEvent(MSimEvent* Event) { if (Event != m_SimEvent) { delete m_SimEvent; m_SimEvent = Event; } }
   //! Return the simulated event
   MSimEvent* GetSimulatedEvent() { return m_SimEvent; }
 
   //! Return the number of low-voltage DEE strip hits
   unsigned int GetNDEEStripHitsLV() const { return m_DEEStripHitsLV.size(); }
   //! Return low-voltage DEE Strip hit at position i
-  void AddDEEStripHitLV(MDEEStripHit& DEEStripHit) { return m_DEEStripHitsLV.push_back(DEEStripHit); }
+  void AddDEEStripHitLV(const MDEEStripHit& DEEStripHit) { m_DEEStripHitsLV.push_back(DEEStripHit); }
   //! Get a reference to the list of strip hits for direct manipulation
   list<MDEEStripHit>& GetDEEStripHitLVListReference() { return m_DEEStripHitsLV; }
 
   //! Return the number of high-voltage DEE strip hits
   unsigned int GetNDEEStripHitsHV() const { return m_DEEStripHitsHV.size(); }
   //! Add a high-voltage DEE Strip hit
-  void AddDEEStripHitHV(MDEEStripHit DEEStripHit) { return m_DEEStripHitsHV.push_back(DEEStripHit); }
+  void AddDEEStripHitHV(const MDEEStripHit& DEEStripHit) { m_DEEStripHitsHV.push_back(DEEStripHit); }
   //! Get a reference to the list of strip hits for direct manipulation
   list<MDEEStripHit>& GetDEEStripHitHVListReference() { return m_DEEStripHitsHV; }
 
   //! Return the number of crystal hits
   unsigned int GetNDEECrystalHits() const { return m_DEECrystalHits.size(); }
   //! Add a crystal hit
-  void AddDEECrystalHit(MDEECrystalHit DEECrystalHit) { return m_DEECrystalHits.push_back(DEECrystalHit); }
+  void AddDEECrystalHit(const MDEECrystalHit& DEECrystalHit) { m_DEECrystalHits.push_back(DEECrystalHit); }
   //! Get a reference to the list of crystal hits for direct manipulation
   list<MDEECrystalHit>& GetDEECrystalHitListReference() { return m_DEECrystalHits; }
 
@@ -282,8 +286,6 @@ class MReadOutAssembly : public MReadOutSequence
 
   // protected methods:
  protected:
-  //MReadOutAssembly() {};
-  //MReadOutAssembly(const MReadOutAssembly& ReadOutAssembly) {};
 
   // private methods:
  private:

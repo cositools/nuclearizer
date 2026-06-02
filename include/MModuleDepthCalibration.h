@@ -63,9 +63,9 @@ class MModuleDepthCalibration : public MModule
   virtual void ShowOptionsGUI();
 
   //! Set filename for coefficients file
-  void SetCoeffsFileName( const MString& FileName) { m_CoeffsFile = FileName; }
+  void SetCoeffsFileName( const MString& FileName) { m_CoeffsFileName = FileName; }
   //! Get filename for coefficients file
-  MString GetCoeffsFileName() const { return m_CoeffsFile; }
+  MString GetCoeffsFileName() const { return m_CoeffsFileName; }
 
   //! Set filename for CTD->Depth splines
   void SetSplinesFileName( const MString& FileName) { m_SplinesFile = FileName; }
@@ -78,9 +78,9 @@ class MModuleDepthCalibration : public MModule
   bool GetMaskMetrologyCorrectionEnable() const { return m_MaskMetrologyEnabled; }
 
   //! Set filename for mask metrology
-  void SetMaskMetrologyFileName( const MString& FileName) { m_MaskMetrologyFile = FileName; }
+  void SetMaskMetrologyFileName( const MString& FileName) { m_MaskMetrologyFileName = FileName; }
   //! Get filename for CTD->Depth splines
-  MString GetMaskMetrologyFileName() const { return m_MaskMetrologyFile; }
+  MString GetMaskMetrologyFileName() const { return m_MaskMetrologyFileName; }
 
   //TODO Remove UCSD code here and place within it's own branch
   //! Set whether the data came from the card cage at UCSD
@@ -88,6 +88,30 @@ class MModuleDepthCalibration : public MModule
   //! Get whether the data came from the card cage at UCSD
   bool GetUCSDOverride() const { return m_UCSDOverride; }
 
+  //! Load the detector and strip dimensions from the geometry object
+  bool LoadDetectorDimensions(MDGeometryQuest* Geometry);
+
+  //! Load in the specified coefficients file
+  bool LoadCoeffsFile(MString FName);
+
+  //! Set the depth calibration coefficients
+  void SetCoeffs( unordered_map<int, vector<double>> Coeffs ) { m_Coeffs = Coeffs; }
+  //! Get the depth calibration coefficients
+  unordered_map<int, vector<double>> GetCoeffs() { return m_Coeffs; }
+
+  //! Set the energy at which the depth calibration coefficients were determined
+  void SetCoeffsEnergy( double Coeffs_Energy ) { m_Coeffs_Energy = Coeffs_Energy; }
+  //! Get the energy at which the depth calibration coefficients were determined
+  double GetCoeffsEnergy() { return m_Coeffs_Energy; }
+
+  //! Load the splines file
+  bool LoadSplinesFile(MString FName);
+
+  //! Get the CTD->Depth Spline Grid
+  unordered_map<int, vector<double>> GetDepthGrid() { return m_DepthGrid; }
+
+  //! Get the CTD->Depth Spline CTD map
+  unordered_map<int, vector<vector<double>>> GetCTDMap() { return m_CTDMap; }
 
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
@@ -120,17 +144,8 @@ class MModuleDepthCalibration : public MModule
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
 
-  //! Load in the specified coefficients file
-  bool LoadCoeffsFile(MString FName);
-
   //! Return the coefficients for a pixel
   vector<double>* GetPixelCoeffs(int PixelCode);
-
-  //! Load the splines file
-  bool LoadSplinesFile(MString FName);
-
-  //! Mask Metrology Correction
-  bool m_MaskMetrologyEnabled;
   
   //! Load the metrology mask file
   bool LoadMaskMetrologyFile(MString FName);
@@ -151,7 +166,7 @@ class MModuleDepthCalibration : public MModule
 
   unordered_map<int, vector<double>> m_Coeffs;
   double m_Coeffs_Energy;
-  MString m_CoeffsFile;
+  MString m_CoeffsFileName;
   MString m_SplinesFile;
   unordered_map<int, double> m_Thicknesses;
   unordered_map<int, int> m_NXStrips;
@@ -179,12 +194,16 @@ class MModuleDepthCalibration : public MModule
   unordered_map<int, vector<TSpline3*>> m_SplineMap;
   bool m_SplinesFileIsLoaded;
   bool m_CoeffsFileIsLoaded;
-  bool m_MaskMetrologyFileIsLoaded;
 
-  // The Mask Metrology
-  MString m_MaskMetrologyFile;
+  //! The Mask Metrology file name
+  MString m_MaskMetrologyFileName;
+
+  //! The Mask Metrology values
   map<MReadOutElementDoubleStrip, vector<double>> m_MaskMetrology;
 
+  //! Mask Metrology Correction
+  bool m_MaskMetrologyEnabled;
+  bool m_MaskMetrologyFileIsLoaded;
 
   // boolean for use with the card cage at UCSD since it tags all events as detector 11
   bool m_UCSDOverride;

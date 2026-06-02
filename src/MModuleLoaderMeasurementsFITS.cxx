@@ -41,6 +41,7 @@ using namespace std;
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
+#include "MTime.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +99,7 @@ bool MModuleLoaderMeasurementsFITS::Initialize()
 
   // Clean:
   m_FileType = "Unknown";
-  
+
   if (MFile::Exists(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileName<<" does not exist."<<endl;
     return false;
@@ -310,6 +311,10 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   //which mean we will not read a new batch. Instead we will read from the current batch we have
 
   if (ReadBatch() == false) {
+    if (g_Verbosity >= c_Info) {
+      cout << m_XmlTag << ": No more events!" << endl;
+    }
+    m_IsFinished = true;
     return false; // No more events
   }
 

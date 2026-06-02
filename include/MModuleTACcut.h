@@ -71,14 +71,14 @@ class MModuleTACcut : public MModule
 
   ///////////// Creating functions that will update and get the min/max TAC values //////////////////////////
 
-  //! Set filename for TAC Calibration
+  //! Set filename for TAC calibration
   void SetTACCalFileName( const MString& FileName) {m_TACCalFile = FileName;}
-  //! Get filename for TAC Calibration
+  //! Get filename for TAC calibration
   MString GetTACCalFileName() const {return m_TACCalFile;}
 
-  //! Set filename for TAC Cut
+  //! Set filename for TAC cut
   void SetTACCutFileName( const MString& FileName) {m_TACCutFile = FileName;}
-  //! Get filename for TAC Cut
+  //! Get filename for TAC cut
   MString GetTACCutFileName() const {return m_TACCutFile;}
 
   //! Load the TAC calibration file
@@ -86,6 +86,12 @@ class MModuleTACcut : public MModule
 
   //! Load the TAC cut file
   bool LoadTACCutFile(MString FName);
+
+  //! Set the TAC calibration parameters
+  void SetTACCalParameters(unordered_map<int, vector<unordered_map<int, vector<double>>>> TACCal) { m_TACCal = TACCal; }
+
+  //! Get the TAC calibration parameters
+  unordered_map<int, vector<unordered_map<int, vector<double>>>> GetTACCalParameters() { return m_TACCal; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
@@ -106,20 +112,25 @@ class MModuleTACcut : public MModule
   // private members:
  private:
 
-//! TAC cut and TAC calibration parameter files
-MString m_TACCalFile;
-MString m_TACCutFile;
+  //! TAC calibration parameter file name
+  MString m_TACCalFile;
 
-//! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration/cut parameters
-unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCal;
-unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCut;
+  //! TAC cut parameter files
+  MString m_TACCutFile;
 
-//! Map characters representing sides of the detectors indices to avoid mistakes
-unordered_map<char, int> m_SideToIndex;
+  //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration parameters
+  unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCal;
 
-vector<unsigned int> m_DetectorIDs;
+  //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC cut parameters
+  unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCut;
 
-MGUIExpoTACcut* m_ExpoTACcut;
+  //! Map characters representing sides of the detectors indices to avoid mistakes
+  unordered_map<char, int> m_SideToIndex;
+
+  //! Vector of Detector IDs
+  vector<unsigned int> m_DetectorIDs;
+
+  MGUIExpoTACcut* m_ExpoTACcut;
 
   MGUIExpoPlotSpectrum* m_ExpoEnergySpectrum;
 

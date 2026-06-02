@@ -30,10 +30,10 @@
 
 // ROOT libs:
 #include "TRandom.h"
-#include "TMath.h"
 
 // MEGAlib libs:
 #include "MParser.h"
+#include "MModuleEnergyCalibration.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,6 +74,10 @@ bool MSubModuleStripReadout::Initialize()
 {
   // Initialize the module
 
+  // Clear the maps before reading
+  m_Calibration.clear();
+  m_ResolutionCalibration.clear();
+
   // Check if we have a file
   if (m_EnergyCalibrationFileName == "") {
     if (g_Verbosity >= c_Error) {
@@ -82,142 +86,16 @@ bool MSubModuleStripReadout::Initialize()
     return false;
   }
 
-  // Open ecal file
-  MParser Parser;
-  if (Parser.Open(m_EnergyCalibrationFileName, MFile::c_Read) == false) {
-    if (g_Verbosity >= c_Error) {
-      cout << m_Name << ": Unable to open calibration file " << m_EnergyCalibrationFileName << endl;
-    }
+  // Read energy calibration file
+  MModuleEnergyCalibration EnergyCalibration;
+  if (EnergyCalibration.ReadEnergyCalibrationFile(m_EnergyCalibrationFileName) == true) {
+    // Copy the energy calibration function maps
+    m_Calibration = EnergyCalibration.GetCalibration();
+    m_ResolutionCalibration = EnergyCalibration.GetResolutionCalibration();
+  } else {
     return false;
   }
-
-  // Create the map to store line numbers
-  map<MReadOutElementDoubleStrip, unsigned int> CM_ROEToLine;
-    
-  // Clear the maps before reading
-  m_ResolutionCalibration.clear();
-  m_Calibration.clear();
-
   
-  for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
-    MTokenizer* T = Parser.GetTokenizerAt(i);
-    
-    // If user wants it, get the fits to smear the energies based on the FWHM from the ecal
-    if (m_ApplyResolutionCalibration == true) {
-      
-      if (T->GetNTokens() >= 6 && T->IsTokenAt(0, "CR") == true && T->IsTokenAt(1, "dss") == true) {
-        MReadOutElementDoubleStrip R;
-        R.SetDetectorID(T->GetTokenAtAsUnsignedInt(2));
-        R.SetStripID(T->GetTokenAtAsUnsignedInt(3));
-        R.IsLowVoltageStrip((T->GetTokenAtAsString(4) == "p") || (T->GetTokenAtAsString(4) == "l"));
-        
-        MString ResolutionCalibrationType = T->GetTokenAtAsString(5);
-        ResolutionCalibrationType.ToLower();
-        
-        // position of the fwhm and max keV value
-        unsigned int PosResolution = 6;
-        unsigned int HistMaxkeV = 10000;
-        
-        // Look for the CR lines
-        if (ResolutionCalibrationType == "poly1") {
-          double a0 = T->GetTokenAtAsDouble(PosResolution++);
-          double a1 = T->GetTokenAtAsDouble(PosResolution++);
-          
-          TF1* resFit = new TF1("res_poly1", "[0] + [1]*x", 0., HistMaxkeV);
-          resFit->SetParameters(a0, a1);
-          m_ResolutionCalibration[R] = resFit;
-          
-        } else if (ResolutionCalibrationType == "poly2") {
-          double a0 = T->GetTokenAtAsDouble(PosResolution++);
-          double a1 = T->GetTokenAtAsDouble(PosResolution++);
-          double a2 = T->GetTokenAtAsDouble(PosResolution++);
-          
-          TF1* resFit = new TF1("res_poly2", "[0] + [1]*x + [2]*x^2", 0., HistMaxkeV);
-          resFit->SetParameters(a0, a1, a2);
-          m_ResolutionCalibration[R] = resFit;
-          
-        } else if (ResolutionCalibrationType == "poly3") {
-          double a0 = T->GetTokenAtAsDouble(PosResolution++);
-          double a1 = T->GetTokenAtAsDouble(PosResolution++);
-          double a2 = T->GetTokenAtAsDouble(PosResolution++);
-          double a3 = T->GetTokenAtAsDouble(PosResolution++);
-          
-          TF1* resFit = new TF1("res_poly3", "[0] + [1]*x + [2]*x^2 + [3]*x^3", 0., HistMaxkeV);
-          resFit->SetParameters(a0, a1, a2, a3);
-          m_ResolutionCalibration[R] = resFit;
-          
-        } else {
-          // TODO: @RobinAnthonyPetersen add all the other types of fits melinator can do
-          // So far, only added these ones because these are the ones we use for the ecals
-          if (g_Verbosity >= c_Error) {
-            cout << m_Name << ": Unknown FWHM calibrator type: " << ResolutionCalibrationType << endl;
-            return false;
-          }
-        }
-      }
-    }
-    
-    
-    // Get enegry calibration fits second
-    if (T->GetNTokens() >= 2 && T->IsTokenAt(0, "CM") == true && T->IsTokenAt(1, "dss") == true) {
-      
-      MReadOutElementDoubleStrip R;
-      R.SetDetectorID(T->GetTokenAtAsUnsignedInt(2));
-      R.SetStripID(T->GetTokenAtAsUnsignedInt(3));
-      R.IsLowVoltageStrip((T->GetTokenAtAsString(4) == "p") ||
-                          (T->GetTokenAtAsString(4) == "l"));
-      
-      unsigned int Pos = 5;
-      
-      // Get CM token
-      MString CalibratorType = T->GetTokenAtAsString(Pos);
-      CalibratorType.ToLower();
-      
-      
-      if (CalibratorType == "poly1") {
-        double a0 = T->GetTokenAtAsDouble(++Pos);
-        double a1 = T->GetTokenAtAsDouble(++Pos);
-        
-        TF1* melinatorfit = new TF1("poly1", "[0] + [1]*x", 0., m_MaxADCRange);
-        melinatorfit->FixParameter(0, a0);
-        melinatorfit->FixParameter(1, a1);
-        
-        m_Calibration[R] = melinatorfit;
-      } else if (CalibratorType == "poly2") {
-        double a0 = T->GetTokenAtAsDouble(++Pos);
-        double a1 = T->GetTokenAtAsDouble(++Pos);
-        double a2 = T->GetTokenAtAsDouble(++Pos);
-        
-        TF1* melinatorfit = new TF1("poly2", "[0] + [1]*x + [2]*x^2", 0., m_MaxADCRange);
-        melinatorfit->FixParameter(0, a0);
-        melinatorfit->FixParameter(1, a1);
-        melinatorfit->FixParameter(2, a2);
-        
-        m_Calibration[R] = melinatorfit;
-      } else if (CalibratorType == "poly3") {
-        double a0 = T->GetTokenAtAsDouble(++Pos);
-        double a1 = T->GetTokenAtAsDouble(++Pos);
-        double a2 = T->GetTokenAtAsDouble(++Pos);
-        double a3 = T->GetTokenAtAsDouble(++Pos);
-        
-        TF1* melinatorfit = new TF1("poly3", "[0] + [1]*x + [2]*x^2 + [3]*x^3", 0., m_MaxADCRange);
-        melinatorfit->FixParameter(0, a0);
-        melinatorfit->FixParameter(1, a1);
-        melinatorfit->FixParameter(2, a2);
-        melinatorfit->FixParameter(3, a3);
-        
-        m_Calibration[R] = melinatorfit;
-      } else {
-        // TODO: @RobinAnthonyPetersen add all the other types of fits melinator can do
-        // So far, only added these ones because these are the ones we use for the ecals
-        if (g_Verbosity >= c_Error) {
-          cout<<m_Name<<": Unhandled CalibratorType: "<<CalibratorType<<endl<<"Please update this module."<<endl;
-        }
-        return false;
-      }
-    }
-  }
-
   return MSubModule::Initialize();
 }
 
@@ -240,8 +118,6 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
   
-  static const double FWHMtoSigma = 2.0 * TMath::Sqrt(2.0 * TMath::Log(2.0));
-
   // Get low-voltage and high-voltage hits
   for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
     
@@ -252,14 +128,10 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
         // Look up the FWHM fit for this strip
         if (m_ResolutionCalibration.count(SH.m_ROE) == 1) {
           
-          // Calculate FWHM (keV) at this energy
-          double fwhm = m_ResolutionCalibration[SH.m_ROE]->Eval(SH.m_Energy);
-          
-          // Convert FWHM to Sigma (FWHM = 2.355 * Sigma)
-          double sigma = fwhm / FWHMtoSigma;
+          double Sigma = m_ResolutionCalibration[SH.m_ROE]->Eval(SH.m_Energy);
           
           // Smear the hit energy using a Gaussian distribution
-          SH.m_Energy = gRandom->Gaus(SH.m_Energy, sigma);
+          SH.m_Energy = gRandom->Gaus(SH.m_Energy, Sigma);
           
           // If energy is lower than zero now, floor it to zero
           if (SH.m_Energy < 0) {
@@ -269,9 +141,9 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
         } else {
           // The fit wasn't found! Handle the error
           if (g_Verbosity >= c_Warning) {
-          cout << m_Name << ": Warning - No resolution calibration fit found for strip ID " << SH.m_ROE.GetStripID() << endl;
+            cout << m_Name << ": Warning - No resolution calibration fit found for strip ID " << SH.m_ROE.GetStripID() << endl;
           }
-          // Note, if there is not calibration found then the energy remains unsmeared
+          // Note, if no resolution calibration is found then the energy remains unsmeared
         }
       }
       

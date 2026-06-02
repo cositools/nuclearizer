@@ -19,6 +19,8 @@
 // Standard libs:
 #include <vector>
 #include <valarray>
+#include <string>
+#include <cstdint>
 
 // ROOT libs:
 
@@ -72,6 +74,11 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Get the output file name
   MString GetFileName() const { return m_FileName; }
 
+  //! Set the output data level: 1 = L1b, 2 = L2
+  void SetOutputDataLevel(int Level) { m_OutputDataLevel = Level; }
+  //! Get the output data level: 1 = L1b, 2 = L2
+  int GetOutputDataLevel() const { return m_OutputDataLevel; }
+
 
   // protected methods:
  protected:
@@ -94,6 +101,9 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Output file name
   MString m_FileName;
 
+  //! Output data level: 1 = L1b (all events, with QUALITY_FLAG), 2 = L2 (screened, no QUALITY_FLAG)
+  int m_OutputDataLevel;
+
   //! The FITS file object pointer
   FITS* m_FITSFile;
 
@@ -106,6 +116,18 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Total number of events written
   long m_TotalEventsWritten;
 
+  //! Total number of events skipped (L2 screening)
+  long m_TotalEventsSkipped;
+
+  //! First event time seen, RTS (mission seconds since 2025-01-01)
+  double m_FirstEventTime_RTS;
+
+  //! Last event time seen, RTS (mission seconds since 2025-01-01)
+  double m_LastEventTime_RTS;
+
+  //! Whether any events have been processed yet
+  bool m_HasEvents;
+
   //! Batch size for writing FITS data
   static const long m_BatchSize = 100;
 
@@ -117,17 +139,20 @@ class MModuleSaverMeasurementsFITS : public MModule
 
   //! Batch data storage for scalar columns
   std::vector<double> m_BatchTIME;
+  std::vector<uint32_t> m_BatchEVENTID;       // Document said 1J = signed 32-bit, but I think we should use unsigned because EVENTID should always be >= 1?
   std::vector<uint8_t> m_BatchEVENTTYPE;
   std::vector<uint8_t> m_BatchEVENTCLASS;
   std::vector<uint8_t> m_BatchNUMHIT;
-  std::vector<uint8_t> m_BatchSEQHIT;
+  std::vector<uint8_t> m_BatchVETO;
+  std::vector<std::string> m_BatchQUALITY_FLAG; //64A string
 
   //! Batch data storage for fixed-length array columns (event-level)
-  std::vector<std::valarray<float>> m_BatchSTATTEST;      
-  std::vector<std::valarray<float>> m_BatchRECOILDIR;     
-  std::vector<std::valarray<float>> m_BatchRECOILDIR_ERR;
+  std::vector<std::valarray<float>> m_BatchSTATTEST;     // 8E
+  std::vector<std::valarray<float>> m_BatchRECOILDIR;    // 3E
+  std::vector<std::valarray<float>> m_BatchRECOILDIR_ERR;// 3E
 
   //! Batch data storage for variable-length array columns (hit-level data)
+  std::vector<std::valarray<uint8_t>> m_BatchSEQHIT; //L1b PB(50), L2: 10B
   std::vector<std::valarray<float>> m_BatchX;
   std::vector<std::valarray<float>> m_BatchY;
   std::vector<std::valarray<float>> m_BatchZ;
@@ -136,7 +161,6 @@ class MModuleSaverMeasurementsFITS : public MModule
   std::vector<std::valarray<float>> m_BatchZ_ERR;
   std::vector<std::valarray<float>> m_BatchENERGY;
   std::vector<std::valarray<float>> m_BatchENERGY_ERR;
-  std::vector<std::valarray<float>> m_BatchBAD_FLAG;
 
 
 #ifdef ___CLING___

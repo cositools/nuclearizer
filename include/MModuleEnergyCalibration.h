@@ -115,6 +115,12 @@ class MModuleEnergyCalibration : public MModule
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
+  //! Read the energy and energy resolution calibration from an .ecal file
+  virtual bool ReadEnergyCalibrationFile(MString FileName);
+
+  //! Read the slow thresholds from a file
+  virtual bool ReadSlowThresholdCutFile(MString FileName);
+
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
@@ -130,6 +136,16 @@ class MModuleEnergyCalibration : public MModule
   double GetEnergy(MReadOutElementDoubleStrip R, double ADC);
   //! Standalone function to return ADC of certain strip given energy
   double GetADC(MReadOutElementDoubleStrip R, double energy);
+
+  //! Get the energy calibration function map
+  void SetCalibration(map<MReadOutElementDoubleStrip, TF1*> Calibration) { m_Calibration = Calibration; }
+  //! Get the energy calibration function map
+  map<MReadOutElementDoubleStrip, TF1*> GetCalibration() { return m_Calibration; }
+
+  //! Get the energy resolution calibration function map
+  void SetResolutionCalibration(map<MReadOutElementDoubleStrip, TF1*> ResolutionCalibration) { m_ResolutionCalibration = ResolutionCalibration; }
+  //! Get the energy resolution calibration function map
+  map<MReadOutElementDoubleStrip, TF1*> GetResolutionCalibration() { return m_ResolutionCalibration; }
 
 
   // protected methods:
@@ -180,6 +196,9 @@ class MModuleEnergyCalibration : public MModule
   map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
   //! Temperature Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, double> m_ThresholdMap;
+
+  //! Max value of the ADC units
+  static constexpr double m_MaxADCRange = 16383;
  
 #ifdef ___CLING___
  public:
