@@ -165,6 +165,16 @@ class MModuleDEESMEX : public MModule
   void SetApplyResolutionCalibration(bool ApplyResolutionCalibration) {
     m_ApplyResolutionCalibration = ApplyResolutionCalibration;
   }
+  //! Enable or disable shield veto effects
+  bool GetEnableShieldVeto() const { return m_EnableShieldVeto; }
+  void SetEnableShieldVeto(bool EnableShieldVeto) {
+    m_EnableShieldVeto = EnableShieldVeto;
+  }
+  //! Enable or disable guard ring veto effects
+  bool GetEnableGuardRingVeto() const { return m_EnableGuardRingVeto; }
+  void SetEnableGuardRingVeto(bool EnableGuardRingVeto) {
+    m_EnableGuardRingVeto = EnableGuardRingVeto;
+  }
 
   //! Button to apply the FWHM timing resolution to the timing values
   bool GetApplyTimingResolutionCalibration() const { return m_ApplyTimingResolutionCalibration; }
@@ -180,9 +190,6 @@ class MModuleDEESMEX : public MModule
  protected:
   // private members:
  private:
-  //! Time when the dead time ends
-  MTime m_DeadTimeEnd;
-
   //! The sub module handling random coincidences
   MSubModuleRandomCoincidence m_RandomCoincidence;
 
@@ -218,6 +225,10 @@ class MModuleDEESMEX : public MModule
   
   //! Option to add noise to the strip energies
   bool m_ApplyResolutionCalibration; 
+  //! Option to enable shield veto effects
+  bool m_EnableShieldVeto;
+  //! Option to enable guard ring veto effects
+  bool m_EnableGuardRingVeto;
 
   //! Option to add noise to the strip timing values
   bool m_ApplyTimingResolutionCalibration;

@@ -82,6 +82,19 @@ void MGUIOptionsDEESMEX::Create()
   m_DeadtimeFileSelector->SetFileType("Deadtime file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadtimeFileSelector, LabelLayout);
 
+  TGHorizontalFrame* VetoButtonFrame = new TGHorizontalFrame(m_OptionsFrame);
+  TGLayoutHints* VetoButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 30, 0, 0);
+
+  m_EnableShieldVetoButton = new TGCheckButton(VetoButtonFrame, "Enable Shield veto");
+  m_EnableShieldVetoButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnableShieldVeto());
+  VetoButtonFrame->AddFrame(m_EnableShieldVetoButton, VetoButtonLayout);
+
+  m_EnableGuardRingVetoButton = new TGCheckButton(VetoButtonFrame, "Enable Guard Ring veto");
+  m_EnableGuardRingVetoButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnableGuardRingVeto());
+  VetoButtonFrame->AddFrame(m_EnableGuardRingVetoButton, VetoButtonLayout);
+
+  m_OptionsFrame->AddFrame(VetoButtonFrame, LabelLayout);
+
   /*
   m_DeadStripFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a dead strip file:",
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadStripFileName());
@@ -208,6 +221,8 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyResolutionCalibration(m_ResolutionCalibrationButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableShieldVeto(m_EnableShieldVetoButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableGuardRingVeto(m_EnableGuardRingVetoButton->IsOn());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyTimingResolutionCalibration(m_TimingResolutionCalibrationButton->IsOn());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());

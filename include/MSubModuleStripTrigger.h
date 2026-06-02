@@ -80,10 +80,13 @@ class MSubModuleStripTrigger : public MSubModule
   bool HasTrigger() const { return m_HasTrigger; }
 
   //! Return true if we have a Guard Ring veto - filled after AnalyzeEvent
-  bool HasGRVeto() const { return m_HasGRVeto; }
+  bool HasGuardRingVeto() const { return m_HasGuardRingVeto; }
 
   //! Return the time when the dead time ends - filled after AnalyzeEvent
-  MTime GetDeadTimeEnd() const { return m_DeadTimeEnd; }
+  MTime GetStripDeadTimeEnd() const { return m_DeadTimeEnd; }
+
+  //! Apply GeD deadtime cause by shield hard veto
+  void ApplyFastClearDeadtime(const MTime& ShieldVetoTime);
 
   //! Check if GeD is currently dead
   bool IsGeDDead() const { return m_IsGeDDead; }
@@ -139,7 +142,7 @@ class MSubModuleStripTrigger : public MSubModule
   bool m_HasTrigger;
 
   //! Flag indicating that a Guard Ring veto has been raised
-  bool m_HasGRVeto;
+  bool m_HasGuardRingVeto;
 
   //! Time when the strip dead time ends
   MTime m_DeadTimeEnd;
@@ -151,6 +154,8 @@ class MSubModuleStripTrigger : public MSubModule
   double m_StripCoincidenceWindow;
   //! ADC deadtime per channel read out
   double m_ASICDeadTimePerChannel;
+  //! Fast-clear deadtime after a shield veto
+  double m_FastClearDeadTime;
   //! Strip delay before readout
   double m_StripDelayAfter1;
   //! Strip delay for output to settle
@@ -162,6 +167,8 @@ class MSubModuleStripTrigger : public MSubModule
   double m_StripCoincidenceWindowFromFile;
   //! ASIC deadtime per channel read out in seconds as set in file
   double m_ASICDeadTimePerChannelFromFile;
+  //! Fast-clear deadtime after a shield veto in seconds as set in file
+  double m_FastClearDeadTimeFromFile;
   //! Strip delay 1 before readout in seconds as set in file
   double m_StripDelayAfter1FromFile;
   //! Strip delay 2 for output to settle in seconds as set in file
@@ -178,7 +185,7 @@ class MSubModuleStripTrigger : public MSubModule
   //! Total strip hits counter
   int m_TotalStripHitsCounter;
   //! Total GR hits counter
-  int m_TotalGRHitsCounter;
+  int m_TotalGuardRingHitsCounter;
 
   //! First event time for statistics
   double m_FirstTime;

@@ -102,6 +102,10 @@ class MGUIOptionsDEESMEX : public MGUIOptions
   
   //! Button to toggle noise addition to strip energies
   TGCheckButton* m_ResolutionCalibrationButton;
+  //! Button to toggle shield veto effects
+  TGCheckButton* m_EnableShieldVetoButton;
+  //! Button to toggle guard ring veto effects
+  TGCheckButton* m_EnableGuardRingVetoButton;
 
   //! Button to toggle noise addition to strip timings
   TGCheckButton* m_TimingResolutionCalibrationButton;

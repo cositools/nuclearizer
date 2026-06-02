@@ -58,6 +58,9 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_HasTrigger = false;
   m_HasShieldVeto = false;
   m_IsShieldDead = false;
+  m_ShieldVetoTime = 0.0;
+  m_ShieldVetoWindowDelta = 0.0;
+  m_DeadTimeEnd = MTime(0.0);
 
   // Initialize shield parameters with default values
   m_ShieldThreshold = -1.0; // Need to change this value at some point
@@ -124,7 +127,8 @@ void MSubModuleShieldTrigger::Clear()
   m_HasTrigger = false;
   m_HasShieldVeto = false;
   m_IsShieldDead = false;
-  m_DeadTimeEnd = MTime(0.0);
+  m_ShieldVetoTime = 0.0;
+  // m_DeadTimeEnd = MTime(0.0);
   
   // // Clear per-event data
   // for (int i = 0; i < nShieldPanels; i++) {
@@ -171,7 +175,7 @@ double MSubModuleShieldTrigger::CalculateASICDeadtime(vector<int> CrystalIDs)
 
 bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
 {
-  // Process shield crystal hits to determine veto status
+  // Process shield crystal hits and update shield deadtime state
 
   // // Track which GeD detectors got hit (for later deadtime update)
   // list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
@@ -275,16 +279,16 @@ bool MSubModuleShieldTrigger::ParseDeadtimeFile()
   }
 
   MTokenizer* ShieldTokenizer = Parser.GetTokenizerAt(3);
-  if (ShieldTokenizer->GetNTokens() < 5) {
-    cout << m_Name << ": Shield deadtime row does not have enough data" << endl;
+  if (ShieldTokenizer->GetNTokens() != 5) {
+    cout << m_Name << ": Shield deadtime row must contain exactly 5 values" << endl;
     return false;
   }
 
   m_ASICDeadTimePerChannel = ShieldTokenizer->GetTokenAtAsDouble(0);
-  m_ShieldVetoWindowSize = ShieldTokenizer->GetTokenAtAsDouble(1);
-  m_ShieldPulseDuration = ShieldTokenizer->GetTokenAtAsDouble(2);
-  m_ShieldDelayBefore = ShieldTokenizer->GetTokenAtAsDouble(3);
-  m_ShieldDelayAfter = ShieldTokenizer->GetTokenAtAsDouble(4);
+  m_ShieldPulseDuration = ShieldTokenizer->GetTokenAtAsDouble(1);
+  m_ShieldDelayBefore = ShieldTokenizer->GetTokenAtAsDouble(2);
+  m_ShieldDelayAfter = ShieldTokenizer->GetTokenAtAsDouble(3);
+  m_ShieldVetoWindowDelta = ShieldTokenizer->GetTokenAtAsDouble(4);
 
   return true;
 }
@@ -300,19 +304,34 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   m_HasTrigger = false;
   m_HasShieldVeto = false;
   m_IsShieldDead = false;
+  m_ShieldVetoTime = 0.0;
 
   m_EventTime = Event->GetTimeUTC().GetAsSeconds();
 
-  // First: veto based on shield state from previous events
+  ProcessShieldHits(Event);
+
+  double maxShieldDeadtime = 0.0;
   for (int group = 0; group < nShieldPanels; ++group) {
-    if (m_EventTime >= m_ShieldLastHitTime[group] &&
-        m_EventTime <= m_ShieldLastHitTime[group] + m_ShieldVetoWindowSize) {
-      m_HasShieldVeto = true;
+    if (m_ShieldDeadtime[group] > maxShieldDeadtime) {
+      maxShieldDeadtime = m_ShieldDeadtime[group];
     }
   }
 
-  // Process shield hits and check for veto conditions
-  ProcessShieldHits(Event);
+  // First: find the shield hit time that starts the current veto window
+  bool HasShieldVetoStart = false;
+  for (int group = 0; group < nShieldPanels; ++group) {
+    if (m_EventTime >= m_ShieldLastHitTime[group] &&
+        (HasShieldVetoStart == false || m_ShieldLastHitTime[group] > m_ShieldVetoTime)) {
+      m_ShieldVetoTime = m_ShieldLastHitTime[group];
+      HasShieldVetoStart = true;
+    }
+  }
+
+  // Then veto events based on the max shield deadtime from that start time
+  if (HasShieldVetoStart == true &&
+      m_EventTime <= m_ShieldVetoTime + maxShieldDeadtime + m_ShieldVetoWindowDelta) {
+    m_HasShieldVeto = true;
+  }
 
   if (m_EventTime < m_FirstTime) {
     m_FirstTime = m_EventTime;
@@ -321,18 +340,15 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
     m_LastTime = m_EventTime;
   }
 
-  // If vetoed, set the dead time end
-  if (m_HasShieldVeto) {
-    // Calculate the maximum deadtime end across all panels
-    double maxDeadTimeEnd = 0.0;
-    for (int i = 0; i < nShieldPanels; i++) {
-      double thisEnd = m_ShieldLastHitTime[i] + m_ShieldDeadtime[i];
-      if (thisEnd > maxDeadTimeEnd) {
-        maxDeadTimeEnd = thisEnd;
-      }
+  // Calculate the maximum deadtime end across all panels
+  double maxDeadTimeEnd = 0.0;
+  for (int i = 0; i < nShieldPanels; i++) {
+    double thisEnd = m_ShieldLastHitTime[i] + m_ShieldDeadtime[i];
+    if (thisEnd > maxDeadTimeEnd) {
+      maxDeadTimeEnd = thisEnd;
     }
-    m_DeadTimeEnd = MTime(maxDeadTimeEnd);
   }
+  m_DeadTimeEnd = MTime(maxDeadTimeEnd);
 
   return true;
 }
