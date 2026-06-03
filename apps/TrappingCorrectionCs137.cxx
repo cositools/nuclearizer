@@ -511,6 +511,10 @@ bool TrappingCorrectionCs137::Analyze()
         TFitResultPtr CTDFit = FullCTDHist->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
 
         TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
+        // PhotopeakFunctionHV->FixParameter(4, 0.5); 
+        // PhotopeakFunctionHV->FixParameter(5, 0.80); 
+        // PhotopeakFunctionHV->FixParameter(6, 0.13); 
+        // PhotopeakFunctionHV->FixParameter(7, 0.028); 
         TFitResultPtr HVFit = HVHist->Fit(PhotopeakFunctionHV, "S", "", 645, 675);
 
         TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
@@ -640,23 +644,70 @@ bool TrappingCorrectionCs137::Analyze()
 
 TF1* TrappingCorrectionCs137::GeneratePhotopeakFunction()
 {
-  // Gaussian with a low-E shelf
-  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", "gaus(0) + [0]*[3]*(1 - erf((x-[1])/(sqrt(2)*[2])))", 620, 680);
+  // Component 1: Core Gaussian
+  // exp(-(x-x0)^2 / (2*sigma^2))
+  MString gaussStr = "exp(-(x-[1])^2 / (2*[2]^2))";
 
-  PhotopeakFunction->SetParName(0, "Gauss norm");
-  PhotopeakFunction->SetParName(1, "Mu");
-  PhotopeakFunction->SetParName(2, "Sigma");
-  PhotopeakFunction->SetParName(3, "Shelf norm");
+  // Component 2: Exponential Tail + Shelf
+  // BoverA * exp(gamma*(x-x0)) * 0.5 * erfc((x-x0)/(sigma*sigma_ratio*sqrt(2)))
+  MString expTailStr = "[3] * exp([4]*(x-[1])) * 0.5 * erfc((x-[1])/([2]*[5]*sqrt(2)))";
 
-  PhotopeakFunction->SetParameter("Gauss norm", 1000);
-  PhotopeakFunction->SetParameter("Mu", 661.7);
-  PhotopeakFunction->SetParameter("Sigma", 2);
-  PhotopeakFunction->SetParameter("Shelf norm", 0.05);
+  // Component 3: Linear Tail + Shelf
+  // BoverA * CoverB * (1 + D*(x-x0)) * 0.5 * erfc((x-x0)/(sigma*sigma_ratio*sqrt(2)))
+  MString linTailStr = "[3] * [6] * (1 + [7]*(x-[1])) * 0.5 * erfc((x-[1])/([2]*[5]*sqrt(2)))";
 
-  PhotopeakFunction->SetParLimits(0, 10, 1e8);
-  PhotopeakFunction->SetParLimits(1, 652, 672);
-  PhotopeakFunction->SetParLimits(2, 1.0, 10);
-  PhotopeakFunction->SetParLimits(3, 0, 0.1);
+  // Combine components with an overall normalization scaling factor [0]
+  MString fullFormula = "[0] * (" + gaussStr + " + " + expTailStr + " + " + linTailStr + ")";
+
+  // Instantiate TF1 over your expected fit window
+  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", fullFormula.Data(), 645, 675);
+
+  // Set Parameter Names
+  PhotopeakFunction->SetParName(0, "Amplitude");
+  PhotopeakFunction->SetParName(1, "x0 (Mu)");
+  PhotopeakFunction->SetParName(2, "Sigma Gauss");
+  PhotopeakFunction->SetParName(3, "BoverA");
+  PhotopeakFunction->SetParName(4, "Gamma");
+  PhotopeakFunction->SetParName(5, "Sigma Ratio");
+  PhotopeakFunction->SetParName(6, "CoverB");
+  PhotopeakFunction->SetParName(7, "D (Lin Slope)");
+
+  // Provide initial sensible guesses for a Cs137 photopeak
+  PhotopeakFunction->SetParameter("Amplitude", 1000);
+  PhotopeakFunction->SetParameter("x0 (Mu)", 661.7);
+  PhotopeakFunction->SetParameter("Sigma Gauss", 2.0);
+  PhotopeakFunction->SetParameter("BoverA", 0.05);
+  PhotopeakFunction->SetParameter("Gamma", 0.5);
+  PhotopeakFunction->SetParameter("Sigma Ratio", 0.85);
+  PhotopeakFunction->SetParameter("CoverB", 0.13);
+  PhotopeakFunction->SetParameter("D (Lin Slope)", 0.028);
+
+  // Set boundary limits to stabilize convergence
+  PhotopeakFunction->SetParLimits(0, 1, 1e8);
+  PhotopeakFunction->SetParLimits(1, 645, 675);     // Keeps peak centered around 662 keV
+  PhotopeakFunction->SetParLimits(2, 0.5, 10);      // Prevents sigma from blowing up or hitting zero
+  PhotopeakFunction->SetParLimits(3, 0.0, 1.0);     // Tail shouldn't be larger than the main peak
+  PhotopeakFunction->SetParLimits(4, 0.001, 2.0);   // Standard range for exponential decay factor
+  PhotopeakFunction->SetParLimits(5, 0.1, 5.0);     // Ratio of shelf width to peak width
+  PhotopeakFunction->SetParLimits(6, 0.0, 5.0);     
+  PhotopeakFunction->SetParLimits(7, -1.0, 1.0);
+  // // Gaussian with a low-E shelf
+  // TF1* PhotopeakFunction = new TF1("PhotopeakFunction", "gaus(0) + [0]*[3]*(1 - erf((x-[1])/(sqrt(2)*[2])))", 620, 680);
+
+  // PhotopeakFunction->SetParName(0, "Gauss norm");
+  // PhotopeakFunction->SetParName(1, "Mu");
+  // PhotopeakFunction->SetParName(2, "Sigma");
+  // PhotopeakFunction->SetParName(3, "Shelf norm");
+
+  // PhotopeakFunction->SetParameter("Gauss norm", 1000);
+  // PhotopeakFunction->SetParameter("Mu", 661.7);
+  // PhotopeakFunction->SetParameter("Sigma", 2);
+  // PhotopeakFunction->SetParameter("Shelf norm", 0.05);
+
+  // PhotopeakFunction->SetParLimits(0, 10, 1e8);
+  // PhotopeakFunction->SetParLimits(1, 652, 672);
+  // PhotopeakFunction->SetParLimits(2, 1.0, 10);
+  // PhotopeakFunction->SetParLimits(3, 0, 0.1);
 
   return PhotopeakFunction;
 }
