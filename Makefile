@@ -160,21 +160,13 @@ man:
 # Explicit rules & dependencies:
 #
 
-$(FRETALON_DEP_FILES): $(LB)/%.d: $(FRETALON_DIR)/src/%.cxx
-	@echo "Creating dependencies for $(subst $(FRETALON_DIR)/src/,,$<) ..."
-	@set -e; rm -f $@; $(CXX) $(DEPFLAGS) $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
-
-$(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h $(LB)/%.d
+$(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h
 	@echo "Compiling $(subst $(FRETALON_DIR)/src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -MD -MP -MF $(LB)/$*.d -c $< -o $@
 
-$(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
-	@echo "Creating dependencies for $(subst src/,,$<) ..."
-	@set -e; rm -f $@; $(CXX) $(DEPFLAGS) $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
-
-$(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
+$(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -MD -MP -MF $(LB)/$*.d -c $< -o $@
 
 $(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
 	@echo "Generating LinkDef ..."
