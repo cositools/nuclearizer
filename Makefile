@@ -192,11 +192,11 @@ $(NUCLEARIZER_SHARED_LIB): $(NUCLEARIZER_DICT_LIB) $(FRETALON_LIBS) $(NUCLEARIZE
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_DICT_LIB) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
 
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
-	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
+	@echo "Compiling and linking $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ..."
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
 
 $(NUCLEARIZER_APP_PRGS): $(BN)/%: apps/%.cxx $(NUCLEARIZER_SHARED_LIB)
-	@echo "Linking and compiling $(subst $(BN)/,,$@) ... Please stand by ... "
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $@
 
 $(NUCLEARIZER_UT_PRGS): $(BN)/%: $(NUCLEARIZER_DIR)/unittests/%.cxx $(NUCLEARIZER_SHARED_LIB)
