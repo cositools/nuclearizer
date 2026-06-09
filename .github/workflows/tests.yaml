@@ -4,16 +4,22 @@ on:
   push:
     branches:
       - develop/em
-    tags: '*'
   pull_request:
     branches:
       - develop/em
-  release:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     name: Ubuntu
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     env:
       MEGALIB: ${{ github.workspace }}/megalib
@@ -25,7 +31,7 @@ jobs:
       CCACHE_COMPILERCHECK: content
       CCACHE_NOHASHDIR: true
       CCACHE_BASEDIR: ${{ github.workspace }}
-      CCACHE_MAXSIZE: 5G
+      CCACHE_MAXSIZE: 1G
       CCACHE_SLOPPINESS: file_macro,time_macros,pch_defines
 
     steps:
@@ -42,9 +48,12 @@ jobs:
           path: megalib
 
       - name: Setup Conda Environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-name: cosi-env
+          condarc: |
+            channels:
+              - conda-forge
           create-args: >-
             root=6.32 geant4=11.2 healpix_cxx
             pkg-config make cmake cxx-compiler ccache
@@ -57,11 +66,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$CONDA_PREFIX/lib/pkgconfig"
-          echo -e "prefix=$CONDA_PREFIX\nexec_prefix=\${prefix}\nlibdir=\${exec_prefix}/lib\nincludedir=\${prefix}/include\n\nName: hdf5\nDescription: HDF5\nVersion: 1.14\nLibs: -L\${libdir} -lhdf5 -lhdf5_cpp\nCflags: -I\${includedir}" > "$CONDA_PREFIX/lib/pkgconfig/hdf5.pc"
-          echo -e "prefix=$CONDA_PREFIX\nexec_prefix=\${prefix}\nlibdir=\${exec_prefix}/lib\nincludedir=\${prefix}/include\n\nName: CCfits\nDescription: CCfits\nVersion: 2.6\nLibs: -L\${libdir} -lCCfits\nCflags: -I\${includedir}" > "$CONDA_PREFIX/lib/pkgconfig/CCfits.pc"
+          echo -e "prefix=$CONDA_PREFIX\nexec_prefix=\${prefix}\nlibdir=\${exec_prefix}/lib\nincludedir=\${prefix}/include\n\nName: hdf5\nDescription: HDF5\nVersion: 1.14\nLibs: -L\${libdir} -lhdf5_cpp -lhdf5\nCflags: -I\${includedir}" > "$CONDA_PREFIX/lib/pkgconfig/hdf5.pc"
+          echo -e "prefix=$CONDA_PREFIX\nexec_prefix=\${prefix}\nlibdir=\${exec_prefix}/lib\nincludedir=\${prefix}/include\n\nName: CCfits\nDescription: CCfits\nVersion: 2.6\nLibs: -L\${libdir} -lCCfits -lcfitsio\nCflags: -I\${includedir}" > "$CONDA_PREFIX/lib/pkgconfig/CCfits.pc"
           export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/share/pkgconfig:${PKG_CONFIG_PATH:-}"
           pkg-config --print-errors --exists hdf5
           pkg-config --print-errors --exists CCfits
+          pkg-config --libs --cflags hdf5 CCfits
+          echo 'int main(){return 0;}' | g++ -x c++ - $(pkg-config --cflags --libs hdf5 CCfits) -o /tmp/pkgconfig-link-test
 
       - name: Restore ccache
         uses: actions/cache@v4
@@ -70,7 +81,6 @@ jobs:
           key: ccache-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
           restore-keys: |
             ccache-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-
-            ccache-${{ runner.os }}-develop-em-
             ccache-${{ runner.os }}-
 
       - name: Cache MEGAlib build
@@ -82,7 +92,7 @@ jobs:
             ${{ github.workspace }}/megalib/bin
             ${{ github.workspace }}/megalib/include
             ${{ github.workspace }}/megalib/config
-          key: megalib-${{ runner.os }}-root6.32-geant4.11.2-cfitsio4.3-hdf5.1.14-${{ hashFiles('megalib/src/**', 'megalib/configure') }}
+          key: megalib-${{ runner.os }}-root6.32-geant4.11.2-cfitsio4.3-hdf5.1.14-${{ hashFiles('megalib/src/**/*.cxx', 'megalib/src/**/*.h', 'megalib/src/**/Makefile*', 'megalib/configure', 'megalib/Makefile*') }}
 
       - name: Configure build environment
         shell: micromamba-shell {0}
@@ -103,7 +113,7 @@ jobs:
           set -euo pipefail
           cd $MEGALIB
           ./configure
-          make -j2
+          make -j$(nproc)
 
       - name: Build Nuclearizer
         shell: micromamba-shell {0}
@@ -112,16 +122,16 @@ jobs:
           mkdir -p ${{ github.workspace }}/lib ${{ github.workspace }}/bin
           ln -sf $MEGALIB/bin/generatelinkdef ${{ github.workspace }}/bin/generatelinkdef
           cd ${{ github.workspace }}
-          make CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j2
+          make CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
 
-      - name: Symlink to MEGAlib
+      - name: Copy Nuclearizer outputs into MEGAlib tree
         shell: micromamba-shell {0}
         run: |
           set -euo pipefail
           mkdir -p $MEGALIB/lib $MEGALIB/bin
           rm -f "${{ github.workspace }}/bin/generatelinkdef"
-          rsync -a --ignore-existing ${{ github.workspace }}/lib/ $MEGALIB/lib/ || true
-          rsync -a --ignore-existing ${{ github.workspace }}/bin/ $MEGALIB/bin/ || true
+          rsync -a --ignore-existing ${{ github.workspace }}/lib/ $MEGALIB/lib/
+          rsync -a --ignore-existing ${{ github.workspace }}/bin/ $MEGALIB/bin/
 
       - name: Test Nuclearizer
         shell: micromamba-shell {0}
@@ -129,7 +139,7 @@ jobs:
           set -euo pipefail
           cd $NUCLEARIZER
           export PATH=$MEGALIB/bin:$PATH
-          make unittests CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j2
+          make unittests CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
           ${{ github.workspace }}/bin/UTNRunner
 
       - name: ccache stats
