@@ -65,8 +65,8 @@ using namespace std;
 #include "MAssembly.h"
 
 
-double g_MinCTD = -350;
-double g_MaxCTD = 350;
+double g_MinCTD = -300;
+double g_MaxCTD = 300;
 int g_MinCounts = 100;
 
 int g_HVStrips = 64;
@@ -74,12 +74,43 @@ int g_LVStrips = 64;
 
 double g_CsPhotopeak = 661.7;
 
-const int NCTDBins = 5;
-double CTDBinWidth = (g_MaxCTD - g_MinCTD) / NCTDBins;
+const int NCTDBins = 15;
+// We need NCTDBins + 1 edges to define the boundaries of NCTDBins
+double g_CTDBinEdges[NCTDBins + 1]; 
+
+// Run this initialization function ONCE at the start of your program (e.g., in main or class constructor)
+void InitializeCTDBins() {
+  double center = (g_MaxCTD + g_MinCTD) / 2.0;
+  double halfWidth = (g_MaxCTD - g_MinCTD) / 2.0;
+
+  for (int i = 0; i <= NCTDBins; ++i) {
+    // Map linear fraction from -1.0 (at i=0) to +1.0 (at i=NCTDBins)
+    double fraction = -1.0 + 2.0 * double(i) / double(NCTDBins);
+    
+    // Sinusoidal transformation: creates a higher density of points near the center
+    // If you prefer an even steeper density difference, you can use: pow(fraction, 3)
+    double nonLinearFraction =  pow(fraction, 3);//sin(fraction * M_PI / 2.0); 
+
+    // Calculate the actual CTD boundary coordinate
+    g_CTDBinEdges[i] = center + halfWidth * nonLinearFraction;
+  }
+}
 
 int GetCTDBin(double CTD) {
+  // Hard bounds check
   if (CTD < g_MinCTD || CTD >= g_MaxCTD) return -1;
-  return int((CTD - g_MinCTD) / CTDBinWidth);
+
+  // Perform binary search to find the first edge that is strictly greater than our CTD value
+  auto it = std::upper_bound(g_CTDBinEdges, g_CTDBinEdges + NCTDBins + 1, CTD);
+  
+  // The bin index is simply the distance from the beginning boundary minus 1
+  int bin = std::distance(g_CTDBinEdges, it) - 1;
+
+  // Guard against edge cases at the absolute maximum limit
+  if (bin >= NCTDBins) bin = NCTDBins - 1;
+  if (bin < 0) bin = 0;
+
+  return bin;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -272,8 +303,6 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
 
   return true;
 }
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -632,6 +661,78 @@ bool TrappingCorrectionCs137::Analyze()
   }
 
   OutputCalFile.close();
+
+  // --------------------------------------------------------------------------
+  // Generate and Export Linear Splines for Charge Trapping Corrections
+  // --------------------------------------------------------------------------
+  
+  ofstream SplineOutputFile;
+  SplineOutputFile.open(m_OutFile + MString("_splines.txt"));
+  
+  // Write a clean header explaining the piece-wise linear polynomial coefficients:
+  // S_i(x) = y + b*(x - x_i)
+  SplineOutputFile << "# Spline Piece-wise Coefficients for Trapping Correction" << endl;
+  SplineOutputFile << "Det_ID" << '\t' 
+                   << "Interval_i" << '\t' 
+                   << "X_i_(CTD_ns)" << '\t' 
+                   << "Y_i_(HV_Centroid)" << '\t' 
+                   << "b_coeff_(slope)" << endl;
+
+  // Group our points by Detector ID so we can sort them by CTD value
+  // Map structure: [DetID] -> vector of pairs (CTD_Centroid, HV_Centroid)
+  map<int, vector<pair<double, double>>> DetPointsMap;
+
+  for (int c = 0; c < NCTDBins; ++c) {
+    for (auto const& [DetID, FitsVec] : FullDetEndpoints[c]) {
+      if (FitsVec.size() >= 3) {
+        double ctdCentroid = FitsVec[0];
+        double hvCentroid  = FitsVec[1];
+        DetPointsMap[DetID].push_back(make_pair(ctdCentroid, hvCentroid));
+      }
+    }
+  }
+
+  // Loop through each detector to compute linear connectors
+  for (auto& [DetID, PointsVec] : DetPointsMap) {
+    
+    // Sort data points in ascending X (CTD) order
+    sort(PointsVec.begin(), PointsVec.end(), [](const pair<double, double>& a, const pair<double, double>& b) {
+      return a.first < b.first;
+    });
+
+    int nPoints = PointsVec.size();
+    if (nPoints < 2) {
+      cout << "Warning: Detector " << DetID << " has too few data points (" << nPoints << ") to form a linear interpolation." << endl;
+      continue; 
+    }
+
+    cout << "Successfully generated linear spline for Detector " << DetID << " using " << nPoints << " points." << endl;
+
+    // Direct algebraic evaluation of intervals (connecting point i to i+1)
+    for (int i = 0; i < nPoints - 1; ++i) {
+      double x_i = PointsVec[i].first;
+      double y_i = PointsVec[i].second;
+      
+      double x_next = PointsVec[i+1].first;
+      double y_next = PointsVec[i+1].second;
+      
+      // Calculate constant linear slope: dy / dx
+      double b = 0.0;
+      if (x_next != x_i) {
+        b = (y_next - y_i) / (x_next - x_i);
+      }
+
+      // Save everything cleanly to the file match your exact format request
+      SplineOutputFile << DetID << '\t'
+                       << i << '\t'
+                       << x_i << '\t'
+                       << y_i << '\t'
+                       << b << endl;
+    }
+  }
+
+  SplineOutputFile.close();
+  cout << "Linear spline calibration file saved successfully." << endl;  
   watch.Stop();
   cout << "total time (s): " << watch.CpuTime() << endl;
  
@@ -801,6 +902,8 @@ int main(int argc, char** argv)
   MGlobal::Initialize("Standalone", "a standalone example program");
 
   TApplication TrappingCorrectionApp("TrappingCorrectionApp", 0, 0);
+
+  InitializeCTDBins();
 
   g_Prg = new TrappingCorrectionCs137();
 
