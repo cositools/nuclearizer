@@ -65,9 +65,9 @@ using namespace std;
 #include "MAssembly.h"
 
 
-double g_MinCTD = -300;
-double g_MaxCTD = 300;
-int g_MinCounts = 100;
+double g_MinCTD = -250;
+double g_MaxCTD = 250;
+int g_MinCounts = 250;
 
 int g_HVStrips = 64;
 int g_LVStrips = 64;
@@ -133,7 +133,7 @@ public:
   void Interrupt() { m_Interrupt = true; }
 
   //! Produce functions for fitting
-  TF1* GenerateCTDFunction(double CTDFitMin, double CTDFitMax, double CTDGuess);
+  // TF1* GenerateCTDFunction(double CTDFitMin, double CTDFitMax, double CTDGuess);
   TF1* GeneratePhotopeakFunction();
 
   MStripHit* GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction);
@@ -200,6 +200,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"         -m:   strip map file name (.map)"<<endl;
   Usage<<"         -g:   greedy strip pairing (default is chi-square)"<<endl;
   Usage<<"         -n:   exclude nearest neighbors"<<endl;
+  Usage<<"         -ctdmin :   minimum CTD for binning (default -300 ns)"<<endl;
+  Usage<<"         -ctdmax :   maximum CTD for binning (default 300 ns)"<<endl;
   Usage<<"         -o:   outfile (default YYYYMMDDHHMMSS)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -237,7 +239,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "--tcut") || (Option == "-m")) {
+    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "--tcut") || (Option == "-m") || (Option == "--ctdmin") || (Option == "--ctdmax")) {
       if (!((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
@@ -283,6 +285,14 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
       m_StripMapFile = argv[++i];
       cout<<"Accepting file name: "<<m_StripMapFile<<endl;
     }
+
+    if (Option == "--ctdmin") {
+      g_MinCTD = stod(argv[++i]);
+    } 
+
+    if (Option == "--ctdmax") {
+      g_MaxCTD = stod(argv[++i]);
+    } 
 
     if (Option == "-p"){
       m_PixelCorrect = true;
@@ -560,6 +570,7 @@ bool TrappingCorrectionCs137::Analyze()
           // Parameter(2) is Mu for your CTD function, Parameter(1) is Mu for the Photopeaks
           // FullDetEndpoints[c][DetID].push_back(CTDFit->Parameter(2));  // Index 0: CTD Centroid
           FullDetEndpoints[c][DetID].push_back(HVFit->Parameter(1));   // Index 1: HV Photopeak Mu
+          FullDetEndpoints[c][DetID].push_back(HVFit->ParError(1));   // Index 2: HV Photopeak Mu Error
           // FullDetEndpoints[c][DetID].push_back(LVFit->Parameter(1));   // Index 2: LV Photopeak Mu
         
 
@@ -644,7 +655,8 @@ bool TrappingCorrectionCs137::Analyze()
   OutputCalFile << "CTD_Bin" << '\t' 
                 << "Det_ID" << '\t' 
                 // << "CTD_Centroid_ns" << '\t' 
-                << "HV_Centroid_keV" << '\t' << endl;
+                << "HV_Centroid_keV" << '\t'
+                <<"HV_Centroid_error_keV" << '\t' << endl;
                 // << "LV_Centroid_keV" 
   cout << "Parameter file set up" << endl;
 
@@ -657,12 +669,14 @@ bool TrappingCorrectionCs137::Analyze()
       
       // double CTDCentroid = 0.0;
       double HVCentroid  = 0.0;
+      double HVCentroidError = 0.0;
       // double LVCentroid  = 0.0;
 
       // Ensure all 3 parameters (CTD mu, HV mu, LV mu) were successfully saved
       if (FitsVec.size() >= 1) {
         // CTDCentroid = FitsVec[0];
         HVCentroid  = FitsVec[0];
+        HVCentroidError = FitsVec[1];
         // LVCentroid  = FitsVec[2];
       }
 
@@ -670,7 +684,8 @@ bool TrappingCorrectionCs137::Analyze()
       OutputCalFile << c << '\t'
                     << DetID << '\t'
                     // << CTDCentroid << '\t'
-                    << HVCentroid << '\t' << endl;
+                    << HVCentroid << '\t' 
+                    << HVCentroidError << '\t' << endl;
                     // << LVCentroid 
     }
   }
