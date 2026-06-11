@@ -74,7 +74,7 @@ int g_LVStrips = 64;
 
 double g_CsPhotopeak = 661.7;
 
-const int NCTDBins = 15;
+const int NCTDBins = 30;
 // We need NCTDBins + 1 edges to define the boundaries of NCTDBins
 double g_CTDBinEdges[NCTDBins + 1]; 
 
@@ -89,7 +89,7 @@ void InitializeCTDBins() {
     
     // Sinusoidal transformation: creates a higher density of points near the center
     // If you prefer an even steeper density difference, you can use: pow(fraction, 3)
-    double nonLinearFraction =  pow(fraction, 3);//sin(fraction * M_PI / 2.0); 
+    double nonLinearFraction = sin(fraction * M_PI / 2.0); 
 
     // Calculate the actual CTD boundary coordinate
     g_CTDBinEdges[i] = center + halfWidth * nonLinearFraction;
@@ -490,29 +490,29 @@ bool TrappingCorrectionCs137::Analyze()
                   int CTDBin = GetCTDBin(CTD);
                   if (CTDBin < 0) continue;
 
-                  TH1D* FullCTDHist = FullDetCTDHistograms[CTDBin][DetID];
+                  // TH1D* FullCTDHist = FullDetCTDHistograms[CTDBin][DetID];
                   TH1D* FullHVHist  = FullDetHVEnergyHistograms[CTDBin][DetID];
-                  TH1D* FullLVHist  = FullDetLVEnergyHistograms[CTDBin][DetID];
+                  // TH1D* FullLVHist  = FullDetLVEnergyHistograms[CTDBin][DetID];
 
-                  if (FullCTDHist == nullptr) {
-                    char name[128]; sprintf(name, "CTD_Detector%d_bin%d", DetID, CTDBin);
-                    FullCTDHist = new TH1D(name, name, (g_MaxCTD - g_MinCTD) / 2, g_MinCTD, g_MaxCTD);
-                    FullDetCTDHistograms[CTDBin][DetID] = FullCTDHist;
-                  }
+                  // if (FullCTDHist == nullptr) {
+                  //   char name[128]; sprintf(name, "CTD_Detector%d_bin%d", DetID, CTDBin);
+                  //   FullCTDHist = new TH1D(name, name, (g_MaxCTD - g_MinCTD) / 2, g_MinCTD, g_MaxCTD);
+                  //   FullDetCTDHistograms[CTDBin][DetID] = FullCTDHist;
+                  // }
                   if (FullHVHist == nullptr) {
                     char name[128]; sprintf(name, "HV_Detector%d_bin%d", DetID, CTDBin);
                     FullHVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
                     FullDetHVEnergyHistograms[CTDBin][DetID] = FullHVHist;
                   }
-                  if (FullLVHist == nullptr) {
-                    char name[128]; sprintf(name, "LV_Detector%d_bin%d", DetID, CTDBin);
-                    FullLVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
-                    FullDetLVEnergyHistograms[CTDBin][DetID] = FullLVHist;
-                  }
+                  // if (FullLVHist == nullptr) {
+                  //   char name[128]; sprintf(name, "LV_Detector%d_bin%d", DetID, CTDBin);
+                  //   FullLVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
+                  //   FullDetLVEnergyHistograms[CTDBin][DetID] = FullLVHist;
+                  // }
 
-                  FullCTDHist->Fill(CTD);
+                  // FullCTDHist->Fill(CTD);
                   FullHVHist->Fill(HVEnergy);
-                  FullLVHist->Fill(LVEnergy);
+                  // FullLVHist->Fill(LVEnergy);
                 }
               }
             }
@@ -523,78 +523,89 @@ bool TrappingCorrectionCs137::Analyze()
     }
   }
   
+  // Place this outside/before your CTD bin and Detector loops!
+  ofstream MasterFitFile;
+  MasterFitFile.open(m_OutFile + MString("_All_CTDBin_FitResults.txt"));
+  MasterFitFile << "======================================================================" << endl;
+  MasterFitFile << "MASTER PHOTOPEAK FIT LOG FOR ALL CTD BINS AND DETECTORS" << endl;
+  MasterFitFile << "======================================================================" << endl << endl;
+
   // Do function fitting and recording for full detector outputs
   for (int c = 0; c < NCTDBins; ++c) {
 
     cout << "Processing CTD bin " << c << endl;
   
-    for (auto const& [DetID, FullCTDHist] : FullDetCTDHistograms[c]) {
+    for (auto const& [DetID, FullHVHist] : FullDetHVEnergyHistograms[c]) {
   
       TH1D* HVHist = FullDetHVEnergyHistograms[c][DetID];
-      TH1D* LVHist = FullDetLVEnergyHistograms[c][DetID];
+      // TH1D* LVHist = FullDetLVEnergyHistograms[c][DetID];
 
-      if (FullCTDHist->Integral() > g_MinCounts && HVHist->Integral() > g_MinCounts && LVHist->Integral() > g_MinCounts) {
+      if (HVHist->Integral() > g_MinCounts) {
 
-        double CTDGuess = FullCTDHist->GetBinCenter(FullCTDHist->GetMaximumBin());
-        TF1* CTDFunction = GenerateCTDFunction(CTDFitMin, CTDFitMax, CTDGuess);
-        TFitResultPtr CTDFit = FullCTDHist->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
+        // double CTDGuess = FullCTDHist->GetBinCenter(FullCTDHist->GetMaximumBin());
+        // TF1* CTDFunction = GenerateCTDFunction(CTDFitMin, CTDFitMax, CTDGuess);
+        // TFitResultPtr CTDFit = FullCTDHist->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
 
         TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
-        // PhotopeakFunctionHV->FixParameter(4, 0.5); 
-        // PhotopeakFunctionHV->FixParameter(5, 0.80); 
-        // PhotopeakFunctionHV->FixParameter(6, 0.13); 
-        // PhotopeakFunctionHV->FixParameter(7, 0.028); 
         TFitResultPtr HVFit = HVHist->Fit(PhotopeakFunctionHV, "S", "", 645, 675);
 
-        TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
-        TFitResultPtr LVFit = LVHist->Fit(PhotopeakFunctionLV, "S", "", 645, 675);
+        // TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
+        // TFitResultPtr LVFit = LVHist->Fit(PhotopeakFunctionLV, "S", "", 645, 675);
 
-        if ((CTDFit >= 0) && (HVFit >= 0) && (LVFit >= 0)) {
+        if ((HVFit >= 0)) {
       
           // Clear or initialize the vector for this specific bin and detector
           FullDetEndpoints[c][DetID].clear();
           
           // Parameter(2) is Mu for your CTD function, Parameter(1) is Mu for the Photopeaks
-          FullDetEndpoints[c][DetID].push_back(CTDFit->Parameter(2));  // Index 0: CTD Centroid
+          // FullDetEndpoints[c][DetID].push_back(CTDFit->Parameter(2));  // Index 0: CTD Centroid
           FullDetEndpoints[c][DetID].push_back(HVFit->Parameter(1));   // Index 1: HV Photopeak Mu
-          FullDetEndpoints[c][DetID].push_back(LVFit->Parameter(1));   // Index 2: LV Photopeak Mu
+          // FullDetEndpoints[c][DetID].push_back(LVFit->Parameter(1));   // Index 2: LV Photopeak Mu
         
 
-          ofstream CTDFitFile(DetID + MString("_CTDFitResult_.txt"));
-          streambuf* coutbuf = cout.rdbuf();
-          cout.rdbuf(CTDFitFile.rdbuf());
-          cout << "CTD Fit Results for Detector " << DetID << " in CTD bin " << c << endl;
-          if (CTDFit >= 0) {
-            CTDFit->Print();
-          }
-          cout.rdbuf(coutbuf);
-          CTDFitFile.close();
+          // ofstream CTDFitFile(DetID + MString("_CTDFitResult_.txt"));
+          // streambuf* coutbuf = cout.rdbuf();
+          // cout.rdbuf(CTDFitFile.rdbuf());
+          // cout << "CTD Fit Results for Detector " << DetID << " in CTD bin " << c << endl;
+          // if (CTDFit >= 0) {
+          //   CTDFit->Print();
+          // }
+          // cout.rdbuf(coutbuf);
+          // CTDFitFile.close();
 
-          ofstream HVFitFile(DetID + MString("_CTDbin_") + c + MString("_HVEnergyFitResult_.txt"));
-          coutbuf = cout.rdbuf();
-          cout.rdbuf(HVFitFile.rdbuf());
-          if (HVFit >= 0) {
-            HVFit->Print();
-          }
-          cout.rdbuf(coutbuf);
-          HVFitFile.close();
+
+          MasterFitFile << "------------------------------------------------------------" << endl;
+          MasterFitFile << " DETECTOR ID: " << DetID << "  |  CTD BIN INDEX: " << c << endl;
+          MasterFitFile << "------------------------------------------------------------" << endl;
           
-          ofstream LVFitFile(DetID + MString("_CTDbin_") + c + MString("_LVEnergyFitResult_.txt"));
-          coutbuf = cout.rdbuf();
-          cout.rdbuf(LVFitFile.rdbuf());
-          if (LVFit >= 0) {
-            LVFit->Print();
-          }
+          // Redirect cout to our master file stream
+          std::streambuf* coutbuf = cout.rdbuf();
+          cout.rdbuf(MasterFitFile.rdbuf());
+          
+          // Passing "V" forces ROOT to print out all parameters, errors, and Chi2 configurations
+          HVFit->Print("V"); 
+          
+          // Restore normal terminal routing
           cout.rdbuf(coutbuf);
-          LVFitFile.close();
 
-          TFile CTDFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_CTDHist_Illum.root"), "recreate");
-          TCanvas* CTDCanvas = new TCanvas();
-          CTDCanvas->cd();
-          FullCTDHist->Draw("hist");
-          CTDFunction->Draw("same");
-          FullCTDHist->Write();
-          CTDFile.Close();
+          MasterFitFile << endl << endl; // Add spacing between different bin entries
+          
+          // ofstream LVFitFile(DetID + MString("_CTDbin_") + c + MString("_LVEnergyFitResult_.txt"));
+          // coutbuf = cout.rdbuf();
+          // cout.rdbuf(LVFitFile.rdbuf());
+          // if (LVFit >= 0) {
+          //   LVFit->Print();
+          // }
+          // cout.rdbuf(coutbuf);
+          // LVFitFile.close();
+
+          // TFile CTDFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_CTDHist_Illum.root"), "recreate");
+          // TCanvas* CTDCanvas = new TCanvas();
+          // CTDCanvas->cd();
+          // FullCTDHist->Draw("hist");
+          // CTDFunction->Draw("same");
+          // FullCTDHist->Write();
+          // CTDFile.Close();
 
           TFile HVHistFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_HVEnergyHist_Illum.root"), "recreate");
           TCanvas* HVHistCanvas = new TCanvas();
@@ -604,13 +615,13 @@ bool TrappingCorrectionCs137::Analyze()
           HVHistCanvas->Write();
           HVHistFile.Close();
 
-          TFile LVHistFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_LVEnergyHist_Illum.root"), "recreate");
-          TCanvas* LVHistCanvas = new TCanvas();
-          LVHistCanvas->cd();
-          LVHist->Draw("Hist");
-          PhotopeakFunctionLV->Draw("same");
-          LVHistCanvas->Write();
-          LVHistFile.Close();
+          // TFile LVHistFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_LVEnergyHist_Illum.root"), "recreate");
+          // TCanvas* LVHistCanvas = new TCanvas();
+          // LVHistCanvas->cd();
+          // LVHist->Draw("Hist");
+          // PhotopeakFunctionLV->Draw("same");
+          // LVHistCanvas->Write();
+          // LVHistFile.Close();
 
         } else {
           cout << "Fits failed for CTD bin " << c << " Detector " << DetID << endl;
@@ -621,6 +632,10 @@ bool TrappingCorrectionCs137::Analyze()
     }
   }
 
+  // Place this at the absolute end of your Analyze() function
+  MasterFitFile.close();
+  cout << "Master fit results log saved successfully." << endl;
+
   // Setup parameter file
   ofstream OutputCalFile;
   OutputCalFile.open(m_OutFile + MString("_parameters.txt"));
@@ -628,9 +643,9 @@ bool TrappingCorrectionCs137::Analyze()
   // Updated header matching your request
   OutputCalFile << "CTD_Bin" << '\t' 
                 << "Det_ID" << '\t' 
-                << "CTD_Centroid_ns" << '\t' 
-                << "HV_Centroid_keV" << '\t' 
-                << "LV_Centroid_keV" << endl;
+                // << "CTD_Centroid_ns" << '\t' 
+                << "HV_Centroid_keV" << '\t' << endl;
+                // << "LV_Centroid_keV" 
   cout << "Parameter file set up" << endl;
 
   // Loop systematically over each CTD bin first
@@ -640,23 +655,23 @@ bool TrappingCorrectionCs137::Analyze()
     // Loop over the detectors found inside this specific CTD bin
     for (auto const& [DetID, FitsVec] : FullDetEndpoints[c]) {
       
-      double CTDCentroid = 0.0;
+      // double CTDCentroid = 0.0;
       double HVCentroid  = 0.0;
-      double LVCentroid  = 0.0;
+      // double LVCentroid  = 0.0;
 
       // Ensure all 3 parameters (CTD mu, HV mu, LV mu) were successfully saved
-      if (FitsVec.size() >= 3) {
-        CTDCentroid = FitsVec[0];
-        HVCentroid  = FitsVec[1];
-        LVCentroid  = FitsVec[2];
+      if (FitsVec.size() >= 1) {
+        // CTDCentroid = FitsVec[0];
+        HVCentroid  = FitsVec[0];
+        // LVCentroid  = FitsVec[2];
       }
 
       // Write row entries corresponding purely to the detector level measurements
       OutputCalFile << c << '\t'
                     << DetID << '\t'
-                    << CTDCentroid << '\t'
-                    << HVCentroid << '\t'
-                    << LVCentroid << endl;
+                    // << CTDCentroid << '\t'
+                    << HVCentroid << '\t' << endl;
+                    // << LVCentroid 
     }
   }
 
@@ -674,20 +689,25 @@ bool TrappingCorrectionCs137::Analyze()
   SplineOutputFile << "# Spline Piece-wise Coefficients for Trapping Correction" << endl;
   SplineOutputFile << "Det_ID" << '\t' 
                    << "Interval_i" << '\t' 
-                   << "X_i_(CTD_ns)" << '\t' 
+                   << "X_i_(CTD_ns_BinMidpoint)" << '\t' 
                    << "Y_i_(HV_Centroid)" << '\t' 
                    << "b_coeff_(slope)" << endl;
 
   // Group our points by Detector ID so we can sort them by CTD value
-  // Map structure: [DetID] -> vector of pairs (CTD_Centroid, HV_Centroid)
+  // Map structure: [DetID] -> vector of pairs (CTD_Bin_Midpoint, HV_Centroid)
   map<int, vector<pair<double, double>>> DetPointsMap;
 
   for (int c = 0; c < NCTDBins; ++c) {
+    // Calculate the exact midpoint of this specific variable CTD bin
+    double ctdBinMidpoint = (g_CTDBinEdges[c] + g_CTDBinEdges[c + 1]) / 2.0;
+
     for (auto const& [DetID, FitsVec] : FullDetEndpoints[c]) {
-      if (FitsVec.size() >= 3) {
-        double ctdCentroid = FitsVec[0];
-        double hvCentroid  = FitsVec[1];
-        DetPointsMap[DetID].push_back(make_pair(ctdCentroid, hvCentroid));
+      // We only care that the energy photopeak successfully fit (FitsVec[1] is HV mu)
+      if (FitsVec.size() >= 1) {
+        double hvCentroid = FitsVec[0]; 
+        
+        // Push the calculated geometric midpoint instead of the fitted CTD value
+        DetPointsMap[DetID].push_back(make_pair(ctdBinMidpoint, hvCentroid));
       }
     }
   }
@@ -695,7 +715,7 @@ bool TrappingCorrectionCs137::Analyze()
   // Loop through each detector to compute linear connectors
   for (auto& [DetID, PointsVec] : DetPointsMap) {
     
-    // Sort data points in ascending X (CTD) order
+    // Sort data points in ascending X (CTD Midpoint) order
     sort(PointsVec.begin(), PointsVec.end(), [](const pair<double, double>& a, const pair<double, double>& b) {
       return a.first < b.first;
     });
@@ -706,14 +726,14 @@ bool TrappingCorrectionCs137::Analyze()
       continue; 
     }
 
-    cout << "Successfully generated linear spline for Detector " << DetID << " using " << nPoints << " points." << endl;
+    cout << "Successfully generated linear spline for Detector " << DetID << " using " << nPoints << " points (Bin Midpoints)." << endl;
 
     // Direct algebraic evaluation of intervals (connecting point i to i+1)
     for (int i = 0; i < nPoints - 1; ++i) {
-      double x_i = PointsVec[i].first;
+      double x_i = PointsVec[i].first;      // This is now the exact midpoint of interval i
       double y_i = PointsVec[i].second;
       
-      double x_next = PointsVec[i+1].first;
+      double x_next = PointsVec[i+1].first; // Exact midpoint of interval i+1
       double y_next = PointsVec[i+1].second;
       
       // Calculate constant linear slope: dy / dx
@@ -722,7 +742,7 @@ bool TrappingCorrectionCs137::Analyze()
         b = (y_next - y_i) / (x_next - x_i);
       }
 
-      // Save everything cleanly to the file match your exact format request
+      // Save everything cleanly to the file matching your exact format request
       SplineOutputFile << DetID << '\t'
                        << i << '\t'
                        << x_i << '\t'
@@ -738,8 +758,6 @@ bool TrappingCorrectionCs137::Analyze()
  
   return true;
 }
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -817,30 +835,30 @@ TF1* TrappingCorrectionCs137::GeneratePhotopeakFunction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TF1* TrappingCorrectionCs137::GenerateCTDFunction(double CTDFitMin, double CTDFitMax, double CTDGuess)
-{
-  // Exponentially modified gaussian
-  TF1* CTDFunction = new TF1("CTDFunction", "[0]*([1]/2)*exp(([1]/2)*(([1]*[3]*[3]) - 2*[4]*(x-[2])))*erfc((([1]*[3]*[3]) - [4]*(x-[2]))/([3]*sqrt(2)))", CTDFitMin, CTDFitMax);
+// TF1* TrappingCorrectionCs137::GenerateCTDFunction(double CTDFitMin, double CTDFitMax, double CTDGuess)
+// {
+//   // Exponentially modified gaussian
+//   TF1* CTDFunction = new TF1("CTDFunction", "[0]*([1]/2)*exp(([1]/2)*(([1]*[3]*[3]) - 2*[4]*(x-[2])))*erfc((([1]*[3]*[3]) - [4]*(x-[2]))/([3]*sqrt(2)))", CTDFitMin, CTDFitMax);
 
-  CTDFunction->SetParName(0, "Norm");
-  CTDFunction->SetParName(1, "Lambda");
-  CTDFunction->SetParName(2, "Mu");
-  CTDFunction->SetParName(3, "Sigma");
-  CTDFunction->SetParName(4, "Flip");
+//   CTDFunction->SetParName(0, "Norm");
+//   CTDFunction->SetParName(1, "Lambda");
+//   CTDFunction->SetParName(2, "Mu");
+//   CTDFunction->SetParName(3, "Sigma");
+//   CTDFunction->SetParName(4, "Flip");
 
-  CTDFunction->SetParameter("Norm", 1000);
-  CTDFunction->SetParameter("Lambda", 0.05);
-  CTDFunction->SetParameter("Sigma", 12);
-  CTDFunction->SetParameter("Mu", CTDGuess);
+//   CTDFunction->SetParameter("Norm", 1000);
+//   CTDFunction->SetParameter("Lambda", 0.05);
+//   CTDFunction->SetParameter("Sigma", 12);
+//   CTDFunction->SetParameter("Mu", CTDGuess);
 
 
-  CTDFunction->SetParLimits(0, 0, 1e8);
-  CTDFunction->SetParLimits(1, 0.01, 1);
-  CTDFunction->SetParLimits(2, CTDFitMin, CTDFitMax);
-  CTDFunction->SetParLimits(3, 6, 30);
+//   CTDFunction->SetParLimits(0, 0, 1e8);
+//   CTDFunction->SetParLimits(1, 0.01, 1);
+//   CTDFunction->SetParLimits(2, CTDFitMin, CTDFitMax);
+//   CTDFunction->SetParLimits(3, 6, 30);
 
-  return CTDFunction;
-}
+//   return CTDFunction;
+// }
 
 
 ////////////////////////////////////////////////////////////////////////////////
