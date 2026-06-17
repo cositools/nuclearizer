@@ -67,14 +67,14 @@ using namespace std;
 
 double g_MinCTD = -250;
 double g_MaxCTD = 250;
-int g_MinCounts = 250;
+int g_MinCounts = 1500;
 
 int g_HVStrips = 64;
 int g_LVStrips = 64;
 
 double g_CsPhotopeak = 661.7;
 
-const int NCTDBins = 30;
+const int NCTDBins = 50;
 // We need NCTDBins + 1 edges to define the boundaries of NCTDBins
 double g_CTDBinEdges[NCTDBins + 1]; 
 
@@ -727,6 +727,26 @@ bool TrappingCorrectionCs137::Analyze()
     }
   }
 
+  // Find Absolute Global Min and Max CTD values ---
+  double globalMinCTD = 1e9;  // Initialize to a large positive number
+  double globalMaxCTD = -1e9; // Initialize to a large negative number
+  bool foundAnyPoints = false;
+
+  for (auto const& [DetID, PointsVec] : DetPointsMap) {
+    for (auto const& pt : PointsVec) {
+      double ctdVal = pt.first;
+      if (ctdVal < globalMinCTD) globalMinCTD = ctdVal;
+      if (ctdVal > globalMaxCTD) globalMaxCTD = ctdVal;
+      foundAnyPoints = true;
+    }
+  }
+
+  // If no data points were mapped at all, fall back safely to global system limits
+  if (!foundAnyPoints) {
+    globalMinCTD = g_MinCTD;
+    globalMaxCTD = g_MaxCTD;
+  }
+
   // Loop through each detector to compute linear connectors
   for (auto& [DetID, PointsVec] : DetPointsMap) {
     
@@ -758,6 +778,7 @@ bool TrappingCorrectionCs137::Analyze()
       }
 
       // Save everything cleanly to the file matching your exact format request
+      SplineOutputFile << "# Global Dataset Limits: Min_CTD = " << globalMinCTD << " ns, Max_CTD = " << globalMaxCTD << " ns" << endl;
       SplineOutputFile << DetID << '\t'
                        << i << '\t'
                        << x_i << '\t'
