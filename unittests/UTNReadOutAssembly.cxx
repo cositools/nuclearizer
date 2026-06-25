@@ -393,12 +393,15 @@ bool UTNReadOutAssembly::TestStripHitManagement()
                          R.InDetector(4)) && Passed;
 
   // Out-of-range InDetector returns false
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
   Passed = EvaluateFalse("InDetector()", "out of range 16", "InDetector(16) returns false for an out-of-range detector ID",
                          R.InDetector(16)) && Passed;
   Passed = EvaluateFalse("InDetector()", "out of range -1", "InDetector(-1) returns false for a negative detector ID",
                          R.InDetector(-1)) && Passed;
+  g_Verbosity = OldVerbosity;
 
-  // Out-of-bounds access emits merr and returns nullptr
+  // Out-of-bounds access reports an error and returns nullptr
   DisableDefaultStreams();
   Passed = EvaluateTrue("GetStripHit()", "out of bounds returns nullptr", "GetStripHit(99) returns nullptr when index is out of bounds",
                         R.GetStripHit(99) == nullptr) && Passed;

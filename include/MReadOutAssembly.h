@@ -406,7 +406,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! Strip pairing quality string
   vector<MString> m_StripPairingString_QualityFlag;
 
-  //! Reduced Chi^2 of the Strip Paired Event
+  //! The reduced chi^2 values of the strip-paired event
   vector<double> m_StripPairingReducedChiSquare;
 
   //! True if the event has been filtered out

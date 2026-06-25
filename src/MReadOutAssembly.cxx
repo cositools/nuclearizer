@@ -71,7 +71,7 @@ MReadOutAssembly::~MReadOutAssembly()
 {
   // Destruct an instance of MReadOutAssembly
 
-  // Clear() also resets state, not just owned memory, but the overhead is small compared to the code duplication it removes.
+  // Clear() also resets state, not just owned memory, but the overhead is small compared to the code duplication it removes
   Clear();
 }
 
@@ -182,6 +182,11 @@ bool MReadOutAssembly::InDetector(int DetectorID) const
     return m_InDetector[DetectorID];
   }
 
+  if (g_Verbosity >= c_Error) {
+    cout<<"Error in MReadOutAssembly::InDetector: detector ID "<<DetectorID
+        <<" out of bounds (valid range: 0-15)"<<endl;
+  }
+
   return false;
 }
 
@@ -249,7 +254,7 @@ void MReadOutAssembly::RemoveStripHit(unsigned int i)
   // Remove a strip hit
 
   if (i < m_StripHits.size()) {
-    // BUG: MHit objects retain non-owning references to this strip hit if the caller deletes it.
+    // BUG: MHit objects retain non-owning references to this strip hit if the caller deletes it
     vector<MStripHit*>::iterator it;
     it = m_StripHits.begin() + i;
     m_StripHits.erase(it);
@@ -402,7 +407,7 @@ MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime) const
 
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
-  // HT, SH, and BD are handled here; malformed HT or SH lines return false.
+  // HT, SH, and BD are handled here; malformed HT or SH lines return false
 
   if (Line.BeginsWith("TI")) {
     MTime T(0);
@@ -423,7 +428,7 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
     }
   }
   if (Line.BeginsWith("SH")) {
-    // Assume that the SH line belongs to the last read hit.
+    // Assume that the SH line belongs to the last read hit
     if (m_Hits.empty() == true) return false;
     MHit* h = m_Hits.back();
     MStripHit* SH = new MStripHit();
@@ -437,12 +442,12 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
     }
   }
   if (Line.BeginsWith("BD")) {
-    // Mark the event as filtered out.
+    // Mark the event as filtered out
     m_FilteredOut = true;
     return true;
   }
 
-  // Everything else goes to the tolerant base parser, which also consumes unrecognized lines and returns true.
+  // Everything else goes to the tolerant base parser, which also consumes unrecognized lines and returns true
   return MReadOutSequence::Parse(Line);
 }
 
@@ -455,21 +460,22 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
   // Read data from a .dat file
 
   MString Line;
-  int i = 0;
-  int MaxIter = 1000;
   bool EventRead = false;
 
+  int i = 0;
+  int MaxLinesToRead = 1000;
+
   Clear();
-  for (i = 0; i < MaxIter; ++i) {
-    // Try up to 1000 lines to read the next complete event.
+  for (i = 0; i < MaxLinesToRead; ++i) {
+    // Try up to "MaxLinesToRead" lines to read the next complete event
     if (F.ReadLine(Line) == false) {
-      // End of file reached.
+      // End of file reached
       break;
     }
     const char* LineData = Line.Data();
     if (Line.BeginsWith("SE")) {
       if (i != 0) {
-        // We read the full event in, break now.
+        // We read the full event in, break now
         break;
       }
     } else if (Line.BeginsWith("ID")) {
@@ -499,7 +505,7 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
         AddStripHit(sh);
         EventRead = true;
         if (m_Hits.size() > 0) {
-          // Add this SH to the last read HT.
+          // Add this SH to the last read HT
           MHit* h = m_Hits.back();
           h->AddStripHit(sh);
         }
@@ -513,8 +519,8 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
 
   }
 
-  if (i == MaxIter) {
-    if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetNextFromDatFile(): Event not fully read after "<<MaxIter<<" lines"<<endl;
+  if (i == MaxLinesToRead) {
+    if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetNextFromDatFile(): Event not fully read after "<<MaxLinesToRead<<" lines"<<endl;
     return false;
   }
 
@@ -575,7 +581,7 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 
 void MReadOutAssembly::StreamEvta(ostream& S)
 {
-  // Stream the content in MEGAlib's evta format.
+  // Stream the content in MEGAlib's evta format
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
@@ -610,7 +616,7 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 
 void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
 {
-  // Stream the content in MEGAlib's roa format.
+  // Stream the content in MEGAlib's roa format
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
@@ -650,7 +656,7 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
 
 void MReadOutAssembly::StreamTra(ostream& S)
 {
-  // Stream the content in MEGAlib's tra format.
+  // Stream the content in MEGAlib's tra format
 
   S<<"SE"<<endl;
 
@@ -668,12 +674,12 @@ void MReadOutAssembly::StreamTra(ostream& S)
 
 void MReadOutAssembly::StreamBDFlags(ostream& S)
 {
-  // Stream the BD and QA flags for this assembly.
+  // Stream the BD and QA flags for this assembly
 
   if (m_EnergyCalibrationError == true) {
     S<<"BD EnergyCalibrationError";
     if (m_EnergyCalibrationErrorString.empty() == false) {
-      // Append any associated error text.
+      // Append any associated error text
       for (auto i : m_EnergyCalibrationErrorString) {
         S<<" ("<<i<<")";
       }
@@ -683,7 +689,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_StripPairingError == true) {
     S<<"BD StripPairingError";
     if (m_StripPairingErrorString.empty() == false) {
-      // Append any associated error text.
+      // Append any associated error text
       for (auto i : m_StripPairingErrorString) {
         S<<" ("<<i<<")";
       }
@@ -693,7 +699,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_DepthCalibrationError == true) {
     S<<"BD DepthCalibrationError";
     if (m_DepthCalibrationErrorString.empty() == false) {
-      // Append any associated error text.
+      // Append any associated error text
       for (auto i : m_DepthCalibrationErrorString) {
         S<<" ("<<i<<")";
       }
@@ -703,7 +709,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_EventReconstructionError == true) {
     S<<"BD EventReconstructionError";
     if (m_EventReconstructionErrorString.empty() == false) {
-      // Append any associated error text.
+      // Append any associated error text
       for (auto i : m_EventReconstructionErrorString) {
         S<<" ("<<i<<")";
       }
@@ -714,7 +720,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_StripHitBelowThreshold_QualityFlag == true) {
     S<<"QA StripHitBelowThreshold";
     if (m_StripHitBelowThresholdString_QualityFlag.empty() == false) {
-      // Append any associated error text.
+      // Append any associated error text
       for (auto i : m_StripHitBelowThresholdString_QualityFlag) {
         S<<" ("<<i<<")";
       }
@@ -725,7 +731,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_StripPairing_QualityFlag == true) {
     S<<"QA StripPairing";
     if (m_StripPairingString_QualityFlag.empty() == false) {
-      // Append any associated error text.
+      // Append any associated error text
       for (auto i : m_StripPairingString_QualityFlag) {
         S<<" ("<<i<<")";
       }
@@ -741,7 +747,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   }
 
   S<<"PQ";
-  // Append the strip pairing reduced chi-square values.
+  // Append the strip pairing reduced chi^2 values
   for (auto i : m_StripPairingReducedChiSquare) {
     S<<" "<<i;
   }
@@ -792,7 +798,7 @@ bool MReadOutAssembly::IsBad() const
 
 bool MReadOutAssembly::IsVeto() const
 {
-  // Return true if one of the veto flags has been set.
+  // Return true if one of the veto flags has been set
 
   if (m_ShieldVeto == true) return true;
   if (m_GuardRingVeto == true) return true;
