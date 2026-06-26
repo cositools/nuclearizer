@@ -290,6 +290,11 @@ class MReadOutAssembly : public MReadOutSequence
   MTime ComputeRTSfromUTCTime(MTime UTCTime) const;
   //! Compute the UTC time from known RTS
   MTime ComputeUTCfromRTSTime(MTime RTSTime) const;
+  //! Compute the RTS time from GPS time
+  MTime ComputeRTSfromGPSTime(MTime GPSTime);
+  //! Compute GPS time from known RTS
+  MTime ComputeGPSfromRTSTime(MTime RTSTime);
+
 
   // protected methods:
  protected:

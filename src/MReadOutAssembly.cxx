@@ -405,6 +405,32 @@ MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MTime MReadOutAssembly::ComputeRTSfromGPSTime(MTime GPSTime)
+{
+  //! Compute RTS time from GPS by converting to UTC, then call ComputeRTSfromUTCTime
+  //! UTC = GPS - 18
+  MTime GPS_Unix = MTime(1980,1,6,0,0,0,0);
+  MTime UTCTime = GPS_Unix + GPSTime - 18;
+  return ComputeRTSfromUTCTime(UTCTime);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeGPSfromRTSTime(MTime RTSTime)
+{
+  //! Compute GPS time from RTS by calling ComputeUTCfromRTSTime then converting UTC to GPS
+  //! GPS = UTC + 18
+  MTime GPS_Unix = MTime(1980,1,6,0,0,0,0);
+  MTime UTCTime = ComputeUTCfromRTSTime(RTSTime);
+  return UTCTime - GPS_Unix + 18;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
   // HT, SH, and BD are handled here; malformed HT or SH lines return false

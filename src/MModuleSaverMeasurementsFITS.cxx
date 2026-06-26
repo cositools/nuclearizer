@@ -116,6 +116,20 @@ bool MModuleSaverMeasurementsFITS::Initialize()
     return false;
   }
 
+  // If output data level is 0, call the external m_L1aWriter
+  if (m_OutputDataLevel == 0) {
+    // L1b need strip pairing which is not a requirement for L1a.
+    m_PreceedingModules.clear();
+    m_PreceedingModulesHardRequirement.clear();
+    AddPreceedingModuleType(MAssembly::c_EventLoader);
+
+    if (m_L1aWriter.Create(m_FileName) == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to create L1a FITS file."<<endl;
+      return false;
+    }
+    return MModule::Initialize();
+  }
+
   // Create the FITS file
   if (CreateFITSFile(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to create FITS file."<<endl;
@@ -146,8 +160,8 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     // Add some keywords to primary HDU
     m_PrimaryHDU->addKey("TELESCOP", "COSI", "Mission name");
     m_PrimaryHDU->addKey("INSTRUME", "GeD", "Instrument name");
-    m_PrimaryHDU->addKey("OBS_ID", "YYMMDD", "Observation ID"); //OBS_ID should have the same YYMMDD as the filename
-    m_PrimaryHDU->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date");  //DATE-OBS should have the start date and time of the data, and this should match the YYMMDD in the filename
+    m_PrimaryHDU->addKey("OBS_ID", "YYYYMMDD", "Observation ID"); //OBS_ID should have the same YYYYMMDD as the filename
+    m_PrimaryHDU->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date");  //DATE-OBS should have the start date and time of the data, and this should match the YYYYMMDD in the filename
     m_PrimaryHDU->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date");   //DATE-END should have the stop time of the data, i.e. the last timestamp
     m_PrimaryHDU->addKey("ORIGIN", "SSL", "Organization");
 
@@ -165,79 +179,81 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     string seqHitFormat = isL1b ? "PB(50)" : "10B";
     string hitFormat    = isL1b ? "PE(50)" : "10E";
 
-    std::vector<string> colNames = {
-      "TIME", "EVENTID", "EVENTCLASS", "NUMHIT", "SEQHIT",
-      "X", "Y", "Z",
-      "X_ERR", "Y_ERR", "Z_ERR",
-      "ENERGY", "ENERGY_ERR", 
-      "RECOILDIR", "RECOILDIR_ERR"
+    struct ColSpec { string name, format, unit, comment; bool isL1bOnly; };
+    const std::vector<ColSpec> colsGedL1b = {
+      {"TIME",          "1D",         "s",   "Mission Time in sec since 01 Jan 2025 00:00:00",                                      false},
+      {"EVENTID",       "1J",         "",    "Event ID, unique number that starts at 1 each day",                                   false},
+      {"EVENTTYPE",     "1B",         "",    "Type of event",                                                                       true },
+      {"EVENTCLASS",    "1B",         "",    "0=Compton, 1=photoabsor, 2=charge particle, 4=pair, 5=unknown",                       false},
+      {"NUMHIT",        "1B",         "",    "Number of Hits",                                                                      false},
+      {"STATTEST",      "8E",         "",    "Statistical Test",                                                                    true },
+      {"VETO",          "1B",         "",    "Veto flag: 0=none, 1=hard ACD veto, 2=soft ACD veto, 3=guard ring veto",              true },
+      {"SEQHIT",        seqHitFormat, "",    "Sequence of the Hits",                                                                false},
+      {"X",             hitFormat,    "cm",  "X Location of the HITS",                                                              false},
+      {"Y",             hitFormat,    "cm",  "Y Location of the HITS",                                                              false},
+      {"Z",             hitFormat,    "cm",  "Z Location of the HITS",                                                              false},
+      {"X_ERR",         hitFormat,    "cm",  "Error of X Location of the HITS",                                                     false},
+      {"Y_ERR",         hitFormat,    "cm",  "Error on Y Location of the HITS",                                                     false},
+      {"Z_ERR",         hitFormat,    "cm",  "Error on Z Location of the HITS",                                                     false},
+      {"ENERGY",        hitFormat,    "keV", "ENERGY of the HITS",                                                                  false},
+      {"ENERGY_ERR",    hitFormat,    "keV", "Error on ENERGY of the HITS",                                                         false},
+      {"RECOILDIR",     "3E",         "",    "Recoil electron direction",                                                           false},
+      {"RECOILDIR_ERR", "3E",         "",    "Recoil electron direction error",                                                     false},
+      {"QUALITY_FLAG",  "64A",        "",    "String to specify quality of event calibration and reconstruction",                   true },
     };
 
-    std::vector<string> colFormats = {
-      "1D",          // TIME
-      "1J",          // EVENTID
-      "1B",          // EVENTCLASS
-      "1B",          // NUMHIT
-      seqHitFormat,  // SEQHIT
-      hitFormat,     // X
-      hitFormat,     // Y
-      hitFormat,     // Z
-      hitFormat,     // X_ERR
-      hitFormat,     // Y_ERR
-      hitFormat,     // Z_ERR
-      hitFormat,     // ENERGY
-      hitFormat,     // ENERGY_ERR
-      "3E",          // RECOILDIR
-      "3E",          // RECOILDIR_ERR
-    };
+    std::vector<string> colNames, colFormats, colUnits;
+    std::vector<string> colComments;
+    colNames.reserve(colsGedL1b.size());
+    colFormats.reserve(colsGedL1b.size());
+    colUnits.reserve(colsGedL1b.size());
+    colComments.reserve(colsGedL1b.size());
 
-    std::vector<string> colUnits = {
-      "s", "", "", "", "",
-      "cm", "cm", "cm",
-      "cm", "cm", "cm",
-      "keV", "keV",
-      "", ""
-    };
-
-    // L2 drops EVENTTYPE, STATTEST, VETO, and QUALITY_FLAG.
-    // VETO: 0=none, 1=hard ACD veto, 2=soft ACD veto, 3=guard ring veto
-    if (m_OutputDataLevel == 1) {
-      colNames.push_back("EVENTTYPE");
-      colFormats.push_back("1B");
-      colUnits.push_back("");
-
-      colNames.push_back("STATTEST");
-      colFormats.push_back("8E");
-      colUnits.push_back("");
-
-      colNames.push_back("VETO");
-      colFormats.push_back("1B");
-      colUnits.push_back("");
-
-      colNames.push_back("QUALITY_FLAG");
-      colFormats.push_back("64A");
-      colUnits.push_back("");
+    for (const auto& col : colsGedL1b) {
+      // if we in L2, and col is L1b only, skip it
+      if (col.isL1bOnly && !isL1b) continue;
+      colNames.push_back(col.name);
+      colFormats.push_back(col.format);
+      colUnits.push_back(col.unit);
+      colComments.push_back(col.comment);
     }
 
     // Create binary table extension
     string extName = (m_OutputDataLevel == 2) ? "GED_L2" : "GED_L1B";
     m_ScienceTable = m_FITSFile->addTable(extName, 0, colNames, colFormats, colUnits);
 
+    {
+      m_ScienceTable->makeThisCurrent();
+      int status = 0;
+      for (size_t i = 0; i < colComments.size(); ++i) {
+        char keyName[16];
+        snprintf(keyName, sizeof(keyName), "TTYPE%zu", i + 1);
+        fits_modify_comment(m_FITSFile->fitsPointer(),
+                            keyName,
+                            const_cast<char*>(colComments[i].c_str()),
+                            &status);
+      }
+      if (status != 0 && g_Verbosity >= c_Warning) {
+        cout << m_XmlTag << ": fits_modify_comment status=" << status << endl;
+      }
+    }
+
     // Add keywords to science table
     m_ScienceTable->addKey("EXTNAME", extName, "name of this HDU");
     m_ScienceTable->addKey("TELESCOP", "COSI", "Telescope mission name");
     m_ScienceTable->addKey("INSTRUME", "GED", "Instrument name");
     m_ScienceTable->addKey("DATAMODE", "SYNC", "Instrument datamode: SYNC or ASYNC");
+    m_ScienceTable->addKey("OBSMODE", "SCANNING", "Spacecraft observing mode");
     m_ScienceTable->addKey("OBSERVER", "John Tomsick", "Principal Investigator");
-    m_ScienceTable->addKey("OBS_ID", "YYMMDD", "Observation ID"); //should match the YYMMDD of the filename
-    m_ScienceTable->addKey("OBJECT", "ALL SKY", "Object/Target name or ALL SKY");
+    m_ScienceTable->addKey("OBS_ID", "YYYYMMDD", "Observation ID"); //should match the YYYYMMDD of the filename
+    m_ScienceTable->addKey("OBJECT", "ALLSKY", "Object/Target name or ALLSKY");
     m_ScienceTable->addKey("MJDREFI", 60676, "MJD reference day 01 Jan 2025 00:00:00");
     m_ScienceTable->addKey("MJDREFF", 8.007407407407E-04, "MJD reference (fraction of day)");
     m_ScienceTable->addKey("TIMEREF", "LOCAL", "Reference Frame");
     m_ScienceTable->addKey("TASSIGN", "SATELLITE", "Time assigned");
     m_ScienceTable->addKey("TIMESYS", "TT", "Time System");
     m_ScienceTable->addKey("TIMEUNIT", "s", "Time unit for timing header keywords");
-    m_ScienceTable->addKey("CLOCKAPP", false, "If clock corrections are applied (T/F)");
+    m_ScienceTable->addKey("CLOCKAPP", "F", "If clock corrections are applied (T/F)");
     m_ScienceTable->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date"); //placeholder, this will be written after we read through all the events
     m_ScienceTable->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date"); // 
     m_ScienceTable->addKey("TSTART", 0.0, "Start time"); //placeholder, this will be written after we read through all the events
@@ -246,13 +262,12 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     m_ScienceTable->addKey("HDUCLAS1", "ARRAY", "hduclass1");
     m_ScienceTable->addKey("HDUCLAS2", "TOTAL", "hduclas2");
     m_ScienceTable->addKey("CREATOR", "TBD", "Software that create 1st the file");
-    m_ScienceTable->addKey("PROCVER", "TBD", "Processing Version");
-    m_ScienceTable->addKey("CALDBVER", "TBD", "CALDB version");
-    m_ScienceTable->addKey("SEQPNUM", "TBD", "Times the dataset has been processed");
+    m_ScienceTable->addKey("PROCVER", "MM.XX.NN.YY", "Processing Version");
+    m_ScienceTable->addKey("CALDBVER", "csYYYYMMDD", "CALDB version");
+    m_ScienceTable->addKey("SEQPNUM", "nn", "Times the dataset has been processed");
     m_ScienceTable->addKey("ORIGIN", "SSL", "Origin of the FITS files");
-    m_ScienceTable->addKey("DATE", "TOTAL", "File creation date"); //DATE should have the date of the file creation (same as primary header)
-    //CHECKSUM
-    //DATESUM
+    m_ScienceTable->addKey("DATE", string(dateBuffer), "File creation date (UTC)"); //DATE should have the date of the file creation (same as primary header)
+    // CHECKSUM and DATASUM are written at file close in Finalize()
 
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": FITS file created successfully"<<endl;
 
@@ -271,6 +286,13 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
 bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Add this event to the batch, write batch when full
+
+  // L1a mode: call the external L1a writer
+  if (m_OutputDataLevel == 0) {
+    bool ok = m_L1aWriter.Write(Event);
+    Event->SetAnalysisProgress(MAssembly::c_EventSaver);
+    return ok;
+  }
 
   // L2 mode: skip bad events (screening)
   if (m_OutputDataLevel == 2 && Event->IsBad()) {
@@ -552,6 +574,12 @@ void MModuleSaverMeasurementsFITS::Finalize()
 {
   // Finalize the module
 
+  if (m_OutputDataLevel == 0) {
+    m_L1aWriter.Close();
+    MModule::Finalize();
+    return;
+  }
+
   // Write any remaining events in the batch
   if (m_BatchEventCount > 0) {
     FlushBatch();
@@ -578,12 +606,12 @@ void MModuleSaverMeasurementsFITS::Finalize()
       // Update science table HDU
       m_ScienceTable->addKey("DATE-OBS", string(startBuf), "Start Date");
       m_ScienceTable->addKey("DATE-END", string(stopBuf), "Stop Date");
-      m_ScienceTable->addKey("TSTART", m_FirstEventTime_RTS, "Start time");
-      m_ScienceTable->addKey("TSTOP", m_LastEventTime_RTS, "Stop time");
+      m_ScienceTable->addKey("TSTART", m_FirstEventTime_RTS, "Start time (RTS)");
+      m_ScienceTable->addKey("TSTOP", m_LastEventTime_RTS, "Stop time (RTS)");
 
-      // Also update OBS_ID to match the start date (YYMMDD format)
-      char obsIdBuf[8];
-      strftime(obsIdBuf, sizeof(obsIdBuf), "%y%m%d", gmtime(&startUnix));
+      // Also update OBS_ID to match the start date (YYYYMMDD format)
+      char obsIdBuf[16];
+      strftime(obsIdBuf, sizeof(obsIdBuf), "%Y%m%d", gmtime(&startUnix));
       m_PrimaryHDU->addKey("OBS_ID", string(obsIdBuf), "Observation ID");
       m_ScienceTable->addKey("OBS_ID", string(obsIdBuf), "Observation ID");
 
@@ -595,6 +623,20 @@ void MModuleSaverMeasurementsFITS::Finalize()
     } catch (const CCfits::FitsException& e) {
       if (g_Verbosity >= c_Error) {
         cout<<m_XmlTag<<": Error updating time headers: "<<e.message()<<endl;
+      }
+    }
+  }
+
+  // CHECKSUM and DATASUM keywords on every HDU 
+  if (m_FITSFile != nullptr) {
+    try {
+      m_FITSFile->pHDU().writeChecksum();
+      if (m_ScienceTable != nullptr) {
+        m_ScienceTable->writeChecksum();
+      }
+    } catch (const CCfits::FitsException& e) {
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": writeChecksum error: "<<e.message()<<endl;
       }
     }
   }
@@ -635,6 +677,8 @@ bool MModuleSaverMeasurementsFITS::ReadXmlConfiguration(MXmlNode* Node)
     MString Level = OutputLevelNode->GetValue();
     if (Level == "L2" || Level == "l2") {
       m_OutputDataLevel = 2;
+    } else if (Level == "L1a" || Level == "l1a") {
+      m_OutputDataLevel = 0;
     } else {
       m_OutputDataLevel = 1;
     }
@@ -653,7 +697,14 @@ MXmlNode* MModuleSaverMeasurementsFITS::CreateXmlConfiguration()
 
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
-  new MXmlNode(Node, "OutputLevel", (m_OutputDataLevel == 2) ? "L2" : "L1b");
+
+  const char* lvl = "L1b";
+  switch (m_OutputDataLevel) {
+    case 0: lvl = "L1a"; break;
+    case 2: lvl = "L2";  break;
+    default: lvl = "L1b"; break;   // 1 = L1b
+  }
+  new MXmlNode(Node, "OutputLevel", lvl);
 
   return Node;
 }

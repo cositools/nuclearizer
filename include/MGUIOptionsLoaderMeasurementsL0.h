@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsSaverMeasurementsL0.h
+ * MGUIOptionsLoaderMeasurementsL0.h
  *
  * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsSaverMeasurementsL0__
-#define __MGUIOptionsSaverMeasurementsL0__
+#ifndef __MGUIOptionsLoaderMeasurementsL0__
+#define __MGUIOptionsLoaderMeasurementsL0__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,15 +41,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! UI settings for the L0 measurements saver
-class MGUIOptionsSaverMeasurementsL0 : public MGUIOptions
+//! UI settings for the L0 measurements loader
+class MGUIOptionsLoaderMeasurementsL0 : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsSaverMeasurementsL0(MModule* Module);
+  MGUIOptionsLoaderMeasurementsL0(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsSaverMeasurementsL0();
+  virtual ~MGUIOptionsLoaderMeasurementsL0();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -69,16 +69,17 @@ class MGUIOptionsSaverMeasurementsL0 : public MGUIOptions
 
   // private members:
  private:
-  //! Select which output file to save to
-  MGUIEFileSelector* m_FileSelectorOutput;
+  //! Select the L0 binary file to load (.bin / .dat)
+  MGUIEFileSelector* m_FileSelectorL0;
 
+  //! Select the strip map file
   MGUIEFileSelector* m_FileSelectorStripMap;
 
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsSaverMeasurementsL0, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsLoaderMeasurementsL0, 1) // basic class for dialog windows
 #endif
 
 };
