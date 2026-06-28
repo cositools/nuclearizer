@@ -66,7 +66,7 @@ class MReadOutAssembly : public MReadOutSequence
   void DeleteHits();
 
   //! Set the Reference Time System (RTS) time for this event
-  //! The RTS is mission time in seconds since January 1, 2025 in TT
+  //! The RTS is mission time in seconds since January 1, 2025 in TT (terrestrial time)
   void SetTimeRTS(const MTime& TimeRTS) { m_EventTimeRTS = TimeRTS; }
   //! Return the Reference Time System (RTS) time for this event
   MTime GetTimeRTS() const { return m_EventTimeRTS; }
@@ -268,16 +268,16 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
 
-  //! Parse some content from a line
+  //! Parse a read-out assembly from a line
   bool Parse(MString& Line, int Version = 1);
 
-  //! Stream the content in a way Nuclearizer can read it in again
+  //! Stream the read-out assembly in a way Nuclearizer can read it in again
   bool StreamDat(ostream& S, int Version = 1);
-  //! Stream the content in MEGAlib's evta format
+  //! Stream the read-out assembly in MEGAlib's EVTA format
   void StreamEvta(ostream& S);
-  //! Stream the content in MEGAlib's tra format
+  //! Stream the read-out assembly in MEGAlib's TRA format
   void StreamTra(ostream& S);
-  //! Stream the content in MEGAlib's roa format
+  //! Stream the read-out assembly in MEGAlib's ROA format
   void StreamRoa(ostream& S, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithTemperatures = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
 
   //! Stream the BD flags
@@ -287,13 +287,17 @@ class MReadOutAssembly : public MReadOutSequence
   bool GetNextFromDatFile(MFile& F);
 
   //! Compute the RTS time from known UTC time
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
   MTime ComputeRTSfromUTCTime(MTime UTCTime) const;
   //! Compute the UTC time from known RTS
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
   MTime ComputeUTCfromRTSTime(MTime RTSTime) const;
   //! Compute the RTS time from GPS time
-  MTime ComputeRTSfromGPSTime(MTime GPSTime);
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
+  MTime ComputeRTSfromGPSTime(MTime GPSTime) const;
   //! Compute GPS time from known RTS
-  MTime ComputeGPSfromRTSTime(MTime RTSTime);
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
+  MTime ComputeGPSfromRTSTime(MTime RTSTime) const;
 
 
   // protected methods:
@@ -317,7 +321,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! Unique assembly identifier
   unsigned long m_AssemblyID;
 
-  //! The time of the event in COSI Reference Time System (seconds since Jan 1, 2025) in TT
+  //! The time of the event in COSI Reference Time System (seconds since January 1, 2025) in TT (terrestrial time)
   MTime m_EventTimeRTS;
 
   //! The time of the event in absolute UTC time

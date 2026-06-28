@@ -376,8 +376,8 @@ void MReadOutAssembly::RemoveHit(unsigned int i)
 MTime MReadOutAssembly::ComputeRTSfromUTCTime(MTime UTCTime) const
 {
   // Compute the RTS time if the event only has UTC time defined
-  // RTS is elapsed time since Jan 1, 2025 in TT
-  // TT = UTC + 37 + 32.184
+  // RTS is elapsed time since January 1, 2025 in TT (terrestrial time)
+  // TT (terrestrial time) = TAI (international atomic time) + 32.184 seconds, and TAI = UTC + 37 leap seconds
 
   MTime RTS_Unix = MTime(2025, 1, 1, 0, 0, 0, 0);
   MTime RTS_TT = UTCTime - RTS_Unix + 37 + 32.184;
@@ -392,8 +392,8 @@ MTime MReadOutAssembly::ComputeRTSfromUTCTime(MTime UTCTime) const
 MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime) const
 {
   // Compute the UTC time if the event only has RTS time defined
-  // RTS is elapsed time since Jan 1, 2025 in TT
-  // TT = UTC + 37 + 32.184
+  // RTS is elapsed time since January 1, 2025 in TT (terrestrial time)
+  // TT (terrestrial time) = TAI (international atomic time) + 32.184 seconds, and TAI = UTC + 37 leap seconds
 
   MTime RTS_Unix = MTime(2025, 1, 1, 0, 0, 0, 0);
   MTime UTCTime = RTSTime + RTS_Unix - 37 - 32.184;
@@ -405,12 +405,14 @@ MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MTime MReadOutAssembly::ComputeRTSfromGPSTime(MTime GPSTime)
+MTime MReadOutAssembly::ComputeRTSfromGPSTime(MTime GPSTime) const
 {
-  //! Compute RTS time from GPS by converting to UTC, then call ComputeRTSfromUTCTime
-  //! UTC = GPS - 18
-  MTime GPS_Unix = MTime(1980,1,6,0,0,0,0);
+  // Compute RTS time from GPS by converting to UTC, then call ComputeRTSfromUTCTime
+  // UTC = GPS - 18 seconds (GPS time is currently 18 leap seconds ahead of UTC)
+
+  MTime GPS_Unix = MTime(1980, 1, 6, 0, 0, 0, 0);
   MTime UTCTime = GPS_Unix + GPSTime - 18;
+
   return ComputeRTSfromUTCTime(UTCTime);
 }
 
@@ -418,12 +420,14 @@ MTime MReadOutAssembly::ComputeRTSfromGPSTime(MTime GPSTime)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MTime MReadOutAssembly::ComputeGPSfromRTSTime(MTime RTSTime)
+MTime MReadOutAssembly::ComputeGPSfromRTSTime(MTime RTSTime) const
 {
-  //! Compute GPS time from RTS by calling ComputeUTCfromRTSTime then converting UTC to GPS
-  //! GPS = UTC + 18
-  MTime GPS_Unix = MTime(1980,1,6,0,0,0,0);
+  // Compute GPS time from RTS by calling ComputeUTCfromRTSTime then converting UTC to GPS
+  // GPS = UTC + 18
+
+  MTime GPS_Unix = MTime(1980, 1, 6, 0, 0, 0, 0);
   MTime UTCTime = ComputeUTCfromRTSTime(RTSTime);
+
   return UTCTime - GPS_Unix + 18;
 }
 
@@ -559,7 +563,7 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
 
 bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 {
-  // Stream the content to an ASCII `.dat` file
+  // Stream the read-out assembly to an ASCII `.dat` file
 
   if (Version >= 1 && Version <= 3) {
     S<<"SE"<<endl;
@@ -607,7 +611,7 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 
 void MReadOutAssembly::StreamEvta(ostream& S)
 {
-  // Stream the content in MEGAlib's evta format
+  // Stream the read-out assembly in MEGAlib's EVTA format
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
@@ -642,7 +646,7 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 
 void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
 {
-  // Stream the content in MEGAlib's roa format
+  // Stream the read-out assembly in MEGAlib's ROA format
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
@@ -682,7 +686,7 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
 
 void MReadOutAssembly::StreamTra(ostream& S)
 {
-  // Stream the content in MEGAlib's tra format
+  // Stream the read-out assembly in MEGAlib's TRA format
 
   S<<"SE"<<endl;
 
@@ -786,8 +790,8 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
 
 bool MReadOutAssembly::IsGood() const
 {
-  // Return true if no error flag is set and the event has not been filtered out.
-  // Veto and quality flags do not affect this result.
+  // Return true if no error flag is set and the event has not been filtered out
+  // Veto and quality flags do not affect this result
 
   if (m_EnergyCalibrationError == true) return false;
   if (m_StripPairingError == true) return false;
@@ -805,8 +809,8 @@ bool MReadOutAssembly::IsGood() const
 
 bool MReadOutAssembly::IsBad() const
 {
-  // Return true if any error flag is set or the event has been filtered out.
-  // Veto and quality flags do not affect this result.
+  // Return true if any error flag is set or the event has been filtered out
+  // Veto and quality flags do not affect this result
 
   if (m_EnergyCalibrationError == true) return true;
   if (m_StripPairingError == true) return true;
