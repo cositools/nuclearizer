@@ -120,6 +120,7 @@ MStripHit* MHit::GetStripHit(unsigned int i)
 void MHit::RemoveStripHit(unsigned int i)
 {
   // Remove a strip hit without deleting it
+
   if (i < m_StripHits.size()) {
     m_StripHits.erase(m_StripHits.begin() + i);
   } else {
@@ -236,6 +237,8 @@ void MHit::StreamEvta(ostream& S)
 
 bool MHit::Parse(MString& Line, int Version)
 {
+  // Parse a hit in Nuclearizer's DAT format
+
   Clear();
 
   if (Line.Length() < 3) {
@@ -286,6 +289,8 @@ bool MHit::Parse(MString& Line, int Version)
 
 void MHit::AddOrigins(const vector<int>& Origins)
 {
+  // Set the origins from the simulations (take care of duplicates)
+
   m_Origins.insert(m_Origins.end(), Origins.begin(), Origins.end());
   sort(m_Origins.begin(), m_Origins.end());
   m_Origins.erase(unique(m_Origins.begin(), m_Origins.end()), m_Origins.end());

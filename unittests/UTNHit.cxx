@@ -117,7 +117,7 @@ bool UTNHit::TestDefaultConstruction()
                          H.GetCrossTalkFlag()) && Passed;
   Passed = EvaluateFalse("GetChargeLossFlag()", "default after construction", "ChargeLoss is false after construction",
                          H.GetChargeLossFlag()) && Passed;
-  Passed = EvaluateFalse("GetGuardRingHitFlag()", "default after construction", "GuardRingHit is false after construction",
+  Passed = EvaluateFalse("GetGuardRingHitFlag()", "default after construction", "Guard ring hit is false after construction",
                          H.GetGuardRingHitFlag()) && Passed;
   Passed = EvaluateFalse("GetChargeSharing()", "default after construction", "ChargeSharing is false after construction",
                          H.GetChargeSharing()) && Passed;
@@ -176,7 +176,7 @@ bool UTNHit::TestDefaultConstruction()
                          H.GetCrossTalkFlag()) && Passed;
   Passed = EvaluateFalse("Clear() ChargeLoss", "false restored", "Clear() restores ChargeLoss to false",
                          H.GetChargeLossFlag()) && Passed;
-  Passed = EvaluateFalse("Clear() GuardRingHit", "false restored", "Clear() restores GuardRingHit to false",
+  Passed = EvaluateFalse("Clear() GuardRingHit", "false restored", "Clear() restores guard ring hit to false",
                          H.GetGuardRingHitFlag()) && Passed;
   Passed = EvaluateFalse("Clear() ChargeSharing", "false restored", "Clear() restores ChargeSharing to false",
                          H.GetChargeSharing()) && Passed;
@@ -259,7 +259,7 @@ bool UTNHit::TestGettersSetters()
   Passed = EvaluateFalse("SetCrossTalkFlag/GetCrossTalkFlag", "representative false", "GetCrossTalkFlag returns false after SetCrossTalkFlag(false)",
                          H.GetCrossTalkFlag()) && Passed;
 
-  // GuardRingHit flag
+  // Guard ring hit flag
   H.SetGuardRingHitFlag(true);
   Passed = EvaluateTrue("SetGuardRingHitFlag/GetGuardRingHitFlag", "representative true", "GetGuardRingHitFlag returns true after SetGuardRingHitFlag(true)",
                         H.GetGuardRingHitFlag() == true) && Passed;

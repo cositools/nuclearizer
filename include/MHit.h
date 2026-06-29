@@ -44,6 +44,25 @@ class MHit
   //! Reset all data
   void Clear();
 
+
+  // Strip hits:
+
+  //! Return the number of strip hits
+  unsigned int GetNStripHits() const { return m_StripHits.size(); }
+  //! Return strip hit i or nullptr if i is out of bounds
+  //! Ownership stays elsewhere
+  MStripHit* GetStripHit(unsigned int i);
+  //! Add a strip hit
+  //! Ownership stays elsewhere
+  void AddStripHit(MStripHit* StripHit) { m_StripHits.push_back(StripHit); }
+  //! Remove strip hit i without deleting it
+  void RemoveStripHit(unsigned int i);
+  //! Remove a strip hit without deleting it
+  void RemoveStripHit(MStripHit* StripHit);
+
+
+  // Position:
+
   //! Set the position of the hit
   void SetPosition(const MVector& Position) { m_Position = Position; }
   //! Return the position of the hit
@@ -53,6 +72,9 @@ class MHit
   void SetPositionResolution(const MVector& PositionResolution) { m_PositionResolution = PositionResolution; }
   //! Return the position resolution of the hit
   MVector GetPositionResolution() const { return m_PositionResolution; }
+
+
+  // Energy:
 
   //! Set the energy
   void SetEnergy(double Energy) { m_Energy = Energy; }
@@ -74,24 +96,10 @@ class MHit
   //! Return the high-voltage energy
   double GetHVEnergy() const { return m_HVEnergy; }
 
-  //! Set the quality of the hit
-  void SetHitQuality(double HitQuality) { m_HitQuality = HitQuality; }
-  //! Return the quality of the hit
-  double GetHitQuality() const { return m_HitQuality; }
 
-  //! Return the number of strip hits
-  unsigned int GetNStripHits() const { return m_StripHits.size(); }
-  //! Return strip hit i
-  //! Ownership stays elsewhere
-  MStripHit* GetStripHit(unsigned int i);
-  //! Add a strip hit
-  //! Ownership stays elsewhere
-  void AddStripHit(MStripHit* StripHit) { m_StripHits.push_back(StripHit); }
-  //! Remove strip hit i without deleting it
-  void RemoveStripHit(unsigned int i);
-  //! Remove a strip hit without deleting it
-  void RemoveStripHit(MStripHit* StripHit);
+  // Flags:
 
+  //! REVIEW: Currently unused
   //! Set the cross talk flag
   void SetCrossTalkFlag(bool PossibleCrossTalk) { m_PossibleCrossTalk = PossibleCrossTalk; }
   //! Return the cross talk flag
@@ -102,11 +110,13 @@ class MHit
   //! Return the guard ring hit flag
   bool GetGuardRingHitFlag() const { return m_GuardRingHit; }
 
+  //! REVIEW: Currently unused
   //! Set the charge loss flag
   void SetChargeLossFlag(bool PossibleChargeLoss) { m_PossibleChargeLoss = PossibleChargeLoss; }
   //! Return the charge loss flag
   bool GetChargeLossFlag() const { return m_PossibleChargeLoss; }
 
+  //! REVIEW: These should use low-voltage and high-voltage naming
   //! Set the flag indicating that an x strip was hit multiple times
   void SetStripHitMultipleTimesX(bool StripHitMultipleTimesX) { m_StripHitMultipleTimesX = StripHitMultipleTimesX; }
   //! Return the flag indicating that an x strip was hit multiple times
@@ -124,31 +134,49 @@ class MHit
   void SetChargeSharingHV(bool ChargeSharingHV) { m_ChargeSharingHV = ChargeSharingHV; }
   //! Return the charge sharing flag for the high-voltage side
   bool GetChargeSharingHV() const { return m_ChargeSharingHV; }
+
+  //! REVIEW: Only SetChargeSharingLV and SetChargeSharingHV are used
   //! Set the general charge sharing flag
   void SetChargeSharing(bool ChargeSharing) { m_ChargeSharing = ChargeSharing; }
   //! Return the general charge sharing flag
   bool GetChargeSharing() const { return m_ChargeSharing; }
+
   //! Set the no-depth flag
   void SetNoDepth(bool NoDepth = true) { m_NoDepth = NoDepth; }
   //! Return the no-depth flag
   bool GetNoDepth() const { return m_NoDepth; }
+
+  //! REVIEW: This might be left over from greedy strip pairing
   //! Set the flag indicating that this hit uses a non-dominant neighbor strip
   void SetIsNondominantNeighborStrip(bool IsNonDominantNeighborStrip = true) { m_IsNonDominantNeighborStrip = IsNonDominantNeighborStrip; }
   //! Return the flag indicating that this hit uses a non-dominant neighbor strip
   bool GetIsNondominantNeighborStrip() const { return m_IsNonDominantNeighborStrip; }
+
+  //! REVIEW: Currently unused
+  //! Set the quality of the hit
+  void SetHitQuality(double HitQuality) { m_HitQuality = HitQuality; }
+  //! Return the quality of the hit
+  double GetHitQuality() const { return m_HitQuality; }
+
+
+  // Parsing / Streaming:
+
+  //! Parse a hit in Nuclearizer's DAT format
+  bool Parse(MString& Line, int Version = 1);
+  //! Stream the hit in Nuclearizer's DAT format
+  bool StreamDat(ostream& S, int Version = 1);
+  //! Stream the hit in MEGAlib's EVTA format
+  void StreamEvta(ostream& S);
+
+
+  // Simulation:
 
   //! Set the origins from the simulations (take care of duplicates)
   void AddOrigins(const vector<int>& Origins);
   //! Get the origins from the simulation
   vector<int> GetOrigins() const { return m_Origins; }
 
-  //! Stream the hit in a way Nuclearizer can read it in again
-  bool StreamDat(ostream& S, int Version = 1);
-  //! Stream the hit in MEGAlib's EVTA format
-  void StreamEvta(ostream& S);
 
-  //! Parse a hit from a line
-  bool Parse(MString& Line, int Version = 1);
 
   // private methods:
  private:
