@@ -83,15 +83,16 @@ FRETALON_LIBS         := $(addprefix $(LB)/,$(notdir $(FRETALON_CXX_FILES:.cxx=.
 FRETALON_DEP_FILES    := $(FRETALON_LIBS:.o=.d)
 
 # Nuclearizer library 
-NUCLEARIZER            := $(TOPLEVEL)
-NUCLEARIZER_DIR        := $(NUCLEARIZER)
-NUCLEARIZER_PRG        := $(BN)/nuclearizer
-NUCLEARIZER_CXX_MAIN   := $(NUCLEARIZER_DIR)/src/MNuclearizerMain.cxx
-NUCLEARIZER_CXX_FILES  := $(wildcard $(NUCLEARIZER_DIR)/src/*.cxx)
-NUCLEARIZER_CXX_FILES  := $(filter-out $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_DIR)/src/MModuleTemplate.cxx,$(NUCLEARIZER_CXX_FILES))
-NUCLEARIZER_LIBS       := $(addprefix $(LB)/,$(notdir $(NUCLEARIZER_CXX_FILES:.cxx=.o)))
-NUCLEARIZER_DEP_FILES  := $(NUCLEARIZER_LIBS:.o=.d)
-NUCLEARIZER_H_FILES    := $(addprefix $(NUCLEARIZER)/include/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
+NUCLEARIZER              := $(TOPLEVEL)
+NUCLEARIZER_DIR          := $(NUCLEARIZER)
+NUCLEARIZER_PRG          := $(BN)/nuclearizer
+NUCLEARIZER_CXX_MAIN     := $(NUCLEARIZER_DIR)/src/MNuclearizerMain.cxx
+NUCLEARIZER_CXX_FILTERED := $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_DIR)/src/MModuleTemplate.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSingleDet.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSMEX.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSingleDet.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSMEX.cxx $(NUCLEARIZER_DIR)/src/MGUIOptionsLoaderSimulations.cxx $(NUCLEARIZER_DIR)/src/MGUIOptionsDEESMEX.cxx
+NUCLEARIZER_CXX_FILES    := $(wildcard $(NUCLEARIZER_DIR)/src/*.cxx)
+NUCLEARIZER_CXX_FILES    := $(filter-out $(NUCLEARIZER_CXX_FILTERED),$(NUCLEARIZER_CXX_FILES))
+NUCLEARIZER_LIBS         := $(addprefix $(LB)/,$(notdir $(NUCLEARIZER_CXX_FILES:.cxx=.o)))
+NUCLEARIZER_DEP_FILES    := $(NUCLEARIZER_LIBS:.o=.d)
+NUCLEARIZER_H_FILES      := $(addprefix $(NUCLEARIZER)/include/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
 
 # Nuclearizer dictionary
 NUCLEARIZER_DICT_NAME=Nuclearizer_Dictionary
