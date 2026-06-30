@@ -1,5 +1,5 @@
 /*
- * StripEnergyThresholdFinder.cpp
+ * StripEnergyThresholdFinder.cxx
  *
  * Author: Jarred Roberts
  * Affiliation: UC San Diego, Department of Astronomy & Astrophysics
