@@ -27,7 +27,7 @@
 h5c++ -O2 StripEnergyThresholdFinder.cxx -o StripEnergyThresholdFinder \
 $(root-config --cflags --libs) \
 -I$MEGALIB/include \
--I~/COSItools/nuclearizer/include \
+-I$NUCLEARIZER/include \
 -L$MEGALIB/lib \
 -lMEGAlib -lNuclearizer -lyaml-cpp
 
