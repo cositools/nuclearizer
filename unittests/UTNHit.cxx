@@ -80,7 +80,7 @@ bool UTNHit::TestDefaultConstruction()
   MHit H;
 
   // Construction calls Clear(), which initialises all fields: numeric fields to sentinels,
-  // collections to empty, bool flags to false, and HitQuality to 0.0.
+  // collections to empty, and bool flags to false.
 
   Passed = EvaluateTrue("GetPosition()", "sentinel after construction", "Position is initialised to g_VectorNotDefined after construction",
                         H.GetPosition() == g_VectorNotDefined) && Passed;
@@ -106,13 +106,10 @@ bool UTNHit::TestDefaultConstruction()
   Passed = Evaluate("GetOrigins()", "empty after construction", "Origins list is empty after construction",
                     (unsigned int) H.GetOrigins().size(), (unsigned int) 0) && Passed;
 
-  Passed = EvaluateNear("GetHitQuality()", "default after construction", "HitQuality is initialised to 0.0 after construction",
-                        H.GetHitQuality(), 0.0, 1e-9) && Passed;
-
-  Passed = EvaluateFalse("GetStripHitMultipleTimesX()", "default after construction", "StripHitMultipleTimesX is false after construction",
-                         H.GetStripHitMultipleTimesX()) && Passed;
-  Passed = EvaluateFalse("GetStripHitMultipleTimesY()", "default after construction", "StripHitMultipleTimesY is false after construction",
-                         H.GetStripHitMultipleTimesY()) && Passed;
+  Passed = EvaluateFalse("GetStripHitMultipleTimesLV()", "default after construction", "StripHitMultipleTimesLV is false after construction",
+                         H.GetStripHitMultipleTimesLV()) && Passed;
+  Passed = EvaluateFalse("GetStripHitMultipleTimesHV()", "default after construction", "StripHitMultipleTimesHV is false after construction",
+                         H.GetStripHitMultipleTimesHV()) && Passed;
   Passed = EvaluateFalse("GetCrossTalkFlag()", "default after construction", "CrossTalk is false after construction",
                          H.GetCrossTalkFlag()) && Passed;
   Passed = EvaluateFalse("GetChargeLossFlag()", "default after construction", "ChargeLoss is false after construction",
@@ -127,8 +124,6 @@ bool UTNHit::TestDefaultConstruction()
                          H.GetChargeSharingHV()) && Passed;
   Passed = EvaluateFalse("GetNoDepth()", "default after construction", "NoDepth is false after construction",
                          H.GetNoDepth()) && Passed;
-  Passed = EvaluateFalse("GetIsNondominantNeighborStrip()", "default after construction", "IsNonDominantNeighborStrip is false after construction",
-                         H.GetIsNondominantNeighborStrip()) && Passed;
 
   // Verify Clear() reinstates sentinels on a populated instance
   H.SetPosition(MVector(1.0, 2.0, 3.0));
@@ -137,18 +132,15 @@ bool UTNHit::TestDefaultConstruction()
   H.SetHVEnergy(311.0);
   H.SetPositionResolution(MVector(0.1, 0.1, 0.1));
   H.SetEnergyResolution(1.5);
-  H.SetHitQuality(0.75);
   H.AddOrigins({4, 7});
   H.SetCrossTalkFlag(true);
   H.SetChargeLossFlag(true);
   H.SetGuardRingHitFlag(true);
-  H.SetChargeSharing(true);
   H.SetChargeSharingLV(true);
   H.SetChargeSharingHV(true);
   H.SetNoDepth(true);
-  H.SetIsNondominantNeighborStrip(true);
-  H.SetStripHitMultipleTimesX(true);
-  H.SetStripHitMultipleTimesY(true);
+  H.SetStripHitMultipleTimesLV(true);
+  H.SetStripHitMultipleTimesHV(true);
   MStripHit SH;
   H.AddStripHit(&SH);
 
@@ -170,8 +162,6 @@ bool UTNHit::TestDefaultConstruction()
                     H.GetNStripHits(), (unsigned int) 0) && Passed;
   Passed = Evaluate("Clear() Origins", "empty restored", "Clear() empties the origins list",
                     (unsigned int) H.GetOrigins().size(), (unsigned int) 0) && Passed;
-  Passed = EvaluateNear("Clear() HitQuality", "zero restored", "Clear() restores HitQuality to 0.0",
-                        H.GetHitQuality(), 0.0, 1e-9) && Passed;
   Passed = EvaluateFalse("Clear() CrossTalk", "false restored", "Clear() restores CrossTalk to false",
                          H.GetCrossTalkFlag()) && Passed;
   Passed = EvaluateFalse("Clear() ChargeLoss", "false restored", "Clear() restores ChargeLoss to false",
@@ -186,12 +176,10 @@ bool UTNHit::TestDefaultConstruction()
                          H.GetChargeSharingHV()) && Passed;
   Passed = EvaluateFalse("Clear() NoDepth", "false restored", "Clear() restores NoDepth to false",
                          H.GetNoDepth()) && Passed;
-  Passed = EvaluateFalse("Clear() IsNonDominantNeighborStrip", "false restored", "Clear() restores IsNonDominantNeighborStrip to false",
-                         H.GetIsNondominantNeighborStrip()) && Passed;
-  Passed = EvaluateFalse("Clear() StripHitMultipleTimesX", "false restored", "Clear() restores StripHitMultipleTimesX to false",
-                         H.GetStripHitMultipleTimesX()) && Passed;
-  Passed = EvaluateFalse("Clear() StripHitMultipleTimesY", "false restored", "Clear() restores StripHitMultipleTimesY to false",
-                         H.GetStripHitMultipleTimesY()) && Passed;
+  Passed = EvaluateFalse("Clear() StripHitMultipleTimesLV", "false restored", "Clear() restores StripHitMultipleTimesLV to false",
+                         H.GetStripHitMultipleTimesLV()) && Passed;
+  Passed = EvaluateFalse("Clear() StripHitMultipleTimesHV", "false restored", "Clear() restores StripHitMultipleTimesHV to false",
+                         H.GetStripHitMultipleTimesHV()) && Passed;
 
   return Passed;
 }
@@ -246,11 +234,6 @@ bool UTNHit::TestGettersSetters()
   Passed = EvaluateNear("SetEnergyResolution/GetEnergyResolution", "representative value", "GetEnergyResolution returns the representative value 2.5 keV",
                         H.GetEnergyResolution(), 2.5, 1e-9) && Passed;
 
-  // HitQuality
-  H.SetHitQuality(0.95);
-  Passed = EvaluateNear("SetHitQuality/GetHitQuality", "representative value", "GetHitQuality returns the representative value 0.95",
-                        H.GetHitQuality(), 0.95, 1e-9) && Passed;
-
   // CrossTalk flag
   H.SetCrossTalkFlag(true);
   Passed = EvaluateTrue("SetCrossTalkFlag/GetCrossTalkFlag", "representative true", "GetCrossTalkFlag returns true after SetCrossTalkFlag(true)",
@@ -275,44 +258,44 @@ bool UTNHit::TestGettersSetters()
   Passed = EvaluateFalse("SetChargeLossFlag/GetChargeLossFlag", "representative false", "GetChargeLossFlag returns false after SetChargeLossFlag(false)",
                          H.GetChargeLossFlag()) && Passed;
 
-  // StripHitMultipleTimesX
-  H.SetStripHitMultipleTimesX(true);
-  Passed = EvaluateTrue("SetStripHitMultipleTimesX/GetStripHitMultipleTimesX", "representative true", "GetStripHitMultipleTimesX returns true after setting true",
-                        H.GetStripHitMultipleTimesX() == true) && Passed;
-  H.SetStripHitMultipleTimesX(false);
-  Passed = EvaluateFalse("SetStripHitMultipleTimesX/GetStripHitMultipleTimesX", "representative false", "GetStripHitMultipleTimesX returns false after setting false",
-                         H.GetStripHitMultipleTimesX()) && Passed;
+  // StripHitMultipleTimesLV
+  H.SetStripHitMultipleTimesLV(true);
+  Passed = EvaluateTrue("SetStripHitMultipleTimesLV/GetStripHitMultipleTimesLV", "representative true", "GetStripHitMultipleTimesLV returns true after setting true",
+                        H.GetStripHitMultipleTimesLV() == true) && Passed;
+  H.SetStripHitMultipleTimesLV(false);
+  Passed = EvaluateFalse("SetStripHitMultipleTimesLV/GetStripHitMultipleTimesLV", "representative false", "GetStripHitMultipleTimesLV returns false after setting false",
+                         H.GetStripHitMultipleTimesLV()) && Passed;
 
-  // StripHitMultipleTimesY
-  H.SetStripHitMultipleTimesY(true);
-  Passed = EvaluateTrue("SetStripHitMultipleTimesY/GetStripHitMultipleTimesY", "representative true", "GetStripHitMultipleTimesY returns true after setting true",
-                        H.GetStripHitMultipleTimesY() == true) && Passed;
-  H.SetStripHitMultipleTimesY(false);
-  Passed = EvaluateFalse("SetStripHitMultipleTimesY/GetStripHitMultipleTimesY", "representative false", "GetStripHitMultipleTimesY returns false after setting false",
-                         H.GetStripHitMultipleTimesY()) && Passed;
+  // StripHitMultipleTimesHV
+  H.SetStripHitMultipleTimesHV(true);
+  Passed = EvaluateTrue("SetStripHitMultipleTimesHV/GetStripHitMultipleTimesHV", "representative true", "GetStripHitMultipleTimesHV returns true after setting true",
+                        H.GetStripHitMultipleTimesHV() == true) && Passed;
+  H.SetStripHitMultipleTimesHV(false);
+  Passed = EvaluateFalse("SetStripHitMultipleTimesHV/GetStripHitMultipleTimesHV", "representative false", "GetStripHitMultipleTimesHV returns false after setting false",
+                         H.GetStripHitMultipleTimesHV()) && Passed;
 
   // ChargeSharingLV
   H.SetChargeSharingLV(true);
   Passed = EvaluateTrue("SetChargeSharingLV/GetChargeSharingLV", "representative true", "GetChargeSharingLV returns true after SetChargeSharingLV(true)",
                         H.GetChargeSharingLV() == true) && Passed;
+  Passed = EvaluateTrue("SetChargeSharingLV/GetChargeSharing", "general flag", "GetChargeSharing returns true if low-voltage charge sharing is true",
+                        H.GetChargeSharing() == true) && Passed;
   H.SetChargeSharingLV(false);
   Passed = EvaluateFalse("SetChargeSharingLV/GetChargeSharingLV", "representative false", "GetChargeSharingLV returns false after SetChargeSharingLV(false)",
                          H.GetChargeSharingLV()) && Passed;
+  Passed = EvaluateFalse("SetChargeSharingLV/GetChargeSharing", "general flag", "GetChargeSharing returns false if both charge sharing flags are false",
+                         H.GetChargeSharing()) && Passed;
 
   // ChargeSharingHV
   H.SetChargeSharingHV(true);
   Passed = EvaluateTrue("SetChargeSharingHV/GetChargeSharingHV", "representative true", "GetChargeSharingHV returns true after SetChargeSharingHV(true)",
                         H.GetChargeSharingHV() == true) && Passed;
+  Passed = EvaluateTrue("SetChargeSharingHV/GetChargeSharing", "general flag", "GetChargeSharing returns true if high-voltage charge sharing is true",
+                        H.GetChargeSharing() == true) && Passed;
   H.SetChargeSharingHV(false);
   Passed = EvaluateFalse("SetChargeSharingHV/GetChargeSharingHV", "representative false", "GetChargeSharingHV returns false after SetChargeSharingHV(false)",
                          H.GetChargeSharingHV()) && Passed;
-
-  // ChargeSharing (general)
-  H.SetChargeSharing(true);
-  Passed = EvaluateTrue("SetChargeSharing/GetChargeSharing", "representative true", "GetChargeSharing returns true after SetChargeSharing(true)",
-                        H.GetChargeSharing() == true) && Passed;
-  H.SetChargeSharing(false);
-  Passed = EvaluateFalse("SetChargeSharing/GetChargeSharing", "representative false", "GetChargeSharing returns false after SetChargeSharing(false)",
+  Passed = EvaluateFalse("SetChargeSharingHV/GetChargeSharing", "general flag", "GetChargeSharing returns false if both charge sharing flags are false",
                          H.GetChargeSharing()) && Passed;
 
   // NoDepth
@@ -322,14 +305,6 @@ bool UTNHit::TestGettersSetters()
   H.SetNoDepth(false);
   Passed = EvaluateFalse("SetNoDepth/GetNoDepth", "representative false", "GetNoDepth returns false after SetNoDepth(false)",
                          H.GetNoDepth()) && Passed;
-
-  // IsNondominantNeighborStrip
-  H.SetIsNondominantNeighborStrip(true);
-  Passed = EvaluateTrue("SetIsNondominantNeighborStrip/GetIsNondominantNeighborStrip", "representative true", "GetIsNondominantNeighborStrip returns true after setting true",
-                        H.GetIsNondominantNeighborStrip() == true) && Passed;
-  H.SetIsNondominantNeighborStrip(false);
-  Passed = EvaluateFalse("SetIsNondominantNeighborStrip/GetIsNondominantNeighborStrip", "representative false", "GetIsNondominantNeighborStrip returns false after setting false",
-                         H.GetIsNondominantNeighborStrip()) && Passed;
 
   return Passed;
 }
@@ -347,6 +322,14 @@ bool UTNHit::TestStripHitManagement()
 
   MHit H;
   Passed = Evaluate("GetNStripHits()", "empty", "GetNStripHits() returns 0 on a fresh MHit",
+                    H.GetNStripHits(), (unsigned int) 0) && Passed;
+
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+
+  // AddStripHit rejects null pointers
+  H.AddStripHit(nullptr);
+  Passed = Evaluate("AddStripHit()", "null pointer ignored", "AddStripHit(nullptr) leaves the strip hit list unchanged",
                     H.GetNStripHits(), (unsigned int) 0) && Passed;
 
   // AddStripHit
@@ -368,7 +351,6 @@ bool UTNHit::TestStripHitManagement()
                         H.GetStripHit(2) == &SH2) && Passed;
 
   // The following calls emit guarded cout diagnostics for expected error paths.
-  int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
 
   // GetStripHit out of bounds returns null and emits a diagnostic

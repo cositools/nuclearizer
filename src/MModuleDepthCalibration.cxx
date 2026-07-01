@@ -767,9 +767,9 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
   }
 
   // If the same strip has multiple hits, this is a bad grade.
-  bool MultiHitX = H->GetStripHitMultipleTimesX();
-  bool MultiHitY = H->GetStripHitMultipleTimesY();
-  if (MultiHitX || MultiHitY) {
+  bool MultiHitLV = H->GetStripHitMultipleTimesLV();
+  bool MultiHitHV = H->GetStripHitMultipleTimesHV();
+  if (MultiHitLV || MultiHitHV) {
     return 5;  
   }
 

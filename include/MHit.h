@@ -54,7 +54,7 @@ class MHit
   MStripHit* GetStripHit(unsigned int i);
   //! Add a strip hit
   //! Ownership stays elsewhere
-  void AddStripHit(MStripHit* StripHit) { m_StripHits.push_back(StripHit); }
+  void AddStripHit(MStripHit* StripHit);
   //! Remove strip hit i without deleting it
   void RemoveStripHit(unsigned int i);
   //! Remove a strip hit without deleting it
@@ -99,32 +99,29 @@ class MHit
 
   // Flags:
 
-  //! REVIEW: Currently unused
-  //! Set the cross talk flag
-  void SetCrossTalkFlag(bool PossibleCrossTalk) { m_PossibleCrossTalk = PossibleCrossTalk; }
-  //! Return the cross talk flag
-  bool GetCrossTalkFlag() const { return m_PossibleCrossTalk; }
+  //! Set the cross-talk flag
+  void SetCrossTalkFlag(bool CrossTalk) { m_CrossTalk = CrossTalk; }
+  //! Return the cross-talk flag
+  bool GetCrossTalkFlag() const { return m_CrossTalk; }
 
-  //! Set the guard ring hit flag
+  //! Set the guard-ring hit flag
   void SetGuardRingHitFlag(bool GuardRingHit) { m_GuardRingHit = GuardRingHit; }
-  //! Return the guard ring hit flag
+  //! Return the guard-ring hit flag
   bool GetGuardRingHitFlag() const { return m_GuardRingHit; }
 
-  //! REVIEW: Currently unused
-  //! Set the charge loss flag
-  void SetChargeLossFlag(bool PossibleChargeLoss) { m_PossibleChargeLoss = PossibleChargeLoss; }
-  //! Return the charge loss flag
-  bool GetChargeLossFlag() const { return m_PossibleChargeLoss; }
+  //! Set the charge-loss flag
+  void SetChargeLossFlag(bool ChargeLoss) { m_ChargeLoss = ChargeLoss; }
+  //! Return the charge-loss flag
+  bool GetChargeLossFlag() const { return m_ChargeLoss; }
 
-  //! REVIEW: These should use low-voltage and high-voltage naming
-  //! Set the flag indicating that an x strip was hit multiple times
-  void SetStripHitMultipleTimesX(bool StripHitMultipleTimesX) { m_StripHitMultipleTimesX = StripHitMultipleTimesX; }
-  //! Return the flag indicating that an x strip was hit multiple times
-  bool GetStripHitMultipleTimesX() const { return m_StripHitMultipleTimesX; }
-  //! Set the flag indicating that a y strip was hit multiple times
-  void SetStripHitMultipleTimesY(bool StripHitMultipleTimesY) { m_StripHitMultipleTimesY = StripHitMultipleTimesY; }
-  //! Return the flag indicating that a y strip was hit multiple times
-  bool GetStripHitMultipleTimesY() const { return m_StripHitMultipleTimesY; }
+  //! Set the flag indicating that a low-voltage strip was hit multiple times
+  void SetStripHitMultipleTimesLV(bool StripHitMultipleTimesLV) { m_StripHitMultipleTimesLV = StripHitMultipleTimesLV; }
+  //! Return the flag indicating that a low-voltage strip was hit multiple times
+  bool GetStripHitMultipleTimesLV() const { return m_StripHitMultipleTimesLV; }
+  //! Set the flag indicating that a high-voltage strip was hit multiple times
+  void SetStripHitMultipleTimesHV(bool StripHitMultipleTimesHV) { m_StripHitMultipleTimesHV = StripHitMultipleTimesHV; }
+  //! Return the flag indicating that a high-voltage strip was hit multiple times
+  bool GetStripHitMultipleTimesHV() const { return m_StripHitMultipleTimesHV; }
 
   //! Set the charge sharing flag for the low-voltage side
   void SetChargeSharingLV(bool ChargeSharingLV) { m_ChargeSharingLV = ChargeSharingLV; }
@@ -134,30 +131,13 @@ class MHit
   void SetChargeSharingHV(bool ChargeSharingHV) { m_ChargeSharingHV = ChargeSharingHV; }
   //! Return the charge sharing flag for the high-voltage side
   bool GetChargeSharingHV() const { return m_ChargeSharingHV; }
-
-  //! REVIEW: Only SetChargeSharingLV and SetChargeSharingHV are used
-  //! Set the general charge sharing flag
-  void SetChargeSharing(bool ChargeSharing) { m_ChargeSharing = ChargeSharing; }
   //! Return the general charge sharing flag
-  bool GetChargeSharing() const { return m_ChargeSharing; }
+  bool GetChargeSharing() const { return m_ChargeSharingLV == true || m_ChargeSharingHV == true; }
 
   //! Set the no-depth flag
   void SetNoDepth(bool NoDepth = true) { m_NoDepth = NoDepth; }
   //! Return the no-depth flag
   bool GetNoDepth() const { return m_NoDepth; }
-
-  //! REVIEW: This might be left over from greedy strip pairing
-  //! Set the flag indicating that this hit uses a non-dominant neighbor strip
-  void SetIsNondominantNeighborStrip(bool IsNonDominantNeighborStrip = true) { m_IsNonDominantNeighborStrip = IsNonDominantNeighborStrip; }
-  //! Return the flag indicating that this hit uses a non-dominant neighbor strip
-  bool GetIsNondominantNeighborStrip() const { return m_IsNonDominantNeighborStrip; }
-
-  //! REVIEW: Currently unused
-  //! Set the quality of the hit
-  void SetHitQuality(double HitQuality) { m_HitQuality = HitQuality; }
-  //! Return the quality of the hit
-  double GetHitQuality() const { return m_HitQuality; }
-
 
   // Parsing / Streaming:
 
@@ -189,6 +169,10 @@ class MHit
 
   // private members:
  private:
+  //! List of strip hits contributing to this hit
+  //! Ownership stays elsewhere
+  vector<MStripHit*> m_StripHits;
+
   //! Position of the hit
   MVector m_Position;
   //! Position resolution of the hit
@@ -196,37 +180,25 @@ class MHit
 
   //! Energy of the hit
   double m_Energy;
-
+  //! Energy resolution of the hit
+  double m_EnergyResolution;
   //! Low-voltage energy of the hit
   double m_LVEnergy;
-
   //! High-voltage energy of the hit
   double m_HVEnergy;
 
-  //! Energy resolution of the hit
-  double m_EnergyResolution;
-
-  //! Quality of the hit
-  double m_HitQuality;
-
-  //! List of strip hits contributing to this hit
-  //! Ownership stays with the caller
-  vector<MStripHit*> m_StripHits;
-
-  //! Flag indicating possible cross talk
-  bool m_PossibleCrossTalk;
-  //! Flag indicating possible charge loss
-  bool m_PossibleChargeLoss;
+  //! Flag indicating cross talk
+  bool m_CrossTalk;
   //! Flag indicating that this hit contains a guard ring strip
   bool m_GuardRingHit;
+  //! Flag indicating charge loss
+  bool m_ChargeLoss;
 
-  //! Flag indicating that this hit contains an x strip hit multiple times
-  bool m_StripHitMultipleTimesX;
-  //! Flag indicating that this hit contains a y strip hit multiple times
-  bool m_StripHitMultipleTimesY;
+  //! Flag indicating that this hit contains a low-voltage strip hit multiple times
+  bool m_StripHitMultipleTimesLV;
+  //! Flag indicating that this hit contains a high-voltage strip hit multiple times
+  bool m_StripHitMultipleTimesHV;
 
-  //! Flag indicating that this hit contains charge sharing
-  bool m_ChargeSharing;
   //! Flag indicating that this hit contains charge sharing on the low-voltage side
   bool m_ChargeSharingLV;
   //! Flag indicating that this hit contains charge sharing on the high-voltage side
@@ -236,17 +208,13 @@ class MHit
   //! This can happen when the pixel depth was uncalibrated, the hit was mapped too far out of the detector, or timing data was missing
   bool m_NoDepth;
 
-  //! Flag indicating that this hit was made from a charge sharing event using a neighbor strip with the lower energy fraction
-  bool m_IsNonDominantNeighborStrip;
-
   //! Origin interaction IDs from simulations
   vector<int> m_Origins;
 
 
-
 #ifdef ___CLING___
  public:
-  ClassDef(MHit, 0) // no description
+  ClassDef(MHit, 0) // a hit
 #endif
 
 };
