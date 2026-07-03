@@ -263,20 +263,25 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         int HVStripID = HVSH->GetStripID();
         // int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
-        
+      
 
+        // Get the position value (assumed from event/hit context H)
+        int Zpos = H->GetPosition(); 
+        double ctd_val = static_cast<double>(Zpos);
 
-      int Zpos = H->GetPosition();
-      int Zpos_res = H->GetPositionResolution();
+        // Correct the Low Voltage side energy if the hit pointer exists
+        if (LVSH != nullptr) {
+            double rawLVEnergy = LVSH->GetEnergy(); // Replace with actual getter method for your hit class
+            double correctedLVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawLVEnergy, m_CCEs_LV);
+            LVSH->SetEnergy(correctedLVEnergy);     // Replace with actual setter method for your hit class
+        }
 
-
-          // You can freely read the data now
-      for (size_t i = 0; i < m_Depths.size(); ++i) {
-        double currentDepth = m_Depths[i];
-        double currentCCE = m_CCE_HVs[i];
-        
-        // Do your analysis calculations here...
-      }
+        // Correct the High Voltage side energy if the hit pointer exists
+        if (HVSH != nullptr) {
+            double rawHVEnergy = HVSH->GetEnergy(); // Replace with actual getter method for your hit class
+            double correctedHVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawHVEnergy, m_CCEs_HV);
+            HVSH->SetEnergy(correctedHVEnergy);     // Replace with actual setter method for your hit class
+        }
 
 
       }
