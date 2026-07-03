@@ -65,7 +65,7 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
   AddPreceedingModuleType(MAssembly::c_TACcut, true);
-  AddPreceedingModuleType(MAssembly::c_DepthCalibration, true);
+  AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
 //  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
@@ -113,9 +113,7 @@ bool MModuleTrappingCorrection::Initialize()
     // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
     // If using the card cage at UCSD, default to DetID=11.
     unsigned int DetID = i;
-    if (m_UCSDOverride == true) {
-      DetID = 11;
-    }
+
 
     MDDetector* det = DetList[i];
     vector<string> DetectorNames;
@@ -125,20 +123,9 @@ bool MModuleTrappingCorrection::Initialize()
         string det_name = vol->GetName().GetString();
         if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
           DetectorNames.push_back(det_name);
-          m_Thicknesses[DetID] = 2 * (det->GetStructuralSize().GetZ());
-          MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
-          m_XPitches[DetID] = strip->GetPitchX();
-          m_YPitches[DetID] = strip->GetPitchY();
-          m_NXStrips[DetID] = strip->GetNStripsX();
-          m_NYStrips[DetID] = strip->GetNStripsY();
 
           if (g_Verbosity >= c_Info) {
             cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
-            cout << "Detector thickness: " << m_Thicknesses[DetID] << endl;
-            cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
-            cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
-            cout << "X strip pitch: " << m_XPitches[DetID] << endl;
-            cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
           }
           m_DetectorIDs.push_back(DetID);
           m_Detectors[DetID] = det;
@@ -205,7 +192,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   if (Event->GetGuardRingVeto() == true) {
     //TODO: Handle events with GR vetos    
     
-    Event->SetTrappingCorrectionError("GR Veto");
+    // Event->SetTrappingCorrectionError("GR Veto");
     return false;
   
   } else {
@@ -222,22 +209,22 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       // GRADE=-1 is an error. Break from the loop and continue.
       if (Grade < 0){
         H->SetNoDepth();
-        Event->SetTrappingCorrectionError("Error in Trapping Correction");
-        if (Grade == -1) {
-          ++m_ErrorSH;
-        } else if (Grade == -2) {
-          ++m_ErrorNullSH;
-        } else if (Grade == -3) {
-          ++m_ErrorNoE;
-        }
-      } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
+        // // Event->SetTrappingCorrectionError("Error in Trapping Correction");
+        // if (Grade == -1) {
+        //   ++m_ErrorSH;
+        // } else if (Grade == -2) {
+        //   ++m_ErrorNullSH;
+        // } else if (Grade == -3) {
+        //   ++m_ErrorNoE;
+        // }
+      } else if (Grade < 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
         H->SetNoDepth();
-        Event->SetTrappingCorrectionError("Multiple hits on single strip");
-        if (Grade==5) {
-          ++m_Error5;
-        } else if (Grade==6) {
-          ++m_Error6;
-        }
+        // // Event->SetTrappingCorrectionError("Multiple hits on single strip");
+        // if (Grade==5) {
+        //   ++m_Error5;
+        // } else if (Grade==6) {
+        //   ++m_Error6;
+        // }
       } else { // If the Grade is 0-4, we can handle it.
 
         // Get the position from the depth cal. If error is thrown, record and no depth.
@@ -266,7 +253,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       
 
         // Get the position value (assumed from event/hit context H)
-        int Zpos = H->GetPosition(); 
+        double Zpos = H->GetPosition().GetZ();
         double ctd_val = static_cast<double>(Zpos);
 
         // Correct the Low Voltage side energy if the hit pointer exists
@@ -334,8 +321,8 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
   // Clear existing array data before loading new files
   m_Depths.clear();
-  m_CCE_HVs.clear();
-  m_CCEs_LVs.clear();
+  m_CCEs_HV.clear();
+  m_CCEs_LV.clear();
 
   MString Line;
   int ValidLineCount = 0;
@@ -374,8 +361,8 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
       // Step 3: Read the rest of the rows into your depth and CCE HV arrays
       if (Tokens.size() == 3) {
         m_Depths.push_back(Tokens[0].ToDouble());
-        m_CCE_HVs.push_back(Tokens[1].ToDouble());
-        m_CCEs_LVs.push_back(Tokens[2].ToDouble())
+        m_CCEs_HV.push_back(Tokens[1].ToDouble());
+        m_CCEs_LV.push_back(Tokens[2].ToDouble());
         ValidLineCount++;
       }
     }
@@ -561,13 +548,13 @@ int MModuleTrappingCorrection::GetHitGrade(MHit* H){
 /////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleTrappingCorrection::ShowOptionsGUI()
-{
-  // Show the options GUI - or do nothing
-  MGUIOptionsTrappingCorrection* Options = new MGUIOptionsTrappingCorrection(this);
-  Options->Create();
-  gClient->WaitForUnmap(Options);
-}
+// void MModuleTrappingCorrection::ShowOptionsGUI()
+// {
+//   // Show the options GUI - or do nothing
+//   MGUIOptionsTrappingCorrection* Options = new MGUIOptionsTrappingCorrection(this);
+//   Options->Create();
+//   gClient->WaitForUnmap(Options);
+// }
 
 
 /////////////////////////////////////////////////////////////////////////////////

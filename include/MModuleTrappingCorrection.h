@@ -53,8 +53,8 @@ class MModuleTrappingCorrection : public MModule
   //! Initialize the module
   virtual bool Initialize();
 
-  //! Create the expos
-  virtual void CreateExpos();
+  // //! Create the expos
+  // virtual void CreateExpos();
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
@@ -95,6 +95,12 @@ class MModuleTrappingCorrection : public MModule
   //! Load in the specified SimCCE file
   bool LoadSimCCEFile(MString FName);
 
+  //! Get the Sim-based corrected energy given the CTD value, uncorrected energy, and the sorted Sim CCE values
+  double GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted);
+
+  //! Interpolate a value given x, xp, and fp
+  double Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp);
+
 
 
   // private methods
@@ -111,7 +117,7 @@ class MModuleTrappingCorrection : public MModule
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
-  MGUIExpoTrappingCorrection* m_ExpoTrappingCorrection;
+  // MGUIExpoTrappingCorrection* m_ExpoTrappingCorrection;
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   // unordered_map<int, vector<vector<double>>> m_CTDMap;
@@ -124,7 +130,8 @@ class MModuleTrappingCorrection : public MModule
   double m_ParamB;
   double m_ParamC;
   std::vector<double> m_Depths;
-  std::vector<double> m_CCE_HVs;
+  std::vector<double> m_CCEs_HV;
+  std::vector<double> m_CCEs_LV;
 
 
 
