@@ -335,6 +335,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   // Clear existing array data before loading new files
   m_Depths.clear();
   m_CCE_HVs.clear();
+  m_CCEs_LVs.clear();
 
   MString Line;
   int ValidLineCount = 0;
@@ -371,9 +372,10 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     } 
     else {
       // Step 3: Read the rest of the rows into your depth and CCE HV arrays
-      if (Tokens.size() == 2) {
+      if (Tokens.size() == 3) {
         m_Depths.push_back(Tokens[0].ToDouble());
         m_CCE_HVs.push_back(Tokens[1].ToDouble());
+        m_CCEs_LVs.push_back(Tokens[2].ToDouble())
         ValidLineCount++;
       }
     }
