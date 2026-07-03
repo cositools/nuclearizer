@@ -26,7 +26,7 @@
 
 // Include the header:
 #include "MModuleTrappingCorrection.h"
-#include "MGUIOptionsTrappingCorrection.h"
+// #include "MGUIOptionsTrappingCorrection.h"
 
 // Standard libs:
 
@@ -69,7 +69,7 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
 //  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
-  AddModuleType(MAssembly::c_DepthCorrection);
+  AddModuleType(MAssembly::c_TrappingCorrection);
   AddModuleType(MAssembly::c_PositionDetermiation);
 
   // Set all modules, which can follow this module
@@ -288,7 +288,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
-  // Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
+  Event->SetAnalysisProgress(MAssembly::c_TrappingCorrection);
 
   return true;
 }

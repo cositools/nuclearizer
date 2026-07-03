@@ -30,7 +30,7 @@
 #include "MModuleEnergyCalibration.h"
 #include "MDStrip3D.h"
 #include "MDShapeBRIK.h"
-#include "MGUIExpoTrappingCorrection.h"
+// #include "MGUIExpoTrappingCorrection.h"
 
 // Forward declarations:
 
@@ -62,9 +62,9 @@ class MModuleTrappingCorrection : public MModule
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
-  //! Set filename for coefficients file
+  //! Set filename for SimCCE file
   void SetSimCCEFileName( const MString& FileName) { m_SimCCEFile = FileName; }
-  //! Get filename for coefficients file
+  //! Get filename for SimCCE file
   MString GetSimCCEFileName() const { return m_SimCCEFile; }
 
 
@@ -83,16 +83,16 @@ class MModuleTrappingCorrection : public MModule
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
   MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
   
-  //! Retrieve the appropriate Depth values given the DetID
-  vector<double> GetDepth(int DetID);
+  // //! Retrieve the appropriate Depth values given the DetID
+  // vector<double> GetDepth(int DetID);
   
-  //! Retrieve the appropriate CTD values given the DetID and Grade
-  vector<double> GetCTD(int DetID, int Grade);
+  // //! Retrieve the appropriate CTD values given the DetID and Grade
+  // vector<double> GetCTD(int DetID, int Grade);
 
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
 
-  //! Load in the specified coefficients file
+  //! Load in the specified SimCCE file
   bool LoadSimCCEFile(MString FName);
 
 
