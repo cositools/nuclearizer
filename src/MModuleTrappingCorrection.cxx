@@ -270,7 +270,13 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       int Zpos_res = H->GetPositionResolution();
 
 
-
+          // You can freely read the data now
+      for (size_t i = 0; i < m_Depths.size(); ++i) {
+        double currentDepth = m_Depths[i];
+        double currentCCE = m_CCE_HVs[i];
+        
+        // Do your analysis calculations here...
+      }
 
 
       }
@@ -380,6 +386,47 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   return true;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted) {
+
+  // 2. Look up the simulation CCE baseline using the helper
+  double cce_base = Interpolate(ctd_val, m_Depths, sim_cce_sorted);
+
+  // 3. Evaluate the physical trapping function model using class global popt variables
+  double expected_centroid_scaled = m_ParamA * (1.0 - m_ParamB * (1.0 - cce_base)) * (1.0 - m_ParamC * (1.0 - cce_base));
+
+  // 4. Prevent division-by-zero or non-physical negative values
+  if (expected_centroid_scaled <= 0.0) {
+      return uncorrected_energy;
+  }
+
+  // 5. Reconstruct the true un-trapped energy deposition
+  return uncorrected_energy / expected_centroid_scaled;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+double MModuleTrappingCorrection::Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp) {
+  if (xp.empty()) return 0.0;
+  if (x <= xp.front()) return fp.front();
+  if (x >= xp.back()) return fp.back();
+
+  // Find the first element which is greater than or equal to x
+  auto it = std::lower_bound(xp.begin(), xp.end(), x);
+  size_t idx = std::distance(xp.begin(), it);
+
+  // Linear interpolation formula
+  double x0 = xp[idx - 1];
+  double x1 = xp[idx];
+  double y0 = fp[idx - 1];
+  double y1 = fp[idx];
+
+  return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+}
 
 /////////////////////////////////////////////////////////////////////////////////
 
