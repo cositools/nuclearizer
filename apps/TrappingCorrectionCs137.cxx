@@ -548,7 +548,7 @@ bool TrappingCorrectionCs137::Analyze()
     for (auto const& [DetID, FullHVHist] : FullDetHVEnergyHistograms[c]) {
   
       TH1D* HVHist = FullDetHVEnergyHistograms[c][DetID];
-      // TH1D* LVHist = FullDetLVEnergyHistograms[c][DetID];
+      TH1D* LVHist = FullDetLVEnergyHistograms[c][DetID];
 
       if (HVHist->Integral() > g_MinCounts) {
 
