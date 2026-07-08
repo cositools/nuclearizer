@@ -502,7 +502,7 @@ bool TrappingCorrectionCs137::Analyze()
 
                   // TH1D* FullCTDHist = FullDetCTDHistograms[CTDBin][DetID];
                   TH1D* FullHVHist  = FullDetHVEnergyHistograms[CTDBin][DetID];
-                  // TH1D* FullLVHist  = FullDetLVEnergyHistograms[CTDBin][DetID];
+                  TH1D* FullLVHist  = FullDetLVEnergyHistograms[CTDBin][DetID];
 
                   // if (FullCTDHist == nullptr) {
                   //   char name[128]; sprintf(name, "CTD_Detector%d_bin%d", DetID, CTDBin);
@@ -514,15 +514,15 @@ bool TrappingCorrectionCs137::Analyze()
                     FullHVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
                     FullDetHVEnergyHistograms[CTDBin][DetID] = FullHVHist;
                   }
-                  // if (FullLVHist == nullptr) {
-                  //   char name[128]; sprintf(name, "LV_Detector%d_bin%d", DetID, CTDBin);
-                  //   FullLVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
-                  //   FullDetLVEnergyHistograms[CTDBin][DetID] = FullLVHist;
-                  // }
+                  if (FullLVHist == nullptr) {
+                    char name[128]; sprintf(name, "LV_Detector%d_bin%d", DetID, CTDBin);
+                    FullLVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
+                    FullDetLVEnergyHistograms[CTDBin][DetID] = FullLVHist;
+                  }
 
                   // FullCTDHist->Fill(CTD);
                   FullHVHist->Fill(HVEnergy);
-                  // FullLVHist->Fill(LVEnergy);
+                  FullLVHist->Fill(LVEnergy);
                 }
               }
             }
@@ -559,8 +559,8 @@ bool TrappingCorrectionCs137::Analyze()
         TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
         TFitResultPtr HVFit = HVHist->Fit(PhotopeakFunctionHV, "S", "", 645, 675);
 
-        // TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
-        // TFitResultPtr LVFit = LVHist->Fit(PhotopeakFunctionLV, "S", "", 645, 675);
+        TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
+        TFitResultPtr LVFit = LVHist->Fit(PhotopeakFunctionLV, "S", "", 645, 675);
 
         if ((HVFit >= 0)) {
       
@@ -571,7 +571,8 @@ bool TrappingCorrectionCs137::Analyze()
           // FullDetEndpoints[c][DetID].push_back(CTDFit->Parameter(2));  // Index 0: CTD Centroid
           FullDetEndpoints[c][DetID].push_back(HVFit->Parameter(1));   // Index 1: HV Photopeak Mu
           FullDetEndpoints[c][DetID].push_back(HVFit->ParError(1));   // Index 2: HV Photopeak Mu Error
-          // FullDetEndpoints[c][DetID].push_back(LVFit->Parameter(1));   // Index 2: LV Photopeak Mu
+          FullDetEndpoints[c][DetID].push_back(LVFit->Parameter(1));   // Index 2: LV Photopeak Mu
+          FullDetEndpoints[c][DetID].push_back(LVFit->ParError(1));   // Index 2: HV Photopeak Mu Error
         
 
           // ofstream CTDFitFile(DetID + MString("_CTDFitResult_.txt"));
@@ -601,14 +602,14 @@ bool TrappingCorrectionCs137::Analyze()
 
           MasterFitFile << endl << endl; // Add spacing between different bin entries
           
-          // ofstream LVFitFile(DetID + MString("_CTDbin_") + c + MString("_LVEnergyFitResult_.txt"));
-          // coutbuf = cout.rdbuf();
-          // cout.rdbuf(LVFitFile.rdbuf());
-          // if (LVFit >= 0) {
-          //   LVFit->Print();
-          // }
-          // cout.rdbuf(coutbuf);
-          // LVFitFile.close();
+          ofstream LVFitFile(DetID + MString("_CTDbin_") + c + MString("_LVEnergyFitResult_.txt"));
+          coutbuf = cout.rdbuf();
+          cout.rdbuf(LVFitFile.rdbuf());
+          if (LVFit >= 0) {
+            LVFit->Print();
+          }
+          cout.rdbuf(coutbuf);
+          LVFitFile.close();
 
           // TFile CTDFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_CTDHist_Illum.root"), "recreate");
           // TCanvas* CTDCanvas = new TCanvas();
@@ -626,13 +627,13 @@ bool TrappingCorrectionCs137::Analyze()
           HVHistCanvas->Write();
           HVHistFile.Close();
 
-          // TFile LVHistFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_LVEnergyHist_Illum.root"), "recreate");
-          // TCanvas* LVHistCanvas = new TCanvas();
-          // LVHistCanvas->cd();
-          // LVHist->Draw("Hist");
-          // PhotopeakFunctionLV->Draw("same");
-          // LVHistCanvas->Write();
-          // LVHistFile.Close();
+          TFile LVHistFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_LVEnergyHist_Illum.root"), "recreate");
+          TCanvas* LVHistCanvas = new TCanvas();
+          LVHistCanvas->cd();
+          LVHist->Draw("Hist");
+          PhotopeakFunctionLV->Draw("same");
+          LVHistCanvas->Write();
+          LVHistFile.Close();
 
         } else {
           cout << "Fits failed for CTD bin " << c << " Detector " << DetID << endl;
@@ -652,12 +653,13 @@ bool TrappingCorrectionCs137::Analyze()
   OutputCalFile.open(m_OutFile + MString("_parameters.txt"));
   
   // Updated header matching your request
-  OutputCalFile << "CTD_Bin" << '\t' 
-                << "Det_ID" << '\t' 
-                // << "CTD_Centroid_ns" << '\t' 
+  OutputCalFile << "Det_ID" << '\t' 
+                << "CTD_Bin" << '\t' 
+                << "CTD_Centroid_ns" << '\t' 
                 << "HV_Centroid_keV" << '\t'
-                <<"HV_Centroid_error_keV" << '\t' << endl;
-                // << "LV_Centroid_keV" 
+                <<"HV_Centroid_error_keV" << '\t'
+                << "LV_Centroid_keV" << '\t'
+                <<"LV_Centroid_error_keV" << '\t' << endl;
   cout << "Parameter file set up" << endl;
 
   // Loop systematically over each CTD bin first
@@ -670,23 +672,26 @@ bool TrappingCorrectionCs137::Analyze()
       // double CTDCentroid = 0.0;
       double HVCentroid  = 0.0;
       double HVCentroidError = 0.0;
-      // double LVCentroid  = 0.0;
+      double LVCentroid  = 0.0;
+      double LVCentroidError = 0.0;
 
       // Ensure all 3 parameters (CTD mu, HV mu, LV mu) were successfully saved
       if (FitsVec.size() >= 1) {
         // CTDCentroid = FitsVec[0];
         HVCentroid  = FitsVec[0];
         HVCentroidError = FitsVec[1];
-        // LVCentroid  = FitsVec[2];
+        LVCentroid  = FitsVec[2];
+        LVCentroidError = FitsVec[3];
       }
 
       // Write row entries corresponding purely to the detector level measurements
-      OutputCalFile << c << '\t'
-                    << DetID << '\t'
+      OutputCalFile << DetID << '\t'
+                    << c << '\t'
                     // << CTDCentroid << '\t'
                     << HVCentroid << '\t' 
-                    << HVCentroidError << '\t' << endl;
-                    // << LVCentroid 
+                    << HVCentroidError << '\t' 
+                    << LVCentroid  << '\t'
+                    << LVCentroidError << '\t' << endl;
     }
   }
 
