@@ -655,7 +655,7 @@ bool TrappingCorrectionCs137::Analyze()
   // Updated header matching your request
   OutputCalFile << "Det_ID" << '\t' 
                 << "CTD_Bin" << '\t' 
-                << "CTD_Centroid_ns" << '\t' 
+                << "CTD_BinMidpoint_ns" << '\t' 
                 << "HV_Centroid_keV" << '\t'
                 <<"HV_Centroid_error_keV" << '\t'
                 << "LV_Centroid_keV" << '\t'
@@ -664,12 +664,15 @@ bool TrappingCorrectionCs137::Analyze()
 
   // Loop systematically over each CTD bin first
   for (int c = 0; c < NCTDBins; ++c) {
+
     cout << "Writing output tracking parameters for CTD bin: " << c << endl;
+
+    // Calculate the exact midpoint of this specific variable CTD bin
+    double ctdBinMidpoint = (g_CTDBinEdges[c] + g_CTDBinEdges[c + 1]) / 2.0;
 
     // Loop over the detectors found inside this specific CTD bin
     for (auto const& [DetID, FitsVec] : FullDetEndpoints[c]) {
       
-      // double CTDCentroid = 0.0;
       double HVCentroid  = 0.0;
       double HVCentroidError = 0.0;
       double LVCentroid  = 0.0;
@@ -677,7 +680,6 @@ bool TrappingCorrectionCs137::Analyze()
 
       // Ensure all 3 parameters (CTD mu, HV mu, LV mu) were successfully saved
       if (FitsVec.size() >= 1) {
-        // CTDCentroid = FitsVec[0];
         HVCentroid  = FitsVec[0];
         HVCentroidError = FitsVec[1];
         LVCentroid  = FitsVec[2];
@@ -687,7 +689,7 @@ bool TrappingCorrectionCs137::Analyze()
       // Write row entries corresponding purely to the detector level measurements
       OutputCalFile << DetID << '\t'
                     << c << '\t'
-                    // << CTDCentroid << '\t'
+                    << ctdBinMidpoint << '\t'
                     << HVCentroid << '\t' 
                     << HVCentroidError << '\t' 
                     << LVCentroid  << '\t'
@@ -696,104 +698,7 @@ bool TrappingCorrectionCs137::Analyze()
   }
 
   OutputCalFile.close();
-
-  // --------------------------------------------------------------------------
-  // Generate and Export Linear Splines for Charge Trapping Corrections
-  // --------------------------------------------------------------------------
-  
-  ofstream SplineOutputFile;
-  SplineOutputFile.open(m_OutFile + MString("_splines.txt"));
-  
-  // Write a clean header explaining the piece-wise linear polynomial coefficients:
-  // S_i(x) = y + b*(x - x_i)
-  SplineOutputFile << "# Spline Piece-wise Coefficients for Trapping Correction" << endl;
-  SplineOutputFile << "Det_ID" << '\t' 
-                   << "Interval_i" << '\t' 
-                   << "X_i_(CTD_ns_BinMidpoint)" << '\t' 
-                   << "Y_i_(HV_Centroid)" << '\t' 
-                   << "b_coeff_(slope)" << endl;
-
-  // Group our points by Detector ID so we can sort them by CTD value
-  // Map structure: [DetID] -> vector of pairs (CTD_Bin_Midpoint, HV_Centroid)
-  map<int, vector<pair<double, double>>> DetPointsMap;
-
-  for (int c = 0; c < NCTDBins; ++c) {
-    // Calculate the exact midpoint of this specific variable CTD bin
-    double ctdBinMidpoint = (g_CTDBinEdges[c] + g_CTDBinEdges[c + 1]) / 2.0;
-
-    for (auto const& [DetID, FitsVec] : FullDetEndpoints[c]) {
-      // We only care that the energy photopeak successfully fit (FitsVec[1] is HV mu)
-      if (FitsVec.size() >= 1) {
-        double hvCentroid = FitsVec[0]; 
-        
-        // Push the calculated geometric midpoint instead of the fitted CTD value
-        DetPointsMap[DetID].push_back(make_pair(ctdBinMidpoint, hvCentroid));
-      }
-    }
-  }
-
-  // Find Absolute Global Min and Max CTD values ---
-  double globalMinCTD = 1e9;  // Initialize to a large positive number
-  double globalMaxCTD = -1e9; // Initialize to a large negative number
-  bool foundAnyPoints = false;
-
-  for (auto const& [DetID, PointsVec] : DetPointsMap) {
-    for (auto const& pt : PointsVec) {
-      double ctdVal = pt.first;
-      if (ctdVal < globalMinCTD) globalMinCTD = ctdVal;
-      if (ctdVal > globalMaxCTD) globalMaxCTD = ctdVal;
-      foundAnyPoints = true;
-    }
-  }
-
-  // If no data points were mapped at all, fall back safely to global system limits
-  if (!foundAnyPoints) {
-    globalMinCTD = g_MinCTD;
-    globalMaxCTD = g_MaxCTD;
-  }
-
-  // Loop through each detector to compute linear connectors
-  for (auto& [DetID, PointsVec] : DetPointsMap) {
-    
-    // Sort data points in ascending X (CTD Midpoint) order
-    sort(PointsVec.begin(), PointsVec.end(), [](const pair<double, double>& a, const pair<double, double>& b) {
-      return a.first < b.first;
-    });
-
-    int nPoints = PointsVec.size();
-    if (nPoints < 2) {
-      cout << "Warning: Detector " << DetID << " has too few data points (" << nPoints << ") to form a linear interpolation." << endl;
-      continue; 
-    }
-
-    cout << "Successfully generated linear spline for Detector " << DetID << " using " << nPoints << " points (Bin Midpoints)." << endl;
-
-    // Direct algebraic evaluation of intervals (connecting point i to i+1)
-    for (int i = 0; i < nPoints - 1; ++i) {
-      double x_i = PointsVec[i].first;      // This is now the exact midpoint of interval i
-      double y_i = PointsVec[i].second;
-      
-      double x_next = PointsVec[i+1].first; // Exact midpoint of interval i+1
-      double y_next = PointsVec[i+1].second;
-      
-      // Calculate constant linear slope: dy / dx
-      double b = 0.0;
-      if (x_next != x_i) {
-        b = (y_next - y_i) / (x_next - x_i);
-      }
-
-      // Save everything cleanly to the file matching your exact format request
-      SplineOutputFile << "# Global Dataset Limits: Min_CTD = " << globalMinCTD << " ns, Max_CTD = " << globalMaxCTD << " ns" << endl;
-      SplineOutputFile << DetID << '\t'
-                       << i << '\t'
-                       << x_i << '\t'
-                       << y_i << '\t'
-                       << b << endl;
-    }
-  }
-
-  SplineOutputFile.close();
-  cout << "Linear spline calibration file saved successfully." << endl;  
+  cout << "Parameters file saved successfully." << endl;
   watch.Stop();
   cout << "total time (s): " << watch.CpuTime() << endl;
  
