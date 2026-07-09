@@ -76,7 +76,7 @@ class MGUIOptionsTrappingCorrection : public MGUIOptions
  private:
 
   //! Select which file to load
-  MGUIEFileSelector* m_FileSelector;
+  MGUIEFileSelector* m_SimCCEFileSelector;
 
   // //! Radio button for ignoring the slow threshold cut
   // TGRadioButton* m_SlowThresholdCutRBIgnore;

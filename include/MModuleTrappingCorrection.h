@@ -27,10 +27,15 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
+// #include "MModuleTrappingCorrection.h"
+#include "MGUIEEntry.h"
+
+
+
+// Nuclearizer libs:
+#include "MGUIExpoPlotSpectrum.h"
 #include "MModuleEnergyCalibration.h"
-#include "MDStrip3D.h"
-#include "MDShapeBRIK.h"
-// #include "MGUIExpoTrappingCorrection.h"
+#include "MGUIExpoTrappingCorrection.h"
 
 // Forward declarations:
 
@@ -53,8 +58,8 @@ class MModuleTrappingCorrection : public MModule
   //! Initialize the module
   virtual bool Initialize();
 
-  // //! Create the expos
-  // virtual void CreateExpos();
+  //! Create the expos
+  virtual void CreateExpos();
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
@@ -64,6 +69,7 @@ class MModuleTrappingCorrection : public MModule
 
   //! Set filename for SimCCE file
   void SetSimCCEFileName( const MString& FileName) { m_SimCCEFile = FileName; }
+
   //! Get filename for SimCCE file
   MString GetSimCCEFileName() const { return m_SimCCEFile; }
 
@@ -117,7 +123,7 @@ class MModuleTrappingCorrection : public MModule
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
-  // MGUIExpoTrappingCorrection* m_ExpoTrappingCorrection;
+  MGUIExpoTrappingCorrection* m_ExpoTrappingCorrection;
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   // unordered_map<int, vector<vector<double>>> m_CTDMap;
@@ -138,7 +144,9 @@ class MModuleTrappingCorrection : public MModule
   // private members:
  private:
 
-
+  //! Updated GUI to display the energy histogram
+  MGUIExpoPlotSpectrum* m_ExpoSpectrum;
+  // MGUIExpoPlotSpectrum* m_ExpoSpectrum_LV;
 
 
 #ifdef ___CLING___

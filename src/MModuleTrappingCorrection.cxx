@@ -26,7 +26,6 @@
 
 // Include the header:
 #include "MModuleTrappingCorrection.h"
-// #include "MGUIOptionsTrappingCorrection.h"
 
 // Standard libs:
 
@@ -36,7 +35,12 @@
 #include "TH1.h"
 
 // MEGAlib libs:
+#include "MString.h"
 
+// Nuclearizer libs:
+#include "MGUIOptionsTrappingCorrection.h"
+#include "MGUIExpoPlotSpectrum.h"
+#include "MModuleEnergyCalibration.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -165,22 +169,21 @@ bool MModuleTrappingCorrection::Initialize()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// void MModuleTrappingCorrection::CreateExpos()
-// {
-//   // Create all expos
+void MModuleTrappingCorrection::CreateExpos()
+{
+  // Create all expos
 
-//   if (HasExpos() == true) return;
+  if (HasExpos() == true) return;
 
-//   // Set the histogram display
-//   m_ExpoTrappingCorrection = new MGUIExpoTrappingCorrection(this);
-//   m_ExpoTrappingCorrection->SetDepthHistogramArrangement(&m_DetectorIDs);
-//   for (unsigned int i = 0; i < m_DetectorIDs.size(); ++i){
-//     unsigned int DetID = m_DetectorIDs[i];
-//     double thickness = m_Thicknesses[DetID];
-//     m_ExpoTrappingCorrection->SetDepthHistogramParameters(DetID, 120, -thickness/2.0,thickness/2.0);
-//   }
-//   m_Expos.push_back(m_ExpoTrappingCorrection);
-// }
+  // Set the histogram display
+  m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
+  m_ExpoSpectrum->SetEnergyHistogramParameters(200, 0, 2000);
+  m_Expos.push_back(m_ExpoSpectrum);
+
+//   m_ExpoSpectrum_LV = new MGUIExpoPlotSpectrum(this);
+//   m_ExpoSpectrum_LV->SetEnergyHistogramParameters(200, 0, 2000);
+//   m_Expos.push_back(m_ExpoSpectrum_LV);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -261,6 +264,10 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
             double rawLVEnergy = LVSH->GetEnergy(); // Replace with actual getter method for your hit class
             double correctedLVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawLVEnergy, m_CCEs_LV);
             LVSH->SetEnergy(correctedLVEnergy);     // Replace with actual setter method for your hit class
+
+            if (HasExpos() == true) {
+              m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
+            }
         }
 
         // Correct the High Voltage side energy if the hit pointer exists
@@ -268,6 +275,10 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
             double rawHVEnergy = HVSH->GetEnergy(); // Replace with actual getter method for your hit class
             double correctedHVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawHVEnergy, m_CCEs_HV);
             HVSH->SetEnergy(correctedHVEnergy);     // Replace with actual setter method for your hit class
+
+            if (HasExpos() == true) {
+              m_ExpoSpectrum->AddEnergyFinal(correctedHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
+            }
         }
 
 
@@ -548,13 +559,13 @@ int MModuleTrappingCorrection::GetHitGrade(MHit* H){
 /////////////////////////////////////////////////////////////////////////////////
 
 
-// void MModuleTrappingCorrection::ShowOptionsGUI()
-// {
-//   // Show the options GUI - or do nothing
-//   MGUIOptionsTrappingCorrection* Options = new MGUIOptionsTrappingCorrection(this);
-//   Options->Create();
-//   gClient->WaitForUnmap(Options);
-// }
+void MModuleTrappingCorrection::ShowOptionsGUI()
+{
+  // Show the options GUI - or do nothing
+  MGUIOptionsTrappingCorrection* Options = new MGUIOptionsTrappingCorrection(this);
+  Options->Create();
+  gClient->WaitForUnmap(Options);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////
