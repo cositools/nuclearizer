@@ -39,6 +39,7 @@
 
 // Nuclearizer libs:
 #include "MGUIOptionsTrappingCorrection.h"
+#include "MGUIExpoTrappingCorrection.h"
 #include "MGUIExpoPlotSpectrum.h"
 #include "MModuleEnergyCalibration.h"
 
@@ -70,11 +71,12 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
   AddPreceedingModuleType(MAssembly::c_TACcut, true);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
+  AddPreceedingModuleType(MAssembly::c_DepthCorrection, true);
 //  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_TrappingCorrection);
-  AddModuleType(MAssembly::c_PositionDetermiation);
+  // AddModuleType(MAssembly::c_PositionDetermiation);
 
   // Set all modules, which can follow this module
   AddSucceedingModuleType(MAssembly::c_NoRestriction);
@@ -180,9 +182,7 @@ void MModuleTrappingCorrection::CreateExpos()
   m_ExpoSpectrum->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoSpectrum);
 
-//   m_ExpoSpectrum_LV = new MGUIExpoPlotSpectrum(this);
-//   m_ExpoSpectrum_LV->SetEnergyHistogramParameters(200, 0, 2000);
-//   m_Expos.push_back(m_ExpoSpectrum_LV);
+
 }
 
 
@@ -220,7 +220,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         // } else if (Grade == -3) {
         //   ++m_ErrorNoE;
         // }
-      } else if (Grade < 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
+      } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
         H->SetNoDepth();
         // // Event->SetTrappingCorrectionError("Multiple hits on single strip");
         // if (Grade==5) {
@@ -262,7 +262,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         // Correct the Low Voltage side energy if the hit pointer exists
         if (LVSH != nullptr) {
             double rawLVEnergy = LVSH->GetEnergy(); // Replace with actual getter method for your hit class
-            double correctedLVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawLVEnergy, m_CCEs_LV);
+            double correctedLVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawLVEnergy, m_CCEs_LV, m_ParamA_LV, m_ParamB_LV, m_ParamC_LV);
             LVSH->SetEnergy(correctedLVEnergy);     // Replace with actual setter method for your hit class
 
             if (HasExpos() == true) {
@@ -273,7 +273,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         // Correct the High Voltage side energy if the hit pointer exists
         if (HVSH != nullptr) {
             double rawHVEnergy = HVSH->GetEnergy(); // Replace with actual getter method for your hit class
-            double correctedHVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawHVEnergy, m_CCEs_HV);
+            double correctedHVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawHVEnergy, m_CCEs_HV, m_ParamA_HV, m_ParamB_HV, m_ParamC_HV);
             HVSH->SetEnergy(correctedHVEnergy);     // Replace with actual setter method for your hit class
 
             if (HasExpos() == true) {
@@ -294,6 +294,61 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 
 /////////////////////////////////////////////////////////////////////////////////
 
+void MModuleTrappingCorrection::Finalize()
+{
+  // 1. Let the base class handle its core finalization routine first
+  MModule::Finalize();
+
+  if (m_ExpoSpectrum == nullptr) {
+    cout << "ERROR in MModuleTrappingCorrection::Finalize: Expo plot spectrum is null." << endl;
+    return;
+  }
+
+  // 2. Locate the histograms dynamically from ROOT's global memory map
+  TH1D* histLV = (TH1D*) gDirectory->Get("EnergyHistogramLVFinal");
+  TH1D* histHV = (TH1D*) gDirectory->Get("EnergyHistogramHVFinal");
+
+  if (histLV == nullptr) histLV = (TH1D*) gDirectory->Get("m_EnergyHistogramLVFinal");
+  if (histHV == nullptr) histHV = (TH1D*) gDirectory->Get("m_EnergyHistogramHVFinal");
+
+  // 3. Perform the analytical fit for the Low Voltage spectrum
+  if (histLV != nullptr && histLV->GetEntries() > 0) {
+    TF1* fitFuncLV = GeneratePhotopeakFunction();
+    fitFuncLV->SetParameter("Amplitude", histLV->GetBinContent(histLV->GetMaximumBin()));
+    
+    histLV->Fit(fitFuncLV, "RQ");
+    
+    double mu = fitFuncLV->GetParameter("x0 (Mu)");
+    double fwhm = 2.35482 * fitFuncLV->GetParameter("Sigma Gauss");
+    
+    if (g_Verbosity >= c_Info) {
+      cout << m_XmlTag << " --- LV FINAL SPECTRUM FIT ---" << endl;
+      cout << "  Centroid (Mu): " << mu << " keV | FWHM: " << fwhm << " keV" << endl;
+    }
+    delete fitFuncLV;
+  }
+
+  // 4. Perform the analytical fit for the High Voltage spectrum
+  if (histHV != nullptr && histHV->GetEntries() > 0) {
+    TF1* fitFuncHV = GeneratePhotopeakFunction();
+    fitFuncHV->SetParameter("Amplitude", histHV->GetBinContent(histHV->GetMaximumBin()));
+    
+    histHV->Fit(fitFuncHV, "RQ");
+    
+    double mu = fitFuncHV->GetParameter("x0 (Mu)");
+    double fwhm = 2.35482 * fitFuncHV->GetParameter("Sigma Gauss");
+    
+    if (g_Verbosity >= c_Info) {
+      cout << m_XmlTag << " --- HV FINAL SPECTRUM FIT ---" << endl;
+      cout << "  Centroid (Mu): " << mu << " keV | FWHM: " << fwhm << " keV" << endl;
+    }
+    delete fitFuncHV;
+  }
+
+  return; // Clean exit for a void function
+}
+
+/////////////////////////////////////////////////////////////////////////////////
 
 MStripHit* MModuleTrappingCorrection::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
 {
@@ -353,10 +408,13 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
     if (ValidLineCount == 0) {
       // Step 1: Read parameters A, B, and C from the first line
-      if (Tokens.size() == 3) {
-        m_ParamA = Tokens[0].ToDouble();
-        m_ParamB = Tokens[1].ToDouble();
-        m_ParamC = Tokens[2].ToDouble();
+      if (Tokens.size() == 6) {
+        m_ParamA_HV = Tokens[0].ToDouble();
+        m_ParamB_HV = Tokens[1].ToDouble();
+        m_ParamC_HV = Tokens[2].ToDouble();
+        m_ParamA_LV = Tokens[3].ToDouble();
+        m_ParamB_LV = Tokens[4].ToDouble();
+        m_ParamC_LV = Tokens[5].ToDouble();
         ValidLineCount++;
       } else {
         cout << "ERROR in LoadSimCCEFile: Expected 3 parameters (A,B,C) on the first line." << endl;
@@ -383,8 +441,8 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
   // Print summary to console if verbose logging is enabled
   if (g_Verbosity >= c_Info) {
-    cout << m_XmlTag << "Loaded parameters: A=" << m_ParamA 
-         << ", B=" << m_ParamB << ", C=" << m_ParamC << endl;
+    cout << m_XmlTag << "Loaded HV parameters: A=" << m_ParamA_HV 
+         << ", B=" << m_ParamB_HV << ", C=" << m_ParamC_HV << endl;
     cout << m_XmlTag << "Loaded " << m_Depths.size() << " data points into arrays." << endl;
   }
 
@@ -394,13 +452,13 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted) {
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted, double paramA, double paramB, double paramC) {
 
   // 2. Look up the simulation CCE baseline using the helper
   double cce_base = Interpolate(ctd_val, m_Depths, sim_cce_sorted);
 
   // 3. Evaluate the physical trapping function model using class global popt variables
-  double expected_centroid_scaled = m_ParamA * (1.0 - m_ParamB * (1.0 - cce_base)) * (1.0 - m_ParamC * (1.0 - cce_base));
+  double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base)) * (1.0 - paramC * (1.0 - cce_base));
 
   // 4. Prevent division-by-zero or non-physical negative values
   if (expected_centroid_scaled <= 0.0) {
@@ -596,17 +654,76 @@ MXmlNode* MModuleTrappingCorrection::CreateXmlConfiguration()
   return Node;
 }
 
-void MModuleTrappingCorrection::Finalize()
+// void MModuleTrappingCorrection::Finalize()
+// {
+
+//   MModule::Finalize();
+//   cout << "finalize is working" << endl;
+
+//   // Clean up maps and vectors
+//   m_Detectors.clear();
+//   m_DetectorIDs.clear();
+
+// }
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
 {
+  // Component 1: Core Gaussian
+  // exp(-(x-x0)^2 / (2*sigma^2))
+  MString gaussStr = "exp(-(x-[1])^2 / (2*[2]^2))";
 
-  MModule::Finalize();
-  cout << "finalize is working" << endl;
+  // Component 2: Exponential Tail + Shelf
+  // BoverA * exp(gamma*(x-x0)) * 0.5 * erfc((x-x0)/(sigma*sigma_ratio*sqrt(2)))
+  MString expTailStr = "[3] * exp([4]*(x-[1])) * 0.5 * erfc((x-[1])/([2]*[5]*sqrt(2)))";
 
-  // Clean up maps and vectors
-  m_Detectors.clear();
-  m_DetectorIDs.clear();
+  // Component 3: Linear Tail + Shelf
+  // BoverA * CoverB * (1 + D*(x-x0)) * 0.5 * erfc((x-x0)/(sigma*sigma_ratio*sqrt(2)))
+  MString linTailStr = "[3] * [6] * (1 + [7]*(x-[1])) * 0.5 * erfc((x-[1])/([2]*[5]*sqrt(2)))";
 
+  // Combine components with an overall normalization scaling factor [0]
+  MString fullFormula = "[0] * (" + gaussStr + " + " + expTailStr + " + " + linTailStr + ")";
+
+  // Instantiate TF1 over your expected fit window
+  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", fullFormula.Data(), 645, 675);
+
+  // Set Parameter Names
+  PhotopeakFunction->SetParName(0, "Amplitude");
+  PhotopeakFunction->SetParName(1, "x0 (Mu)");
+  PhotopeakFunction->SetParName(2, "Sigma Gauss");
+  PhotopeakFunction->SetParName(3, "BoverA");
+  PhotopeakFunction->SetParName(4, "Gamma");
+  PhotopeakFunction->SetParName(5, "Sigma Ratio");
+  PhotopeakFunction->SetParName(6, "CoverB");
+  PhotopeakFunction->SetParName(7, "D (Lin Slope)");
+
+  // Provide initial sensible guesses for a Cs137 photopeak
+  PhotopeakFunction->SetParameter("Amplitude", 1000);
+  PhotopeakFunction->SetParameter("x0 (Mu)", 661.7);
+  PhotopeakFunction->SetParameter("Sigma Gauss", 2.0);
+  PhotopeakFunction->SetParameter("BoverA", 0.05);
+  PhotopeakFunction->SetParameter("Gamma", 0.5);
+  PhotopeakFunction->SetParameter("Sigma Ratio", 0.85);
+  PhotopeakFunction->SetParameter("CoverB", 0.13);
+  PhotopeakFunction->SetParameter("D (Lin Slope)", 0.028);
+
+  // Set boundary limits to stabilize convergence
+  PhotopeakFunction->SetParLimits(0, 1, 1e8);
+  PhotopeakFunction->SetParLimits(1, 645, 675);     // Keeps peak centered around 662 keV
+  PhotopeakFunction->SetParLimits(2, 0.5, 10);      // Prevents sigma from blowing up or hitting zero
+  PhotopeakFunction->SetParLimits(3, 0.0, 1.0);     // Tail shouldn't be larger than the main peak
+  PhotopeakFunction->SetParLimits(4, 0.001, 2.0);   // Standard range for exponential decay factor
+  PhotopeakFunction->SetParLimits(5, 0.1, 5.0);     // Ratio of shelf width to peak width
+  PhotopeakFunction->SetParLimits(6, 0.0, 5.0);     
+  PhotopeakFunction->SetParLimits(7, -1.0, 1.0);
+
+  return PhotopeakFunction;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 

@@ -27,7 +27,6 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
-// #include "MModuleTrappingCorrection.h"
 #include "MGUIEEntry.h"
 
 
@@ -36,6 +35,7 @@
 #include "MGUIExpoPlotSpectrum.h"
 #include "MModuleEnergyCalibration.h"
 #include "MGUIExpoTrappingCorrection.h"
+#include "MGUIOptionsTrappingCorrection.h"
 
 // Forward declarations:
 
@@ -73,6 +73,9 @@ class MModuleTrappingCorrection : public MModule
   //! Get filename for SimCCE file
   MString GetSimCCEFileName() const { return m_SimCCEFile; }
 
+  //! Finalize the module
+  virtual void Finalize();
+
 
 
   //! Read the XML configuration
@@ -81,8 +84,8 @@ class MModuleTrappingCorrection : public MModule
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
 
-  //! Finalize
-  void Finalize();
+  // //! Finalize
+  // void Finalize();
 
   // protected methods:
  protected:
@@ -102,7 +105,7 @@ class MModuleTrappingCorrection : public MModule
   bool LoadSimCCEFile(MString FName);
 
   //! Get the Sim-based corrected energy given the CTD value, uncorrected energy, and the sorted Sim CCE values
-  double GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted);
+  double GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted, double paramA, double paramB, double paramC);
 
   //! Interpolate a value given x, xp, and fp
   double Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp);
@@ -132,9 +135,12 @@ class MModuleTrappingCorrection : public MModule
 
   bool m_SimCCEFileIsLoaded;
 
-  double m_ParamA;
-  double m_ParamB;
-  double m_ParamC;
+  double m_ParamA_HV;
+  double m_ParamB_HV;
+  double m_ParamC_HV;
+  double m_ParamA_LV;
+  double m_ParamB_LV;
+  double m_ParamC_LV;
   std::vector<double> m_Depths;
   std::vector<double> m_CCEs_HV;
   std::vector<double> m_CCEs_LV;
@@ -146,7 +152,8 @@ class MModuleTrappingCorrection : public MModule
 
   //! Updated GUI to display the energy histogram
   MGUIExpoPlotSpectrum* m_ExpoSpectrum;
-  // MGUIExpoPlotSpectrum* m_ExpoSpectrum_LV;
+  
+  TF1* GeneratePhotopeakFunction();
 
 
 #ifdef ___CLING___

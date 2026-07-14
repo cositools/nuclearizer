@@ -78,9 +78,9 @@ void MGUIOptionsTrappingCorrection::Create()
   // m_OptionsFrame->AddFrame(SlowThresholdLabel, LabelLayout);
 
 
-  // TGLayoutHints* RBLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 40, 10, 2, 0);
-  // TGLayoutHints* RBOptionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 60, 10, 2, 0);
-  // TGLayoutHints* RBOptionStretchLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 60, 10, 2, 0);
+  TGLayoutHints* RBLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 40, 10, 2, 0);
+  TGLayoutHints* RBOptionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 60, 10, 2, 0);
+  TGLayoutHints* RBOptionStretchLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 60, 10, 2, 0);
 
   // m_SlowThresholdCutRBIgnore = new TGRadioButton(m_OptionsFrame, "Do not apply a slow threshold cut", c_SlowThresholdIgnore);
   // m_SlowThresholdCutRBIgnore->Associate(this);
@@ -128,7 +128,7 @@ void MGUIOptionsTrappingCorrection::Create()
   // ToggleRadioButtons(static_cast<int>(NearestNeighborCutMode));
     
 
-  // PostCreate();
+  PostCreate();
 }
 
 
