@@ -177,7 +177,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 {
   
   if (Event->GetGuardRingVeto() == true) {
-    //Right now we cannot use events w gaurd ring veto 
+    //Right now we cannot use events w GR veto 
     
     // Event->SetTrappingCorrectionError("GR Veto");
     return false;
