@@ -50,6 +50,9 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
 {
   // Construct an instance of MModuleDEESMEX
 
+  // Set geometry to nullptr to explicitly check that it was set in Initialize
+  m_Geometry = nullptr;
+
   // Set the module name --- has to be unique
   m_Name = "Detector effects engine for COSI SMEX";
   
@@ -60,7 +63,7 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
   m_IsStartModule = false;
   
   // Allow the use of multiple threads and instances
-  m_AllowMultiThreading = false;
+  m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
 
   // Set all modules, which have to be done before this module
@@ -73,6 +76,14 @@ MModuleDEESMEX::MModuleDEESMEX() : MModule()
   AddSucceedingModuleType(MAssembly::c_NoRestriction);
   
   m_HasOptionsGUI = true;
+  
+  // Default to adding noise to the simulated energies
+  m_ApplyResolutionCalibration = true;
+  m_EnableShieldVeto = true;
+  m_EnableGuardRingVeto = true;
+
+  // Default to adding noise to the simulated timing values
+  m_ApplyTimingResolutionCalibration = true;
 }
 
 
@@ -90,8 +101,20 @@ MModuleDEESMEX::~MModuleDEESMEX()
 
 bool MModuleDEESMEX::Initialize()
 {
+
+  if (m_Geometry == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MModuleDEESMEX::Initialize: m_Geometry is a nullptr" << endl;
+    }
+    return false;
+  }
+
   // Set the geometry to the SubModules using it
   m_ChargeTransport.SetGeometry(m_Geometry);
+  m_DepthReadout.SetGeometry(m_Geometry);
+  
+  m_StripReadout.SetApplyResolutionCalibration(m_ApplyResolutionCalibration);
+  m_DepthReadout.SetApplyTimingResolutionCalibration(m_ApplyTimingResolutionCalibration);
 
   // Initialize the module 
 
@@ -102,6 +125,7 @@ bool MModuleDEESMEX::Initialize()
   if (m_ShieldReadout.Initialize() == false) return false;
   if (m_ShieldTrigger.Initialize() == false) return false;
   if (m_ChargeTransport.Initialize() == false) return false;
+  if (m_StripReadoutNoise.Initialize() == false) return false;
   if (m_StripReadout.Initialize() == false) return false;
   if (m_StripTrigger.Initialize() == false) return false;
   if (m_DepthReadout.Initialize() == false) return false;
@@ -125,11 +149,6 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_Intake.Clear();
   m_Intake.AnalyzeEvent(Event);
 
-  if (Event->GetTime() < m_DeadTimeEnd) {
-    // Flag event for deletion
-    return true;
-  }
-
   // Step (3): Merge coincident events
 
   // Don't know how to handle random coincidences yet
@@ -152,22 +171,30 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_ShieldReadout.AnalyzeEvent(Event);
 
 
+  bool HasShieldHit = Event->GetDEECrystalHitListReference().empty() == false;
+  if (HasShieldHit == true && Event->GetTimeUTC() < m_ShieldTrigger.GetShieldDeadTimeEnd()) {
+    Event->GetDEECrystalHitListReference().clear();
+  }
+
+
   // Step (6): the shield veto / trigger, handle pre-scalers, calculate dead-time, calculate random coincidence time
   m_ShieldTrigger.Clear();
   m_ShieldTrigger.AnalyzeEvent(Event);
-  if (m_ShieldTrigger.HasVeto() == true) {
-    if (m_ShieldTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
-      m_DeadTimeEnd = m_ShieldTrigger.GetDeadTimeEnd();
-    }
+  if (m_EnableShieldVeto == true && m_ShieldTrigger.HasShieldVeto() == true) {
+    Event->SetShieldVeto(true);
+    m_StripTrigger.ApplyFastClearDeadtime(m_ShieldTrigger.GetShieldVetoTime());
 
     // Clean up
-
+    
     Event->SetAnalysisProgress(MAssembly::c_DetectorEffectsEngine);
     return true;
-  } else if (m_ShieldTrigger.HasTrigger() == true) { // = energy read out
-    if (m_ShieldTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
-      m_DeadTimeEnd = m_ShieldTrigger.GetDeadTimeEnd();
-    }
+  }
+
+  bool HasStripHit = Event->GetDEEStripHitLVListReference().empty() == false ||
+                     Event->GetDEEStripHitHVListReference().empty() == false;
+  if (HasStripHit == true && Event->GetTimeUTC() < m_StripTrigger.GetStripDeadTimeEnd()) {
+    // Strip/GeD deadtime only gates the strip path. Shield processing above still runs.
+    return true;
   }
 
   // Charge trapping as input to the charge transport or as "correction afterwards"?
@@ -177,30 +204,21 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_ChargeTransport.AnalyzeEvent(Event);
 
   // Step (8): Handle the strip readout: energy -> ADCs
+  // Also includes user selected energy resolution with the FWHM values from the ecal 
   m_StripReadout.Clear();
   m_StripReadout.AnalyzeEvent(Event);
-
-
-  // Step (9)): Simulate micro-phonics random noise for triggered strips & next neighbors
+  
+  // Step (9): Simulate micro-phonics random noise
   m_StripReadoutNoise.Clear();
   m_StripReadoutNoise.AnalyzeEvent(Event);
 
   // Step (10): Handles triggers and guard ring vetoes, pre-scalers, calculate dead-time, add nearest neighbor noise, calculate random coincidence time
   m_StripTrigger.Clear();
   m_StripTrigger.AnalyzeEvent(Event);
-  if (m_StripTrigger.HasVeto() == true) {
-    if (m_StripTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
-      m_DeadTimeEnd = m_StripTrigger.GetDeadTimeEnd();
-    }
-    // Clean up
-
+  if (m_EnableGuardRingVeto == true && m_StripTrigger.HasGuardRingVeto() == true) {
+    Event->SetGuardRingVeto(true);   // <-- mark the event so EventSaver can filter it
     Event->SetAnalysisProgress(MAssembly::c_DetectorEffectsEngine);
     return true;
-  }
-  if (m_StripTrigger.HasTrigger() == true) {
-    if (m_StripTrigger.GetDeadTimeEnd() > m_DeadTimeEnd) {
-      m_DeadTimeEnd = m_StripTrigger.GetDeadTimeEnd();
-    }
   }
 
   // Step (11): Handle depth and timing noise
@@ -236,6 +254,7 @@ void MModuleDEESMEX::Finalize()
   m_ShieldTrigger.Finalize();
   m_ChargeTransport.Finalize();
   m_StripReadout.Finalize();
+  m_StripReadoutNoise.Finalize();
   m_StripTrigger.Finalize();
   m_DepthReadout.Finalize();
   m_Output.Finalize();
@@ -275,6 +294,26 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_StripTrigger.ReadXmlConfiguration(Node);
   m_DepthReadout.ReadXmlConfiguration(Node);
   m_Output.ReadXmlConfiguration(Node);
+  
+  // Add noise button for energies
+  MXmlNode* ResolutionCalibrationNode = Node->GetNode("ApplyResolutionCalibration");
+  if (ResolutionCalibrationNode != nullptr) {
+    m_ApplyResolutionCalibration  = ResolutionCalibrationNode->GetValueAsBoolean();
+  }
+  MXmlNode* EnableShieldVetoNode = Node->GetNode("EnableShieldVeto");
+  if (EnableShieldVetoNode != nullptr) {
+    m_EnableShieldVeto = EnableShieldVetoNode->GetValueAsBoolean();
+  }
+  MXmlNode* EnableGuardRingVetoNode = Node->GetNode("EnableGuardRingVeto");
+  if (EnableGuardRingVetoNode != nullptr) {
+    m_EnableGuardRingVeto = EnableGuardRingVetoNode->GetValueAsBoolean();
+  }
+
+  // Add noise button for timing values
+  MXmlNode* TimingResolutionCalibrationNode = Node->GetNode("ApplyTimingResolutionCalibration");
+  if (TimingResolutionCalibrationNode != nullptr) {
+    m_ApplyTimingResolutionCalibration  = TimingResolutionCalibrationNode->GetValueAsBoolean();
+  }
 
   return true;
 }
@@ -299,6 +338,16 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
   m_StripTrigger.CreateXmlConfiguration(Node);
   m_DepthReadout.CreateXmlConfiguration(Node);
   m_Output.CreateXmlConfiguration(Node);
+  
+  // Add noise button for energies
+  new MXmlNode(Node, "ApplyResolutionCalibration", m_ApplyResolutionCalibration);
+  // Add shield veto effects button
+  new MXmlNode(Node, "EnableShieldVeto", m_EnableShieldVeto);
+  // Add guard ring veto effects button
+  new MXmlNode(Node, "EnableGuardRingVeto", m_EnableGuardRingVeto);
+
+  // Add noise button for timing values
+  new MXmlNode(Node, "ApplyTimingResolutionCalibration", m_ApplyTimingResolutionCalibration);
 
   return Node;
 }

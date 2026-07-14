@@ -221,6 +221,24 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
 
 void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool isLV) {
 
+  // Define physical constants
+  constexpr double kB = TMath::K(); // unit: J/K
+  constexpr double ElementaryCharge = TMath::Qe(); // unit: C
+  constexpr double IonizationEnergy = 0.00295; // unit: keV
+  constexpr double Epsilon0 = 8.85418781762039e-14; // unit: F/cm
+  constexpr double EpsilonR = 16.0; // in germanium, unitless
+
+  // TODO: Read bias voltage and temperature of the detector from a database
+  constexpr double BiasVoltage = 1050.0; // unit: V
+  constexpr double Temperature = 87.0; // unit: K
+
+  double N = SH.m_SimulatedEnergy / IonizationEnergy;
+
+  // TODO: Implement energy-dependent initial charge-cloud sizes
+  constexpr double InitialChargeCloudSize = 0.; // zero for now, could be set to the default cut range ?
+
+
+
   // This function uses strip coordinates (P and Q) instead of X and Y
   // (P = perpendicular to strip length, Q = along strip length):
   //   ╔═════════════════════════════════════════════════╗ ↑
@@ -236,7 +254,8 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
   double Radius      = m_Radii[DetID];
   double PWidth      = isLV ? m_XWidths[DetID] : m_YWidths[DetID];
   double QWidth      = isLV ? m_YWidths[DetID] : m_XWidths[DetID];
-  double Pitch       = isLV ? m_XPitches[DetID] : m_YPitches[DetID];
+  double PPitch      = isLV ? m_XPitches[DetID] : m_YPitches[DetID];
+  double QPitch      = isLV ? m_YPitches[DetID] : m_XPitches[DetID];
   int NStrips        = isLV ? m_NXStrips[DetID] : m_NYStrips[DetID];
 
   // Express coordinates of the hit in local strip coordinates
@@ -245,33 +264,24 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
   double Q    = isLV ? Pos.Y() : Pos.X();
   double ΔZ   = isLV ? Pos.Z() + Thickness / 2.0 : Thickness / 2.0 - Pos.Z();
 
+  double MeanElectricField = BiasVoltage / Thickness; // unit: V/cm
+
   // Calculate strip ID by rounding down intentionally to avoid truncation towards zero
   // TODO: Include mask metrology information when calculating the strip ID from the position.
-  int ID = static_cast<int>(std::floor((P + PWidth/2.0) / Pitch));
+  int ID = static_cast<int>(std::floor((P + PWidth/2.0) / PPitch));
 
-  // Define physical constants
-  constexpr double kB = TMath::K(); // unit: J/K
-  constexpr double ElementaryCharge = TMath::Qe(); // unit: C
-  constexpr double IonizationEnergy = 0.00295; // unit: keV
-  constexpr double Epsilon0 = 8.85418781762039e-14; // unit: F/cm
-  constexpr double EpsilonR = 16.0; // in germanium, unitless
-
-  // TODO: Read bias voltage and temperature of the detector from a database
-  constexpr double BiasVoltage = 1050.0; // unit: V
-  constexpr double Temperature = 87.0; // unit: K
-
-  double MeanElectricField = BiasVoltage / Thickness; // unit: V/cm
-  double N = SH.m_SimulatedEnergy / IonizationEnergy;
-
-  // TODO: Implement energy-dependent initial charge-cloud sizes
-  constexpr double InitialChargeCloudSize = 0.; // zero for now, could be set to the default cut range ?
+  // Calculate the strip ID for the opposite side of the detector (and explicitly check for guard ring)
+  int OppositeStripID = static_cast<int>(std::floor((Q + QWidth/2.0) / QPitch));
+  if (std::abs(P) > PWidth/2.0 && std::abs(Q) > QWidth/2.0 && std::hypot(P, Q) > Radius) {
+    OppositeStripID = NStrips;
+  }
 
   // Check for strip ID and if the position is within the allowed strip length or on the guard ring
   // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
-  if (ID >= 0 && ID < NStrips && std::abs(P) <= QWidth/2.0 && std::hypot(P, Q) <= Radius) {
+  if (ID >= 0 && ID < NStrips && std::abs(Q) <= QWidth/2.0 && std::hypot(P, Q) <= Radius) {
 
     // Apply charge sharing based on relative coordinate to the gap of that strip (0 <= X < XPitch)
-    double FromGap = std::fmod(P + PWidth/2.0, Pitch);
+    double FromGap = std::fmod(P + PWidth/2.0, PPitch);
 
     // Charge transport based on Eq. (7) in https://doi.org/10.1016/j.nima.2023.168310
     // calculate σ and η, assuming t = z / v = z / (µ * E)
@@ -288,13 +298,14 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
       );
     };
 
-    double MainStripEnergy    = Lambda(Pitch - FromGap) - Lambda(-FromGap);
-    double NNLeftStripEnergy  = Lambda(-FromGap) - Lambda(-Pitch - FromGap);
-    double NNRightStripEnergy = Lambda(2.0*Pitch - FromGap) - Lambda(Pitch - FromGap);
+    double MainStripEnergy    = Lambda(PPitch - FromGap) - Lambda(-FromGap);
+    double NNLeftStripEnergy  = Lambda(-FromGap) - Lambda(-PPitch - FromGap);
+    double NNRightStripEnergy = Lambda(2.0*PPitch - FromGap) - Lambda(PPitch - FromGap);
 
     // create entry for the main hit
     MDEEStripHit MainSH = SH;
     MainSH.m_ROE.SetStripID(ID);
+    MainSH.m_OppositeStripID = OppositeStripID;
     MainSH.m_Energy = MainStripEnergy;
     MainSH.m_IsGuardRing = false;
     m_ChargeTransportHits.push_back(MainSH);
@@ -303,6 +314,7 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     if (NNLeftStripEnergy > IonizationEnergy) {
       MDEEStripHit NNLeftSH = SH;
       NNLeftSH.m_Energy = NNLeftStripEnergy;
+      NNLeftSH.m_OppositeStripID = OppositeStripID;
       if (ID > 0) {
         NNLeftSH.m_ROE.SetStripID(ID - 1);
         NNLeftSH.m_IsGuardRing = false;
@@ -318,6 +330,7 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     if (NNRightStripEnergy > IonizationEnergy) {
       MDEEStripHit NNRightSH = SH;
       NNRightSH.m_Energy = NNRightStripEnergy;
+      NNRightSH.m_OppositeStripID = OppositeStripID;
       if (ID < NStrips - 1) {
         NNRightSH.m_ROE.SetStripID(ID + 1);
         NNRightSH.m_IsGuardRing = false;

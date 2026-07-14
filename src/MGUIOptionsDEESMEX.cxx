@@ -72,11 +72,28 @@ void MGUIOptionsDEESMEX::Create()
                                                           dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnergyCalibrationFileName());
   m_EnergyCalibrationFileSelector->SetFileType("Ecal file", "*.ecal");
   m_OptionsFrame->AddFrame(m_EnergyCalibrationFileSelector, LabelLayout);
+  
+  m_ResolutionCalibrationButton = new TGCheckButton(m_OptionsFrame, "Smear energies based on FWHM");
+  m_ResolutionCalibrationButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetApplyResolutionCalibration());
+  m_OptionsFrame->AddFrame(m_ResolutionCalibrationButton, LabelLayout);
 
   m_DeadtimeFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a deadtime parameters file:",
                                                           dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDeadtimeFileName());
   m_DeadtimeFileSelector->SetFileType("Deadtime file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadtimeFileSelector, LabelLayout);
+
+  TGHorizontalFrame* VetoButtonFrame = new TGHorizontalFrame(m_OptionsFrame);
+  TGLayoutHints* VetoButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 30, 0, 0);
+
+  m_EnableShieldVetoButton = new TGCheckButton(VetoButtonFrame, "Enable Shield veto");
+  m_EnableShieldVetoButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnableShieldVeto());
+  VetoButtonFrame->AddFrame(m_EnableShieldVetoButton, VetoButtonLayout);
+
+  m_EnableGuardRingVetoButton = new TGCheckButton(VetoButtonFrame, "Enable Guard Ring veto");
+  m_EnableGuardRingVetoButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnableGuardRingVeto());
+  VetoButtonFrame->AddFrame(m_EnableGuardRingVetoButton, VetoButtonLayout);
+
+  m_OptionsFrame->AddFrame(VetoButtonFrame, LabelLayout);
 
   /*
   m_DeadStripFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a dead strip file:",
@@ -109,21 +126,31 @@ void MGUIOptionsDEESMEX::Create()
   m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.log");
   m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
 
-  m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationCoeffsFileName());
-  m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.txt");
-  m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
-
   m_DepthCalibrationTACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a TAC calibration parameters file:",
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationTACCalFileName());
   m_DepthCalibrationTACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
   m_OptionsFrame->AddFrame(m_DepthCalibrationTACCalFileSelector, LabelLayout);
-
-  m_DepthCalibrationSplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration splines file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationSplinesFileName());
-  m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.ctd");
-  m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
   */
+
+  // inverse depth calibration files
+  m_DepthCalibrationSplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration splines file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthSplinesFileName());
+  m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
+
+  m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthCoefficientsFileName());
+  m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
+
+  m_TimingResolutionCalibrationButton = new TGCheckButton(m_OptionsFrame, "Smear timing values based on FWHM");
+  m_TimingResolutionCalibrationButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetApplyTimingResolutionCalibration());
+  m_OptionsFrame->AddFrame(m_TimingResolutionCalibrationButton, LabelLayout);
+
+  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a TAC calibration file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetTACCalFileName());
+  m_TACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
+  m_OptionsFrame->AddFrame(m_TACCalFileSelector, LabelLayout);
 
   // shield energy correction file
   m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
@@ -187,8 +214,16 @@ bool MGUIOptionsDEESMEX::OnApply()
 
   // GeD options:
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthCoefficientsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
 
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
+  
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyResolutionCalibration(m_ResolutionCalibrationButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableShieldVeto(m_EnableShieldVetoButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableGuardRingVeto(m_EnableGuardRingVetoButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyTimingResolutionCalibration(m_TimingResolutionCalibrationButton->IsOn());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());

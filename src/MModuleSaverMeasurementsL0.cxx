@@ -80,6 +80,7 @@ MModuleSaverMeasurementsL0::MModuleSaverMeasurementsL0() : MModule()
 
   m_SequenceCount = 0;
   m_TotalEventsWritten = 0;
+  m_StripMapLoaded = false;
 }
 
 
@@ -110,6 +111,16 @@ bool MModuleSaverMeasurementsL0::Initialize()
     if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Unable to open output file: " << m_FileName << endl;
     return false;
   }
+
+  if (m_FileNameStripMap == "") {
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Strip map file name is required but not set." << endl;
+    return false;
+  }
+  if (m_StripMap.Open(m_FileNameStripMap) == false) {
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Failed to open strip map file: " << m_FileNameStripMap << endl;
+    return false;
+  }
+  m_StripMapLoaded = true;
 
   m_SequenceCount = 0;
   m_TotalEventsWritten = 0;
@@ -213,17 +224,17 @@ void MModuleSaverMeasurementsL0::PackBitsIntoBitstream(std::vector<uint8_t>& bit
 ////////////////////////////////////////////////////////////////////////////////
 
 
-uint64_t MModuleSaverMeasurementsL0::EncodeNormalHit(int stripID, bool fastTiming, int energy, int timing)
+uint64_t MModuleSaverMeasurementsL0::EncodeNormalHit(int stripID, bool fastTiming, int adc, int tac)
 {
   // A normal strip hit (Type 0x0) - 44 bits
-  // Format: HitType: 4 bits + StripID 11 bits + Timing Type: 1bit + Energy Data: 14 bits + Timing data: 14 bits
+  // Format: HitType: 4 bits + StripID 11 bits + Timing Type: 1bit + ADC Data: 14 bits + TAC Data: 14 bits
   // Returns 44 bits packed into the lower bits of a uint64_t
 
   uint64_t hitType = 0x0;
   uint64_t strip = stripID & 0x7FF;      // 11 bits
   uint64_t dt = fastTiming ? 1 : 0;      // 1 bit
-  uint64_t eng = energy & 0x3FFF;        // 14 bits
-  uint64_t tim = timing & 0x3FFF;        // 14 bits
+  uint64_t eng = adc & 0x3FFF;           // 14 bits
+  uint64_t tim = tac & 0x3FFF;           // 14 bits
 
   // Pack bits: [HitType:4][StripID:11][TimingType:1][Energy:14][TimingData:14] = 44 bits
   uint64_t encoded = (hitType << 40) | (strip << 29) | (dt << 28) | (eng << 14) | tim;
@@ -235,17 +246,17 @@ uint64_t MModuleSaverMeasurementsL0::EncodeNormalHit(int stripID, bool fastTimin
 ////////////////////////////////////////////////////////////////////////////////
 
 
-uint64_t MModuleSaverMeasurementsL0::EncodeNeighborHit(int stripID, bool fastTiming, int energy, int timing)
+uint64_t MModuleSaverMeasurementsL0::EncodeNeighborHit(int stripID, bool fastTiming, int adc, int tac)
 {
   // A neighboring strip hit (Type 0x1) - 36 bits
-  // Format: HitType: 4 bits + StripID: 11 bits + Timing Type: 1 bit + Energy Data: 10 bits + Timing Data: 10 bits
+  // Format: HitType: 4 bits + StripID: 11 bits + Timing Type: 1 bit + ADC Data: 10 bits + TAC Data: 10 bits
   // Returns 36 bits packed into the lower bits of a uint64_t
 
   uint64_t hitType = 0x1;
   uint64_t strip = stripID & 0x7FF;      // 11 bits
   uint64_t dt = fastTiming ? 1 : 0;      // 1 bit
-  uint64_t eng = energy & 0x3FF;         // 10 bits
-  uint64_t tim = timing & 0x3FF;         // 10 bits
+  uint64_t eng = adc & 0x3FF;            // 10 bits
+  uint64_t tim = tac & 0x3FF;            // 10 bits
 
   // Pack bits: [HitType:4][StripID:11][TimingType:1][Energy:10][TimingData:10] = 36 bits
   uint64_t encoded = (hitType << 32) | (strip << 21) | (dt << 20) | (eng << 10) | tim;
@@ -257,15 +268,15 @@ uint64_t MModuleSaverMeasurementsL0::EncodeNeighborHit(int stripID, bool fastTim
 ////////////////////////////////////////////////////////////////////////////////
 
 
-uint32_t MModuleSaverMeasurementsL0::EncodeGuardRingHit(int stripID, int energy)
+uint32_t MModuleSaverMeasurementsL0::EncodeGuardRingHit(int stripID, int adc)
 {
   // A guard ring hit (Type 0x2) - 24 bits
-  // Format: HitType: 4 bits + StripID: 5 bits + Energy Data: 14 bits + Pad: 1 bit
+  // Format: HitType: 4 bits + StripID: 5 bits + ADC Data: 14 bits + Pad: 1 bit
   // Returns 24 bits packed into the lower bits of a uint32_t
 
   uint32_t hitType = 0x2;
   uint32_t strip = stripID & 0x1F;        // 5 bits
-  uint32_t eng = energy & 0x3FFF;         // 14 bits
+  uint32_t eng = adc & 0x3FFF;            // 14 bits
 
   // Pack bits: [HitType:4][StripID:5][Energy:14][Pad:1] = 24 bits
   uint32_t encoded = (hitType << 20) | (strip << 15) | (eng << 1) | 0;
@@ -386,10 +397,22 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Write this event as a DD packet
 
-  // Get event timing (change from GetCL() to GetTime())
-  MTime eventTime = Event->GetTime();
-  uint32_t eventSeconds = (uint32_t)eventTime.GetAsSeconds();
-  uint32_t eventNanoseconds = eventTime.GetNanoSeconds();
+  // set/get eventTime from either the UTC time or the RTS time
+  MTime eventTime;
+  if (Event->GetTimeRTS() == 0 && Event->GetTimeUTC() != 0) {
+    eventTime = Event->ComputeRTSfromUTCTime(Event->GetTimeUTC());
+    Event->SetTimeRTS(eventTime);
+  } else {
+    eventTime = Event->GetTimeRTS();
+  }
+
+  // Save time in GPS format
+  MTime gpsTime = Event->ComputeGPSfromRTSTime(eventTime);
+  uint32_t eventSeconds = (uint32_t)gpsTime.GetAsSeconds();
+  uint32_t eventNanoseconds = (uint32_t)gpsTime.GetNanoSeconds();
+
+  // CCSDS secondary header subseconds are 40 MHz DCB ticks (25 ns each)
+  uint32_t subsec40MHz = eventNanoseconds / 25;
 
   // Convert to TRUNC_TIME format: 10 bits seconds + 22 bits 4MHz subseconds
   uint32_t seconds10bit = eventSeconds & 0x3FF;
@@ -406,21 +429,27 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
     MStripHit* hit = Event->GetStripHit(i);
 
     // Get strip info
-    int stripID = hit->GetStripID();
+    int detID = hit->GetDetectorID() & 0xF;     // 4 bits (0-15)
+    int side = hit->IsLowVoltageStrip() ? 0 : 1; // 1 bit
+    int stripNum = hit->GetStripID() & 0x3F;     // 6 bits (0-63)
+    int stripID = 0;
+    if (m_StripMap.HasROIDetSideStrip(detID, hit->IsLowVoltageStrip(), stripNum)) {
+      stripID = (int)m_StripMap.GetReadOutID(detID, hit->IsLowVoltageStrip(), stripNum);
+    }
     bool fastTiming = hit->HasFastTiming();
-    int energy = (int)hit->GetADCUnits();
-    int timing = (int)hit->GetTAC();
+    int adc = (int)hit->GetADCUnits();
+    int tac = (int)hit->GetTAC();
 
     if (hit->IsGuardRing()) {
-      uint32_t encoded = EncodeGuardRingHit(stripID, energy);
+      uint32_t encoded = EncodeGuardRingHit(stripID, adc);
       PackBitsIntoBitstream(hitData, bitOffset, encoded, 24);
       totalBits += 24;
     } else if (hit->IsNearestNeighbor()) {
-      uint64_t encoded = EncodeNeighborHit(stripID, fastTiming, energy, timing);
+      uint64_t encoded = EncodeNeighborHit(stripID, fastTiming, adc, tac);
       PackBitsIntoBitstream(hitData, bitOffset, encoded, 36);
       totalBits += 36;
     } else {
-      uint64_t encoded = EncodeNormalHit(stripID, fastTiming, energy, timing);
+      uint64_t encoded = EncodeNormalHit(stripID, fastTiming, adc, tac);
       PackBitsIntoBitstream(hitData, bitOffset, encoded, 44);
       totalBits += 44;
     }
@@ -444,7 +473,7 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
   m_SequenceCount = (m_SequenceCount + 1) & 0x3FFF;
 
   // Write Secondary Header
-  WriteSecondaryHeader(eventSeconds, eventNanoseconds);
+  WriteSecondaryHeader(eventSeconds, subsec40MHz);
 
   // Write TRUNC_TIME (4 bytes)
   WriteUInt32BE(truncTime);
@@ -506,6 +535,11 @@ bool MModuleSaverMeasurementsL0::ReadXmlConfiguration(MXmlNode* Node)
     m_FileName = FileNameNode->GetValue();
   }
 
+  MXmlNode* StripMapNode = Node->GetNode("FileNameStripMap");
+  if (StripMapNode != nullptr) {
+    m_FileNameStripMap = StripMapNode->GetValue();
+  }
+
   return true;
 }
 
@@ -519,6 +553,7 @@ MXmlNode* MModuleSaverMeasurementsL0::CreateXmlConfiguration()
 
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
+  new MXmlNode(Node, "FileNameStripMap", m_FileNameStripMap);
 
   return Node;
 }

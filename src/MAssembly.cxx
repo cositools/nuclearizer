@@ -59,12 +59,11 @@ using namespace std;
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
-#include "MModuleLoaderSimulationsSMEX.h"
-#include "MModuleLoaderSimulationsSingleDet.h"
 #include "MModuleLoaderSimulationsCosima.h"
 #include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleLoaderMeasurementsFITS.h"
+#include "MModuleLoaderMeasurementsL0.h"
 #include "MModuleEnergyCalibration.h"
 #include "MModuleDepthCalibration.h"
 #include "MModuleTrappingCorrection.h"
@@ -123,12 +122,11 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSMEX());
-  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSingleDet());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsCosima());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsROA());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsHDF());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsFITS());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsL0());
 
   m_Supervisor->AddAvailableModule(new MModuleDEESMEX());
 

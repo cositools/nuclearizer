@@ -2,7 +2,7 @@
  * MSubModuleDEEIntake.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer, Parshad Patel.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel, Valentina Fioretti.
  * All rights reserved.
  *
  *
@@ -95,10 +95,19 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level
 
   Event->SetID(Event->GetSimulatedEvent()->GetID());
+  Event->SetTimeUTC(Event->GetSimulatedEvent()->GetTime());
+
+  // TODO: Check if all instances in the DEE of Get/SetTime are replaced by Get/SetTimeUTC
   Event->SetTime(Event->GetSimulatedEvent()->GetTime());
 
   for (unsigned int h = 0; h < Event->GetSimulatedEvent()->GetNHTs(); ++h) {
     MSimHT* HT = Event->GetSimulatedEvent()->GetHTAt(h);
+    if (HT->GetEnergy() <= 0) {
+      if (g_Verbosity >= c_Warning) {
+        cout << m_Name << ": Skipping simulated hit with non-positive energy." << endl;
+      }
+      continue;
+    }
 
     MDVolumeSequence* VS = HT->GetVolumeSequence();
     MDDetector* Detector = VS->GetDetector();
@@ -132,7 +141,8 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
     double DetectorDepth = Shape->GetSizeZ();
 
     MString DetectorName = Detector->GetName();
-    if (DetectorName.BeginsWith("GeD") == true) {
+    if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing") == true) {
+      DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // Remove prefix GuardRing if existent
       DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
       int DetectorID = DetectorName.ToInt();
 
@@ -193,34 +203,12 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       vector<MString> Tokens = DetectorName.Tokenize("_");
 
       if (Tokens.size() != 3) {
-        cerr << "ERROR: Unexpected detector name format for the Shield"
-             << DetectorName << endl;
+        if (g_Verbosity >= c_Error)
+          cout << "ERROR: Unexpected detector name format for the Shield"
+               << DetectorName << endl;
         return false;
       }
-      
-      // int DetectorID = -1;
-      // if (Tokens[1] == "X0") {
-      //   DetectorID = 0;
-      // }
-      // else if (Tokens[1] ==  "X1") {
-      //   DetectorID = 1;
-      // }
-      // else if (Tokens[1] ==  "Y0") {
-      //   DetectorID = 2;
-      // }
-      // else if (Tokens[1] == "Y1") {
-      //   DetectorID = 3;
-      // }
-      // else if (Tokens[1] == "Z0") {
-      //   DetectorID = 4;      
-      // }
-      // else if (Tokens[1] == "Z1") {
-      //   DetectorID = 5;
-      // }
-      // else {
-      //   cerr << "ERROR: Detector name does not correspond to any panel " << Tokens[1] << endl;
-      //   return false;
-      // }
+
       MString DetectorID = Tokens[1];
       int CrystalID = Tokens[2].ToInt();
 
@@ -258,7 +246,7 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
     } else {
       if (g_Verbosity >= c_Error)
-        cout << m_Name << ": No GeD_ volumes found" << endl;
+        cout << m_Name << ": No GeD_ and no ACS_ volumes found" << endl;
       continue;
     }
   }

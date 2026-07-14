@@ -17,6 +17,8 @@
 
 
 // Standard libs:
+#include <atomic>
+#include <array>
 
 // ROOT libs:
 
@@ -24,15 +26,17 @@
 #include "MGlobal.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
+#include "MPhysicalEvent.h"
+#include "MSimEvent.h"
+#include "MSimIA.h"
+
+// Nuclearizer libs:
 #include "MStripHit.h"
 #include "MDEEStripHit.h"
 #include "MCrystalHit.h"
 #include "MDEECrystalHit.h"
 #include "MGuardringHit.h"
 #include "MHit.h"
-#include "MPhysicalEvent.h"
-#include "MSimEvent.h"
-#include "MSimIA.h"
 
 // Forward declarations:
 
@@ -40,6 +44,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The read-out assembly: A container for all read-out data, reconstructed events, and derived event flags
 class MReadOutAssembly : public MReadOutSequence
 {
   // public interface:
@@ -49,46 +54,55 @@ class MReadOutAssembly : public MReadOutSequence
   //! Default destructor
   virtual ~MReadOutAssembly();
 
+  //! Copying is disabled - the assembly owns raw pointers
+  MReadOutAssembly(const MReadOutAssembly&) = delete;
+  //! Copy assignment is disabled - the assembly owns raw pointers
+  MReadOutAssembly& operator=(const MReadOutAssembly&) = delete;
+
   //! Reset all data
   virtual void Clear();
 
-  //! Delete Hits
+  //! Delete all hits
   void DeleteHits();
 
-  //! TODO Scrub all clock/time variables for COSI SMEX 
-  //! set and get Unix clock time
-  void SetTI(unsigned long long TI) { m_TI = TI;}
-  unsigned long long GetTI() const { return m_TI;}
+  //! Set the Reference Time System (RTS) time for this event
+  //! The RTS is mission time in seconds since January 1, 2025 in TT (terrestrial time)
+  void SetTimeRTS(const MTime& TimeRTS) { m_EventTimeRTS = TimeRTS; }
+  //! Return the Reference Time System (RTS) time for this event
+  MTime GetTimeRTS() const { return m_EventTimeRTS; }
 
-  //! set and get clock tick
-  void SetCL(uint64_t CL) { m_CL = CL;}
-  uint64_t GetCL() const { return m_CL;}
-
-  //! Set and get the Modified Julian Date of this event
-  void SetMJD(double MJD) { m_MJD = MJD; }
-  double GetMJD() const { return m_MJD; }
-  
-  //! Set and get the UTC time of this event
+  //! Set the UTC time of this event
   void SetTimeUTC(const MTime& TimeUTC) { m_EventTimeUTC = TimeUTC; }
+  //! Return the UTC time of this event
   MTime GetTimeUTC() const { return m_EventTimeUTC; }
-  
+
   //! Set and get simulation aspect information
-  void SetGalacticPointingXAxisTheta(double theta){ m_GalacticPointingXAxisTheta = theta; }
-  void SetGalacticPointingXAxisPhi(double phi){ m_GalacticPointingXAxisPhi = phi; }
-  void SetGalacticPointingZAxisTheta(double theta){ m_GalacticPointingZAxisTheta = theta; }
-  void SetGalacticPointingZAxisPhi(double phi){ m_GalacticPointingZAxisPhi = phi; }
+  //! Set the galactic pointing X-axis theta
+  void SetGalacticPointingXAxisTheta(double Theta) { m_GalacticPointingXAxisTheta = Theta; }
+  //! Set the galactic pointing X-axis phi
+  void SetGalacticPointingXAxisPhi(double Phi) { m_GalacticPointingXAxisPhi = Phi; }
+  //! Set the galactic pointing Z-axis theta
+  void SetGalacticPointingZAxisTheta(double Theta) { m_GalacticPointingZAxisTheta = Theta; }
+  //! Set the galactic pointing Z-axis phi
+  void SetGalacticPointingZAxisPhi(double Phi) { m_GalacticPointingZAxisPhi = Phi; }
 
-  double GetGalacticPointingXAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisTheta;} else{return 0;}}
-  double GetGalacticPointingXAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingXAxisPhi;} else{return 0;}}
-  double GetGalacticPointingZAxisTheta(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisTheta;} else{return 0;}}
-  double GetGalacticPointingZAxisPhi(){ if (m_HasSimAspectInfo){return m_GalacticPointingZAxisPhi;} else{return 0;}}
+  //! Return the galactic pointing X-axis theta
+  double GetGalacticPointingXAxisTheta() const { return m_HasSimAspectInfo ? m_GalacticPointingXAxisTheta : 0; }
+  //! Return the galactic pointing X-axis phi
+  double GetGalacticPointingXAxisPhi() const { return m_HasSimAspectInfo ? m_GalacticPointingXAxisPhi : 0; }
+  //! Return the galactic pointing Z-axis theta
+  double GetGalacticPointingZAxisTheta() const { return m_HasSimAspectInfo ? m_GalacticPointingZAxisTheta : 0; }
+  //! Return the galactic pointing Z-axis phi
+  double GetGalacticPointingZAxisPhi() const { return m_HasSimAspectInfo ? m_GalacticPointingZAxisPhi : 0; }
 
-  void SetSimAspectInfo(bool TF){ m_HasSimAspectInfo = TF; }
-  bool HasSimAspectInfo(){ return m_HasSimAspectInfo; }
+  //! Set whether simulation aspect information is available
+  void SetSimAspectInfo(bool Flag) { m_HasSimAspectInfo = Flag; }
+  //! Return true if simulation aspect information is available
+  bool HasSimAspectInfo() const { return m_HasSimAspectInfo; }
 
 
   //! Find out if the event contains strip hits in a given detector
-  bool InDetector(int DetectorID);
+  bool InDetector(int DetectorID) const;
 
   //! Set the guard ring veto flag
   void SetGuardRingVeto(bool Veto = true) { m_GuardRingVeto = Veto; }
@@ -108,138 +122,126 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the number of strip hits
   unsigned int GetNStripHits() const { return m_StripHits.size(); }
   //! Return strip hit i
+  //! Ownership stays with this object
   MStripHit* GetStripHit(unsigned int i);
   //! Add a strip hit
+  //! Ownership is transferred to this object
   void AddStripHit(MStripHit* StripHit);
-  //! Remove a strip hit
+  //! Remove strip hit i without deleting it
+  //! The assembly relinquishes ownership of the removed pointer
   void RemoveStripHit(unsigned int i);
-
-  //! Return the number of T Only strip hits
-  //! TODO Is this a hold-over from balloon days?
-  unsigned int GetNStripHitsTOnly() const { return m_StripHitsTOnly.size(); }
-  //! Return strip hit i
-  MStripHit* GetStripHitTOnly(unsigned int i);
-  //! Adda T Only strip hit
-  void AddStripHitTOnly(MStripHit*);
-  //! Remove a strip hit
-  void RemoveStripHitTOnly(unsigned int i);
 
   //! Return the number of crystal hits
   unsigned int GetNCrystalHits() const { return m_CrystalHits.size(); }
   //! Return crystal hit i
+  //! Ownership stays with this object
   MCrystalHit* GetCrystalHit(unsigned int i);
   //! Add a crystal hit
+  //! Ownership is transferred to this object
   void AddCrystalHit(MCrystalHit* CrystalHit);
-  //! Remove a crystal hit
+  //! Remove crystal hit i without deleting it
+  //! The assembly relinquishes ownership of the removed pointer
   void RemoveCrystalHit(unsigned int i);
 
   //! Return the number of guardring hits
   unsigned int GetNGuardringHits() const { return m_GuardringHits.size(); }
   //! Return guardring hit i
+  //! Ownership stays with this object
   MGuardringHit* GetGuardringHit(unsigned int i);
   //! Add a guardring hit
-  void AddGuardringHit(MGuardringHit* GuardringHit) { return m_GuardringHits.push_back(GuardringHit); }
+  //! Ownership is transferred to this object
+  void AddGuardringHit(MGuardringHit* GuardringHit) { if (GuardringHit != nullptr) m_GuardringHits.push_back(GuardringHit); }
 
   //! Return the number of hits
   unsigned int GetNHits() const { return m_Hits.size(); }
   //! Return hit i
+  //! Ownership stays with this object
   MHit* GetHit(unsigned int i);
   //! Add a hit
-  void AddHit(MHit* Hit) { return m_Hits.push_back(Hit); }
-  //! Remove a hit
+  //! Ownership is transferred to this object
+  void AddHit(MHit* Hit) { if (Hit != nullptr) m_Hits.push_back(Hit); }
+  //! Remove hit i without deleting it
+  //! The assembly relinquishes ownership of the removed pointer
   void RemoveHit(unsigned int i);
 
-  //! Return the number of simulation hits
-  // TODO: Remove - part of m_SimEvent
-//  unsigned int GetNHitsSim() const { return m_HitsSim.size(); }
-  //! Return simulation hit i
-  // TODO: Remove - part of m_SimEvent
-//  MHit* GetHitSim(unsigned int i);
-  //! Move hits to simulation hits list
-  // TODO: Why ??
-//  void MoveHitsToSim() {m_HitsSim = m_Hits; m_Hits.clear();}
-
-  /*
-  //! Return the number of simulation interactions
-  unsigned int GetNSimIAs() const { return m_IAs.size(); }
-  //! Return simulation hit i
-  MSimIA* GetSimIA(unsigned int i);
-  */
-
-  //! Set the physical event from event reconstruction
+  //! Set the physical event from event reconstruction by storing a duplicate
+  //! Ownership of the supplied pointer stays with the caller
   void SetPhysicalEvent(MPhysicalEvent* Event);
   //! Return the physical event
+  //! Ownership stays with this object
   MPhysicalEvent* GetPhysicalEvent() { return m_PhysicalEvent; }
 
-  //! Set the physical event from event reconstruction
-  void SetSimulatedEvent(MSimEvent* Event) { m_SimEvent = Event; }
-  //! Return the simulated event
+  //! Set the simulated event
+  //! Ownership of the supplied pointer is transferred to this object
+  //! Any previously stored simulated event is deleted
+  void SetSimulatedEvent(MSimEvent* Event) { if (Event != m_SimEvent) { delete m_SimEvent; m_SimEvent = Event; } }
+  //! Return the simulated event; returns nullptr if none is set
+  //! Ownership stays with this object
   MSimEvent* GetSimulatedEvent() { return m_SimEvent; }
 
   //! Return the number of low-voltage DEE strip hits
   unsigned int GetNDEEStripHitsLV() const { return m_DEEStripHitsLV.size(); }
-  //! Return low-voltage DEE Strip hit at position i
-  void AddDEEStripHitLV(MDEEStripHit& DEEStripHit) { return m_DEEStripHitsLV.push_back(DEEStripHit); }
+  //! Add a low-voltage DEE strip hit
+  void AddDEEStripHitLV(const MDEEStripHit& DEEStripHit) { m_DEEStripHitsLV.push_back(DEEStripHit); }
   //! Get a reference to the list of strip hits for direct manipulation
   list<MDEEStripHit>& GetDEEStripHitLVListReference() { return m_DEEStripHitsLV; }
 
   //! Return the number of high-voltage DEE strip hits
   unsigned int GetNDEEStripHitsHV() const { return m_DEEStripHitsHV.size(); }
-  //! Add a high-voltage DEE Strip hit
-  void AddDEEStripHitHV(MDEEStripHit DEEStripHit) { return m_DEEStripHitsHV.push_back(DEEStripHit); }
+  //! Add a high-voltage DEE strip hit
+  void AddDEEStripHitHV(const MDEEStripHit& DEEStripHit) { m_DEEStripHitsHV.push_back(DEEStripHit); }
   //! Get a reference to the list of strip hits for direct manipulation
   list<MDEEStripHit>& GetDEEStripHitHVListReference() { return m_DEEStripHitsHV; }
 
   //! Return the number of crystal hits
   unsigned int GetNDEECrystalHits() const { return m_DEECrystalHits.size(); }
-  //! Add a crystal hit
-  void AddDEECrystalHit(MDEECrystalHit DEECrystalHit) { return m_DEECrystalHits.push_back(DEECrystalHit); }
+  //! Add a DEE crystal hit
+  void AddDEECrystalHit(const MDEECrystalHit& DEECrystalHit) { m_DEECrystalHits.push_back(DEECrystalHit); }
   //! Get a reference to the list of crystal hits for direct manipulation
   list<MDEECrystalHit>& GetDEECrystalHitListReference() { return m_DEECrystalHits; }
 
 
-  //Track BD Flags
+  // Track BD flags
 
   //! Set the energy calibration error flag
-  void SetEnergyCalibrationError(MString Text = "") { m_EnergyCalibrationError = true; if (Text != "") { m_EnergyCalibrationErrorString.push_back(Text); }}
+  void SetEnergyCalibrationError(const MString& Text = "") { m_EnergyCalibrationError = true; if (Text != "") m_EnergyCalibrationErrorString.push_back(Text); }
   //! Get the energy calibration error flag
   bool HasEnergyCalibrationError() const { return m_EnergyCalibrationError; }
- 
- //! Set the strip pairing error flag
-  void SetStripPairingError(MString Text = "") { m_StripPairingError = true; if (Text != "") { m_StripPairingErrorString.push_back(Text); }}
+
+  //! Set the strip pairing error flag
+  void SetStripPairingError(const MString& Text = "") { m_StripPairingError = true; if (Text != "") m_StripPairingErrorString.push_back(Text); }
   //! Get the strip pairing error flag
   bool HasStripPairingError() const { return m_StripPairingError; }
 
   //! Set the depth calibration error flag
-  void SetDepthCalibrationError(MString Text = "") { m_DepthCalibrationError = true; if (Text != "") { m_DepthCalibrationErrorString.push_back(Text); }}
+  void SetDepthCalibrationError(const MString& Text = "") { m_DepthCalibrationError = true; if (Text != "") m_DepthCalibrationErrorString.push_back(Text); }
   //! Get the depth calibration error flag
   bool HasDepthCalibrationError() const { return m_DepthCalibrationError; }
 
   //! Set the event reconstruction error flag
-  void SetEventReconstructionError(MString Text = "") { m_EventReconstructionError = true; if (Text != "") { m_EventReconstructionErrorString.push_back(Text); }}
+  void SetEventReconstructionError(const MString& Text = "") { m_EventReconstructionError = true; if (Text != "") m_EventReconstructionErrorString.push_back(Text); }
   //! Get the event reconstruction error flag
   bool HasEventReconstructionError() const { return m_EventReconstructionError; }
 
   // Track Quality Flags
 
   //! Set the Strip Hit Below Threshold quality flag
-  void SetStripHitBelowThreshold_QualityFlag(MString Text = ""){ m_StripHitBelowThreshold_QualityFlag = true; if (Text != "") { m_StripHitBelowThresholdString_QualityFlag.push_back(Text); }}
+  void SetStripHitBelowThreshold_QualityFlag(const MString& Text = "") { m_StripHitBelowThreshold_QualityFlag = true; if (Text != "") m_StripHitBelowThresholdString_QualityFlag.push_back(Text); }
   //! Get the Strip Hit Below Threshold quality flag
   bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
-    
+
   //! Set the Strip Pairing quality flag
-  void SetStripPairing_QualityFlag(MString Text = ""){ m_StripPairing_QualityFlag = true;
-      if (Text != "") { m_StripPairingString_QualityFlag.push_back(Text); }}
+  void SetStripPairing_QualityFlag(const MString& Text = "") { m_StripPairing_QualityFlag = true; if (Text != "") m_StripPairingString_QualityFlag.push_back(Text); }
   //! Get the Strip Pairing quality flag
   bool HasStripPairing_QualityFlag() const { return m_StripPairing_QualityFlag; }
 
-  //! Set the Reduced Chi^2 used in MultiRoundChiSquare module
-  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare = StripPairingReducedChiSquare; }
-  //! Return the Reduced Chi^2
-  double GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
+  //! Set the reduced chi^2 used in the MultiRoundChiSquare module (one for each detector)
+  void SetStripPairingReducedChiSquare(double StripPairingReducedChiSquare) { m_StripPairingReducedChiSquare.push_back(StripPairingReducedChiSquare); }
+  //! Return all the reduced chi^2 values (one for each detector)
+  vector<double> GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
 
-  // Track Vetos
+  // Track vetoes
 
   //! Returns true if any of the "veto" flags have been set
   bool IsVeto() const;
@@ -247,12 +249,16 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Set the filtered-out flag
   void SetFilteredOut(bool Flag = true) { m_FilteredOut = Flag; }
-  //! Get the filgtered-out flag
+  //! Get the filtered-out flag
   bool IsFilteredOut() const { return m_FilteredOut; }
+  //! Return the unique assembly identifier
+  unsigned long GetAssemblyID() const { return m_AssemblyID; }
 
-  //! Returns true if none of the "bad" or "Error" flags has been set and the event has not been filtered out or rejected
+  //! Return true if no error flag is set and the event has not been filtered out
+  //! Veto and quality flags do not affect this result
   bool IsGood() const;
-  //! Returns true if any of the "bad" or "Error" flags has been set
+  //! Return true if any error flag is set or the event has been filtered out
+  //! Veto and quality flags do not affect this result
   bool IsBad() const;
 
   //! Set a specific analysis progress
@@ -262,35 +268,40 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
 
-  //! Parse some content from a line
+  //! Parse a read-out assembly from a line
   bool Parse(MString& Line, int Version = 1);
 
-  //! Steam the content in a way Nuclearizer can read it in again
+  //! Stream the read-out assembly in a way Nuclearizer can read it in again
   bool StreamDat(ostream& S, int Version = 1);
-  //! Stream the content in MEGAlib's evta format 
+  //! Stream the read-out assembly in MEGAlib's EVTA format
   void StreamEvta(ostream& S);
-  //! Stream the content in MEGAlib's evta format
+  //! Stream the read-out assembly in MEGAlib's TRA format
   void StreamTra(ostream& S);
-  //! Stream the content in MEGAlib's roa format 
+  //! Stream the read-out assembly in MEGAlib's ROA format
   void StreamRoa(ostream& S, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithTemperatures = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
 
-  //! Steam the BD flags
+  //! Stream the BD flags
   void StreamBDFlags(ostream& S);
 
-  //! Build the next MReadoutAssemply from a .dat file
-  bool GetNextFromDatFile(MFile &F);
+  //! Build the next MReadOutAssembly from a `.dat` file
+  bool GetNextFromDatFile(MFile& F);
 
-  //! Use the info in m_Aspect to turn m_CL into an absolute UTC time
-  bool ComputeAbsoluteTime();
-  //! Set the MTime corresponding to absolute UTC time
-  void SetAbsoluteTime(MTime T) {m_EventTimeUTC = T;}
-  //! Get the MTime corresponding to absolute UTC time
-  MTime GetAbsoluteTime() const {return m_EventTimeUTC; }
+  //! Compute the RTS time from known UTC time
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
+  MTime ComputeRTSfromUTCTime(MTime UTCTime) const;
+  //! Compute the UTC time from known RTS
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
+  MTime ComputeUTCfromRTSTime(MTime RTSTime) const;
+  //! Compute the RTS time from GPS time
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
+  MTime ComputeRTSfromGPSTime(MTime GPSTime) const;
+  //! Compute GPS time from known RTS
+  //! BUG: Fix leap-second issue and move to MTimeConversions class
+  MTime ComputeGPSfromRTSTime(MTime RTSTime) const;
+
 
   // protected methods:
  protected:
-  //MReadOutAssembly() {};
-  //MReadOutAssembly(const MReadOutAssembly& ReadOutAssembly) {};
 
   // private methods:
  private:
@@ -304,22 +315,27 @@ class MReadOutAssembly : public MReadOutSequence
   // private members:
  private:
 
-  //! Clock tick (Unix and UHF)
-  unsigned long long m_TI;
-  uint64_t m_CL;
+  //! Unique assembly identifier counter
+  static atomic<unsigned long> s_NextAssemblyID;
 
-  //! Time and MJD of this event
-  double m_MJD;
-  // MTime m_Time; // in base class
+  //! Unique assembly identifier
+  unsigned long m_AssemblyID;
+
+  //! The time of the event in COSI Reference Time System (seconds since January 1, 2025) in TT (terrestrial time)
+  MTime m_EventTimeRTS;
 
   //! The time of the event in absolute UTC time
   MTime m_EventTimeUTC;
 
-  //! The aspect information from the simulation, only used in DEE
+  //! The galactic pointing X-axis theta from simulation aspect information, used only in DEE
   double m_GalacticPointingXAxisTheta;
+  //! The galactic pointing X-axis phi from simulation aspect information, used only in DEE
   double m_GalacticPointingXAxisPhi;
+  //! The galactic pointing Z-axis theta from simulation aspect information, used only in DEE
   double m_GalacticPointingZAxisTheta;
+  //! The galactic pointing Z-axis phi from simulation aspect information, used only in DEE
   double m_GalacticPointingZAxisPhi;
+  //! True if simulation aspect information is available
   bool m_HasSimAspectInfo;
 
   //! Guard ring veto flag
@@ -332,40 +348,39 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_Trigger;
 
   //! Whether event contains strip hits in given detector
-  bool m_InDetector[16];
+  array<bool, 16> m_InDetector;
 
   //! List of strip hits
+  //! Ownership stays with this object
   vector<MStripHit*> m_StripHits;
 
-  //! List of strip hits with timing only
-  vector<MStripHit*> m_StripHitsTOnly;
-
   //! List of crystal hits
+  //! Ownership stays with this object
   vector<MCrystalHit*> m_CrystalHits;
 
   //! List of guardring hits
+  //! Ownership stays with this object
   vector<MGuardringHit*> m_GuardringHits;
 
   //! List of real hits
+  //! Ownership stays with this object
   vector<MHit*> m_Hits;
 
   //! The simulated event (nullptr if there is none)
+  //! Ownership stays with this object
   MSimEvent* m_SimEvent;
 
-  //! List of simulation hits
-  //! TODO: Remove: Part of m_SimEvent
-  vector<MHit*> m_HitsSim;
-
-  //! A list of low voltage DEE strips hit - i.e. normal strip hits in the making from the simulated hits sorted by side
+  //! A list of low-voltage DEE strip hits, i.e. normal strip hits in the making from the simulated hits sorted by side
   list<MDEEStripHit> m_DEEStripHitsLV;
-  //! A list of high voltage DEE strips hit - i.e. normal strip hits in the making from the simulated hits sorted by side
+  //! A list of high-voltage DEE strip hits, i.e. normal strip hits in the making from the simulated hits sorted by side
   list<MDEEStripHit> m_DEEStripHitsHV;
-  //! A list of crystal hit - i.e. normal crystal hits in the making from the simulated hits
+  //! A list of crystal hits, i.e. normal crystal hits in the making from the simulated hits
   list<MDEECrystalHit> m_DEECrystalHits;
 
   //! The physical event from event reconstruction
+  //! Ownership stays with this object
   MPhysicalEvent* m_PhysicalEvent;
-    
+
   // Flags indicating bad events:
 
   //! Energy calibration error flag
@@ -373,7 +388,7 @@ class MReadOutAssembly : public MReadOutSequence
   //! Energy calibration error string
   vector<MString> m_EnergyCalibrationErrorString;
 
-  //! String pairing error flag
+  //! Strip pairing error flag
   bool m_StripPairingError;
   //! Strip pairing error string
   vector<MString> m_StripPairingErrorString;
@@ -382,37 +397,37 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_DepthCalibrationError;
   //! Depth calibration error string
   vector<MString> m_DepthCalibrationErrorString;
- 
+
   //! Event reconstruction error flag
   bool m_EventReconstructionError;
   //! Event reconstruction error string
   vector<MString> m_EventReconstructionErrorString;
- 
+
   // Flags indicating the quality of the event: quality warning, but not to be filtered out:
 
   //! Strip hit below threshold quality flag
   bool m_StripHitBelowThreshold_QualityFlag;
   //! Strip hit below threshold quality string
   vector<MString> m_StripHitBelowThresholdString_QualityFlag;
-    
+
   //! Strip pairing quality flag
   bool m_StripPairing_QualityFlag;
   //! Strip pairing quality string
   vector<MString> m_StripPairingString_QualityFlag;
 
-  //! Reduced Chi^2 of the Strip Paired Event
-  double m_StripPairingReducedChiSquare;
+  //! The reduced chi^2 values of the strip-paired event
+  vector<double> m_StripPairingReducedChiSquare;
 
- //! True if event has been filtered out
+  //! True if the event has been filtered out
   bool m_FilteredOut;
 
-  //! The analysis progress 
+  //! The analysis progress
   uint64_t m_AnalysisProgress;
-  
-  
+
+
 #ifdef ___CLING___
  public:
-  ClassDef(MReadOutAssembly, 0) // no description
+  ClassDef(MReadOutAssembly, 0) // a read-out assembly
 #endif
 
 };

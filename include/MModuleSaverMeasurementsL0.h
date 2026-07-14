@@ -29,6 +29,7 @@
 // Nuclearizer libs:
 #include "MModule.h"
 #include "MReadOutAssembly.h"
+#include "MStripMap.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +70,11 @@ class MModuleSaverMeasurementsL0 : public MModule
   //! Get the output file name
   MString GetFileName() const { return m_FileName; }
 
+  //! Set the strip map file name (used for reverse (det,side,strip) → ReadOutID lookup)
+  void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
+  //! Get the strip map file name
+  MString GetFileNameStripMap() const { return m_FileNameStripMap; }
+
   // protected methods:
  protected:
   //! Write CCSDS Primary Header
@@ -78,11 +84,11 @@ class MModuleSaverMeasurementsL0 : public MModule
   //! Pack bits into a continuous bit stream
   void PackBitsIntoBitstream(std::vector<uint8_t>& bitstream, int& bitOffset, uint64_t bits, int numBits);
   //! Encode a normal strip hit (Type 0x0) - returns 44 bits
-  uint64_t EncodeNormalHit(int stripID, bool fastTiming, int energy, int timing);
+  uint64_t EncodeNormalHit(int stripID, bool fastTiming, int adc, int tac);
   //! Encode a neighboring strip hit (Type 0x1) - returns 36 bits
-  uint64_t EncodeNeighborHit(int stripID, bool fastTiming, int energy, int timing);
+  uint64_t EncodeNeighborHit(int stripID, bool fastTiming, int adc, int tac);
   //! Encode a guard ring hit (Type 0x2) - returns 24 bits
-  uint32_t EncodeGuardRingHit(int stripID, int energy);
+  uint32_t EncodeGuardRingHit(int stripID, int adc);
   //! Get event type based on detector count and veto status
   uint8_t GetEventType(MReadOutAssembly* Event);
   //! Write 16-bit value in big-endian
@@ -103,6 +109,14 @@ class MModuleSaverMeasurementsL0 : public MModule
  private:
   //! Output file name
   MString m_FileName;
+
+  //! Strip map file name. Used for reverse lookup (det,side,strip) → read-out ID
+  MString m_FileNameStripMap;
+
+  //! The loaded strip map
+  MStripMap m_StripMap;
+
+  bool m_StripMapLoaded;
 
   //! Output file stream
   std::ofstream m_OutFile;

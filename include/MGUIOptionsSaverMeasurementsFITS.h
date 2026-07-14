@@ -23,11 +23,12 @@
 #include <TObjArray.h>
 #include <TGFrame.h>
 #include <TGButton.h>
-#include <MString.h>
 #include <TGClient.h>
+#include <TGComboBox.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include <MString.h>
 #include "MGUIEFileSelector.h"
 #include "MGUIOptions.h"
 
@@ -71,6 +72,9 @@ class MGUIOptionsSaverMeasurementsFITS : public MGUIOptions
  private:
   //! Select which FITS file to save to
   MGUIEFileSelector* m_FileSelectorFITS;
+
+  //! Select output level: L1b or L2
+  TGComboBox* m_OutputDataLevelCombo;
 
 
 

@@ -103,24 +103,42 @@ void MStripHit::Clear()
 bool MStripHit::Parse(MString& Line, int Version)
 {
   const char* line = Line.Data();
+  if (Line.Length() < 3) {
+    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line too short"<<endl;
+    return false;
+  }
+
   if (line[0] == 'S' && line[1] == 'H') {
-    int det_id, strip_id, has_triggered, timing, un_adc, adc;
-    float energy, energy_res;
+    unsigned int det_id, strip_id;
+    int has_triggered;
+    double timing, un_adc, adc;
+    double energy, energy_res;
     char pos_strip;
     unsigned int flags;
-    sscanf(&line[3],"%d %c %d %d %d %d %d %f %f %u", &det_id, &pos_strip, &strip_id, &has_triggered,  &timing, &un_adc, &adc, &energy, &energy_res, &flags);
+    int N = sscanf(&line[3], "%u %c %u %d %lf %lf %lf %lf %lf %u",
+                   &det_id, &pos_strip, &strip_id, &has_triggered,
+                   &timing, &un_adc, &adc, &energy, &energy_res, &flags);
+    if (N != 10) {
+      if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: malformed SH line"<<endl;
+      return false;
+    }
+    if (pos_strip != 'l' && pos_strip != 'h') {
+      if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: unknown detector face: "<<pos_strip<<endl;
+      return false;
+    }
     SetDetectorID(det_id);
-    pos_strip == 'l' ? IsLowVoltageStrip(true) : IsLowVoltageStrip(false);
+    IsLowVoltageStrip(pos_strip == 'l');
     SetStripID(strip_id);
-    has_triggered == 0 ? HasTriggered(false) : HasTriggered(true);
-    SetTiming((double)timing);
-    SetUncorrectedADCUnits((double)un_adc);
-    SetADCUnits((double)adc);
+    HasTriggered(has_triggered != 0);
+    SetTiming(timing);
+    SetUncorrectedADCUnits(un_adc);
+    SetADCUnits(adc);
     SetEnergy(energy);
     SetEnergyResolution(energy_res);
     ParseFlags(flags);
     return true;
   } else {
+    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line does not start with SH"<<endl;
     return false;
   }
 }
@@ -212,7 +230,7 @@ void MStripHit::StreamRoa(ostream& S, bool WithADC, bool WithTAC, bool WithEnerg
 unsigned int MStripHit::MakeFlags()
 {
   //! Return flags to indicate the type of strip hit
-  //! Currently, 2 bits:
+  //! Currently, 3 bits:
   //!   v = Has fast timing
   //!    v = Is a nearest neighbor
   //!     v = Is a guard ring
@@ -245,9 +263,10 @@ void MStripHit::ParseFlags(unsigned int Flags)
   //!     v = Is a guard ring
   //! 0b111u
 
-  IsGuardRing(Flags & 0b001u);
-  IsNearestNeighbor(Flags & 0b010u);
-  HasFastTiming(Flags & 0b100u);
+  // "Flags & 0b001u" extracts bit 0, "!= 0u" turns it into an explicit bool.
+  IsGuardRing((Flags & 0b001u) != 0u);
+  IsNearestNeighbor((Flags & 0b010u) != 0u);
+  HasFastTiming((Flags & 0b100u) != 0u);
 }
 
 
