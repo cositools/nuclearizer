@@ -21,6 +21,7 @@
 #include <vector>
 #include <numeric>
 #include <cmath>
+#include <tuple>
 
 // ROOT libs:
 
@@ -124,6 +125,10 @@ class MModuleDepthCalibration : public MModule
 
   // protected methods:
  protected:
+
+  //! Returns the z as a function of ctd, given some ctd and some detector
+  std::tuple<double, double> CalculateZfromCTD(double CTDvalue, double noise, int DetID,int Grade, bool sean_weighting);
+
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
   MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
   

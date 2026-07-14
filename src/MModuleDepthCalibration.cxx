@@ -65,7 +65,7 @@ MModuleDepthCalibration::MModuleDepthCalibration() : MModule()
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
   AddPreceedingModuleType(MAssembly::c_TACcut, true);
-//  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
+  // AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_DepthCorrection);
@@ -196,6 +196,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
       // Handle different grades differently    
       // GRADE=-1 is an error. Break from the loop and continue.
+      // TODO in what circumstances do we get errors? 
       if (Grade < 0){
         H->SetNoDepth();
         Event->SetDepthCalibrationError("Error in depth calibration");
@@ -226,12 +227,13 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
         }
 
+	// TODO classify based on charge sharing degree. > 10% == charge sharing event! 
         double LVEnergyFraction;
         double HVEnergyFraction;
         MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-        double CTD_s = 0.0;
+        double rawCTD_s = 0.0;
 
         //now try and get z position
         int DetID = LVSH->GetDetectorID();
@@ -275,6 +277,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         double HVTiming = HVSH->GetTiming();
 
         // If there aren't coefficients loaded, then report a depth calibration error.
+	// TODO check adjacent strips if so
         if( Coeffs == nullptr ){
           // Set the bad flag for depth
           H->SetNoDepth();
@@ -295,58 +298,37 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         } else {
           
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
-          double CTD = (HVTiming - LVTiming);
+	  // TODO FR start here
+          double rawCTD = (HVTiming - LVTiming);
 
-          // Confirmed that this matches SP's python code.
-          CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
+          rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
 
           double Xmin = * std::min_element(CTDVec.begin(), CTDVec.end());
           double Xmax = * std::max_element(CTDVec.begin(), CTDVec.end());
 
-          double noise = GetTimingNoiseFWHM(PixelCode, H->GetEnergy());
+          double noise = GetTimingNoiseFWHM(PixelCode, H->GetEnergy()); 
+	  // TODO make the energy dependence correct.... or at least something!
 
           //if the CTD is out of range, check if we should reject the event.
-          if ((CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise))) {
+	  // TODO -- nope, check consistency with adjacent strips
+	  // ALSO TODO would we want to reject tht whole event? What if this is the last hit and we still have the energy? 
+	  // also, how is slow timing dealt with? I think a lot of last-hits could be out of range for this reason... 
+          if ((rawCTD_s < (Xmin - 2.0*noise)) || (rawCTD_s > (Xmax + 2.0*noise))) {
             H->SetNoDepth();
             Event->SetDepthCalibrationError("Out of Range");
             ++m_Error2;
           }
 
           // If the CTD is in range, calculate the depth
-          // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
-          // This way we can avoid problems like non-monotonicity or assigning depth to events "outside" the detector 
-          // Note that this requires that we don't massively overestimate the timing noise
           else {
-            // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
-            // Utlize symmetry of the normal distribution.
-            vector<double> prob_dist = norm_pdf(CTDVec, CTD_s, noise/2.355);
-            
-            // Weight the depth by probability
-        	  double prob_sum = 0.0;
-        	  for (unsigned int k=0; k < prob_dist.size(); ++k) {
-        	    prob_sum += prob_dist[k];
-        	  }
-            double weighted_depth = 0.0;
+	    // FR TODO the last boolean is for sean's weighting method;  make it a flag
+	    auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false);
 
-            for (unsigned int k = 0; k < DepthVec.size(); ++k) {
-              weighted_depth += prob_dist[k] * DepthVec[k];
-            }
-
-            // Calculate the expectation value of the depth
-            double mean_depth = weighted_depth/prob_sum;
-
-            // Calculate the standard deviation of the depth
-            double depth_var = 0.0;
-
-            for (unsigned int k=0; k < DepthVec.size(); ++k) {
-              depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0);
-            }
-
-            Zsigma =  sqrt(depth_var/prob_sum);
-            Zpos = mean_depth;
-            // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
-
-            // Add the depth to the GUI histogram.
+	    // TODO depth correction loop!
+	    Zpos = rawZpos;
+	    Zsigma = rawZsigma;
+	      
+	    // Add the depth to the GUI histogram.
             if (Event->HasStripPairingError()==false) {
               if (HasExpos() == true) {
                 m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
@@ -370,8 +352,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
       H->SetPositionResolution(GlobalResolution);
 
-
-
       }
     }
   }
@@ -379,6 +359,82 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
   Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
 
   return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+// TODO noise needs to be broken down into strip noise and calculated as a function of energy per strip...
+std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTDvalue, double noise, int DetID,int Grade, bool sean_weighting=false)
+{
+  vector<double> CTDVec = GetCTD(DetID, Grade);
+  vector<double> DepthVec = GetDepth(DetID);
+          
+  
+  // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
+  // This way we can avoid problems like non-monotonicity or assigning depth to events "outside" the detector 
+  // Note that this requires that we don't massively overestimate the timing noise
+  if (sean_weighting){
+    vector<double> prob_dist = norm_pdf(CTDVec, CTDvalue, noise/2.355);
+            
+    // Weight the depth by probability
+    double prob_sum = 0.0;
+    for (unsigned int k=0; k < prob_dist.size(); ++k) {
+      prob_sum += prob_dist[k];
+    }
+    double weighted_depth = 0.0;
+
+    for (unsigned int k = 0; k < DepthVec.size(); ++k) {
+      weighted_depth += prob_dist[k] * DepthVec[k];
+    }
+
+    // Calculate the expectation value of the depth
+    double mean_depth = weighted_depth/prob_sum;
+
+    // Calculate the standard deviation of the depth
+    double depth_var = 0.0;
+
+    for (unsigned int k=0; k < DepthVec.size(); ++k) {
+      depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0);
+    }
+    return std::make_tuple(mean_depth,sqrt(depth_var/prob_sum));
+  }
+  // otherwise, use the standard appropach with no rounding off
+  // if out of bounds, return boundary
+  if (CTDvalue <= CTDVec.front()) {
+    double CTD_high = CTDvalue + noise/2.355;
+    auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_high);
+    unsigned int i = std::distance(CTDVec.begin(), it);
+    double fraction = (CTD_high - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
+    double depth_high = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+    return std::make_tuple(DepthVec.front(),depth_high-DepthVec.front());
+  }
+  if (CTDvalue >= CTDVec.back()) {
+    double CTD_low = CTDvalue - noise/2.355;
+    auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_low);
+    unsigned int i = std::distance(CTDVec.begin(), it);
+    double fraction = (CTD_low - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
+    double depth_low = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+    return std::make_tuple(DepthVec.back(),depth_low-DepthVec.back());
+  }
+  
+  // if not out of bounds, extrapolate and calculate errors....
+  auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTDvalue);
+  unsigned int i = std::distance(CTDVec.begin(), it);
+  double fraction = (CTDvalue - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
+  double depth = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+  
+  double CTD_low = CTDvalue - noise/2.355;
+  double CTD_high = CTDvalue + noise/2.355;
+  it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_low);
+  i = std::distance(CTDVec.begin(), it);
+  fraction = (CTD_low - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
+  double depth_low = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+  it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_high);
+  i = std::distance(CTDVec.begin(), it);
+  fraction = (CTD_high - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
+  double depth_high = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+
+  return std::make_tuple(depth, (depth_high - depth_low) / 2.);
 }
 
 
