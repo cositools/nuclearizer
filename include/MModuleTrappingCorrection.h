@@ -77,15 +77,12 @@ class MModuleTrappingCorrection : public MModule
   virtual void Finalize();
 
 
-
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
 
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
 
-  // //! Finalize
-  // void Finalize();
 
   // protected methods:
  protected:
@@ -94,9 +91,6 @@ class MModuleTrappingCorrection : public MModule
   
   // //! Retrieve the appropriate Depth values given the DetID
   // vector<double> GetDepth(int DetID);
-  
-  // //! Retrieve the appropriate CTD values given the DetID and Grade
-  // vector<double> GetCTD(int DetID, int Grade);
 
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
@@ -127,11 +121,6 @@ class MModuleTrappingCorrection : public MModule
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
   MGUIExpoTrappingCorrection* m_ExpoTrappingCorrection;
-
-  // The CTD Map maps each detector (int) to a 2D array of CTD values.
-  // unordered_map<int, vector<vector<double>>> m_CTDMap;
-  // unordered_map<int, vector<double>> m_DepthGrid;
-  // unordered_map<int, vector<TSpline3*>> m_SplineMap;
 
   bool m_SimCCEFileIsLoaded;
 

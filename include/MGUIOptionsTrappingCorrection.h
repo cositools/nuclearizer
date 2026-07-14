@@ -53,9 +53,6 @@ class MGUIOptionsTrappingCorrection : public MGUIOptions
   //! Default destructor
   virtual ~MGUIOptionsTrappingCorrection();
 
-  // //! Process all button, etc. messages
-  // virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
-
   //! The creation part which gets overwritten
   virtual void Create();
 
@@ -65,8 +62,6 @@ class MGUIOptionsTrappingCorrection : public MGUIOptions
   //! Actions after the Apply or OK button has been pressed
   virtual bool OnApply();
 
-  // //! Toggle the radio buttons
-  // void ToggleRadioButtons(int WidgetID);
 
 
   // protected members:
@@ -77,35 +72,6 @@ class MGUIOptionsTrappingCorrection : public MGUIOptions
 
   //! Select which file to load
   MGUIEFileSelector* m_SimCCEFileSelector;
-
-  // //! Radio button for ignoring the slow threshold cut
-  // TGRadioButton* m_SlowThresholdCutRBIgnore;
-
-  // //! Radio button for using a fixed slow threshold cut
-  // TGRadioButton* m_SlowThresholdCutRBFixed;
-  // //! The slow threshold cut entry box
-  // MGUIEEntry* m_SlowThresholdCutFixedValue;
-
-  // //! Radio button for reading slow threshold cuts from a file
-  // TGRadioButton* m_SlowThresholdCutRBFile;
-  // //! The slow threshold cut file selector
-  // MGUIEFileSelector* m_SlowThresholdCutFileSelector;
-  
-  // //! Radio button for ignoring the threshold cut for Nearest Neighbors
-  // TGRadioButton* m_SlowThresholdCutNearestNeighborRBIgnore;
-  // //! Radio button for using a fixed threshold cut for Nearest Neighbors
-  // TGRadioButton* m_SlowThresholdCutNearestNeighborRBFixed;
-  // //! The threshold cut entry box for Nearest Neighbors
-  // MGUIEEntry* m_SlowThresholdCutNearestNeighborFixedValue;
-
-
-  // //! IDs of radio buttons
-  // //! The numbers should be identical to MSlowThresholdCutModes
-  // enum RBButtonIDs { c_SlowThresholdIgnore = 0,
-  //   c_SlowThresholdFixed,
-  //   c_SlowThresholdFile,
-  //   c_SlowThresholdNearestNeighborIgnore = 100,
-  //   c_SlowThresholdNearestNeighborFixed};
 
 
 #ifdef ___CLING___

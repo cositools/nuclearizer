@@ -3,7 +3,7 @@
  *
  *
  * Copyright (C) 2008-2008 by Andreas Zoglauer, Alex Lowell, 
- * 				Sean Pike, Carolyn Kierans.
+ * 				Sophie Haight, Carolyn Kierans.
  * All rights reserved.
  *
  *
@@ -72,11 +72,9 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
   AddPreceedingModuleType(MAssembly::c_TACcut, true);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_DepthCorrection, true);
-//  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_TrappingCorrection);
-  // AddModuleType(MAssembly::c_PositionDetermiation);
 
   // Set all modules, which can follow this module
   AddSucceedingModuleType(MAssembly::c_NoRestriction);
@@ -84,8 +82,6 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
   // Set if this module has an options GUI
   // If true, overwrite ShowOptionsGUI() with the call to the GUI!
   m_HasOptionsGUI = true;
-  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
-  // and implement all your GUI options
   
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
@@ -114,40 +110,28 @@ bool MModuleTrappingCorrection::Initialize()
   // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
   vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
 
-  // Look through the Geometry and get the names and thicknesses of all the detectors.
+  // Look through the Geometry and get the names of all the detectors.
   for (unsigned int i = 0; i < DetList.size(); ++i) {
     // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
-    // If using the card cage at UCSD, default to DetID=11.
     unsigned int DetID = i;
-
 
     MDDetector* det = DetList[i];
     vector<string> DetectorNames;
-    if (det->GetTypeName() == "Strip3D") {
-      if (det->GetNSensitiveVolumes() == 1) {
-        MDVolume* vol = det->GetSensitiveVolume(0);
-        string det_name = vol->GetName().GetString();
-        if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
-          DetectorNames.push_back(det_name);
 
-          if (g_Verbosity >= c_Info) {
-            cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
-          }
-          m_DetectorIDs.push_back(DetID);
-          m_Detectors[DetID] = det;
-        } else {
-          if (g_Verbosity >= c_Error) {
-            cout<<"ERROR in MModuleTrappingCorrection::Initialize: Found a duplicate detector: "<<det_name<<endl;
-          }
-        }
-      } else {
-        if (g_Verbosity >= c_Error) {
-          cout<<"ERROR in MModuleTrappingCorrection::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
-        }
+    if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
+      DetectorNames.push_back(det_name);
+
+      if (g_Verbosity >= c_Info) {
+        cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
+      }
+      m_DetectorIDs.push_back(DetID);
+      m_Detectors[DetID] = det;
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout<<"ERROR in MModuleTrappingCorrection::Initialize: Found a duplicate detector: "<<det_name<<endl;
       }
     }
-  }
-
+  } 
   if (m_DetectorIDs.size() == 0) {
     cout<<"No Strip3D detectors were found."<<endl;
     return false; 
@@ -193,7 +177,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 {
   
   if (Event->GetGuardRingVeto() == true) {
-    //TODO: Handle events with GR vetos    
+    //Right now we cannot use events w gaurd ring veto 
     
     // Event->SetTrappingCorrectionError("GR Veto");
     return false;
@@ -208,29 +192,16 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 
       int Grade = GetHitGrade(H);
 
-      // Handle different grades differently    
+      // Handle different grades differently  
+      // Get the position from the depth cal. If error is thrown, record and no depth.
+
       // GRADE=-1 is an error. Break from the loop and continue.
       if (Grade < 0){
         H->SetNoDepth();
-        // // Event->SetTrappingCorrectionError("Error in Trapping Correction");
-        // if (Grade == -1) {
-        //   ++m_ErrorSH;
-        // } else if (Grade == -2) {
-        //   ++m_ErrorNullSH;
-        // } else if (Grade == -3) {
-        //   ++m_ErrorNoE;
-        // }
       } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
         H->SetNoDepth();
-        // // Event->SetTrappingCorrectionError("Multiple hits on single strip");
-        // if (Grade==5) {
-        //   ++m_Error5;
-        // } else if (Grade==6) {
-        //   ++m_Error6;
-        // }
       } else { // If the Grade is 0-4, we can handle it.
 
-        // Get the position from the depth cal. If error is thrown, record and no depth.
         // Take a Hit and separate its activated X- and Y-strips into separate vectors.
         vector<MStripHit*> LVStrips;
         vector<MStripHit*> HVStrips;
@@ -240,30 +211,22 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
           if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
         }
 
+        // For the hits in and events corresponding to the HV, LV sides, get the dominant strip and its energy fraction
+        // This is used to determine the CTD value for the event
         double LVEnergyFraction;
         double HVEnergyFraction;
         MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-        double CTD_s = 0.0;
-
-        //now try and get z position
-        int DetID = LVSH->GetDetectorID();
-        int LVStripID = LVSH->GetStripID();
-        int HVStripID = HVSH->GetStripID();
-        // int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
-
-      
-
         // Get the position value (assumed from event/hit context H)
         double Zpos = H->GetPosition().GetZ();
-        double ctd_val = static_cast<double>(Zpos);
+        double depth_val = static_cast<double>(Zpos);
 
         // Correct the Low Voltage side energy if the hit pointer exists
         if (LVSH != nullptr) {
-            double rawLVEnergy = LVSH->GetEnergy(); // Replace with actual getter method for your hit class
-            double correctedLVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawLVEnergy, m_CCEs_LV, m_ParamA_LV, m_ParamB_LV, m_ParamC_LV);
-            LVSH->SetEnergy(correctedLVEnergy);     // Replace with actual setter method for your hit class
+            double rawLVEnergy = LVSH->GetEnergy(); 
+            double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV, m_ParamA_LV, m_ParamB_LV, m_ParamC_LV);
+            LVSH->SetEnergy(correctedLVEnergy);    
 
             if (HasExpos() == true) {
               m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
@@ -272,9 +235,9 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 
         // Correct the High Voltage side energy if the hit pointer exists
         if (HVSH != nullptr) {
-            double rawHVEnergy = HVSH->GetEnergy(); // Replace with actual getter method for your hit class
-            double correctedHVEnergy = GetSimBasedCorrectedEnergy(ctd_val, rawHVEnergy, m_CCEs_HV, m_ParamA_HV, m_ParamB_HV, m_ParamC_HV);
-            HVSH->SetEnergy(correctedHVEnergy);     // Replace with actual setter method for your hit class
+            double rawHVEnergy = HVSH->GetEnergy(); 
+            double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV, m_ParamA_HV, m_ParamB_HV, m_ParamC_HV);
+            HVSH->SetEnergy(correctedHVEnergy);    
 
             if (HasExpos() == true) {
               m_ExpoSpectrum->AddEnergyFinal(correctedHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
@@ -296,7 +259,6 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 
 void MModuleTrappingCorrection::Finalize()
 {
-  // 1. Let the base class handle its core finalization routine first
   MModule::Finalize();
 
   if (m_ExpoSpectrum == nullptr) {
@@ -304,17 +266,16 @@ void MModuleTrappingCorrection::Finalize()
     return;
   }
 
-  // 2. Locate the histograms dynamically from ROOT's global memory map
+  // Locate the histograms dynamically from ROOT's global memory map
   TH1D* histLV = (TH1D*) gDirectory->Get("EnergyHistogramLVFinal");
   TH1D* histHV = (TH1D*) gDirectory->Get("EnergyHistogramHVFinal");
 
   if (histLV == nullptr) histLV = (TH1D*) gDirectory->Get("m_EnergyHistogramLVFinal");
   if (histHV == nullptr) histHV = (TH1D*) gDirectory->Get("m_EnergyHistogramHVFinal");
 
-  // 3. Perform the analytical fit for the Low Voltage spectrum
+  // Perform the photopeak fit for the LV peak
   if (histLV != nullptr && histLV->GetEntries() > 0) {
     TF1* fitFuncLV = GeneratePhotopeakFunction();
-    fitFuncLV->SetParameter("Amplitude", histLV->GetBinContent(histLV->GetMaximumBin()));
     
     histLV->Fit(fitFuncLV, "RQ");
     
@@ -328,10 +289,9 @@ void MModuleTrappingCorrection::Finalize()
     delete fitFuncLV;
   }
 
-  // 4. Perform the analytical fit for the High Voltage spectrum
+  // Perform the photopeak fit for the HV peak
   if (histHV != nullptr && histHV->GetEntries() > 0) {
     TF1* fitFuncHV = GeneratePhotopeakFunction();
-    fitFuncHV->SetParameter("Amplitude", histHV->GetBinContent(histHV->GetMaximumBin()));
     
     histHV->Fit(fitFuncHV, "RQ");
     
@@ -345,8 +305,7 @@ void MModuleTrappingCorrection::Finalize()
     delete fitFuncHV;
   }
 
-  return; // Clean exit for a void function
-}
+  return; 
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -407,7 +366,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     }
 
     if (ValidLineCount == 0) {
-      // Step 1: Read parameters A, B, and C from the first line
+      // Read parameters A, B, and C from the first line
       if (Tokens.size() == 6) {
         m_ParamA_HV = Tokens[0].ToDouble();
         m_ParamB_HV = Tokens[1].ToDouble();
@@ -417,17 +376,17 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
         m_ParamC_LV = Tokens[5].ToDouble();
         ValidLineCount++;
       } else {
-        cout << "ERROR in LoadSimCCEFile: Expected 3 parameters (A,B,C) on the first line." << endl;
+        cout << "ERROR in LoadSimCCEFile: Expected 6 parameters (A,B,C for HV, LV) on the first line." << endl;
         SimCCEFile.Close();
         return false;
       }
     } 
     else if (ValidLineCount == 1) {
-      // Step 2: Skip the second line which is the column header (z_depth_mm,CCE_HV)
+      // Skip the second line which is the column header (z_depth_mm,CCE_HV)
       ValidLineCount++;
     } 
     else {
-      // Step 3: Read the rest of the rows into your depth and CCE HV arrays
+      // Read the rest of the rows into your depth and CCE HV arrays
       if (Tokens.size() == 3) {
         m_Depths.push_back(Tokens[0].ToDouble());
         m_CCEs_HV.push_back(Tokens[1].ToDouble());
@@ -452,20 +411,20 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted, double paramA, double paramB, double paramC) {
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted, double paramA, double paramB, double paramC) {
 
-  // 2. Look up the simulation CCE baseline using the helper
-  double cce_base = Interpolate(ctd_val, m_Depths, sim_cce_sorted);
+  // Look up the simulation CCE baseline using the interpolate function
+  double cce_base = Interpolate(depth_val, m_Depths, sim_cce_sorted);
 
-  // 3. Evaluate the physical trapping function model using class global popt variables
+  // Evaluate the physical trapping function model using class global popt variables
   double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base)) * (1.0 - paramC * (1.0 - cce_base));
 
-  // 4. Prevent division-by-zero or non-physical negative values
+  // Prevent division-by-zero or non-physical negative values
   if (expected_centroid_scaled <= 0.0) {
       return uncorrected_energy;
   }
 
-  // 5. Reconstruct the true un-trapped energy deposition
+  //Reconstruct the true un-trapped energy 
   return uncorrected_energy / expected_centroid_scaled;
 }
 
@@ -474,6 +433,7 @@ double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double ctd_val, dou
 
 
 double MModuleTrappingCorrection::Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp) {
+  // need an interpolation function to get continuour CCE values from the discrete simulation data
   if (xp.empty()) return 0.0;
   if (x <= xp.front()) return fp.front();
   if (x >= xp.back()) return fp.back();
@@ -653,18 +613,6 @@ MXmlNode* MModuleTrappingCorrection::CreateXmlConfiguration()
   
   return Node;
 }
-
-// void MModuleTrappingCorrection::Finalize()
-// {
-
-//   MModule::Finalize();
-//   cout << "finalize is working" << endl;
-
-//   // Clean up maps and vectors
-//   m_Detectors.clear();
-//   m_DetectorIDs.clear();
-
-// }
 
 ////////////////////////////////////////////////////////////////////////////////
 
