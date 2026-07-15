@@ -322,7 +322,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           // If the CTD is in range, calculate the depth
           else {
 	    // FR TODO the last boolean is for sean's weighting method;  make it a flag
-	    auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false);
+	    auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, true);
 
 	    // TODO depth correction loop!
 	    Zpos = rawZpos;
