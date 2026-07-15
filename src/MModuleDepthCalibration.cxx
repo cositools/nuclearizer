@@ -364,7 +364,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 /////////////////////////////////////////////////////////////////////////////////
 
 // TODO noise needs to be broken down into strip noise and calculated as a function of energy per strip...
-std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTDvalue, double noise, int DetID,int Grade, bool sean_weighting=false)
+std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTDvalue, double noise, int DetID,int Grade, bool sean_weighting)
 {
   vector<double> CTDVec = GetCTD(DetID, Grade);
   vector<double> DepthVec = GetDepth(DetID);
@@ -402,6 +402,9 @@ std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTD
   // if out of bounds, return boundary
   if (CTDvalue <= CTDVec.front()) {
     double CTD_high = CTDvalue + noise/2.355;
+    if (CTD_high <= CTDVec.front()) {
+        return std::make_tuple(DepthVec.front(), 0.0);
+    }
     auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_high);
     unsigned int i = std::distance(CTDVec.begin(), it);
     double fraction = (CTD_high - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
@@ -410,6 +413,9 @@ std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTD
   }
   if (CTDvalue >= CTDVec.back()) {
     double CTD_low = CTDvalue - noise/2.355;
+    if (CTD_low >= CTDVec.back()) {
+        return std::make_tuple(DepthVec.back(), 0.0);
+    }
     auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_low);
     unsigned int i = std::distance(CTDVec.begin(), it);
     double fraction = (CTD_low - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
@@ -423,8 +429,8 @@ std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTD
   double fraction = (CTDvalue - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
   double depth = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
   
-  double CTD_low = CTDvalue - noise/2.355;
-  double CTD_high = CTDvalue + noise/2.355;
+  double CTD_low = std::max(CTDvalue - noise/2.355,CTDVec.front());
+  double CTD_high = std::min(CTDvalue + noise/2.355,CTDVec.back());
   it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_low);
   i = std::distance(CTDVec.begin(), it);
   fraction = (CTD_low - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
