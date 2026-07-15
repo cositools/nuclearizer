@@ -227,7 +227,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
         }
 
-	// TODO classify based on charge sharing degree. > 10% == charge sharing event! 
         double LVEnergyFraction;
         double HVEnergyFraction;
         MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
@@ -262,6 +261,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
 
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
+	// FR note: i think this actually has to go later in the loop 
 
         double Xsigma = m_YPitches[DetID]/sqrt(12.0);
         double Ysigma = m_XPitches[DetID]/sqrt(12.0);
@@ -307,7 +307,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           double Xmax = * std::max_element(CTDVec.begin(), CTDVec.end());
 
           double noise = GetTimingNoiseFWHM(PixelCode, H->GetEnergy()); 
-	  // TODO make the energy dependence correct.... or at least something!
+	  // TODO make the energy dependence correct... and make it depend on teh two strip energies, as it should!!
 
           //if the CTD is out of range, check if we should reject the event.
 	  // TODO -- nope, check consistency with adjacent strips
@@ -325,6 +325,29 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, true);
 
 	    // TODO depth correction loop!
+	    //
+	    // step 1 -- check the HV side:
+	    // 	-- how many strips share > 10% of the total energy (or are over slow threshold, maybe?)  need this info for next steps
+	    // 	-- check dTAC between adjacent strips with charge sharing and also strips relative to their low-eneryg neighbors
+	    // 	   -- correct the HV timing asic jitter bug, if needed, to make everything consistent
+	    // 	   -- TODO FLAG that HV timing asic jitter bug correction was used, if needed
+	    // 	   -- if charge sharing, calculate the corrected timing value for each strip in teh absense of charge sharing,
+	    // 	   -- and also calculate the HV tac as the weighted average, with its own uncertainty
+	    // 	   -- note, rawZpos is used in the above calculations! 
+	    //
+	    // step 2 -- check the LV side: 
+	    //  -- how many strips share > 10% of the total energy (or are over the slow threshold, maybe?) need this info for the next steps
+	    //  -- check dTAC between adjacent strips with charge sharing and also strips relative to their low-energy neighbors
+	    //     -- deal with the zombie bump! 
+	    //     	-- check for consistency between all adjacent strip pairs. If any strips with significant energy are consistent with bump: flag and correct!
+	    //     -- if charge sharing, calculate the corrected timing value for each strip in the absence of charge sharing, 
+	    //     -- and then also calculate the corrected LV tac as the weighted average, with its own uncertainty (they should be consistent)
+	    //     -- note, rawZpos is used in teh above calculations
+	    //
+	    // step 3 -- calculate new corrected CTD, and from that calculate new corrected Z
+	    // 
+	    // bonus points: implement x and y localization based on info in step 1 and 2 with charge sharing :) 
+	    // bonus points -- can re-calculated depth between 1 and 2 if significant changes with HV correction would impact ZB correction!
 	    Zpos = rawZpos;
 	    Zsigma = rawZsigma;
 	      
