@@ -117,18 +117,24 @@ bool MModuleTrappingCorrection::Initialize()
 
     MDDetector* det = DetList[i];
     vector<string> DetectorNames;
+    if (det->GetTypeName() == "Strip3D") {
+      if (det->GetNSensitiveVolumes() == 1) {
+        MDVolume* vol = det->GetSensitiveVolume(0);
+        string det_name = vol->GetName().GetString();
 
-    if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
-      DetectorNames.push_back(det_name);
+        if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
+          DetectorNames.push_back(det_name);
 
-      if (g_Verbosity >= c_Info) {
-        cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
-      }
-      m_DetectorIDs.push_back(DetID);
-      m_Detectors[DetID] = det;
-    } else {
-      if (g_Verbosity >= c_Error) {
-        cout<<"ERROR in MModuleTrappingCorrection::Initialize: Found a duplicate detector: "<<det_name<<endl;
+          if (g_Verbosity >= c_Info) {
+            cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
+          }
+          m_DetectorIDs.push_back(DetID);
+          m_Detectors[DetID] = det;
+        } else {
+          if (g_Verbosity >= c_Error) {
+            cout<<"ERROR in MModuleTrappingCorrection::Initialize: Found a duplicate detector: "<<det_name<<endl;
+          }
+        }
       }
     }
   } 
@@ -211,16 +217,15 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
           if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
         }
 
-        // For the hits in and events corresponding to the HV, LV sides, get the dominant strip and its energy fraction
-        // This is used to determine the CTD value for the event
+        // Get the dominant strip for the hit and its energy fraction for both LV and HV sides
         double LVEnergyFraction;
         double HVEnergyFraction;
         MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
 
         // Get the position value (assumed from event/hit context H)
-        double Zpos = H->GetPosition().GetZ();
-        double depth_val = static_cast<double>(Zpos);
+        double depth_val = H->GetPosition().GetZ();
+        // double depth_val = static_cast<double>(Zpos);
 
         // Correct the Low Voltage side energy if the hit pointer exists
         if (LVSH != nullptr) {
@@ -306,7 +311,7 @@ void MModuleTrappingCorrection::Finalize()
   }
 
   return; 
-
+}
 /////////////////////////////////////////////////////////////////////////////////
 
 MStripHit* MModuleTrappingCorrection::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
@@ -495,8 +500,8 @@ int MModuleTrappingCorrection::GetHitGrade(MHit* H){
   }
 
   // If the same strip has multiple hits, this is a bad grade.
-  bool MultiHitX = H->GetStripHitMultipleTimesX();
-  bool MultiHitY = H->GetStripHitMultipleTimesY();
+  bool MultiHitX = H->GetStripHitMultipleTimesLV();
+  bool MultiHitY = H->GetStripHitMultipleTimesHV();
   if (MultiHitX || MultiHitY) {
     return 5;  
   }
