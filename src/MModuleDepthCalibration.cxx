@@ -127,6 +127,10 @@ bool MModuleDepthCalibration::Initialize()
   if (m_CoeffsFileIsLoaded == false) {
     return false;
   }
+  m_DtacCoeffsFileIsLoaded = LoadDtacCoeffsFile(m_DtacCoeffsFileName);
+  if (m_DtacCoeffsFileIsLoaded == false) {
+    return false;
+  }
   m_SplinesFileIsLoaded = LoadSplinesFile(m_SplinesFile);
   if (m_SplinesFileIsLoaded == false) {
     return false;
@@ -327,6 +331,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // TODO depth correction loop!
 	    //
 	    // step 1 -- check the HV side:
+	    int StripPairCode = 10000*DetID + HVStripID; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
 	    // 	-- how many strips share > 10% of the total energy (or are over slow threshold, maybe?)  need this info for next steps
 	    // 	-- check dTAC between adjacent strips with charge sharing and also strips relative to their low-eneryg neighbors
 	    // 	   -- correct the HV timing asic jitter bug, if needed, to make everything consistent
@@ -336,6 +341,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // 	   -- note, rawZpos is used in the above calculations! 
 	    //
 	    // step 2 -- check the LV side: 
+	    StripPairCode = 10000*DetID + 100*LVStripID; // note, it is the lower Strip ID always!
 	    //  -- how many strips share > 10% of the total energy (or are over the slow threshold, maybe?) need this info for the next steps
 	    //  -- check dTAC between adjacent strips with charge sharing and also strips relative to their low-energy neighbors
 	    //     -- deal with the zombie bump! 
@@ -575,6 +581,58 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
   return true;
 }
 
+bool MModuleDepthCalibration::LoadDtacCoeffsFile(MString FileName)
+{
+  // Read in the dTAC coefficients file, which gives the coefficients needed for per-strip charge sharing correction
+  // it should have a header line with the following info: 
+  // TODO info here once finalized! 
+  // it should contain for each pixel
+  // TODO final form here!!
+  
+  // TODO replace this! temp fix while waiting for actual config file... 
+  for (int DetID = 0; DetID < 1; DetID++){
+    vector<double> poly_coeffs;
+    poly_coeffs.push_back(139.209); poly_coeffs.push_back(-106.849);// these are the coefficients, where we'll have a polynomial dTac = coeffs[0]*(f-0.5) - coeffs[1]*(f-0.5)^3
+    m_LVDtacPolyCoeffs[DetID] = poly_coeffs;
+    m_HVDtacPolyCoeffs[DetID] = poly_coeffs; // in principle they would be different
+  
+    vector<double> coeffs; // the stretch and offset, currently set to the same values for all strips (which are almost certainly wrong)
+    coeffs.push_back(1.033454449); coeffs.push_back(-1.996517705);coeffs.push_back(6.373983606); // stretch, offset, dTacSigma. Need to figure out how to deal with dTac sigma in an energy-dependent way
+    for (int LVStripID = 0; LVStripID < 63; LVStripID++){ // up to 62 since these are pairs
+      int StripPairCode = 10000*DetID + 100*LVStripID;
+      m_DtacCoeffs[StripPairCode] = coeffs;
+    }
+    for (int HVStripID = 0; HVStripID < 63; HVStripID++){
+      int StripPairCode = 10000*DetID +  HVStripID; 
+      m_DtacCoeffs[StripPairCode] = coeffs;
+    }
+  }
+  return true;
+  
+  //read in file
+  MFile DtacCoeffsFile;
+  std::vector<MString> HeaderTokens;
+  if (DtacCoeffsFile.Open(FileName) == false) {
+    cout << "ERROR in MModuleDepthCalibration::LoadDtacCoeffsFile: failed to open dtac coefficients file." <<endl;
+    return false;
+  }
+
+  MString Line;
+  while (DtacCoeffsFile.ReadLine(Line) == true){
+    // TODO verify functional form (ie a*x^3 + b*x) and request the correct number of args based on it 
+    if (Line.BeginsWith("#") == true) { // note: this will overwrite tokens mutliple tiems, but the last one should be what we want for the coefficients
+      HeaderTokens = Line.Tokenize(" ");// TODO why is it like this? Did i not put commas in the header?
+      for (int i = 0; i < HeaderTokens.size(); i++) cout << HeaderTokens[i];
+      cout <<  endl;
+    } else {
+      std::vector<MString> Tokens = Line.Tokenize(",");
+      vector<double> coeffs;
+
+    }
+  }
+  DtacCoeffsFile.Close();
+  return true;  
+}
 
 bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 {
@@ -592,7 +650,7 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
   MString Line;
   while (CoeffsFile.ReadLine(Line) == true) {
     if (Line.BeginsWith('#') == true) {
-      std::vector<MString> Tokens = Line.Tokenize(" ");
+      std::vector<MString> Tokens = Line.Tokenize(" "); // TODO why is it like this? Did i not put commas in the header of the depth cal? 
       m_Coeffs_Energy = Tokens[5].ToDouble();
       if (g_Verbosity >= c_Info) {
         cout << m_XmlTag << "The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
@@ -619,6 +677,28 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+std::vector<double>* MModuleDepthCalibration::GetDtacCoeffs(int StripPairCode)
+{
+  // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
+  if (m_DtacCoeffsFileIsLoaded == true) {
+    if (m_DtacCoeffs.count(StripPairCode) > 0) {
+      return &m_Coeffs[StripPairCode];
+    } else {
+      if (g_Verbosity >= c_Warning) {
+        cout << "MModuleDepthCalibration::GetDtacCoeffs: cannot get charge sharing coefficients; strip pair code " << StripPairCode << " not found." << endl;
+      }
+      return nullptr;
+    }
+  } else {
+    cout << "MModuleDepthCalibration::GetDtacCoeffs: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
+    return nullptr;
+  }
+
+}
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -1142,6 +1222,11 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
   m_CoeffsFileName = CoeffsFileNameNode->GetValue();
   }
 
+  MXmlNode* DtacCoeffsFileNameNode = Node->GetNode("DtacCoeffsFileName");
+  if (DtacCoeffsFileNameNode != nullptr) {
+  m_DtacCoeffsFileName = DtacCoeffsFileNameNode->GetValue();
+  }
+
   MXmlNode* SplinesFileNameNode = Node->GetNode("SplinesFileName");
   if (SplinesFileNameNode != nullptr) {
   m_SplinesFile = SplinesFileNameNode->GetValue();
@@ -1174,6 +1259,7 @@ MXmlNode* MModuleDepthCalibration::CreateXmlConfiguration()
 
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFileName);
+  new MXmlNode(Node, "DtacCoeffsFileName", m_DtacCoeffsFileName);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
   new MXmlNode(Node, "MaskMetrology", (bool)m_MaskMetrologyEnabled);
   new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFileName);
@@ -1202,6 +1288,7 @@ void MModuleDepthCalibration::Finalize()
 
   // Clean up maps and vectors
   m_Coeffs.clear();
+  m_DtacCoeffs.clear();
   m_Thicknesses.clear();
   m_NXStrips.clear();
   m_NYStrips.clear();

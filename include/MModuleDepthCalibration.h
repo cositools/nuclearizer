@@ -63,6 +63,12 @@ class MModuleDepthCalibration : public MModule
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
+  //! Set filename for charge sharing coefficients file
+  void SetDtacCoeffsFileName( const MString& FileName) { m_DtacCoeffsFileName = FileName; }
+  //! Get filename for coefficients file
+  MString GetDtacCoeffsFileName() const { return m_DtacCoeffsFileName; }
+
+
   //! Set filename for coefficients file
   void SetCoeffsFileName( const MString& FileName) { m_CoeffsFileName = FileName; }
   //! Get filename for coefficients file
@@ -92,11 +98,21 @@ class MModuleDepthCalibration : public MModule
   //! Load the detector and strip dimensions from the geometry object
   bool LoadDetectorDimensions(MDGeometryQuest* Geometry);
 
+  //! Load in the specified dTAC coefficients file
+  bool LoadDtacCoeffsFile(MString FName);
+
   //! Load in the specified coefficients file
   bool LoadCoeffsFile(MString FName);
 
+  //! Set the charge sharing correction depth calibration coefficients
+  void SetDtacCoeffs( unordered_map<int, vector<double>> DtacCoeffs ) { m_DtacCoeffs = DtacCoeffs; }
+
   //! Set the depth calibration coefficients
   void SetCoeffs( unordered_map<int, vector<double>> Coeffs ) { m_Coeffs = Coeffs; }
+
+  //! Get the charge sharing correction calibration coefficients
+  unordered_map<int, vector<double>> GetDtacCoeffs() { return m_DtacCoeffs; }
+
   //! Get the depth calibration coefficients
   unordered_map<int, vector<double>> GetCoeffs() { return m_Coeffs; }
 
@@ -149,6 +165,9 @@ class MModuleDepthCalibration : public MModule
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
 
+  //! Return the charge-sharing coefficients for a strip
+  vector<double>* GetDtacCoeffs(int StripPairCode);
+  
   //! Return the coefficients for a pixel
   vector<double>* GetPixelCoeffs(int PixelCode);
   
@@ -169,8 +188,12 @@ class MModuleDepthCalibration : public MModule
   // protected members:
  protected:
 
+  unordered_map<int, vector<double>> m_DtacCoeffs; // maps StripPairID to a vector of coefficients...
+  unordered_map<int, vector<double>> m_LVDtacPolyCoeffs; // maps DetID to the LV coefficients for dTAC vs CS map
+  unordered_map<int, vector<double>> m_HVDtacPolyCoeffs; // maps DetID to the HV coefficients for dTAC vs CS map
   unordered_map<int, vector<double>> m_Coeffs;
   double m_Coeffs_Energy;
+  MString m_DtacCoeffsFileName;
   MString m_CoeffsFileName;
   MString m_SplinesFile;
   unordered_map<int, double> m_Thicknesses;
@@ -199,6 +222,7 @@ class MModuleDepthCalibration : public MModule
   unordered_map<int, vector<TSpline3*>> m_SplineMap;
   bool m_SplinesFileIsLoaded;
   bool m_CoeffsFileIsLoaded;
+  bool m_DtacCoeffsFileIsLoaded;
 
   //! The Mask Metrology file name
   MString m_MaskMetrologyFileName;
