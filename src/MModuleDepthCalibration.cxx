@@ -324,14 +324,15 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           }
 
           // If the CTD is in range, calculate the depth
+
           else {
 	    // FR TODO the last boolean is for sean's weighting method;  make it a flag
 	    auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, true);
-
+	
 	    // TODO depth correction loop!
 	    //
 	    // step 1 -- check the HV side:
-	    int StripPairCode = 10000*DetID + HVStripID; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
+	    //int StripPairCode = 10000*DetID + HVStripID; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
 	    // 	-- how many strips share > 10% of the total energy (or are over slow threshold, maybe?)  need this info for next steps
 	    // 	-- check dTAC between adjacent strips with charge sharing and also strips relative to their low-eneryg neighbors
 	    // 	   -- correct the HV timing asic jitter bug, if needed, to make everything consistent
@@ -339,9 +340,58 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // 	   -- if charge sharing, calculate the corrected timing value for each strip in teh absense of charge sharing,
 	    // 	   -- and also calculate the HV tac as the weighted average, with its own uncertainty
 	    // 	   -- note, rawZpos is used in the above calculations! 
-	    //
+	    
 	    // step 2 -- check the LV side: 
-	    StripPairCode = 10000*DetID + 100*LVStripID; // note, it is the lower Strip ID always!
+	    bool ValidatedTiming = false; // should put a flag here eventually TODO; if NN do not have fast timing
+	    bool ZombieBump = false;
+	    vector<double> CorrectedTiming;
+	    vector<double> CorrectedTimingUncertainty;
+	    bool CorrectedChargeSharingLV = false;
+	    // also should put a flag here TODO (is there another flag for charge sharing?)
+
+	    if (LVEnergyFraction > m_SingleStripChargeSharing){// if we have one obvious main strip, we are not going to be correcting charge sharing but just checking for zombie bump
+	      // compare with the neighbors, if possible
+	      for (int neighbor = 0; neighbor < 2; neighbor++){// 0 for left neighbor, 1 for right
+		int pm = 2*neighbor - 1; // -1 for neighbor 0 (neighbor is left); + 1 for neighbor == 1 (right neighbor, which is nominal for the convention StripPairID = left StripID of pair
+	        int NeighborStripID = LVStripID + pm; 
+		MStripHit* NSH = GetStrip(LVStrips, NeighborStripID);
+		if (NeighborStripID >=0 && NeighborStripID <=63 && NSH){ // neighbor is not a guard ring strip, NSH exists (not a null pointer) TODO and NSH has fast timing!
+		  double dTacData = (LVSH->GetTiming() - NSH->GetTiming())*pm; // always the left strip - right strip; neighbor on left means pm = -1 -> NSH - LVSH timing
+		  double fracData = (NSH->GetEnergy()/(LVSH->GetEnergy() + NSH->GetEnergy())*pm) + 1 - neighbor; // always the fraction on the right stripHit; nominally NSH for right neighbor
+		  int StripPairCode = 10000*DetID + 100*(LVStripID - 1 + neighbor); //LVStripID -1 + 0 = LVStripID -1 (left neighbor); or LVStripID -1 + 1 = LVStripID (LVStrip is the StripID when we consider right negihbor)
+		  int x = (fracData - 0.5); // x is LVEnergyFraction - 0.5
+		  vector<double>* CSPolyCoeffs = GetChargeSharingPolyCoeffsLV(DetID,rawZpos); // TODO need to actually check and fill the variable that checks the length of this, and check that it's right when loading
+		  vector<double>* CSCoeffs = GetChargeSharingCoeffs(StripPairCode,rawZpos);
+		  if (CSCoeffs && CSPolyCoeffs){
+	 	    double dTacExpect = (CSPolyCoeffs->at(0)*x + CSPolyCoeffs->at(1)*x*x*x)*CSCoeffs->at(0) + CSCoeffs->at(1);// TODO update if not cubic polynomial
+		    // TODO we should display (dTacData - dTacExpect)*pm to keep an eye on the prevalence of the bump
+		    if (rawZpos > -5 && dTacData < 500 && dTacData > -500 && (dTacData - dTacExpect)*pm > 2*noise){// zombie bump! TODO update bump criteria, fix noise, remove Slow Timing check once checked earlier
+		      ZombieBump = true;
+		      ValidatedTiming = false;
+		      if ((dTacData - dTacExpect)*pm > -1*pm*dTacExpect) { // zombie bump with good neighbor. Can we not always do this in this case, though, since we know what the timing should be? 
+		        CorrectedTiming.push_back(LVTiming-(dTacData - dTacExpect)*pm);
+		        CorrectedTimingUncertainty.push_back(noise*2); // to do: quantify and make into something real
+		      }
+		    } else {
+		    if (dTacData < 500 && dTacData > -500 && !ZombieBump && CSCoeffs && CSPolyCoeffs) ValidatedTiming = true;
+		   }
+		 }
+	  	}	
+              }
+	    } else { // charge sharing correction
+	      CorrectedChargeSharingLV = true;
+	    }
+	    if (ZombieBump) m_ZombieBump++;
+	    if (CorrectedTiming.size() > 0){// if we have a correction. Also, implemented weighting! TODO an
+	      double correctionSum = 0;
+	      for (unsigned int j = 0; j < CorrectedTiming.size(); j++) {
+		// TODO check that they are consistent and drop one if not.... 
+	        correctionSum += CorrectedTiming.at(j);
+	      }
+	      LVTiming = correctionSum / CorrectedTiming.size();
+	    }
+	    rawCTD = (HVTiming - LVTiming);
+            rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0));
 	    //  -- how many strips share > 10% of the total energy (or are over the slow threshold, maybe?) need this info for the next steps
 	    //  -- check dTAC between adjacent strips with charge sharing and also strips relative to their low-energy neighbors
 	    //     -- deal with the zombie bump! 
@@ -349,21 +399,32 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    //     -- if charge sharing, calculate the corrected timing value for each strip in the absence of charge sharing, 
 	    //     -- and then also calculate the corrected LV tac as the weighted average, with its own uncertainty (they should be consistent)
 	    //     -- note, rawZpos is used in teh above calculations
-	    //
+	    
 	    // step 3 -- calculate new corrected CTD, and from that calculate new corrected Z
 	    // 
 	    // bonus points: implement x and y localization based on info in step 1 and 2 with charge sharing :) 
 	    // bonus points -- can re-calculated depth between 1 and 2 if significant changes with HV correction would impact ZB correction!
-	    Zpos = rawZpos;
-	    Zsigma = rawZsigma;
-	      
-	    // Add the depth to the GUI histogram.
-            if (Event->HasStripPairingError()==false) {
-              if (HasExpos() == true) {
-                m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
-              }
+            
+	    
+	    if ((rawCTD_s < (Xmin - 2.0*noise)) || (rawCTD_s > (Xmax + 2.0*noise))) {
+              H->SetNoDepth();
+              Event->SetDepthCalibrationError("Out of Range");
+              ++m_Error2;
             }
-            m_NoError+=1;
+            // If the CTD is in range, calculate the depth
+	    else {
+	      auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, true);
+	      Zpos = rawZpos;
+	      Zsigma = rawZsigma;
+	    
+	      // Add the depth to the GUI histogram.
+              if (Event->HasStripPairingError()==false) {
+                if (HasExpos() == true) {
+                  m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+                }
+              }
+              m_NoError+=1;
+	    }
           }
         }
 
@@ -499,6 +560,25 @@ MStripHit* MModuleDepthCalibration::GetDominantStrip(vector<MStripHit*>& Strips,
   return MaxStrip;
 }
 
+
+    
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+MStripHit* MModuleDepthCalibration::GetStrip(vector<MStripHit*>& Strips, int StripID)
+{
+  MStripHit* MaxStrip = nullptr;
+
+  // Iterate through strip hits and get the strip with highest energy
+  for (const auto SH : Strips) {
+    if (SH->GetStripID() == StripID) return SH;
+  }
+  return MaxStrip;
+}
+
+
+    
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -1378,6 +1458,7 @@ void MModuleDepthCalibration::Finalize()
   cout << "Number of hits with no strip hits on one or both sides: " << m_ErrorSH << endl;
   cout << "Number of hits with null strip hits: " << m_ErrorNullSH << endl;
   cout << "Number of hits 0 energy on a strip hit: " << m_ErrorNoE << endl;
+  cout << "Number of hits with zombie bump:" << m_ZombieBump << endl;
 
   // Clean up maps and vectors
   m_Coeffs.clear();

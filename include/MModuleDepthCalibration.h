@@ -158,6 +158,9 @@ class MModuleDepthCalibration : public MModule
   //! Returns the z as a function of ctd, given some ctd and some detector
   std::tuple<double, double> CalculateZfromCTD(double CTDvalue, double noise, int DetID,int Grade, bool sean_weighting);
 
+  //! Returns the strip with the specified strip ID
+  MStripHit* GetStrip(std::vector<MStripHit*>& Strips, int StripID);
+
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
   MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
   
@@ -205,7 +208,7 @@ class MModuleDepthCalibration : public MModule
 
   // protected members:
   protected:
-
+ 
   unordered_map<int, vector<double>> m_ChargeSharingDepths; // maps DetID to the depths for which the charge sharing polynomial correction and charge sharing coefficients per-strip-pair were calculated
   unordered_map<int, vector<vector<double>>> m_ChargeSharingCoeffs; // maps StripPairID to a vector of coefficients, for a vector of depths (needs interpolation)
   vector<double> m_InterpolatedCoeffs; // holder for interpolated charge sharing coeffs between different depths
@@ -231,6 +234,7 @@ class MModuleDepthCalibration : public MModule
   uint64_t m_ErrorSH;
   uint64_t m_ErrorNullSH;
   uint64_t m_ErrorNoE;
+  uint64_t m_ZombieBump;
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
@@ -257,7 +261,9 @@ class MModuleDepthCalibration : public MModule
   // boolean for use with the card cage at UCSD since it tags all events as detector 11
   bool m_UCSDOverride;
 
-
+  // variable to describe the fraction of charge sharing that we define as a single strip
+  // TODO -- should this be a variable in the config? 
+  double m_SingleStripChargeSharing = 0.9;
 
   // private members:
  private:
