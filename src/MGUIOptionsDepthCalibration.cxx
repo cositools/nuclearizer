@@ -78,11 +78,11 @@ void MGUIOptionsDepthCalibration::Create()
 //  TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_SplinesFileSelector, LabelLayout);
 
-  m_DtacCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a dtac (charge sharing) coefficients file:",
-      dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetDtacCoeffsFileName());
-  m_DtacCoeffsFileSelector->SetFileType("dtacCoeffs", "*.csv");
+  m_ChargeSharingConfigFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a dtac (charge sharing) coefficients file:",
+      dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetChargeSharingConfigFileName());
+  m_ChargeSharingConfigFileSelector->SetFileType("Charge Sharing Config", "*.csv");
 //  TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_DtacCoeffsFileSelector, LabelLayout);
+  m_OptionsFrame->AddFrame(m_ChargeSharingConfigFileSelector, LabelLayout);
 
   m_MaskMetModeCB = new TGCheckButton(m_OptionsFrame, "Enable mask metrology correction and read calibration from file:", c_MetrologyFile);
   m_MaskMetModeCB->SetState((dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable() == true) ? kButtonDown : kButtonUp);
@@ -165,7 +165,7 @@ bool MGUIOptionsDepthCalibration::OnApply()
 {
   // Modify this to store the data in the module!
 
-  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetDtacCoeffsFileName(m_DtacCoeffsFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetChargeSharingConfigFileName(m_ChargeSharingConfigFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
 

@@ -127,8 +127,8 @@ bool MModuleDepthCalibration::Initialize()
   if (m_CoeffsFileIsLoaded == false) {
     return false;
   }
-  m_DtacCoeffsFileIsLoaded = LoadDtacCoeffsFile(m_DtacCoeffsFileName);
-  if (m_DtacCoeffsFileIsLoaded == false) {
+  m_ChargeSharingConfigFileIsLoaded = LoadChargeSharingConfigFile(m_ChargeSharingConfigFileName);
+  if (m_ChargeSharingConfigFileIsLoaded == false) {
     return false;
   }
   m_SplinesFileIsLoaded = LoadSplinesFile(m_SplinesFile);
@@ -508,6 +508,7 @@ double MModuleDepthCalibration::GetTimingNoiseFWHM(int PixelCode, double Energy)
   // Placeholder for determining the timing noise with energy, and possibly even on a pixel-by-pixel basis.
   // Should follow 1/E relation
   // TODO: Determine real energy dependence and implement it here.
+  // TODO: should be a function of strip, not pixel
   double noiseFWHM = 0.0;
   if (m_CoeffsFileIsLoaded == true) {
     noiseFWHM = m_Coeffs[PixelCode][2] * m_Coeffs_Energy/Energy;
@@ -581,7 +582,7 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
   return true;
 }
 
-bool MModuleDepthCalibration::LoadDtacCoeffsFile(MString FileName)
+bool MModuleDepthCalibration::LoadChargeSharingConfigFile(MString FileName)
 {
   // Read in the dTAC coefficients file, which gives the coefficients needed for per-strip charge sharing correction
   // it should have a header line with the following info: 
@@ -591,34 +592,44 @@ bool MModuleDepthCalibration::LoadDtacCoeffsFile(MString FileName)
   
   // TODO replace this! temp fix while waiting for actual config file... 
   for (int DetID = 0; DetID < 1; DetID++){
-    vector<double> poly_coeffs;
-    poly_coeffs.push_back(139.209); poly_coeffs.push_back(-106.849);// these are the coefficients, where we'll have a polynomial dTac = coeffs[0]*(f-0.5) - coeffs[1]*(f-0.5)^3
-    m_LVDtacPolyCoeffs[DetID] = poly_coeffs;
-    m_HVDtacPolyCoeffs[DetID] = poly_coeffs; // in principle they would be different
-  
-    vector<double> coeffs; // the stretch and offset, currently set to the same values for all strips (which are almost certainly wrong)
-    coeffs.push_back(1.033454449); coeffs.push_back(-1.996517705);coeffs.push_back(6.373983606); // stretch, offset, dTacSigma. Need to figure out how to deal with dTac sigma in an energy-dependent way
-    for (int LVStripID = 0; LVStripID < 63; LVStripID++){ // up to 62 since these are pairs
-      int StripPairCode = 10000*DetID + 100*LVStripID;
-      m_DtacCoeffs[StripPairCode] = coeffs;
-    }
-    for (int HVStripID = 0; HVStripID < 63; HVStripID++){
-      int StripPairCode = 10000*DetID +  HVStripID; 
-      m_DtacCoeffs[StripPairCode] = coeffs;
+    
+    // fill m_ChargeSharingDepths for each detector
+    vector<double> depths;
+    for (double i = -7.; i < 7.4; i = i + 1.) depths.push_back(i);
+    m_ChargeSharingDepths[DetID] = depths;
+
+    for(int z = 0; z < depths.size(); z++){
+      // fill m_ChargeSharingPolyCoeffs (HV and LV) for each detector and each depth 
+      vector<double> poly_coeffs;
+      poly_coeffs.push_back(139.209); poly_coeffs.push_back(-106.849);// these are the coefficients, where we'll have a polynomial dTac = coeffs[0]*(f-0.5) - coeffs[1]*(f-0.5)^3
+      m_ChargeSharingPolyCoeffsHV[DetID].push_back(poly_coeffs);
+      m_ChargeSharingPolyCoeffsLV[DetID].push_back(poly_coeffs); // in principle they would be different
+
+      // fill m_ChargeSharingConfig for each detector / depth / strip pair
+      vector<double> coeffs; // the stretch and offset, currently set to the same values for all strips (which are almost certainly wrong)
+      coeffs.push_back(1.033454449); coeffs.push_back(-1.996517705);coeffs.push_back(6.373983606); // stretch, offset, dTacSigma. Need to figure out how to deal with dTac sigma in an energy-dependent way
+      for (int LVStripID = 0; LVStripID < 63; LVStripID++){ // up to 62 since these are pairs
+        int StripPairCode = 10000*DetID + 100*LVStripID;
+        m_ChargeSharingCoeffs[StripPairCode].push_back(coeffs);
+      }
+      for (int HVStripID = 0; HVStripID < 63; HVStripID++){
+        int StripPairCode = 10000*DetID +  HVStripID; 
+        m_ChargeSharingCoeffs[StripPairCode].push_back(coeffs);
+      }
     }
   }
   return true;
   
   //read in file
-  MFile DtacCoeffsFile;
+  MFile ChargeSharingConfigFile;
   std::vector<MString> HeaderTokens;
-  if (DtacCoeffsFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleDepthCalibration::LoadDtacCoeffsFile: failed to open dtac coefficients file." <<endl;
+  if (ChargeSharingConfigFile.Open(FileName) == false) {
+    cout << "ERROR in MModuleDepthCalibration::LoadChargeSharingConfigFile: failed to open file." <<endl;
     return false;
   }
 
   MString Line;
-  while (DtacCoeffsFile.ReadLine(Line) == true){
+  while (ChargeSharingConfigFile.ReadLine(Line) == true){
     // TODO verify functional form (ie a*x^3 + b*x) and request the correct number of args based on it 
     if (Line.BeginsWith("#") == true) { // note: this will overwrite tokens mutliple tiems, but the last one should be what we want for the coefficients
       HeaderTokens = Line.Tokenize(" ");// TODO why is it like this? Did i not put commas in the header?
@@ -630,7 +641,7 @@ bool MModuleDepthCalibration::LoadDtacCoeffsFile(MString FileName)
 
     }
   }
-  DtacCoeffsFile.Close();
+  ChargeSharingConfigFile.Close();
   return true;  
 }
 
@@ -681,20 +692,102 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-std::vector<double>* MModuleDepthCalibration::GetDtacCoeffs(int StripPairCode)
+std::vector<double>* MModuleDepthCalibration::GetChargeSharingCoeffs(int StripPairCode, double z)
 {
+  int DetID = StripPairCode / 10000;	
   // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
-  if (m_DtacCoeffsFileIsLoaded == true) {
-    if (m_DtacCoeffs.count(StripPairCode) > 0) {
-      return &m_Coeffs[StripPairCode];
+  if (m_ChargeSharingConfigFileIsLoaded == true) {
+    if (m_ChargeSharingCoeffs.count(StripPairCode) > 0) {
+                 
+      // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
+      if (z <= m_ChargeSharingDepths[DetID].front()) return &m_ChargeSharingCoeffs[StripPairCode].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return &m_ChargeSharingCoeffs[StripPairCode].at(m_ChargeSharingDepths[DetID].size()-1);
+
+      // otherwise, interpolate
+      for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
+        if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
+          double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
+	  m_InterpolatedCoeffs.clear();
+	  for (int j = 0; j < m_ChargeSharingCoeffs[StripPairCode].at(i).size(); j++) m_InterpolatedCoeffs.push_back((1.0 - f) * m_ChargeSharingCoeffs[StripPairCode][i][j] + f * m_ChargeSharingCoeffs[StripPairCode][i + 1][j]);
+	  return &m_InterpolatedCoeffs;
+	}
+      }
     } else {
       if (g_Verbosity >= c_Warning) {
-        cout << "MModuleDepthCalibration::GetDtacCoeffs: cannot get charge sharing coefficients; strip pair code " << StripPairCode << " not found." << endl;
+        cout << "MModuleDepthCalibration::GetChargeSharingCoeffs: cannot get charge sharing coefficients; strip pair code " << StripPairCode << " not found." << endl;
       }
       return nullptr;
     }
   } else {
-    cout << "MModuleDepthCalibration::GetDtacCoeffs: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
+    cout << "MModuleDepthCalibration::GetChargeSharingCoeffs: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
+    return nullptr;
+  }
+
+}
+/////////////////////////////////////////////////////////////////////////////////
+
+
+std::vector<double>* MModuleDepthCalibration::GetChargeSharingPolyCoeffsLV(int DetID, double z)
+{ 
+  // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
+  if (m_ChargeSharingConfigFileIsLoaded == true) {
+    if (m_ChargeSharingPolyCoeffsLV.count(DetID) > 0) {
+                 
+      // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
+      if (z <= m_ChargeSharingDepths[DetID].front()) return &m_ChargeSharingPolyCoeffsLV[DetID].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return &m_ChargeSharingPolyCoeffsLV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
+
+      // otherwise, interpolate
+      for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
+        if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
+          double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
+	  m_InterpolatedCoeffs.clear();
+	  for (int j = 0; j < m_ChargeSharingPolyCoeffsLV[DetID].at(i).size(); j++) m_InterpolatedCoeffs.push_back((1.0 - f) * m_ChargeSharingPolyCoeffsLV[DetID][i][j] + f * m_ChargeSharingPolyCoeffsLV[DetID][i + 1][j]);
+	  return &m_InterpolatedCoeffs;
+	}
+      }
+    } else {
+      if (g_Verbosity >= c_Warning) {
+        cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsLV: cannot get charge sharing polynomial coefficients; detector id code " << DetID << " not found." << endl;
+      }
+      return nullptr;
+    }
+  } else {
+    cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsLV: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
+    return nullptr;
+  }
+
+}
+/////////////////////////////////////////////////////////////////////////////////
+
+
+std::vector<double>* MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV(int DetID, double z)
+{ 
+  // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
+  if (m_ChargeSharingConfigFileIsLoaded == true) {
+    if (m_ChargeSharingPolyCoeffsHV.count(DetID) > 0) {
+                 
+      // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
+      if (z <= m_ChargeSharingDepths[DetID].front()) return &m_ChargeSharingPolyCoeffsHV[DetID].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return &m_ChargeSharingPolyCoeffsHV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
+
+      // otherwise, interpolate
+      for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
+        if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
+          double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
+	  m_InterpolatedCoeffs.clear();
+	  for (int j = 0; j < m_ChargeSharingPolyCoeffsHV[DetID].at(i).size(); j++) m_InterpolatedCoeffs.push_back((1.0 - f) * m_ChargeSharingPolyCoeffsHV[DetID][i][j] + f * m_ChargeSharingPolyCoeffsHV[DetID][i + 1][j]);
+	  return &m_InterpolatedCoeffs;
+	}
+      }
+    } else {
+      if (g_Verbosity >= c_Warning) {
+        cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV: cannot get charge sharing polynomial coefficients; detector id code " << DetID << " not found." << endl;
+      }
+      return nullptr;
+    }
+  } else {
+    cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
     return nullptr;
   }
 
@@ -1222,9 +1315,9 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
   m_CoeffsFileName = CoeffsFileNameNode->GetValue();
   }
 
-  MXmlNode* DtacCoeffsFileNameNode = Node->GetNode("DtacCoeffsFileName");
-  if (DtacCoeffsFileNameNode != nullptr) {
-  m_DtacCoeffsFileName = DtacCoeffsFileNameNode->GetValue();
+  MXmlNode* ChargeSharingConfigFileNameNode = Node->GetNode("ChargeSharingConfigFileName");
+  if (ChargeSharingConfigFileNameNode != nullptr) {
+  m_ChargeSharingConfigFileName = ChargeSharingConfigFileNameNode->GetValue();
   }
 
   MXmlNode* SplinesFileNameNode = Node->GetNode("SplinesFileName");
@@ -1259,7 +1352,7 @@ MXmlNode* MModuleDepthCalibration::CreateXmlConfiguration()
 
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFileName);
-  new MXmlNode(Node, "DtacCoeffsFileName", m_DtacCoeffsFileName);
+  new MXmlNode(Node, "ChargeSharingConfigFileName", m_ChargeSharingConfigFileName);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
   new MXmlNode(Node, "MaskMetrology", (bool)m_MaskMetrologyEnabled);
   new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFileName);
@@ -1288,7 +1381,10 @@ void MModuleDepthCalibration::Finalize()
 
   // Clean up maps and vectors
   m_Coeffs.clear();
-  m_DtacCoeffs.clear();
+  m_ChargeSharingCoeffs.clear();
+  m_ChargeSharingPolyCoeffsHV.clear();
+  m_ChargeSharingPolyCoeffsLV.clear();
+  m_ChargeSharingDepths.clear();
   m_Thicknesses.clear();
   m_NXStrips.clear();
   m_NYStrips.clear();

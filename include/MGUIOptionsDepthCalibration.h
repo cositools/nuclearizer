@@ -72,7 +72,7 @@ class MGUIOptionsDepthCalibration : public MGUIOptions
   MGUIEFileSelector* m_CoeffsFileSelector;
 
   //! Select which coefficients file (charge sharing correction) to load
-  MGUIEFileSelector* m_DtacCoeffsFileSelector;
+  MGUIEFileSelector* m_ChargeSharingConfigFileSelector;
 
   //! Select spline file to load, splines will convert CTD->Depth
   MGUIEFileSelector* m_SplinesFileSelector;
