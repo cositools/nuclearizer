@@ -2,7 +2,7 @@
  * MHit.cxx
  *
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -28,11 +28,11 @@
 
 // Standard libs:
 #include <algorithm>
+#include <iterator>
 
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -59,8 +59,8 @@ MHit::MHit()
 MHit::~MHit()
 {
   // Delete this instance of MHit
-  
-  // This strip hits are not deleted since they where not generated here
+
+  // MHit does not own the strip hits, so they are not deleted
 }
 
 
@@ -73,44 +73,56 @@ void MHit::Clear()
 
   m_Position = g_VectorNotDefined;
   m_Energy = g_DoubleNotDefined;
-    
+
   m_LVEnergy = g_DoubleNotDefined;
   m_HVEnergy = g_DoubleNotDefined;
-    
+
   m_PositionResolution = g_VectorNotDefined;
   m_EnergyResolution = g_DoubleNotDefined;
 
   m_StripHits.clear();
   m_Origins.clear();
 
-  m_HitQuality = 0.0;
-  m_PossibleCrossTalk = false;
-  m_PossibleChargeLoss = false;
+  m_CrossTalk = false;
   m_GuardRingHit = false;
-  m_StripHitMultipleTimesX = false;
-  m_StripHitMultipleTimesY = false;
-  m_ChargeSharing = false;
+  m_ChargeLoss = false;
+  m_StripHitMultipleTimesLV = false;
+  m_StripHitMultipleTimesHV = false;
   m_ChargeSharingLV = false;
   m_ChargeSharingHV = false;
   m_NoDepth = false;
-  m_IsNonDominantNeighborStrip = false;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MStripHit* MHit::GetStripHit(unsigned int i) 
-{ 
-  //! Return strip hit i
+MStripHit* MHit::GetStripHit(unsigned int i)
+{
+  // Return strip hit i
 
   if (i < m_StripHits.size()) {
     return m_StripHits[i];
   }
 
-  merr<<"Index out of bounds!"<<show;
+  if (g_Verbosity >= c_Error) cout<<"Error in MHit::GetStripHit: Strip hit index "<<i<<" is out of bounds: "<<m_StripHits.size()<<" strip hits available"<<endl;
 
-  return 0;
+  return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MHit::AddStripHit(MStripHit* StripHit)
+{
+  // Add a strip hit
+
+  if (StripHit != nullptr) {
+    m_StripHits.push_back(StripHit);
+  } else {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::AddStripHit: Strip hit is nullptr"<<endl;
+  }
 }
 
 
@@ -119,9 +131,12 @@ MStripHit* MHit::GetStripHit(unsigned int i)
 
 void MHit::RemoveStripHit(unsigned int i)
 {
-  //! Remove a strip hit
+  // Remove a strip hit without deleting it
+
   if (i < m_StripHits.size()) {
-    m_StripHits.erase(m_StripHits.begin()+i);
+    m_StripHits.erase(m_StripHits.begin() + i);
+  } else {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::RemoveStripHit: Strip hit index "<<i<<" is out of bounds: "<<m_StripHits.size()<<" strip hits available"<<endl;
   }
 }
 
@@ -131,11 +146,13 @@ void MHit::RemoveStripHit(unsigned int i)
 
 void MHit::RemoveStripHit(MStripHit* StripHit)
 {
-  //! Remove a strip hit
-  
+  // Remove a strip hit without deleting it
+
   vector<MStripHit*>::iterator I = find(m_StripHits.begin(), m_StripHits.end(), StripHit);
   if (I != m_StripHits.end()) {
-    m_StripHits.erase(I); 
+    m_StripHits.erase(I);
+  } else {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::RemoveStripHit: Strip hit not found"<<endl;
   }
 }
 
@@ -144,26 +161,24 @@ void MHit::RemoveStripHit(MStripHit* StripHit)
 
 bool MHit::StreamDat(ostream& S, int Version)
 {
-  //! Stream the content to an ASCII file 
-  
-  if( Version == 1 ){
-     S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<endl;
-  } else if( Version == 2 ){
-	  //stream the hit information, then stream the strip hit info for this hit so that 
-	  //we will know which strip hits were associated with which hits
-     S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<endl;
-	  for( auto SH : m_StripHits ){
-		  SH->StreamDat(S,0);
-	  }
-  } else if( Version == 3 ){
-      //stream the hit information, then stream the strip hit info for this hit so that
-      //we will know which strip hits were associated with which hits
-      //this version also reads out the LV and HV energy of each hit
-     S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<" "<<m_LVEnergy<<" "<<m_HVEnergy<<endl;
-      for( auto SH : m_StripHits ){
-          SH->StreamDat(S,0);
-      }
+  // Stream the hit in a way Nuclearizer can read it in again
+
+  if (Version == 1) {
+    S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<endl;
+  } else if (Version == 2) {
+    // Stream the hit information, then stream the strip hit information for this hit
+    S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<endl;
+    for (auto SH : m_StripHits) {
+      SH->StreamDat(S, 0);
+    }
+  } else if (Version == 3) {
+    // Stream the hit information, including low-voltage and high-voltage energy, then stream the strip hit information
+    S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<" "<<m_LVEnergy<<" "<<m_HVEnergy<<endl;
+    for (auto SH : m_StripHits) {
+      SH->StreamDat(S, 0);
+    }
   } else {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::StreamDat: Stream version "<<Version<<" not handled"<<endl;
     return false;
   }
 
@@ -176,42 +191,42 @@ bool MHit::StreamDat(ostream& S, int Version)
 
 void MHit::StreamEvta(ostream& S)
 {
-  //! Stream the content to an ASCII file 
-  
-  // Assemble the origin information;
+  // Stream the hit in MEGAlib's EVTA format
+
+  // Assemble the origin information
   vector<int> Origins;
-  
-  // Fix the origins: only those existing both on x and y strips count
-  vector<int> xOrigins;
-  vector<int> yOrigins;
+
+  // Only origins existing on both low-voltage and high-voltage strips count
+  vector<int> LVOrigins;
+  vector<int> HVOrigins;
   for (unsigned int s = 0; s < GetNStripHits(); ++s) {
-    //GetStripHit(s)->StreamRoa(cout);
-    vector<int> NewOrigins = GetStripHit(s)->GetOrigins();
-    if (GetStripHit(s)->IsLowVoltageStrip() == true) {
+    MStripHit* StripHit = m_StripHits[s];
+    vector<int> NewOrigins = StripHit->GetOrigins();
+    if (StripHit->IsLowVoltageStrip() == true) {
       for (int o: NewOrigins) {
-        xOrigins.push_back(o);
+        LVOrigins.push_back(o);
       }
     } else {
       for (int o: NewOrigins) {
-        yOrigins.push_back(o);
+        HVOrigins.push_back(o);
       }
     }
   }
-  
-  sort(xOrigins.begin(), xOrigins.end());
-  xOrigins.erase(unique(xOrigins.begin(), xOrigins.end()), xOrigins.end());
-  sort(yOrigins.begin(), yOrigins.end());
-  yOrigins.erase(unique(yOrigins.begin(), yOrigins.end()), yOrigins.end());
-  
-  set_intersection(xOrigins.begin(), xOrigins.end(),
-                   yOrigins.begin(), yOrigins.end(),
+
+  sort(LVOrigins.begin(), LVOrigins.end());
+  LVOrigins.erase(unique(LVOrigins.begin(), LVOrigins.end()), LVOrigins.end());
+  sort(HVOrigins.begin(), HVOrigins.end());
+  HVOrigins.erase(unique(HVOrigins.begin(), HVOrigins.end()), HVOrigins.end());
+
+  set_intersection(LVOrigins.begin(), LVOrigins.end(),
+                   HVOrigins.begin(), HVOrigins.end(),
                    std::back_inserter(Origins));
 
-  if ((xOrigins.size() != 0 || yOrigins.size() != 0) && Origins.size() == 0) {
-    // This is the case when the strip pairing got screwed up completely, and the hits got mixed
-    // In this case we need to keep the mixing:
+  if ((LVOrigins.size() != 0 || HVOrigins.size() != 0) && Origins.size() == 0) {
+    // If strip pairing mixed the hits completely, keep the mixed origin information
     for (unsigned int s = 0; s < GetNStripHits(); ++s) {
-      vector<int> NewOrigins = GetStripHit(s)->GetOrigins();
+      MStripHit* StripHit = m_StripHits[s];
+      vector<int> NewOrigins = StripHit->GetOrigins();
       for (int o: NewOrigins) {
         Origins.push_back(o);
       }
@@ -219,46 +234,62 @@ void MHit::StreamEvta(ostream& S)
     sort(Origins.begin(), Origins.end());
     Origins.erase(unique(Origins.begin(), Origins.end()), Origins.end());
   }
-  
+
   S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
     <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution;
   for (unsigned int i = 0; i < Origins.size(); ++i) {
-    S<<";"<<Origins[i]; 
+    S<<";"<<Origins[i];
   }
   S<<endl;
-
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MHit::Parse(MString &Line, int Version)
+bool MHit::Parse(MString& Line, int Version)
 {
-  if (Line.Length() < 3) return false;
-  if (Line.BeginsWith("HT") == false) return false;
-  if (Version < 1 || Version > 3) return false;
+  // Parse a hit in Nuclearizer's DAT format
 
   Clear();
 
+  if (Line.Length() < 3) {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::Parse: line too short with length "<<Line.Length()<<endl;
+    return false;
+  }
+  if (Line.BeginsWith("HT") == false) {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::Parse: line does not start with 'HT'"<<endl;
+    return false;
+  }
+  if (Version < 1 || Version > 3) {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::Parse: unsupported version "<<Version<<endl;
+    return false;
+  }
+
   if (Version == 3) {
-    double X, Y, Z, E, LVE, HVE;
-    int N = sscanf(Line.Data() + 3, "%lf %lf %lf %lf %lf %lf", &X, &Y, &Z, &E, &LVE, &HVE);
-    if (N != 6) return false;
+    double X, Y, Z, Energy, LowVoltageEnergy, HighVoltageEnergy;
+    int N = sscanf(Line.Data() + 3, "%lf %lf %lf %lf %lf %lf", &X, &Y, &Z, &Energy, &LowVoltageEnergy, &HighVoltageEnergy);
+    if (N != 6) {
+      if (g_Verbosity >= c_Error) cout<<"Error in MHit::Parse: malformed HT V3 line with "<<N<<" fields instead of 6"<<endl;
+      return false;
+    }
     m_Position.SetX(X);
     m_Position.SetY(Y);
     m_Position.SetZ(Z);
-    m_Energy = E;
-    m_LVEnergy = LVE;
-    m_HVEnergy = HVE;
+    m_Energy = Energy;
+    m_LVEnergy = LowVoltageEnergy;
+    m_HVEnergy = HighVoltageEnergy;
   } else {
-    double X, Y, Z, E;
-    int N = sscanf(Line.Data() + 3, "%lf %lf %lf %lf", &X, &Y, &Z, &E);
-    if (N != 4) return false;
+    double X, Y, Z, Energy;
+    int N = sscanf(Line.Data() + 3, "%lf %lf %lf %lf", &X, &Y, &Z, &Energy);
+    if (N != 4) {
+      if (g_Verbosity >= c_Error) cout<<"Error in MHit::Parse: malformed HT V"<<Version<<" line with "<<N<<" fields instead of 4"<<endl;
+      return false;
+    }
     m_Position.SetX(X);
     m_Position.SetY(Y);
     m_Position.SetZ(Z);
-    m_Energy = E;
+    m_Energy = Energy;
   }
 
   return true;
@@ -268,18 +299,14 @@ bool MHit::Parse(MString &Line, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Set the origins from the simulations (take care of duplicates)
-void MHit::AddOrigins(vector<int> Origins)
+void MHit::AddOrigins(const vector<int>& Origins)
 {
+  // Set the origins from the simulations (take care of duplicates)
+
   m_Origins.insert(m_Origins.end(), Origins.begin(), Origins.end());
   sort(m_Origins.begin(), m_Origins.end());
   m_Origins.erase(unique(m_Origins.begin(), m_Origins.end()), m_Origins.end());
 }
-
-
-
-
-
 
 
 // MHit.cxx: the end...

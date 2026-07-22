@@ -30,6 +30,7 @@
 
 // Nuclearizer libs:
 #include "MModule.h"
+#include "MFITSWriterL1a.h"
 
 // CCfits libs
 #include <CCfits/CCfits>
@@ -101,8 +102,11 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Output file name
   MString m_FileName;
 
-  //! Output data level: 1 = L1b (all events, with QUALITY_FLAG), 2 = L2 (screened, no QUALITY_FLAG)
+  //! Output data level: 0 = L1a (raw hits), 1 = L1b (all events, with QUALITY_FLAG), 2 = L2 (screened, no QUALITY_FLAG)
   int m_OutputDataLevel;
+
+  //! L1a writer, used only when m_OutputDataLevel == 0
+  MFITSWriterL1a m_L1aWriter;
 
   //! The FITS file object pointer
   FITS* m_FITSFile;

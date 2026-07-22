@@ -33,10 +33,7 @@ include $(MEGALIB)/config/Makefile.config
 MAKEFLAGS += --no-builtin-rules --no-print-directory
 
 .SUFFIXES:
-#.SUFFIXES: .cxx .h .o .so
 .PHONY: all n nuclearizer megalib apps clean unittests
-.EXPORT_ALL_VARIABLES:
-#.NOTPARALLEL: megalib
 .SILENT:
 
 
@@ -75,17 +72,7 @@ CXXFLAGS += -I$(IN) -I$(MEGALIB)/include -I/opt/local/include $(H5CXXFLAGS) $(CC
 
 LIBS += $(H5LIBS) $(CCFITSLIBS)
 
-# Definitions
-NUCLEARIZER            := $(TOPLEVEL)
-NUCLEARIZER_DIR        := $(NUCLEARIZER)
-NUCLEARIZER_PRG        := $(BN)/nuclearizer
-NUCLEARIZER_CXX_MAIN   := $(NUCLEARIZER_DIR)/src/MNuclearizerMain.cxx
-NUCLEARIZER_CXX_FILES  := $(wildcard $(NUCLEARIZER_DIR)/src/*.cxx)
-NUCLEARIZER_CXX_FILES  := $(filter-out $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_DIR)/src/MModuleTemplate.cxx,$(NUCLEARIZER_CXX_FILES))
-NUCLEARIZER_LIBS       := $(addprefix $(LB)/,$(notdir $(NUCLEARIZER_CXX_FILES:.cxx=.o)))
-NUCLEARIZER_DEP_FILES  := $(NUCLEARIZER_LIBS:.o=.d)
-NUCLEARIZER_H_FILES    := $(addprefix $(NUCLEARIZER)/include/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
-
+# Fretalon core:
 FRETALON_DIR          := $(MEGALIB)/src/fretalon/framework
 FRETALON_CXX_MAIN     := $(FRETALON_DIR)/src/MAssembly.cxx $(FRETALON_DIR)/src/MReadOutAssembly.cxx
 FRETALON_CXX_FILES    := $(wildcard $(FRETALON_DIR)/src/*.cxx)
@@ -95,27 +82,42 @@ FRETALON_H_FILES      := $(filter-out $(FRETALON_DIR)/inc/MAssembly.h $(FRETALON
 FRETALON_LIBS         := $(addprefix $(LB)/,$(notdir $(FRETALON_CXX_FILES:.cxx=.o)))
 FRETALON_DEP_FILES    := $(FRETALON_LIBS:.o=.d)
 
-# The shared library
-NUCLEARIZER_SHARED_LIB = $(LB)/libNuclearizer.$(DLL)
+# Nuclearizer library 
+NUCLEARIZER              := $(TOPLEVEL)
+NUCLEARIZER_DIR          := $(NUCLEARIZER)
+NUCLEARIZER_PRG          := $(BN)/nuclearizer
+NUCLEARIZER_CXX_MAIN     := $(NUCLEARIZER_DIR)/src/MNuclearizerMain.cxx
+NUCLEARIZER_CXX_FILTERED := $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_DIR)/src/MModuleTemplate.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSingleDet.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSMEX.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSingleDet.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSMEX.cxx $(NUCLEARIZER_DIR)/src/MGUIOptionsLoaderSimulations.cxx
+NUCLEARIZER_CXX_FILES    := $(wildcard $(NUCLEARIZER_DIR)/src/*.cxx)
+NUCLEARIZER_CXX_FILES    := $(filter-out $(NUCLEARIZER_CXX_FILTERED),$(NUCLEARIZER_CXX_FILES))
+NUCLEARIZER_LIBS         := $(addprefix $(LB)/,$(notdir $(NUCLEARIZER_CXX_FILES:.cxx=.o)))
+NUCLEARIZER_DEP_FILES    := $(NUCLEARIZER_LIBS:.o=.d)
+NUCLEARIZER_H_FILES      := $(addprefix $(NUCLEARIZER)/include/,$(notdir $(NUCLEARIZER_LIBS:.o=.h)))
 
-# The main program
-NUCLEARIZER_CXX_MAIN := $(NUCLEARIZER)/src/MNuclearizerMain.cxx
-
-# External libraries
-# MEGAlib
-ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
-
-
-CXX_UT := $(wildcard $(NUCLEARIZER_DIR)/unittests/*.cxx)
-EXE_UT := $(patsubst %.cxx,%,$(CXX_UT))
-EXE_UT := $(patsubst $(NUCLEARIZER_DIR)/unittests/%,$(BN)/%,$(EXE_UT))
-
+# Nuclearizer dictionary
 NUCLEARIZER_DICT_NAME=Nuclearizer_Dictionary
 NUCLEARIZER_DICT=$(LB)/$(NUCLEARIZER_DICT_NAME).cxx
 NUCLEARIZER_DICT_LIB=$(LB)/$(NUCLEARIZER_DICT_NAME).o
 NUCLEARIZER_LINKDEF=$(LB)/$(NUCLEARIZER_DICT_NAME)_LinkDef.h
 NUCLEARIZER_ROOTMAP=$(LB)/libNuclearizer.rootmap
 NUCLEARIZER_ROOTPCM=libNuclearizer_rdict.pcm
+
+# Nuclearizer shared library
+NUCLEARIZER_SHARED_LIB = $(LB)/libNuclearizer.$(DLL)
+
+# Nuclearizer apps
+NUCLEARIZER_APP_CXX_FILES := $(wildcard $(NUCLEARIZER_DIR)/apps/*.cxx)
+NUCLEARIZER_APP_CXX_FILES := $(filter-out $(NUCLEARIZER_DIR)/apps/MAspectTester.cxx,$(NUCLEARIZER_APP_CXX_FILES))
+NUCLEARIZER_APP_PRGS      := $(addprefix $(BN)/,$(notdir $(NUCLEARIZER_APP_CXX_FILES:.cxx=)))
+
+# Nuclearizer unit tests
+NUCLEARIZER_UT_CXX_FILES := $(wildcard $(NUCLEARIZER_DIR)/unittests/*.cxx)
+NUCLEARIZER_UT_PRGS := $(patsubst %.cxx,%,$(NUCLEARIZER_UT_CXX_FILES))
+NUCLEARIZER_UT_PRGS := $(patsubst $(NUCLEARIZER_DIR)/unittests/%,$(BN)/%,$(NUCLEARIZER_UT_PRGS))
+
+# External MEGAlib libraries
+ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
+
 
 #----------------------------------------------------------------
 # Command rules
@@ -132,19 +134,19 @@ nuclearizer:
 
 apps:
 	@$(MAKE) $(NUCLEARIZER_SHARED_LIB)
-	@$(MAKE) -C apps
+	@$(MAKE) $(NUCLEARIZER_APP_PRGS)
 
-unittests: $(NUCLEARIZER_SHARED_LIB) $(EXE_UT)
+unittests: $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_UT_PRGS)
 
 clean:
-	@-rm -f $(EXE_UT)
+	@-rm -f $(NUCLEARIZER_UT_PRGS)
 	@-rm -f $(MEGALIB)/include/MAssembly.h $(MEGALIB)/include/MReadOutAssembly.h
 	@-rm -f $(FRETALON_LIBS) $(FRETALON_DEP_FILES)
 	@-rm -f $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_LIBS) $(NUCLEARIZER_DEP_FILES)
+	@-rm -f $(NUCLEARIZER_APP_PRGS)
 	@-rm -f $(NUCLEARIZER_PRG)
 	@-rm -f $(NUCLEARIZER_DICT) $(NUCLEARIZER_LINKDEF) $(NUCLEARIZER_ROOTMAP) $(NUCLEARIZER_ROOTPCM)
 	@-rm -f *~ include/*~ src/*~
-	@$(MAKE) clean -C apps
 
 html: man
 doxygen: man
@@ -159,21 +161,13 @@ man:
 # Explicit rules & dependencies:
 #
 
-$(FRETALON_DEP_FILES): $(LB)/%.d: $(FRETALON_DIR)/src/%.cxx
-	@echo "Creating dependencies for $(subst $(FRETALON_DIR)/src/,,$<) ..."
-	@set -e; rm -f $@; $(CXX) $(DEPFLAGS) $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
-
-$(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h $(LB)/%.d
+$(FRETALON_LIBS): $(LB)/%.o: $(FRETALON_DIR)/src/%.cxx $(FRETALON_DIR)/inc/%.h
 	@echo "Compiling $(subst $(FRETALON_DIR)/src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -MD -MP -MF $(LB)/$*.d -c $< -o $@
 
-$(NUCLEARIZER_DEP_FILES): $(LB)/%.d: src/%.cxx
-	@echo "Creating dependencies for $(subst src/,,$<) ..."
-	@set -e; rm -f $@; $(CXX) $(DEPFLAGS) $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
-
-$(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h $(LB)/%.d
+$(NUCLEARIZER_LIBS): $(LB)/%.o: src/%.cxx include/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -MD -MP -MF $(LB)/$*.d -c $< -o $@
 
 $(NUCLEARIZER_DICT): $(FRETALON_H_FILES) $(NUCLEARIZER_H_FILES)
 	@echo "Generating LinkDef ..."
@@ -191,10 +185,14 @@ $(NUCLEARIZER_SHARED_LIB): $(NUCLEARIZER_DICT_LIB) $(FRETALON_LIBS) $(NUCLEARIZE
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(NUCLEARIZER_DICT_LIB) $(NUCLEARIZER_LIBS) $(FRETALON_LIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_SHARED_LIB)
 
 $(NUCLEARIZER_PRG): $(NUCLEARIZER_SHARED_LIB) $(NUCLEARIZER_CXX_MAIN)
-	@echo "Linking and compiling $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ... Please stand by ... "
+	@echo "Compiling and linking $(subst $(BN)/,,$(NUCLEARIZER_PRG)) ..."
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $(NUCLEARIZER_PRG)
 
-$(EXE_UT): $(BN)/%: $(NUCLEARIZER_DIR)/unittests/%.cxx $(NUCLEARIZER_SHARED_LIB)
+$(NUCLEARIZER_APP_PRGS): $(BN)/%: apps/%.cxx $(NUCLEARIZER_SHARED_LIB)
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) $(PYTHONLIBS) -o $@
+
+$(NUCLEARIZER_UT_PRGS): $(BN)/%: $(NUCLEARIZER_DIR)/unittests/%.cxx $(NUCLEARIZER_SHARED_LIB)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(NUCLEARIZER_SHARED_LIB) $(ALLLIBS) $(GLIBS) $(LIBS) -o $@
 

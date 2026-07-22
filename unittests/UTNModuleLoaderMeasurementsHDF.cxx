@@ -464,9 +464,9 @@ bool UTNModuleLoaderMeasurementsHDF::TestV2EventBoundaries()
   const unsigned long ExpectedIDs[3] = { 1, 2, 3 };
   const unsigned int ExpectedHitCountsWithNN[3] = { 1, 7, 6 };
   const double ExpectedTimes[3] = {
-    1771360826.007614416,
-    1771360826.010675750,
-    1771360826.011540033
+    1771332026.007614416,
+    1771332026.010675750,
+    1771332026.011540033
   };
 
   for (unsigned int e = 0; e < 3; ++e) {

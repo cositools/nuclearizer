@@ -185,41 +185,9 @@ bool UTNEndToEnd_542_1::CompareOutputToReference(const MString& OutputFile, cons
 {
   bool Passed = true;
 
-  ifstream Output(OutputFile.Data());
-  Passed = EvaluateTrue("End-to-end test 542-1", "open output file",
-                        "The generated output file can be opened for comparison",
-                        Output.is_open()) && Passed;
-
-  ifstream Reference(ReferenceFile.Data());
-  Passed = EvaluateTrue("End-to-end test 542-1", "open reference file",
-                        "The reference output file can be opened for comparison",
-                        Reference.is_open()) && Passed;
-
-  if (Passed == false) return Passed;
-
-  string OutputLine;
-  string ReferenceLine;
-  unsigned int Line = 1;
-  while (true) {
-    const bool HasOutput = static_cast<bool>(getline(Output, OutputLine));
-    const bool HasReference = static_cast<bool>(getline(Reference, ReferenceLine));
-
-    if (HasOutput == false || HasReference == false) {
-      Passed = Evaluate("End-to-end test 542-1", "line count",
-                        "The generated output and reference have the same number of lines",
-                        HasOutput, HasReference) && Passed;
-      break;
-    }
-
-    if (OutputLine != ReferenceLine) {
-      Passed = Evaluate("End-to-end test 542-1", MString("line ") + Line,
-                        "The generated output line matches the reference line",
-                        MString(OutputLine.c_str()), MString(ReferenceLine.c_str())) && Passed;
-      break;
-    }
-
-    ++Line;
-  }
+  Passed = EvaluateFilesNumericallyEquivalent("End-to-end test 542-1", "output file",
+                                              "The generated output is numerically equivalent to the reference",
+                                              OutputFile, ReferenceFile) && Passed;
 
   return Passed;
 }

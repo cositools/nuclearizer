@@ -115,6 +115,14 @@ bool MStripMap::Open(MString FileName)
   // Sort by m_ReadOutID:
   sort(m_StripMappings.begin(), m_StripMappings.end(), [](const MSingleStripMapping& A, const MSingleStripMapping& B) { return A.m_ReadOutID < B.m_ReadOutID; });
 
+  // build the map
+  m_DetSideStripToROI.clear();
+  m_DetSideStripToROI.reserve(m_StripMappings.size());
+  for (const MSingleStripMapping& SM : m_StripMappings) {
+    unsigned int Key = (SM.m_DetectorID << 8) | ((SM.m_IsLowVoltage ? 0u : 1u) << 7) | SM.m_StripNumber;
+    m_DetSideStripToROI[Key] = SM.m_ReadOutID;
+  }
+
   return true;
 }
 
@@ -125,6 +133,14 @@ bool MStripMap::UpdateASICPolarities(vector<map<bool, vector<bool>>> ASICPolarit
   if (!m_StripMappings.empty()) {
     for (MSingleStripMapping& S : m_StripMappings) {
       S.m_IsLowVoltage = ASICPolarities[S.m_DetectorID][S.m_IsPrimary][S.m_ASICID];
+    }
+
+    // rebuild the map since the key (low voltage) may have changed
+    m_DetSideStripToROI.clear();
+    m_DetSideStripToROI.reserve(m_StripMappings.size());
+    for (const MSingleStripMapping& SM : m_StripMappings) {
+      unsigned int Key = (SM.m_DetectorID << 8) | ((SM.m_IsLowVoltage ? 0u : 1u) << 7) | SM.m_StripNumber;
+      m_DetSideStripToROI[Key] = SM.m_ReadOutID;
     }
   }
   return true;
@@ -185,6 +201,30 @@ bool MStripMap::IsLowVoltage(unsigned int ROI) const
 unsigned int MStripMap::GetStripNumber(unsigned int ROI) const
 {
   return m_StripMappings[GetReadOutIDIndex(ROI)].m_StripNumber;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Check whether (detector, side, strip) maps to a known read-out ID
+bool MStripMap::HasROIDetSideStrip(unsigned int DetectorID, bool IsLowVoltage, unsigned int StripNumber) const
+{
+  unsigned int Key = (DetectorID << 8) | ((IsLowVoltage ? 0u : 1u) << 7) | StripNumber;
+  return m_DetSideStripToROI.find(Key) != m_DetSideStripToROI.end();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+unsigned int MStripMap::GetReadOutID(unsigned int DetectorID, bool IsLowVoltage, unsigned int StripNumber) const
+{
+  unsigned int Key = (DetectorID << 8) | ((IsLowVoltage ? 0u : 1u) << 7) | StripNumber;
+  auto Iter = m_DetSideStripToROI.find(Key);
+  if (Iter == m_DetSideStripToROI.end()) {
+    throw MExceptionValueNotFound(Key, "(det/side/strip) tuple in strip map");
+  }
+  return Iter->second;
 }
 
 

@@ -19,6 +19,7 @@
 // Standard libs:
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 using namespace std;
 
 // ROOT libs:
@@ -60,6 +61,12 @@ class MStripMap
   //! Get strip ID by read out ID - check with HasReadOutID(ROI) first
   unsigned int GetStripNumber(unsigned int ROI) const;
 
+  //! Check if a (detector, side, strip) tuple is mapped to a read-out ID
+  bool HasROIDetSideStrip(unsigned int DetectorID, bool IsLowVoltage, unsigned int StripNumber) const;
+
+  //! Reverse lookup: get read-out ID for a (detector, side, strip) tuple.
+  unsigned int GetReadOutID(unsigned int DetectorID, bool IsLowVoltage, unsigned int StripNumber) const;
+
 
   // protected methods:
  protected:
@@ -93,6 +100,10 @@ class MStripMap
 
   //! The strip mapping data
   vector<MSingleStripMapping> m_StripMappings;
+
+  //! Reverse index: (det<<8) | (side<<7) | strip → read-out ID. 12-bit key
+  //! det 0-15 (4 bits), side 0/1 (1 bit), strip 0-64 (7 bits - guard-ring strip 64)
+  unordered_map<unsigned int, unsigned int> m_DetSideStripToROI;
 
 
 #ifdef ___CLING___
