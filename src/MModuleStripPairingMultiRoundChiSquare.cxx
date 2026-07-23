@@ -281,7 +281,7 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
 bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits)
 {
 
-  // Limit the number of strip hits on each side
+  // Limit the number of (triggered) strip hits on each side
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
       if (StripHits[d][side].size() > m_MaximumStrips) {
