@@ -277,6 +277,50 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//! Divide an event's nearest neighbor strip hits by detector and LV/HV side
+vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectNearestNeighborStripHits(MReadOutAssembly* Event)
+{
+
+  // Split hits by detector ID
+  vector<unsigned int> DetectorIDs; // List of detector IDs
+  vector<vector<vector<MStripHit*>>> NNStripHits; // list of detector IDs, list of sides (LV and HV), list of strip hits
+
+  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's NN strip hits
+    MStripHit* SH = Event->GetStripHit(sh);
+    
+    // Separate out the triggered and NN strip hits
+    if SH->IsNearestNeighbor() == true {
+      
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      
+      // Check if detector is on list
+      bool DetectorFound = false;
+      unsigned int DetectorPos = 0;
+      for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
+        if (DetectorIDs[d] == SH->GetDetectorID()) {
+          DetectorFound = true;
+          DetectorPos = d;
+        }
+      }
+      
+      // Once the correct detector is found, add strip hit to StripHits
+      if (DetectorFound == true) {
+        NNStripHits[DetectorPos][Side].push_back(SH);
+      } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
+        vector<vector<MStripHit*>> List; // list of sides, list of hits
+        List.push_back(vector<MStripHit*>()); // LV
+        List.push_back(vector<MStripHit*>()); // HV
+        List[Side].push_back(SH);
+        NNStripHits.push_back(List);
+        DetectorIDs.push_back(SH->GetDetectorID());
+      }
+    }
+  }
+  return NNStripHits;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 //! Read in strip hits on each side for each detector and perform quality selections
 bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits)
 {

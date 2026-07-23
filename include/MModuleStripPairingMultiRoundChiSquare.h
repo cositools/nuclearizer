@@ -88,6 +88,10 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
     
   //! Divide an event's strip hits by detector and LV/HV side
     vector<vector<vector<MStripHit*>>> CollectStripHits(MReadOutAssembly* Event);
+  
+  //! Divide an event's nearest neighbor strip hits by detector and LV/HV side
+    vector<vector<vector<MStripHit*>>> CollectNearestNeighborStripHits(MReadOutAssembly* Event);
+
 
   //! Read in strip hits on each side for each detector and perform quality selections
     bool EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits);
@@ -97,6 +101,7 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
 
   //! Evaluate the reduced chi square for all possible strip pairings
     tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> EvaluateAllCombinations(unsigned int d, const vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& StripHits);
+  
   //! Create hits
     bool CreateHits(unsigned int d, MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits, const vector<vector<unsigned int>>& BestLVSideCombo, const vector<vector<unsigned int>>& BestHVSideCombo);
     //! Return the order of indices resulting from sorting a vector
