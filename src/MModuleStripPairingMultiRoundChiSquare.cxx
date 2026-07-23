@@ -243,28 +243,33 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
 
   for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's strip hits
     MStripHit* SH = Event->GetStripHit(sh);
-    unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
-
-    // Check if detector is on list
-    bool DetectorFound = false;
-    unsigned int DetectorPos = 0;
-    for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
-      if (DetectorIDs[d] == SH->GetDetectorID()) {
-        DetectorFound = true;
-        DetectorPos = d;
+    
+    // Separate out the triggered and NN strip hits
+    if SH->IsNearestNeighbor() == false {
+      
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      
+      // Check if detector is on list
+      bool DetectorFound = false;
+      unsigned int DetectorPos = 0;
+      for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
+        if (DetectorIDs[d] == SH->GetDetectorID()) {
+          DetectorFound = true;
+          DetectorPos = d;
+        }
       }
-    }
-
-    // Once the correct detector is found, add strip hit to StripHits
-    if (DetectorFound == true) {
-      StripHits[DetectorPos][Side].push_back(SH);
-    } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
-      vector<vector<MStripHit*>> List; // list of sides, list of hits
-      List.push_back(vector<MStripHit*>()); // LV
-      List.push_back(vector<MStripHit*>()); // HV
-      List[Side].push_back(SH);
-      StripHits.push_back(List);
-      DetectorIDs.push_back(SH->GetDetectorID());
+      
+      // Once the correct detector is found, add strip hit to StripHits
+      if (DetectorFound == true) {
+        StripHits[DetectorPos][Side].push_back(SH);
+      } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
+        vector<vector<MStripHit*>> List; // list of sides, list of hits
+        List.push_back(vector<MStripHit*>()); // LV
+        List.push_back(vector<MStripHit*>()); // HV
+        List[Side].push_back(SH);
+        StripHits.push_back(List);
+        DetectorIDs.push_back(SH->GetDetectorID());
+      }
     }
   }
   return StripHits;
