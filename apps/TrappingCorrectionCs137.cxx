@@ -504,11 +504,6 @@ bool TrappingCorrectionCs137::Analyze()
                   TH1D* FullHVHist  = FullDetHVEnergyHistograms[CTDBin][DetID];
                   TH1D* FullLVHist  = FullDetLVEnergyHistograms[CTDBin][DetID];
 
-                  // if (FullCTDHist == nullptr) {
-                  //   char name[128]; sprintf(name, "CTD_Detector%d_bin%d", DetID, CTDBin);
-                  //   FullCTDHist = new TH1D(name, name, (g_MaxCTD - g_MinCTD) / 2, g_MinCTD, g_MaxCTD);
-                  //   FullDetCTDHistograms[CTDBin][DetID] = FullCTDHist;
-                  // }
                   if (FullHVHist == nullptr) {
                     char name[128]; sprintf(name, "HV_Detector%d_bin%d", DetID, CTDBin);
                     FullHVHist = new TH1D(name, name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
@@ -552,10 +547,6 @@ bool TrappingCorrectionCs137::Analyze()
 
       if (HVHist->Integral() > g_MinCounts) {
 
-        // double CTDGuess = FullCTDHist->GetBinCenter(FullCTDHist->GetMaximumBin());
-        // TF1* CTDFunction = GenerateCTDFunction(CTDFitMin, CTDFitMax, CTDGuess);
-        // TFitResultPtr CTDFit = FullCTDHist->Fit(CTDFunction, "SQ", "", CTDFitMin, CTDFitMax);
-
         TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
         TFitResultPtr HVFit = HVHist->Fit(PhotopeakFunctionHV, "S", "", 645, 675);
 
@@ -574,17 +565,6 @@ bool TrappingCorrectionCs137::Analyze()
           FullDetEndpoints[c][DetID].push_back(LVFit->Parameter(1));   // Index 2: LV Photopeak Mu
           FullDetEndpoints[c][DetID].push_back(LVFit->ParError(1));   // Index 2: HV Photopeak Mu Error
         
-
-          // ofstream CTDFitFile(DetID + MString("_CTDFitResult_.txt"));
-          // streambuf* coutbuf = cout.rdbuf();
-          // cout.rdbuf(CTDFitFile.rdbuf());
-          // cout << "CTD Fit Results for Detector " << DetID << " in CTD bin " << c << endl;
-          // if (CTDFit >= 0) {
-          //   CTDFit->Print();
-          // }
-          // cout.rdbuf(coutbuf);
-          // CTDFitFile.close();
-
 
           MasterFitFile << "------------------------------------------------------------" << endl;
           MasterFitFile << " DETECTOR ID: " << DetID << "  |  CTD BIN INDEX: " << c << endl;
@@ -610,14 +590,6 @@ bool TrappingCorrectionCs137::Analyze()
           }
           cout.rdbuf(coutbuf);
           LVFitFile.close();
-
-          // TFile CTDFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_CTDHist_Illum.root"), "recreate");
-          // TCanvas* CTDCanvas = new TCanvas();
-          // CTDCanvas->cd();
-          // FullCTDHist->Draw("hist");
-          // CTDFunction->Draw("same");
-          // FullCTDHist->Write();
-          // CTDFile.Close();
 
           TFile HVHistFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_HVEnergyHist_Illum.root"), "recreate");
           TCanvas* HVHistCanvas = new TCanvas();
@@ -781,37 +753,8 @@ TF1* TrappingCorrectionCs137::GeneratePhotopeakFunction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// TF1* TrappingCorrectionCs137::GenerateCTDFunction(double CTDFitMin, double CTDFitMax, double CTDGuess)
-// {
-//   // Exponentially modified gaussian
-//   TF1* CTDFunction = new TF1("CTDFunction", "[0]*([1]/2)*exp(([1]/2)*(([1]*[3]*[3]) - 2*[4]*(x-[2])))*erfc((([1]*[3]*[3]) - [4]*(x-[2]))/([3]*sqrt(2)))", CTDFitMin, CTDFitMax);
-
-//   CTDFunction->SetParName(0, "Norm");
-//   CTDFunction->SetParName(1, "Lambda");
-//   CTDFunction->SetParName(2, "Mu");
-//   CTDFunction->SetParName(3, "Sigma");
-//   CTDFunction->SetParName(4, "Flip");
-
-//   CTDFunction->SetParameter("Norm", 1000);
-//   CTDFunction->SetParameter("Lambda", 0.05);
-//   CTDFunction->SetParameter("Sigma", 12);
-//   CTDFunction->SetParameter("Mu", CTDGuess);
-
-
-//   CTDFunction->SetParLimits(0, 0, 1e8);
-//   CTDFunction->SetParLimits(1, 0.01, 1);
-//   CTDFunction->SetParLimits(2, CTDFitMin, CTDFitMax);
-//   CTDFunction->SetParLimits(3, 6, 30);
-
-//   return CTDFunction;
-// }
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TrappingCorrectionCs137* g_Prg = 0;
-int g_NInterruptCatches = 1;
+// TrappingCorrectionCs137* g_Prg = 0;
+// int g_NInterruptCatches = 1;
 
 MStripHit* TrappingCorrectionCs137::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
 {
