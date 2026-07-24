@@ -245,7 +245,7 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
     MStripHit* SH = Event->GetStripHit(sh);
     
     // Separate out the triggered and NN strip hits
-    if SH->IsNearestNeighbor() == false {
+    if (SH->IsNearestNeighbor() == false) {
       
       unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
       
@@ -289,7 +289,7 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
     MStripHit* SH = Event->GetStripHit(sh);
     
     // Separate out the triggered and NN strip hits
-    if SH->IsNearestNeighbor() == true {
+    if (SH->IsNearestNeighbor() == true) {
       
       unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
       
@@ -768,40 +768,40 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
   
   for (unsigned int h = 0; h < Event->GetNHits(); h++) {
     vector<vector<int>> StripIDs; // list of sides, list of strips
-    StripIDs.push_back(vector<int>) // LV
-    StripIDs.push_back(vector<int>) // HV
+    StripIDs.push_back(vector<int>()); // LV
+    StripIDs.push_back(vector<int>()); // HV
     bool AssignedDetector = false;
     int DetectorID; // Define detector ID where hit took place
     for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
       // Collect all the strip hits in a hit and split them by side
       MStripHit* SH = Event->GetHit(h)->GetStripHit(sh);
       unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
-      StripIDs[Side].push_back(SH->GetStripID())
+      StripIDs[Side].push_back(SH->GetStripID());
       
       if (AssignedDetector == false) {
         DetectorID = SH->GetDetectorID();
-        AssignedDetector == true;
+        AssignedDetector = true;
       }
     }
     // For each side, find the edge strip hit. i.e if there's charge sharing between strips 4, 5, and 6, the edges will be 4 and 6
-    int LeftEdgeLV = min_element(StripIDs[0].begin(), StripIDs[0].end());
-    int RightEdgeLV = max_element(StripIDs[0].begin(), StripIDs[0].end());
-    int LeftEdgeHV = min_element(StripIDs[1].begin(), StripIDs[1].end());
-    int RightEdgeHV = max_element(StripIDs[1].begin(), StripIDs[1].end());
+    int LeftEdgeLV = *min_element(StripIDs[0].begin(), StripIDs[0].end());
+    int RightEdgeLV = *max_element(StripIDs[0].begin(), StripIDs[0].end());
+    int LeftEdgeHV = *min_element(StripIDs[1].begin(), StripIDs[1].end());
+    int RightEdgeHV = *max_element(StripIDs[1].begin(), StripIDs[1].end());
     
     // NOTE: If there are two hits that are one strip hit apart, then the NN strip hit will be added to both hits
     // Should there be some flag for the case where it's ambiguous which hit a neighbor should be assigned to?
     
     // Define the LV neighbors
     for (unsigned int sh = 0; sh < NNStripHits[DetectorID][0].size(); sh++) {
-      if (NNStripHits[DetectorID][0][sh]->GetStripID() == LeftEdgeLV - 1) or (NNStripHits[DetectorID][0][sh]->GetStripID() == RightEdgeLV + 1) {
+      if ((NNStripHits[DetectorID][0][sh]->GetStripID() == LeftEdgeLV - 1) or (NNStripHits[DetectorID][0][sh]->GetStripID() == RightEdgeLV + 1)) {
         Event->GetHit(h)->AddNearestNeighborStripHit(NNStripHits[DetectorID][0][sh]);
       }
     }
     
     // Define the HV neighbors
     for (unsigned int sh = 0; sh < NNStripHits[DetectorID][1].size(); sh++) {
-      if (NNStripHits[DetectorID][1][sh]->GetStripID() == LeftEdgeHV - 1) or (NNStripHits[DetectorID][1][sh]->GetStripID() == RightEdgeHV + 1) {
+      if ((NNStripHits[DetectorID][1][sh]->GetStripID() == LeftEdgeHV - 1) or (NNStripHits[DetectorID][1][sh]->GetStripID() == RightEdgeHV + 1)) {
         Event->GetHit(h)->AddNearestNeighborStripHit(NNStripHits[DetectorID][1][sh]);
       }
     }
