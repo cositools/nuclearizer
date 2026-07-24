@@ -281,7 +281,6 @@ void MGUIExpoDepthCalibration::RebuildDisplayHistograms()
       int key = GetStripKey(DetID, m_SelectedSide, s);
       if (m_DepthPerStrip.count(key) > 0)
         m_DepthHistograms[DetID]->Add(m_DepthPerStrip[key]);
-        cout << " added "<< key << ": " << m_DepthPerStrip[key]->GetEntries() << " entries" << endl;
       if (m_RawDepthPerStrip.count(key) > 0)
         m_RawDepthHistograms[DetID]->Add(m_RawDepthPerStrip[key]);
     }
