@@ -114,6 +114,10 @@ class MModuleDepthCalibration : public MModule
   void SetChargeSharingPolyCoeffsHV( unordered_map<int, vector<vector<double>>> ChargeSharingPolyCoeffsHV ) { m_ChargeSharingPolyCoeffsHV = ChargeSharingPolyCoeffsHV; }
   void SetChargeSharingPolyCoeffsLV( unordered_map<int, vector<vector<double>>> ChargeSharingPolyCoeffsLV ) { m_ChargeSharingPolyCoeffsLV = ChargeSharingPolyCoeffsLV; }
 
+  //! Set the coefficients of the polynomial describing the charge sharing correction, one vector per detector (map-int) per depth (the vector)
+  void SetChargeSharingCorrectionCoeffsHV( unordered_map<int, vector<vector<double>>> ChargeSharingCorrectionCoeffsHV ) { m_ChargeSharingCorrectionCoeffsHV = ChargeSharingCorrectionCoeffsHV; }
+  void SetChargeSharingCorrectionCoeffsLV( unordered_map<int, vector<vector<double>>> ChargeSharingCorrectionCoeffsLV ) { m_ChargeSharingCorrectionCoeffsLV = ChargeSharingCorrectionCoeffsLV; }
+
   //! Set the depth calibration coefficients
   void SetCoeffs( unordered_map<int, vector<double>> Coeffs ) { m_Coeffs = Coeffs; }
 
@@ -123,9 +127,13 @@ class MModuleDepthCalibration : public MModule
   //! Get the charge sharing correction calibration coefficients
   unordered_map<int, vector<vector<double>>> GetChargeSharingCoeffs() { return m_ChargeSharingCoeffs; }
 
-  //! Get the coefficients of the polynomial for the ccharge sharing correction calibration
+  //! Get the coefficients of the polynomial for the ccharge sharing expectation / bump  calibration
   unordered_map<int, vector<vector<double>>> GetChargeSharingPolyCoeffsHV() { return m_ChargeSharingPolyCoeffsHV; }
   unordered_map<int, vector<vector<double>>> GetChargeSharingPolyCoeffsLV() { return m_ChargeSharingPolyCoeffsLV; }
+
+  //! Get the coefficients of the polynomial for the charge sharing correction calibration
+  unordered_map<int, vector<vector<double>>> GetChargeSharingCorrectionCoeffsHV() { return m_ChargeSharingCorrectionCoeffsHV; }
+  unordered_map<int, vector<vector<double>>> GetChargeSharingCorrectionCoeffsLV() { return m_ChargeSharingCorrectionCoeffsLV; }
 
   //! Get the depth calibration coefficients
   unordered_map<int, vector<double>> GetCoeffs() { return m_Coeffs; }
@@ -182,6 +190,10 @@ class MModuleDepthCalibration : public MModule
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
 
+  //! Return the coefficients of the charge sharing correction  polynomial for a detector at a depth
+  vector<double> GetChargeSharingCorrectionCoeffsHV(int DetID,double z);
+  vector<double> GetChargeSharingCorrectionCoeffsLV(int DetID,double z);
+  
   //! Return the coefficients of the dTac polynomial for a detector at a depth
   vector<double> GetChargeSharingPolyCoeffsHV(int DetID,double z);
   vector<double> GetChargeSharingPolyCoeffsLV(int DetID,double z);
@@ -212,6 +224,8 @@ class MModuleDepthCalibration : public MModule
  
   unordered_map<int, vector<double>> m_ChargeSharingDepths; // maps DetID to the depths for which the charge sharing polynomial correction and charge sharing coefficients per-strip-pair were calculated
   unordered_map<int, vector<vector<double>>> m_ChargeSharingCoeffs; // maps StripPairID to a vector of coefficients, for a vector of depths (needs interpolation)
+  unordered_map<int, vector<vector<double>>> m_ChargeSharingCorrectionCoeffsLV; // maps DetID to the LV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a vector of depths
+  unordered_map<int, vector<vector<double>>> m_ChargeSharingCorrectionCoeffsHV; // maps DetID to the HV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a given depth
   unordered_map<int, vector<vector<double>>> m_ChargeSharingPolyCoeffsLV; // maps DetID to the LV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a vector of depths
   unordered_map<int, vector<vector<double>>> m_ChargeSharingPolyCoeffsHV; // maps DetID to the HV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a given depth
   unordered_map<int, vector<double>> m_Coeffs; // maps pix id to a vector of coefficients... 

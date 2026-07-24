@@ -352,13 +352,13 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	      }
 	    }
 
-	    // TODO depth correction loop!
-	    //
-	    // step 1 -- check the HV side:
-	    bool ChargeSharingHV = false;
+	    // === check and correct the HV side TAC
+	    bool ChargeSharingHV = false; // TODO flag
+	    bool TacJitterCorrectHV = false; // TODO flag; check if problem in FM ASICS
 	    vector<double> CorrectedHVTiming;
 	    vector<double> CorrectedHVTimingUncertainty;
-	    //int StripPairCode = 10000*DetID + HVStripID; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
+	    int StripPairCode = 10000*DetID + HVStripID + 9900; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
+	    // TODO actually fill the vectors and correct the TAC
 	    // 	-- how many strips share > 10% of the total energy (or are over slow threshold, maybe?)  need this info for next steps
 	    // 	-- check dTAC between adjacent strips with charge sharing and also strips relative to their low-eneryg neighbors
 	    // 	   -- correct the HV timing asic jitter bug, if needed, to make everything consistent
@@ -366,6 +366,9 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // 	   -- if charge sharing, calculate the corrected timing value for each strip in teh absense of charge sharing,
 	    // 	   -- and also calculate the HV tac as the weighted average, with its own uncertainty
 	    // 	   -- note, rawZpos is used in the above calculations! 
+            double rawCTD = (HVTiming - LVTiming);
+            rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
+	    std::tie(rawZpos, rawZsigma) = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false); // true (sean weighting)
 	    
 	    // step 2 -- check the LV side: 
 	    bool ValidatedLVTiming = false; // should put a flag here eventually TODO; if NN do not have fast timing
@@ -750,6 +753,14 @@ bool MModuleDepthCalibration::LoadChargeSharingConfigFile(MString FileName)
       poly_coeffs.push_back(139.209); poly_coeffs.push_back(-106.849);// these are the coefficients, where we'll have a polynomial dTac = coeffs[0]*(f-0.5) - coeffs[1]*(f-0.5)^3
       m_ChargeSharingPolyCoeffsHV[DetID].push_back(poly_coeffs);
       m_ChargeSharingPolyCoeffsLV[DetID].push_back(poly_coeffs); // in principle they would be different
+								
+      vector<double> correction_coeffs;
+      correction_coeffs.push_back(0); // TODO get actual coeffs from Isidro!!!
+      correction_coeffs.push_back(0);
+      correction_coeffs.push_back(0);
+      correction_coeffs.push_back(0);
+      m_ChargeSharingCorrectionCoeffsLV[DetID].push_back(correction_coeffs);
+      m_ChargeSharingCorrectionCoeffsHV[DetID].push_back(correction_coeffs);
 
       // fill m_ChargeSharingConfig for each detector / depth / strip pair
       vector<double> coeffs; // the stretch and offset, currently set to the same values for all strips (which are almost certainly wrong)
@@ -934,6 +945,74 @@ std::vector<double> MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV(int De
     }
   } else {
     cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
+    return {};
+  }
+
+}
+/////////////////////////////////////////////////////////////////////////////////
+
+
+std::vector<double> MModuleDepthCalibration::GetChargeSharingCorrectionCoeffsLV(int DetID, double z)
+{ 
+  // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
+  if (m_ChargeSharingConfigFileIsLoaded == true) {
+    if (m_ChargeSharingCorrectionCoeffsLV.count(DetID) > 0) {
+                 
+      // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
+      if (z <= m_ChargeSharingDepths[DetID].front()) return m_ChargeSharingCorrectionCoeffsLV[DetID].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return m_ChargeSharingCorrectionCoeffsLV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
+
+      // otherwise, interpolate
+      for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
+        if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
+          double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
+	  vector<double> result;
+	  for (int j = 0; j < m_ChargeSharingCorrectionCoeffsLV[DetID].at(i).size(); j++) result.push_back((1.0 - f) * m_ChargeSharingCorrectionCoeffsLV[DetID][i][j] + f * m_ChargeSharingCorrectionCoeffsLV[DetID][i + 1][j]);
+	  return result;
+	}
+      }
+    } else {
+      if (g_Verbosity >= c_Warning) {
+        cout << "MModuleDepthCalibration::GetChargeSharingCorrectionCoeffsLV: cannot get charge sharing correction coefficients; detector id code " << DetID << " not found." << endl;
+      }
+      return {};
+    }
+  } else {
+    cout << "MModuleDepthCalibration::GetChargeSharingCorrectionCoeffsLV: cannot get charge sharing correction coefficients; file has not yet been loaded." << endl;
+    return {};
+  }
+
+}
+/////////////////////////////////////////////////////////////////////////////////
+
+
+std::vector<double> MModuleDepthCalibration::GetChargeSharingCorrectionCoeffsHV(int DetID, double z)
+{ 
+  // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
+  if (m_ChargeSharingConfigFileIsLoaded == true) {
+    if (m_ChargeSharingCorrectionCoeffsHV.count(DetID) > 0) {
+                 
+      // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
+      if (z <= m_ChargeSharingDepths[DetID].front()) return m_ChargeSharingCorrectionCoeffsHV[DetID].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return m_ChargeSharingCorrectionCoeffsHV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
+
+      // otherwise, interpolate
+      for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
+        if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
+          double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
+	  vector<double> result;
+	  for (int j = 0; j < m_ChargeSharingCorrectionCoeffsHV[DetID].at(i).size(); j++) result.push_back((1.0 - f) * m_ChargeSharingCorrectionCoeffsHV[DetID][i][j] + f * m_ChargeSharingCorrectionCoeffsHV[DetID][i + 1][j]);
+	  return result;
+	}
+      }
+    } else {
+      if (g_Verbosity >= c_Warning) {
+        cout << "MModuleDepthCalibration::GetChargeSharingCorrectionCoeffsHV: cannot get charge sharing correction coefficients; detector id code " << DetID << " not found." << endl;
+      }
+      return {};
+    }
+  } else {
+    cout << "MModuleDepthCalibration::GetChargeSharingCorrectionCoeffsHV: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
     return {};
   }
 
