@@ -942,8 +942,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
       
   } // End Detector loop
 
-  // Collect the NN strip hits, if any
-  
+  // If there are NN strips, assign them to their appropriate hits
   if (IncludingNearestNeighbors == true) {
     AssignNearestNeighbors(Event);
   }
