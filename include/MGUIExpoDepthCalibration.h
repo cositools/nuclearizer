@@ -28,6 +28,9 @@
 #include <TRootEmbeddedCanvas.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TLegend.h>
+#include <TGNumberEntry.h>
+#include <TGComboBox.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -83,21 +86,44 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   //!  0    1    2    3 
   //!  4    5    6    7
   //!  8    9   10   11
-  void AddDepth(unsigned int DetID, double Depth);
+  void AddDepth(unsigned int DetID, int LVStrip, int HVStrip, double Depth);
+  void AddRawDepth(unsigned int DetID, int LVStrip, int HVStrip, double Depth);
+  void OnStripSelectionChanged();
+  void RebuildDisplayHistograms();
+  virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
+
 
   // protected methods:
  protected:
-
-
+ 
   // protected members:
- protected:
+ protected: 
+  std::map<int, TH1D*> m_RawDepthPerStrip;
+  std::map<int, TH1D*> m_DepthPerStrip;
+
+  TGComboBox* m_SideSelector;
+  TGNumberEntry* m_StripMinEntry;
+  TGNumberEntry* m_StripMaxEntry;
+
+  int m_SelectedSide;   // 0=LV, 1=HV
+  int m_StripMin;
+  int m_StripMax;
+
+  int GetStripKey(int DetID, int Side, int StripID) { return DetID * 1000 + Side * 100 + StripID; }
 
   // private members:
  private:
+  TLegend* m_Legend = nullptr;
+  TGTextButton* m_UpdateSelectionButton;
+
+  static const int c_UpdateSelection = 1001;
+
+
   //! Depth canvas
   unordered_map<unsigned int, TRootEmbeddedCanvas*> m_DepthCanvases;
   //! Depth vs detector ID histogram
   unordered_map<unsigned int, TH1D*> m_DepthHistograms;
+  unordered_map<unsigned int, TH1D*> m_RawDepthHistograms;
 
   //! Detectors in x direction
   unsigned int m_NColumns;

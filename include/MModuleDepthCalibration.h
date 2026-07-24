@@ -32,6 +32,7 @@
 #include "MDStrip3D.h"
 #include "MDShapeBRIK.h"
 #include "MGUIExpoDepthCalibration.h"
+#include "MGUIExpoPlotTacDiff.h"
 
 // Forward declarations:
 
@@ -182,11 +183,11 @@ class MModuleDepthCalibration : public MModule
   int GetHitGrade(MHit* H);
 
   //! Return the coefficients of the dTac polynomial for a detector at a depth
-  vector<double>* GetChargeSharingPolyCoeffsHV(int DetID,double z);
-  vector<double>* GetChargeSharingPolyCoeffsLV(int DetID,double z);
+  vector<double> GetChargeSharingPolyCoeffsHV(int DetID,double z);
+  vector<double> GetChargeSharingPolyCoeffsLV(int DetID,double z);
   
   //! Return the charge-sharing stretch/offset coefficients for a strip-pair at a depth
-  vector<double>* GetChargeSharingCoeffs(int StripPairCode,double z);
+  vector<double> GetChargeSharingCoeffs(int StripPairCode,double z);
   
   //! Return the ctd-z stretch/offset coefficients for a pixel
   vector<double>* GetPixelCoeffs(int PixelCode);
@@ -211,7 +212,6 @@ class MModuleDepthCalibration : public MModule
  
   unordered_map<int, vector<double>> m_ChargeSharingDepths; // maps DetID to the depths for which the charge sharing polynomial correction and charge sharing coefficients per-strip-pair were calculated
   unordered_map<int, vector<vector<double>>> m_ChargeSharingCoeffs; // maps StripPairID to a vector of coefficients, for a vector of depths (needs interpolation)
-  vector<double> m_InterpolatedCoeffs; // holder for interpolated charge sharing coeffs between different depths
   unordered_map<int, vector<vector<double>>> m_ChargeSharingPolyCoeffsLV; // maps DetID to the LV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a vector of depths
   unordered_map<int, vector<vector<double>>> m_ChargeSharingPolyCoeffsHV; // maps DetID to the HV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a given depth
   unordered_map<int, vector<double>> m_Coeffs; // maps pix id to a vector of coefficients... 
@@ -235,10 +235,14 @@ class MModuleDepthCalibration : public MModule
   uint64_t m_ErrorNullSH;
   uint64_t m_ErrorNoE;
   uint64_t m_ZombieBump;
+  uint64_t m_ChargeSharingLV;
+  uint64_t m_ChargeSharingHV;
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
   MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
+  MGUIExpoPlotTacDiff* m_ExpoPlotTacDiff;
+
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   unordered_map<int, vector<vector<double>>> m_CTDMap;

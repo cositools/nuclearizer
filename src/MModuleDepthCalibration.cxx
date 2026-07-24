@@ -163,18 +163,34 @@ void MModuleDepthCalibration::CreateExpos()
   // Create all expos
 
   if (HasExpos() == true) return;
-
-  // Set the histogram display
-  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
-  m_ExpoDepthCalibration->SetDepthHistogramArrangement(&m_DetectorIDs);
-  for (unsigned int i = 0; i < m_DetectorIDs.size(); ++i){
+  
+  cout << "CreateExpos: m_DetectorIDs.size() = " << m_DetectorIDs.size() << endl;
+ 
+  // dTAC expo for bump diagnostics
+  m_ExpoPlotTacDiff = new MGUIExpoPlotTacDiff(this);
+  for (unsigned int i = 0; i < m_DetectorIDs.size(); ++i) {
     unsigned int DetID = m_DetectorIDs[i];
     double thickness = m_Thicknesses[DetID];
-    m_ExpoDepthCalibration->SetDepthHistogramParameters(DetID, 120, -thickness/2.0,thickness/2.0);
+    m_ExpoPlotTacDiff->SetHistogramParameters(DetID,
+      120, -thickness/2.0, thickness/2.0,  // depth bins
+      200, -100, 100,                       // dTac bins
+      100, 0, 1);                           // fraction bins
   }
+  m_Expos.push_back(m_ExpoPlotTacDiff);
+
+  // Depth calibration expo
+  m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
+  // Set parameters first (so m_NBins/m_Min/m_Max are available)
+  for (unsigned int i = 0; i < m_DetectorIDs.size(); ++i) {
+    unsigned int DetID = m_DetectorIDs[i];
+    double thickness = m_Thicknesses[DetID];
+    cout << "  DetID=" << DetID << " thickness=" << thickness << endl;
+    m_ExpoDepthCalibration->SetDepthHistogramParameters(DetID, 120, -thickness/2.0, thickness/2.0);
+  }
+  // Then create arrangement (which uses m_NBins/m_Min/m_Max to create histograms)
+  m_ExpoDepthCalibration->SetDepthHistogramArrangement(&m_DetectorIDs);
   m_Expos.push_back(m_ExpoDepthCalibration);
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -195,6 +211,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       // H is a pointer to an instance of the MHit class. Each Hit has activated strips, represented by
       // instances of the MStripHit class.
       MHit* H = Event->GetHit(i);
+      double HitEnergy = H->GetEnergy();
 
       int Grade = GetHitGrade(H);
 
@@ -327,11 +344,20 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
           else {
 	    // FR TODO the last boolean is for sean's weighting method;  make it a flag
-	    auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, true);
-	
+	    auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false); // true (sean weighting)
+	    // add the raw depth to the raw depth histogram
+            if (Event->HasStripPairingError()==false) {
+              if (HasExpos() == true) {
+	        m_ExpoDepthCalibration->AddRawDepth(DetID, LVStripID, HVStripID, rawZpos);	
+	      }
+	    }
+
 	    // TODO depth correction loop!
 	    //
 	    // step 1 -- check the HV side:
+	    bool ChargeSharingHV = false;
+	    vector<double> CorrectedHVTiming;
+	    vector<double> CorrectedHVTimingUncertainty;
 	    //int StripPairCode = 10000*DetID + HVStripID; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
 	    // 	-- how many strips share > 10% of the total energy (or are over slow threshold, maybe?)  need this info for next steps
 	    // 	-- check dTAC between adjacent strips with charge sharing and also strips relative to their low-eneryg neighbors
@@ -342,12 +368,11 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // 	   -- note, rawZpos is used in the above calculations! 
 	    
 	    // step 2 -- check the LV side: 
-	    bool ValidatedTiming = false; // should put a flag here eventually TODO; if NN do not have fast timing
-	    bool ZombieBump = false;
-	    vector<double> CorrectedTiming;
-	    vector<double> CorrectedTimingUncertainty;
-	    bool CorrectedChargeSharingLV = false;
-	    // also should put a flag here TODO (is there another flag for charge sharing?)
+	    bool ValidatedLVTiming = false; // should put a flag here eventually TODO; if NN do not have fast timing
+	    bool ZombieBump = false;// should put a flag here TODO
+	    vector<double> CorrectedLVTiming;
+	    vector<double> CorrectedLVTimingUncertainty;
+	    bool ChargeSharingLV = false;// also should put a flag here TODO (is there another flag for charge sharing?)
 
 	    if (LVEnergyFraction > m_SingleStripChargeSharing){// if we have one obvious main strip, we are not going to be correcting charge sharing but just checking for zombie bump
 	      // compare with the neighbors, if possible
@@ -355,43 +380,59 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 		int pm = 2*neighbor - 1; // -1 for neighbor 0 (neighbor is left); + 1 for neighbor == 1 (right neighbor, which is nominal for the convention StripPairID = left StripID of pair
 	        int NeighborStripID = LVStripID + pm; 
 		MStripHit* NSH = GetStrip(LVStrips, NeighborStripID);
-		if (NeighborStripID >=0 && NeighborStripID <=63 && NSH){ // neighbor is not a guard ring strip, NSH exists (not a null pointer) TODO and NSH has fast timing!
+		if (NeighborStripID >=0 && NeighborStripID <=63 && NSH && NSH->HasFastTiming()){ // neighbor is not a guard ring strip, NSH exists (not a null pointer) and has fast timing!
 		  double dTacData = (LVSH->GetTiming() - NSH->GetTiming())*pm; // always the left strip - right strip; neighbor on left means pm = -1 -> NSH - LVSH timing
 		  double fracData = (NSH->GetEnergy()/(LVSH->GetEnergy() + NSH->GetEnergy())*pm) + 1 - neighbor; // always the fraction on the right stripHit; nominally NSH for right neighbor
-		  int StripPairCode = 10000*DetID + 100*(LVStripID - 1 + neighbor); //LVStripID -1 + 0 = LVStripID -1 (left neighbor); or LVStripID -1 + 1 = LVStripID (LVStrip is the StripID when we consider right negihbor)
-		  int x = (fracData - 0.5); // x is LVEnergyFraction - 0.5
-		  vector<double>* CSPolyCoeffs = GetChargeSharingPolyCoeffsLV(DetID,rawZpos); // TODO need to actually check and fill the variable that checks the length of this, and check that it's right when loading
-		  vector<double>* CSCoeffs = GetChargeSharingCoeffs(StripPairCode,rawZpos);
-		  if (CSCoeffs && CSPolyCoeffs){
-	 	    double dTacExpect = (CSPolyCoeffs->at(0)*x + CSPolyCoeffs->at(1)*x*x*x)*CSCoeffs->at(0) + CSCoeffs->at(1);// TODO update if not cubic polynomial
+		  int StripPairCode = 10000*DetID + 100*(LVStripID - 1 + neighbor) + 99; //LVStripID -1 + 0 = LVStripID -1 (left neighbor); or LVStripID -1 + 1 = LVStripID (LVStrip is the StripID when we consider right negihbor)
+		  double x = (fracData - 0.5); // x is LVEnergyFraction - 0.5, ie the parameter of Isidro's polynomials, which are forced to go through (0.5, 0)
+		  vector<double> CSPolyCoeffs = GetChargeSharingPolyCoeffsLV(DetID,rawZpos); // TODO need to actually check and fill the variable that checks the length of this, and check that it's right when loading
+		  vector<double> CSCoeffs = GetChargeSharingCoeffs(StripPairCode,rawZpos);
+	      
+		  // add to the expo
+	      	  if (HasExpos() == true) {
+	            m_ExpoPlotTacDiff->AddData(StripPairCode, rawZpos, dTacData, fracData, std::nan(""),HitEnergy);
+	          }
+
+		  if (!CSCoeffs.empty() && !CSPolyCoeffs.empty()){
+	 	    double dTacExpect = (CSPolyCoeffs.at(0)*x + CSPolyCoeffs.at(1)*x*x*x)*CSCoeffs.at(0) + CSCoeffs.at(1);// TODO update if not cubic polynomial
 		    // TODO we should display (dTacData - dTacExpect)*pm to keep an eye on the prevalence of the bump
-		    if (rawZpos > -5 && dTacData < 500 && dTacData > -500 && (dTacData - dTacExpect)*pm > 2*noise){// zombie bump! TODO update bump criteria, fix noise, remove Slow Timing check once checked earlier
+		    if (rawZpos > -0.5 && (dTacData - dTacExpect)*pm > 2*noise){// zombie bump! TODO update bump criteria, fix noise
 		      ZombieBump = true;
-		      ValidatedTiming = false;
+		      ValidatedLVTiming = false;
+		      cout << "LV Strip: "<<LVStripID<<" neighbor: " << NeighborStripID<< " f data: "<< fracData<< " data:" << dTacData << " Expected dTAC "<< dTacExpect<< " noise "<< noise <<endl;
 		      if ((dTacData - dTacExpect)*pm > -1*pm*dTacExpect) { // zombie bump with good neighbor. Can we not always do this in this case, though, since we know what the timing should be? 
-		        CorrectedTiming.push_back(LVTiming-(dTacData - dTacExpect)*pm);
-		        CorrectedTimingUncertainty.push_back(noise*2); // to do: quantify and make into something real
+		        CorrectedLVTiming.push_back(LVTiming-60); // needs to be a config
+		        CorrectedLVTimingUncertainty.push_back(noise*2); // to do: quantify and make into something real
+		      } else {
+		        CorrectedLVTiming.push_back(0); // needs to be a config
+		        CorrectedLVTimingUncertainty.push_back(0); // to do: quantify and make into something real 
 		      }
 		    } else {
-		    if (dTacData < 500 && dTacData > -500 && !ZombieBump && CSCoeffs && CSPolyCoeffs) ValidatedTiming = true;
+		      if (!ZombieBump && !CSCoeffs.empty() && !CSPolyCoeffs.empty()) ValidatedLVTiming = true;
 		   }
 		 }
 	  	}	
               }
 	    } else { // charge sharing correction
-	      CorrectedChargeSharingLV = true;
+	      ChargeSharingLV = true;
 	    }
-	    if (ZombieBump) m_ZombieBump++;
-	    if (CorrectedTiming.size() > 0){// if we have a correction. Also, implemented weighting! TODO an
+	    // correct the timing
+	    if (CorrectedLVTiming.size() > 0){// if we have a correction. Also, implemented weighting! TODO an
 	      double correctionSum = 0;
-	      for (unsigned int j = 0; j < CorrectedTiming.size(); j++) {
+	      for (unsigned int j = 0; j < CorrectedLVTiming.size(); j++) {
 		// TODO check that they are consistent and drop one if not.... 
-	        correctionSum += CorrectedTiming.at(j);
+	        correctionSum += CorrectedLVTiming.at(j);
 	      }
-	      LVTiming = correctionSum / CorrectedTiming.size();
+	      LVTiming = correctionSum / CorrectedLVTiming.size();
 	    }
-	    rawCTD = (HVTiming - LVTiming);
-            rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0));
+
+	    // update counters
+	    if (ZombieBump) m_ZombieBump++;
+	    if (ChargeSharingLV) m_ChargeSharingLV++;
+	    if (ChargeSharingHV) m_ChargeSharingHV++;
+
+	    double CTD = (HVTiming - LVTiming);
+            double CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0));
 	    //  -- how many strips share > 10% of the total energy (or are over the slow threshold, maybe?) need this info for the next steps
 	    //  -- check dTAC between adjacent strips with charge sharing and also strips relative to their low-energy neighbors
 	    //     -- deal with the zombie bump! 
@@ -400,27 +441,24 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    //     -- and then also calculate the corrected LV tac as the weighted average, with its own uncertainty (they should be consistent)
 	    //     -- note, rawZpos is used in teh above calculations
 	    
-	    // step 3 -- calculate new corrected CTD, and from that calculate new corrected Z
-	    // 
+	    // step 3
 	    // bonus points: implement x and y localization based on info in step 1 and 2 with charge sharing :) 
-	    // bonus points -- can re-calculated depth between 1 and 2 if significant changes with HV correction would impact ZB correction!
             
 	    
-	    if ((rawCTD_s < (Xmin - 2.0*noise)) || (rawCTD_s > (Xmax + 2.0*noise))) {
+	    if ((CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise))) {
               H->SetNoDepth();
               Event->SetDepthCalibrationError("Out of Range");
               ++m_Error2;
             }
+
             // If the CTD is in range, calculate the depth
 	    else {
-	      auto [rawZpos, rawZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, true);
-	      Zpos = rawZpos;
-	      Zsigma = rawZsigma;
+	      auto [Zpos, Zsigma] = CalculateZfromCTD(CTD_s, noise,DetID, Grade, false);
 	    
 	      // Add the depth to the GUI histogram.
               if (Event->HasStripPairingError()==false) {
                 if (HasExpos() == true) {
-                  m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+                  m_ExpoDepthCalibration->AddDepth(DetID, LVStripID, HVStripID, Zpos);
                 }
               }
               m_NoError+=1;
@@ -458,6 +496,11 @@ std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTD
 {
   vector<double> CTDVec = GetCTD(DetID, Grade);
   vector<double> DepthVec = GetDepth(DetID);
+ 
+  if (CTDVec.empty() || DepthVec.empty()) {
+    cout << "NO CTD Vector for this detector and GRADE!!!!" <<endl <<endl;
+    return std::make_tuple(0.0, 0.0);
+  }
           
   
   // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
@@ -490,24 +533,38 @@ std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTD
   }
   // otherwise, use the standard appropach with no rounding off
   // if out of bounds, return boundary
-  if (CTDvalue <= CTDVec.front()) {
+  double Vecmin = CTDVec.front();
+  double Vecmax = CTDVec.back();
+  if (Vecmin > Vecmax) cout << "CTD vec in descenting order!! front: "<< Vecmin << " back: "<<Vecmax<<endl<< endl;
+
+  if (CTDvalue <= Vecmin) {
     double CTD_high = CTDvalue + noise/2.355;
-    if (CTD_high <= CTDVec.front()) {
+    if (CTD_high <= Vecmin) {
         return std::make_tuple(DepthVec.front(), 0.0);
+    }
+    if (CTD_high >= Vecmax) {
+      return std::make_tuple(DepthVec.front(), DepthVec.back() - DepthVec.front());
     }
     auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_high);
     unsigned int i = std::distance(CTDVec.begin(), it);
+    if (i == 0) return std::make_tuple(DepthVec.front(), 0.0);
+    if (i >= CTDVec.size()) return std::make_tuple(DepthVec.front(), DepthVec.back() - DepthVec.front());
     double fraction = (CTD_high - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
     double depth_high = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
     return std::make_tuple(DepthVec.front(),depth_high-DepthVec.front());
   }
-  if (CTDvalue >= CTDVec.back()) {
+  if (CTDvalue >= Vecmax) {
     double CTD_low = CTDvalue - noise/2.355;
     if (CTD_low >= CTDVec.back()) {
         return std::make_tuple(DepthVec.back(), 0.0);
     }
+    if (CTD_low <= Vecmin) {
+      return std::make_tuple(DepthVec.back(), DepthVec.back() - DepthVec.front());
+    }
     auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_low);
     unsigned int i = std::distance(CTDVec.begin(), it);
+    if (i == 0) return std::make_tuple(DepthVec.back(), DepthVec.back() - DepthVec.front());
+    if (i >= CTDVec.size()) return std::make_tuple(DepthVec.back(), 0.0);
     double fraction = (CTD_low - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
     double depth_low = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
     return std::make_tuple(DepthVec.back(),depth_low-DepthVec.back());
@@ -516,20 +573,29 @@ std::tuple<double, double> MModuleDepthCalibration::CalculateZfromCTD(double CTD
   // if not out of bounds, extrapolate and calculate errors....
   auto it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTDvalue);
   unsigned int i = std::distance(CTDVec.begin(), it);
+  if (i == 0) return std::make_tuple(DepthVec.front(), 0.0);
+  if (i >= CTDVec.size()) return std::make_tuple(DepthVec.back(), 0.0);
   double fraction = (CTDvalue - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
   double depth = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
   
   double CTD_low = std::max(CTDvalue - noise/2.355,CTDVec.front());
   double CTD_high = std::min(CTDvalue + noise/2.355,CTDVec.back());
+
+  double depth_low = depth;
+  double depth_high = depth;
+
   it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_low);
   i = std::distance(CTDVec.begin(), it);
-  fraction = (CTD_low - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
-  double depth_low = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+  if (i > 0 && i < CTDVec.size()) {
+    fraction = (CTD_low - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
+    depth_low = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+  }// give an else TODO 
   it = std::upper_bound(CTDVec.begin(), CTDVec.end(), CTD_high);
   i = std::distance(CTDVec.begin(), it);
-  fraction = (CTD_high - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
-  double depth_high = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
-
+  if (i > 0 && i < CTDVec.size()) {
+    fraction = (CTD_high - CTDVec[i - 1]) / (CTDVec[i] - CTDVec[i - 1]);
+    depth_high = DepthVec[i - 1] + fraction * (DepthVec[i] - DepthVec[i - 1]);
+  }
   return std::make_tuple(depth, (depth_high - depth_low) / 2.);
 }
 
@@ -675,7 +741,7 @@ bool MModuleDepthCalibration::LoadChargeSharingConfigFile(MString FileName)
     
     // fill m_ChargeSharingDepths for each detector
     vector<double> depths;
-    for (double i = -7.; i < 7.4; i = i + 1.) depths.push_back(i);
+    for (double i = -7.; i < 7.4; i = i + 1.) depths.push_back(i/10); // should be 100% in cm 
     m_ChargeSharingDepths[DetID] = depths;
 
     for(int z = 0; z < depths.size(); z++){
@@ -689,11 +755,11 @@ bool MModuleDepthCalibration::LoadChargeSharingConfigFile(MString FileName)
       vector<double> coeffs; // the stretch and offset, currently set to the same values for all strips (which are almost certainly wrong)
       coeffs.push_back(1.033454449); coeffs.push_back(-1.996517705);coeffs.push_back(6.373983606); // stretch, offset, dTacSigma. Need to figure out how to deal with dTac sigma in an energy-dependent way
       for (int LVStripID = 0; LVStripID < 63; LVStripID++){ // up to 62 since these are pairs
-        int StripPairCode = 10000*DetID + 100*LVStripID;
+        int StripPairCode = 10000*DetID + 100*LVStripID + 99;
         m_ChargeSharingCoeffs[StripPairCode].push_back(coeffs);
       }
       for (int HVStripID = 0; HVStripID < 63; HVStripID++){
-        int StripPairCode = 10000*DetID +  HVStripID; 
+        int StripPairCode = 10000*DetID +  HVStripID + 9900; 
         m_ChargeSharingCoeffs[StripPairCode].push_back(coeffs);
       }
     }
@@ -772,7 +838,7 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-std::vector<double>* MModuleDepthCalibration::GetChargeSharingCoeffs(int StripPairCode, double z)
+std::vector<double> MModuleDepthCalibration::GetChargeSharingCoeffs(int StripPairCode, double z)
 {
   int DetID = StripPairCode / 10000;	
   // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
@@ -780,95 +846,95 @@ std::vector<double>* MModuleDepthCalibration::GetChargeSharingCoeffs(int StripPa
     if (m_ChargeSharingCoeffs.count(StripPairCode) > 0) {
                  
       // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
-      if (z <= m_ChargeSharingDepths[DetID].front()) return &m_ChargeSharingCoeffs[StripPairCode].at(0);
-      if (z >= m_ChargeSharingDepths[DetID].back())  return &m_ChargeSharingCoeffs[StripPairCode].at(m_ChargeSharingDepths[DetID].size()-1);
+      if (z <= m_ChargeSharingDepths[DetID].front()) return m_ChargeSharingCoeffs[StripPairCode].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return m_ChargeSharingCoeffs[StripPairCode].at(m_ChargeSharingDepths[DetID].size()-1);
 
       // otherwise, interpolate
       for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
         if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
           double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
-	  m_InterpolatedCoeffs.clear();
-	  for (int j = 0; j < m_ChargeSharingCoeffs[StripPairCode].at(i).size(); j++) m_InterpolatedCoeffs.push_back((1.0 - f) * m_ChargeSharingCoeffs[StripPairCode][i][j] + f * m_ChargeSharingCoeffs[StripPairCode][i + 1][j]);
-	  return &m_InterpolatedCoeffs;
+	  vector<double> result;
+	  for (unsigned int j = 0; j < m_ChargeSharingCoeffs[StripPairCode].at(i).size(); j++) result.push_back((1.0 - f) * m_ChargeSharingCoeffs[StripPairCode][i][j] + f * m_ChargeSharingCoeffs[StripPairCode][i + 1][j]);
+	  return result;
 	}
       }
     } else {
       if (g_Verbosity >= c_Warning) {
         cout << "MModuleDepthCalibration::GetChargeSharingCoeffs: cannot get charge sharing coefficients; strip pair code " << StripPairCode << " not found." << endl;
       }
-      return nullptr;
+      return {};
     }
   } else {
     cout << "MModuleDepthCalibration::GetChargeSharingCoeffs: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
-    return nullptr;
+    return {};
   }
 
 }
 /////////////////////////////////////////////////////////////////////////////////
 
 
-std::vector<double>* MModuleDepthCalibration::GetChargeSharingPolyCoeffsLV(int DetID, double z)
+std::vector<double> MModuleDepthCalibration::GetChargeSharingPolyCoeffsLV(int DetID, double z)
 { 
   // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
   if (m_ChargeSharingConfigFileIsLoaded == true) {
     if (m_ChargeSharingPolyCoeffsLV.count(DetID) > 0) {
                  
       // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
-      if (z <= m_ChargeSharingDepths[DetID].front()) return &m_ChargeSharingPolyCoeffsLV[DetID].at(0);
-      if (z >= m_ChargeSharingDepths[DetID].back())  return &m_ChargeSharingPolyCoeffsLV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
+      if (z <= m_ChargeSharingDepths[DetID].front()) return m_ChargeSharingPolyCoeffsLV[DetID].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return m_ChargeSharingPolyCoeffsLV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
 
       // otherwise, interpolate
       for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
         if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
           double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
-	  m_InterpolatedCoeffs.clear();
-	  for (int j = 0; j < m_ChargeSharingPolyCoeffsLV[DetID].at(i).size(); j++) m_InterpolatedCoeffs.push_back((1.0 - f) * m_ChargeSharingPolyCoeffsLV[DetID][i][j] + f * m_ChargeSharingPolyCoeffsLV[DetID][i + 1][j]);
-	  return &m_InterpolatedCoeffs;
+	  vector<double> result;
+	  for (int j = 0; j < m_ChargeSharingPolyCoeffsLV[DetID].at(i).size(); j++) result.push_back((1.0 - f) * m_ChargeSharingPolyCoeffsLV[DetID][i][j] + f * m_ChargeSharingPolyCoeffsLV[DetID][i + 1][j]);
+	  return result;
 	}
       }
     } else {
       if (g_Verbosity >= c_Warning) {
         cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsLV: cannot get charge sharing polynomial coefficients; detector id code " << DetID << " not found." << endl;
       }
-      return nullptr;
+      return {};
     }
   } else {
     cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsLV: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
-    return nullptr;
+    return {};
   }
 
 }
 /////////////////////////////////////////////////////////////////////////////////
 
 
-std::vector<double>* MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV(int DetID, double z)
+std::vector<double> MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV(int DetID, double z)
 { 
   // Check to see if the charge sharing coefficients have been loaded. If so, try to get the coefficients for the specified strip pair.
   if (m_ChargeSharingConfigFileIsLoaded == true) {
     if (m_ChargeSharingPolyCoeffsHV.count(DetID) > 0) {
                  
       // if we only sampled one depth, or we're beyond the depth range, just return the closest coefficients
-      if (z <= m_ChargeSharingDepths[DetID].front()) return &m_ChargeSharingPolyCoeffsHV[DetID].at(0);
-      if (z >= m_ChargeSharingDepths[DetID].back())  return &m_ChargeSharingPolyCoeffsHV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
+      if (z <= m_ChargeSharingDepths[DetID].front()) return m_ChargeSharingPolyCoeffsHV[DetID].at(0);
+      if (z >= m_ChargeSharingDepths[DetID].back())  return m_ChargeSharingPolyCoeffsHV[DetID].at(m_ChargeSharingDepths[DetID].size()-1);
 
       // otherwise, interpolate
       for (unsigned int i = 0; i < m_ChargeSharingDepths[DetID].size() - 1; i++){
         if (z >= m_ChargeSharingDepths[DetID].at(i) && z < m_ChargeSharingDepths[DetID].at(i + 1)) {
           double f = (z - m_ChargeSharingDepths[DetID][i]) / (m_ChargeSharingDepths[DetID][i + 1] - m_ChargeSharingDepths[DetID][i]);
-	  m_InterpolatedCoeffs.clear();
-	  for (int j = 0; j < m_ChargeSharingPolyCoeffsHV[DetID].at(i).size(); j++) m_InterpolatedCoeffs.push_back((1.0 - f) * m_ChargeSharingPolyCoeffsHV[DetID][i][j] + f * m_ChargeSharingPolyCoeffsHV[DetID][i + 1][j]);
-	  return &m_InterpolatedCoeffs;
+	  vector<double> result;
+	  for (int j = 0; j < m_ChargeSharingPolyCoeffsHV[DetID].at(i).size(); j++) result.push_back((1.0 - f) * m_ChargeSharingPolyCoeffsHV[DetID][i][j] + f * m_ChargeSharingPolyCoeffsHV[DetID][i + 1][j]);
+	  return result;
 	}
       }
     } else {
       if (g_Verbosity >= c_Warning) {
         cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV: cannot get charge sharing polynomial coefficients; detector id code " << DetID << " not found." << endl;
       }
-      return nullptr;
+      return {};
     }
   } else {
     cout << "MModuleDepthCalibration::GetChargeSharingPolyCoeffsHV: cannot get charge sharing coefficients; file has not yet been loaded." << endl;
-    return nullptr;
+    return {};
   }
 
 }
@@ -939,6 +1005,7 @@ bool MModuleDepthCalibration::LoadSplinesFile(MString FileName)
 
         if (DepthVec.size() > 0) {
           Result &= AddDepthCTD(DepthVec, CTDArr, DetID, m_DepthGrid, m_CTDMap, m_SplineMap, 1000);
+          cout << "loaded spline for detector"<<DetID<< ": "<< DepthVec.front() << " - " << DepthVec.back()<<" cm"<<endl;
         }
 
         DepthVec.clear(); CTDArr.clear(); 
@@ -965,6 +1032,7 @@ bool MModuleDepthCalibration::LoadSplinesFile(MString FileName)
   // Make last spline
   if (DepthVec.size() > 0) {
     Result &= AddDepthCTD(DepthVec, CTDArr, DetID, m_DepthGrid, m_CTDMap, m_SplineMap, 1000);
+    cout << "loaded spline for detector"<<DetID<< ": "<< DepthVec.front() << " - " << DepthVec.back()<<" cm"<<endl;
   }
 
   return Result;
@@ -1459,6 +1527,8 @@ void MModuleDepthCalibration::Finalize()
   cout << "Number of hits with null strip hits: " << m_ErrorNullSH << endl;
   cout << "Number of hits 0 energy on a strip hit: " << m_ErrorNoE << endl;
   cout << "Number of hits with zombie bump:" << m_ZombieBump << endl;
+  cout << "Number of hits with charge sharing correction on HV:" << m_ChargeSharingHV << endl;
+  cout << "Number of hits with charge sharing correction on LV:" << m_ChargeSharingLV << endl;
 
   // Clean up maps and vectors
   m_Coeffs.clear();
