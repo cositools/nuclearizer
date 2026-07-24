@@ -177,6 +177,7 @@ void MModuleDepthCalibration::CreateExpos()
       100, 0, 1);                           // fraction bins
   }
   m_Expos.push_back(m_ExpoPlotTacDiff);
+  cout << "added dTAC expo"<<endl;
 
   // Depth calibration expo
   m_ExpoDepthCalibration = new MGUIExpoDepthCalibration(this);
@@ -228,6 +229,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         } else if (Grade == -3) {
           ++m_ErrorNoE;
         }
+	continue;
       } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
         H->SetNoDepth();
         Event->SetDepthCalibrationError("Multiple hits on single strip");
@@ -236,6 +238,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         } else if (Grade==6) {
           ++m_Error6;
         }
+	continue;
       } else { // If the Grade is 0-4, we can handle it.
 
         // Calculate the position. If error is thrown, record and no depth.
@@ -253,7 +256,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-        double rawCTD_s = 0.0;
 
         //now try and get z position
         int DetID = LVSH->GetDetectorID();
@@ -304,25 +306,29 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
+	  continue;
         } else if (CTDVec.size() == 0) {
             if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
             H->SetNoDepth();
             Event->SetDepthCalibrationError("No calibration coefficients");
+	    continue;
         } else if (DepthVec.size() == 0) {
             if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
             H->SetNoDepth();
             Event->SetDepthCalibrationError("No calibration coefficients");
+	    continue;
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
             ++m_Error3;
             H->SetNoDepth();
             Event->SetDepthCalibrationError("No timing");
+	    continue;
         } else {
           
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
 	  // TODO FR start here
           double rawCTD = (HVTiming - LVTiming);
 
-          rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
+          double rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
 
           double Xmin = * std::min_element(CTDVec.begin(), CTDVec.end());
           double Xmax = * std::max_element(CTDVec.begin(), CTDVec.end());
@@ -355,9 +361,9 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // === check and correct the HV side TAC
 	    bool ChargeSharingHV = false; // TODO flag
 	    bool TacJitterCorrectHV = false; // TODO flag; check if problem in FM ASICS
-	    vector<double> CorrectedHVTiming;
-	    vector<double> CorrectedHVTimingUncertainty;
-	    int StripPairCode = 10000*DetID + HVStripID + 9900; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
+	    //vector<double> CorrectedHVTiming;
+	    //vector<double> CorrectedHVTimingUncertainty;
+	    //int StripPairCode = 10000*DetID + HVStripID + 9900; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
 	    // TODO actually fill the vectors and correct the TAC
 	    // 	-- how many strips share > 10% of the total energy (or are over slow threshold, maybe?)  need this info for next steps
 	    // 	-- check dTAC between adjacent strips with charge sharing and also strips relative to their low-eneryg neighbors
@@ -366,9 +372,9 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // 	   -- if charge sharing, calculate the corrected timing value for each strip in teh absense of charge sharing,
 	    // 	   -- and also calculate the HV tac as the weighted average, with its own uncertainty
 	    // 	   -- note, rawZpos is used in the above calculations! 
-            double rawCTD = (HVTiming - LVTiming);
-            rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
-	    std::tie(rawZpos, rawZsigma) = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false); // true (sean weighting)
+            //rawCTD = (HVTiming - LVTiming);
+            //rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
+	    //auto [HVZpos, HVZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false); // true (sean weighting)
 	    
 	    // step 2 -- check the LV side: 
 	    bool ValidatedLVTiming = false; // should put a flag here eventually TODO; if NN do not have fast timing
