@@ -84,12 +84,12 @@ void MGUIExpoPlotTacDiff::SetHistogramParameters(unsigned int DetID, unsigned in
       m_DtacVsDepthHistograms[key] = new TH2D("", TString::Format("Det %d LV %d: dTAC vs Depth", DetID, s),
                                                NBinsDepth, DepthMin, DepthMax, NBinsDtac, DtacMin, DtacMax);
       m_DtacVsDepthHistograms[key]->SetXTitle("Depth [cm]");
-      m_DtacVsDepthHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
+      m_DtacVsDepthHistograms[key]->SetYTitle(TString::Format("TAC %d - TAC %d [ns]",s,s+1));
 
       m_DtacVsFracHistograms[key] = new TH2D("", TString::Format("Det %d Charge Shared between LV %d and %d", DetID, s,s+1),
                                               NBinsFrac, FracMin, FracMax, NBinsDtac, DtacMin, DtacMax);
-      m_DtacVsFracHistograms[key]->SetXTitle(TString::Format("Charge Sharing Fraction: (strip %d) / (strip %d + strip %d",s,s,s+1));
-      m_DtacVsFracHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
+      m_DtacVsFracHistograms[key]->SetXTitle(TString::Format("Charge Sharing Fraction: (strip %d) / (strip %d + strip %d)",s,s,s+1));
+      m_DtacVsFracHistograms[key]->SetYTitle(TString::Format("TAC %d - TAC %d [ns]",s,s+1));
 
       m_DtacVsDtacHistograms[key] = new TH2D("", TString::Format("Det %d LV %d: dTAC vs dTAC", DetID, s),
                                               NBinsDtac, DtacMin, DtacMax, NBinsDtac, DtacMin, DtacMax);
@@ -105,12 +105,12 @@ void MGUIExpoPlotTacDiff::SetHistogramParameters(unsigned int DetID, unsigned in
       m_DtacVsDepthHistograms[key] = new TH2D("", TString::Format("Det %d HV %d: dTAC vs Depth", DetID, s),
                                                NBinsDepth, DepthMin, DepthMax, NBinsDtac, DtacMin, DtacMax);
       m_DtacVsDepthHistograms[key]->SetXTitle("Depth [cm]");
-      m_DtacVsDepthHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
+      m_DtacVsDepthHistograms[key]->SetYTitle(TString::Format("TAC %d - TAC %d [ns]",s,s+1));
 
-      m_DtacVsFracHistograms[key] = new TH2D("", TString::Format("Det %d Charge Shared between LV %s and %s", DetID, s,s+1),
+      m_DtacVsFracHistograms[key] = new TH2D("", TString::Format("Det %d Charge Shared between LV %d and %d", DetID, s,s+1),
                                               NBinsFrac, FracMin, FracMax, NBinsDtac, DtacMin, DtacMax);
-      m_DtacVsFracHistograms[key]->SetXTitle(TString::Format("Charge Sharing Fraction: (strip %d) / (strip %d + strip %d",s,s,s+1));
-      m_DtacVsFracHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
+      m_DtacVsFracHistograms[key]->SetXTitle(TString::Format("Charge Sharing Fraction: (strip %d) / (strip %d + strip %d)",s,s,s+1));
+      m_DtacVsFracHistograms[key]->SetYTitle(TString::Format("TAC %d - TAC %d [ns]",s,s+1));
 
       m_DtacVsDtacHistograms[key] = new TH2D("", TString::Format("Det %d HV %d: dTAC vs dTAC", DetID, s),
                                               NBinsDtac, DtacMin, DtacMax, NBinsDtac, DtacMin, DtacMax);
@@ -213,7 +213,7 @@ void MGUIExpoPlotTacDiff::Create()
                                     TGNumberFormat::kNEANonNegative,
                                     TGNumberFormat::kNELLimitMinMax, 0, 62);
   //m_StripEntry->Connect("ValueSet(Long_t)", "MGUIExpoPlotTacDiff", this, "OnStripSelected()");
-  m_StripEntry->GetNumberEntry()->Connect("ReturnPressed()", "MGUIExpoPlotTacDiff", this, "OnStripSelected()");
+  //m_StripEntry->GetNumberEntry()->Connect("ReturnPressed()", "MGUIExpoPlotTacDiff", this, "OnStripSelected()");
   m_StripEntry->Resize(50, 20);
   StripRow->AddFrame(m_StripEntry, EntryLayout);
 
@@ -226,7 +226,7 @@ void MGUIExpoPlotTacDiff::Create()
                                         TGNumberFormat::kNESRealTwo,
                                         TGNumberFormat::kNEANonNegative);
   //m_EnergyMinEntry->Connect("ValueSet(Long_t)", "MGUIExpoPlotTacDiff", this, "OnEnergyRangeChanged()");
-  m_EnergyMinEntry->GetNumberEntry()->Connect("ReturnPressed()", "MGUIExpoPlotTacDiff", this, "OnEnergyRangeChanged()");
+  //m_EnergyMinEntry->GetNumberEntry()->Connect("ReturnPressed()", "MGUIExpoPlotTacDiff", this, "OnEnergyRangeChanged()");
   m_EnergyMinEntry->Resize(70, 20);
   EMinRow->AddFrame(m_EnergyMinEntry, EntryLayout);
 
@@ -239,7 +239,7 @@ void MGUIExpoPlotTacDiff::Create()
                                         TGNumberFormat::kNESRealTwo,
                                         TGNumberFormat::kNEANonNegative);
   //m_EnergyMaxEntry->Connect("ValueSet(Long_t)", "MGUIExpoPlotTacDiff", this, "OnEnergyRangeChanged()");
-  m_EnergyMaxEntry->GetNumberEntry()->Connect("ReturnPressed()", "MGUIExpoPlotTacDiff", this, "OnEnergyRangeChanged()");
+  //m_EnergyMaxEntry->GetNumberEntry()->Connect("ReturnPressed()", "MGUIExpoPlotTacDiff", this, "OnEnergyRangeChanged()");
   m_EnergyMaxEntry->Resize(70, 20);
   EMaxRow->AddFrame(m_EnergyMaxEntry, EntryLayout);
 
