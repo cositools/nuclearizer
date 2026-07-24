@@ -91,7 +91,9 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   
   //! Divide an event's nearest neighbor strip hits by detector and LV/HV side
     vector<vector<vector<MStripHit*>>> CollectNearestNeighborStripHits(MReadOutAssembly* Event);
-
+  
+  //! Assign nearest neighbor strip hits to their associated hits
+    void AssignNearestNeighbors(MReadOutAssembly* Event);
 
   //! Read in strip hits on each side for each detector and perform quality selections
     bool EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits);

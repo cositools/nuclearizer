@@ -303,7 +303,7 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
         }
       }
       
-      // Once the correct detector is found, add strip hit to StripHits
+      // Once the correct detector is found, add strip hit to NNStripHits
       if (DetectorFound == true) {
         NNStripHits[DetectorPos][Side].push_back(SH);
       } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
@@ -760,6 +760,56 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//! Assign nearest neighbor strip hits to their appropriate hit
+void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAssembly* Event) {
+
+  // Collect the NN strip hits
+  vector<vector<vector<MStripHit*>>> NNStripHits = CollectNearestNeighborStripHits(Event); // List of detectors, list of sides, list of strip hits
+  
+  for (unsigned int h = 0; h < Event->GetNHits(); h++) {
+    vector<vector<int>> StripIDs; // list of sides, list of strips
+    StripIDs.push_back(vector<int>) // LV
+    StripIDs.push_back(vector<int>) // HV
+    bool AssignedDetector = false;
+    int DetectorID; // Define detector ID where hit took place
+    for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
+      // Collect all the strip hits in a hit and split them by side
+      MStripHit* SH = Event->GetHit(h)->GetStripHit(sh);
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      StripIDs[Side].push_back(SH->GetStripID())
+      
+      if (AssignedDetector == false) {
+        DetectorID = SH->GetDetectorID();
+        AssignedDetector == true;
+      }
+    }
+    // For each side, find the edge strip hit. i.e if there's charge sharing between strips 4, 5, and 6, the edges will be 4 and 6
+    int LeftEdgeLV = min_element(StripIDs[0].begin(), StripIDs[0].end());
+    int RightEdgeLV = max_element(StripIDs[0].begin(), StripIDs[0].end());
+    int LeftEdgeHV = min_element(StripIDs[1].begin(), StripIDs[1].end());
+    int RightEdgeHV = max_element(StripIDs[1].begin(), StripIDs[1].end());
+    
+    // NOTE: If there are two hits that are one strip hit apart, then the NN strip hit will be added to both hits
+    // Should there be some flag for the case where it's ambiguous which hit a neighbor should be assigned to?
+    
+    // Define the LV neighbors
+    for (unsigned int sh = 0; sh < NNStripHits[DetectorID][0].size(); sh++) {
+      if (NNStripHits[DetectorID][0][sh]->GetStripID() == LeftEdgeLV - 1) or (NNStripHits[DetectorID][0][sh]->GetStripID() == RightEdgeLV + 1) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNStripHits[DetectorID][0][sh]);
+      }
+    }
+    
+    // Define the HV neighbors
+    for (unsigned int sh = 0; sh < NNStripHits[DetectorID][1].size(); sh++) {
+      if (NNStripHits[DetectorID][1][sh]->GetStripID() == LeftEdgeHV - 1) or (NNStripHits[DetectorID][1][sh]->GetStripID() == RightEdgeHV + 1) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNStripHits[DetectorID][1][sh]);
+      }
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 //! Main data analysis routine, which updates the event to a new level
 bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 {
@@ -888,7 +938,11 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
       
   } // End Detector loop
-
+  // If including nearest neighbors strips, assign them to their appropriate hits
+  if (m_IncludeNearestNeighbor == true) {
+    AssignNearestNeighbors(Event);
+  }
+  
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
 
   return true;

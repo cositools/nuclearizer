@@ -52,9 +52,13 @@ class MHit
   //! Return strip hit i or nullptr if i is out of bounds
   //! Ownership stays elsewhere
   MStripHit* GetStripHit(unsigned int i);
+  //! Return nearest neighbor strip hit i or nullptr if i is out of bounds
+  MStripHit* GetNearestNeighborStripHit(unsigned int i);
   //! Add a strip hit
   //! Ownership stays elsewhere
   void AddStripHit(MStripHit* StripHit);
+  //! Add a nearest neighbor strip hit
+  void AddNearestNeighborStripHit(MStripHit* StripHit);
   //! Remove strip hit i without deleting it
   void RemoveStripHit(unsigned int i);
   //! Remove a strip hit without deleting it
@@ -172,6 +176,9 @@ class MHit
   //! List of strip hits contributing to this hit
   //! Ownership stays elsewhere
   vector<MStripHit*> m_StripHits;
+  
+  //! List of nearest neighbor strip hits associated with this hit
+  vector<MStripHit*> m_NearestNeighborStripHits;
 
   //! Position of the hit
   MVector m_Position;
