@@ -753,8 +753,8 @@ TF1* TrappingCorrectionCs137::GeneratePhotopeakFunction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// TrappingCorrectionCs137* g_Prg = 0;
-// int g_NInterruptCatches = 1;
+TrappingCorrectionCs137* g_Prg = 0;
+int g_NInterruptCatches = 1;
 
 MStripHit* TrappingCorrectionCs137::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
 {
