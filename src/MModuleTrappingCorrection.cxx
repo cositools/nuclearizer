@@ -42,6 +42,8 @@
 #include "MGUIExpoTrappingCorrection.h"
 #include "MGUIExpoPlotSpectrum.h"
 #include "MModuleEnergyCalibration.h"
+#include "MModuleDepthCalibration.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -70,7 +72,6 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
   AddPreceedingModuleType(MAssembly::c_TACcut, true);
-  AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_DepthCorrection, true);
 
   // Set all types this modules handles
@@ -155,6 +156,12 @@ bool MModuleTrappingCorrection::Initialize()
     return false;
   }
 
+  m_DepthCalibration = (MModuleDepthCalibration*) S->GetAvailableModuleByXmlTag("DepthCalibration");
+  if (m_DepthCalibration == nullptr) {
+    cout << "MModuleTrappingCorrection: couldn't resolve pointer to Depth Calibration Module... need access to this module for depth resolution lookup!" << endl;
+    return false;
+  }
+
   return MModule::Initialize();
 }
 
@@ -196,7 +203,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       // instances of the MStripHit class.
       MHit* H = Event->GetHit(i);
 
-      int Grade = GetHitGrade(H);
+      int Grade = m_DepthCalibration->GetHitGrade(H);
 
       // Handle different grades differently  
       // Get the position from the depth cal. If error is thrown, record and no depth.
@@ -218,13 +225,15 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         }
 
         // Get the dominant strip for the hit and its energy fraction for both LV and HV sides
+        //s.t we cna determine the depth anf energy to correct
         double LVEnergyFraction;
         double HVEnergyFraction;
-        MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
-        MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
+        MStripHit* LVSH = m_DepthCalibration->GetDominantStrip(LVStrips, LVEnergyFraction); 
+        MStripHit* HVSH = m_DepthCalibration->GetDominantStrip(HVStrips, HVEnergyFraction); 
 
         // Get the position value (assumed from event/hit context H)
         double depth_val = H->GetPosition().GetZ();
+        // cout<<"Depth value: "<<depth_val<<endl;
         // double depth_val = static_cast<double>(Zpos);
 
         // Correct the Low Voltage side energy if the hit pointer exists
@@ -278,65 +287,50 @@ void MModuleTrappingCorrection::Finalize()
   if (histLV == nullptr) histLV = (TH1D*) gDirectory->Get("m_EnergyHistogramLVFinal");
   if (histHV == nullptr) histHV = (TH1D*) gDirectory->Get("m_EnergyHistogramHVFinal");
 
-  // Perform the photopeak fit for the LV peak
+  // Perform the photopeak fit and direct calculation for the LV peak
   if (histLV != nullptr && histLV->GetEntries() > 0) {
+    // Calculate raw FWHM directly from the histogram
+    m_DirectFWHM_LV = CalculateDirectFWHM(histLV);
+
     TF1* fitFuncLV = GeneratePhotopeakFunction();
-    
+    fitFuncLV->SetParameter("Amplitude", histLV->GetBinContent(histLV->GetMaximumBin()));
     histLV->Fit(fitFuncLV, "RQ");
     
     double mu = fitFuncLV->GetParameter("x0 (Mu)");
-    double fwhm = 2.35482 * fitFuncLV->GetParameter("Sigma Gauss");
+    double fwhm_fit = 2.35482 * fitFuncLV->GetParameter("Sigma Gauss");
     
     if (g_Verbosity >= c_Info) {
-      cout << m_XmlTag << " --- LV FINAL SPECTRUM FIT ---" << endl;
-      cout << "  Centroid (Mu): " << mu << " keV | FWHM: " << fwhm << " keV" << endl;
+      cout << m_XmlTag << " --- LV FINAL SPECTRUM RESULTS ---" << endl;
+      cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
+      cout << "  Fitted Gaussian FWHM : " << fwhm_fit << " keV" << endl;
+      cout << "  Direct Histogram FWHM: " << m_DirectFWHM_LV << " keV" << endl;
     }
     delete fitFuncLV;
   }
 
-  // Perform the photopeak fit for the HV peak
+  // Perform the photopeak fit and direct calculation for the HV peak
   if (histHV != nullptr && histHV->GetEntries() > 0) {
+    // Calculate raw FWHM directly from the histogram
+    m_DirectFWHM_HV = CalculateDirectFWHM(histHV);
+
     TF1* fitFuncHV = GeneratePhotopeakFunction();
-    
+    fitFuncHV->SetParameter("Amplitude", histHV->GetBinContent(histHV->GetMaximumBin()));
     histHV->Fit(fitFuncHV, "RQ");
     
     double mu = fitFuncHV->GetParameter("x0 (Mu)");
-    double fwhm = 2.35482 * fitFuncHV->GetParameter("Sigma Gauss");
+    double fwhm_fit = 2.35482 * fitFuncHV->GetParameter("Sigma Gauss");
     
     if (g_Verbosity >= c_Info) {
-      cout << m_XmlTag << " --- HV FINAL SPECTRUM FIT ---" << endl;
-      cout << "  Centroid (Mu): " << mu << " keV | FWHM: " << fwhm << " keV" << endl;
+      cout << m_XmlTag << " --- HV FINAL SPECTRUM RESULTS ---" << endl;
+      cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
+      cout << "  Fitted Gaussian FWHM : " << fwhm_fit << " keV" << endl;
+      cout << "  Direct Histogram FWHM: " << m_DirectFWHM_HV << " keV" << endl;
     }
     delete fitFuncHV;
   }
 
   return; 
 }
-/////////////////////////////////////////////////////////////////////////////////
-
-MStripHit* MModuleTrappingCorrection::GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction)
-{
-  double MaxEnergy = -numeric_limits<double>::max(); // AZ: When both energies are zero (which shouldn't happen) we still pick one
-  double TotalEnergy = 0.0;
-  MStripHit* MaxStrip = nullptr;
-
-  // Iterate through strip hits and get the strip with highest energy
-  for (const auto SH : Strips) {
-    double Energy = SH->GetEnergy();
-    TotalEnergy += Energy;
-    if (Energy > MaxEnergy) {
-      MaxStrip = SH;
-      MaxEnergy = Energy;
-    }
-  }
-  if (TotalEnergy == 0) {
-    EnergyFraction = 0;
-  } else {
-    EnergyFraction = MaxEnergy/TotalEnergy;
-  }
-  return MaxStrip;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -459,129 +453,6 @@ double MModuleTrappingCorrection::Interpolate(double x, const std::vector<double
 /////////////////////////////////////////////////////////////////////////////////
 
 
-int MModuleTrappingCorrection::GetHitGrade(MHit* H){
-  // Function for choosing which Depth-to-CTD relation to use for a given event.
-  // At time of writing, intention is to choose a CTD based on sub-pixel region determined via charge sharing (Event "grade").
-  // 5 possible grades, and one Error Grade, -1. GRADE 4 is as yet uncategorized complicated geometry. GRADE 5 means multiple, presumably separated strip hits.
-
-  //organize x and y strips into vectors
-  if (H == nullptr) {
-    return -1;
-  }
-  if (H->GetNStripHits() == 0) {
-    // Error if no strip hits listed. Bad grade is returned
-    if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleTrappingCorrection: HIT WITH NO STRIP HITS" << endl;
-    return -1;
-  }
-   
-  // Take a Hit and separate its activated p and n strips into separate vectors.
-  std::vector<MStripHit*> LVStrips;
-  std::vector<MStripHit*> HVStrips;
-  vector<int> LVStripIDs;
-  vector<int> HVStripIDs;
-  for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
-    MStripHit* SH = H->GetStripHit(j);
-    if (SH == nullptr ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleTrappingCorrection: Trapping Correction: got NULL strip hit :( " << endl;
-      return -1;
-    }
-    if (SH->GetEnergy() == 0 ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleTrappingCorrection: Trapping Correction: got strip without energy :( " << endl; 
-      return -1;
-    }
-    if (SH->IsLowVoltageStrip()) {
-      LVStrips.push_back(SH); 
-      LVStripIDs.push_back(SH->GetStripID());
-    }
-    else {
-      HVStrips.push_back(SH);
-      HVStripIDs.push_back(SH->GetStripID());
-    }
-  }
-
-  // If the same strip has multiple hits, this is a bad grade.
-  bool MultiHitX = H->GetStripHitMultipleTimesLV();
-  bool MultiHitY = H->GetStripHitMultipleTimesHV();
-  if (MultiHitX || MultiHitY) {
-    return 5;  
-  }
-
-  if (LVStrips.size()>0 && HVStrips.size()>0) {
-    int HVmin = * std::min_element(HVStripIDs.begin(), HVStripIDs.end());
-    int HVmax = * std::max_element(HVStripIDs.begin(), HVStripIDs.end());
-
-    int LVmin = * std::min_element(LVStripIDs.begin(), LVStripIDs.end());
-    int LVmax = * std::max_element(LVStripIDs.begin(), LVStripIDs.end());
-
-    // If the strip hits are not all adjacent, it's a bad grade.
-    if ( ((HVmax - HVmin) >= (HVStrips.size())) || ((LVmax - LVmin) >= (LVStrips.size())) ) {
-      return 6;
-    }
-  }
-  else{
-    return -1;
-  }
-
-  int return_value;
-  // If 1 strip on each side, GRADE=0
-  // This represents the center of the pixel
-  if ( ((LVStrips.size() == 1) && (HVStrips.size() == 1)) || ((LVStrips.size() == 3) && (HVStrips.size() == 3)) ) {
-    return_value = 0;
-  } 
-  // If 2 hits on N side and 1 on P, GRADE=1
-  // This represents the middle of the edges of the pixel
-  else if ( (LVStrips.size() == 1) && (HVStrips.size() == 2) ) {
-    return_value = 1;
-  } 
-
-  // If 2 hits on P and 1 on N, GRADE=2
-  // This represents the middle of the edges of the pixel
-  else if ( (LVStrips.size() == 2) && (HVStrips.size() == 1) ) {
-    return_value = 2;
-  } 
-  
-  // If 2 strip hits on both sides, GRADE=3
-  // This represents the corners the pixel
-  else if ( (LVStrips.size() == 2) && (HVStrips.size() == 2) ) {
-    return_value = 3;
-  } 
-
-  // If 3 hits on N side and 1 on P, GRADE=0
-  // This represents the middle of the pixel, near the p (LV) side of the detector.
-  else if ( (LVStrips.size() == 1) && (HVStrips.size() == 3) ) {
-    return_value = 0;
-  } 
-
-  // If 3 hits on P and 1 on N, GRADE=0
-  // This represents the middle of the pixel, near the n (HV) side of the detector.
-  else if ( (LVStrips.size() == 3) && (HVStrips.size() == 1) ) {
-    return_value = 0;
-  } 
-
-  // If 3 hits on N side and 2 on P, GRADE=0
-  // This represents the middle of the edge of the pixel, near the p (LV) side of the detector.
-  else if ( (LVStrips.size() == 2) && (HVStrips.size() == 3) ) {
-    return_value = 2;
-  } 
-
-  // If 3 hits on P and 2 on N, GRADE=0
-  // This represents the middle of the edge of the pixel, near the n (HV) side of the detector.
-  else if ( (LVStrips.size() == 3) && (HVStrips.size() == 2) ) {
-    return_value = 1;
-  } 
-
-  else {
-    // If more complicated than the above cases, return 4 for now.
-    // TODO: Handle more complicated charge distributions.
-    return_value = 4;
-  }
-
-  return return_value;
-}
-
-/////////////////////////////////////////////////////////////////////////////////
-
-
 void MModuleTrappingCorrection::ShowOptionsGUI()
 {
   // Show the options GUI - or do nothing
@@ -619,7 +490,7 @@ MXmlNode* MModuleTrappingCorrection::CreateXmlConfiguration()
   return Node;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 
 TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
@@ -678,6 +549,51 @@ TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double MModuleTrappingCorrection::CalculateDirectFWHM(TH1D* hist)
+{
+  if (hist == nullptr || hist->GetEntries() == 0) return 0.0;
+
+  // 1. Find the maximum bin and its half-maximum height
+  int maxBin = hist->GetMaximumBin();
+  double halfMax = hist->GetBinContent(maxBin) / 2.0;
+
+  if (halfMax <= 0.0) return 0.0;
+
+  // 2. Search LEFT for the half-maximum crossing point
+  double xLeft = hist->GetBinCenter(1);
+  for (int b = maxBin; b >= 1; --b) {
+    if (hist->GetBinContent(b) <= halfMax) {
+      double x1 = hist->GetBinCenter(b);
+      double y1 = hist->GetBinContent(b);
+      double x2 = hist->GetBinCenter(b + 1);
+      double y2 = hist->GetBinContent(b + 1);
+
+      // Linear interpolation between bins
+      xLeft = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x1;
+      break;
+    }
+  }
+
+  // 3. Search RIGHT for the half-maximum crossing point
+  double xRight = hist->GetBinCenter(hist->GetNbinsX());
+  for (int b = maxBin; b <= hist->GetNbinsX(); ++b) {
+    if (hist->GetBinContent(b) <= halfMax) {
+      double x1 = hist->GetBinCenter(b - 1);
+      double y1 = hist->GetBinContent(b - 1);
+      double x2 = hist->GetBinCenter(b);
+      double y2 = hist->GetBinContent(b);
+
+      // Linear interpolation between bins
+      xRight = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x2;
+      break;
+    }
+  }
+
+  // 4. Return total width at half maximum
+  return (xRight - xLeft);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 // MModuleTrappingCorrection.cxx: the end...

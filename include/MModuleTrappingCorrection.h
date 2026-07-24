@@ -36,6 +36,7 @@
 #include "MModuleEnergyCalibration.h"
 #include "MGUIExpoTrappingCorrection.h"
 #include "MGUIOptionsTrappingCorrection.h"
+#include "MModuleDepthCalibration.h"
 
 // Forward declarations:
 
@@ -76,24 +77,19 @@ class MModuleTrappingCorrection : public MModule
   //! Finalize the module
   virtual void Finalize();
 
-
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
 
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
+  
+  // Getters to retrieve the calculated values after Finalize() runs
+  double GetDirectFWHM_LV() const { return m_DirectFWHM_LV; }
+  double GetDirectFWHM_HV() const { return m_DirectFWHM_HV; }
 
 
   // protected methods:
  protected:
-  //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
-  MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
-  
-  // //! Retrieve the appropriate Depth values given the DetID
-  // vector<double> GetDepth(int DetID);
-
-  //! Determine the Grade (geometry of charge sharing) of the Hit
-  int GetHitGrade(MHit* H);
 
   //! Load in the specified SimCCE file
   bool LoadSimCCEFile(MString FName);
@@ -139,10 +135,17 @@ class MModuleTrappingCorrection : public MModule
   // private members:
  private:
 
+  MModuleDepthCalibration* m_DepthCalibration = nullptr;
+
   //! Updated GUI to display the energy histogram
   MGUIExpoPlotSpectrum* m_ExpoSpectrum;
   
   TF1* GeneratePhotopeakFunction();
+
+  double CalculateDirectFWHM(TH1D* hist);
+  
+  double m_DirectFWHM_LV = 0.0;
+  double m_DirectFWHM_HV = 0.0;
 
 
 #ifdef ___CLING___
