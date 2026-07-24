@@ -173,7 +173,7 @@ void MModuleDepthCalibration::CreateExpos()
     double thickness = m_Thicknesses[DetID];
     m_ExpoPlotTacDiff->SetHistogramParameters(DetID,
       120, -thickness/2.0, thickness/2.0,  // depth bins
-      200, -100, 100,                       // dTac bins
+      100, -150, 150,                       // dTac bins
       100, 0, 1);                           // fraction bins
   }
   m_Expos.push_back(m_ExpoPlotTacDiff);
@@ -361,9 +361,9 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // === check and correct the HV side TAC
 	    bool ChargeSharingHV = false; // TODO flag
 	    bool TacJitterCorrectHV = false; // TODO flag; check if problem in FM ASICS
-	    //vector<double> CorrectedHVTiming;
-	    //vector<double> CorrectedHVTimingUncertainty;
-	    //int StripPairCode = 10000*DetID + HVStripID + 9900; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
+	    vector<double> CorrectedHVTiming;
+	    vector<double> CorrectedHVTimingUncertainty;
+	    int StripPairCode = 10000*DetID + HVStripID + 9900; // note, it is the lower strip ID always (eg, 15 if sharing between strip 15 and 16)
 	    // TODO actually fill the vectors and correct the TAC
 	    // 	-- how many strips share > 10% of the total energy (or are over slow threshold, maybe?)  need this info for next steps
 	    // 	-- check dTAC between adjacent strips with charge sharing and also strips relative to their low-eneryg neighbors
@@ -372,64 +372,68 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 	    // 	   -- if charge sharing, calculate the corrected timing value for each strip in teh absense of charge sharing,
 	    // 	   -- and also calculate the HV tac as the weighted average, with its own uncertainty
 	    // 	   -- note, rawZpos is used in the above calculations! 
-            //rawCTD = (HVTiming - LVTiming);
-            //rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
-	    //auto [HVZpos, HVZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false); // true (sean weighting)
+            rawCTD = (HVTiming - LVTiming);
+            rawCTD_s = (rawCTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
+	    auto [HVZpos, HVZsigma] = CalculateZfromCTD(rawCTD_s, noise,DetID, Grade, false); // true (sean weighting)
 	    
-	    // step 2 -- check the LV side: 
+
+	    // == check and correct the LV side: 
+	    // --------------------------------
 	    bool ValidatedLVTiming = false; // should put a flag here eventually TODO; if NN do not have fast timing
 	    bool ZombieBump = false;// should put a flag here TODO
 	    vector<double> CorrectedLVTiming;
 	    vector<double> CorrectedLVTimingUncertainty;
-	    bool ChargeSharingLV = false;// also should put a flag here TODO (is there another flag for charge sharing?)
+	    bool ChargeSharingLV = LVEnergyFraction > m_SingleStripChargeSharing;// also should put a flag here TODO (is there another flag for charge sharing?)
+	    double MaxEnergy = LVSH->GetEnergy(); 
 
-	    if (LVEnergyFraction > m_SingleStripChargeSharing){// if we have one obvious main strip, we are not going to be correcting charge sharing but just checking for zombie bump
-	      // compare with the neighbors, if possible
-	      for (int neighbor = 0; neighbor < 2; neighbor++){// 0 for left neighbor, 1 for right
-		int pm = 2*neighbor - 1; // -1 for neighbor 0 (neighbor is left); + 1 for neighbor == 1 (right neighbor, which is nominal for the convention StripPairID = left StripID of pair
-	        int NeighborStripID = LVStripID + pm; 
-		MStripHit* NSH = GetStrip(LVStrips, NeighborStripID);
-		if (NeighborStripID >=0 && NeighborStripID <=63 && NSH && NSH->HasFastTiming()){ // neighbor is not a guard ring strip, NSH exists (not a null pointer) and has fast timing!
-		  double dTacData = (LVSH->GetTiming() - NSH->GetTiming())*pm; // always the left strip - right strip; neighbor on left means pm = -1 -> NSH - LVSH timing
-		  double fracData = (NSH->GetEnergy()/(LVSH->GetEnergy() + NSH->GetEnergy())*pm) + 1 - neighbor; // always the fraction on the right stripHit; nominally NSH for right neighbor
-		  int StripPairCode = 10000*DetID + 100*(LVStripID - 1 + neighbor) + 99; //LVStripID -1 + 0 = LVStripID -1 (left neighbor); or LVStripID -1 + 1 = LVStripID (LVStrip is the StripID when we consider right negihbor)
-		  double x = (fracData - 0.5); // x is LVEnergyFraction - 0.5, ie the parameter of Isidro's polynomials, which are forced to go through (0.5, 0)
-		  vector<double> CSPolyCoeffs = GetChargeSharingPolyCoeffsLV(DetID,rawZpos); // TODO need to actually check and fill the variable that checks the length of this, and check that it's right when loading
-		  vector<double> CSCoeffs = GetChargeSharingCoeffs(StripPairCode,rawZpos);
-	      
-		  // add to the expo
-	      	  if (HasExpos() == true) {
-	            m_ExpoPlotTacDiff->AddData(StripPairCode, rawZpos, dTacData, fracData, std::nan(""),HitEnergy);
-	          }
-
-		  if (!CSCoeffs.empty() && !CSPolyCoeffs.empty()){
-	 	    double dTacExpect = (CSPolyCoeffs.at(0)*x + CSPolyCoeffs.at(1)*x*x*x)*CSCoeffs.at(0) + CSCoeffs.at(1);// TODO update if not cubic polynomial
-		    // TODO we should display (dTacData - dTacExpect)*pm to keep an eye on the prevalence of the bump
-		    if (rawZpos > -0.5 && (dTacData - dTacExpect)*pm > 2*noise){// zombie bump! TODO update bump criteria, fix noise
-		      ZombieBump = true;
-		      ValidatedLVTiming = false;
-		      cout << "LV Strip: "<<LVStripID<<" neighbor: " << NeighborStripID<< " f data: "<< fracData<< " data:" << dTacData << " Expected dTAC "<< dTacExpect<< " noise "<< noise <<endl;
-		      if ((dTacData - dTacExpect)*pm > -1*pm*dTacExpect) { // zombie bump with good neighbor. Can we not always do this in this case, though, since we know what the timing should be? 
-		        CorrectedLVTiming.push_back(LVTiming-60); // needs to be a config
-		        CorrectedLVTimingUncertainty.push_back(noise*2); // to do: quantify and make into something real
-		      } else {
-		        CorrectedLVTiming.push_back(0); // needs to be a config
-		        CorrectedLVTimingUncertainty.push_back(0); // to do: quantify and make into something real 
-		      }
+	    // compare with the neighbors -- calculate parameters from data
+	    for (int neighbor = 0; neighbor < 2; neighbor++){// 0 for left neighbor, 1 for right
+	      int pm = 2*neighbor - 1; // -1 for neighbor 0 (neighbor is left); + 1 for neighbor == 1 (right neighbor, which is nominal for the convention StripPairID = left StripID of pair
+	      int NeighborStripID = LVStripID + pm; 
+	      MStripHit* NSH = GetStrip(LVStrips, NeighborStripID);
+	      if (NSH && NSH->HasFastTiming()){ // NSH exists (not a null pointer) and has fast timing!
+	        double dTacData = (LVSH->GetTiming() - NSH->GetTiming())*pm; // always the left strip - right strip; neighbor on left means pm = -1 -> NSH - LVSH timing
+	        double fracData = (NSH->GetEnergy()/(LVSH->GetEnergy() + NSH->GetEnergy())*pm) + 1 - neighbor; // always the fraction on the right stripHit; nominally NSH for right neighbor
+	        int StripPairCode = 10000*DetID + 100*(LVStripID - 1 + neighbor) + 99; //LVStripID -1 + 0 = LVStripID -1 (left neighbor); or LVStripID -1 + 1 = LVStripID (LVStrip is the StripID when we consider right negihbor)
+	      	if (HasExpos() == true) m_ExpoPlotTacDiff->AddData(StripPairCode, rawZpos, dTacData, fracData, std::nan(""),HitEnergy); // TODO add logic to do this later so we can get dTac dTac
+	        
+		// get the expectation
+		vector<double> CSPolyCoeffs = GetChargeSharingPolyCoeffsLV(DetID,rawZpos); // TODO need to actually check and fill the variable that checks the length of this, and check that it's right when loading
+	        vector<double> CSCoeffs = GetChargeSharingCoeffs(StripPairCode,rawZpos);
+	        if (!CSCoeffs.empty() && !CSPolyCoeffs.empty()){
+	          double x = (fracData - 0.5); // x is LVEnergyFraction - 0.5, ie the parameter of Isidro's polynomials, which are forced to go through (0.5, 0)
+	 	  double dTacExpect = (CSPolyCoeffs.at(0)*x + CSPolyCoeffs.at(1)*x*x*x)*CSCoeffs.at(0) + CSCoeffs.at(1);// TODO update if not cubic polynomial
+		  
+		  // check for zombie bump
+		  if (rawZpos > -0.5 && (dTacData - dTacExpect)*pm > 25){// zombie bump! TODO update bump criteria, fix noise (should be noise, not 25, but the noise is all wrong
+		    ZombieBump = true;
+		    ValidatedLVTiming = false;
+		    cout << "Zombie Bump!!! LV Strip: "<<LVStripID<<" neighbor: " << NeighborStripID<< " f data: "<< fracData<< " data:" << dTacData << " Expected dTAC "<< dTacExpect<< " noise "<< noise <<endl;
+		    if ((dTacData - dTacExpect)*pm > 80) { // zombie bump with good neighbor. Can we not always do this in this case, though, since we know what the timing should be? TODO 100 should be calibrated
+		      CorrectedLVTiming.push_back(LVTiming-150); // TODO needs to be a config
+		      CorrectedLVTimingUncertainty.push_back(noise*2); // TODO: quantify and make into something real
 		    } else {
-		      if (!ZombieBump && !CSCoeffs.empty() && !CSPolyCoeffs.empty()) ValidatedLVTiming = true;
-		   }
-		 }
-	  	}	
+		      CorrectedLVTiming.push_back(0); // we will not use it in the calculation later
+		      CorrectedLVTimingUncertainty.push_back(0); 
+		    }
+		  } else {
+		    if (!ZombieBump && !CSCoeffs.empty() && !CSPolyCoeffs.empty()) ValidatedLVTiming = true;
+		  }
+
+		  // now do the charge sharing correction 
+		  // TODO charge sharing correction
+		  // TODO push bakc to corrected LV timing goes here!!!
+	        }
               }
-	    } else { // charge sharing correction
-	      ChargeSharingLV = true;
-	    }
+	      // TODO loop to check NNN if high charge sharing on respective neighbor
+	    } 
+
 	    // correct the timing
 	    if (CorrectedLVTiming.size() > 0){// if we have a correction. Also, implemented weighting! TODO an
 	      double correctionSum = 0;
 	      for (unsigned int j = 0; j < CorrectedLVTiming.size(); j++) {
 		// TODO check that they are consistent and drop one if not.... 
+		// TODO figure out actual logic with the charge sharing correction included, in combination with zombie bump. I think this involves calculating both the expectation for neighbor and main strip in the case of charge sharing and zombie bump (?)
 	        correctionSum += CorrectedLVTiming.at(j);
 	      }
 	      LVTiming = correctionSum / CorrectedLVTiming.size();
