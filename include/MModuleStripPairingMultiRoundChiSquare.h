@@ -87,7 +87,7 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
     float ChargeTrappingCorrection(unsigned int d, const vector<vector<MStripHit*>>& StripHits);
     
   //! Divide an event's strip hits by detector and LV/HV side
-    vector<vector<vector<MStripHit*>>> CollectStripHits(MReadOutAssembly* Event);
+    tuple<vector<vector<vector<MStripHit*>>>, bool> CollectStripHits(MReadOutAssembly* Event);
   
   //! Divide an event's nearest neighbor strip hits by detector and LV/HV side
     vector<vector<vector<MStripHit*>>> CollectNearestNeighborStripHits(MReadOutAssembly* Event);

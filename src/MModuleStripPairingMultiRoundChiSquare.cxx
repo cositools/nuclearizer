@@ -234,12 +234,13 @@ float MModuleStripPairingMultiRoundChiSquare::ChargeTrappingCorrection(unsigned 
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Divide an event's strip hits by detector and LV/HV side
-vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectStripHits(MReadOutAssembly* Event)
+tuple<vector<vector<vector<MStripHit*>>>, bool> MModuleStripPairingMultiRoundChiSquare::CollectStripHits(MReadOutAssembly* Event)
 {
 
   // Split hits by detector ID
   vector<unsigned int> DetectorIDs; // List of detector IDs
   vector<vector<vector<MStripHit*>>> StripHits; // list of detector IDs, list of sides (LV and HV), list of strip hits
+  bool IncludingNearestNeighbors = false;
 
   for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's strip hits
     MStripHit* SH = Event->GetStripHit(sh);
@@ -271,8 +272,11 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
         DetectorIDs.push_back(SH->GetDetectorID());
       }
     }
+    else {
+      IncludingNearestNeighbors = true;
+    }
   }
-  return StripHits;
+  return {StripHits, IncludingNearestNeighbors};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -762,8 +766,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
 //! Assign nearest neighbor strip hits to their appropriate hit
 void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAssembly* Event) {
-
-  // Collect the NN strip hits
+  
   vector<vector<vector<MStripHit*>>> NNStripHits = CollectNearestNeighborStripHits(Event); // List of detectors, list of sides, list of strip hits
   
   for (unsigned int h = 0; h < Event->GetNHits(); h++) {
@@ -821,7 +824,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
   }
 
   // Collect strip hits from input event
-  vector<vector<vector<MStripHit*>>> StripHits = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits
+  auto [StripHits, IncludingNearestNeighbors] = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits (and bool saying if running with nearest neighbors or not
 
   // Perform some event selections
   bool CheckStripHits = EventSelection(Event, StripHits);
@@ -938,8 +941,10 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
       
   } // End Detector loop
-  // If including nearest neighbors strips, assign them to their appropriate hits
-  if (m_IncludeNearestNeighbor == true) {
+
+  // Collect the NN strip hits, if any
+  
+  if (IncludingNearestNeighbors == true) {
     AssignNearestNeighbors(Event);
   }
   
