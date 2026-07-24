@@ -77,19 +77,19 @@ void MGUIExpoPlotTacDiff::SetHistogramParameters(unsigned int DetID, unsigned in
   for (auto id : m_DetIDs) { if (id == DetID) { found = true; break; } }
   if (!found) m_DetIDs.push_back(DetID);
 
-  // LV strips: code = 10000*DetID + 100*StripID + 99
+    // LV strips: code = 10000*DetID + 100*StripID + 99
   for (int s = 0; s < 63; s++) {
     int key = 10000 * DetID + 100 * s + 99;
     if (m_DtacVsDepthHistograms.count(key) == 0) {
       m_DtacVsDepthHistograms[key] = new TH2D("", TString::Format("Det %d LV %d: dTAC vs Depth", DetID, s),
                                                NBinsDepth, DepthMin, DepthMax, NBinsDtac, DtacMin, DtacMax);
       m_DtacVsDepthHistograms[key]->SetXTitle("Depth [cm]");
-      m_DtacVsDepthHistograms[key]->SetYTitle("dTAC [ns]");
+      m_DtacVsDepthHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
 
-      m_DtacVsFracHistograms[key] = new TH2D("", TString::Format("Det %d LV %d: dTAC vs Frac", DetID, s),
+      m_DtacVsFracHistograms[key] = new TH2D("", TString::Format("Det %d Charge Shared between LV %d and %d", DetID, s,s+1),
                                               NBinsFrac, FracMin, FracMax, NBinsDtac, DtacMin, DtacMax);
-      m_DtacVsFracHistograms[key]->SetXTitle("Fraction");
-      m_DtacVsFracHistograms[key]->SetYTitle("dTAC [ns]");
+      m_DtacVsFracHistograms[key]->SetXTitle(TString::Format("Charge Sharing Fraction: (strip %d) / (strip %d + strip %d",s,s,s+1));
+      m_DtacVsFracHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
 
       m_DtacVsDtacHistograms[key] = new TH2D("", TString::Format("Det %d LV %d: dTAC vs dTAC", DetID, s),
                                               NBinsDtac, DtacMin, DtacMax, NBinsDtac, DtacMin, DtacMax);
@@ -105,12 +105,12 @@ void MGUIExpoPlotTacDiff::SetHistogramParameters(unsigned int DetID, unsigned in
       m_DtacVsDepthHistograms[key] = new TH2D("", TString::Format("Det %d HV %d: dTAC vs Depth", DetID, s),
                                                NBinsDepth, DepthMin, DepthMax, NBinsDtac, DtacMin, DtacMax);
       m_DtacVsDepthHistograms[key]->SetXTitle("Depth [cm]");
-      m_DtacVsDepthHistograms[key]->SetYTitle("dTAC [ns]");
+      m_DtacVsDepthHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
 
-      m_DtacVsFracHistograms[key] = new TH2D("", TString::Format("Det %d HV %d: dTAC vs Frac", DetID, s),
+      m_DtacVsFracHistograms[key] = new TH2D("", TString::Format("Det %d Charge Shared between LV %s and %s", DetID, s,s+1),
                                               NBinsFrac, FracMin, FracMax, NBinsDtac, DtacMin, DtacMax);
-      m_DtacVsFracHistograms[key]->SetXTitle("Fraction");
-      m_DtacVsFracHistograms[key]->SetYTitle("dTAC [ns]");
+      m_DtacVsFracHistograms[key]->SetXTitle(TString::Format("Charge Sharing Fraction: (strip %d) / (strip %d + strip %d",s,s,s+1));
+      m_DtacVsFracHistograms[key]->SetYTitle(TString::Format("TAC %s - TAC %s [ns]",s,s+1));
 
       m_DtacVsDtacHistograms[key] = new TH2D("", TString::Format("Det %d HV %d: dTAC vs dTAC", DetID, s),
                                               NBinsDtac, DtacMin, DtacMax, NBinsDtac, DtacMin, DtacMax);
