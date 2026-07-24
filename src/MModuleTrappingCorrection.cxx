@@ -106,44 +106,6 @@ MModuleTrappingCorrection::~MModuleTrappingCorrection()
 
 bool MModuleTrappingCorrection::Initialize()
 {
-
-  // The detectors need to be in the same order as DetIDs.
-  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
-  vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
-
-  // Look through the Geometry and get the names of all the detectors.
-  for (unsigned int i = 0; i < DetList.size(); ++i) {
-    // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
-    unsigned int DetID = i;
-
-    MDDetector* det = DetList[i];
-    vector<string> DetectorNames;
-    if (det->GetTypeName() == "Strip3D") {
-      if (det->GetNSensitiveVolumes() == 1) {
-        MDVolume* vol = det->GetSensitiveVolume(0);
-        string det_name = vol->GetName().GetString();
-
-        if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
-          DetectorNames.push_back(det_name);
-
-          if (g_Verbosity >= c_Info) {
-            cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
-          }
-          m_DetectorIDs.push_back(DetID);
-          m_Detectors[DetID] = det;
-        } else {
-          if (g_Verbosity >= c_Error) {
-            cout<<"ERROR in MModuleTrappingCorrection::Initialize: Found a duplicate detector: "<<det_name<<endl;
-          }
-        }
-      }
-    }
-  } 
-  if (m_DetectorIDs.size() == 0) {
-    cout<<"No Strip3D detectors were found."<<endl;
-    return false; 
-  }
-
   m_SimCCEFileIsLoaded = LoadSimCCEFile(m_SimCCEFile);
   if (m_SimCCEFileIsLoaded == false) {
     return false;
@@ -159,6 +121,14 @@ bool MModuleTrappingCorrection::Initialize()
   m_DepthCalibration = (MModuleDepthCalibration*) S->GetAvailableModuleByXmlTag("DepthCalibration");
   if (m_DepthCalibration == nullptr) {
     cout << "MModuleTrappingCorrection: couldn't resolve pointer to Depth Calibration Module... need access to this module for depth resolution lookup!" << endl;
+    return false;
+  }
+
+
+  m_DetectorIDs = m_DepthCalibration-> GetDetectorIDs();
+
+  if (m_DetectorIDs.empty()) {
+    cout << "ERROR in MModuleTrappingCorrection::Initialize: Depth Calibration has no registered detector IDs!" << endl;
     return false;
   }
 

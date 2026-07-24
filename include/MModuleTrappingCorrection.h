@@ -113,7 +113,7 @@ class MModuleTrappingCorrection : public MModule
   double m_SimCCE_Energy;
   MString m_SimCCEFile;
  
-  unordered_map<int, MDDetector*> m_Detectors;
+  // unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
   MGUIExpoTrappingCorrection* m_ExpoTrappingCorrection;

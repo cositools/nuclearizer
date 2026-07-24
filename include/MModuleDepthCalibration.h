@@ -126,6 +126,8 @@ class MModuleDepthCalibration : public MModule
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
 
+  const std::vector<unsigned int>& GetDetectorIDs() const { return m_DetectorIDs; }
+  
   //! Finalize
   void Finalize();
 
