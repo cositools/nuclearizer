@@ -87,15 +87,21 @@ class MModuleTrappingCorrection : public MModule
   double GetDirectFWHM_LV() const { return m_DirectFWHM_LV; }
   double GetDirectFWHM_HV() const { return m_DirectFWHM_HV; }
 
-
-  // protected methods:
- protected:
+  //! Get the Sim-based scaling factor given the depth value for the LV (isLV == true) or HV (isLV == false) energy
+  double GetSimBasedScalingFactor(double depth_val, bool isLV);
 
   //! Load in the specified SimCCE file
   bool LoadSimCCEFile(MString FName);
 
-  //! Get the Sim-based corrected energy given the CTD value, uncorrected energy, and the sorted Sim CCE values
-  double GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC);
+  // protected methods:
+ protected:
+
+  //! Get the Sim-based corrected energy given the depth value, uncorrected energy, and the sorted Sim CCE values
+  double GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC);
+
+  //! Get the Sim-based scaling factor given the depth value and the sorted Sim CCE values
+  double GetSimBasedScalingFactor(double depth_val, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC);
+
 
   //! Interpolate a value given x, xp, and fp
   double Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp);

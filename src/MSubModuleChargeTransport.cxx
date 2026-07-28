@@ -72,6 +72,13 @@ MSubModuleChargeTransport::~MSubModuleChargeTransport()
 bool MSubModuleChargeTransport::Initialize()
 {
 
+  m_TrappingCorrection.SetSimCCEFileName(m_SimCCEFileName);
+  if (m_TrappingCorrection.LoadSimCCEFile(m_SimCCEFileName) == false) {
+    return false;
+  }
+  
+
+
   // The detectors need to be in the same order as DetIDs.
   // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
   vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
@@ -280,6 +287,9 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
   // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
   if (ID >= 0 && ID < NStrips && std::abs(Q) <= QWidth/2.0 && std::hypot(P, Q) <= Radius) {
 
+    // Determine the amount of charge sharing
+    double CCE = m_TrappingCorrection.GetSimBasedScalingFactor(Pos.Z(), isLV);
+
     // Apply charge sharing based on relative coordinate to the gap of that strip (0 <= X < XPitch)
     double FromGap = std::fmod(P + PWidth/2.0, PPitch);
 
@@ -290,7 +300,7 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     auto Lambda = [&](double x) -> double { 
       double a = (x - Eta) / (TMath::Sqrt2() * Sigma);
       double b = (x + Eta) / (TMath::Sqrt2() * Sigma);
-      return SH.m_SimulatedEnergy / (8.0 * std::pow(Eta, 3)) * (
+      return SH.m_SimulatedEnergy * CCE / (8.0 * std::pow(Eta, 3)) * (
         std::erf(b) * (2.0 * std::pow(Eta, 3) + x * (3.0 * std::pow(Eta, 2) - 3.0 * std::pow(Sigma, 2) - std::pow(x, 2))) + 
         std::erf(a) * (2.0 * std::pow(Eta, 3) - x * (3.0 * std::pow(Eta, 2) - 3.0 * std::pow(Sigma, 2) - std::pow(x, 2))) + 
         std::exp(- std::pow(b,2)) * std::sqrt(2 / TMath::Pi()) * Sigma * (Eta * x + (2.0 * std::pow(Eta, 2) - 2.0 * std::pow(Sigma, 2) - std::pow(x, 2))) + 
@@ -370,12 +380,10 @@ bool MSubModuleChargeTransport::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
-  /*
-  MXmlNode* SomeTagNode = Node->GetNode("SomeTag");
-  if (SomeTagNode != 0) {
-    m_SomeTagValue = SomeTagNode->GetValue();
+  MXmlNode* N = Node->GetNode("SimCCEFileName");
+  if (N != nullptr) {
+    m_SimCCEFileName = N->GetValue();
   }
-  */
 
   return true;
 }
@@ -388,9 +396,7 @@ MXmlNode* MSubModuleChargeTransport::CreateXmlConfiguration(MXmlNode* Node)
 {
   //! Create an XML node tree from the configuration
 
-  /*
-  MXmlNode* SomeTagNode = new MXmlNode(Node, "SomeTag", "SomeValue");
-  */
+  new MXmlNode(Node, "SimCCEFileName", m_SimCCEFileName);
 
   return Node;
 }

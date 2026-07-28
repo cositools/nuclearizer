@@ -24,6 +24,7 @@
 #include "MGlobal.h"
 #include "MSubModule.h"
 #include "MDStrip3D.h"
+#include "MModuleTrappingCorrection.h"
 
 // Forward declarations:
 
@@ -63,6 +64,11 @@ class MSubModuleChargeTransport : public MSubModule
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
+  //! Set simulated CCE file name
+  void SetSimCCEFileName( const MString& FileName) { m_SimCCEFileName = FileName; }
+  //! Get simulated CCE file name
+  MString GetSimCCEFileName() const { return m_SimCCEFileName; }
+
   //! Finalize the module
   virtual void Finalize();
 
@@ -101,6 +107,9 @@ class MSubModuleChargeTransport : public MSubModule
 
   list<MDEEStripHit> m_ChargeTransportHits;
 
+  MModuleTrappingCorrection m_TrappingCorrection;
+
+  MString m_SimCCEFileName;
 
   // private members:
  private:

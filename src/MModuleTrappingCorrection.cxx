@@ -372,6 +372,19 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC) {
 
+  // Evaluate the physical trapping function model using class global popt variables
+  double expected_centroid_scaled = GetSimBasedScalingFactor(depth_val, sim_cce_sorted_e, sim_cce_sorted_h, paramA, paramB, paramC);
+
+  // Reconstruct the true un-trapped energy 
+  return uncorrected_energy / expected_centroid_scaled;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+double MModuleTrappingCorrection::GetSimBasedScalingFactor(double depth_val, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC) {
+
   // Look up the simulation CCE baseline using the interpolate function
   
   double cce_base_e = Interpolate(depth_val, m_Depths, sim_cce_sorted_e);
@@ -382,17 +395,23 @@ double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, d
   double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
 
   // Prevent division-by-zero or non-physical negative values
-  if (expected_centroid_scaled <= 0.0) {
-      return uncorrected_energy;
-  }
+  if (expected_centroid_scaled <= 0.0) return 1.0;
+  return expected_centroid_scaled;
 
-  //Reconstruct the true un-trapped energy 
-  return uncorrected_energy / expected_centroid_scaled;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////
 
+
+double MModuleTrappingCorrection::GetSimBasedScalingFactor(double depth_val, bool isLV) {
+  if (isLV == true) {
+    return GetSimBasedScalingFactor(depth_val, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamA_LV, m_ParamB, m_ParamC);
+  } else {
+    return GetSimBasedScalingFactor(depth_val, m_CCEs_HV_e, m_CCEs_HV_h, m_ParamA_HV, m_ParamB, m_ParamC);
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////
 
 double MModuleTrappingCorrection::Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp) {
   // need an interpolation function to get continuous CCE values from the discrete simulation data

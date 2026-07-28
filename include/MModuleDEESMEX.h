@@ -137,6 +137,16 @@ class MModuleDEESMEX : public MModule
     return m_DepthReadout.GetTACCalFileName();
   }
 
+  //! Set simulated CCE file name
+  void SetSimCCEFileName(const MString& FileName)
+  {
+    m_ChargeTransport.SetSimCCEFileName(FileName);
+  }
+  //! Get simulated CCE file name
+  MString GetSimCCEFileName() const
+  {
+    return m_ChargeTransport.GetSimCCEFileName();
+  }
 
   //! Set shield energy correction file name
   void SetShieldEnergyCorrectionFileName(const MString& FileName)
