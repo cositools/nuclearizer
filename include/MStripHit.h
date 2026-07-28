@@ -131,6 +131,11 @@ class MStripHit
   void IsNearestNeighbor(bool NearestNeighbor) { m_IsNearestNeighbor = NearestNeighbor; }
   //! Return a boolean indicating whether the strip is a Nearest Neighbor
   bool IsNearestNeighbor() const { return m_IsNearestNeighbor; }
+  
+  //! Set if this is an ambiguous neighbor (ie. associated with multiple hits)
+  void IsAmbiguousNearestNeighbor(bool AmbiguousNeighbor) { m_IsAmbiguousNeighbor = AmbiguousNeighbor; }
+  //! Return boolean indicating whether strip is an ambiguous nearest neighbor (default is false for triggered strips)
+  bool IsAmbiguousNearestNeighbor() const { return m_IsAmbiguousNeighbor; }
     
   //! Set the Fast Timing flag
   void HasFastTiming(bool FastTiming) { m_HasFastTiming = FastTiming; }

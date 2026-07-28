@@ -769,6 +769,8 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
   
   vector<vector<vector<MStripHit*>>> NNStripHits = CollectNearestNeighborStripHits(Event); // List of detectors, list of sides, list of strip hits
   
+  vector<MStripHit*> AssignedNeighbors; // List of all the assigned NN strip hits, in order to check if NNs are double counted
+  
   for (unsigned int h = 0; h < Event->GetNHits(); h++) {
     vector<vector<int>> StripIDs; // list of sides, list of strips
     StripIDs.push_back(vector<int>()); // LV
@@ -792,20 +794,37 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
     int LeftEdgeHV = *min_element(StripIDs[1].begin(), StripIDs[1].end());
     int RightEdgeHV = *max_element(StripIDs[1].begin(), StripIDs[1].end());
     
-    // NOTE: If there are two hits that are one strip hit apart, then the NN strip hit will be added to both hits
-    // Should there be some flag for the case where it's ambiguous which hit a neighbor should be assigned to?
+    // If there are two hits that are one strip hit apart, then the NN strip hit will be added to both hits
     
     // Define the LV neighbors
     for (unsigned int sh = 0; sh < NNStripHits[DetectorID][0].size(); sh++) {
-      if ((NNStripHits[DetectorID][0][sh]->GetStripID() == LeftEdgeLV - 1) or (NNStripHits[DetectorID][0][sh]->GetStripID() == RightEdgeLV + 1)) {
-        Event->GetHit(h)->AddNearestNeighborStripHit(NNStripHits[DetectorID][0][sh]);
+      MStripHit* NNSH = NNStripHits[DetectorID][0][sh];
+      if ((NNSH->GetStripID() == LeftEdgeLV - 1) or (NNSH->GetStripID() == RightEdgeLV + 1)) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
+        // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
+        if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
+          AssignedNeighbors.push_back(NNSH);
+        }
+        // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
+        else {
+          NNSH->IsAmbiguousNeighbor(true);
+        }
       }
     }
     
     // Define the HV neighbors
     for (unsigned int sh = 0; sh < NNStripHits[DetectorID][1].size(); sh++) {
-      if ((NNStripHits[DetectorID][1][sh]->GetStripID() == LeftEdgeHV - 1) or (NNStripHits[DetectorID][1][sh]->GetStripID() == RightEdgeHV + 1)) {
-        Event->GetHit(h)->AddNearestNeighborStripHit(NNStripHits[DetectorID][1][sh]);
+      MStripHit* NNSH = NNStripHits[DetectorID][1];
+      if ((NNSH->GetStripID() == LeftEdgeHV - 1) or (NNSH->GetStripID() == RightEdgeHV + 1)) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
+      }
+      // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
+      if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
+        AssignedNeighbors.push_back(NNSH);
+      }
+      // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
+      else {
+        NNSH->IsAmbiguousNeighbor(true);
       }
     }
   }
