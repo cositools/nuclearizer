@@ -67,14 +67,14 @@ using namespace std;
 
 double g_MinCTD = -250;
 double g_MaxCTD = 250;
-int g_MinCounts = 1500;
+int g_MinCounts = 400;
 
 int g_HVStrips = 64;
 int g_LVStrips = 64;
 
 double g_CsPhotopeak = 661.7;
 
-const int NCTDBins = 50;
+const int NCTDBins = 40;
 // We need NCTDBins + 1 edges to define the boundaries of NCTDBins
 double g_CTDBinEdges[NCTDBins + 1]; 
 
@@ -582,14 +582,14 @@ bool TrappingCorrectionCs137::Analyze()
 
           MasterFitFile << endl << endl; // Add spacing between different bin entries
           
-          ofstream LVFitFile(DetID + MString("_CTDbin_") + c + MString("_LVEnergyFitResult_.txt"));
-          coutbuf = cout.rdbuf();
-          cout.rdbuf(LVFitFile.rdbuf());
-          if (LVFit >= 0) {
-            LVFit->Print();
-          }
-          cout.rdbuf(coutbuf);
-          LVFitFile.close();
+          // ofstream LVFitFile(DetID + MString("_CTDbin_") + c + MString("_LVEnergyFitResult_.txt"));
+          // coutbuf = cout.rdbuf();
+          // cout.rdbuf(LVFitFile.rdbuf());
+          // if (LVFit >= 0) {
+          //   LVFit->Print();
+          // }
+          // cout.rdbuf(coutbuf);
+          // LVFitFile.close();
 
           TFile HVHistFile(m_OutFile + MString("_Det") + DetID + MString("_CTDbin_") + c + MString("_HVEnergyHist_Illum.root"), "recreate");
           TCanvas* HVHistCanvas = new TCanvas();
