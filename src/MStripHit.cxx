@@ -161,19 +161,36 @@ void MStripHit::AddOrigins(vector<int> Origins)
 
 bool MStripHit::StreamDat(ostream& S, int Version)
 {
-  //! Stream the content to an ASCII file 
+  //! Stream the content to an ASCII file
   
-  S<<"SH "
-   <<m_ReadOutElement->GetDetectorID()<<" "
-   <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
-   <<m_ReadOutElement->GetStripID()<<" "
-   <<m_HasTriggered<<" "
-   <<setprecision(9)<<m_Timing<<" "
-   <<m_UncorrectedADCUnits<<" "
-   <<m_ADCUnits<<" "
-   <<m_Energy<<" "
-   <<m_EnergyResolution<<" "
-   <<MakeFlags()<<endl;
+  if (m_ReadOutElement->IsNearestNeighbor() == true) {
+    S<<"NN "
+    <<m_ReadOutElement->GetDetectorID()<<" "
+    <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
+    <<m_ReadOutElement->GetStripID()<<" "
+    <<m_HasTriggered<<" "
+    <<setprecision(9)<<m_Timing<<" "
+    <<m_UncorrectedADCUnits<<" "
+    <<m_ADCUnits<<" "
+    <<m_Energy<<" "
+    <<m_EnergyResolution<<" "
+    <<MakeFlags()<<endl;
+   
+  }
+  
+  else {
+    S<<"SH "
+    <<m_ReadOutElement->GetDetectorID()<<" "
+    <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
+    <<m_ReadOutElement->GetStripID()<<" "
+    <<m_HasTriggered<<" "
+    <<setprecision(9)<<m_Timing<<" "
+    <<m_UncorrectedADCUnits<<" "
+    <<m_ADCUnits<<" "
+    <<m_Energy<<" "
+    <<m_EnergyResolution<<" "
+    <<MakeFlags()<<endl;
+  }
  
   return true;
 }

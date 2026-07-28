@@ -211,6 +211,9 @@ bool MHit::StreamDat(ostream& S, int Version)
     for (auto SH : m_StripHits) {
       SH->StreamDat(S, 0);
     }
+    for (auto SH : m_NearestNeighborStripHits) {
+      SH->StreamDat(S, 0);
+    }
   } else {
     if (g_Verbosity >= c_Error) cout<<"Error in MHit::StreamDat: Stream version "<<Version<<" not handled"<<endl;
     return false;
