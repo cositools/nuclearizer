@@ -19,19 +19,13 @@
  * Redistribution and modification should follow the licensing
  * terms of the parent frameworks (MEGAlib/Nuclearizer) where applicable.
  */
- 
+
 // NOTES:
 // Compile Command
-/* 
+// make (in the main nuclearizer directory)
 
-h5c++ -O2 StripEnergyThresholdFinder.cxx -o StripEnergyThresholdFinder \
-$(root-config --cflags --libs) \
--I$MEGALIB/include \
--I$NUCLEARIZER/include \
--L$MEGALIB/lib \
--lMEGAlib -lNuclearizer -lyaml-cpp
-
-*/
+// Run command example
+// $MEGALIB/bin/StripEnergyThresholdFinder /your/yaml/file/directory/file.yaml
 
 #include <iostream>
 #include <fstream>
@@ -57,6 +51,8 @@ using namespace std;
 #include <TLine.h>
 #include <getopt.h>
 #include "TStyle.h"
+#include <iomanip>
+#include <chrono>
 
 /* YAML */
 #include <yaml-cpp/yaml.h>
@@ -68,136 +64,145 @@ using namespace std;
 #include "MReadOutAssembly.h"
 #include "MStripHit.h"
 #include "MString.h"
+#include "MModuleEnergyCalibration.h"
 
 
-/* ------------------------------------------------------------- */
-/* Strip identifier structure                                     */
-/* ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// Strip identifier structure
+// -------------------------------------------------------------
 
-struct StripKey
-{
+//using StripKey = std::tuple<int, char, int>;
+
+
+struct StripKey {
   int det;
   char side;
-  int strip;
+  int Strip;
 
   bool operator<(const StripKey& o) const
   {
-    if(det!=o.det) return det<o.det;
-    if(side!=o.side) return side<o.side;
-    return strip<o.strip;
+    if (det != o.det) {
+      return det < o.det;
+    }
+    if (side != o.side) {
+      return side < o.side;
+    }
+    return Strip < o.Strip;
   }
 };
 
 
-/* -------------------------------------------------------------   */
-/* Simple calibration helper                                       */
-/* Converts ADC → Energy using polynomial calibration coefficients */
-/* -------------------------------------------------------------   */
+// ----------------------------------------------------------------
+// Simple calibration helper
+// Converts ADC → Energy using polynomial calibration coefficients
+// ----------------------------------------------------------------
 
 class EnergyCalHelper
 {
-public:
-
-  struct Coeff
-  {
-    double c0=0;
-    double c1=0;
-    double c2=0;
-    double c3=0;
+ public:
+  struct Coeff {
+    double c0 = 0;
+    double c1 = 0;
+    double c2 = 0;
+    double c3 = 0;
   };
 
-  bool Load(const string& fileName,int nDet=64,int nStrip=65)
+  bool Load(const string& fileName, int nDet = 64, int nStrip = 65)
   {
-    m_NDet=nDet;
-    m_NStrip=nStrip;
+    m_NDet = nDet;
+    m_NStrip = nStrip;
 
     m_Coeffs.resize(m_NDet);
 
-    for(int d=0;d<m_NDet;d++)
-    {
+    for (int d = 0; d < m_NDet; d++) {
       m_Coeffs[d].resize(2);
 
-      for(int s=0;s<2;s++)
+      for (int s = 0; s < 2; s++) {
         m_Coeffs[d][s].resize(m_NStrip);
+      }
     }
 
     ifstream in(fileName);
 
-    if(!in)
-    {
-      cout<<"Unable to open calibration file "<<fileName<<endl;
+    if (!in) {
+      cout << "Unable to open calibration file " << fileName << endl;
       return false;
     }
 
     string line;
 
-    while(getline(in,line))
-    {
-      if(line.empty()) continue;
+    while (getline(in, line)) {
+      if (line.empty()) {
+        continue;
+      }
 
       stringstream ss(line);
 
       string tag;
-      ss>>tag;
+      ss >> tag;
 
-      if(tag!="CM") continue;
+      if (tag != "CM") {
+        continue;
+      }
 
       string unused;
-      int det=-1;
-      int strip=-1;
+      int det = -1;
+      int Strip = -1;
       string side;
       string order;
 
-      ss>>unused>>det>>strip>>side>>order;
+      ss >> unused >> det >> Strip >> side >> order;
 
-      if(det<0||det>=m_NDet) continue;
-      if(strip<0||strip>=m_NStrip) continue;
+      if (det < 0 || det >= m_NDet) {
+        continue;
+      }
+      if (Strip < 0 || Strip >= m_NStrip) {
+        continue;
+      }
 
-      int sideInt=(side=="l")?0:1;
+      int sideInt = (side == "l") ? 0 : 1;
 
       Coeff c;
 
-      if(order=="poly1zero")
-        ss>>c.c1;
-      else if(order=="poly1")
-        ss>>c.c0>>c.c1;
-      else if(order=="poly2")
-        ss>>c.c0>>c.c1>>c.c2;
-      else
-        ss>>c.c0>>c.c1>>c.c2>>c.c3;
+      if (order == "poly1zero") {
+        ss >> c.c1;
+      } else if (order == "poly1") {
+        ss >> c.c0 >> c.c1;
+      } else if (order == "poly2") {
+        ss >> c.c0 >> c.c1 >> c.c2;
+      } else {
+        ss >> c.c0 >> c.c1 >> c.c2 >> c.c3;
+      }
 
-      m_Coeffs[det][sideInt][strip]=c;
+      m_Coeffs[det][sideInt][Strip] = c;
     }
 
     return true;
   }
 
-  double ADCToEnergy(int det,char side,int strip,double adc) const
+  double ADCToEnergy(int det, char side, int Strip, double adc) const
   {
-    int sideInt=(side=='l')?0:1;
-    const Coeff& c=m_Coeffs[det][sideInt][strip];
+    int sideInt = (side == 'l') ? 0 : 1;
+    const Coeff& c = m_Coeffs[det][sideInt][Strip];
 
-    return c.c3*pow(adc,3)+c.c2*pow(adc,2)+c.c1*adc+c.c0;
+    return c.c3 * pow(adc, 3) + c.c2 * pow(adc, 2) + c.c1 * adc + c.c0;
   }
 
-private:
-
+ private:
   int m_NDet;
   int m_NStrip;
 
   vector<vector<vector<Coeff>>> m_Coeffs;
 };
 
-/* ------------------------------------------------------------- */
-/* TAC calibration helper                                        */
-/* ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// TAC calibration helper
+// -------------------------------------------------------------
 
 class TACCalHelper
 {
-public:
-
-  struct Coeff
-  {
+ public:
+  struct Coeff {
     double slope = 0;
     double offset = 0;
   };
@@ -205,78 +210,87 @@ public:
   bool Load(const string& fileName)
   {
     ifstream in(fileName);
-    if(!in)
-    {
-      cout<<"Failed to open TAC calibration file: "<<fileName<<endl;
+    if (!in) {
+      cout << "Failed to open TAC calibration file: " << fileName << endl;
       return false;
     }
 
     string line;
-    getline(in,line); // skip header
+    getline(in, line); // skip header
 
-    while(getline(in,line))
-    {
-      if(line.empty()) continue;
+    while (getline(in, line)) {
+      if (line.empty()) {
+        continue;
+      }
 
       stringstream ss(line);
 
-      int strip_id, det, side, strip;
+      int Strip_id, det, side, Strip;
       double slope, slope_err, offset, offset_err;
 
-      ss >> strip_id >> det >> side >> strip
-         >> slope >> slope_err >> offset >> offset_err;
+      ss >> Strip_id >> det >> side >> Strip >> slope >> slope_err >> offset >> offset_err;
 
-      char sideChar = (side==0) ? 'l' : 'h';
+      char sideChar = (side == 0) ? 'l' : 'h';
 
-      StripKey key{det, sideChar, strip};
+      StripKey key { det, sideChar, Strip };
 
-      m_Coeffs[key] = {slope, offset};
+      m_Coeffs[key] = { slope, offset };
     }
 
     return true;
   }
 
-  double TACToEnergy(int det, char side, int strip, double tac) const
+  double TACToEnergy(int det, char side, int Strip, double TAC) const
   {
-    StripKey key{det, side, strip};
+    StripKey key { det, side, Strip };
 
     auto it = m_Coeffs.find(key);
-    if(it == m_Coeffs.end()) return 0;
+    if (it == m_Coeffs.end()) {
+      return 0;
+    }
 
-    return it->second.slope * tac + it->second.offset;
+    return it->second.slope * TAC + it->second.offset;
   }
 
-private:
+ private:
   map<StripKey, Coeff> m_Coeffs;
 };
 
 
-/* ------------------------------------------------------------- */
-/* Hit selection                                                 */
-/* ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// Hit selection
+// -------------------------------------------------------------
 
 bool PassHitSelection(MStripHit* SH)
 {
-  if (SH == nullptr) return false;
+  if (SH == nullptr) {
+    return false;
+  }
 
   // Basic sanity checks only
-  if (SH->GetStripID() < 0) return false;
-  if (SH->GetDetectorID() < 0) return false;
+  if (SH->GetStripID() < 0) {
+    return false;
+  }
+  if (SH->GetDetectorID() < 0) {
+    return false;
+  }
 
   // Require signal
-  if (SH->GetADCUnits() <= 0) return false;
+  if (SH->GetADCUnits() <= 0) {
+    return false;
+  }
 
   return true;
 }
 
 
-
-
-//! Finds per-strip slow and fast energy thresholds for germanium detectors
+//! Class for determining strip energy thresholds from histogrammed data
 class MStripThresholdFinder
 {
-public:
-  MStripThresholdFinder() {}
+ public:
+  MStripThresholdFinder()
+  {
+  }
 
   bool ParseCommandLine(int Argc, char** Argv);
   bool BuildHistograms();
@@ -286,23 +300,24 @@ public:
 
   void WriteCSV() const;
   void WriteDiagnostics() const;
-  
-  MString GetOutputPrefix() const { return m_OutputPrefix; }
 
-private:
+  MString GetOutputPrefix() const
+  {
+    return m_OutputPrefix;
+  }
 
+ private:
   // --- Configuration ---
-  EnergyCalHelper m_EnergyCal;
+  EnergyCalHelper m_EnergyCalHelper;
   vector<string> m_InputFiles;
   MString m_CalibrationFile;
-  MString m_TACCalibrationFile;
   MString m_StripMapFile;
   MString m_OutputPrefix;
 
   int m_MinEntries = 10;
   double m_FallbackThreshold = 20.0;
 
-  int m_HistogramBins = 2048;
+  int m_HistogramBins = 512;
   double m_HistogramMaxADC = 4096.0;
   double m_NoiseSearchMaxADC = 2200.0;
 
@@ -310,8 +325,8 @@ private:
 
   // --- Data ---
   map<StripKey, TH1D*> m_ADCHistograms;
-  map<StripKey, map<int, pair<int,int>>> m_TimingCounts;
-  
+  map<StripKey, map<int, pair<int, int>>> m_TimingCounts;
+
   map<StripKey, TH1D*> dt0_hists;
   map<StripKey, TH1D*> dt1_hists;
 
@@ -325,20 +340,15 @@ private:
   // --- Helpers ---
   int FindNoisePeakBin(TH1D* Histogram) const;
   int FindThresholdBin(TH1D* Histogram, int PeakBin) const;
-  int FindCrossoverADC(const map<int, pair<int,int>>& ADCMap, int FirstNonzero) const;
-  
+  int FindCrossoverADC(const map<int, pair<int, int>>& ADCMap, int FirstNonzero) const;
+
   // --- Diagnostics (temporary restore for plotting) ---
-  vector<double> m_stripIndex_LV;
-  vector<double> m_stripIndex_HV;
+  vector<double> m_StripIndex_LV;
+  vector<double> m_StripIndex_HV;
 
-  vector<double> m_thresholdValues_LV;
-  vector<double> m_thresholdValues_HV;
-  
-  
+  vector<double> m_ThresholdValues_LV;
+  vector<double> m_ThresholdValues_HV;
 };
-
-
-
 
 
 int main(int Argc, char** Argv)
@@ -348,68 +358,71 @@ int main(int Argc, char** Argv)
 
   MStripThresholdFinder Finder;
 
-  if (!Finder.ParseCommandLine(Argc, Argv)) return 1;
-  if (!Finder.BuildHistograms()) return 1;
+  if (!Finder.ParseCommandLine(Argc, Argv)) {
+    return 1;
+  }
+  if (!Finder.BuildHistograms()) {
+    return 1;
+  }
 
   Finder.FindSlowThresholds();
   Finder.FindFastThresholds();
 
   Finder.WriteCSV();
   Finder.WriteDiagnostics();
-  
-  
-  /* ------------------------------------------------------------- */
-  /* Helpful ROOT instructions                                     */
-  /* ------------------------------------------------------------- */
 
-  cout<<endl;
-  cout<<"Diagnostics written to "
-      << Finder.GetOutputPrefix()
-      << "_diagnostics.root"<<endl;
-  cout<<endl;
 
-  cout<<"Example ROOT commands for diagnostics:"<<endl;
-  cout<<"---------------------------------------"<<endl;
+  // -------------------------------------------------------------
+  // Helpful ROOT instructions
+  // -------------------------------------------------------------
 
-  cout<<"Open file:"<<endl;
-  cout<<"  root -l "<<Finder.GetOutputPrefix()<<"_diagnostics.root"<<endl;
-  cout<<endl;
+  cout << endl;
+  cout << "Diagnostics written to "
+       << Finder.GetOutputPrefix()
+       << "_diagnostics.root" << endl;
+  cout << endl;
 
-  cout<<"Slow threshold diagnostic plots:"<<endl;
-  cout<<"---------------------------------------"<<endl;
+  cout << "Example ROOT commands for diagnostics:" << endl;
+  cout << "---------------------------------------" << endl;
 
-  cout<<"Slow threshold distribution:"<<endl;
-  cout<<"  cSlowDist->Draw()"<<endl;
-  cout<<endl;
+  cout << "Open file:" << endl;
+  cout << "  root -l " << Finder.GetOutputPrefix() << "_diagnostics.root" << endl;
+  cout << endl;
 
-  cout<<endl;
-  cout<<"Slow threshold vs strip:"<<endl;
-  cout<<"  cSlowThresh->Draw()"<<endl;
-  cout<<endl;
-  
-  cout<<"Example energy spectrum with threshold:"<<endl;
-  cout<<"  Energy_0_h_10->Draw()"<<endl;
-  cout<<"  Energy_0_h_10->GetXaxis()->SetRangeUser(0,30)"<<endl;
-  cout<<endl;
+  cout << "Slow threshold diagnostic plots:" << endl;
+  cout << "---------------------------------------" << endl;
 
-  cout<<"Pixel threshold heat maps:"<<endl;
-  cout<<"  cSlowPixel->Draw()"<<endl;
-  cout<<endl;
-  
-  
-  
-  cout<<endl;
-  cout<<"FAST threshold diagnostics:"<<endl;
-  cout<<"---------------------------------------"<<endl;
+  cout << "Slow threshold distribution:" << endl;
+  cout << "  cSlowDist->Draw()" << endl;
+  cout << endl;
 
-  cout<<"Fast threshold distribution (keV):"<<endl;
-  cout<<"  cFastDist->Draw()"<<endl;
-  cout<<endl;
+  cout << endl;
+  cout << "Slow threshold vs Strip:" << endl;
+  cout << "  cSlowThresh->Draw()" << endl;
+  cout << endl;
 
-  cout<<"HV and LV FAST thresholds:"<<endl;
-  cout<<"  cFastThresh->Draw()"<<endl;
-  cout<<endl;
-  
+  cout << "Example energy spectrum with threshold:" << endl;
+  cout << "  Energy_0_h_10->Draw()" << endl;
+  cout << "  Energy_0_h_10->GetXaxis()->SetRangeUser(0,30)" << endl;
+  cout << endl;
+
+  cout << "Pixel threshold heat maps:" << endl;
+  cout << "  cSlowPixel->Draw()" << endl;
+  cout << endl;
+
+
+  cout << endl;
+  cout << "FAST threshold diagnostics:" << endl;
+  cout << "---------------------------------------" << endl;
+
+  cout << "Fast threshold distribution (keV):" << endl;
+  cout << "  cFastDist->Draw()" << endl;
+  cout << endl;
+
+  cout << "HV and LV FAST thresholds:" << endl;
+  cout << "  cFastThresh->Draw()" << endl;
+  cout << endl;
+
   cout << "dt0 vs dt1 with fast threshold:" << endl;
   cout << "  cFast_0_l_10->Draw();" << endl;
 
@@ -417,196 +430,199 @@ int main(int Argc, char** Argv)
   return 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 {
-  if(argc < 2)
-  {
+  if (argc < 2) {
     cout << "Usage: ./StripEnergyThresholdFinder config.yaml" << endl;
     return false;
   }
-  
 
 
   string configFile = argv[1];
   YAML::Node config = YAML::LoadFile(configFile);
 
 
-  int minEntries=10;
-  double fallbackThreshold=20;
-  m_HistogramBins=2048;
-  m_HistogramMaxADC=4096;
-  m_NoiseSearchMaxADC=2200;
-  
-  /* ------------------------------------------------------------- */
-  /* Command line override parameters (optional)                   */
-  /* ------------------------------------------------------------- */
+  //int minEntries=10;
+  //double fallbackThreshold=20;
+  m_HistogramBins = 2048;
+  m_HistogramMaxADC = 4096;
+  m_NoiseSearchMaxADC = 2200;
+
+  // -------------------------------------------------------------
+  // Command line override parameters (optional)
+  // -------------------------------------------------------------
 
   int cmd_min_entries = -1;
   double cmd_noise_search_max_adc = -1;
   double cmd_fallback_threshold_keV = -1;
-  
+
   string cmd_data_file = "";
   string cmd_calibration_file = "";
-  string cmd_strip_map = "";
+  string cmd_Strip_map = "";
   string cmd_output_prefix = "";
-  long max_events = -1;
+  m_MaxEvents = -1;
 
-  /* ------------------------------------------------------------- */
-  /* YAML file input loading                                       */
-  /* ------------------------------------------------------------- */
+  // -------------------------------------------------------------
+  // YAML file input loading
+  // -------------------------------------------------------------
 
-  if(config["analysis"])
-  {
-    if(config["analysis"]["min_entries"])
-      minEntries=config["analysis"]["min_entries"].as<int>();
+  if (config["analysis"]) {
+    if (config["analysis"]["min_entries"]) {
+      //minEntries=config["analysis"]["min_entries"].as<int>();
+      m_MinEntries = config["analysis"]["min_entries"].as<int>();
+    }
 
-    if(config["analysis"]["fallback_threshold_keV"])
-      fallbackThreshold=config["analysis"]["fallback_threshold_keV"].as<double>();
+    if (config["analysis"]["fallback_threshold_keV"]) {
+      //fallbackThreshold=config["analysis"]["fallback_threshold_keV"].as<double>();
+      m_FallbackThreshold = config["analysis"]["fallback_threshold_keV"].as<double>();
+    }
 
-    if(config["analysis"]["histogram_bins"])
+    if (config["analysis"]["histogram_bins"]) {
       m_HistogramBins = config["analysis"]["histogram_bins"].as<int>();
+    }
 
-    if(config["analysis"]["histogram_max_adc"])
+    if (config["analysis"]["histogram_max_adc"]) {
       m_HistogramMaxADC = config["analysis"]["histogram_max_adc"].as<double>();
+    }
 
-    if(config["analysis"]["noise_search_max_adc"])
+    if (config["analysis"]["noise_search_max_adc"]) {
       m_NoiseSearchMaxADC = config["analysis"]["noise_search_max_adc"].as<double>();
+    }
   }
 
 
-  
   m_InputFiles = config["input"]["data_files"].as<vector<string>>();
-  
-  if (m_InputFiles.empty()) 
-  {
+
+  if (m_InputFiles.empty()) {
     cerr << "Error: No input files provided." << endl;
     return 1;
   }
-  
-  
+
+
   m_CalibrationFile = config["input"]["calibration_file"].as<string>().c_str();
-  m_StripMapFile = config["input"]["strip_map"].as<string>().c_str();
+  m_StripMapFile = config["input"]["Strip_map"].as<string>().c_str();
   m_OutputPrefix = config["output"]["prefix"].as<string>().c_str();
 
 
-  //EnergyCalHelper m_EnergyCal;
-  TACCalHelper m_EnergyCal_TAC;
-  
-  if(!m_EnergyCal.Load(m_CalibrationFile.Data()))
-  {
-    cout<<"Failed to load calibration file: "<<m_CalibrationFile.Data()<<endl;
+  if (!m_EnergyCalHelper.Load(m_CalibrationFile.Data())) {
+    cout << "Failed to load calibration file: " << m_CalibrationFile.Data() << endl;
     return false;
   }
-  
-  string tacCalibrationFile = config["input"]["tac_calibration_file"].as<string>();
 
-  
-  
-  /* ------------------------------------------------------------- */
-  /* Modern command line parser using getopt_long                  */
-  /* ------------------------------------------------------------- */
 
-  static struct option long_options[] =
-  {
-    {"min_entries", required_argument, 0, 'm'},
-    {"noise_search_max_adc", required_argument, 0, 'n'},
-    {"fallback_threshold_keV", required_argument, 0, 'f'},
+  // -------------------------------------------------------------
+  // Modern command line parser using getopt_long
+  // -------------------------------------------------------------
+
+  static struct option long_options[] = {
+    { "min_entries", required_argument, 0, 'm' },
+    { "noise_search_max_adc", required_argument, 0, 'n' },
+    { "fallback_threshold_keV", required_argument, 0, 'f' },
 
     /* NEW overrides */
-    {"data_file", required_argument, 0, 'd'},
-    {"calibration_file", required_argument, 0, 'c'},
-    {"strip_map", required_argument, 0, 's'},
-    {"output_prefix", required_argument, 0, 'o'},
-	{"max_events", required_argument, 0, 'e'},
+    { "data_file", required_argument, 0, 'd' },
+    { "calibration_file", required_argument, 0, 'c' },
+    { "Strip_map", required_argument, 0, 's' },
+    { "output_prefix", required_argument, 0, 'o' },
+    { "max_events", required_argument, 0, 'e' },
 
-    {"help", no_argument, 0, 'h'},
-    {0,0,0,0}
+    { "help", no_argument, 0, 'h' },
+    { 0, 0, 0, 0 }
   };
 
-  optind = 2;   // skip program name and YAML file
+  optind = 2; // skip program name and YAML file
 
   int opt;
-  while((opt = getopt_long(argc, argv, "", long_options, NULL)) != -1)
-  {
-    switch(opt)
-    {
-      case 'm':
-        cmd_min_entries = atoi(optarg);
-        break;
+  while ((opt = getopt_long(argc, argv, "", long_options, NULL)) != -1) {
+    switch (opt) {
+    case 'm':
+      cmd_min_entries = atoi(optarg);
+      break;
 
-      case 'n':
-        cmd_noise_search_max_adc = atof(optarg);
-        break;
+    case 'n':
+      cmd_noise_search_max_adc = atof(optarg);
+      break;
 
-      case 'f':
-        cmd_fallback_threshold_keV = atof(optarg);
-        break;
-		
-      case 'd':
-        m_InputFiles.push_back(optarg);
-        break;
-		
-	  case 'e':
-        max_events = atol(optarg);
-        break; 
-		
-      case 'c':
-        cmd_calibration_file = optarg;
-        break;
+    case 'f':
+      cmd_fallback_threshold_keV = atof(optarg);
+      break;
 
-      case 's':
-        cmd_strip_map = optarg;
-        break;
+    case 'd':
+      m_InputFiles.push_back(optarg);
+      break;
 
-      case 'o':
-        cmd_output_prefix = optarg;
-        break;
+    case 'e':
+      m_MaxEvents = atol(optarg);
+      break;
 
-      case 'h':
-        cout<<endl;
-        cout<<"Usage:"<<endl;
-        cout<<"  ./StripEnergyThresholdFinder config.yaml [options]"<<endl;
-        cout<<endl;
-        cout<<"Options:"<<endl;
-		cout<<"Input/Output overrides:"<<endl;
-        cout<<"  --data_file FILE            Override YAML data file"<<endl;
-        cout<<"  --calibration_file FILE     Override calibration file"<<endl;
-        cout<<"  --strip_map FILE            Override strip map"<<endl;
-        cout<<"  --output_prefix NAME        Override output file prefix"<<endl;
-        cout<<endl;
-        cout<<"  --min_entries N              Minimum histogram entries"<<endl;
-        cout<<"  --noise_search_max_adc N     Max ADC for noise search"<<endl;
-        cout<<"  --fallback_threshold_keV N   Default threshold if fit fails"<<endl;
-        cout<<"  --help                       Show this message"<<endl;
-        cout<<endl;
-        exit(0);
+    case 'c':
+      cmd_calibration_file = optarg;
+      break;
 
-      default:
-        break;
+    case 's':
+      cmd_Strip_map = optarg;
+      break;
+
+    case 'o':
+      cmd_output_prefix = optarg;
+      break;
+
+    case 'h':
+      cout << endl;
+      cout << "Usage:" << endl;
+      cout << "  ./StripEnergyThresholdFinder config.yaml [options]" << endl;
+      cout << endl;
+      cout << "Options:" << endl;
+      cout << "Input/Output overrides:" << endl;
+      cout << "  --data_file FILE            Override YAML data file" << endl;
+      cout << "  --calibration_file FILE     Override calibration file" << endl;
+      cout << "  --Strip_map FILE            Override Strip map" << endl;
+      cout << "  --output_prefix NAME        Override output file prefix" << endl;
+      cout << endl;
+      cout << "  --min_entries N              Minimum histogram entries" << endl;
+      cout << "  --noise_search_max_adc N     Max ADC for noise search" << endl;
+      cout << "  --fallback_threshold_keV N   Default threshold if fit fails" << endl;
+      cout << "  --help                       Show this message" << endl;
+      cout << endl;
+      exit(0);
+
+    default:
+      break;
     }
   }
-  
-  /* ------------------------------------------------------------- */
-  /* Apply command line overrides for input/output                  */
-  /* ------------------------------------------------------------- */
+
+  if (cmd_min_entries >= 0) {
+    m_MinEntries = cmd_min_entries;
+  }
+
+  if (cmd_noise_search_max_adc >= 0) {
+    m_NoiseSearchMaxADC = cmd_noise_search_max_adc;
+  }
+
+  if (cmd_fallback_threshold_keV >= 0) {
+    m_FallbackThreshold = cmd_fallback_threshold_keV;
+  }
 
 
-  if(cmd_calibration_file != "")
-  {
+  // -------------------------------------------------------------
+  // Apply command line overrides for input/output
+  // -------------------------------------------------------------
+
+
+  if (cmd_calibration_file != "") {
     m_CalibrationFile = cmd_calibration_file;
   }
 
-  if(cmd_strip_map != "")
-  {
-    m_StripMapFile = cmd_strip_map;
+  if (cmd_Strip_map != "") {
+    m_StripMapFile = cmd_Strip_map;
   }
 
-  if(cmd_output_prefix != "")
-  {
+  if (cmd_output_prefix != "") {
     m_OutputPrefix = cmd_output_prefix;
-  } 
-  
+  }
+
   // Determine output directory from first data file
   fs::path dataPath(m_InputFiles.back());
   fs::path outputDir = dataPath.parent_path();
@@ -614,416 +630,375 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   // Resolve m_OutputPrefix path
   fs::path outPath(m_OutputPrefix.Data());
 
-  if (!outPath.is_absolute())
-  {
+  if (!outPath.is_absolute()) {
     m_OutputPrefix = (outputDir / outPath).string();
   }
 
   // Debug print
   cout << "Resolved output prefix: " << m_OutputPrefix << endl;
-  
-  
-  /* ------------------------------------------------------------- */
-  /* Save configuration to log file                                */
-  /* ------------------------------------------------------------- */
-  
-  cout<<endl;
-  cout<<"  calibration_file:        "<<m_CalibrationFile.Data()<<endl;
-  cout<<"  strip_map:               "<<m_StripMapFile<<endl;
-  cout<<"  output_prefix:           "<<m_OutputPrefix<<endl;
 
-  cout<<"  data_files:"<<endl;
-  for(auto &f : m_InputFiles)
-      cout<<"    "<<f<<endl;
 
-  cout<<endl;
-  cout<<"Active analysis configuration:"<<endl;
-  cout<<"  min_entries:            "<<m_MinEntries<<endl;
-  cout<<"  fallback_threshold_keV: "<<m_FallbackThreshold<<endl;
-  cout<<"  NoiseSearchMaxADC:      "<<m_NoiseSearchMaxADC<<endl;
-  cout<<"  histogram_bins:         "<<m_HistogramBins<<endl;
-  cout<<"  histogram_max_adc:      "<<m_HistogramMaxADC<<endl;
-  cout<<endl;
-  
-  MString stripMapFile = m_StripMapFile.Data() ;
-  
+  // -------------------------------------------------------------
+  // Save configuration to log file
+  // -------------------------------------------------------------
 
+  cout << endl;
+  cout << "  calibration_file:        " << m_CalibrationFile.Data() << endl;
+  cout << "  Strip_map:               " << m_StripMapFile << endl;
+  cout << "  output_prefix:           " << m_OutputPrefix << endl;
+
+  cout << "  data_files:" << endl;
+  for (auto& f : m_InputFiles) {
+    cout << "    " << f << endl;
+  }
+
+  cout << endl;
+  cout << "Active analysis configuration:" << endl;
+  cout << "  min_entries:            " << m_MinEntries << endl;
+  cout << "  fallback_threshold_keV: " << m_FallbackThreshold << endl;
+  cout << "  NoiseSearchMaxADC:      " << m_NoiseSearchMaxADC << endl;
+  cout << "  histogram_bins:         " << m_HistogramBins << endl;
+  cout << "  histogram_max_adc:      " << m_HistogramMaxADC << endl;
+  cout << endl;
+
+  MString StripMapFile = m_StripMapFile.Data();
 
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+//! Build per-strip ADC and timing histograms from input data
 bool MStripThresholdFinder::BuildHistograms()
-{ 
-  MString stripMapFile = m_StripMapFile;
-  long max_events = m_MaxEvents;  
+{
+  MString StripMapFile = m_StripMapFile;
+  long max_events = m_MaxEvents;
 
   //map<StripKey,TH1D*> histograms;
   map<StripKey, vector<int>> hist_counts;
   map<StripKey, vector<int>> dt0_counts;
-  map<StripKey, vector<int>> dt1_counts;  
+  map<StripKey, vector<int>> dt1_counts;
   map<StripKey, double> adc_to_keV_scale;
-  map<StripKey,TH1D*> histograms_TAC;
+  map<StripKey, TH1D*> histograms_TAC;
 
-  map<StripKey, map<int, pair<int,int>>> timingCounts;
+  map<StripKey, map<int, pair<int, int>>> timingCounts;
 
-  /* ------------------------------------------------------------- */
-  /* Build ADC histograms from data                                */
-  /* ------------------------------------------------------------- */
-    
-	MModuleLoaderMeasurementsHDF* Loader = new MModuleLoaderMeasurementsHDF();
+  // -------------------------------------------------------------
+  // Build ADC histograms from data
+  // -------------------------------------------------------------
 
-    Loader->SetFileName(m_InputFiles[0].c_str());
+  MModuleLoaderMeasurementsHDF* Loader = new MModuleLoaderMeasurementsHDF();
 
-	cout << "Loading file: " << m_InputFiles[0] << endl;
-	cout << "Number of input files: " << m_InputFiles.size() << endl;
-	
-    Loader->SetFileNameStripMap(m_StripMapFile.Data());
+  Loader->SetFileName(m_InputFiles[0].c_str());
 
-	MSupervisor* S = MSupervisor::GetSupervisor();
-    S->SetModule(Loader, 0);
+  cout << "Loading file: " << m_InputFiles[0] << endl;
+  cout << "Number of input files: " << m_InputFiles.size() << endl;
 
-    if (!Loader->Initialize())
-    {
-      cerr << "Failed to initialize loader!" << endl;
-      return false;
+  Loader->SetFileNameStripMap(m_StripMapFile.Data());
+
+  //NEW Energy Calibrator / MEGAlib module
+  MSupervisor* S = MSupervisor::GetSupervisor();
+
+  unsigned int ModuleIndex = 0;
+
+  // Loader
+  S->SetModule(Loader, ModuleIndex);
+  ++ModuleIndex;
+
+  // Energy calibration module
+  MModuleEnergyCalibration* EnergyCalibrator = new MModuleEnergyCalibration();
+  EnergyCalibrator->SetFileName(m_CalibrationFile);
+  S->SetModule(EnergyCalibrator, ModuleIndex);
+  ++ModuleIndex;
+
+
+  if (!Loader->Initialize())
+
+  {
+    cerr << "Failed to initialize loader!" << endl;
+    return false;
+  }
+
+  if (!EnergyCalibrator->Initialize()) {
+    cerr << "Failed to initialize energy calibration!" << endl;
+    return false;
+  }
+
+  MReadOutAssembly* Event = new MReadOutAssembly();
+
+  long event_counter = 0;
+  //cout << std::unitbuf;
+  auto start_time = std::chrono::steady_clock::now();
+  while (!Loader->IsFinished()) {
+
+    if (max_events > 0 && event_counter >= max_events) {
+      break;
     }
-	
-	
-	
-    MReadOutAssembly* Event=new MReadOutAssembly();
-    
-	long event_counter = 0;
-	
-	while (Loader->IsFinished() == false)
-    {
-		
-	
-	  
-      if (max_events > 0 && event_counter >= max_events)
-        break;
 
-      Event->Clear();
+    Event->Clear();
 
-      if (Loader->IsReady())
-      {
-        Loader->AnalyzeEvent(Event);
-        event_counter++;
-		
-        // -------------------------------------------------------------
-        // GLOBAL progress bar (event processing)
-        // -------------------------------------------------------------
-        if (event_counter % 10000 == 0)
-        {
-          int barWidth = 40;
+    if (Loader->IsReady()) {
+      //Loader->AnalyzeEvent(Event);
+      Loader->AnalyzeEvent(Event);
+      EnergyCalibrator->AnalyzeEvent(Event);
+      event_counter++;
 
-          // If we know total → real progress
-          if (max_events > 0)
-          {
-            float progress = (float)event_counter / max_events;
+      // -------------------------------------------------------------
+      // GLOBAL progress
+      // -------------------------------------------------------------
 
-            cout << "\r[";
-            int pos = barWidth * progress;
+      if (event_counter % 1000000 == 0) {
+        auto now = std::chrono::steady_clock::now();
+        double elapsed = std::chrono::duration<double>(now - start_time).count();
 
-            for (int i = 0; i < barWidth; ++i)
-            {
-              if (i < pos) cout << "=";
-              else if (i == pos) cout << ">";
-              else cout << " ";
-            }
+        double rate = event_counter / elapsed;
 
-            cout << "] " << int(progress * 100.0) << "%";
-          }
-          else
-          {
-            // -------------------------------------------------------------
-            // UNKNOWN TOTAL → animated progress bar
-            // -------------------------------------------------------------
-            int pos = (event_counter / 10000) % barWidth;
+        cout << "Processed events: " << event_counter
+             << " | Rate: " << rate << " events/s"
+             << endl;
+      }
 
-            cout << "\r[";
 
-            for (int i = 0; i < barWidth; ++i)
-            {
-              if (i == pos) cout << ">";
-              else cout << " ";
-            }
+      int NStrips = Event->GetNStripHits();
 
-            cout << "] events: " << event_counter;
+      for (int i = 0; i < NStrips; ++i) {
+        MStripHit* SH = Event->GetStripHit(i);
+
+        if (!PassHitSelection(SH)) {
+          continue;
+        }
+
+        double adc = SH->GetADCUnits();
+        //double energy = SH->GetEnergy();
+        int det = SH->GetDetectorID();
+        int Strip = SH->GetStripID();
+        char side = SH->IsLowVoltageStrip() ? 'l' : 'h';
+
+        StripKey key { det, side, Strip };
+
+
+        //it_hist->second->Fill(adc);
+        int bin = (int) (adc / m_HistogramMaxADC * m_HistogramBins);
+
+        if (bin >= 0 && bin < m_HistogramBins) {
+          if (hist_counts.find(key) == hist_counts.end()) {
+            hist_counts[key] = vector<int>(m_HistogramBins, 0);
           }
 
-          cout << flush;      
+          hist_counts[key][bin]++;
+        }
+
+        // -------------------------------------------------------------
+        // FAST timing accumulation (dt0 vs dt1)
+        // -------------------------------------------------------------
+
+        //int adc_bin = static_cast<int>(adc);
+        double energy = SH->GetEnergy();
+
+        double TAC = SH->GetTAC();
+        int adc_bin = static_cast<int>(adc);
+
+        // --- dt0 vs dt1 separation ---
+        bool is_dt1 = (TAC > 8000); // initial threshold
+
+
+        // Initialize bin if needed
+        if (timingCounts[key].find(adc_bin) == timingCounts[key].end()) {
+          timingCounts[key][adc_bin] = { 0, 0 };
+        }
+
+        double maxEnergy = m_EnergyCalHelper.ADCToEnergy(det, side, Strip, m_HistogramMaxADC);
+
+        int ebin = (int) (energy / maxEnergy * m_HistogramBins);
+
+
+        if (is_dt1) {
+          timingCounts[key][adc_bin].second++;
+        } else {
+          timingCounts[key][adc_bin].first++;
         }
 
 
+        // -------------------------------------------------------------
+        // SEPARATE: fill smooth dt0/dt1 histograms in ENERGY space
+        // -------------------------------------------------------------
 
-        int NStrips = Event->GetNStripHits();
+        auto& counts = (is_dt1 ? dt1_counts[key] : dt0_counts[key]);
 
-        for (int i = 0; i < NStrips; ++i)
-        {
-          MStripHit* SH = Event->GetStripHit(i);
+        if (counts.empty()) {
+          counts.resize(m_HistogramBins, 0);
+        }
 
-          if (!PassHitSelection(SH)) continue;
-
-          double adc = SH->GetADCUnits();
-          int det = SH->GetDetectorID();
-          int strip = SH->GetStripID();
-          char side = SH->IsLowVoltageStrip() ? 'l' : 'h';
-
-          StripKey key{det, side, strip};
-		  
-		  // -------------------------------------------------------------
-          // Precompute ADC→keV scale (once per strip)
-          // -------------------------------------------------------------
-          if (adc_to_keV_scale.find(key) == adc_to_keV_scale.end())
-          {
-            // approximate slope using ADC=0 → ADC=1000
-            double e0 = m_EnergyCal.ADCToEnergy(det, side, strip, 0);
-            double e1 = m_EnergyCal.ADCToEnergy(det, side, strip, 1000);
-
-            adc_to_keV_scale[key] = (e1 - e0) / 1000.0;
-          }
-		 
-
-
-          //it_hist->second->Fill(adc);
-		  int bin = (int)(adc / m_HistogramMaxADC * m_HistogramBins);
-
-          if (bin >= 0 && bin < m_HistogramBins)
-          {
-            if (hist_counts.find(key) == hist_counts.end())
-            {
-              hist_counts[key] = vector<int>(m_HistogramBins, 0);
-            }
-
-            hist_counts[key][bin]++;
-          }
-		  		  
-		  // -------------------------------------------------------------
-          // FAST timing accumulation (dt0 vs dt1)
-          // -------------------------------------------------------------
-
-          int adc_bin = static_cast<int>(adc);
-      	  
-		  double tac = SH->GetTAC();
-
-          // --- dt0 vs dt1 separation ---
-          bool is_dt1 = (tac > 8000);   // initial threshold
-
-
-          // Initialize bin if needed
-          if (timingCounts[key].find(adc_bin) == timingCounts[key].end())
-          {
-            timingCounts[key][adc_bin] = {0, 0};
-          }
-
-
-          double energy = adc * adc_to_keV_scale[key];
-
-		  
-		  int ebin = (int)(energy / (adc_to_keV_scale[key] * m_HistogramMaxADC) * m_HistogramBins);
-
-          if (ebin >= 0 && ebin < m_HistogramBins)
-          {
-            if (is_dt1)
-            {
-              timingCounts[key][adc_bin].second++;
-
-              auto& counts = dt1_counts[key];
-              if (counts.empty()) counts.resize(m_HistogramBins, 0);
-              counts[ebin]++;
-            }
-            else
-            {
-              timingCounts[key][adc_bin].first++;
-
-              auto& counts = dt0_counts[key];
-              if (counts.empty()) counts.resize(m_HistogramBins, 0);
-              counts[ebin]++;
-            }
-          }		  
+        if (ebin >= 0 && ebin < m_HistogramBins) {
+          counts[ebin]++;
         }
       }
     }
-    cout << endl;
+  }
+  cout << endl;
 
   // Save into class
 
-  
-  for (auto& kv : hist_counts)
-  {
+
+  for (auto& kv : hist_counts) {
     StripKey key = kv.first;
     vector<int>& counts = kv.second;
 
-    string name = "h_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.strip);
+    string name = "h_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.Strip);
 
     TH1D* h = new TH1D(
       name.c_str(),
       name.c_str(),
       m_HistogramBins,
       0,
-      m_HistogramMaxADC
-    );
+      m_HistogramMaxADC);
 
-    for (int i = 0; i < m_HistogramBins; ++i)
-    {
-      h->SetBinContent(i+1, counts[i]);
+    for (int i = 0; i < m_HistogramBins; ++i) {
+      h->SetBinContent(i + 1, counts[i]);
     }
 
     m_ADCHistograms[key] = h;
   }
-  
+
   // -------------------------------------------------------------
   // Rebuild dt0 histograms
   // -------------------------------------------------------------
-  for (auto& kv : dt0_counts)
-  {
+  for (auto& kv : dt0_counts) {
     StripKey key = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCal.ADCToEnergy(key.det, key.side, key.strip, m_HistogramMaxADC);
+    double maxE = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, m_HistogramMaxADC);
+    //double maxE = 3000.0;  // keV, safe upper bound
 
-    string name = "dt0_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.strip);
+
+    string name = "dt0_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.Strip);
 
     TH1D* h = new TH1D(
       name.c_str(),
       name.c_str(),
       m_HistogramBins,
       0,
-      maxE
-    );
+      maxE);
 
-    for (int i = 0; i < m_HistogramBins; ++i)
-    {
-      h->SetBinContent(i+1, counts[i]);
+    for (int i = 0; i < m_HistogramBins; ++i) {
+      h->SetBinContent(i + 1, counts[i]);
     }
 
     dt0_hists[key] = h;
   }
 
-
   // -------------------------------------------------------------
   // Rebuild dt1 histograms
   // -------------------------------------------------------------
-  for (auto& kv : dt1_counts)
-  {
+  for (auto& kv : dt1_counts) {
     StripKey key = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCal.ADCToEnergy(key.det, key.side, key.strip, m_HistogramMaxADC);
+    double maxE = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, m_HistogramMaxADC);
+    //double maxE = 3000.0;
 
-    string name = "dt1_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.strip);
+    string name = "dt1_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.Strip);
 
     TH1D* h = new TH1D(
       name.c_str(),
       name.c_str(),
       m_HistogramBins,
       0,
-      maxE
-    );
+      maxE);
 
-    for (int i = 0; i < m_HistogramBins; ++i)
-    {
-      h->SetBinContent(i+1, counts[i]);
+    for (int i = 0; i < m_HistogramBins; ++i) {
+      h->SetBinContent(i + 1, counts[i]);
     }
 
     dt1_hists[key] = h;
   }
-  
-  
-  m_TimingCounts = timingCounts;
-  
 
+  m_TimingCounts = timingCounts;
 
   return true;
-  
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+//! Determine slow thresholds from ADC histograms
 void MStripThresholdFinder::FindSlowThresholds()
 {
 
-  m_stripIndex_LV.clear();
-  m_stripIndex_HV.clear();
-  m_thresholdValues_LV.clear();
-  m_thresholdValues_HV.clear();
+  m_StripIndex_LV.clear();
+  m_StripIndex_HV.clear();
+  m_ThresholdValues_LV.clear();
+  m_ThresholdValues_HV.clear();
 
 
-  /* ------------------------------------------------------------- */
-  /* Threshold finding algorithm                                   */
-  /* ------------------------------------------------------------- */
+  // -------------------------------------------------------------
+  // Threshold finding algorithm
+  // -------------------------------------------------------------
 
-  map<StripKey,double> thresholds;
-  map<StripKey,double> thresholdsADC;
-  
+  map<StripKey, double> thresholds;
+  map<StripKey, double> thresholdsADC;
+
   // Progress tracking (slow thresholds)
-  int totalStrips = m_ADCHistograms.size();
-  int processedStrips = 0;
+  //int totalStrips = m_ADCHistograms.size();
+  //int processedStrips = 0;
 
-  map<int,double> thresholdLV;
-  map<int,double> thresholdHV;
+  map<int, double> thresholdLV;
+  map<int, double> thresholdHV;
 
-  map<int,double> thresholdLV_ADC;
-  map<int,double> thresholdHV_ADC;
-  
-  
-  /* ------------------------------------------------------------- */
-  /* TAC threshold storage                                         */
-  /* ------------------------------------------------------------- */
-  
-  // HV/LV split 
+  map<int, double> thresholdLV_ADC;
+  map<int, double> thresholdHV_ADC;
 
-  map<int,double> thresholdLV_TAC;
-  map<int,double> thresholdHV_TAC;
 
-  map<int,double> thresholdLV_TAC_ADC;
-  map<int,double> thresholdHV_TAC_ADC;
-  
-  
-  
-  /* ------------------------------------------------------------- */
-  /* Diagnostic storage vectors                                     */
-  /* These vectors allow us to build ROOT diagnostic plots later    */
-  /* ------------------------------------------------------------- */
+  // -------------------------------------------------------------
+  // TAC threshold storage
+  // -------------------------------------------------------------
 
-  vector<double> stripIndex;
+  // HV/LV split
+
+  map<int, double> thresholdLV_TAC;
+  map<int, double> thresholdHV_TAC;
+
+  map<int, double> thresholdLV_TAC_ADC;
+  map<int, double> thresholdHV_TAC_ADC;
+
+
+  // -------------------------------------------------------------
+  // Diagnostic storage vectors
+  // These vectors allow us to build ROOT diagnostic plots later
+  // -------------------------------------------------------------
+
+  vector<double> StripIndex;
   vector<double> thresholdValues;
   vector<double> noisePeakADC;
-  
-  /* ------------------------------------------------------------- */
-  /* Separate vectors for HV and LV strip diagnostics               */
-  /* ------------------------------------------------------------- */
 
-  vector<double> stripIndex_LV;
-  vector<double> stripIndex_HV;
+  // -------------------------------------------------------------
+  // Separate vectors for HV and LV Strip diagnostics
+  // -------------------------------------------------------------
+
+  vector<double> StripIndex_LV;
+  vector<double> StripIndex_HV;
 
   vector<double> thresholdValues_LV;
   vector<double> thresholdValues_HV;
 
 
-  /* ------------------------------------------------------------- */
-  /* TAC diagnostic vectors                                        */
-  /* ------------------------------------------------------------- */
+  // -------------------------------------------------------------
+  // TAC diagnostic vectors
+  // -------------------------------------------------------------
 
   vector<double> thresholdValues_TAC_LV;
   vector<double> thresholdValues_TAC_HV;
 
-  vector<double> tacPeakADC_LV;
-  vector<double> tacPeakADC_HV;
-  
+  vector<double> TACPeakADC_LV;
+  vector<double> TACPeakADC_HV;
 
 
-  for(auto& kv : m_ADCHistograms)
-  {
-	
-    StripKey key=kv.first;
-    TH1D* hist=kv.second;
+  for (auto& kv : m_ADCHistograms) {
 
-    if(hist->GetEntries()<m_MinEntries)
-    {
-      thresholds[key]=m_FallbackThreshold;
+    StripKey key = kv.first;
+    TH1D* hist = kv.second;
+
+    if (hist->GetEntries() < m_MinEntries) {
+      thresholds[key] = m_FallbackThreshold;
       continue;
     }
 
@@ -1031,197 +1006,170 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     int maxSearchBin = hist->FindBin(m_NoiseSearchMaxADC);
 
-    int startBin=-1;
+    int startBin = -1;
 
-    for(int b=1;b<=maxSearchBin;b++)
-      if(hist->GetBinContent(b)>5){ startBin=b; break; }
+    for (int b = 1; b <= maxSearchBin; b++) {
+      if (hist->GetBinContent(b) > 5) {
+        startBin = b;
+        break;
+      }
+    }
 
-    if(startBin<0)
-    {
-      thresholds[key]=m_FallbackThreshold;
+    if (startBin < 0) {
+      thresholds[key] = m_FallbackThreshold;
       continue;
     }
 
-    int peakBin=startBin;
-    double peakCounts=hist->GetBinContent(startBin);
+    int peakBin = startBin;
+    double peakCounts = hist->GetBinContent(startBin);
 
-    for(int b=startBin+1;b<=maxSearchBin;b++)
-    {
-      double c=hist->GetBinContent(b);
+    for (int b = startBin + 1; b <= maxSearchBin; b++) {
+      double c = hist->GetBinContent(b);
 
-      if(c>peakCounts){ peakCounts=c; peakBin=b; }
-      else if(b>peakBin && c<peakCounts*0.9) break;
+      if (c > peakCounts) {
+        peakCounts = c;
+        peakBin = b;
+      } else if (b > peakBin && c < peakCounts * 0.9) {
+        break;
+      }
     }
 
-    int thresholdBin=peakBin;
+    int thresholdBin = peakBin;
 
-    if(key.strip==64)
-    {
-      for(int b=peakBin+1;b<=maxSearchBin;b++)
-        if(hist->GetBinContent(b)<=peakCounts*0.5)
-        { thresholdBin=b; break; }
-    }
-    else
-    {
-      for(int b=peakBin+1;b<=maxSearchBin;b++)
-      {
-        double c=hist->GetBinContent(b);
-
-        if(c<hist->GetBinContent(thresholdBin))
-          thresholdBin=b;
-
-        if(b>peakBin && c>peakCounts*0.5)
+    if (key.Strip == 64) {
+      for (int b = peakBin + 1; b <= maxSearchBin; b++) {
+        if (hist->GetBinContent(b) <= peakCounts * 0.5) {
+          thresholdBin = b;
           break;
-      } 
+        }
+      }
+    } else {
+      for (int b = peakBin + 1; b <= maxSearchBin; b++) {
+        double c = hist->GetBinContent(b);
+
+        if (c < hist->GetBinContent(thresholdBin)) {
+          thresholdBin = b;
+        }
+
+        if (b > peakBin && c > peakCounts * 0.5) {
+          break;
+        }
+      }
     }
-	
 
-    /* ------------------------------------------------------------- */
-    /* Shift threshold slightly to the right of the noise trough     */
-    /* This prevents thresholds from sitting inside the noise tail   */
-    /* ------------------------------------------------------------- */
 
-    int shiftBins = 2;   // move threshold up by a couple of bins
+    // -------------------------------------------------------------
+    // Shift threshold slightly to the right of the noise trough
+    // This prevents thresholds from sitting inside the noise tail
+    // -------------------------------------------------------------
+
+    int shiftBins = 2; // move threshold up by a couple of bins
     thresholdBin = min(thresholdBin + shiftBins, hist->GetNbinsX());
 
     double thresholdADC = hist->GetBinCenter(thresholdBin);
 
     /* Convert ADC → keV using SLOW calibration */
     double thresholdKeV =
-      m_EnergyCal.ADCToEnergy(key.det,key.side,key.strip,thresholdADC);
-    
-	if(key.side == 'l')
-    {
-      m_stripIndex_LV.push_back(key.strip);
-      m_thresholdValues_LV.push_back(thresholdKeV);
+      m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, thresholdADC);
+
+
+    if (key.side == 'l') {
+      m_StripIndex_LV.push_back(key.Strip);
+      m_ThresholdValues_LV.push_back(thresholdKeV);
+    } else if (key.side == 'h') {
+      m_StripIndex_HV.push_back(key.Strip);
+      m_ThresholdValues_HV.push_back(thresholdKeV);
     }
-    else if(key.side == 'h')
-    {
-      m_stripIndex_HV.push_back(key.strip);
-      m_thresholdValues_HV.push_back(thresholdKeV);
-    }
-	
-	
-	
-    // Store SLOW thresholds 
+
+
+    // Store SLOW thresholds
     thresholds[key] = thresholdKeV;
     thresholdsADC[key] = thresholdADC;
-	
-	// Progress bar update
-    //processedStrips++;
-
-    //int barWidth = 40;
-    //if (totalStrips == 0) totalStrips = 1;
-    //float progress = (float)processedStrips / totalStrips;
-	
-	
-	
-    //cout << "\r[";
-    //int pos = barWidth * progress;
-
-    //for(int i = 0; i < barWidth; ++i)
-    //{
-    //  if(i < pos) cout << "=";
-    //  else if(i == pos) cout << ">";
-    //  else cout << " ";
-    //}
-
-    //cout << "] " << int(progress * 100.0) << "%" << flush;
-	
   }
   cout << endl;
 
   // Save results into class members
   m_SlowThresholds = thresholds;
   m_SlowThresholdsADC = thresholdsADC;
-  
-  
-  cout << "LV points: " << m_stripIndex_LV.size() << endl;
-  cout << "HV points: " << m_stripIndex_HV.size() << endl;
-}
 
+
+  cout << "LV points: " << m_StripIndex_LV.size() << endl;
+  cout << "HV points: " << m_StripIndex_HV.size() << endl;
+}
 
 
 void MStripThresholdFinder::FindFastThresholds()
 {
-  
-  if (m_TimingCounts.empty())
-  {
+
+  if (m_TimingCounts.empty()) {
     cout << "Warning: No timing data available for fast threshold calculation." << endl;
   }
-  
-  
-  //map<StripKey,double> m_FastThresholds;
-  map<StripKey,double> thresholds_TAC_ADC;
-  //map<StripKey,double> m_FastThresholdsADC;
 
-  /* ------------------------------------------------------------- */
-  /* Fast threshold finder (dt0 vs dt1 crossover)                  */
-  /* ------------------------------------------------------------- */
+  map<StripKey, double> thresholds_TAC_ADC;
 
-  for(auto& kv : m_TimingCounts)
-  {
+  // -------------------------------------------------------------
+  // Fast threshold finder (dt0 vs dt1 crossover)
+  // -------------------------------------------------------------
+
+  for (auto& kv : m_TimingCounts) {
     StripKey key = kv.first;
     auto& adcMap = kv.second;
 
-    // --- FIX: skip guard ring for FAST thresholds ---
-    if(key.strip == 64)
-    {
+    // Skip guard ring for FAST thresholds
+    if (key.Strip == 64) {
       continue;
     }
-	
-	int totalCounts = 0;
-    for(auto& a : adcMap)
-      totalCounts += a.second.first + a.second.second;
 
-    //if(totalCounts < m_MinEntries)
-		
-	// Proper m_MinEntries guard
-    if(totalCounts < m_MinEntries)
-    {
+    int totalCounts = 0;
+    for (auto& a : adcMap) {
+      totalCounts += a.second.first + a.second.second;
+    }
+
+
+    // Proper m_MinEntries guard
+    if (totalCounts < m_MinEntries) {
       m_FastThresholds[key] = m_FallbackThreshold;
       continue;
     }
 
     // Find first nonzero ADC
     int first_nonzero = -1;
-	if (kv.second.empty()) continue;
+    if (kv.second.empty()) {
+      continue;
+    }
 
-    for(auto& a : adcMap)
-    {
-      if(a.second.first + a.second.second > 0)
-      {
+    for (auto& a : adcMap) {
+      if (a.second.first + a.second.second > 0) {
         first_nonzero = a.first + 10;
         break;
       }
     }
 
-    if(first_nonzero < 0)
-    {
+    if (first_nonzero < 0) {
       m_FastThresholds[key] = m_FallbackThreshold;
       continue;
     }
-	
+
 
     int bestADC = -1;
     int minDiff = 1e9;
-	
-	// -------------------------------------------------------------
+
+    // -------------------------------------------------------------
     // Direct crossover detection (no smoothing bias)
     // -------------------------------------------------------------
     int crossoverADC = -1;
 
-    for(auto& a : adcMap)
-    {
+    for (auto& a : adcMap) {
       int adc_val = a.first;
       int n0 = a.second.first;
       int n1 = a.second.second;
 
       // Require minimum statistics to avoid noise triggers
-      if(n0 + n1 < 10) continue;
+      if (n0 + n1 < 10) {
+        continue;
+      }
 
-      if(n1 > n0)
-      {
+      if (n1 > n0) {
         crossoverADC = adc_val;
         break;
       }
@@ -1232,14 +1180,14 @@ void MStripThresholdFinder::FindFastThresholds()
     // Extend search window for stability
     int searchMax = first_nonzero + 800;
 
-    for(int adc = first_nonzero; adc < searchMax; adc++)
-    {
+    for (int adc = first_nonzero; adc < searchMax; adc++) {
       int n_dt0 = 0;
       int n_dt1 = 0;
 
-      for(int a = adc; a < adc + nbins; a++)
-      {
-        if(adcMap.find(a) == adcMap.end()) continue;
+      for (int a = adc; a < adc + nbins; a++) {
+        if (adcMap.find(a) == adcMap.end()) {
+          continue;
+        }
 
         n_dt0 += adcMap[a].first;
         n_dt1 += adcMap[a].second;
@@ -1247,20 +1195,19 @@ void MStripThresholdFinder::FindFastThresholds()
 
       int diff;
 
-      if(n_dt0 == 0 && n_dt1 == 0)
+      if (n_dt0 == 0 && n_dt1 == 0) {
         diff = 1000000;
-      else
+      } else {
         diff = abs(n_dt1 - n_dt0);
+      }
 
-      if(diff < minDiff)
-      {
+      if (diff < minDiff) {
         minDiff = diff;
         bestADC = adc;
       }
     }
 
-    if(bestADC < 0)
-    {
+    if (bestADC < 0) {
       m_FastThresholds[key] = m_FallbackThreshold;
       continue;
     }
@@ -1269,112 +1216,95 @@ void MStripThresholdFinder::FindFastThresholds()
     // prefer physical crossover if available
     int fast_thresh_adc;
 
-    if(crossoverADC > 0)
-    {
+    if (crossoverADC > 0) {
       fast_thresh_adc = crossoverADC;
-    }
-    else
-    {
+    } else {
       // fallback to old method
-      fast_thresh_adc = bestADC + nbins/2;
+      fast_thresh_adc = bestADC + nbins / 2;
     }
-
 
     m_FastThresholdsADC[key] = fast_thresh_adc;
 
     double fast_thresh_keV =
-      m_EnergyCal.ADCToEnergy(key.det,key.side,key.strip,fast_thresh_adc);
+      m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, fast_thresh_adc);
 
     m_FastThresholds[key] = fast_thresh_keV;
-
-  } 
+  }
 }
 
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void MStripThresholdFinder::WriteCSV() const
 {
-  
-  if (m_SlowThresholds.empty() && m_FastThresholds.empty())
-  {
+
+  if (m_SlowThresholds.empty() && m_FastThresholds.empty()) {
     cout << "Warning: No thresholds available to write to CSV." << endl;
   }
-  
-  /* ------------------------------------------------------------- */
-  /* Write CSV threshold tables (HV and LV)                        */
-  /* ------------------------------------------------------------- */
+
+  // -------------------------------------------------------------
+  // Write CSV threshold tables (HV and LV)
+  // -------------------------------------------------------------
 
   ofstream csv_HV(m_OutputPrefix + "_Slow_HV_thresholds.csv");
   ofstream csv_LV(m_OutputPrefix + "_Slow_LV_thresholds.csv");
 
   /* CSV headers */
 
-  csv_HV << "detector_side,strip,threshold_adc,threshold_keV\n";
-  csv_LV << "detector_side,strip,threshold_adc,threshold_keV\n";
+  csv_HV << "detector_side,Strip,threshold_adc,threshold_keV\n";
+  csv_LV << "detector_side,Strip,threshold_adc,threshold_keV\n";
 
   /* Write rows */
 
-  for(const auto& kv : m_SlowThresholds)
-  {
+  for (const auto& kv : m_SlowThresholds) {
     char side = kv.first.side;
-    int strip = kv.first.strip;
+    int Strip = kv.first.Strip;
 
-    double thr_keV = kv.second;	
-	double thr_adc = m_SlowThresholdsADC.at(kv.first);
-    	
-	
-	if(side == 'h')
-    {
+    double thr_keV = kv.second;
+    double thr_adc = m_SlowThresholdsADC.at(kv.first);
+
+
+    if (side == 'h') {
       csv_HV << "h,"
-             << strip << ","
+             << Strip << ","
              << thr_adc << ","
              << thr_keV << "\n";
-    }
-    else if(side == 'l')
-    {
+    } else if (side == 'l') {
       csv_LV << "l,"
-             << strip << ","
+             << Strip << ","
              << thr_adc << ","
              << thr_keV << "\n";
     }
   }
-  
-  
 
 
-  
-  /* ------------------------------------------------------------- */
-  /* Write CSV threshold tables (SLOW + FAST)                      */
-  /* ------------------------------------------------------------- */
+  // -------------------------------------------------------------
+  // Write CSV threshold tables (SLOW + FAST)
+  // -------------------------------------------------------------
 
   // --- FAST CSV ---
   ofstream csv_TAC_HV(m_OutputPrefix + "_Fast_HV_thresholds.csv");
   ofstream csv_TAC_LV(m_OutputPrefix + "_Fast_LV_thresholds.csv");
 
-  csv_TAC_HV << "detector_side,strip,threshold_adc,threshold_keV\n";
-  csv_TAC_LV << "detector_side,strip,threshold_adc,threshold_keV\n";
+  csv_TAC_HV << "detector_side,Strip,threshold_adc,threshold_keV\n";
+  csv_TAC_LV << "detector_side,Strip,threshold_adc,threshold_keV\n";
 
   cout << "Writing FAST CSV entries: " << m_FastThresholds.size() << endl;
-  
-  for(const auto& kv : m_FastThresholds)
-  {
+
+  for (const auto& kv : m_FastThresholds) {
     char side = kv.first.side;
-    int strip = kv.first.strip;
+    int Strip = kv.first.Strip;
 
     double thr_adc = m_FastThresholdsADC.at(kv.first);
     double thr_keV = kv.second;
 
-    if(side == 'h')
-    {
-      csv_TAC_HV << "h," << strip << "," << thr_adc << "," << thr_keV << "\n";
-    }
-    else if(side == 'l')
-    {
-      csv_TAC_LV << "l," << strip << "," << thr_adc << "," << thr_keV << "\n";
+    if (side == 'h') {
+      csv_TAC_HV << "h," << Strip << "," << thr_adc << "," << thr_keV << "\n";
+    } else if (side == 'l') {
+      csv_TAC_LV << "l," << Strip << "," << thr_adc << "," << thr_keV << "\n";
     }
   }
-  
-  
+
+
   csv_HV.close();
   csv_LV.close();
   csv_TAC_HV.close();
@@ -1384,22 +1314,19 @@ void MStripThresholdFinder::WriteCSV() const
 
 void MStripThresholdFinder::WriteDiagnostics() const
 {
-  
-  if (m_SlowThresholds.empty() && m_FastThresholds.empty())
-  {
+
+  if (m_SlowThresholds.empty() && m_FastThresholds.empty()) {
     cout << "Warning: No thresholds available for diagnostics." << endl;
   }
-  
-  /* ------------------------------------------------------------- */
-  /* ROOT output                                                   */
-  /* ------------------------------------------------------------- */
-  //cout << "DEBUG: m_OutputPrefix being used = " << m_OutputPrefix << endl;
-  TFile f((m_OutputPrefix + "_diagnostics.root").Data(), "RECREATE");
-  
-
 
   // -------------------------------------------------------------
-  // SLOW threshold per strip (HV vs LV scatter)
+  // ROOT output
+  // -------------------------------------------------------------
+
+  TFile f((m_OutputPrefix + "_diagnostics.root").Data(), "RECREATE");
+
+  // -------------------------------------------------------------
+  // SLOW threshold per Strip (HV vs LV scatter)
   // -------------------------------------------------------------
   TGraph* gSlowThresh_LV = new TGraph();
   TGraph* gSlowThresh_HV = new TGraph();
@@ -1411,33 +1338,34 @@ void MStripThresholdFinder::WriteDiagnostics() const
   gSlowThresh_LV->SetTitle("Slow Threshold per Strip;Strip;Threshold (keV)");
 
   // Styling
-  gSlowThresh_LV->SetMarkerStyle(20);   // circle
+  gSlowThresh_LV->SetMarkerStyle(20); // circle
   gSlowThresh_LV->SetMarkerSize(1.0);
   gSlowThresh_LV->SetMarkerColor(kBlue);
 
-  gSlowThresh_HV->SetMarkerStyle(20);   
+  gSlowThresh_HV->SetMarkerStyle(20);
   gSlowThresh_HV->SetMarkerSize(1.0);
   gSlowThresh_HV->SetMarkerColor(kRed);
 
   // Fill graphs
-  for(const auto& kv : m_SlowThresholds)
-  {
-    int strip = kv.first.strip;
+  for (const auto& kv : m_SlowThresholds) {
+    int Strip = kv.first.Strip;
     char side = kv.first.side;
-    double thr = kv.second;
+    double Threshold = kv.second;
 
 
-    if(side == 'l')
-      gSlowThresh_LV->SetPoint(gSlowThresh_LV->GetN(), strip, thr);
+    if (side == 'l') {
+      gSlowThresh_LV->SetPoint(gSlowThresh_LV->GetN(), Strip, Threshold);
+    }
 
-    if(side == 'h')
-      gSlowThresh_HV->SetPoint(gSlowThresh_HV->GetN(), strip, thr);
+    if (side == 'h') {
+      gSlowThresh_HV->SetPoint(gSlowThresh_HV->GetN(), Strip, Threshold);
+    }
   }
 
   // -------------------------------------------------------------
   // Canvas with legend
   // -------------------------------------------------------------
-  TCanvas* cSlowThresh = new TCanvas("cSlowThresh","Slow Threshold per Strip",800,600);
+  TCanvas* cSlowThresh = new TCanvas("cSlowThresh", "Slow Threshold per Strip", 800, 600);
   cSlowThresh->cd();
 
   // Draw LV first (sets axes)
@@ -1445,12 +1373,15 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   // Optional: auto-scale Y axis
   double ymin = 1e9, ymax = -1e9;
-  for(const auto& kv : m_SlowThresholds)
-  {
-    if(kv.first.strip == 64) continue;
+  for (const auto& kv : m_SlowThresholds) {
+    //if(kv.first.Strip == 64) continue;
     double v = kv.second;
-    if(v < ymin) ymin = v;
-    if(v > ymax) ymax = v;
+    if (v < ymin) {
+      ymin = v;
+    }
+    if (v > ymax) {
+      ymax = v;
+    }
   }
   double pad = 0.1 * (ymax - ymin);
   gSlowThresh_LV->GetYaxis()->SetRangeUser(ymin - pad, ymax + pad);
@@ -1459,7 +1390,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
   gSlowThresh_HV->Draw("P SAME");
 
   // Legend
-  TLegend* legSlowScatter = new TLegend(0.7,0.72,0.8,0.8);
+  TLegend* legSlowScatter = new TLegend(0.7, 0.72, 0.8, 0.8);
   legSlowScatter->AddEntry(gSlowThresh_LV, "LV", "p");
   legSlowScatter->AddEntry(gSlowThresh_HV, "HV", "p");
 
@@ -1477,21 +1408,19 @@ void MStripThresholdFinder::WriteDiagnostics() const
   cSlowThresh->Write();
   gSlowThresh_LV->Write();
   gSlowThresh_HV->Write();
- 
+
   // -------------------------------------------------------------
   // SLOW threshold distribution (HV vs LV separated)
   // -------------------------------------------------------------
   TH1D* hSlowDist_LV = new TH1D(
     "SlowThresholdDistribution_LV",
     "Slow Threshold Distribution;Threshold (keV);Counts",
-    100, 0, 50
-  );
+    100, 0, 50);
 
   TH1D* hSlowDist_HV = new TH1D(
     "SlowThresholdDistribution_HV",
     "Slow Threshold Distribution;Threshold (keV);Counts",
-    100, 0, 50
-  );
+    100, 0, 50);
 
   // Styling
   hSlowDist_LV->SetLineColor(kBlue);
@@ -1501,22 +1430,25 @@ void MStripThresholdFinder::WriteDiagnostics() const
   hSlowDist_HV->SetLineWidth(2);
 
   // Fill histograms
-  for(const auto& kv : m_SlowThresholds)
-  {
-    int strip = kv.first.strip;
+  for (const auto& kv : m_SlowThresholds) {
+    //int Strip = kv.first.Strip;
     char side = kv.first.side;
-    double thr = kv.second;
+    double Threshold = kv.second;
 
-    if(strip == 64) continue;
+    //if(Strip == 64) continue;
 
-    if(side == 'l') hSlowDist_LV->Fill(thr);
-    if(side == 'h') hSlowDist_HV->Fill(thr);
+    if (side == 'l') {
+      hSlowDist_LV->Fill(Threshold);
+    }
+    if (side == 'h') {
+      hSlowDist_HV->Fill(Threshold);
+    }
   }
 
   // -------------------------------------------------------------
   // Canvas with legend
   // -------------------------------------------------------------
-  TCanvas* cSlowDist = new TCanvas("cSlowDist","Slow Threshold Distribution",800,600);
+  TCanvas* cSlowDist = new TCanvas("cSlowDist", "Slow Threshold Distribution", 800, 600);
   cSlowDist->cd();
 
   // Draw LV first
@@ -1526,7 +1458,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
   hSlowDist_HV->Draw("HIST SAME");
 
   // Legend
-  TLegend* legSlow = new TLegend(0.7,0.72,0.8,0.8);
+  TLegend* legSlow = new TLegend(0.7, 0.72, 0.8, 0.8);
   legSlow->AddEntry(hSlowDist_LV, "LV", "l");
   legSlow->AddEntry(hSlowDist_HV, "HV", "l");
   legSlow->Draw();
@@ -1539,41 +1471,37 @@ void MStripThresholdFinder::WriteDiagnostics() const
   cSlowDist->Write();
   hSlowDist_LV->Write();
   hSlowDist_HV->Write();
-  
- 
 
   // -------------------------------------------------------------
-  // FAST threshold per strip histogram
+  // FAST threshold per Strip histogram
   // -------------------------------------------------------------
   TH1D* hFastThreshPerStrip = new TH1D(
-    "FastThresholds_per_strip",
+    "FastThresholds_per_Strip",
     "Fast Threshold per Strip;Strip;Threshold (keV)",
-    65, 0, 65
-  );
+    65, 0, 65);
 
-  for(const auto& kv : m_FastThresholds)
-  {
-    int strip = kv.first.strip;
-    double thr_keV = kv.second;
+  for (const auto& kv : m_FastThresholds) {
+    int Strip = kv.first.Strip;
+    double Threshold_keV = kv.second;
 
-    if(strip == 64) continue;   // skip guard ring
+    if (Strip == 64) {
+      continue; // skip guard ring
+    }
 
-    hFastThreshPerStrip->SetBinContent(strip + 1, thr_keV);
+    hFastThreshPerStrip->SetBinContent(Strip + 1, Threshold_keV);
   }
 
   hFastThreshPerStrip->Write();
- 
-  
-  // ------------------------------------------------------------- 
-  // Threshold vs strip for HV and LV sides                        
-  // ------------------------------------------------------------- 
 
-  if (!m_stripIndex_LV.empty())
-  {
+  // -------------------------------------------------------------
+  // Threshold vs Strip for HV and LV sides
+  // -------------------------------------------------------------
+
+  if (!m_StripIndex_LV.empty()) {
     TGraph Threshold_vs_Strip_LV(
-      m_stripIndex_LV.size(),
-      m_stripIndex_LV.data(),
-      m_thresholdValues_LV.data());
+      m_StripIndex_LV.size(),
+      m_StripIndex_LV.data(),
+      m_ThresholdValues_LV.data());
 
     Threshold_vs_Strip_LV.SetName("Threshold_vs_Strip_LV");
     Threshold_vs_Strip_LV.SetTitle("Threshold vs Strip (LV)");
@@ -1583,12 +1511,11 @@ void MStripThresholdFinder::WriteDiagnostics() const
     Threshold_vs_Strip_LV.Write();
   }
 
-  if (!m_stripIndex_HV.empty())
-  {
+  if (!m_StripIndex_HV.empty()) {
     TGraph Threshold_vs_Strip_HV(
-      m_stripIndex_HV.size(),
-      m_stripIndex_HV.data(),
-      m_thresholdValues_HV.data());
+      m_StripIndex_HV.size(),
+      m_StripIndex_HV.data(),
+      m_ThresholdValues_HV.data());
 
     Threshold_vs_Strip_HV.SetName("Threshold_vs_Strip_HV");
     Threshold_vs_Strip_HV.SetTitle("Threshold vs Strip (HV)");
@@ -1598,25 +1525,24 @@ void MStripThresholdFinder::WriteDiagnostics() const
     Threshold_vs_Strip_HV.Write();
   }
 
-
-  
-  for (auto& kv : dt0_hists)
-  {
+  for (auto& kv : dt0_hists) {
     const StripKey& key = kv.first;
 
-    if (dt1_hists.find(key) == dt1_hists.end()) continue;
-  
+    if (dt1_hists.find(key) == dt1_hists.end()) {
+      continue;
+    }
+
     TH1D* dt0 = kv.second;
     TH1D* dt1 = dt1_hists.at(key);
 
     int det = key.det;
     char side = key.side;
-    int strip = key.strip;
+    int Strip = key.Strip;
 
     // -------------------------------
     // Create canvas
     // -------------------------------
-    string cname = "cFast_" + to_string(det) + "_" + side + "_" + to_string(strip);
+    string cname = "cFast_" + to_string(det) + "_" + side + "_" + to_string(Strip);
     TCanvas* c = new TCanvas(cname.c_str(), cname.c_str(), 800, 600);
 
     // -------------------------------
@@ -1626,109 +1552,100 @@ void MStripThresholdFinder::WriteDiagnostics() const
     dt1->SetLineColor(kBlue);
 
     dt0->SetTitle(Form(
-      "Fast Shaper Threshold (det=%d %c strip=%d);Energy (keV);Counts",
-      det, side, strip
-    ));
-	dt0->GetXaxis()->SetRangeUser(0, 100);
-	
-	
+      "Fast Shaper Threshold (det=%d %c Strip=%d);Energy (keV);Counts",
+      det, side, Strip));
+
 
     // -------------------------------
     // Draw both
     // -------------------------------
     dt0->Draw("HIST");
     dt1->Draw("HIST SAME");
-	
-	gPad->Update();
+    dt0->GetXaxis()->SetRangeUser(0, 100);
+
+    gPad->Update();
 
 
-    TLegend* leg = new TLegend(0.65,0.7,0.88,0.88);
+    TLegend* leg = new TLegend(0.65, 0.7, 0.88, 0.88);
     leg->AddEntry(dt0, "dt0", "l");
     leg->AddEntry(dt1, "dt1", "l");
 
     // -------------------------------
     // Threshold line (NOW IN keV)
     // -------------------------------
-    if (m_FastThresholds.find(key) != m_FastThresholds.end())
-    { 
+    if (m_FastThresholds.find(key) != m_FastThresholds.end()) {
 
-      double thr_keV = m_FastThresholds.at(key);  
+      double Threshold_keV = m_FastThresholds.at(key);
 
       double ymin = gPad->GetUymin();
       double ymax = gPad->GetUymax();
 
-      TLine* line = new TLine(thr_keV, ymin, thr_keV, ymax);
+      TLine* line = new TLine(Threshold_keV, ymin, Threshold_keV, ymax);
       line->SetLineColor(kRed);
       line->SetLineWidth(2);
       line->Draw("SAME");
 
       // Legend entry (fix from earlier)
-      leg->AddEntry(line, "Fast Threshold", "l");
+      leg->AddEntry(line, "Fast Thresholdeshold", "l");
     }
 
     //leg->AddEntry((TObject*)0, "Fast Threshold", ""); // label only
     leg->Draw();
 
-    // -------------------------------
     // Save
-    // -------------------------------
     c->Write();
- }
-  
+  }
 
-  
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  
-  /* ------------------------------------------------------------- */
-  /* Write ADC spectra and create energy spectra with thresholds   */
-  /* ------------------------------------------------------------- */
+  // -------------------------------------------------------------
+  // Write ADC spectra and create energy spectra with thresholds
+  // -------------------------------------------------------------
 
-  for(auto& kv:m_ADCHistograms)
-  {
-    StripKey key=kv.first;
-    TH1D* adcHist=kv.second;
+  for (auto& kv : m_ADCHistograms) {
+    StripKey key = kv.first;
+    TH1D* adcHist = kv.second;
 
     adcHist->Write();
-    
-	int det = key.det;
+
+    int det = key.det;
     char side = key.side;
-    int strip = key.strip;
-	
-	
-    //string name="Slow Threshold Det "+to_string(key.det)+", Side"+key.side+", Strip"+to_string(key.strip);
-    string name = "Energy_" + to_string(det) + "_" + side + "_" + to_string(strip);
-	
-	double maxE = m_EnergyCal.ADCToEnergy(det, side, strip, m_HistogramMaxADC);
-	
+    int Strip = key.Strip;
 
-    TH1D* energyHist=new TH1D(
-        name.c_str(),
-        name.c_str(),
-        adcHist->GetNbinsX(),
-        0,
-        maxE
-    );
-    
-	energyHist->SetTitle(Form(
-      "Slow Threshold (det=%d side=%c strip=%d);Energy (keV);Counts",
-      det, side, strip
-    ));
-	
-	energyHist->GetXaxis()->SetRangeUser(0, 100);
-	
-    for(int b=1;b<=adcHist->GetNbinsX();b++)
-    {
-      double adc=adcHist->GetBinCenter(b);
-      double energy=m_EnergyCal.ADCToEnergy(key.det,key.side,key.strip,adc);
-      double counts=adcHist->GetBinContent(b);
 
-      int ebin=energyHist->FindBin(energy);
-      energyHist->AddBinContent(ebin,counts);
+    //string name="Slow Threshold Det "+to_string(key.det)+", Side"+key.side+", Strip"+to_string(key.Strip);
+    string name = "Energy_" + to_string(det) + "_" + side + "_" + to_string(Strip);
+
+    double maxE = m_EnergyCalHelper.ADCToEnergy(det, side, Strip, m_HistogramMaxADC);
+    //double maxE = 3000.0;
+
+    TH1D* energyHist = new TH1D(
+      name.c_str(),
+      name.c_str(),
+      adcHist->GetNbinsX(),
+      0,
+      maxE);
+
+    energyHist->SetTitle(Form(
+      "Slow Threshold (det=%d side=%c Strip=%d);Energy (keV);Counts",
+      det, side, Strip));
+
+    energyHist->GetXaxis()->SetRangeUser(0, 100);
+
+    for (int b = 1; b <= adcHist->GetNbinsX(); b++) {
+      double adc = adcHist->GetBinCenter(b);
+      double energy = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, adc);
+      //double energy = adc;   // TEMP: keep histogram consistent
+
+      double counts = adcHist->GetBinContent(b);
+
+      int ebin = energyHist->FindBin(energy);
+      energyHist->AddBinContent(ebin, counts);
     }
 
-    double thr = m_SlowThresholds.at(key);
+    double Threshold = m_SlowThresholds.at(key);
 
-    TLine* line=new TLine(thr,0,thr,energyHist->GetMaximum());
+    TLine* line = new TLine(Threshold, 0, Threshold, energyHist->GetMaximum());
     line->SetLineColor(kRed);
     line->SetLineWidth(2);
 
@@ -1736,7 +1653,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
     energyHist->Write();
   }
-  
+
 
   // -------------------------------------------------------------
   // FAST threshold distribution (HV vs LV separated)
@@ -1744,14 +1661,12 @@ void MStripThresholdFinder::WriteDiagnostics() const
   TH1D* hFastDist_LV = new TH1D(
     "FastThresholdDistribution_LV",
     "Fast Threshold Distribution;Threshold (keV);Counts",
-    100, 0, 100
-  );
+    100, 0, 100);
 
   TH1D* hFastDist_HV = new TH1D(
     "FastThresholdDistribution_HV",
     "Fast Threshold Distribution;Threshold (keV);Counts",
-    100, 0, 100
-  );
+    100, 0, 100);
 
   // Styling
   hFastDist_LV->SetLineColor(kBlue);
@@ -1761,32 +1676,37 @@ void MStripThresholdFinder::WriteDiagnostics() const
   hFastDist_HV->SetLineWidth(2);
 
   // Fill histograms
-  for(const auto& kv : m_FastThresholds)
-  {
-    int strip = kv.first.strip;
+  for (const auto& kv : m_FastThresholds) {
+    int Strip = kv.first.Strip;
     char side = kv.first.side;
-    double thr = kv.second;
+    double Threshold = kv.second;
 
-    if(strip == 64) continue;
+    if (Strip == 64) {
+      continue; // The GR has no fast threshold
+    }
 
-    if(side == 'l') hFastDist_LV->Fill(thr);
-    if(side == 'h') hFastDist_HV->Fill(thr);
+    if (side == 'l') {
+      hFastDist_LV->Fill(Threshold);
+    }
+    if (side == 'h') {
+      hFastDist_HV->Fill(Threshold);
+    }
   }
 
   // -------------------------------------------------------------
   // Canvas with legend
   // -------------------------------------------------------------
-  TCanvas* cFastDist = new TCanvas("cFastDist","Fast Threshold Distribution",800,600);
+  TCanvas* cFastDist = new TCanvas("cFastDist", "Fast Threshold Distribution", 800, 600);
   cFastDist->cd();
 
   // Draw LV first
   hFastDist_LV->Draw("HIST");
- 
+
   // Overlay HV
   hFastDist_HV->Draw("HIST SAME");
 
   // Legend
-  TLegend* leg2 = new TLegend(0.70,0.72,0.8,0.8);
+  TLegend* leg2 = new TLegend(0.70, 0.72, 0.8, 0.8);
   leg2->AddEntry(hFastDist_LV, "LV", "l");
   leg2->AddEntry(hFastDist_HV, "HV", "l");
   leg2->Draw();
@@ -1799,26 +1719,23 @@ void MStripThresholdFinder::WriteDiagnostics() const
   cFastDist->Write();
   hFastDist_LV->Write();
   hFastDist_HV->Write();
-  
-  
+
 
   // Distribution in ADC
   TH1D* FastThresholdDistribution_ADC = new TH1D(
     "FastThresholdDistribution_ADC",
     "Fast Threshold Distribution (ADC);ADC;Counts",
-    200, 0, 2000
-  );
+    200, 0, 2000);
 
-  for(const auto& kv : m_FastThresholdsADC)
-  {
+  for (const auto& kv : m_FastThresholdsADC) {
     FastThresholdDistribution_ADC->Fill(kv.second);
   }
 
   FastThresholdDistribution_ADC->Write();
-  
-  
+
+
   // -------------------------------------------------------------
-  // FAST threshold per strip (use TGraph for proper axes)
+  // FAST threshold per Strip (use TGraph for proper axes)
   // -------------------------------------------------------------
   TGraph* gFastThresh_LV = new TGraph();
   TGraph* gFastThresh_HV = new TGraph();
@@ -1830,40 +1747,43 @@ void MStripThresholdFinder::WriteDiagnostics() const
   gFastThresh_LV->SetTitle("Fast Threshold per Strip;Strip;Threshold (keV)");
 
   // Styling
-  gFastThresh_LV->SetMarkerStyle(20);   // circle
+  gFastThresh_LV->SetMarkerStyle(20); // circle
   gFastThresh_LV->SetMarkerSize(1.0);
   gFastThresh_LV->SetMarkerColor(kBlue);
 
-  gFastThresh_HV->SetMarkerStyle(20);   
+  gFastThresh_HV->SetMarkerStyle(20);
   gFastThresh_HV->SetMarkerSize(1.0);
   gFastThresh_HV->SetMarkerColor(kRed);
 
   // Fill graphs
-  for(const auto& kv : m_FastThresholds)
-  {
-    int strip = kv.first.strip;
+  for (const auto& kv : m_FastThresholds) {
+    int Strip = kv.first.Strip;
     char side = kv.first.side;
-    double thr = kv.second;
+    double Threshold = kv.second;
 
-    if(strip == 64) continue;
+    if (Strip == 64) {
+      continue; // No fast GR threshold
+    }
 
-    if(side == 'l')
-      gFastThresh_LV->SetPoint(gFastThresh_LV->GetN(), strip, thr);
+    if (side == 'l') {
+      gFastThresh_LV->SetPoint(gFastThresh_LV->GetN(), Strip, Threshold);
+    }
 
-    if(side == 'h')
-    gFastThresh_HV->SetPoint(gFastThresh_HV->GetN(), strip, thr);
+    if (side == 'h') {
+      gFastThresh_HV->SetPoint(gFastThresh_HV->GetN(), Strip, Threshold);
+    }
   }
 
   // Make sure ROOT file is the active directory
   f.cd();
-  
+
   // -------------------------------------------------------------
   // Canvas with legend (FIXED VERSION)
   // -------------------------------------------------------------
-  TCanvas* cFast = new TCanvas("cFastThresh","Fast Threshold per Strip",800,600);
-  cFast->cd();   
+  TCanvas* cFast = new TCanvas("cFastThresh", "Fast Threshold per Strip", 800, 600);
+  cFast->cd();
 
-  // Draw LV first 
+  // Draw LV first
   gFastThresh_LV->Draw("AP");
 
   // Force axis AFTER draw
@@ -1873,7 +1793,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
   gFastThresh_HV->Draw("P SAME");
 
   // Create legend AFTER graphs are drawn
-  TLegend* leg = new TLegend(0.7,0.72,0.8,0.8);
+  TLegend* leg = new TLegend(0.7, 0.72, 0.8, 0.8);
   leg->AddEntry(gFastThresh_LV, "LV", "p");
   leg->AddEntry(gFastThresh_HV, "HV", "p");
 
@@ -1891,55 +1811,58 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   // Write AFTER everything is finalized
   cFast->Write();
-  
+
   gFastThresh_LV->Write();
   gFastThresh_HV->Write();
-  
-  
+
+
   // -------------------------------------------------------------
   // SLOW threshold pixel map (LV vs HV)
   // -------------------------------------------------------------
   TH2D* hSlowPixelMap = new TH2D(
     "SlowThresholdPixelMap",
     "Slow Threshold Pixel Map;LV Strip;HV Strip;Threshold Value [keV]",
-    64, -0.5, 63.5,   // LV: 0–63
-    61, -0.5, 63.5    // HV: 0–60
+    64, -0.5, 63.5, // LV: 0–63
+    61, -0.5, 63.5 // HV: 0–60
   );
 
   // Temporary storage
-  map<int,double> slowLV;
-  map<int,double> slowHV;
+  map<int, double> slowLV;
+  map<int, double> slowHV;
 
   // Separate m_SlowThresholds by side
-  for(const auto& kv : m_SlowThresholds)
-  {
-    int strip = kv.first.strip;
+  for (const auto& kv : m_SlowThresholds) {
+    int Strip = kv.first.Strip;
     char side = kv.first.side;
-    double thr = kv.second;
+    double Threshold = kv.second;
 
-    if(strip == 64) continue; // skip guard ring
+    if (Strip == 64) {
+      continue; // skip guard ring
+    }
 
-    if(side == 'l') slowLV[strip] = thr;
-    if(side == 'h') slowHV[strip] = thr;
+    if (side == 'l') {
+      slowLV[Strip] = Threshold;
+    }
+    if (side == 'h') {
+      slowHV[Strip] = Threshold;
+    }
   }
 
   // Fill pixel map (HV vs LV)
-  for(const auto& lv : slowLV)
-  {
-    int lv_strip = lv.first;
-    double lv_thr = lv.second;
+  for (const auto& lv : slowLV) {
+    int lv_Strip = lv.first;
+    double lv_Threshold = lv.second;
 
-    for(const auto& hv : slowHV)
-    {
-      int hv_strip = hv.first;
-      double hv_thr = hv.second;
+    for (const auto& hv : slowHV) {
+      int hv_Strip = hv.first;
+      double hv_Threshold = hv.second;
 
       //double value = 0.5 * (lv_thr + hv_thr);  // average
-	  double value = std::max(lv_thr, hv_thr); // select the higher threshold value
+      double value = std::max(lv_Threshold, hv_Threshold); // select the higher threshold value
 
-      //hSlowPixelMap->Fill(lv_strip, hv_strip, value);
-	  int binX = hSlowPixelMap->GetXaxis()->FindBin(lv_strip);
-      int binY = hSlowPixelMap->GetYaxis()->FindBin(hv_strip);
+      //hSlowPixelMap->Fill(lv_Strip, hv_Strip, value);
+      int binX = hSlowPixelMap->GetXaxis()->FindBin(lv_Strip);
+      int binY = hSlowPixelMap->GetYaxis()->FindBin(hv_Strip);
 
       hSlowPixelMap->SetBinContent(binX, binY, value);
     }
@@ -1948,10 +1871,10 @@ void MStripThresholdFinder::WriteDiagnostics() const
   // -------------------------------------------------------------
   // Draw heatmap
   // -------------------------------------------------------------
-  TCanvas* cSlowPixel = new TCanvas("cSlowPixel","Slow Threshold Pixel Map",800,700);
+  TCanvas* cSlowPixel = new TCanvas("cSlowPixel", "Slow Threshold Pixel Map", 800, 700);
   cSlowPixel->cd();
 
-  gStyle->SetPalette(112);  // safe Viridis
+  gStyle->SetPalette(112); // safe Viridis
 
   hSlowPixelMap->SetStats(0);
 
@@ -1962,33 +1885,28 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   cSlowPixel->Write();
   hSlowPixelMap->Write();
-  
 
- 
+
   //------------------------------------------------------------
   // New Plots
   //------------------------------------------------------------
-  
-  
+
+
   // Plot Slow Thresholds per Strip
-  
+
   TGraph* gSlowLV = new TGraph();
   TGraph* gSlowHV = new TGraph();
 
-  for (const auto& kv : m_SlowThresholds)
-  {
+  for (const auto& kv : m_SlowThresholds) {
     const StripKey& key = kv.first;
-    double thr = kv.second;
+    double Threshold = kv.second;
 
-    if (key.strip == 64) continue; // skip guard ring if needed
+    //if (key.Strip == 64) continue; // skip guard ring if needed
 
-    if (key.side == 'l')
-    {
-      gSlowLV->SetPoint(gSlowLV->GetN(), key.strip, thr);
-    }
-    else if (key.side == 'h')
-    {
-      gSlowHV->SetPoint(gSlowHV->GetN(), key.strip, thr);
+    if (key.side == 'l') {
+      gSlowLV->SetPoint(gSlowLV->GetN(), key.Strip, Threshold);
+    } else if (key.side == 'h') {
+      gSlowHV->SetPoint(gSlowHV->GetN(), key.Strip, Threshold);
     }
   }
 
@@ -1996,8 +1914,8 @@ void MStripThresholdFinder::WriteDiagnostics() const
   gSlowLV->SetTitle("Slow Threshold vs Strip (LV);Strip;Threshold [keV]");
   gSlowHV->SetTitle("Slow Threshold vs Strip (HV);Strip;Threshold [keV]");
 
-  TCanvas* cSlowStrip = new TCanvas("cSlowStrip","Slow Threshold vs Strip",1200,500);
-  cSlowStrip->Divide(2,1);
+  TCanvas* cSlowStrip = new TCanvas("cSlowStrip", "Slow Threshold vs Strip", 1200, 500);
+  cSlowStrip->Divide(2, 1);
 
   cSlowStrip->cd(1);
   gSlowLV->Draw("AP");
@@ -2006,31 +1924,29 @@ void MStripThresholdFinder::WriteDiagnostics() const
   gSlowHV->Draw("AP");
 
   cSlowStrip->Write();
-  
-  // PLot Fast Thresholds per strip
-  
+
+  // PLot Fast Thresholds per Strip
+
   TGraph* gFastLV = new TGraph();
   TGraph* gFastHV = new TGraph();
 
-  for (const auto& kv : m_FastThresholds)
-  {
+  for (const auto& kv : m_FastThresholds) {
     const StripKey& key = kv.first;
-    double thr = kv.second;
+    double Threshold = kv.second;
 
-    if (key.strip == 64) continue;
-
-    if (key.side == 'l')
-    {
-      gFastLV->SetPoint(gFastLV->GetN(), key.strip, thr);
+    if (key.Strip == 64) {
+      continue;
     }
-    else if (key.side == 'h')
-    {
-      gFastHV->SetPoint(gFastHV->GetN(), key.strip, thr);
+
+    if (key.side == 'l') {
+      gFastLV->SetPoint(gFastLV->GetN(), key.Strip, Threshold);
+    } else if (key.side == 'h') {
+      gFastHV->SetPoint(gFastHV->GetN(), key.Strip, Threshold);
     }
   }
 
-  TCanvas* cFastStrip = new TCanvas("cFastStrip","Fast Threshold vs Strip",1200,500);
-  cFastStrip->Divide(2,1);
+  TCanvas* cFastStrip = new TCanvas("cFastStrip", "Fast Threshold vs Strip", 1200, 500);
+  cFastStrip->Divide(2, 1);
 
   cFastStrip->cd(1);
   gFastLV->Draw("AP");
@@ -2042,4 +1958,3 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   f.Close();
 }
-
