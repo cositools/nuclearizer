@@ -200,6 +200,7 @@ class MStripHit
   //! Flags denoting the type of strip hit
   bool m_IsGuardRing;
   bool m_IsNearestNeighbor;
+  bool m_IsAmbiguousNeighbor;
 
   //! Flag indicating whether the hit has fast timing
   bool m_HasFastTiming;
