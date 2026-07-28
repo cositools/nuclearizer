@@ -108,8 +108,8 @@ bool MStripHit::Parse(MString& Line, int Version)
     if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line too short"<<endl;
     return false;
   }
-
-  if (line[0] == 'S' && line[1] == 'H') {
+  // Read strip hit if line starts with SH (triggered strip hit) or NN (nearest neighbor strip hit)
+  if ((line[0] == 'S' && line[1] == 'H') || (line[0] == 'N' && line[1] == 'N')) {
     unsigned int det_id, strip_id;
     int has_triggered;
     double timing, un_adc, adc;
