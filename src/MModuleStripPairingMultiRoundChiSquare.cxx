@@ -807,14 +807,14 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
         }
         // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
         else {
-          NNSH->IsAmbiguousNeighbor(true);
+          NNSH->IsAmbiguousNearestNeighbor(true);
         }
       }
     }
     
     // Define the HV neighbors
     for (unsigned int sh = 0; sh < NNStripHits[DetectorID][1].size(); sh++) {
-      MStripHit* NNSH = NNStripHits[DetectorID][1];
+      MStripHit* NNSH = NNStripHits[DetectorID][1][sh];
       if ((NNSH->GetStripID() == LeftEdgeHV - 1) or (NNSH->GetStripID() == RightEdgeHV + 1)) {
         Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
       }
@@ -824,7 +824,7 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
       }
       // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
       else {
-        NNSH->IsAmbiguousNeighbor(true);
+        NNSH->IsAmbiguousNearestNeighbor(true);
       }
     }
   }

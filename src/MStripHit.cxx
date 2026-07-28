@@ -89,7 +89,7 @@ void MStripHit::Clear()
 
   m_IsGuardRing = false;
   m_IsNearestNeighbor = false;
-  m_IsAmbiguousNeighbor = false;
+  m_IsAmbiguousNearestNeighbor = false;
 
   m_HasFastTiming = false;
   m_HasCalibratedTiming = false;
