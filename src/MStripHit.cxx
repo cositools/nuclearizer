@@ -163,7 +163,7 @@ bool MStripHit::StreamDat(ostream& S, int Version)
 {
   //! Stream the content to an ASCII file
   
-  if (m_ReadOutElement->IsNearestNeighbor() == true) {
+  if (m_IsNearestNeighbor == true) {
     S<<"NN "
     <<m_ReadOutElement->GetDetectorID()<<" "
     <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
