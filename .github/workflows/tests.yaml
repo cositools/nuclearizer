@@ -57,7 +57,7 @@ jobs:
           create-args: >-
             root=6.32 geant4=11.2 healpix_cxx
             pkg-config make cmake cxx-compiler ccache
-            ccfits=2.6 cfitsio=4.3 hdf5=1.14
+            ccfits=2.6 cfitsio=4.3 hdf5=1.14 gcovr
           cache-environment: true
           cache-environment-key: micromamba-${{ runner.os }}-root6.32-geant4.11.2-ccfits2.6-cfitsio4.3-hdf5.1.14
 
@@ -122,7 +122,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/lib ${{ github.workspace }}/bin
           ln -sf $MEGALIB/bin/generatelinkdef ${{ github.workspace }}/bin/generatelinkdef
           cd ${{ github.workspace }}
-          make CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
+          make COVERAGE=1 CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
 
       - name: Copy Nuclearizer outputs into MEGAlib tree
         shell: micromamba-shell {0}
@@ -139,7 +139,7 @@ jobs:
           set -euo pipefail
           cd $NUCLEARIZER
           export PATH=$MEGALIB/bin:$PATH
-          make unittests CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
+          make unittests COVERAGE=1 CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
           ${{ github.workspace }}/bin/UTNRunner
 
       - name: ccache stats
@@ -153,3 +153,20 @@ jobs:
         with:
           name: failure-logs
           path: /tmp/*.log
+
+      - name: Generate Coverage Report
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+          gcovr -r . $MEGALIB/lib/ $MEGALIB/bin/ \
+            --xml coverage.xml \
+            --exclude '$NUCLEARIZER/apps/.*' \
+            --exclude '$NUCLEARIZER/unittests/.*' \
+            -j $(nproc)
+
+      - name: Upload Report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: true
