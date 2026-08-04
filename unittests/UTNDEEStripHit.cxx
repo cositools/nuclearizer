@@ -90,6 +90,7 @@ bool UTNDEEStripHit::TestDefaultConstruction()
   Passed = EvaluateNear("MDEEStripHit()", "default measured energy", "Default measured energy is 0", H.m_Energy, 0.0, 1e-12) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default ADC", "Default ADC value is 0", H.m_ADC, (unsigned int) 0) && Passed;
   Passed = EvaluateFalse("MDEEStripHit()", "default trigger", "Default trigger flag is false", H.m_HasTriggered) && Passed;
+  Passed = EvaluateFalse("MDEEStripHit()", "default fast timing", "Default fast timing is false", H.m_HasFastTiming) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default TAC", "Default TAC value is 0", H.m_TAC, (unsigned int) 0) && Passed;
   Passed = EvaluateNear("MDEEStripHit()", "default temperature", "Default temperature is 0", H.m_Temperature, 0.0, 1e-12) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default sub strip hits", "Default sub strip hit list is empty", (unsigned int) H.m_SubStripHits.size(), (unsigned int) 0) && Passed;
@@ -112,6 +113,7 @@ bool UTNDEEStripHit::TestConvertRepresentativeValues()
   H.m_ROE.SetStripID(41);
   H.m_ROE.IsLowVoltageStrip(false);
   H.m_HasTriggered = true;
+  H.m_HasFastTiming = true;
   H.m_ADC = 4053;
   H.m_TAC = 10452;
   H.m_IsGuardRing = true;
@@ -125,6 +127,7 @@ bool UTNDEEStripHit::TestConvertRepresentativeValues()
     Passed = Evaluate("Convert()", "representative strip ID", "Convert() transfers strip ID 41", Converted->GetStripID(), (unsigned int) 41) && Passed;
     Passed = EvaluateFalse("Convert()", "representative strip side high voltage", "Convert() transfers IsLowVoltageStrip(false) as high-voltage strip", Converted->IsLowVoltageStrip()) && Passed;
     Passed = EvaluateTrue("Convert()", "representative trigger", "Convert() transfers HasTriggered true", Converted->HasTriggered()) && Passed;
+    Passed = EvaluateTrue("Convert()", "representative fast timing", "Convert() transfers HasFastTiming true", Converted->HasFastTiming()) && Passed;
     Passed = EvaluateNear("Convert()", "representative ADC", "Convert() transfers ADC value 4053", Converted->GetADCUnits(), 4053.0, 1e-9) && Passed;
     Passed = EvaluateNear("Convert()", "representative TAC", "Convert() transfers TAC value 10452", Converted->GetTAC(), 10452.0, 1e-9) && Passed;
     Passed = EvaluateTrue("Convert()", "representative guard ring", "Convert() transfers IsGuardRing true", Converted->IsGuardRing()) && Passed;
@@ -149,6 +152,7 @@ bool UTNDEEStripHit::TestConvertFalsePaths()
   H.m_ROE.SetStripID(2);
   H.m_ROE.IsLowVoltageStrip(true);
   H.m_HasTriggered = false;
+  H.m_HasFastTiming = false;
   H.m_ADC = 0;
   H.m_TAC = 0;
   H.m_IsGuardRing = false;
@@ -160,6 +164,7 @@ bool UTNDEEStripHit::TestConvertFalsePaths()
   if (Converted != nullptr) {
     Passed = EvaluateTrue("Convert()", "low-voltage strip side", "Convert() transfers IsLowVoltageStrip(true) for low-voltage strips", Converted->IsLowVoltageStrip()) && Passed;
     Passed = EvaluateFalse("Convert()", "false-path trigger", "Convert() transfers HasTriggered false", Converted->HasTriggered()) && Passed;
+    Passed = EvaluateFalse("Convert()", "false-path fast timing", "Convert() transfers HasFastTiming false", Converted->HasFastTiming()) && Passed;
     Passed = EvaluateFalse("Convert()", "false-path guard ring", "Convert() transfers IsGuardRing false", Converted->IsGuardRing()) && Passed;
     Passed = EvaluateNear("Convert()", "false-path ADC", "Convert() transfers ADC value 0", Converted->GetADCUnits(), 0.0, 1e-12) && Passed;
     Passed = EvaluateNear("Convert()", "false-path TAC", "Convert() transfers TAC value 0", Converted->GetTAC(), 0.0, 1e-12) && Passed;
@@ -184,6 +189,7 @@ bool UTNDEEStripHit::TestConvertLifecycleIndependence()
   H.m_ROE.SetStripID(9);
   H.m_ROE.IsLowVoltageStrip(true);
   H.m_HasTriggered = true;
+  H.m_HasFastTiming = true;
   H.m_ADC = 100;
   H.m_TAC = 200;
   H.m_IsGuardRing = false;
