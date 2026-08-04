@@ -632,7 +632,13 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   }
 
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    m_Hits[h]->StreamEvta(S);
+    // Don't print Guard Ring hits as normal strip hits as they don't have positions defined
+    // the corresponding energy is saved in the StripPairing QA message
+    if (m_Hits[h]->GetGuardRingHitFlag() == true) {
+	continue;
+    } else {
+      m_Hits[h]->StreamEvta(S);  
+    }
   }
 
   S<<"CC NStripHits "<<m_StripHits.size()<<endl;
@@ -816,6 +822,23 @@ bool MReadOutAssembly::IsBad() const
   if (m_StripPairingError == true) return true;
   if (m_DepthCalibrationError == true) return true;
   if (m_EventReconstructionError == true) return true;
+
+  if (m_FilteredOut == true) return true;
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::IsPoorQuality() const
+{
+  //! Returns true if none of the Quality flag has been set
+
+  // Let's not filter out the strips below threshold events since these aren't less quality
+  //if (m_StripHitBelowThreshold_QualityFlag == true) return true;
+  if (m_StripPairing_QualityFlag == true) return true;
 
   if (m_FilteredOut == true) return true;
 

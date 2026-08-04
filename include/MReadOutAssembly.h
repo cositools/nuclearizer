@@ -260,6 +260,8 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return true if any error flag is set or the event has been filtered out
   //! Veto and quality flags do not affect this result
   bool IsBad() const;
+  //! Returns true if any of the Quality flags have been set
+  bool IsPoorQuality() const;
 
   //! Set a specific analysis progress
   void SetAnalysisProgress(uint64_t Progress) { m_AnalysisProgress |= Progress; }
