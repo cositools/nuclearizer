@@ -139,7 +139,7 @@ bool MSubModuleChargeTransport::Initialize()
     return false; 
   }
 
-  m_Coeffs.clear();
+  m_StripCoeffs.clear();
   m_DepthGrid.clear();
   m_ElectronDriftTimes.clear();
   m_HoleDriftTimes.clear();
@@ -182,10 +182,11 @@ bool MSubModuleChargeTransport::Initialize()
   }
 
   // Load depth calibration coefficients
-  DepthCalibration.SetCoeffsFileName(m_DepthCoefficientsFileName);
-  if (DepthCalibration.LoadCoeffsFile(m_DepthCoefficientsFileName) == true) {
+  if (DepthCalibration.LoadStripCoeffsFile(m_DepthCoefficientsFileName) == true) {
     // Copy depth calibration coefficients
-    m_Coeffs = DepthCalibration.GetCoeffs();
+    m_StripCoeffs = DepthCalibration.GetStripCoeffs();
+    m_MeanStretch = DepthCalibration.GetMeanStretch();
+    m_MeanOffset = DepthCalibration.GetMeanOffset();
 
   } else {
     return false;
@@ -327,7 +328,7 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
 
   // Calculate strip ID by rounding down intentionally to avoid truncation towards zero
   // TODO: Include mask metrology information when calculating the strip ID from the position.
-  int ID = static_cast<int>(std::floor((P + PWidth/2.0) / PPitch));
+  int StripID = static_cast<int>(std::floor((P + PWidth/2.0) / PPitch));
 
   // Calculate the strip ID for the opposite side of the detector (and explicitly check for guard ring)
   int OppositeStripID = static_cast<int>(std::floor((Q + QWidth/2.0) / QPitch));
@@ -337,26 +338,41 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
 
   // Check for strip ID and if the position is within the allowed strip length or on the guard ring
   // TODO: Confirm the correct boundary of the guard ring based on SMEX detector models
-  if (ID >= 0 && ID < NStrips && std::abs(Q) <= QWidth/2.0 && std::hypot(P, Q) <= Radius) {
+  if (StripID >= 0 && StripID < NStrips && std::abs(Q) <= QWidth/2.0 && std::hypot(P, Q) <= Radius) {
 
     // Determine the charge drift times in nanoseconds from simulations + stretch/offset from the depth calibration
     // Set the default to a large number (here: 1e10 ns) in case no depth calibration coefficients exist
     double FastPeakTime = 1e10;
 
     TSpline3* DriftTimeSpline = isLV ? m_HoleDriftSplines[DetID] : m_ElectronDriftSplines[DetID];
-    int PixelCode = 10000*DetID + 100*(isLV ? ID : OppositeStripID) + (isLV ? OppositeStripID : ID);
+
+    double MeanStretch = 1.0;
+    double MeanOffset = 0.0;
+    if (m_MeanStretch.count(DetID) == 1){
+      MeanStretch = m_MeanStretch[DetID];
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout << "Detector " << DetID << " does not have a mean stretch defined" << endl;
+      }
+    }
+    if (m_MeanOffset.count(DetID) == 1){
+      MeanOffset = m_MeanOffset[DetID];
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout << "Detector " << DetID << " does not have a mean offset defined" << endl;
+      }
+    }
 
     // Apply stretch based on Eq. (3) in https://doi.org/10.1016/j.nima.2026.171332
-    // Apply no offset to the electron drift time --> add it fully to the hole (LV) signal
-    auto it = m_Coeffs.find(PixelCode);
-    if (it != m_Coeffs.end()) {
-      const vector<double>& Coeffs = it->second;
-      double Stretch = Coeffs[0];
-      double Offset = isLV ? Coeffs[1] : 0.0;
+    // Apply the mean offset fully to the hole (LV) signal
+    if (m_StripCoeffs.count(DetID) == 1 && m_StripCoeffs[DetID].size() == 2 && m_StripCoeffs[DetID][isLV ? 0 : 1].count(StripID) == 1) {
+      vector<double> Coeffs = m_StripCoeffs[DetID][isLV ? 0 : 1][StripID];
+      double Stretch = MeanStretch * Coeffs[0];
+      double Offset = (isLV ? MeanOffset + Coeffs[1] : -Coeffs[1]);
       FastPeakTime = (DriftTimeSpline->Eval(Z) + Offset) * Stretch;
     } else {
       if (g_Verbosity >= c_Warning) {
-        cout << "No depth calibration coefficients for pixel in DetID " << DetID << " HV " << (isLV ? OppositeStripID : ID) << " LV " << (isLV ? ID : OppositeStripID) << endl;
+        cout << "No depth calibration coefficients for " << (isLV ? "LV" : "HV") << " strip " << StripID << endl;
       }
     }
 
@@ -385,7 +401,7 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
 
     // create entry for the main hit
     MDEEStripHit MainSH = SH;
-    MainSH.m_ROE.SetStripID(ID);
+    MainSH.m_ROE.SetStripID(StripID);
     MainSH.m_OppositeStripID = OppositeStripID;
     MainSH.m_Energy = MainStripEnergy;
     // TODO: Implement a more realistic parameterization to determine nearest-neighbor timing values
@@ -398,8 +414,8 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     NNLeftSH.m_Energy = std::max(NNLeftStripEnergy, 0.0);
     NNLeftSH.m_FastPeakTime = FastPeakTime - 50 * (1 - NNLeftStripEnergy / SH.m_SimulatedEnergy);
     NNLeftSH.m_OppositeStripID = OppositeStripID;
-    if (ID > 0) {
-      NNLeftSH.m_ROE.SetStripID(ID - 1);
+    if (StripID > 0) {
+      NNLeftSH.m_ROE.SetStripID(StripID - 1);
       NNLeftSH.m_IsGuardRing = false;
     } else {
       NNLeftSH.m_ROE.SetStripID(NStrips);
@@ -412,8 +428,8 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     NNRightSH.m_Energy = std::max(NNRightStripEnergy, 0.0);
     NNRightSH.m_FastPeakTime = FastPeakTime - 50 * (1 - NNRightStripEnergy / SH.m_SimulatedEnergy);
     NNRightSH.m_OppositeStripID = OppositeStripID;
-    if (ID < NStrips - 1) {
-      NNRightSH.m_ROE.SetStripID(ID + 1);
+    if (StripID < NStrips - 1) {
+      NNRightSH.m_ROE.SetStripID(StripID + 1);
       NNRightSH.m_IsGuardRing = false;
     } else {
       NNRightSH.m_ROE.SetStripID(NStrips);
@@ -438,7 +454,10 @@ void MSubModuleChargeTransport::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
 
-  m_Coeffs.clear();
+  m_StripCoeffs.clear();
+  m_MeanStretch.clear();
+  m_MeanOffset.clear();
+
   m_DepthGrid.clear();
   m_ElectronDriftTimes.clear();
   m_HoleDriftTimes.clear();

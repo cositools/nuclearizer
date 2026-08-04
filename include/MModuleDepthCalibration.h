@@ -91,13 +91,30 @@ class MModuleDepthCalibration : public MModule
   //! Load the detector and strip dimensions from the geometry object
   bool LoadDetectorDimensions(MDGeometryQuest* Geometry);
 
-  //! Load in the specified coefficients file
+  //! Load the pixel-based coefficients file
   bool LoadCoeffsFile(MString FName);
+  //! Load the strip-based coefficients file
+  bool LoadStripCoeffsFile(MString FName);
 
-  //! Set the depth calibration coefficients
+  //! Set the pixel-based depth calibration coefficients
   void SetCoeffs( unordered_map<int, vector<double>> Coeffs ) { m_Coeffs = Coeffs; }
-  //! Get the depth calibration coefficients
+  //! Get the pixel-based depth calibration coefficients
   unordered_map<int, vector<double>> GetCoeffs() { return m_Coeffs; }
+
+  //! Set the strip-based depth calibration coefficients
+  void SetStripCoeffs(unordered_map<int, vector<unordered_map<int, vector<double>>>> Coeffs) { m_StripCoeffs = Coeffs; }
+  //! Get the strip-based depth calibration coefficients
+  unordered_map<int, vector<unordered_map<int, vector<double>>>> GetStripCoeffs() { return m_StripCoeffs; }
+
+  //! Set the mean depth calibration offsets for all detectors
+  void SetMeanOffset(unordered_map<int, double> MeanOffset) { m_MeanOffset = MeanOffset; }
+  //! Get the mean depth calibration offsets for all detectors
+  unordered_map<int, double> GetMeanOffset() { return m_MeanOffset; }
+
+  //! Set the mean depth calibration stretches for all detectors
+  void SetMeanStretch(unordered_map<int, double> MeanStretch) { m_MeanStretch = MeanStretch; }
+  //! Get the mean depth calibration stretches for all detectors
+  unordered_map<int, double> GetMeanStretch() { return m_MeanStretch; }
 
   //! Set the energy at which the depth calibration coefficients were determined
   void SetCoeffsEnergy( double Coeffs_Energy ) { m_Coeffs_Energy = Coeffs_Energy; }
@@ -187,6 +204,14 @@ class MModuleDepthCalibration : public MModule
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
   MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
+
+
+  //! Map: detector ID (int) -> mean stretch over all pixels / strips
+  unordered_map<int, double> m_MeanStretch;
+  //! Map: detector ID (int) -> mean offset over all pixels / strips
+  unordered_map<int, double> m_MeanOffset;
+  //! Map: detector ID (int) -> Side (LV=0, HV=1) -> Strip ID -> Depth calibration coefficients (per strip)
+  unordered_map<int, vector<unordered_map<int, vector<double>>>> m_StripCoeffs;
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   unordered_map<int, vector<vector<double>>> m_CTDMap;

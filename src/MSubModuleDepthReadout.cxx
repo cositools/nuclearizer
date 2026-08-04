@@ -73,17 +73,16 @@ MSubModuleDepthReadout::~MSubModuleDepthReadout()
 bool MSubModuleDepthReadout::Initialize()
 {
 
-  m_Coeffs.clear();
+  m_StripCoeffs.clear();
 
   // Load depth-related files using the parsers in MModuleDepthCalibration
   MModuleDepthCalibration DepthCalibration;
   DepthCalibration.SetUCSDOverride(false);
 
-  // Load depth calibration coefficients
-  DepthCalibration.SetCoeffsFileName(m_DepthCoefficientsFileName);
-  if (DepthCalibration.LoadCoeffsFile(m_DepthCoefficientsFileName) == true) {
-    // Copy depth calibration coefficients
-    m_Coeffs = DepthCalibration.GetCoeffs();
+  // Load the strip-based depth calibration coefficients
+  if (DepthCalibration.LoadStripCoeffsFile(m_DepthCoefficientsFileName) == true) {
+    // Copy strip-based depth calibration coefficients
+    m_StripCoeffs = DepthCalibration.GetStripCoeffs();
     m_Coeffs_Energy = DepthCalibration.GetCoeffsEnergy();
 
     // The reference energy for the timing noise should be in the file header of the depth coefficients file
@@ -146,17 +145,13 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
         SH.m_HasFastTiming = true;
 
         if (m_ApplyTimingResolutionCalibration == true){
-          int PixelCode = 10000*DetID + 100*StripID + SH.m_OppositeStripID;
-          if (m_Coeffs.count(PixelCode) == 1){
-            vector<double> Coeffs = m_Coeffs[PixelCode];
-            double CTD_FWHM = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
-            double CTD_Sigma = CTD_FWHM / 2.355;
-            // Smear the timing value based on the given CTD resolution
-            // --> divide by √2 to obtain TAC resolution from CTD resolution
-            SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
+          if (m_StripCoeffs.count(DetID) == 1 && m_StripCoeffs[DetID].size() == 2 && m_StripCoeffs[DetID][0].count(StripID) == 1) {
+            vector<double> Coeffs = m_StripCoeffs[DetID][0][StripID];
+            double TAC_Sigma = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
+            SH.m_Timing = gRandom->Gaus(SH.m_Timing, TAC_Sigma);
           } else {
             if (g_Verbosity >= c_Info) {
-              cout<<"MSubModuleDepthReadout::AnalyzeEvent: No depth coefficient found for pixel with code "<<PixelCode<<"."<<endl;
+              cout<<"MSubModuleDepthReadout::AnalyzeEvent: No depth coefficient found for LV strip "<<StripID<<"."<<endl;
             }
           }
         }
@@ -209,18 +204,13 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
         SH.m_HasFastTiming = true;
 
         if (m_ApplyTimingResolutionCalibration == true) {
-          int PixelCode = 10000*DetID + 100*SH.m_OppositeStripID + StripID;
-          if (m_Coeffs.count(PixelCode) == 1){
-            vector<double> Coeffs = m_Coeffs[PixelCode];
-            double CTD_FWHM = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
-            double CTD_Sigma = CTD_FWHM / 2.355;
-            // Smear the timing value based on the given CTD resolution
-            // --> divide by √2 to obtain TAC resolution from CTD resolution
-            SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
-
+          if (m_StripCoeffs.count(DetID) == 1 && m_StripCoeffs[DetID].size() == 2 && m_StripCoeffs[DetID][1].count(StripID) == 1) {
+            vector<double> Coeffs = m_StripCoeffs[DetID][1][StripID];
+            double TAC_Sigma = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
+            SH.m_Timing = gRandom->Gaus(SH.m_Timing, TAC_Sigma);
           } else {
             if (g_Verbosity >= c_Info) {
-              cout<<"MSubModuleDepthReadout::AnalyzeEvent: No depth coefficient found for pixel with code "<<PixelCode<<"."<<endl;
+              cout<<"MSubModuleDepthReadout::AnalyzeEvent: No depth coefficient found for HV strip "<<StripID<<"."<<endl;
             }
           }
         }
@@ -260,7 +250,7 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
 void MSubModuleDepthReadout::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize()
-  m_Coeffs.clear();
+  m_StripCoeffs.clear();
   m_TACCal.clear();
 
   MSubModule::Finalize();
