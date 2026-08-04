@@ -88,13 +88,13 @@ bool MFITSWriterL1a::Create(const MString& FileName)
     primary.addKey("TELESCOP", "COSI", "Telescope mission name");
     primary.addKey("INSTRUME", "GED", "Instrument name");
     primary.addKey("ORIGIN", "SSL", "Origin of the FITS file");
-    primary.addKey("CREATOR", "TBD", "Software that create 1st the file");
+    primary.addKey("CREATOR", "Nuclearizer", "Software that create 1st the file");
 
     // File creation date (UTC, computed at write time)
     time_t now = time(nullptr);
     char dateBuffer[32];
     strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%dT%H:%M:%S", gmtime(&now));
-    primary.addKey("DATE", string(dateBuffer), "File creation date (UTC)");
+    primary.addKey("DATE", string(dateBuffer), "File creation date");
 
     // add placeholder at creation, write at the end
     primary.addKey("OBS_ID", "YYYYMMDD", "Observation ID");
@@ -146,13 +146,13 @@ bool MFITSWriterL1a::Create(const MString& FileName)
     }
 
     // Extension header keywords (Table 6.2d)
-    m_Table->addKey("EXTNAME", "GED_L1A", "name of this HDU");
+    m_Table->addKey("EXTNAME", "GED_L1A", "Name of this HDU");
     m_Table->addKey("TELESCOP", "COSI", "Telescope mission name");
     m_Table->addKey("INSTRUME", "GED", "Instrument name");
-    m_Table->addKey("DATAMODE", "SYNC", "Instrument datamode");
-    m_Table->addKey("OBSMODE", "SCANNING", "Spacecraft observing mode");
+    m_Table->addKey("DATAMODE", "SYNC", "Instrument datamode: synchronous or asynchronous");
+    m_Table->addKey("OBSMODE", "SCANNING", "Spacecraft observing mode: Scanning or Constant Zenith Angle");
     m_Table->addKey("OBSERVER", "John Tomsick", "Principal Investigator");
-    m_Table->addKey("OBJECT", "ALLSKY", "Object/target name of ALLSKY");
+    m_Table->addKey("OBJECT", "ALLSKY", "Object/Target name or ALLSKY");
     m_Table->addKey("MJDREFI", 60676, "MJD reference day 01 Jan 2025 00:00:00");
     m_Table->addKey("MJDREFF", 8.007407407407E-04, "MJD reference (fraction of day)");
     m_Table->addKey("TIMEREF", "LOCAL", "Reference Frame");
@@ -160,16 +160,16 @@ bool MFITSWriterL1a::Create(const MString& FileName)
     m_Table->addKey("TIMESYS", "TT", "Time System");
     m_Table->addKey("TIMEUNIT", "s", "Time unit for timing header keywords");
     m_Table->addKey("CLOCKAPP", "F", "If clock corrections are applied (T/F)");
-    m_Table->addKey("HDUCLASS", "OGIP", "format conforms to OGIP standard");
+    m_Table->addKey("HDUCLASS", "OGIP", "Format conforms to OGIP standard");
     m_Table->addKey("HDUCLAS1", "EVENTS", "hduclass1");
     m_Table->addKey("HDUCLAS2", "ALL", "hduclas2");
-    m_Table->addKey("CREATOR", "TBD", "Software that create 1st the file");
-    m_Table->addKey("PROCVER", "MM.XX.NN.YY", "Processing version");
-    m_Table->addKey("CALDBVER", "csYYYYMMDD", "CALDB version");
-    m_Table->addKey("SEQPNUM", "nn", "Times the dataset has been processed");
+    m_Table->addKey("CREATOR", "Nuclearizer", "Software that create 1st the file");
+    m_Table->addKey("PROCVER", "00.00.00.00", "Processing version");  // MM.XX.YY.NN; ICD reserves MM=00 for development/testing
+    m_Table->addKey("CALDBVER", "cs20230401", "CALDB index version used");  // provisional value per ICD until first CALDB ingestion
+    m_Table->addKey("SEQPNUM", 0, "Times the dataset has been processed");
     m_Table->addKey("ORIGIN", "SSL", "Origin of the FITS files");
 
-    m_Table->addKey("DATE", string(dateBuffer), "File creation date (UTC)");
+    m_Table->addKey("DATE", string(dateBuffer), "File creation date");
     m_Table->addKey("OBS_ID", "YYYYMMDD", "Observation ID");
     m_Table->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date");
     m_Table->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date");
@@ -293,8 +293,8 @@ void MFITSWriterL1a::Close()
 
   if (m_HasEvents && m_Table != nullptr) {
     try {
-      m_Table->addKey("TSTART", m_FirstEventTime_RTS, "Start time [s] since MJDREFI");
-      m_Table->addKey("TSTOP", m_LastEventTime_RTS, "Stop time [s] since MJDREFI");
+      m_Table->addKey("TSTART", m_FirstEventTime_RTS, "[s] Observation start");
+      m_Table->addKey("TSTOP", m_LastEventTime_RTS, "[s] Observation stop");  // "stopsince" is verbatim from Table 6.2d (doc typo)
 
       constexpr time_t MISSION_EPOCH_UNIX = 1735689600;  // 2025-01-01T00:00:00 UTC
       time_t startUnix = MISSION_EPOCH_UNIX + (time_t)m_FirstEventTime_RTS;

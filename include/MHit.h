@@ -31,6 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! This class represents a hit
 class MHit
 {
   // public interface:
@@ -43,109 +44,119 @@ class MHit
   //! Reset all data
   void Clear();
 
+
+  // Strip hits:
+
+  //! Return the number of strip hits
+  unsigned int GetNStripHits() const { return m_StripHits.size(); }
+  //! Return strip hit i or nullptr if i is out of bounds
+  //! Ownership stays elsewhere
+  MStripHit* GetStripHit(unsigned int i);
+  //! Add a strip hit
+  //! Ownership stays elsewhere
+  void AddStripHit(MStripHit* StripHit);
+  //! Remove strip hit i without deleting it
+  void RemoveStripHit(unsigned int i);
+  //! Remove a strip hit without deleting it
+  void RemoveStripHit(MStripHit* StripHit);
+
+
+  // Position:
+
   //! Set the position of the hit
   void SetPosition(const MVector& Position) { m_Position = Position; }
   //! Return the position of the hit
   MVector GetPosition() const { return m_Position; }
 
-  //! Set the position of the hit
+  //! Set the position resolution of the hit
   void SetPositionResolution(const MVector& PositionResolution) { m_PositionResolution = PositionResolution; }
-  //! Return the position of the hit
+  //! Return the position resolution of the hit
   MVector GetPositionResolution() const { return m_PositionResolution; }
+
+
+  // Energy:
 
   //! Set the energy
   void SetEnergy(double Energy) { m_Energy = Energy; }
   //! Return the energy
   double GetEnergy() const { return m_Energy; }
-    
-    //! Set the LVenergy
-    void SetLVEnergy(double LVEnergy) { m_LVEnergy = LVEnergy; }
-    //! Return the LVenergy
-    double GetLVEnergy() const { return m_LVEnergy; }
-
-    //! Set the HVenergy
-    void SetHVEnergy(double HVEnergy) { m_HVEnergy = HVEnergy; }
-    //! Return the HVenergy
-    double GetHVEnergy() const { return m_HVEnergy; }
 
   //! Set the energy resolution
   void SetEnergyResolution(double EnergyResolution) { m_EnergyResolution = EnergyResolution; }
   //! Return the energy resolution
   double GetEnergyResolution() const { return m_EnergyResolution; }
 
-  //! Set the Quality of the Hit
-  void SetHitQuality(double HitQuality) { m_HitQuality = HitQuality; }
-  //! Return the Quality of the Hit
-  double GetHitQuality() const { return m_HitQuality; }
+  //! Set the low-voltage energy
+  void SetLVEnergy(double LVEnergy) { m_LVEnergy = LVEnergy; }
+  //! Return the low-voltage energy
+  double GetLVEnergy() const { return m_LVEnergy; }
 
-  //! Return the number of strip hits
-  unsigned int GetNStripHits() const { return m_StripHits.size(); }
-  //! Return strip hit i
-  MStripHit* GetStripHit(unsigned int i);
-  //! Add a strip hit
-  void AddStripHit(MStripHit* StripHit) { return m_StripHits.push_back(StripHit); }
-  //! Remove a strip hit
-  void RemoveStripHit(unsigned int i); 
-  //! Remove a strip hit
-  void RemoveStripHit(MStripHit* StripHit); 
-  
-	//! set cross talk flag
-	void SetCrossTalkFlag(bool PossibleCrossTalk) {m_PossibleCrossTalk = PossibleCrossTalk;}
-	//! get cross talk flag value
-	bool GetCrossTalkFlag() const { return m_PossibleCrossTalk; }
-    
-    //! Set guard ring hit flag
-    void SetGuardRingHitFlag(bool GuardRingHit) {m_GuardRingHit = GuardRingHit;}
-    //! Get guard ring hit flag
-    bool GetGuardRingHitFlag() const { return m_GuardRingHit; }
+  //! Set the high-voltage energy
+  void SetHVEnergy(double HVEnergy) { m_HVEnergy = HVEnergy; }
+  //! Return the high-voltage energy
+  double GetHVEnergy() const { return m_HVEnergy; }
 
-	//! set charge loss flag
-	void SetChargeLossFlag(bool PossibleChargeLoss) {m_PossibleChargeLoss = PossibleChargeLoss;}
-	//! get charge loss flag value
-	bool GetChargeLossFlag() const { return m_PossibleChargeLoss; }
 
-	//! set x strip hit multiple times flag
-	void SetStripHitMultipleTimesX(bool stripHitMultipleTimesX) {m_StripHitMultipleTimesX = stripHitMultipleTimesX;}
-	//! get m_StripHitMultipleTimesX
-	bool GetStripHitMultipleTimesX() const { return m_StripHitMultipleTimesX; }
-	//! set y strip hit multiple times flag
-	void SetStripHitMultipleTimesY(bool stripHitMultipleTimesY) {m_StripHitMultipleTimesY = stripHitMultipleTimesY;}
-	//! get m_StripHitMultipleTimesY
-	bool GetStripHitMultipleTimesY() const { return m_StripHitMultipleTimesY; }
+  // Flags:
 
-	//! set charge sharing flag for LV side
-	void SetChargeSharingLV(bool chargeSharingLV) {m_ChargeSharingLV = chargeSharingLV; }
-	//! get m_ChargeSharingLV
-	bool GetChargeSharingLV() const { return m_ChargeSharingLV; }
-    //! set charge sharing flag for HV side
-    void SetChargeSharingHV(bool chargeSharingHV) {m_ChargeSharingHV = chargeSharingHV; }
-    //! get m_ChargeSharingHV
-    bool GetChargeSharingHV() const { return m_ChargeSharingHV; }
-    //! Keeping general charge sharing flags because Greedy strip pairing relies on it
-    void SetChargeSharing(bool chargeSharing) {m_ChargeSharing = chargeSharing; }
-    //! get m_ChargeSharing
-    bool GetChargeSharing() const { return m_ChargeSharing; }
-	//! set m_NoDepth
-	void SetNoDepth(bool X = true) { m_NoDepth = X;}
-	//! get m_NoDepth
-	bool GetNoDepth(void) const { return m_NoDepth; }
-	//! set m_IsNonDominantNeighborStrip
-	void SetIsNondominantNeighborStrip(bool X = true) {m_IsNonDominantNeighborStrip = X;}
-	//! get m_IsNonDominantNeighborStrip
-	bool GetIsNondominantNeighborStrip(void) const {return m_IsNonDominantNeighborStrip;}
-	
-	//! Set the origins from the simulations (take care of duplicates)
-	void AddOrigins(vector<int> Origins);
+  //! Set the cross-talk flag
+  void SetCrossTalkFlag(bool CrossTalk) { m_CrossTalk = CrossTalk; }
+  //! Return the cross-talk flag
+  bool GetCrossTalkFlag() const { return m_CrossTalk; }
+
+  //! Set the guard-ring hit flag
+  void SetGuardRingHitFlag(bool GuardRingHit) { m_GuardRingHit = GuardRingHit; }
+  //! Return the guard-ring hit flag
+  bool GetGuardRingHitFlag() const { return m_GuardRingHit; }
+
+  //! Set the charge-loss flag
+  void SetChargeLossFlag(bool ChargeLoss) { m_ChargeLoss = ChargeLoss; }
+  //! Return the charge-loss flag
+  bool GetChargeLossFlag() const { return m_ChargeLoss; }
+
+  //! Set the flag indicating that a low-voltage strip was hit multiple times
+  void SetStripHitMultipleTimesLV(bool StripHitMultipleTimesLV) { m_StripHitMultipleTimesLV = StripHitMultipleTimesLV; }
+  //! Return the flag indicating that a low-voltage strip was hit multiple times
+  bool GetStripHitMultipleTimesLV() const { return m_StripHitMultipleTimesLV; }
+  //! Set the flag indicating that a high-voltage strip was hit multiple times
+  void SetStripHitMultipleTimesHV(bool StripHitMultipleTimesHV) { m_StripHitMultipleTimesHV = StripHitMultipleTimesHV; }
+  //! Return the flag indicating that a high-voltage strip was hit multiple times
+  bool GetStripHitMultipleTimesHV() const { return m_StripHitMultipleTimesHV; }
+
+  //! Set the charge sharing flag for the low-voltage side
+  void SetChargeSharingLV(bool ChargeSharingLV) { m_ChargeSharingLV = ChargeSharingLV; }
+  //! Return the charge sharing flag for the low-voltage side
+  bool GetChargeSharingLV() const { return m_ChargeSharingLV; }
+  //! Set the charge sharing flag for the high-voltage side
+  void SetChargeSharingHV(bool ChargeSharingHV) { m_ChargeSharingHV = ChargeSharingHV; }
+  //! Return the charge sharing flag for the high-voltage side
+  bool GetChargeSharingHV() const { return m_ChargeSharingHV; }
+  //! Return the general charge sharing flag
+  bool GetChargeSharing() const { return m_ChargeSharingLV == true || m_ChargeSharingHV == true; }
+
+  //! Set the no-depth flag
+  void SetNoDepth(bool NoDepth = true) { m_NoDepth = NoDepth; }
+  //! Return the no-depth flag
+  bool GetNoDepth() const { return m_NoDepth; }
+
+  // Parsing / Streaming:
+
+  //! Parse a hit in Nuclearizer's DAT format
+  bool Parse(MString& Line, int Version = 1);
+  //! Stream the hit in Nuclearizer's DAT format
+  bool StreamDat(ostream& S, int Version = 1);
+  //! Stream the hit in MEGAlib's EVTA format
+  void StreamEvta(ostream& S);
+
+
+  // Simulation:
+
+  //! Set the origins from the simulations (take care of duplicates)
+  void AddOrigins(const vector<int>& Origins);
   //! Get the origins from the simulation
   vector<int> GetOrigins() const { return m_Origins; }
-  
-  //! Dump the content into a file stream
-  bool StreamDat(ostream& S, int Version = 1);
-  //! Stream the content in MEGAlib's evta format 
-  void StreamEvta(ostream& S);
-  
-  //! Parse some content from a line
-  bool Parse(MString &Line, int Version = 1);
+
+
 
   // private methods:
  private:
@@ -158,60 +169,52 @@ class MHit
 
   // private members:
  private:
+  //! List of strip hits contributing to this hit
+  //! Ownership stays elsewhere
+  vector<MStripHit*> m_StripHits;
+
   //! Position of the hit
   MVector m_Position;
-  //! Position resolutionof the hit
+  //! Position resolution of the hit
   MVector m_PositionResolution;
 
   //! Energy of the hit
   double m_Energy;
-    
-  //! LV Energy of the hit
-  double m_LVEnergy;
-    
-  //! HV Energy of the hit
-  double m_HVEnergy;
-    
   //! Energy resolution of the hit
   double m_EnergyResolution;
+  //! Low-voltage energy of the hit
+  double m_LVEnergy;
+  //! High-voltage energy of the hit
+  double m_HVEnergy;
 
-  //! Quality of the Hit
-  double m_HitQuality; 
+  //! Flag indicating cross talk
+  bool m_CrossTalk;
+  //! Flag indicating that this hit contains a guard ring strip
+  bool m_GuardRingHit;
+  //! Flag indicating charge loss
+  bool m_ChargeLoss;
 
-  //! List of strip hits
-  vector<MStripHit*> m_StripHits;
+  //! Flag indicating that this hit contains a low-voltage strip hit multiple times
+  bool m_StripHitMultipleTimesLV;
+  //! Flag indicating that this hit contains a high-voltage strip hit multiple times
+  bool m_StripHitMultipleTimesHV;
 
-	//! Flag: possible cross talk
-	bool m_PossibleCrossTalk;
-	//! Flag: possible charge loss
-	bool m_PossibleChargeLoss;
-    //! Flag: hit containing guard ring strip
-    bool m_GuardRingHit;
+  //! Flag indicating that this hit contains charge sharing on the low-voltage side
+  bool m_ChargeSharingLV;
+  //! Flag indicating that this hit contains charge sharing on the high-voltage side
+  bool m_ChargeSharingHV;
 
-	//! true if hit contains strip that was hit multiple times on X
-	bool m_StripHitMultipleTimesX;
-    //! true if hit contains strip that was hit multiple times on Y
-	bool m_StripHitMultipleTimesY;
+  //! Flag indicating that the depth is invalid
+  //! This can happen when the pixel depth was uncalibrated, the hit was mapped too far out of the detector, or timing data was missing
+  bool m_NoDepth;
 
-	//! true if hit contains charge sharing
-    bool m_ChargeSharing;
-	bool m_ChargeSharingLV;
-    bool m_ChargeSharingHV;
-
-	//! true if depth is invalid, either because the pixel depth was uncalibrated, the hit was mapped too far out of the detector,or there was no timing data
-	bool m_NoDepth;
-
-	//! true if hit was made from a charge sharing event using a neighbor strip that had the lowere energy fraction
-	bool m_IsNonDominantNeighborStrip;
-  
-  //! Origin IAs from simulations
+  //! Origin interaction IDs from simulations
   vector<int> m_Origins;
-  
-  
-  
+
+
 #ifdef ___CLING___
  public:
-  ClassDef(MHit, 0) // no description
+  ClassDef(MHit, 0) // a hit
 #endif
 
 };

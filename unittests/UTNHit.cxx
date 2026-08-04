@@ -80,7 +80,7 @@ bool UTNHit::TestDefaultConstruction()
   MHit H;
 
   // Construction calls Clear(), which initialises all fields: numeric fields to sentinels,
-  // collections to empty, bool flags to false, and HitQuality to 0.0.
+  // collections to empty, and bool flags to false.
 
   Passed = EvaluateTrue("GetPosition()", "sentinel after construction", "Position is initialised to g_VectorNotDefined after construction",
                         H.GetPosition() == g_VectorNotDefined) && Passed;
@@ -91,10 +91,10 @@ bool UTNHit::TestDefaultConstruction()
   Passed = EvaluateTrue("GetEnergy()", "sentinel after construction", "Energy is initialised to g_DoubleNotDefined after construction",
                         H.GetEnergy() == g_DoubleNotDefined) && Passed;
 
-  Passed = EvaluateTrue("GetLVEnergy()", "sentinel after construction", "LVEnergy is initialised to g_DoubleNotDefined after construction",
+  Passed = EvaluateTrue("GetLVEnergy()", "sentinel after construction", "Low-voltage energy is initialised to g_DoubleNotDefined after construction",
                         H.GetLVEnergy() == g_DoubleNotDefined) && Passed;
 
-  Passed = EvaluateTrue("GetHVEnergy()", "sentinel after construction", "HVEnergy is initialised to g_DoubleNotDefined after construction",
+  Passed = EvaluateTrue("GetHVEnergy()", "sentinel after construction", "High-voltage energy is initialised to g_DoubleNotDefined after construction",
                         H.GetHVEnergy() == g_DoubleNotDefined) && Passed;
 
   Passed = EvaluateTrue("GetEnergyResolution()", "sentinel after construction", "EnergyResolution is initialised to g_DoubleNotDefined after construction",
@@ -106,18 +106,15 @@ bool UTNHit::TestDefaultConstruction()
   Passed = Evaluate("GetOrigins()", "empty after construction", "Origins list is empty after construction",
                     (unsigned int) H.GetOrigins().size(), (unsigned int) 0) && Passed;
 
-  Passed = EvaluateNear("GetHitQuality()", "default after construction", "HitQuality is initialised to 0.0 after construction",
-                        H.GetHitQuality(), 0.0, 1e-9) && Passed;
-
-  Passed = EvaluateFalse("GetStripHitMultipleTimesX()", "default after construction", "StripHitMultipleTimesX is false after construction",
-                         H.GetStripHitMultipleTimesX()) && Passed;
-  Passed = EvaluateFalse("GetStripHitMultipleTimesY()", "default after construction", "StripHitMultipleTimesY is false after construction",
-                         H.GetStripHitMultipleTimesY()) && Passed;
+  Passed = EvaluateFalse("GetStripHitMultipleTimesLV()", "default after construction", "StripHitMultipleTimesLV is false after construction",
+                         H.GetStripHitMultipleTimesLV()) && Passed;
+  Passed = EvaluateFalse("GetStripHitMultipleTimesHV()", "default after construction", "StripHitMultipleTimesHV is false after construction",
+                         H.GetStripHitMultipleTimesHV()) && Passed;
   Passed = EvaluateFalse("GetCrossTalkFlag()", "default after construction", "CrossTalk is false after construction",
                          H.GetCrossTalkFlag()) && Passed;
   Passed = EvaluateFalse("GetChargeLossFlag()", "default after construction", "ChargeLoss is false after construction",
                          H.GetChargeLossFlag()) && Passed;
-  Passed = EvaluateFalse("GetGuardRingHitFlag()", "default after construction", "GuardRingHit is false after construction",
+  Passed = EvaluateFalse("GetGuardRingHitFlag()", "default after construction", "Guard ring hit is false after construction",
                          H.GetGuardRingHitFlag()) && Passed;
   Passed = EvaluateFalse("GetChargeSharing()", "default after construction", "ChargeSharing is false after construction",
                          H.GetChargeSharing()) && Passed;
@@ -127,8 +124,6 @@ bool UTNHit::TestDefaultConstruction()
                          H.GetChargeSharingHV()) && Passed;
   Passed = EvaluateFalse("GetNoDepth()", "default after construction", "NoDepth is false after construction",
                          H.GetNoDepth()) && Passed;
-  Passed = EvaluateFalse("GetIsNondominantNeighborStrip()", "default after construction", "IsNonDominantNeighborStrip is false after construction",
-                         H.GetIsNondominantNeighborStrip()) && Passed;
 
   // Verify Clear() reinstates sentinels on a populated instance
   H.SetPosition(MVector(1.0, 2.0, 3.0));
@@ -137,18 +132,15 @@ bool UTNHit::TestDefaultConstruction()
   H.SetHVEnergy(311.0);
   H.SetPositionResolution(MVector(0.1, 0.1, 0.1));
   H.SetEnergyResolution(1.5);
-  H.SetHitQuality(0.75);
   H.AddOrigins({4, 7});
   H.SetCrossTalkFlag(true);
   H.SetChargeLossFlag(true);
   H.SetGuardRingHitFlag(true);
-  H.SetChargeSharing(true);
   H.SetChargeSharingLV(true);
   H.SetChargeSharingHV(true);
   H.SetNoDepth(true);
-  H.SetIsNondominantNeighborStrip(true);
-  H.SetStripHitMultipleTimesX(true);
-  H.SetStripHitMultipleTimesY(true);
+  H.SetStripHitMultipleTimesLV(true);
+  H.SetStripHitMultipleTimesHV(true);
   MStripHit SH;
   H.AddStripHit(&SH);
 
@@ -158,9 +150,9 @@ bool UTNHit::TestDefaultConstruction()
                         H.GetPosition() == g_VectorNotDefined) && Passed;
   Passed = EvaluateTrue("Clear() Energy", "sentinel restored", "Clear() restores Energy to g_DoubleNotDefined",
                         H.GetEnergy() == g_DoubleNotDefined) && Passed;
-  Passed = EvaluateTrue("Clear() LVEnergy", "sentinel restored", "Clear() restores LVEnergy to g_DoubleNotDefined",
+  Passed = EvaluateTrue("Clear() LVEnergy", "sentinel restored", "Clear() restores low-voltage energy to g_DoubleNotDefined",
                         H.GetLVEnergy() == g_DoubleNotDefined) && Passed;
-  Passed = EvaluateTrue("Clear() HVEnergy", "sentinel restored", "Clear() restores HVEnergy to g_DoubleNotDefined",
+  Passed = EvaluateTrue("Clear() HVEnergy", "sentinel restored", "Clear() restores high-voltage energy to g_DoubleNotDefined",
                         H.GetHVEnergy() == g_DoubleNotDefined) && Passed;
   Passed = EvaluateTrue("Clear() EnergyResolution", "sentinel restored", "Clear() restores EnergyResolution to g_DoubleNotDefined",
                         H.GetEnergyResolution() == g_DoubleNotDefined) && Passed;
@@ -170,13 +162,11 @@ bool UTNHit::TestDefaultConstruction()
                     H.GetNStripHits(), (unsigned int) 0) && Passed;
   Passed = Evaluate("Clear() Origins", "empty restored", "Clear() empties the origins list",
                     (unsigned int) H.GetOrigins().size(), (unsigned int) 0) && Passed;
-  Passed = EvaluateNear("Clear() HitQuality", "zero restored", "Clear() restores HitQuality to 0.0",
-                        H.GetHitQuality(), 0.0, 1e-9) && Passed;
   Passed = EvaluateFalse("Clear() CrossTalk", "false restored", "Clear() restores CrossTalk to false",
                          H.GetCrossTalkFlag()) && Passed;
   Passed = EvaluateFalse("Clear() ChargeLoss", "false restored", "Clear() restores ChargeLoss to false",
                          H.GetChargeLossFlag()) && Passed;
-  Passed = EvaluateFalse("Clear() GuardRingHit", "false restored", "Clear() restores GuardRingHit to false",
+  Passed = EvaluateFalse("Clear() GuardRingHit", "false restored", "Clear() restores guard ring hit to false",
                          H.GetGuardRingHitFlag()) && Passed;
   Passed = EvaluateFalse("Clear() ChargeSharing", "false restored", "Clear() restores ChargeSharing to false",
                          H.GetChargeSharing()) && Passed;
@@ -186,12 +176,10 @@ bool UTNHit::TestDefaultConstruction()
                          H.GetChargeSharingHV()) && Passed;
   Passed = EvaluateFalse("Clear() NoDepth", "false restored", "Clear() restores NoDepth to false",
                          H.GetNoDepth()) && Passed;
-  Passed = EvaluateFalse("Clear() IsNonDominantNeighborStrip", "false restored", "Clear() restores IsNonDominantNeighborStrip to false",
-                         H.GetIsNondominantNeighborStrip()) && Passed;
-  Passed = EvaluateFalse("Clear() StripHitMultipleTimesX", "false restored", "Clear() restores StripHitMultipleTimesX to false",
-                         H.GetStripHitMultipleTimesX()) && Passed;
-  Passed = EvaluateFalse("Clear() StripHitMultipleTimesY", "false restored", "Clear() restores StripHitMultipleTimesY to false",
-                         H.GetStripHitMultipleTimesY()) && Passed;
+  Passed = EvaluateFalse("Clear() StripHitMultipleTimesLV", "false restored", "Clear() restores StripHitMultipleTimesLV to false",
+                         H.GetStripHitMultipleTimesLV()) && Passed;
+  Passed = EvaluateFalse("Clear() StripHitMultipleTimesHV", "false restored", "Clear() restores StripHitMultipleTimesHV to false",
+                         H.GetStripHitMultipleTimesHV()) && Passed;
 
   return Passed;
 }
@@ -231,25 +219,20 @@ bool UTNHit::TestGettersSetters()
   Passed = EvaluateNear("SetEnergy/GetEnergy", "representative value", "GetEnergy returns the representative value 661.7 keV",
                         H.GetEnergy(), 661.7, 1e-9) && Passed;
 
-  // LVEnergy
+  // Low-voltage energy
   H.SetLVEnergy(330.0);
-  Passed = EvaluateNear("SetLVEnergy/GetLVEnergy", "representative value", "GetLVEnergy returns the representative value 330.0 keV",
+  Passed = EvaluateNear("SetLVEnergy/GetLVEnergy", "representative value", "GetLVEnergy returns the representative low-voltage energy 330.0 keV",
                         H.GetLVEnergy(), 330.0, 1e-9) && Passed;
 
-  // HVEnergy
+  // High-voltage energy
   H.SetHVEnergy(331.7);
-  Passed = EvaluateNear("SetHVEnergy/GetHVEnergy", "representative value", "GetHVEnergy returns the representative value 331.7 keV",
+  Passed = EvaluateNear("SetHVEnergy/GetHVEnergy", "representative value", "GetHVEnergy returns the representative high-voltage energy 331.7 keV",
                         H.GetHVEnergy(), 331.7, 1e-9) && Passed;
 
   // EnergyResolution
   H.SetEnergyResolution(2.5);
   Passed = EvaluateNear("SetEnergyResolution/GetEnergyResolution", "representative value", "GetEnergyResolution returns the representative value 2.5 keV",
                         H.GetEnergyResolution(), 2.5, 1e-9) && Passed;
-
-  // HitQuality
-  H.SetHitQuality(0.95);
-  Passed = EvaluateNear("SetHitQuality/GetHitQuality", "representative value", "GetHitQuality returns the representative value 0.95",
-                        H.GetHitQuality(), 0.95, 1e-9) && Passed;
 
   // CrossTalk flag
   H.SetCrossTalkFlag(true);
@@ -259,7 +242,7 @@ bool UTNHit::TestGettersSetters()
   Passed = EvaluateFalse("SetCrossTalkFlag/GetCrossTalkFlag", "representative false", "GetCrossTalkFlag returns false after SetCrossTalkFlag(false)",
                          H.GetCrossTalkFlag()) && Passed;
 
-  // GuardRingHit flag
+  // Guard ring hit flag
   H.SetGuardRingHitFlag(true);
   Passed = EvaluateTrue("SetGuardRingHitFlag/GetGuardRingHitFlag", "representative true", "GetGuardRingHitFlag returns true after SetGuardRingHitFlag(true)",
                         H.GetGuardRingHitFlag() == true) && Passed;
@@ -275,44 +258,44 @@ bool UTNHit::TestGettersSetters()
   Passed = EvaluateFalse("SetChargeLossFlag/GetChargeLossFlag", "representative false", "GetChargeLossFlag returns false after SetChargeLossFlag(false)",
                          H.GetChargeLossFlag()) && Passed;
 
-  // StripHitMultipleTimesX
-  H.SetStripHitMultipleTimesX(true);
-  Passed = EvaluateTrue("SetStripHitMultipleTimesX/GetStripHitMultipleTimesX", "representative true", "GetStripHitMultipleTimesX returns true after setting true",
-                        H.GetStripHitMultipleTimesX() == true) && Passed;
-  H.SetStripHitMultipleTimesX(false);
-  Passed = EvaluateFalse("SetStripHitMultipleTimesX/GetStripHitMultipleTimesX", "representative false", "GetStripHitMultipleTimesX returns false after setting false",
-                         H.GetStripHitMultipleTimesX()) && Passed;
+  // StripHitMultipleTimesLV
+  H.SetStripHitMultipleTimesLV(true);
+  Passed = EvaluateTrue("SetStripHitMultipleTimesLV/GetStripHitMultipleTimesLV", "representative true", "GetStripHitMultipleTimesLV returns true after setting true",
+                        H.GetStripHitMultipleTimesLV() == true) && Passed;
+  H.SetStripHitMultipleTimesLV(false);
+  Passed = EvaluateFalse("SetStripHitMultipleTimesLV/GetStripHitMultipleTimesLV", "representative false", "GetStripHitMultipleTimesLV returns false after setting false",
+                         H.GetStripHitMultipleTimesLV()) && Passed;
 
-  // StripHitMultipleTimesY
-  H.SetStripHitMultipleTimesY(true);
-  Passed = EvaluateTrue("SetStripHitMultipleTimesY/GetStripHitMultipleTimesY", "representative true", "GetStripHitMultipleTimesY returns true after setting true",
-                        H.GetStripHitMultipleTimesY() == true) && Passed;
-  H.SetStripHitMultipleTimesY(false);
-  Passed = EvaluateFalse("SetStripHitMultipleTimesY/GetStripHitMultipleTimesY", "representative false", "GetStripHitMultipleTimesY returns false after setting false",
-                         H.GetStripHitMultipleTimesY()) && Passed;
+  // StripHitMultipleTimesHV
+  H.SetStripHitMultipleTimesHV(true);
+  Passed = EvaluateTrue("SetStripHitMultipleTimesHV/GetStripHitMultipleTimesHV", "representative true", "GetStripHitMultipleTimesHV returns true after setting true",
+                        H.GetStripHitMultipleTimesHV() == true) && Passed;
+  H.SetStripHitMultipleTimesHV(false);
+  Passed = EvaluateFalse("SetStripHitMultipleTimesHV/GetStripHitMultipleTimesHV", "representative false", "GetStripHitMultipleTimesHV returns false after setting false",
+                         H.GetStripHitMultipleTimesHV()) && Passed;
 
   // ChargeSharingLV
   H.SetChargeSharingLV(true);
   Passed = EvaluateTrue("SetChargeSharingLV/GetChargeSharingLV", "representative true", "GetChargeSharingLV returns true after SetChargeSharingLV(true)",
                         H.GetChargeSharingLV() == true) && Passed;
+  Passed = EvaluateTrue("SetChargeSharingLV/GetChargeSharing", "general flag", "GetChargeSharing returns true if low-voltage charge sharing is true",
+                        H.GetChargeSharing() == true) && Passed;
   H.SetChargeSharingLV(false);
   Passed = EvaluateFalse("SetChargeSharingLV/GetChargeSharingLV", "representative false", "GetChargeSharingLV returns false after SetChargeSharingLV(false)",
                          H.GetChargeSharingLV()) && Passed;
+  Passed = EvaluateFalse("SetChargeSharingLV/GetChargeSharing", "general flag", "GetChargeSharing returns false if both charge sharing flags are false",
+                         H.GetChargeSharing()) && Passed;
 
   // ChargeSharingHV
   H.SetChargeSharingHV(true);
   Passed = EvaluateTrue("SetChargeSharingHV/GetChargeSharingHV", "representative true", "GetChargeSharingHV returns true after SetChargeSharingHV(true)",
                         H.GetChargeSharingHV() == true) && Passed;
+  Passed = EvaluateTrue("SetChargeSharingHV/GetChargeSharing", "general flag", "GetChargeSharing returns true if high-voltage charge sharing is true",
+                        H.GetChargeSharing() == true) && Passed;
   H.SetChargeSharingHV(false);
   Passed = EvaluateFalse("SetChargeSharingHV/GetChargeSharingHV", "representative false", "GetChargeSharingHV returns false after SetChargeSharingHV(false)",
                          H.GetChargeSharingHV()) && Passed;
-
-  // ChargeSharing (general)
-  H.SetChargeSharing(true);
-  Passed = EvaluateTrue("SetChargeSharing/GetChargeSharing", "representative true", "GetChargeSharing returns true after SetChargeSharing(true)",
-                        H.GetChargeSharing() == true) && Passed;
-  H.SetChargeSharing(false);
-  Passed = EvaluateFalse("SetChargeSharing/GetChargeSharing", "representative false", "GetChargeSharing returns false after SetChargeSharing(false)",
+  Passed = EvaluateFalse("SetChargeSharingHV/GetChargeSharing", "general flag", "GetChargeSharing returns false if both charge sharing flags are false",
                          H.GetChargeSharing()) && Passed;
 
   // NoDepth
@@ -322,14 +305,6 @@ bool UTNHit::TestGettersSetters()
   H.SetNoDepth(false);
   Passed = EvaluateFalse("SetNoDepth/GetNoDepth", "representative false", "GetNoDepth returns false after SetNoDepth(false)",
                          H.GetNoDepth()) && Passed;
-
-  // IsNondominantNeighborStrip
-  H.SetIsNondominantNeighborStrip(true);
-  Passed = EvaluateTrue("SetIsNondominantNeighborStrip/GetIsNondominantNeighborStrip", "representative true", "GetIsNondominantNeighborStrip returns true after setting true",
-                        H.GetIsNondominantNeighborStrip() == true) && Passed;
-  H.SetIsNondominantNeighborStrip(false);
-  Passed = EvaluateFalse("SetIsNondominantNeighborStrip/GetIsNondominantNeighborStrip", "representative false", "GetIsNondominantNeighborStrip returns false after setting false",
-                         H.GetIsNondominantNeighborStrip()) && Passed;
 
   return Passed;
 }
@@ -342,11 +317,19 @@ bool UTNHit::TestStripHitManagement()
 {
   bool Passed = true;
 
-  // MHit does NOT own the strip hits — ownership and lifetime remain with the caller.
+  // MHit does NOT own the strip hits - ownership and lifetime remain with the caller.
   MStripHit SH0, SH1, SH2;
 
   MHit H;
   Passed = Evaluate("GetNStripHits()", "empty", "GetNStripHits() returns 0 on a fresh MHit",
+                    H.GetNStripHits(), (unsigned int) 0) && Passed;
+
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+
+  // AddStripHit rejects null pointers
+  H.AddStripHit(nullptr);
+  Passed = Evaluate("AddStripHit()", "null pointer ignored", "AddStripHit(nullptr) leaves the strip hit list unchanged",
                     H.GetNStripHits(), (unsigned int) 0) && Passed;
 
   // AddStripHit
@@ -359,7 +342,7 @@ bool UTNHit::TestStripHitManagement()
   Passed = Evaluate("AddStripHit()", "count after three adds", "GetNStripHits() returns 3 after adding three strip hits",
                     H.GetNStripHits(), (unsigned int) 3) && Passed;
 
-  // GetStripHit — pointer identity
+  // GetStripHit - pointer identity
   Passed = EvaluateTrue("GetStripHit()", "pointer identity 0", "GetStripHit(0) returns the pointer passed in the first AddStripHit()",
                         H.GetStripHit(0) == &SH0) && Passed;
   Passed = EvaluateTrue("GetStripHit()", "pointer identity 1", "GetStripHit(1) returns the pointer passed in the second AddStripHit()",
@@ -367,14 +350,15 @@ bool UTNHit::TestStripHitManagement()
   Passed = EvaluateTrue("GetStripHit()", "pointer identity 2", "GetStripHit(2) returns the pointer passed in the third AddStripHit()",
                         H.GetStripHit(2) == &SH2) && Passed;
 
-  // GetStripHit out of bounds returns null (emits merr)
-  DisableDefaultStreams();
+  // The following calls emit guarded cout diagnostics for expected error paths.
+  g_Verbosity = c_Quiet;
+
+  // GetStripHit out of bounds returns null and emits a diagnostic
   MStripHit* OutOfBounds = H.GetStripHit(99);
-  EnableDefaultStreams();
   Passed = EvaluateTrue("GetStripHit()", "out of bounds returns null", "GetStripHit(99) returns nullptr when index is out of bounds",
                         OutOfBounds == nullptr) && Passed;
 
-  // RemoveStripHit by index — removes SH1, leaving {SH0, SH2}
+  // RemoveStripHit by index - removes SH1, leaving {SH0, SH2}
   H.RemoveStripHit((unsigned int) 1);
   Passed = Evaluate("RemoveStripHit(unsigned int)", "count after remove", "GetNStripHits() returns 2 after removing index 1",
                     H.GetNStripHits(), (unsigned int) 2) && Passed;
@@ -383,23 +367,25 @@ bool UTNHit::TestStripHitManagement()
   Passed = EvaluateTrue("RemoveStripHit(unsigned int)", "remaining pointer 1", "After removing index 1, GetStripHit(1) returns the third strip hit",
                         H.GetStripHit(1) == &SH2) && Passed;
 
-  // RemoveStripHit by pointer — removes SH2, leaving {SH0}
+  // RemoveStripHit by pointer - removes SH2, leaving {SH0}
   H.RemoveStripHit(&SH2);
   Passed = Evaluate("RemoveStripHit(MStripHit*)", "count after pointer remove", "GetNStripHits() returns 1 after removing by pointer",
                     H.GetNStripHits(), (unsigned int) 1) && Passed;
   Passed = EvaluateTrue("RemoveStripHit(MStripHit*)", "remaining pointer", "After removing by pointer, GetStripHit(0) still returns the first strip hit",
                         H.GetStripHit(0) == &SH0) && Passed;
 
-  // RemoveStripHit of a pointer not in the list is a no-op
+  // RemoveStripHit of a pointer not in the list is a no-op with a diagnostic
   MStripHit NotPresent;
   H.RemoveStripHit(&NotPresent);
   Passed = Evaluate("RemoveStripHit(MStripHit*)", "no-op for absent pointer", "Removing a pointer not in the list leaves the count unchanged",
                     H.GetNStripHits(), (unsigned int) 1) && Passed;
 
-  // RemoveStripHit by index out of range is a no-op
+  // RemoveStripHit by index out of range is a no-op with a diagnostic
   H.RemoveStripHit((unsigned int) 99);
   Passed = Evaluate("RemoveStripHit(unsigned int)", "no-op for out-of-range index", "Removing an out-of-range index leaves the count unchanged",
                     H.GetNStripHits(), (unsigned int) 1) && Passed;
+
+  g_Verbosity = OldVerbosity;
 
   return Passed;
 }
@@ -417,7 +403,7 @@ bool UTNHit::TestAddOrigins()
   Passed = Evaluate("GetOrigins()", "empty default", "Origins list is empty after construction",
                     (unsigned int) H.GetOrigins().size(), (unsigned int) 0) && Passed;
 
-  // Add {4, 1, 7, 2} — should be sorted to {1, 2, 4, 7}
+  // Add {4, 1, 7, 2} - should be sorted to {1, 2, 4, 7}
   H.AddOrigins({4, 1, 7, 2});
   vector<int> Origins = H.GetOrigins();
   Passed = Evaluate("AddOrigins()", "count after first add", "Origins list has 4 entries after adding {4,1,7,2}",
@@ -433,7 +419,7 @@ bool UTNHit::TestAddOrigins()
                       Origins[3], 7) && Passed;
   }
 
-  // Add {2, 5, 7} — 2 and 7 are duplicates; result should be {1, 2, 4, 5, 7}
+  // Add {2, 5, 7} - 2 and 7 are duplicates; result should be {1, 2, 4, 5, 7}
   H.AddOrigins({2, 5, 7});
   Origins = H.GetOrigins();
   Passed = Evaluate("AddOrigins()", "deduplicated count", "Origins list has 5 unique entries after adding {2,5,7} to {1,2,4,7}",
@@ -573,9 +559,9 @@ bool UTNHit::TestStreamDatParse()
     MString Output(Out.str().c_str());
     Passed = EvaluateTrue("StreamDat() V3", "starts with HT", "StreamDat(V3) output starts with 'HT'",
                           Output.BeginsWith("HT")) && Passed;
-    Passed = EvaluateTrue("StreamDat() V3", "contains LV energy", "StreamDat(V3) output contains the representative LV energy 250",
+    Passed = EvaluateTrue("StreamDat() V3", "contains low-voltage energy", "StreamDat(V3) output contains the representative low-voltage energy 250",
                           Output.Contains("250")) && Passed;
-    Passed = EvaluateTrue("StreamDat() V3", "contains HV energy", "StreamDat(V3) output contains the representative HV energy 261",
+    Passed = EvaluateTrue("StreamDat() V3", "contains high-voltage energy", "StreamDat(V3) output contains the representative high-voltage energy 261",
                           Output.Contains("261")) && Passed;
     Passed = EvaluateTrue("StreamDat() V3", "contains SH line", "StreamDat(V3) output contains an SH sub-line for the strip hit",
                           Output.Contains("SH")) && Passed;
@@ -608,39 +594,66 @@ bool UTNHit::TestStreamDatParse()
                           Reader3.GetPosition().GetZ(), Z, Tolerance) && Passed;
     Passed = EvaluateNear("Parse() V3", "energy", "Parse() restores the representative energy",
                           Reader3.GetEnergy(), E, Tolerance) && Passed;
-    Passed = EvaluateNear("Parse() V3", "LV energy", "Parse() restores the representative LV energy",
+    Passed = EvaluateNear("Parse() V3", "low-voltage energy", "Parse() restores the representative low-voltage energy",
                           Reader3.GetLVEnergy(), LVE, Tolerance) && Passed;
-    Passed = EvaluateNear("Parse() V3", "HV energy", "Parse() restores the representative HV energy",
+    Passed = EvaluateNear("Parse() V3", "high-voltage energy", "Parse() restores the representative high-voltage energy",
                           Reader3.GetHVEnergy(), HVE, Tolerance) && Passed;
   }
 
-  // --- Parse() returns false for a non-HT line ------------------------------
+  // MHit::Parse() diagnostics print via "if (g_Verbosity >= c_Error)".
+  // Lower g_Verbosity to c_Quiet to keep expected malformed-input cases quiet.
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+
+  // --- Parse() returns false for a non-HT line and clears the object --------
   {
     MHit Dummy;
+    Dummy.SetEnergy(123.0);
     MString NonHTLine("UH 0 41 l 4053 10452 4");
+    bool ParseResult = Dummy.Parse(NonHTLine);
     Passed = EvaluateFalse("Parse()", "non-HT line", "Parse() returns false for a line that does not start with 'HT'",
-                           Dummy.Parse(NonHTLine)) && Passed;
+                           ParseResult) && Passed;
+    Passed = EvaluateTrue("Parse()", "non-HT line clears state", "Failed Parse() of a non-HT line clears the existing energy",
+                          Dummy.GetEnergy() == g_DoubleNotDefined) && Passed;
   }
 
-  // --- Parse() returns false for an unsupported version number --------------
+  // --- Parse() returns false for an unsupported version and clears the object
   {
     MHit Dummy;
+    Dummy.SetEnergy(123.0);
     MString HTLine("HT 2.0 -3.0 5.0 511.0");
+    bool ParseResult = Dummy.Parse(HTLine, 99);
     Passed = EvaluateFalse("Parse()", "unsupported version 99", "Parse() returns false for an unsupported version number",
-                           Dummy.Parse(HTLine, 99)) && Passed;
+                           ParseResult) && Passed;
+    Passed = EvaluateTrue("Parse()", "unsupported version clears state", "Failed Parse() with an unsupported version clears the existing energy",
+                          Dummy.GetEnergy() == g_DoubleNotDefined) && Passed;
   }
 
-  // --- Parse() V1 on a reused object resets stale LV/HV energy -------------
+  // --- Parse() returns false for too few fields and clears the object -------
+  {
+    MHit Dummy;
+    Dummy.SetEnergy(123.0);
+    MString TooFewFields("HT 2.0 -3.0 5.0");
+    bool ParseResult = Dummy.Parse(TooFewFields, 1);
+    Passed = EvaluateFalse("Parse()", "too few fields", "Parse() returns false for a line with too few fields",
+                           ParseResult) && Passed;
+    Passed = EvaluateTrue("Parse()", "too few fields clears state", "Failed Parse() with too few fields clears the existing energy",
+                          Dummy.GetEnergy() == g_DoubleNotDefined) && Passed;
+  }
+
+  g_Verbosity = OldVerbosity;
+
+  // --- Parse() V1 on a reused object resets stale low-voltage/high-voltage energy -------------
   {
     MHit H;
     H.SetLVEnergy(250.0);
     H.SetHVEnergy(261.0);
     MString HTLine("HT 2.0 -3.0 5.0 511.0");
-    Passed = EvaluateTrue("Parse() V1 clears stale LV/HV", "return value", "Parse() V1 returns true on a valid HT line",
+    Passed = EvaluateTrue("Parse() V1 clears stale low-voltage/high-voltage", "return value", "Parse() V1 returns true on a valid HT line",
                           H.Parse(HTLine, 1)) && Passed;
-    Passed = EvaluateTrue("Parse() V1 clears stale LV/HV", "LVEnergy reset", "Parse() V1 resets LVEnergy to g_DoubleNotDefined",
+    Passed = EvaluateTrue("Parse() V1 clears stale low-voltage/high-voltage", "low-voltage energy reset", "Parse() V1 resets low-voltage energy to g_DoubleNotDefined",
                           H.GetLVEnergy() == g_DoubleNotDefined) && Passed;
-    Passed = EvaluateTrue("Parse() V1 clears stale LV/HV", "HVEnergy reset", "Parse() V1 resets HVEnergy to g_DoubleNotDefined",
+    Passed = EvaluateTrue("Parse() V1 clears stale low-voltage/high-voltage", "high-voltage energy reset", "Parse() V1 resets high-voltage energy to g_DoubleNotDefined",
                           H.GetHVEnergy() == g_DoubleNotDefined) && Passed;
   }
 
@@ -656,10 +669,10 @@ bool UTNHit::TestStreamEvta()
   bool Passed = true;
 
   // StreamEvta format:  HT 3;x;y;z;energy;posresX;posresY;posresZ;energyRes[;origin...]
-  // Origins are the intersection of LV-strip origins and HV-strip origins.
+  // Origins are the intersection of low-voltage-strip origins and high-voltage-strip origins.
   // If the intersection is empty but either side has origins, the union is used instead.
 
-  // --- Case 1: LV origins {1,2} ∩ HV origins {2,3} = {2} -------------------
+  // --- Case 1: Low-voltage origins {1,2} intersect high-voltage origins {2,3} = {2} -------------------
   // Coordinates chosen so that ";1" and ";3" do not appear as substrings of
   // any serialized field value, making the Contains() checks unambiguous.
   {
@@ -688,13 +701,13 @@ bool UTNHit::TestStreamEvta()
                           S.Contains(";2")) && Passed;
     // Origins 1 and 3 are not in the intersection and must not appear as origins
     // (They may appear as part of position/energy values, so search for ;1 and ;3 specifically)
-    Passed = EvaluateTrue("StreamEvta()", "non-intersection origin 1 absent", "StreamEvta() output does not contain LV-only origin ;1",
+    Passed = EvaluateTrue("StreamEvta()", "non-intersection origin 1 absent", "StreamEvta() output does not contain low-voltage-only origin ;1",
                           S.Contains(";1") == false) && Passed;
-    Passed = EvaluateTrue("StreamEvta()", "non-intersection origin 3 absent", "StreamEvta() output does not contain HV-only origin ;3",
+    Passed = EvaluateTrue("StreamEvta()", "non-intersection origin 3 absent", "StreamEvta() output does not contain high-voltage-only origin ;3",
                           S.Contains(";3") == false) && Passed;
   }
 
-  // --- Case 2: LV origins {1} ∩ HV origins {2} = {} → fallback to union {1,2} ---
+  // --- Case 2: Low-voltage origins {1} intersect high-voltage origins {2} = {} -> fallback to union {1,2} ---
   {
     MStripHit LV, HV;
     LV.IsLowVoltageStrip(true);
@@ -714,14 +727,14 @@ bool UTNHit::TestStreamEvta()
     H.StreamEvta(Out);
     MString S(Out.str().c_str());
 
-    // Both 1 and 2 must appear because the intersection is empty → union fallback
-    Passed = EvaluateTrue("StreamEvta()", "union fallback origin 1", "StreamEvta() output contains union-fallback origin ;1 when LV/HV intersection is empty",
+    // Both 1 and 2 must appear because the intersection is empty -> union fallback
+    Passed = EvaluateTrue("StreamEvta()", "union fallback origin 1", "StreamEvta() output contains union-fallback origin ;1 when low-voltage/high-voltage intersection is empty",
                           S.Contains(";1")) && Passed;
-    Passed = EvaluateTrue("StreamEvta()", "union fallback origin 2", "StreamEvta() output contains union-fallback origin ;2 when LV/HV intersection is empty",
+    Passed = EvaluateTrue("StreamEvta()", "union fallback origin 2", "StreamEvta() output contains union-fallback origin ;2 when low-voltage/high-voltage intersection is empty",
                           S.Contains(";2")) && Passed;
   }
 
-  // --- Case 3: No strip hits → no origins appended --------------------------
+  // --- Case 3: No strip hits -> no origins appended --------------------------
   {
     MHit H;
     H.SetPosition(MVector(0.0, 0.0, 0.0));
@@ -734,7 +747,7 @@ bool UTNHit::TestStreamEvta()
     MString S(Out.str().c_str());
 
     // With no strip hits there are no origins: output ends with energyRes + newline
-    // Count semicolons: HT 3;x;y;z;e;prx;pry;prz;er → exactly 8
+    // Count semicolons: HT 3;x;y;z;e;prx;pry;prz;er -> exactly 8
     unsigned int Semicolons = 0;
     for (size_t i = 0; i < S.Length(); ++i) {
       if (S[i] == ';') ++Semicolons;
