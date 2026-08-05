@@ -95,7 +95,7 @@ class MModuleTrappingCorrection : public MModule
   bool LoadSimCCEFile(MString FName);
 
   //! Get the Sim-based corrected energy given the CTD value, uncorrected energy, and the sorted Sim CCE values
-  double GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted, double paramA, double paramB, double paramC);
+  double GetSimBasedCorrectedEnergy(double ctd_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC);
 
   //! Interpolate a value given x, xp, and fp
   double Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp);

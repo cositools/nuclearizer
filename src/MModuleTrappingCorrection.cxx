@@ -207,7 +207,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         // Correct the Low Voltage side energy if the hit pointer exists
         if (LVSH != nullptr) {
             double rawLVEnergy = LVSH->GetEnergy(); 
-            double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV, m_ParamA_LV, m_ParamB_LV, m_ParamC_LV);
+            double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamA_LV, m_ParamB, m_ParamC);
             LVSH->SetEnergy(correctedLVEnergy);    
 
             if (HasExpos() == true) {
@@ -218,7 +218,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         // Correct the High Voltage side energy if the hit pointer exists
         if (HVSH != nullptr) {
             double rawHVEnergy = HVSH->GetEnergy(); 
-            double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV_e, m_CCEs_HV_h, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamA_HV, m_ParamA_LV, m_ParamB, m_ParamC);
+            double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV_e, m_CCEs_HV_h, m_ParamA_HV, m_ParamB, m_ParamC);
             HVSH->SetEnergy(correctedHVEnergy);    
 
             if (HasExpos() == true) {
@@ -369,8 +369,8 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
   // Print summary to console if verbose logging is enabled
   if (g_Verbosity >= c_Info) {
-    cout << m_XmlTag << "Loaded HV parameters: A=" << m_ParamA_HV 
-         << ", B=" << m_ParamB_HV << ", C=" << m_ParamC_HV << endl;
+    cout << m_XmlTag << "Loaded parameters: A=" << m_ParamA_HV << ", " << m_ParamA_LV
+         << ", B=" << m_ParamB << ", C=" << m_ParamC << endl;
     cout << m_XmlTag << "Loaded " << m_Depths.size() << " data points into arrays." << endl;
   }
 
@@ -380,13 +380,14 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted, double paramA, double paramB, double paramC) {
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC) {
 
   // Look up the simulation CCE baseline using the interpolate function
-  double cce_base = Interpolate(depth_val, m_Depths, sim_cce_sorted);
+  double cce_base_e = Interpolate(depth_val, m_Depths, sim_cce_sorted_e);
+  double cce_base_h = Interpolate(depth_val, m_Depths, sim_cce_sorted_h);
 
   // Evaluate the physical trapping function model using class global popt variables
-  double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base)) * (1.0 - paramC * (1.0 - cce_base));
+  double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
 
   // Prevent division-by-zero or non-physical negative values
   if (expected_centroid_scaled <= 0.0) {
