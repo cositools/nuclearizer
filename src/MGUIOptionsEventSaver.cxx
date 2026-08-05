@@ -108,10 +108,6 @@ void MGUIOptionsEventSaver::Create()
   m_SaveBadEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveBadEvents());
   GeneralFrame->AddFrame(m_SaveBadEvents, FirstLabelLayout);
 
-  m_SavePoorQualityEvents = new TGCheckButton(GeneralFrame, "Save events with quality flag (QA)", 1);
-  m_SavePoorQualityEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSavePoorQualityEvents());
-  GeneralFrame->AddFrame(m_SavePoorQualityEvents, TightButtonLayout);
-
   m_SaveVetoEvents = new TGCheckButton(GeneralFrame, "Save guard ring and shield veto events (Veto)", 1);
   m_SaveVetoEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveVetoEvents());
   GeneralFrame->AddFrame(m_SaveVetoEvents, TightButtonLayout);
@@ -233,7 +229,6 @@ bool MGUIOptionsEventSaver::OnApply()
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSaveBadEvents(m_SaveBadEvents->IsOn());
-  dynamic_cast<MModuleEventSaver*>(m_Module)->SetSavePoorQualityEvents(m_SavePoorQualityEvents->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSaveVetoEvents(m_SaveVetoEvents->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetAddTimeTag(m_AddTimeTag->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSplitFile(m_SplitFile->IsOn());

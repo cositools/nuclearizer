@@ -81,9 +81,6 @@ class MGUIOptionsEventSaver : public MGUIOptions
   //! Checkbutton to save or reject bad events
   TGCheckButton* m_SaveBadEvents;
 
-  //! Checkbutton to save or reject quality flag events
-  TGCheckButton* m_SavePoorQualityEvents;
-
   //! Checkbutton to save veto events
   TGCheckButton* m_SaveVetoEvents;
 
