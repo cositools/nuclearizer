@@ -121,14 +121,14 @@ class MModuleTrappingCorrection : public MModule
   bool m_SimCCEFileIsLoaded;
 
   double m_ParamA_HV;
-  double m_ParamB_HV;
-  double m_ParamC_HV;
   double m_ParamA_LV;
-  double m_ParamB_LV;
-  double m_ParamC_LV;
+  double m_ParamB;
+  double m_ParamC;
   std::vector<double> m_Depths;
-  std::vector<double> m_CCEs_HV;
-  std::vector<double> m_CCEs_LV;
+  std::vector<double> m_CCEs_HV_e;
+  std::vector<double> m_CCEs_HV_h;
+  std::vector<double> m_CCEs_LV_e;
+  std::vector<double> m_CCEs_LV_h;
 
 
 
