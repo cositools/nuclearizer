@@ -210,9 +210,12 @@ class MStripHit
   bool m_IsGuardRing;
   //! True if the hit is a nearest neighbor hit
   bool m_IsNearestNeighbor;
+  //! True if the strip has triggered
+  bool m_HasTriggered;
+  //! True if the nearest neighbor strip hit is associated with multiple strip paired hits
   bool m_IsAmbiguousNearestNeighbor;
 
-  //! Flag indicating whether the hit has fast timing
+  //! True if the hit has fast timing
   bool m_HasFastTiming;
   //! True if the hit has calibrated timing
   bool m_HasCalibratedTiming;
