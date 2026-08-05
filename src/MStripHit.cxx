@@ -141,7 +141,7 @@ bool MStripHit::Parse(const MString& Line, int Version)
     ParseFlags(flags);
     return true;
   } else {
-    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line starts with '"<<line[0]<<line[1]<<"' instead of 'SH'"<<endl;
+    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line starts with '"<<line[0]<<line[1]<<"' instead of 'SH' or 'NN'"<<endl;
     return false;
   }
 }
