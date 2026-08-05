@@ -23,7 +23,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 
-// Nuclearizer libs
+// Nuclearizer libs:
 #include "MModule.h"
 #include "MSubModuleDEEIntake.h"
 #include "MSubModuleRandomCoincidence.h"
@@ -105,26 +105,14 @@ class MModuleDEESMEX : public MModule
   }
 
   //! Set depth coefficients file name
-  void SetDepthCoefficientsFileName(const MString& FileName)
-  {
-    m_DepthReadout.SetDepthCoefficientsFileName(FileName);
-  }
+  void SetDepthCoefficientsFileName(const MString& FileName) { m_DepthCoefficientsFileName = FileName; }
   //! Get depth coefficients file name
-  MString GetDepthCoefficientsFileName() const
-  {
-    return m_DepthReadout.GetDepthCoefficientsFileName();
-  }
+  MString GetDepthCoefficientsFileName() const { return m_DepthCoefficientsFileName; }
 
   //! Set depth splines file name
-  void SetDepthSplinesFileName(const MString& FileName)
-  {
-    m_DepthReadout.SetDepthSplinesFileName(FileName);
-  }
+  void SetDepthSplinesFileName(const MString& FileName) { m_DepthSplinesFileName = FileName; }
   //! Get depth splines file name
-  MString GetDepthSplinesFileName() const
-  {
-    return m_DepthReadout.GetDepthSplinesFileName();
-  }
+  MString GetDepthSplinesFileName() const { return m_DepthSplinesFileName;}
 
   //! Set TAC calibration file name
   void SetTACCalFileName(const MString& FileName)
@@ -223,6 +211,12 @@ class MModuleDEESMEX : public MModule
   //! The sub module handling the output of the DEE in to the standard nuclearizer classes
   MSubModuleDEEOutput m_Output;
   
+  //! The file name of the simulated CTD and drift time splines
+  MString m_DepthSplinesFileName;
+
+  //! The file name of the depth-calibration coefficients
+  MString m_DepthCoefficientsFileName;
+
   //! Option to add noise to the strip energies
   bool m_ApplyResolutionCalibration; 
   //! Option to enable shield veto effects

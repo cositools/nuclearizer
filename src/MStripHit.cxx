@@ -36,6 +36,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MStreams.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -52,7 +53,7 @@ MStripHit::MStripHit()
   // Construct an instance of MStripHit
 
   m_ReadOutElement = new MReadOutElementDoubleStrip();
-  
+
   Clear();
 }
 
@@ -63,7 +64,7 @@ MStripHit::MStripHit()
 MStripHit::~MStripHit()
 {
   // Delete this instance of MStripHit
-  
+
   delete m_ReadOutElement;
 }
 
@@ -77,15 +78,12 @@ void MStripHit::Clear()
 
   m_ReadOutElement->Clear();
   m_HasTriggered = false;
-  m_UncorrectedADCUnits = 0;
   m_ADCUnits = 0;
   m_Energy = 0;
   m_EnergyResolution = 0;
   m_TAC = 0;
-  m_TACResolution = 0;
   m_Timing = 0;
   m_TimingResolution = 0;
-  m_PreampTemp = 0;
 
   m_IsGuardRing = false;
   m_IsNearestNeighbor = false;
@@ -101,45 +99,49 @@ void MStripHit::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MStripHit::Parse(MString& Line, int Version)
+bool MStripHit::Parse(const MString& Line, int Version)
 {
+  // Parse the hit from a string starting with SH
+
+  Clear();
+
   const char* line = Line.Data();
   if (Line.Length() < 3) {
-    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line too short"<<endl;
+    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line too short with length "<<Line.Length()<<endl;
     return false;
   }
   // Read strip hit if line starts with SH (triggered strip hit) or NN (nearest neighbor strip hit)
   if ((line[0] == 'S' && line[1] == 'H') || (line[0] == 'N' && line[1] == 'N')) {
     unsigned int det_id, strip_id;
     int has_triggered;
-    double timing, un_adc, adc;
+    double timing, adc;
     double energy, energy_res;
     char pos_strip;
     unsigned int flags;
-    int N = sscanf(&line[3], "%u %c %u %d %lf %lf %lf %lf %lf %u",
+    int N = sscanf(&line[3], "%u %c %u %d %lf %lf %lf %lf %u",
                    &det_id, &pos_strip, &strip_id, &has_triggered,
-                   &timing, &un_adc, &adc, &energy, &energy_res, &flags);
-    if (N != 10) {
-      if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: malformed SH line"<<endl;
+                   &timing, &adc, &energy, &energy_res, &flags);
+    if (N != 9) {
+      if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: malformed SH line with "<<N<<" fields instead of 9"<<endl;
       return false;
     }
     if (pos_strip != 'l' && pos_strip != 'h') {
-      if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: unknown detector face: "<<pos_strip<<endl;
+      if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: unknown detector side '"<<pos_strip<<"' (expected 'l' or 'h')"<<endl;
       return false;
     }
+
     SetDetectorID(det_id);
     IsLowVoltageStrip(pos_strip == 'l');
     SetStripID(strip_id);
     HasTriggered(has_triggered != 0);
     SetTiming(timing);
-    SetUncorrectedADCUnits(un_adc);
     SetADCUnits(adc);
     SetEnergy(energy);
     SetEnergyResolution(energy_res);
     ParseFlags(flags);
     return true;
   } else {
-    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line does not start with SH"<<endl;
+    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line starts with '"<<line[0]<<line[1]<<"' instead of 'SH'"<<endl;
     return false;
   }
 }
@@ -148,15 +150,16 @@ bool MStripHit::Parse(MString& Line, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Set the origins from the simulations (take care of duplicates)
-void MStripHit::AddOrigins(vector<int> Origins)
+void MStripHit::AddOrigins(const vector<int>& Origins)
 {
+  // Add origins from the simulation and remove duplicates
+
   m_Origins.insert(m_Origins.end(), Origins.begin(), Origins.end());
   sort(m_Origins.begin(), m_Origins.end());
   m_Origins.erase(unique(m_Origins.begin(), m_Origins.end()), m_Origins.end());
 }
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -197,16 +200,14 @@ bool MStripHit::StreamDat(ostream& S, int Version)
 }
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MStripHit::StreamRoa(ostream& S, bool WithADC, bool WithTAC, bool WithEnergy, bool WithTiming, bool WithTemperature, bool WithFlags, bool WithOrigins)
+void MStripHit::StreamRoa(ostream& S, bool WithADC, bool WithTAC, bool WithEnergy, bool WithTiming, bool WithFlags, bool WithOrigins)
 {
-  //! Stream the content in MEGAlib's evta format 
+  // Stream the strip hit in MEGAlib's ROA format
 
-  S<<"UH " 
+  S<<"UH "
    <<m_ReadOutElement->GetDetectorID()<<" "
    <<m_ReadOutElement->GetStripID()<<" "
    <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" ";
@@ -215,9 +216,6 @@ void MStripHit::StreamRoa(ostream& S, bool WithADC, bool WithTAC, bool WithEnerg
   }
   if (WithTAC == true) {
     S<<m_TAC<<" ";
-  }
-  if (WithTemperature == true) {
-    S<<m_PreampTemp<<" ";
   }
   if (WithEnergy == true) {
     S<<m_Energy<<" ";
@@ -247,12 +245,12 @@ void MStripHit::StreamRoa(ostream& S, bool WithADC, bool WithTAC, bool WithEnerg
 
 unsigned int MStripHit::MakeFlags()
 {
-  //! Return flags to indicate the type of strip hit
-  //! Currently, 3 bits:
-  //!   v = Has fast timing
-  //!    v = Is a nearest neighbor
-  //!     v = Is a guard ring
-  //! 0b111u
+  // Return the bitwise strip-hit flags
+  // Currently, 3 bits:
+  //   v = Has fast timing
+  //    v = Is a nearest neighbor strip hit
+  //     v = Is a guard ring strip hit
+  // 0b111u
 
   unsigned int Flags = 0b000u;
   if (m_IsGuardRing == true) {
@@ -274,14 +272,14 @@ unsigned int MStripHit::MakeFlags()
 
 void MStripHit::ParseFlags(unsigned int Flags)
 {
-  //! Set internal booleans according to flag
-  //! Currently, 3 bits:
-  //!   v = Has fast timing
-  //!    v = Is a nearest neighbor
-  //!     v = Is a guard ring
-  //! 0b111u
+  // Update the strip-hit flags from a bit mask
+  // Currently, 3 bits:
+  //   v = Has fast timing
+  //    v = Is a nearest neighbor
+  //     v = Is a guard ring
+  // 0b111u
 
-  // "Flags & 0b001u" extracts bit 0, "!= 0u" turns it into an explicit bool.
+  // "Flags & 0b001u" extracts bit 0, "!= 0u" turns it into an explicit bool
   IsGuardRing((Flags & 0b001u) != 0u);
   IsNearestNeighbor((Flags & 0b010u) != 0u);
   HasFastTiming((Flags & 0b100u) != 0u);

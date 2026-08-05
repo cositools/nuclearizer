@@ -79,17 +79,14 @@ bool UTNStripHit::TestDefaultConstruction()
   Passed = EvaluateTrue("GetReadOutElement()", "non-null", "GetReadOutElement() returns a non-null pointer after construction", H.GetReadOutElement() != nullptr) && Passed;
   Passed = Evaluate("GetDetectorID()", "default", "Default DetectorID is undefined", H.GetDetectorID(), g_UnsignedIntNotDefined) && Passed;
   Passed = Evaluate("GetStripID()", "default", "Default StripID is undefined", H.GetStripID(), g_UnsignedIntNotDefined) && Passed;
-  Passed = EvaluateTrue("IsLowVoltageStrip()", "default", "Default strip type is low-voltage", H.IsLowVoltageStrip()) && Passed;
+  Passed = EvaluateTrue("IsLowVoltageStrip()", "default", "Default strip is on the low voltage side", H.IsLowVoltageStrip()) && Passed;
   Passed = EvaluateFalse("HasTriggered()", "default", "Default HasTriggered is false", H.HasTriggered()) && Passed;
-  Passed = EvaluateNear("GetUncorrectedADCUnits()", "default", "Default UncorrectedADCUnits is 0", H.GetUncorrectedADCUnits(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetADCUnits()", "default", "Default ADCUnits is 0", H.GetADCUnits(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetEnergy()", "default", "Default Energy is 0", H.GetEnergy(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetEnergyResolution()", "default", "Default EnergyResolution is 0", H.GetEnergyResolution(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetTAC()", "default", "Default TAC is 0", H.GetTAC(), 0.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetTACResolution()", "default", "Default TACResolution is 0", H.GetTACResolution(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetTiming()", "default", "Default Timing is 0", H.GetTiming(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetTimingResolution()", "default", "Default TimingResolution is 0", H.GetTimingResolution(), 0.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetPreampTemp()", "default", "Default PreampTemp is 0", H.GetPreampTemp(), 0.0, 1e-12) && Passed;
   Passed = EvaluateFalse("IsGuardRing()", "default", "Default IsGuardRing is false", H.IsGuardRing()) && Passed;
   Passed = EvaluateFalse("IsNearestNeighbor()", "default", "Default IsNearestNeighbor is false", H.IsNearestNeighbor()) && Passed;
   Passed = EvaluateFalse("HasFastTiming()", "default", "Default HasFastTiming is false", H.HasFastTiming()) && Passed;
@@ -154,22 +151,18 @@ bool UTNStripHit::TestGettersSetters()
   H.IsLowVoltageStrip(false);
   Passed = EvaluateFalse("IsLowVoltageStrip(bool)/IsLowVoltageStrip()", "representative false", "IsLowVoltageStrip() returns false after IsLowVoltageStrip(false)", H.IsLowVoltageStrip()) && Passed;
 
-  // IsXStrip is an alias for IsLowVoltageStrip
+  // Deprecated IsXStrip forwards to IsLowVoltageStrip
   H.IsXStrip(true);
-  Passed = EvaluateTrue("IsXStrip(bool)/IsXStrip()", "alias true", "IsXStrip() returns true after IsXStrip(true)", H.IsXStrip()) && Passed;
-  Passed = EvaluateTrue("IsXStrip(bool)/IsLowVoltageStrip()", "alias true", "IsLowVoltageStrip() returns true after IsXStrip(true)", H.IsLowVoltageStrip()) && Passed;
+  Passed = EvaluateTrue("IsXStrip(bool)/IsXStrip()", "deprecated true", "IsXStrip() returns true after IsXStrip(true)", H.IsXStrip()) && Passed;
+  Passed = EvaluateTrue("IsXStrip(bool)/IsLowVoltageStrip()", "deprecated true", "IsLowVoltageStrip() returns true after IsXStrip(true)", H.IsLowVoltageStrip()) && Passed;
   H.IsXStrip(false);
-  Passed = EvaluateFalse("IsXStrip(bool)/IsXStrip()", "alias false", "IsXStrip() returns false after IsXStrip(false)", H.IsXStrip()) && Passed;
+  Passed = EvaluateFalse("IsXStrip(bool)/IsXStrip()", "deprecated false", "IsXStrip() returns false after IsXStrip(false)", H.IsXStrip()) && Passed;
 
   // HasTriggered
   H.HasTriggered(true);
   Passed = EvaluateTrue("HasTriggered(bool)/HasTriggered()", "representative true", "HasTriggered() returns true after HasTriggered(true)", H.HasTriggered()) && Passed;
   H.HasTriggered(false);
   Passed = EvaluateFalse("HasTriggered(bool)/HasTriggered()", "representative false", "HasTriggered() returns false after HasTriggered(false)", H.HasTriggered()) && Passed;
-
-  // UncorrectedADCUnits
-  H.SetUncorrectedADCUnits(2048.5);
-  Passed = EvaluateNear("SetUncorrectedADCUnits/GetUncorrectedADCUnits", "representative value", "GetUncorrectedADCUnits returns the representative value 2048.5", H.GetUncorrectedADCUnits(), 2048.5, 1e-9) && Passed;
 
   // ADCUnits
   H.SetADCUnits(4095.0);
@@ -187,10 +180,6 @@ bool UTNStripHit::TestGettersSetters()
   H.SetTAC(10452.0);
   Passed = EvaluateNear("SetTAC/GetTAC", "representative value", "GetTAC returns the representative value 10452.0", H.GetTAC(), 10452.0, 1e-9) && Passed;
 
-  // TACResolution
-  H.SetTACResolution(3.0);
-  Passed = EvaluateNear("SetTACResolution/GetTACResolution", "representative value", "GetTACResolution returns the representative value 3.0", H.GetTACResolution(), 3.0, 1e-9) && Passed;
-
   // Timing
   H.SetTiming(123.456);
   Passed = EvaluateNear("SetTiming/GetTiming", "representative value", "GetTiming returns the representative value 123.456 ns", H.GetTiming(), 123.456, 1e-9) && Passed;
@@ -198,10 +187,6 @@ bool UTNStripHit::TestGettersSetters()
   // TimingResolution
   H.SetTimingResolution(0.5);
   Passed = EvaluateNear("SetTimingResolution/GetTimingResolution", "representative value", "GetTimingResolution returns the representative value 0.5 ns", H.GetTimingResolution(), 0.5, 1e-9) && Passed;
-
-  // PreampTemp
-  H.SetPreampTemp(25.3);
-  Passed = EvaluateNear("SetPreampTemp/GetPreampTemp", "representative value", "GetPreampTemp returns the representative value 25.3 degrees C", H.GetPreampTemp(), 25.3, 1e-9) && Passed;
 
   // IsGuardRing
   H.IsGuardRing(true);
@@ -245,35 +230,35 @@ bool UTNStripHit::TestMakeParseFlags()
 
   MStripHit H;
 
-  // All flags off → 0
+  // All flags off -> 0
   H.IsGuardRing(false);
   H.IsNearestNeighbor(false);
   H.HasFastTiming(false);
   Passed = Evaluate("MakeFlags()", "all off", "MakeFlags() returns 0 when no flag is set",
                     H.MakeFlags(), (unsigned int) 0b000) && Passed;
 
-  // Only IsGuardRing → bit 0 = 1
+  // Only IsGuardRing -> bit 0 = 1
   H.IsGuardRing(true);
   H.IsNearestNeighbor(false);
   H.HasFastTiming(false);
   Passed = Evaluate("MakeFlags()", "guard ring only", "MakeFlags() returns 1 when only IsGuardRing is set",
                     H.MakeFlags(), (unsigned int) 0b001) && Passed;
 
-  // Only IsNearestNeighbor → bit 1 = 2
+  // Only IsNearestNeighbor -> bit 1 = 2
   H.IsGuardRing(false);
   H.IsNearestNeighbor(true);
   H.HasFastTiming(false);
   Passed = Evaluate("MakeFlags()", "nearest neighbor only", "MakeFlags() returns 2 when only IsNearestNeighbor is set",
                     H.MakeFlags(), (unsigned int) 0b010) && Passed;
 
-  // Only HasFastTiming → bit 2 = 4
+  // Only HasFastTiming -> bit 2 = 4
   H.IsGuardRing(false);
   H.IsNearestNeighbor(false);
   H.HasFastTiming(true);
   Passed = Evaluate("MakeFlags()", "fast timing only", "MakeFlags() returns 4 when only HasFastTiming is set",
                     H.MakeFlags(), (unsigned int) 0b100) && Passed;
 
-  // All three flags → 7
+  // All three flags -> 7
   H.IsGuardRing(true);
   H.IsNearestNeighbor(true);
   H.HasFastTiming(true);
@@ -345,7 +330,7 @@ bool UTNStripHit::TestAddOrigins()
                       Origins[3], 8) && Passed;
   }
 
-  // Add again with duplicates: {3, 7, 8} — 3 and 8 are already present
+  // Add again with duplicates: {3, 7, 8} - 3 and 8 are already present
   H.AddOrigins({3, 7, 8});
   Origins = H.GetOrigins();
   Passed = Evaluate("AddOrigins()", "deduplicated count", "Origins list has 5 unique entries after adding {3,7,8} to {1,3,5,8}",
@@ -364,7 +349,7 @@ bool UTNStripHit::TestAddOrigins()
                       Origins[4], 8) && Passed;
   }
 
-  // Add an empty list — count unchanged
+  // Add an empty list - count unchanged
   H.AddOrigins({});
   Passed = Evaluate("AddOrigins()", "empty add", "Origins count is unchanged after adding an empty list",
                     (unsigned int) H.GetOrigins().size(), (unsigned int) 5) && Passed;
@@ -380,14 +365,13 @@ bool UTNStripHit::TestStreamDatParse()
 {
   bool Passed = true;
 
-  // Set up a representative strip hit with representative values.
+  // Set up a representative strip hit with representative values
   MStripHit Writer;
   Writer.SetDetectorID(2);
   Writer.IsLowVoltageStrip(true);
   Writer.SetStripID(37);
   Writer.HasTriggered(true);
   Writer.SetTiming(500.123);
-  Writer.SetUncorrectedADCUnits(3000.25);
   Writer.SetADCUnits(2950.75);
   Writer.SetEnergy(662.0);
   Writer.SetEnergyResolution(2.5);
@@ -414,14 +398,12 @@ bool UTNStripHit::TestStreamDatParse()
                     Reader.GetDetectorID(), 2u) && Passed;
   Passed = Evaluate("Parse()", "StripID", "Parse() restores the representative StripID 37",
                     Reader.GetStripID(), 37u) && Passed;
-  Passed = EvaluateTrue("Parse()", "IsLowVoltageStrip", "Parse() restores the representative low-voltage strip flag",
+  Passed = EvaluateTrue("Parse()", "IsLowVoltageStrip", "Parse() restores the low-voltage-side flag",
                         Reader.IsLowVoltageStrip() == true) && Passed;
   Passed = EvaluateTrue("Parse()", "HasTriggered", "Parse() restores the representative HasTriggered flag",
                         Reader.HasTriggered() == true) && Passed;
   Passed = EvaluateNear("Parse()", "Timing", "Parse() restores the representative Timing value 500.123",
                         Reader.GetTiming(), 500.123, 1e-6) && Passed;
-  Passed = EvaluateNear("Parse()", "UncorrectedADCUnits", "Parse() restores the representative UncorrectedADCUnits value 3000.25",
-                        Reader.GetUncorrectedADCUnits(), 3000.25, 1e-6) && Passed;
   Passed = EvaluateNear("Parse()", "ADCUnits", "Parse() restores the representative ADCUnits value 2950.75",
                         Reader.GetADCUnits(), 2950.75, 1e-6) && Passed;
   Passed = EvaluateNear("Parse()", "Energy", "Parse() restores the representative Energy value 662.0",
@@ -430,15 +412,35 @@ bool UTNStripHit::TestStreamDatParse()
                         Reader.GetEnergyResolution(), 2.5, 1e-4) && Passed;
   Passed = EvaluateNear("Parse()", "TAC", "Parse() leaves TAC at its default value because StreamDat() does not persist it",
                         Reader.GetTAC(), 0.0, 1e-12) && Passed;
-  Passed = EvaluateNear("Parse()", "PreampTemp", "Parse() leaves PreampTemp at its default value because StreamDat() does not persist it",
-                        Reader.GetPreampTemp(), 0.0, 1e-12) && Passed;
   Passed = EvaluateFalse("Parse()", "HasCalibratedTiming", "Parse() leaves HasCalibratedTiming false because StreamDat() does not persist it",
                          Reader.HasCalibratedTiming()) && Passed;
   Passed = EvaluateFalse("Parse()", "IsGuardRing", "Parse() restores IsGuardRing false via flags", Reader.IsGuardRing()) && Passed;
   Passed = EvaluateTrue("Parse()", "IsNearestNeighbor", "Parse() restores IsNearestNeighbor true via flags", Reader.IsNearestNeighbor()) && Passed;
   Passed = EvaluateTrue("Parse()", "HasFastTiming", "Parse() restores HasFastTiming true via flags", Reader.HasFastTiming()) && Passed;
 
-  // High-voltage strip round-trip: verify 'h' marker and HasTriggered(false) survive StreamDat/Parse
+  // Parse into a reused object: fields not present in the SH line must not
+  // retain stale values from the previous object state
+  {
+    MStripHit Reused;
+    Reused.SetTAC(1234.0);
+    Reused.SetTimingResolution(6.0);
+    Reused.HasCalibratedTiming(true);
+    Reused.AddOrigins({9, 10});
+
+    MString ReusedLine(Out.str().c_str());
+    Passed = EvaluateTrue("Parse()", "reused object", "Parse() returns true when parsing into a reused object",
+                          Reused.Parse(ReusedLine)) && Passed;
+    Passed = EvaluateNear("Parse()", "reused TAC reset", "Parse() resets TAC before applying fields from the line",
+                          Reused.GetTAC(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Parse()", "reused TimingResolution reset", "Parse() resets TimingResolution before applying fields from the line",
+                          Reused.GetTimingResolution(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateFalse("Parse()", "reused HasCalibratedTiming reset", "Parse() resets HasCalibratedTiming before applying fields from the line",
+                           Reused.HasCalibratedTiming()) && Passed;
+    Passed = Evaluate("Parse()", "reused origins reset", "Parse() clears origins before applying fields from the line",
+                      (unsigned int) Reused.GetOrigins().size(), (unsigned int) 0) && Passed;
+  }
+
+  // High voltage side round-trip: verify 'h' marker and HasTriggered(false) survive StreamDat/Parse
   {
     MStripHit WriterHV;
     WriterHV.SetDetectorID(5);
@@ -446,7 +448,6 @@ bool UTNStripHit::TestStreamDatParse()
     WriterHV.SetStripID(18);
     WriterHV.HasTriggered(false);
     WriterHV.SetTiming(99.5);
-    WriterHV.SetUncorrectedADCUnits(1024.0);
     WriterHV.SetADCUnits(1000.0);
     WriterHV.SetEnergy(356.0);
     WriterHV.SetEnergyResolution(1.2);
@@ -454,19 +455,19 @@ bool UTNStripHit::TestStreamDatParse()
     WriterHV.StreamDat(OutHV);
     MString LineHV(OutHV.str().c_str());
     MStripHit ReaderHV;
-    Passed = EvaluateTrue("Parse()", "HV line", "Parse() returns true for a high-voltage strip line",
+    Passed = EvaluateTrue("Parse()", "HV line", "Parse() returns true for a strip on the high voltage side",
                           ReaderHV.Parse(LineHV)) && Passed;
-    Passed = EvaluateFalse("Parse()", "HV IsLowVoltageStrip", "Parse() restores IsLowVoltageStrip false for a high-voltage strip",
+    Passed = EvaluateFalse("Parse()", "HV IsLowVoltageStrip", "Parse() restores IsLowVoltageStrip false for a strip on the high voltage side",
                            ReaderHV.IsLowVoltageStrip()) && Passed;
-    Passed = EvaluateFalse("Parse()", "HV HasTriggered false", "Parse() restores HasTriggered false for the high-voltage strip",
+    Passed = EvaluateFalse("Parse()", "HV HasTriggered false", "Parse() restores HasTriggered false for the strip on the high voltage side",
                            ReaderHV.HasTriggered()) && Passed;
-    Passed = EvaluateNear("Parse()", "HV Timing", "Parse() restores Timing 99.5 for the high-voltage strip",
+    Passed = EvaluateNear("Parse()", "HV Timing", "Parse() restores Timing 99.5 for the strip on the high voltage side",
                           ReaderHV.GetTiming(), 99.5, 1e-6) && Passed;
   }
 
   // The malformed-line cases below exercise MStripHit::Parse() error paths that
   // print via "if (g_Verbosity >= c_Error)". Lower g_Verbosity to c_Quiet to
-  // silence the expected diagnostics, and restore it afterwards.
+  // silence the expected diagnostics, and restore it afterwards
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
 
@@ -481,6 +482,26 @@ bool UTNStripHit::TestStreamDatParse()
   Passed = EvaluateFalse("Parse()", "invalid face", "Parse() returns false for a line with an unknown detector face",
                          Dummy.Parse(InvalidFaceLine)) && Passed;
 
+  // Failed Parse() calls leave the object in a clean default state
+  MStripHit Preserved;
+  Preserved.SetDetectorID(7);
+  Preserved.SetStripID(22);
+  Preserved.SetTAC(1234.0);
+  Preserved.IsGuardRing(true);
+  Preserved.AddOrigins({4, 5});
+  Passed = EvaluateFalse("Parse()", "failed parse clears object", "Parse() returns false for invalid input after clearing existing state",
+                         Preserved.Parse(InvalidFaceLine)) && Passed;
+  Passed = Evaluate("Parse()", "cleared DetectorID", "Failed Parse() resets DetectorID to undefined",
+                    Preserved.GetDetectorID(), g_UnsignedIntNotDefined) && Passed;
+  Passed = Evaluate("Parse()", "cleared StripID", "Failed Parse() resets StripID to undefined",
+                    Preserved.GetStripID(), g_UnsignedIntNotDefined) && Passed;
+  Passed = EvaluateNear("Parse()", "cleared TAC", "Failed Parse() resets TAC to 0",
+                        Preserved.GetTAC(), 0.0, 1e-12) && Passed;
+  Passed = EvaluateFalse("Parse()", "cleared guard ring flag", "Failed Parse() resets IsGuardRing to false",
+                         Preserved.IsGuardRing()) && Passed;
+  Passed = Evaluate("Parse()", "cleared origins", "Failed Parse() clears origins",
+                    (unsigned int) Preserved.GetOrigins().size(), (unsigned int) 0) && Passed;
+
   // Parse() returns false for a line shorter than 3 characters
   MString ShortLine("SH");
   Passed = EvaluateFalse("Parse()", "short line", "Parse() returns false for a line shorter than 3 characters",
@@ -488,7 +509,7 @@ bool UTNStripHit::TestStreamDatParse()
 
   // Parse() returns false for a line with too few fields
   MString TooFewFieldsLine("SH 2 l 37 1 500");
-  Passed = EvaluateFalse("Parse()", "too few fields", "Parse() returns false for a line with fewer than 10 fields",
+  Passed = EvaluateFalse("Parse()", "too few fields", "Parse() returns false for a line with fewer than 9 fields",
                          Dummy.Parse(TooFewFieldsLine)) && Passed;
 
   g_Verbosity = OldVerbosity;
@@ -510,7 +531,6 @@ bool UTNStripHit::TestStreamRoa()
   H.IsLowVoltageStrip(true);
   H.SetADCUnits(4053.0);
   H.SetTAC(10452.0);
-  H.SetPreampTemp(22.1);
   H.SetEnergy(661.7);
   H.SetTiming(123.0);
   H.IsGuardRing(false);
@@ -519,16 +539,18 @@ bool UTNStripHit::TestStreamRoa()
   // MakeFlags() = 0b100 = 4
   H.AddOrigins({2, 5});
 
-  // Full output: ADC + TAC + temperature + energy + timing + flags + origins
+  // Full output: ADC + TAC + energy + timing + flags + origins
   {
     ostringstream Out;
-    H.StreamRoa(Out, true, true, true, true, true, true, true);
+    H.StreamRoa(Out, true, true, true, true, true, true);
     MString S(Out.str().c_str());
+    Passed = Evaluate("StreamRoa()", "full exact output", "Full StreamRoa() output matches the expected field order",
+                      S, MString("UH 0 41 l 4053 10452 661.7 123 4 2;5\n")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "starts with UH", "Full StreamRoa() output starts with 'UH'",
                           S.BeginsWith("UH")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "contains strip 41", "Full StreamRoa() output contains strip ID 41",
                           S.Contains("41")) && Passed;
-    Passed = EvaluateTrue("StreamRoa()", "contains lv marker", "Full StreamRoa() output contains low-voltage marker 'l'",
+    Passed = EvaluateTrue("StreamRoa()", "contains lv marker", "Full StreamRoa() output contains low-voltage-side marker 'l'",
                           S.Contains(" l ")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "contains ADC", "Full StreamRoa() output contains ADC value 4053",
                           S.Contains("4053")) && Passed;
@@ -540,14 +562,12 @@ bool UTNStripHit::TestStreamRoa()
                           S.Contains("661.7")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "contains timing", "Full StreamRoa() output contains timing value 123",
                           S.Contains("123")) && Passed;
-    Passed = EvaluateTrue("StreamRoa()", "contains temperature", "Full StreamRoa() output contains temperature value 22.1",
-                          S.Contains("22.1")) && Passed;
   }
 
   // ADC only
   {
     ostringstream Out;
-    H.StreamRoa(Out, true, false, false, false, false, false, false);
+    H.StreamRoa(Out, true, false, false, false, false, false);
     MString S(Out.str().c_str());
     Passed = EvaluateTrue("StreamRoa()", "ADC only contains 4053", "ADC-only StreamRoa() output contains ADC value 4053",
                           S.Contains("4053")) && Passed;
@@ -558,7 +578,7 @@ bool UTNStripHit::TestStreamRoa()
   // TAC only
   {
     ostringstream Out;
-    H.StreamRoa(Out, false, true, false, false, false, false, false);
+    H.StreamRoa(Out, false, true, false, false, false, false);
     MString S(Out.str().c_str());
     Passed = EvaluateTrue("StreamRoa()", "TAC only contains 10452", "TAC-only StreamRoa() output contains TAC value 10452",
                           S.Contains("10452")) && Passed;
@@ -569,7 +589,7 @@ bool UTNStripHit::TestStreamRoa()
   // Energy only
   {
     ostringstream Out;
-    H.StreamRoa(Out, false, false, true, false, false, false, false);
+    H.StreamRoa(Out, false, false, true, false, false, false);
     MString S(Out.str().c_str());
     Passed = EvaluateTrue("StreamRoa()", "energy only contains 661.7", "Energy-only StreamRoa() output contains energy value 661.7",
                           S.Contains("661.7")) && Passed;
@@ -580,7 +600,7 @@ bool UTNStripHit::TestStreamRoa()
   // Timing only
   {
     ostringstream Out;
-    H.StreamRoa(Out, false, false, false, true, false, false, false);
+    H.StreamRoa(Out, false, false, false, true, false, false);
     MString S(Out.str().c_str());
     Passed = EvaluateTrue("StreamRoa()", "timing only contains 123", "Timing-only StreamRoa() output contains timing value 123",
                           S.Contains("123")) && Passed;
@@ -588,21 +608,10 @@ bool UTNStripHit::TestStreamRoa()
                           S.Contains("4053") == false) && Passed;
   }
 
-  // Temperature only
+  // Flags only - MakeFlags() = 4 (HasFastTiming only); check as " 4 " to distinguish from strip ID 41
   {
     ostringstream Out;
-    H.StreamRoa(Out, false, false, false, false, true, false, false);
-    MString S(Out.str().c_str());
-    Passed = EvaluateTrue("StreamRoa()", "temperature only contains 22.1", "Temperature-only StreamRoa() output contains temperature value 22.1",
-                          S.Contains("22.1")) && Passed;
-    Passed = EvaluateTrue("StreamRoa()", "temperature only no ADC", "Temperature-only StreamRoa() output does not contain ADC value 4053",
-                          S.Contains("4053") == false) && Passed;
-  }
-
-  // Flags only — MakeFlags() = 4 (HasFastTiming only); check as " 4 " to distinguish from strip ID 41
-  {
-    ostringstream Out;
-    H.StreamRoa(Out, false, false, false, false, false, true, false);
+    H.StreamRoa(Out, false, false, false, false, true, false);
     MString S(Out.str().c_str());
     Passed = EvaluateTrue("StreamRoa()", "flags only contains 4", "Flags-only StreamRoa() output contains flags value 4",
                           S.Contains(" 4 ")) && Passed;
@@ -613,8 +622,10 @@ bool UTNStripHit::TestStreamRoa()
   // No optional fields: output contains only the fixed UH prefix fields
   {
     ostringstream Out;
-    H.StreamRoa(Out, false, false, false, false, false, false, false);
+    H.StreamRoa(Out, false, false, false, false, false, false);
     MString S(Out.str().c_str());
+    Passed = Evaluate("StreamRoa()", "bare exact output", "Bare StreamRoa() output matches the fixed UH prefix fields",
+                      S, MString("UH 0 41 l \n")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "bare prefix", "Bare StreamRoa() output starts with the UH prefix",
                           S.BeginsWith("UH")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "bare no ADC", "Bare StreamRoa() output does not contain ADC value 4053",
@@ -623,18 +634,18 @@ bool UTNStripHit::TestStreamRoa()
                           S.Contains("10452") == false) && Passed;
   }
 
-  // High-voltage strip → 'h' marker
+  // High voltage side -> 'h' marker
   {
     MStripHit HV;
     HV.SetDetectorID(1);
     HV.SetStripID(12);
     HV.IsLowVoltageStrip(false);
     ostringstream Out;
-    HV.StreamRoa(Out, false, false, false, false, false, false, false);
+    HV.StreamRoa(Out, false, false, false, false, false, false);
     MString S(Out.str().c_str());
-    Passed = EvaluateTrue("StreamRoa()", "HV marker 'h'", "StreamRoa() emits ' h ' for a high-voltage strip",
+    Passed = EvaluateTrue("StreamRoa()", "HV marker 'h'", "StreamRoa() emits ' h ' for a strip on the high voltage side",
                           S.Contains(" h ")) && Passed;
-    Passed = EvaluateTrue("StreamRoa()", "HV no LV marker", "StreamRoa() does not emit ' l ' for a high-voltage strip",
+    Passed = EvaluateTrue("StreamRoa()", "HV no LV marker", "StreamRoa() does not emit ' l ' for a strip on the high voltage side",
                           S.Contains(" l ") == false) && Passed;
   }
 
@@ -645,7 +656,7 @@ bool UTNStripHit::TestStreamRoa()
     NoOrigins.SetStripID(1);
     NoOrigins.IsLowVoltageStrip(true);
     ostringstream Out;
-    NoOrigins.StreamRoa(Out, false, false, false, false, false, false, true);
+    NoOrigins.StreamRoa(Out, false, false, false, false, false, true);
     MString S(Out.str().c_str());
     Passed = EvaluateTrue("StreamRoa()", "no origins emits dash", "StreamRoa() emits '- ' when the origins list is empty",
                           S.Contains("- ")) && Passed;
