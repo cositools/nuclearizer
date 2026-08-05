@@ -111,12 +111,14 @@ bool MModuleDEESMEX::Initialize()
 
   // Set the geometry to the SubModules using it
   m_ChargeTransport.SetGeometry(m_Geometry);
-  m_DepthReadout.SetGeometry(m_Geometry);
   
   m_StripReadout.SetApplyResolutionCalibration(m_ApplyResolutionCalibration);
   m_DepthReadout.SetApplyTimingResolutionCalibration(m_ApplyTimingResolutionCalibration);
 
-  // Initialize the module 
+  // Pass the depth-calibration-related files to the SubModules using it
+  m_ChargeTransport.SetDepthSplinesFileName(m_DepthSplinesFileName);
+  m_ChargeTransport.SetDepthCoefficientsFileName(m_DepthCoefficientsFileName);
+  m_DepthReadout.SetDepthCoefficientsFileName(m_DepthCoefficientsFileName);
 
   // Each Initialize() should handle its own error messaging
   if (m_Intake.Initialize() == false) return false;
@@ -294,6 +296,16 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_StripTrigger.ReadXmlConfiguration(Node);
   m_DepthReadout.ReadXmlConfiguration(Node);
   m_Output.ReadXmlConfiguration(Node);
+
+  // Add depth-calibration-related file names (used by several submodules)
+  MXmlNode* DepthSplineFile = Node->GetNode("DepthSplineFileName");
+  if (DepthSplineFile != nullptr) {
+    m_DepthSplinesFileName = DepthSplineFile->GetValue();
+  }
+  MXmlNode* DepthCoefficientsFileName = Node->GetNode("DepthCoefficientsFileName");
+  if (DepthCoefficientsFileName != nullptr) {
+    m_DepthCoefficientsFileName = DepthCoefficientsFileName->GetValue();
+  }
   
   // Add noise button for energies
   MXmlNode* ResolutionCalibrationNode = Node->GetNode("ApplyResolutionCalibration");
@@ -339,6 +351,10 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
   m_DepthReadout.CreateXmlConfiguration(Node);
   m_Output.CreateXmlConfiguration(Node);
   
+  // Add depth-calibration-related file names (used by several submodules)
+  new MXmlNode(Node, "DepthSplineFileName", m_DepthSplinesFileName);
+  new MXmlNode(Node, "DepthCoefficientsFileName", m_DepthCoefficientsFileName);
+
   // Add noise button for energies
   new MXmlNode(Node, "ApplyResolutionCalibration", m_ApplyResolutionCalibration);
   // Add shield veto effects button

@@ -647,6 +647,8 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
 {
   // Stream the read-out assembly in MEGAlib's ROA format
+  //
+  // WithTemperatures is currently not used, since we don't have that housekeeping info at the moment
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
@@ -666,7 +668,7 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
     if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
       continue;
     }
-    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags, WithOrigins);
+    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
     ++Counter;
   }
   for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
