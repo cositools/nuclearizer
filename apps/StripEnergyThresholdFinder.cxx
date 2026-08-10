@@ -1059,8 +1059,21 @@ void MStripThresholdFinder::WriteCSV()
   // Write CSV threshold tables (HV and LV)
   // -------------------------------------------------------------
 
-  ofstream csv_HV(m_OutputPrefix + "_Slow_HV_thresholds.csv");
-  ofstream csv_LV(m_OutputPrefix + "_Slow_LV_thresholds.csv");
+  MString HVOutputCSVFileName = m_OutputPrefix + "_Slow_HV_thresholds.csv";
+  MString LVOutputCSVFileName = m_OutputPrefix + "_Slow_LV_thresholds.csv";
+
+  ofstream csv_HV(HVOutputCSVFileName);
+  ofstream csv_LV(LVOutputCSVFileName);
+
+  if (!csv_HV.is_open()) {
+    cerr << "Error: Failed to open CSV output file for HV thresholds:" << HVOutputCSVFileName << endl;
+    return;
+  }
+
+  if (!csv_LV.is_open()) {
+    cerr << "Error: Failed to open CSV output file for LV thresholds:" << HVOutputCSVFileName << endl;
+    return;
+  }
 
   /* CSV headers */
 
