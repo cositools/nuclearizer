@@ -62,34 +62,10 @@ using namespace std;
 #include "MSupervisor.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MReadOutAssembly.h"
+#include "MReadOutElementDoubleStrip.h"
 #include "MStripHit.h"
 #include "MString.h"
 #include "MModuleEnergyCalibration.h"
-
-
-// -------------------------------------------------------------
-// Strip identifier structure
-// -------------------------------------------------------------
-
-//using StripKey = std::tuple<int, char, int>;
-
-
-struct StripKey {
-  int det;
-  char side;
-  int Strip;
-
-  bool operator<(const StripKey& o) const
-  {
-    if (det != o.det) {
-      return det < o.det;
-    }
-    if (side != o.side) {
-      return side < o.side;
-    }
-    return Strip < o.Strip;
-  }
-};
 
 
 // ----------------------------------------------------------------
@@ -112,15 +88,7 @@ class EnergyCalHelper
     m_NDet = nDet;
     m_NStrip = nStrip;
 
-    m_Coeffs.resize(m_NDet);
-
-    for (int d = 0; d < m_NDet; d++) {
-      m_Coeffs[d].resize(2);
-
-      for (int s = 0; s < 2; s++) {
-        m_Coeffs[d][s].resize(m_NStrip);
-      }
-    }
+    m_Coeffs.clear();
 
     ifstream in(fileName);
 
@@ -160,7 +128,10 @@ class EnergyCalHelper
         continue;
       }
 
-      int sideInt = (side == "l") ? 0 : 1;
+      MReadOutElementDoubleStrip R;
+      R.SetDetectorID(det);
+      R.SetStripID(Strip);
+      R.IsLowVoltageStrip(side == "l");
 
       Coeff c;
 
@@ -174,17 +145,15 @@ class EnergyCalHelper
         ss >> c.c0 >> c.c1 >> c.c2 >> c.c3;
       }
 
-      m_Coeffs[det][sideInt][Strip] = c;
+      m_Coeffs[R] = c;
     }
 
     return true;
   }
 
-  double ADCToEnergy(int det, char side, int Strip, double ADC) const
+  double ADCToEnergy(MReadOutElementDoubleStrip R, double ADC) const
   {
-    int sideInt = (side == 'l') ? 0 : 1;
-    const Coeff& c = m_Coeffs[det][sideInt][Strip];
-
+    const Coeff& c = m_Coeffs.at(R);
     return c.c3 * pow(ADC, 3) + c.c2 * pow(ADC, 2) + c.c1 * ADC + c.c0;
   }
 
@@ -192,7 +161,7 @@ class EnergyCalHelper
   int m_NDet;
   int m_NStrip;
 
-  vector<vector<vector<Coeff>>> m_Coeffs;
+  map<MReadOutElementDoubleStrip,Coeff> m_Coeffs;
 };
 
 // -------------------------------------------------------------
@@ -230,30 +199,30 @@ class TACCalHelper
 
       ss >> Strip_id >> det >> side >> Strip >> slope >> slope_err >> offset >> offset_err;
 
-      char sideChar = (side == 0) ? 'l' : 'h';
+      MReadOutElementDoubleStrip R;
+      R.SetDetectorID(det);
+      R.SetStripID(Strip);
+      R.IsLowVoltageStrip(side == 0);
 
-      StripKey key { det, sideChar, Strip };
-
-      m_Coeffs[key] = { slope, offset };
+      m_Coeffs[R] = { slope, offset };
     }
 
     return true;
   }
 
-  double TACToEnergy(int det, char side, int Strip, double TAC) const
+  double TACToEnergy(MReadOutElementDoubleStrip R, double TAC) const
   {
-    StripKey key { det, side, Strip };
 
-    auto it = m_Coeffs.find(key);
-    if (it == m_Coeffs.end()) {
+    if (m_Coeffs.count(R) == 1) {
+      const Coeff& c = m_Coeffs.at(R);
+      return c.slope * TAC + c.offset;
+    } else {
       return 0;
     }
-
-    return it->second.slope * TAC + it->second.offset;
   }
 
  private:
-  map<StripKey, Coeff> m_Coeffs;
+  map<MReadOutElementDoubleStrip, Coeff> m_Coeffs;
 };
 
 
@@ -298,8 +267,8 @@ class MStripThresholdFinder
   void FindSlowThresholds();
   void FindFastThresholds();
 
-  void WriteCSV() const;
-  void WriteDiagnostics() const;
+  void WriteCSV();
+  void WriteDiagnostics();
 
   MString GetOutputPrefix() const
   {
@@ -324,18 +293,18 @@ class MStripThresholdFinder
   long m_MaxEvents = -1;
 
   // --- Data ---
-  map<StripKey, TH1D*> m_ADCHistograms;
-  map<StripKey, map<int, pair<int, int>>> m_TimingCounts;
+  map<MReadOutElementDoubleStrip, TH1D*> m_ADCHistograms;
+  map<MReadOutElementDoubleStrip, map<int, pair<int, int>>> m_TimingCounts;
 
-  map<StripKey, TH1D*> dt0_hists;
-  map<StripKey, TH1D*> dt1_hists;
+  map<MReadOutElementDoubleStrip, TH1D*> dt0_hists;
+  map<MReadOutElementDoubleStrip, TH1D*> dt1_hists;
 
   // --- Results ---
-  map<StripKey, double> m_SlowThresholds;
-  map<StripKey, double> m_SlowThresholdsADC;
+  map<MReadOutElementDoubleStrip, double> m_SlowThresholds;
+  map<MReadOutElementDoubleStrip, double> m_SlowThresholdsADC;
 
-  map<StripKey, double> m_FastThresholds;
-  map<StripKey, double> m_FastThresholdsADC;
+  map<MReadOutElementDoubleStrip, double> m_FastThresholds;
+  map<MReadOutElementDoubleStrip, double> m_FastThresholdsADC;
 
   // --- Helpers ---
   int FindNoisePeakBin(TH1D* Histogram) const;
@@ -674,14 +643,14 @@ bool MStripThresholdFinder::BuildHistograms()
   MString StripMapFile = m_StripMapFile;
   long max_events = m_MaxEvents;
 
-  //map<StripKey,TH1D*> histograms;
-  map<StripKey, vector<int>> hist_counts;
-  map<StripKey, vector<int>> dt0_counts;
-  map<StripKey, vector<int>> dt1_counts;
-  map<StripKey, double> ADC_to_keV_scale;
-  map<StripKey, TH1D*> histograms_TAC;
+  //map<MReadOutElementDoubleStrip,TH1D*> histograms;
+  map<MReadOutElementDoubleStrip, vector<int>> hist_counts;
+  map<MReadOutElementDoubleStrip, vector<int>> dt0_counts;
+  map<MReadOutElementDoubleStrip, vector<int>> dt1_counts;
+  map<MReadOutElementDoubleStrip, double> ADC_to_keV_scale;
+  map<MReadOutElementDoubleStrip, TH1D*> histograms_TAC;
 
-  map<StripKey, map<int, pair<int, int>>> timingCounts;
+  map<MReadOutElementDoubleStrip, map<int, pair<int, int>>> timingCounts;
 
   // -------------------------------------------------------------
   // Build ADC histograms from data
@@ -770,22 +739,22 @@ bool MStripThresholdFinder::BuildHistograms()
 
         double ADC = SH->GetADCUnits();
         //double energy = SH->GetEnergy();
-        int det = SH->GetDetectorID();
-        int Strip = SH->GetStripID();
-        char side = SH->IsLowVoltageStrip() ? 'l' : 'h';
 
-        StripKey key { det, side, Strip };
+        MReadOutElementDoubleStrip R;
+        R.SetDetectorID(SH->GetDetectorID());
+        R.SetStripID(SH->GetStripID());
+        R.IsLowVoltageStrip(SH->IsLowVoltageStrip());
 
 
         //it_hist->second->Fill(ADC);
         int bin = (int) (ADC / m_HistogramMaxADC * m_HistogramBins);
 
         if (bin >= 0 && bin < m_HistogramBins) {
-          if (hist_counts.find(key) == hist_counts.end()) {
-            hist_counts[key] = vector<int>(m_HistogramBins, 0);
+          if (hist_counts.find(R) == hist_counts.end()) {
+            hist_counts[R] = vector<int>(m_HistogramBins, 0);
           }
 
-          hist_counts[key][bin]++;
+          hist_counts[R][bin]++;
         }
 
         // -------------------------------------------------------------
@@ -803,19 +772,19 @@ bool MStripThresholdFinder::BuildHistograms()
 
 
         // Initialize bin if needed
-        if (timingCounts[key].find(ADC_bin) == timingCounts[key].end()) {
-          timingCounts[key][ADC_bin] = { 0, 0 };
+        if (timingCounts[R].count(ADC_bin) == 0) {
+          timingCounts[R][ADC_bin] = { 0, 0 };
         }
 
-        double maxEnergy = m_EnergyCalHelper.ADCToEnergy(det, side, Strip, m_HistogramMaxADC);
+        double maxEnergy = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
 
         int ebin = (int) (energy / maxEnergy * m_HistogramBins);
 
 
         if (is_dt1) {
-          timingCounts[key][ADC_bin].second++;
+          timingCounts[R][ADC_bin].second++;
         } else {
-          timingCounts[key][ADC_bin].first++;
+          timingCounts[R][ADC_bin].first++;
         }
 
 
@@ -823,7 +792,7 @@ bool MStripThresholdFinder::BuildHistograms()
         // SEPARATE: fill smooth dt0/dt1 histograms in ENERGY space
         // -------------------------------------------------------------
 
-        auto& counts = (is_dt1 ? dt1_counts[key] : dt0_counts[key]);
+        auto& counts = (is_dt1 ? dt1_counts[R] : dt0_counts[R]);
 
         if (counts.empty()) {
           counts.resize(m_HistogramBins, 0);
@@ -841,10 +810,10 @@ bool MStripThresholdFinder::BuildHistograms()
 
 
   for (auto& kv : hist_counts) {
-    StripKey key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
     vector<int>& counts = kv.second;
 
-    string name = "h_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.Strip);
+    string name = "h_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
 
     TH1D* h = new TH1D(
       name.c_str(),
@@ -857,21 +826,21 @@ bool MStripThresholdFinder::BuildHistograms()
       h->SetBinContent(i + 1, counts[i]);
     }
 
-    m_ADCHistograms[key] = h;
+    m_ADCHistograms[R] = h;
   }
 
   // -------------------------------------------------------------
   // Rebuild dt0 histograms
   // -------------------------------------------------------------
   for (auto& kv : dt0_counts) {
-    StripKey key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, m_HistogramMaxADC);
+    double maxE = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
     //double maxE = 3000.0;  // keV, safe upper bound
 
 
-    string name = "dt0_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.Strip);
+    string name = "dt0_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
 
     TH1D* h = new TH1D(
       name.c_str(),
@@ -884,20 +853,20 @@ bool MStripThresholdFinder::BuildHistograms()
       h->SetBinContent(i + 1, counts[i]);
     }
 
-    dt0_hists[key] = h;
+    dt0_hists[R] = h;
   }
 
   // -------------------------------------------------------------
   // Rebuild dt1 histograms
   // -------------------------------------------------------------
   for (auto& kv : dt1_counts) {
-    StripKey key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, m_HistogramMaxADC);
+    double maxE = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
     //double maxE = 3000.0;
 
-    string name = "dt1_" + to_string(key.det) + "_" + key.side + "_" + to_string(key.Strip);
+    string name = "dt1_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
 
     TH1D* h = new TH1D(
       name.c_str(),
@@ -910,7 +879,7 @@ bool MStripThresholdFinder::BuildHistograms()
       h->SetBinContent(i + 1, counts[i]);
     }
 
-    dt1_hists[key] = h;
+    dt1_hists[R] = h;
   }
 
   m_TimingCounts = timingCounts;
@@ -934,8 +903,8 @@ void MStripThresholdFinder::FindSlowThresholds()
   // Threshold finding algorithm
   // -------------------------------------------------------------
 
-  map<StripKey, double> thresholds;
-  map<StripKey, double> thresholdsADC;
+  map<MReadOutElementDoubleStrip, double> thresholds;
+  map<MReadOutElementDoubleStrip, double> thresholdsADC;
 
   // Progress tracking (slow thresholds)
   //int totalStrips = m_ADCHistograms.size();
@@ -994,11 +963,11 @@ void MStripThresholdFinder::FindSlowThresholds()
 
   for (auto& kv : m_ADCHistograms) {
 
-    StripKey key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
     TH1D* hist = kv.second;
 
     if (hist->GetEntries() < m_MinEntries) {
-      thresholds[key] = m_FallbackThreshold;
+      thresholds[R] = m_FallbackThreshold;
       continue;
     }
 
@@ -1016,7 +985,7 @@ void MStripThresholdFinder::FindSlowThresholds()
     }
 
     if (startBin < 0) {
-      thresholds[key] = m_FallbackThreshold;
+      thresholds[R] = m_FallbackThreshold;
       continue;
     }
 
@@ -1036,7 +1005,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     int thresholdBin = peakBin;
 
-    if (key.Strip == 64) {
+    if (R.GetStripID() == 64) {
       for (int b = peakBin + 1; b <= maxSearchBin; b++) {
         if (hist->GetBinContent(b) <= peakCounts * 0.5) {
           thresholdBin = b;
@@ -1070,21 +1039,21 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     /* Convert ADC → keV using SLOW calibration */
     double thresholdKeV =
-      m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, thresholdADC);
+      m_EnergyCalHelper.ADCToEnergy(R, thresholdADC);
 
 
-    if (key.side == 'l') {
-      m_StripIndex_LV.push_back(key.Strip);
+    if (R.IsLowVoltageStrip() == true) {
+      m_StripIndex_LV.push_back(R.GetStripID());
       m_ThresholdValues_LV.push_back(thresholdKeV);
-    } else if (key.side == 'h') {
-      m_StripIndex_HV.push_back(key.Strip);
+    } else {
+      m_StripIndex_HV.push_back(R.GetStripID());
       m_ThresholdValues_HV.push_back(thresholdKeV);
     }
 
 
     // Store SLOW thresholds
-    thresholds[key] = thresholdKeV;
-    thresholdsADC[key] = thresholdADC;
+    thresholds[R] = thresholdKeV;
+    thresholdsADC[R] = thresholdADC;
   }
   cout << endl;
 
@@ -1105,18 +1074,18 @@ void MStripThresholdFinder::FindFastThresholds()
     cout << "Warning: No timing data available for fast threshold calculation." << endl;
   }
 
-  map<StripKey, double> thresholds_TAC_ADC;
+  map<MReadOutElementDoubleStrip, double> thresholds_TAC_ADC;
 
   // -------------------------------------------------------------
   // Fast threshold finder (dt0 vs dt1 crossover)
   // -------------------------------------------------------------
 
   for (auto& kv : m_TimingCounts) {
-    StripKey key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
     auto& ADCMap = kv.second;
 
     // Skip guard ring for FAST thresholds
-    if (key.Strip == 64) {
+    if (R.GetStripID() == 64) {
       continue;
     }
 
@@ -1128,7 +1097,7 @@ void MStripThresholdFinder::FindFastThresholds()
 
     // Proper m_MinEntries guard
     if (totalCounts < m_MinEntries) {
-      m_FastThresholds[key] = m_FallbackThreshold;
+      m_FastThresholds[R] = m_FallbackThreshold;
       continue;
     }
 
@@ -1146,7 +1115,7 @@ void MStripThresholdFinder::FindFastThresholds()
     }
 
     if (first_nonzero < 0) {
-      m_FastThresholds[key] = m_FallbackThreshold;
+      m_FastThresholds[R] = m_FallbackThreshold;
       continue;
     }
 
@@ -1208,7 +1177,7 @@ void MStripThresholdFinder::FindFastThresholds()
     }
 
     if (bestADC < 0) {
-      m_FastThresholds[key] = m_FallbackThreshold;
+      m_FastThresholds[R] = m_FallbackThreshold;
       continue;
     }
 
@@ -1223,18 +1192,18 @@ void MStripThresholdFinder::FindFastThresholds()
       fast_thresh_ADC = bestADC + nbins / 2;
     }
 
-    m_FastThresholdsADC[key] = fast_thresh_ADC;
+    m_FastThresholdsADC[R] = fast_thresh_ADC;
 
     double fast_thresh_keV =
-      m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, fast_thresh_ADC);
+      m_EnergyCalHelper.ADCToEnergy(R, fast_thresh_ADC);
 
-    m_FastThresholds[key] = fast_thresh_keV;
+    m_FastThresholds[R] = fast_thresh_keV;
   }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MStripThresholdFinder::WriteCSV() const
+void MStripThresholdFinder::WriteCSV()
 {
 
   if (m_SlowThresholds.empty() && m_FastThresholds.empty()) {
@@ -1256,20 +1225,21 @@ void MStripThresholdFinder::WriteCSV() const
   /* Write rows */
 
   for (const auto& kv : m_SlowThresholds) {
-    char side = kv.first.side;
-    int Strip = kv.first.Strip;
+
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
 
     double thr_keV = kv.second;
-    double thr_ADC = m_SlowThresholdsADC.at(kv.first);
+    double thr_ADC = m_SlowThresholdsADC[R];
 
 
-    if (side == 'h') {
-      csv_HV << "h,"
+    if (R.IsLowVoltageStrip() == true) {
+      csv_LV << "l,"
              << Strip << ","
              << thr_ADC << ","
              << thr_keV << "\n";
-    } else if (side == 'l') {
-      csv_LV << "l,"
+    } else {
+      csv_HV << "h,"
              << Strip << ","
              << thr_ADC << ","
              << thr_keV << "\n";
@@ -1291,16 +1261,16 @@ void MStripThresholdFinder::WriteCSV() const
   cout << "Writing FAST CSV entries: " << m_FastThresholds.size() << endl;
 
   for (const auto& kv : m_FastThresholds) {
-    char side = kv.first.side;
-    int Strip = kv.first.Strip;
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
 
-    double thr_ADC = m_FastThresholdsADC.at(kv.first);
+    double thr_ADC = m_FastThresholdsADC[R];
     double thr_keV = kv.second;
 
-    if (side == 'h') {
-      csv_TAC_HV << "h," << Strip << "," << thr_ADC << "," << thr_keV << "\n";
-    } else if (side == 'l') {
+    if (R.IsLowVoltageStrip() == true) {
       csv_TAC_LV << "l," << Strip << "," << thr_ADC << "," << thr_keV << "\n";
+    } else {
+      csv_TAC_HV << "h," << Strip << "," << thr_ADC << "," << thr_keV << "\n";
     }
   }
 
@@ -1312,7 +1282,7 @@ void MStripThresholdFinder::WriteCSV() const
 }
 
 
-void MStripThresholdFinder::WriteDiagnostics() const
+void MStripThresholdFinder::WriteDiagnostics()
 {
 
   if (m_SlowThresholds.empty() && m_FastThresholds.empty()) {
@@ -1348,16 +1318,14 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   // Fill graphs
   for (const auto& kv : m_SlowThresholds) {
-    int Strip = kv.first.Strip;
-    char side = kv.first.side;
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
     double Threshold = kv.second;
 
 
-    if (side == 'l') {
+    if (R.IsLowVoltageStrip() == true) {
       gSlowThresh_LV->SetPoint(gSlowThresh_LV->GetN(), Strip, Threshold);
-    }
-
-    if (side == 'h') {
+    } else {
       gSlowThresh_HV->SetPoint(gSlowThresh_HV->GetN(), Strip, Threshold);
     }
   }
@@ -1374,7 +1342,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
   // Optional: auto-scale Y axis
   double ymin = 1e9, ymax = -1e9;
   for (const auto& kv : m_SlowThresholds) {
-    //if(kv.first.Strip == 64) continue;
+    //if (kv.first.GetStripID() == 64) continue;
     double v = kv.second;
     if (v < ymin) {
       ymin = v;
@@ -1431,16 +1399,14 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   // Fill histograms
   for (const auto& kv : m_SlowThresholds) {
-    //int Strip = kv.first.Strip;
-    char side = kv.first.side;
+    MReadOutElementDoubleStrip R = kv.first;
     double Threshold = kv.second;
 
     //if(Strip == 64) continue;
 
-    if (side == 'l') {
+    if (R.IsLowVoltageStrip() == true) {
       hSlowDist_LV->Fill(Threshold);
-    }
-    if (side == 'h') {
+    } else {
       hSlowDist_HV->Fill(Threshold);
     }
   }
@@ -1481,7 +1447,8 @@ void MStripThresholdFinder::WriteDiagnostics() const
     65, 0, 65);
 
   for (const auto& kv : m_FastThresholds) {
-    int Strip = kv.first.Strip;
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
     double Threshold_keV = kv.second;
 
     if (Strip == 64) {
@@ -1526,23 +1493,19 @@ void MStripThresholdFinder::WriteDiagnostics() const
   }
 
   for (auto& kv : dt0_hists) {
-    const StripKey& key = kv.first;
+    const MReadOutElementDoubleStrip& R = kv.first;
 
-    if (dt1_hists.find(key) == dt1_hists.end()) {
+    if (dt1_hists.find(R) == dt1_hists.end()) {
       continue;
     }
 
     TH1D* dt0 = kv.second;
-    TH1D* dt1 = dt1_hists.at(key);
-
-    int det = key.det;
-    char side = key.side;
-    int Strip = key.Strip;
+    TH1D* dt1 = dt1_hists[R];
 
     // -------------------------------
     // Create canvas
     // -------------------------------
-    string cname = "cFast_" + to_string(det) + "_" + side + "_" + to_string(Strip);
+    string cname = "cFast_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
     TCanvas* c = new TCanvas(cname.c_str(), cname.c_str(), 800, 600);
 
     // -------------------------------
@@ -1553,7 +1516,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
     dt0->SetTitle(Form(
       "Fast Shaper Threshold (det=%d %c Strip=%d);Energy (keV);Counts",
-      det, side, Strip));
+      R.GetDetectorID(), R.IsLowVoltageStrip() ? 'l' : 'h', R.GetStripID()));
 
 
     // -------------------------------
@@ -1573,9 +1536,9 @@ void MStripThresholdFinder::WriteDiagnostics() const
     // -------------------------------
     // Threshold line (NOW IN keV)
     // -------------------------------
-    if (m_FastThresholds.find(key) != m_FastThresholds.end()) {
+    if (m_FastThresholds.count(R) == 1) {
 
-      double Threshold_keV = m_FastThresholds.at(key);
+      double Threshold_keV = m_FastThresholds[R];
 
       double ymin = gPad->GetUymin();
       double ymax = gPad->GetUymax();
@@ -1603,20 +1566,15 @@ void MStripThresholdFinder::WriteDiagnostics() const
   // -------------------------------------------------------------
 
   for (auto& kv : m_ADCHistograms) {
-    StripKey key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
     TH1D* ADCHist = kv.second;
 
     ADCHist->Write();
 
-    int det = key.det;
-    char side = key.side;
-    int Strip = key.Strip;
-
-
     //string name="Slow Threshold Det "+to_string(key.det)+", Side"+key.side+", Strip"+to_string(key.Strip);
-    string name = "Energy_" + to_string(det) + "_" + side + "_" + to_string(Strip);
+    string name = "Energy_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
 
-    double maxE = m_EnergyCalHelper.ADCToEnergy(det, side, Strip, m_HistogramMaxADC);
+    double maxE = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
     //double maxE = 3000.0;
 
     TH1D* energyHist = new TH1D(
@@ -1628,14 +1586,14 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
     energyHist->SetTitle(Form(
       "Slow Threshold (det=%d side=%c Strip=%d);Energy (keV);Counts",
-      det, side, Strip));
+      R.GetDetectorID(), R.IsLowVoltageStrip() ? 'l' : 'h', R.GetStripID()));
 
     energyHist->GetXaxis()->SetRangeUser(0, 100);
 
     for (int b = 1; b <= ADCHist->GetNbinsX(); b++) {
       double ADC = ADCHist->GetBinCenter(b);
-      double energy = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, ADC);
-      //double energy = ADC;   // TEMP: keep histogram consistent
+      double energy = m_EnergyCalHelper.ADCToEnergy(R, ADC);
+      //double energy = adc;   // TEMP: keep histogram consistent
 
       double counts = ADCHist->GetBinContent(b);
 
@@ -1643,7 +1601,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
       energyHist->AddBinContent(ebin, counts);
     }
 
-    double Threshold = m_SlowThresholds.at(key);
+    double Threshold = m_SlowThresholds[R];
 
     TLine* line = new TLine(Threshold, 0, Threshold, energyHist->GetMaximum());
     line->SetLineColor(kRed);
@@ -1677,18 +1635,16 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   // Fill histograms
   for (const auto& kv : m_FastThresholds) {
-    int Strip = kv.first.Strip;
-    char side = kv.first.side;
+    MReadOutElementDoubleStrip R = kv.first;
     double Threshold = kv.second;
 
-    if (Strip == 64) {
+    if (R.GetStripID() == 64) {
       continue; // The GR has no fast threshold
     }
 
-    if (side == 'l') {
+    if (R.IsLowVoltageStrip() == true) {
       hFastDist_LV->Fill(Threshold);
-    }
-    if (side == 'h') {
+    } else {
       hFastDist_HV->Fill(Threshold);
     }
   }
@@ -1757,20 +1713,17 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   // Fill graphs
   for (const auto& kv : m_FastThresholds) {
-    int Strip = kv.first.Strip;
-    char side = kv.first.side;
+    MReadOutElementDoubleStrip R = kv.first;
     double Threshold = kv.second;
 
-    if (Strip == 64) {
+    if (R.GetStripID() == 64) {
       continue; // No fast GR threshold
     }
 
-    if (side == 'l') {
-      gFastThresh_LV->SetPoint(gFastThresh_LV->GetN(), Strip, Threshold);
-    }
-
-    if (side == 'h') {
-      gFastThresh_HV->SetPoint(gFastThresh_HV->GetN(), Strip, Threshold);
+    if (R.IsLowVoltageStrip() == true) {
+      gFastThresh_LV->SetPoint(gFastThresh_LV->GetN(), R.GetStripID(), Threshold);
+    } else {
+      gFastThresh_HV->SetPoint(gFastThresh_HV->GetN(), R.GetStripID(), Threshold);
     }
   }
 
@@ -1832,18 +1785,18 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   // Separate m_SlowThresholds by side
   for (const auto& kv : m_SlowThresholds) {
-    int Strip = kv.first.Strip;
-    char side = kv.first.side;
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
+
     double Threshold = kv.second;
 
     if (Strip == 64) {
       continue; // skip guard ring
     }
 
-    if (side == 'l') {
+    if (R.IsLowVoltageStrip() == true) {
       slowLV[Strip] = Threshold;
-    }
-    if (side == 'h') {
+    } else {
       slowHV[Strip] = Threshold;
     }
   }
@@ -1898,15 +1851,15 @@ void MStripThresholdFinder::WriteDiagnostics() const
   TGraph* gSlowHV = new TGraph();
 
   for (const auto& kv : m_SlowThresholds) {
-    const StripKey& key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
     double Threshold = kv.second;
 
-    //if (key.Strip == 64) continue; // skip guard ring if needed
+    //if (R.GetStripID() == 64) continue; // skip guard ring if needed
 
-    if (key.side == 'l') {
-      gSlowLV->SetPoint(gSlowLV->GetN(), key.Strip, Threshold);
-    } else if (key.side == 'h') {
-      gSlowHV->SetPoint(gSlowHV->GetN(), key.Strip, Threshold);
+    if (R.IsLowVoltageStrip() == true) {
+      gSlowLV->SetPoint(gSlowLV->GetN(), R.GetStripID(), Threshold);
+    } else {
+      gSlowHV->SetPoint(gSlowHV->GetN(), R.GetStripID(), Threshold);
     }
   }
 
@@ -1931,17 +1884,18 @@ void MStripThresholdFinder::WriteDiagnostics() const
   TGraph* gFastHV = new TGraph();
 
   for (const auto& kv : m_FastThresholds) {
-    const StripKey& key = kv.first;
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
     double Threshold = kv.second;
 
-    if (key.Strip == 64) {
+    if (Strip == 64) {
       continue;
     }
 
-    if (key.side == 'l') {
-      gFastLV->SetPoint(gFastLV->GetN(), key.Strip, Threshold);
-    } else if (key.side == 'h') {
-      gFastHV->SetPoint(gFastHV->GetN(), key.Strip, Threshold);
+    if (R.IsLowVoltageStrip() == true) {
+      gFastLV->SetPoint(gFastLV->GetN(), Strip, Threshold);
+    } else {
+      gFastHV->SetPoint(gFastHV->GetN(), Strip, Threshold);
     }
   }
 
