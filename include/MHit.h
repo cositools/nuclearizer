@@ -73,6 +73,14 @@ class MHit
   //! Return the position resolution of the hit
   MVector GetPositionResolution() const { return m_PositionResolution; }
 
+  // Local Position:
+
+  //! Set the local/raw position of the hit 
+  void SetLocalPosition(const MVector& Position) { m_LocalPosition = Position; }
+
+  //! Return the local/raw position of the hit
+  MVector GetLocalPosition() const { return m_LocalPosition; }
+
 
   // Energy:
 
@@ -177,6 +185,10 @@ class MHit
   MVector m_Position;
   //! Position resolution of the hit
   MVector m_PositionResolution;
+
+
+  //! Local/raw position resolution of the hit
+  MVector m_LocalPosition;
 
   //! Energy of the hit
   double m_Energy;
