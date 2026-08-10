@@ -316,6 +316,9 @@ void MModuleEnergyCalibration::Finalize()
     delete F.second;
   }
 
+  m_ThresholdMap.clear();
+  m_HardwareThresholdMap.clear();
+
   return;
 }
 
@@ -534,7 +537,7 @@ bool MModuleEnergyCalibration::ReadSlowThresholdCutFile(MString FileName) {
         int DetID = Tokens[1 + IndexOffset].ToInt(); // Detector ID
         MString Side = Tokens[2 + IndexOffset].ToString(); // side is a string, either 'l' or 'h'
         int StripID = Tokens[3 + IndexOffset].ToInt(); // stripID
-        //int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
+        int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
         double ThresholdKeVFile = Tokens[5 + IndexOffset].ToDouble(); //energy threshold in keV
 
         MReadOutElementDoubleStrip R;
@@ -542,7 +545,8 @@ bool MModuleEnergyCalibration::ReadSlowThresholdCutFile(MString FileName) {
         R.SetStripID(StripID);
         R.IsLowVoltageStrip(Side == "l");
 
-        // map detectorID, strip number, and voltage side to the threshold (keV)
+        // map detectorID, strip number, and voltage side to the threshold (both ADC and keV)
+        m_HardwareThresholdMap[R] = ThresholdADC;
         m_ThresholdMap[R] = ThresholdKeVFile;
       }
     }
