@@ -60,109 +60,14 @@ using namespace std;
 /* MEGAlib */
 #include "MGlobal.h"
 #include "MSupervisor.h"
+#include "MModuleEnergyCalibration.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MReadOutAssembly.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MStripHit.h"
 #include "MString.h"
-#include "MModuleEnergyCalibration.h"
 
 
-// ----------------------------------------------------------------
-// Simple calibration helper
-// Converts ADC → Energy using polynomial calibration coefficients
-// ----------------------------------------------------------------
-
-class EnergyCalHelper
-{
- public:
-  struct Coeff {
-    double c0 = 0;
-    double c1 = 0;
-    double c2 = 0;
-    double c3 = 0;
-  };
-
-  bool Load(const string& fileName, int nDet = 64, int nStrip = 65)
-  {
-    m_NDet = nDet;
-    m_NStrip = nStrip;
-
-    m_Coeffs.clear();
-
-    ifstream in(fileName);
-
-    if (!in) {
-      cout << "Unable to open calibration file " << fileName << endl;
-      return false;
-    }
-
-    string line;
-
-    while (getline(in, line)) {
-      if (line.empty()) {
-        continue;
-      }
-
-      stringstream ss(line);
-
-      string tag;
-      ss >> tag;
-
-      if (tag != "CM") {
-        continue;
-      }
-
-      string unused;
-      int det = -1;
-      int Strip = -1;
-      string side;
-      string order;
-
-      ss >> unused >> det >> Strip >> side >> order;
-
-      if (det < 0 || det >= m_NDet) {
-        continue;
-      }
-      if (Strip < 0 || Strip >= m_NStrip) {
-        continue;
-      }
-
-      MReadOutElementDoubleStrip R;
-      R.SetDetectorID(det);
-      R.SetStripID(Strip);
-      R.IsLowVoltageStrip(side == "l");
-
-      Coeff c;
-
-      if (order == "poly1zero") {
-        ss >> c.c1;
-      } else if (order == "poly1") {
-        ss >> c.c0 >> c.c1;
-      } else if (order == "poly2") {
-        ss >> c.c0 >> c.c1 >> c.c2;
-      } else {
-        ss >> c.c0 >> c.c1 >> c.c2 >> c.c3;
-      }
-
-      m_Coeffs[R] = c;
-    }
-
-    return true;
-  }
-
-  double ADCToEnergy(MReadOutElementDoubleStrip R, double ADC) const
-  {
-    const Coeff& c = m_Coeffs.at(R);
-    return c.c3 * pow(ADC, 3) + c.c2 * pow(ADC, 2) + c.c1 * ADC + c.c0;
-  }
-
- private:
-  int m_NDet;
-  int m_NStrip;
-
-  map<MReadOutElementDoubleStrip,Coeff> m_Coeffs;
-};
 
 // -------------------------------------------------------------
 // TAC calibration helper
@@ -277,7 +182,7 @@ class MStripThresholdFinder
 
  private:
   // --- Configuration ---
-  EnergyCalHelper m_EnergyCalHelper;
+  MModuleEnergyCalibration m_EnergyCalibration;
   vector<string> m_InputFiles;
   MString m_CalibrationFile;
   MString m_StripMapFile;
@@ -475,8 +380,8 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   m_OutputPrefix = config["output"]["prefix"].as<string>().c_str();
 
 
-  if (!m_EnergyCalHelper.Load(m_CalibrationFile.Data())) {
-    cout << "Failed to load calibration file: " << m_CalibrationFile.Data() << endl;
+  if (m_EnergyCalibration.ReadEnergyCalibrationFile(m_CalibrationFile) == false) {
+    cout << "Failed to load calibration file: " << m_CalibrationFile << endl;
     return false;
   }
 
@@ -776,7 +681,7 @@ bool MStripThresholdFinder::BuildHistograms()
           timingCounts[R][ADC_bin] = { 0, 0 };
         }
 
-        double maxEnergy = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
+        double maxEnergy = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
 
         int ebin = (int) (energy / maxEnergy * m_HistogramBins);
 
@@ -836,7 +741,7 @@ bool MStripThresholdFinder::BuildHistograms()
     MReadOutElementDoubleStrip R = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
+    double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
     //double maxE = 3000.0;  // keV, safe upper bound
 
 
@@ -863,7 +768,7 @@ bool MStripThresholdFinder::BuildHistograms()
     MReadOutElementDoubleStrip R = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
+    double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
     //double maxE = 3000.0;
 
     string name = "dt1_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
@@ -1039,7 +944,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     /* Convert ADC → keV using SLOW calibration */
     double thresholdKeV =
-      m_EnergyCalHelper.ADCToEnergy(R, thresholdADC);
+      m_EnergyCalibration.GetEnergy(R, thresholdADC);
 
 
     if (R.IsLowVoltageStrip() == true) {
@@ -1195,7 +1100,7 @@ void MStripThresholdFinder::FindFastThresholds()
     m_FastThresholdsADC[R] = fast_thresh_ADC;
 
     double fast_thresh_keV =
-      m_EnergyCalHelper.ADCToEnergy(R, fast_thresh_ADC);
+      m_EnergyCalibration.GetEnergy(R, fast_thresh_ADC);
 
     m_FastThresholds[R] = fast_thresh_keV;
   }
@@ -1574,7 +1479,7 @@ void MStripThresholdFinder::WriteDiagnostics()
     //string name="Slow Threshold Det "+to_string(key.det)+", Side"+key.side+", Strip"+to_string(key.Strip);
     string name = "Energy_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
 
-    double maxE = m_EnergyCalHelper.ADCToEnergy(R, m_HistogramMaxADC);
+    double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
     //double maxE = 3000.0;
 
     TH1D* energyHist = new TH1D(
@@ -1592,7 +1497,7 @@ void MStripThresholdFinder::WriteDiagnostics()
 
     for (int b = 1; b <= ADCHist->GetNbinsX(); b++) {
       double ADC = ADCHist->GetBinCenter(b);
-      double energy = m_EnergyCalHelper.ADCToEnergy(R, ADC);
+      double energy = m_EnergyCalibration.GetEnergy(R, ADC);
       //double energy = adc;   // TEMP: keep histogram consistent
 
       double counts = ADCHist->GetBinContent(b);
