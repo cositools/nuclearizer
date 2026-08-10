@@ -561,6 +561,67 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 /////////////////////////////////////////////////////////////////////////////////
 
 
+bool MModuleDepthCalibration::LoadStripCoeffsFile(MString FileName)
+{
+
+  MFile CoeffsFile;
+  if (CoeffsFile.Open(FileName) == false) {
+    cout << "ERROR in MModuleDepthCalibration::LoadStripCoeffsFile: failed to open strip coefficients file." << endl;
+    return false;
+  }
+
+  MString Line;
+  while (CoeffsFile.ReadLine(Line) == true) {
+    if (Line.BeginsWith('#') == true) {
+      std::vector<MString> Tokens = Line.Tokenize(",");
+      if (Tokens.size() < 5 || Tokens[0] != "#detector_info" || Tokens[1] == "detector_id") continue;
+
+      int DetID = Tokens[1].ToInt();
+      // MString DetectorName = Tokens[2];
+      // MString DepthSplineFileName = Tokens[3];
+      m_MeanStretch[DetID] = Tokens[4].ToDouble();
+      m_MeanOffset[DetID] = Tokens[5].ToDouble();
+
+      if (m_StripCoeffs.count(DetID) == 0) {
+        vector<unordered_map<int, vector<double>>> TempVector;
+        unordered_map<int, vector<double>> TempMapLV;
+        unordered_map<int, vector<double>> TempMapHV;
+        m_StripCoeffs[DetID] = TempVector;
+        m_StripCoeffs[DetID].push_back(TempMapLV);
+        m_StripCoeffs[DetID].push_back(TempMapHV);
+      }
+
+      if (g_Verbosity >= c_Info) {
+        cout << "ERROR in MModuleDepthCalibration::LoadStripCoeffsFile: Detector " << DetID << " has a mean stretch of " << m_MeanStretch[DetID] << " and a mean offset of " << m_MeanOffset[DetID] << endl;
+      }
+    } else {
+      std::vector<MString> Tokens = Line.Tokenize(",");
+      if (Tokens.size() == 7) {
+        // unsigned int ReadOutID = Tokens[0].ToUnsignedInt();
+        unsigned int DetID = Tokens[1].ToUnsignedInt();
+        unsigned int Side = Tokens[2].ToUnsignedInt();
+        int StripID = Tokens[3].ToInt();
+        double Stretch = Tokens[4].ToDouble();
+        double Offset = Tokens[5].ToDouble();
+        double TimingNoiseSigma = Tokens[6].ToDouble();
+        
+        vector<double> coeffs;
+        coeffs.push_back(Stretch); coeffs.push_back(Offset); coeffs.push_back(TimingNoiseSigma);
+        m_StripCoeffs[DetID][Side][StripID] = coeffs;
+      }
+    }
+  }
+
+  CoeffsFile.Close();
+
+  return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+
 std::vector<double>* MModuleDepthCalibration::GetPixelCoeffs(int PixelCode)
 {
   // Check to see if the stretch and offset have been loaded. If so, try to get the coefficients for the specified pixel.
