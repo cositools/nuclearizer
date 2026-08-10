@@ -201,13 +201,14 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         MStripHit* LVSH = m_DepthCalibration->GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = m_DepthCalibration->GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-        // Get the position value (assumed from event/hit context H)
-        double depth_val = H->GetPosition().GetZ();
+        // Get the position value in mm(assumed from event/hit context H)
+        double depth_val = H->GetLocalPosition().GetZ();
 
         // Correct the Low Voltage side energy if the hit pointer exists
         if (LVSH != nullptr) {
             double rawLVEnergy = LVSH->GetEnergy(); 
             double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamA_LV, m_ParamB, m_ParamC);
+            
             LVSH->SetEnergy(correctedLVEnergy);    
 
             if (HasExpos() == true) {
@@ -219,6 +220,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         if (HVSH != nullptr) {
             double rawHVEnergy = HVSH->GetEnergy(); 
             double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV_e, m_CCEs_HV_h, m_ParamA_HV, m_ParamB, m_ParamC);
+            
             HVSH->SetEnergy(correctedHVEnergy);    
 
             if (HasExpos() == true) {
@@ -335,32 +337,57 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     }
 
     if (ValidLineCount == 0) {
-      // Read parameters A, B, and C from the first line
-      if (Tokens.size() == 6) {
+      // 1. Read parameters A_HV, A_LV, B, and C from the first line
+      if (Tokens.size() == 4) {
         m_ParamA_HV = Tokens[0].ToDouble();
         m_ParamA_LV = Tokens[1].ToDouble();
-        m_ParamB = Tokens[2].ToDouble();
-        m_ParamC = Tokens[3].ToDouble();
+        m_ParamB    = Tokens[2].ToDouble();
+        m_ParamC    = Tokens[3].ToDouble();
+
+        cout << "\n--- Trapping File Sanity Check ---" << endl;
+        cout << "Loaded Parameters -> A_HV: " << m_ParamA_HV 
+             << " | A_LV: " << m_ParamA_LV 
+             << " | B: " << m_ParamB 
+             << " | C: " << m_ParamC << endl;
+
         ValidLineCount++;
       } else {
-        cout << "ERROR in LoadSimCCEFile: Expected 4 parameters (A_HV, A_LV, B,and C) on the first line." << endl;
+        cout << "ERROR in LoadSimCCEFile: Expected 4 parameters (A_HV, A_LV, B, and C) on the first line." << endl;
         SimCCEFile.Close();
         return false;
       }
     } 
     else if (ValidLineCount == 1) {
-      // Skip the second line which is the column header (z_depth_mm,CCE_HV)
+      // 2. Print column headers line
+      cout << "Loaded Column Headers: ";
+      for (size_t i = 0; i < Tokens.size(); ++i) {
+        cout << Tokens[i] << (i + 1 < Tokens.size() ? " | " : "\n");
+      }
       ValidLineCount++;
     } 
     else {
-      // Read the rest of the rows into your depth and CCE HV arrays
-      if (Tokens.size() == 3) {
+      // 3. Read the 5 data columns into depth and CCE arrays
+      if (Tokens.size() == 5) {
+        // Print the first 3 data rows to terminal for verification
+        if (ValidLineCount <= 4) {
+          cout << "Data Row " << (ValidLineCount - 1) << ": ";
+          for (size_t i = 0; i < Tokens.size(); ++i) {
+            cout << Tokens[i] << (i + 1 < Tokens.size() ? " | " : "\n");
+          }
+          if (ValidLineCount == 4) {
+            cout << "-----------------------------------\n" << endl;
+          }
+        }
+
         m_Depths.push_back(Tokens[0].ToDouble());
         m_CCEs_HV_e.push_back(Tokens[1].ToDouble());
         m_CCEs_HV_h.push_back(Tokens[2].ToDouble());
         m_CCEs_LV_e.push_back(Tokens[3].ToDouble());
         m_CCEs_LV_h.push_back(Tokens[4].ToDouble());
+        
         ValidLineCount++;
+      } else {
+        cout << "ERROR in LoadSimCCEFile: Expected 5 columns on line " << (ValidLineCount + 1) << endl;
       }
     }
   }
@@ -368,8 +395,8 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   SimCCEFile.Close();
 
   // Print summary to console if verbose logging is enabled
-  if (g_Verbosity >= c_Info) {
-    cout << m_XmlTag << "Loaded parameters: A=" << m_ParamA_HV << ", " << m_ParamA_LV
+  if (g_Verbosity >= 1) {
+    cout << m_XmlTag << "Loaded parameters: A_HV=" << m_ParamA_HV << ", A_LV=" << m_ParamA_LV
          << ", B=" << m_ParamB << ", C=" << m_ParamC << endl;
     cout << m_XmlTag << "Loaded " << m_Depths.size() << " data points into arrays." << endl;
   }
@@ -377,14 +404,15 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   return true;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////
 
 double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC) {
 
   // Look up the simulation CCE baseline using the interpolate function
+  
   double cce_base_e = Interpolate(depth_val, m_Depths, sim_cce_sorted_e);
   double cce_base_h = Interpolate(depth_val, m_Depths, sim_cce_sorted_h);
+  
 
   // Evaluate the physical trapping function model using class global popt variables
   double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
@@ -403,7 +431,7 @@ double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, d
 
 
 double MModuleTrappingCorrection::Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp) {
-  // need an interpolation function to get continuour CCE values from the discrete simulation data
+  // need an interpolation function to get continuous CCE values from the discrete simulation data
   if (xp.empty()) return 0.0;
   if (x <= xp.front()) return fp.front();
   if (x >= xp.back()) return fp.back();
