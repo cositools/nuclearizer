@@ -167,6 +167,9 @@ int main(int Argc, char** Argv)
   setvbuf(stdout, NULL, _IONBF, 0);
   MGlobal::Initialize("Standalone", "ThresholdFinder");
 
+  // Set verbosity to c_Error to display errors in the nuclearizer modules
+  g_Verbosity = c_Error;
+
   MStripThresholdFinder Finder;
 
   if (!Finder.ParseCommandLine(Argc, Argv)) {
