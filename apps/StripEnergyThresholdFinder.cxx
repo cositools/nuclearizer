@@ -68,69 +68,6 @@ using namespace std;
 #include "MString.h"
 
 
-
-// -------------------------------------------------------------
-// TAC calibration helper
-// -------------------------------------------------------------
-
-class TACCalHelper
-{
- public:
-  struct Coeff {
-    double slope = 0;
-    double offset = 0;
-  };
-
-  bool Load(const string& fileName)
-  {
-    ifstream in(fileName);
-    if (!in) {
-      cout << "Failed to open TAC calibration file: " << fileName << endl;
-      return false;
-    }
-
-    string line;
-    getline(in, line); // skip header
-
-    while (getline(in, line)) {
-      if (line.empty()) {
-        continue;
-      }
-
-      stringstream ss(line);
-
-      int Strip_id, det, side, Strip;
-      double slope, slope_err, offset, offset_err;
-
-      ss >> Strip_id >> det >> side >> Strip >> slope >> slope_err >> offset >> offset_err;
-
-      MReadOutElementDoubleStrip R;
-      R.SetDetectorID(det);
-      R.SetStripID(Strip);
-      R.IsLowVoltageStrip(side == 0);
-
-      m_Coeffs[R] = { slope, offset };
-    }
-
-    return true;
-  }
-
-  double TACToEnergy(MReadOutElementDoubleStrip R, double TAC) const
-  {
-
-    if (m_Coeffs.count(R) == 1) {
-      const Coeff& c = m_Coeffs.at(R);
-      return c.slope * TAC + c.offset;
-    } else {
-      return 0;
-    }
-  }
-
- private:
-  map<MReadOutElementDoubleStrip, Coeff> m_Coeffs;
-};
-
-
 // -------------------------------------------------------------
 // Hit selection
 // -------------------------------------------------------------
