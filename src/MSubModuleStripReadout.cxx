@@ -97,6 +97,13 @@ bool MSubModuleStripReadout::Initialize()
   } else {
     return false;
   }
+
+  if (EnergyCalibration.ReadSlowThresholdCutFile(m_HardwareThresholdFileName) == true) {
+    // Copy the hardware threshold map
+    m_HardwareThresholdMap = EnergyCalibration.GetHardwareThresholdMap();
+  } else {
+    return false;
+  }
   
   return MSubModule::Initialize();
 }
@@ -122,6 +129,9 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
   
   // Get low-voltage and high-voltage hits
   for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
+
+    list<MReadOutElementDoubleStrip> TriggeredStripHits;
+    list<MReadOutElementDoubleStrip> NeighborStripHits;
     
     for (MDEEStripHit& SH : *Hits) {
       
@@ -162,13 +172,28 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
         if (calculatedADC < 0) calculatedADC = 0;
         
         SH.m_ADC = static_cast<unsigned int>(calculatedADC);
+
+        // Apply the hardware threshold to determine if a strip hit is a nearest-neighbor strip or not
+        SH.m_IsNearestNeighbor = SH.m_ADC < m_HardwareThresholdMap[SH.m_ROE];
+        SH.m_HasTriggered = true;
+
+        if (SH.m_IsNearestNeighbor == false) {
+          TriggeredStripHits.push_back(SH.m_ROE);
+        } else {
+          NeighborStripHits.push_back(SH.m_ROE);
+        }
         
       } else {
         // If no calibration exists in the .ecal file for this strip set it to ADC value of 0
         if (g_Verbosity >= c_Warning) cout << m_Name << ": No inverse calibration found for element " << SH.m_ROE << endl;
         SH.m_ADC = 0;
+        SH.m_HasTriggered = false;
+        NeighborStripHits.push_back(SH.m_ROE);
       }
     }
+
+    // TODO: check that every triggered strip has both nearest neighbors
+    // TODO: Remove all sub-threshold strip hits with no adjacent triggered strips
   }
 
   return true;
@@ -193,6 +218,7 @@ void MSubModuleStripReadout::Finalize()
     delete F.second;
   }
   m_ResolutionCalibration.clear();
+  m_HardwareThresholdMap.clear();
 
   MSubModule::Finalize();
 }
@@ -205,9 +231,14 @@ bool MSubModuleStripReadout::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
-  MXmlNode* N = Node->GetNode("EnergyCalibrationFileName");
-  if (N != nullptr) {
-    m_EnergyCalibrationFileName = N->GetValue();
+  MXmlNode* EnergyCalibrationFileNameNode = Node->GetNode("EnergyCalibrationFileName");
+  if (EnergyCalibrationFileNameNode != nullptr) {
+    m_EnergyCalibrationFileName = EnergyCalibrationFileNameNode->GetValue();
+  }
+
+  MXmlNode* HardwareThresholdFileNameNode = Node->GetNode("HardwareThresholdFileName");
+  if (HardwareThresholdFileNameNode != nullptr) {
+    m_HardwareThresholdFileName = HardwareThresholdFileNameNode->GetValue();
   }
 
   return true;
@@ -222,6 +253,7 @@ MXmlNode* MSubModuleStripReadout::CreateXmlConfiguration(MXmlNode* Node)
   //! Create an XML node tree from the configuration
   
   new MXmlNode(Node, "EnergyCalibrationFileName", m_EnergyCalibrationFileName);
+  new MXmlNode(Node, "HardwareThresholdFileName", m_HardwareThresholdFileName);
 
   return Node;
 }
