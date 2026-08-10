@@ -502,7 +502,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
 
   m_CalibrationFile = config["input"]["calibration_file"].as<string>().c_str();
-  m_StripMapFile = config["input"]["Strip_map"].as<string>().c_str();
+  m_StripMapFile = config["input"]["strip_map"].as<string>().c_str();
   m_OutputPrefix = config["output"]["prefix"].as<string>().c_str();
 
 
