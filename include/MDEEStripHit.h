@@ -82,6 +82,8 @@ struct MDEEStripHit
   double m_Energy;
   //! The measured ADC value
   unsigned int m_ADC;
+  //! If the strip was a nearest neighbor
+  bool m_IsNearestNeighbor;
   //! If the strip has fast timing
   bool m_HasFastTiming;
   //! The measured TAC value in ADC units
