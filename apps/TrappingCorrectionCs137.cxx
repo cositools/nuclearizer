@@ -67,8 +67,7 @@ using namespace std;
 
 double g_MinCTD = -250;
 double g_MaxCTD = 250;
-int g_MinCounts = 400;
-
+int g_MinCounts = 1200;
 int g_HVStrips = 64;
 int g_LVStrips = 64;
 
@@ -494,7 +493,7 @@ bool TrappingCorrectionCs137::Analyze()
                 MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
                 MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction);
                 
-                if ((LVSH->HasCalibratedTiming() == true) && (HVSH->HasCalibratedTiming() == true)) {
+                if ((LVSH->HasCalibratedTiming() == true) && (HVSH->HasCalibratedTiming() == true) && (LVSH != nullptr) && (HVSH != nullptr)) {
                   
                   double CTD = LVSH->GetTiming() - HVSH->GetTiming();
                   int CTDBin = GetCTDBin(CTD);

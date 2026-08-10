@@ -479,7 +479,7 @@ bool TrappingCorrectionAm241::Analyze()
                   MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
                   MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction);
                   
-                  if ((LVSH->HasCalibratedTiming()==true) && (HVSH->HasCalibratedTiming()==true)) {
+                  if ((LVSH->HasCalibratedTiming()==true) && (HVSH->HasCalibratedTiming()==true)&& (LVSH != nullptr) && (HVSH != nullptr)) {
                     
                     double CTD = LVSH->GetTiming() - HVSH->GetTiming();
                     
