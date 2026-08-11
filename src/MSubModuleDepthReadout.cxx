@@ -142,8 +142,8 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
       if (SH.m_FastPeakTime > -200.0 && SH.m_FastPeakTime < 10000.0) {
         SH.m_Timing = 4200.0 - SH.m_FastPeakTime;
 
-        // TODO: apply fast threshold
-        SH.m_HasFastTiming = true;
+        // TODO: apply more realistic fast threshold
+        SH.m_HasFastTiming = (SH.m_Energy > 10.0);
 
         if (m_ApplyTimingResolutionCalibration == true){
           int PixelCode = 10000*DetID + 100*StripID + SH.m_OppositeStripID;
