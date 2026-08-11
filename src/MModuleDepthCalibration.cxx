@@ -116,7 +116,6 @@ bool MModuleDepthCalibration::Initialize()
     return false;
   }
 
-  // Check for issues with geometry or file loading, and return appropriate errors
   if (m_DetectorIDs.size() == 0) {
     cout<<"No Strip3D detectors were found."<<endl;
     return false; 
@@ -192,21 +191,21 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     if (H->GetGuardRingHitFlag() == true) {
       // For GR Hit, define position to be anywhere within the GR volume to pass through to revan
 
-      int GRDetID = H->GetStripHit(0)->GetDetectorID();
+//      int GRDetID = H->GetStripHit(0)->GetDetectorID();
       // Find unique/random position within the GR volume to assign as the hit position, as revan expects
-      MVector GRPosition = m_Geometry->GetDetector(m_GRDetectors[GRDetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
+//      MVector GRPosition = m_Geometry->GetDetector(m_GRDetectors[GRDetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
 
-      Xpos = GRPosition[0];
-      Ypos = GRPosition[1];
-      Zpos = GRPosition[2];      
+//      Xpos = GRPosition[0];
+//      Ypos = GRPosition[1];
+//      Zpos = GRPosition[2];      
 
-      if (g_Verbosity >= c_Info) cout << m_XmlTag << "GR Hit :" << GRDetID << ", " << "set hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
+//      if (g_Verbosity >= c_Info) cout << m_XmlTag << "GR Hit :" << GRDetID << ", " << "set hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
-      MVector GlobalPositionGR = m_GRDetectors[GRDetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(GRPosition);
-      H->SetPosition(GlobalPositionGR); 
+//      MVector GlobalPositionGR = m_GRDetectors[GRDetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(GRPosition);
+//      H->SetPosition(GlobalPositionGR); 
 
       // Skip past the rest of the calibration and move to next Hit
-      continue;
+ //     continue;
  
     } // If not a GR Hit, perform the depth/position calibration...
 
@@ -536,9 +535,25 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
           cout<<"ERROR in MModuleDepthCalibration::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
         }
       }
+    } else if (det->GetTypeName() == "Simple") {
+//      if (det->GetNSensitiveVolumes() == 1) {
+//        MString DetectorName = det->GetName();
+//        string DetName = DetectorName.GetString();
+        
+        // Check that the DetID agrees with the naming scheme GeD_X
+//        if (DetectorName.BeginsWith("GuardRingDetector_GeD_") == true) {
+//          DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // The number after GeD is the COSI detector ID
+//          if (DetID != (DetectorName.ToUnsignedInt()-1)) { // The GR detector ID is +1 compared to the GeD detector for the same DetID.
+//            if (g_Verbosity >= c_Error) {
+//              cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for GR detector "<<DetName<<endl;
+//            }
+//          } else {
+//            m_GRDetectors[DetID-1] = det;
+//          }
+//        }
+//      }
     }
   }
-
   return true;
 }
 
