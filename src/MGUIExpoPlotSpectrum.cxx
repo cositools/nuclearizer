@@ -62,7 +62,7 @@ MGUIExpoPlotSpectrum::MGUIExpoPlotSpectrum(MModule* Module) : MGUIExpo(Module)
 
   // Set the new title of the tab here:
   if (Module != nullptr) {
-      m_TabTitle = "Energy Spectrum (" + Module->GetName() + ")";
+      m_TabTitle = "ESpec (" + Module->GetName() + ")";
   } else {
       m_TabTitle = "Energy Spectrum";
   }

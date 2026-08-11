@@ -21,6 +21,7 @@
 #include <vector>
 #include <numeric>
 #include <cmath>
+#include <tuple>
 
 // ROOT libs:
 
@@ -31,6 +32,7 @@
 #include "MDStrip3D.h"
 #include "MDShapeBRIK.h"
 #include "MGUIExpoDepthCalibration.h"
+#include "MGUIExpoPlotTacDiff.h"
 
 // Forward declarations:
 
@@ -62,7 +64,12 @@ class MModuleDepthCalibration : public MModule
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
-  //! Set filename for coefficients file
+  //! Set filename for charge sharing coefficients file
+  void SetChargeSharingConfigFileName( const MString& FileName) { m_ChargeSharingConfigFileName = FileName; }
+  //! Get filename for coefficients file
+  MString GetChargeSharingConfigFileName() const { return m_ChargeSharingConfigFileName; }
+
+  //! Set filename for ctd-z calibration coefficients file
   void SetCoeffsFileName( const MString& FileName) { m_CoeffsFileName = FileName; }
   //! Get filename for coefficients file
   MString GetCoeffsFileName() const { return m_CoeffsFileName; }
@@ -91,11 +98,43 @@ class MModuleDepthCalibration : public MModule
   //! Load the detector and strip dimensions from the geometry object
   bool LoadDetectorDimensions(MDGeometryQuest* Geometry);
 
-  //! Load in the specified coefficients file
+  //! Load in the specified charge sharing calibration coefficients file
+  bool LoadChargeSharingConfigFile(MString FName);
+
+  //! Load in the specified ctd-z coefficients file
   bool LoadCoeffsFile(MString FName);
+
+  //! Set the vector of z values for each detector (which depths are in the config for the charge sharing correction for each detector)
+  void SetChargeSharingDepths( unordered_map<int, vector<double>> ChargeSharingDepths) {m_ChargeSharingDepths = ChargeSharingDepths;}
+
+  //! Set the charge sharing correction depth calibration coefficient, one vector per strip-pair (map-int)  per depth (the vector)
+  void SetChargeSharingCoeffs( unordered_map<int, vector<vector<double>>> ChargeSharingCoeffs ) { m_ChargeSharingCoeffs = ChargeSharingCoeffs; }
+
+  //! Set the coefficients of the polynomial describing the charge sharing correction depth calibration coefficient, one vector per detector (map-int)  per depth (the vector)
+  void SetChargeSharingPolyCoeffsHV( unordered_map<int, vector<vector<double>>> ChargeSharingPolyCoeffsHV ) { m_ChargeSharingPolyCoeffsHV = ChargeSharingPolyCoeffsHV; }
+  void SetChargeSharingPolyCoeffsLV( unordered_map<int, vector<vector<double>>> ChargeSharingPolyCoeffsLV ) { m_ChargeSharingPolyCoeffsLV = ChargeSharingPolyCoeffsLV; }
+
+  //! Set the coefficients of the polynomial describing the charge sharing correction, one vector per detector (map-int) per depth (the vector)
+  void SetChargeSharingCorrectionCoeffsHV( unordered_map<int, vector<vector<double>>> ChargeSharingCorrectionCoeffsHV ) { m_ChargeSharingCorrectionCoeffsHV = ChargeSharingCorrectionCoeffsHV; }
+  void SetChargeSharingCorrectionCoeffsLV( unordered_map<int, vector<vector<double>>> ChargeSharingCorrectionCoeffsLV ) { m_ChargeSharingCorrectionCoeffsLV = ChargeSharingCorrectionCoeffsLV; }
 
   //! Set the depth calibration coefficients
   void SetCoeffs( unordered_map<int, vector<double>> Coeffs ) { m_Coeffs = Coeffs; }
+
+  //! Get the depths for the charge sharing correction calibration coefficients for a detector
+  unordered_map<int, vector<double>> GetChargeSharingDepths() { return m_ChargeSharingDepths; }
+
+  //! Get the charge sharing correction calibration coefficients
+  unordered_map<int, vector<vector<double>>> GetChargeSharingCoeffs() { return m_ChargeSharingCoeffs; }
+
+  //! Get the coefficients of the polynomial for the ccharge sharing expectation / bump  calibration
+  unordered_map<int, vector<vector<double>>> GetChargeSharingPolyCoeffsHV() { return m_ChargeSharingPolyCoeffsHV; }
+  unordered_map<int, vector<vector<double>>> GetChargeSharingPolyCoeffsLV() { return m_ChargeSharingPolyCoeffsLV; }
+
+  //! Get the coefficients of the polynomial for the charge sharing correction calibration
+  unordered_map<int, vector<vector<double>>> GetChargeSharingCorrectionCoeffsHV() { return m_ChargeSharingCorrectionCoeffsHV; }
+  unordered_map<int, vector<vector<double>>> GetChargeSharingCorrectionCoeffsLV() { return m_ChargeSharingCorrectionCoeffsLV; }
+
   //! Get the depth calibration coefficients
   unordered_map<int, vector<double>> GetCoeffs() { return m_Coeffs; }
 
@@ -124,6 +163,13 @@ class MModuleDepthCalibration : public MModule
 
   // protected methods:
  protected:
+
+  //! Returns the z as a function of ctd, given some ctd and some detector
+  std::tuple<double, double> CalculateZfromCTD(double CTDvalue, double noise, int DetID,int Grade, bool sean_weighting);
+
+  //! Returns the strip with the specified strip ID
+  MStripHit* GetStrip(std::vector<MStripHit*>& Strips, int StripID);
+
   //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
   MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
   
@@ -144,7 +190,18 @@ class MModuleDepthCalibration : public MModule
   //! Determine the Grade (geometry of charge sharing) of the Hit
   int GetHitGrade(MHit* H);
 
-  //! Return the coefficients for a pixel
+  //! Return the coefficients of the charge sharing correction  polynomial for a detector at a depth
+  vector<double> GetChargeSharingCorrectionCoeffsHV(int DetID,double z);
+  vector<double> GetChargeSharingCorrectionCoeffsLV(int DetID,double z);
+  
+  //! Return the coefficients of the dTac polynomial for a detector at a depth
+  vector<double> GetChargeSharingPolyCoeffsHV(int DetID,double z);
+  vector<double> GetChargeSharingPolyCoeffsLV(int DetID,double z);
+  
+  //! Return the charge-sharing stretch/offset coefficients for a strip-pair at a depth
+  vector<double> GetChargeSharingCoeffs(int StripPairCode,double z);
+  
+  //! Return the ctd-z stretch/offset coefficients for a pixel
   vector<double>* GetPixelCoeffs(int PixelCode);
   
   //! Load the metrology mask file
@@ -153,6 +210,7 @@ class MModuleDepthCalibration : public MModule
   //! Get the x, y position of the intersection of two strips based on the Metrology Mask  
   vector<double> GetStripIntersection(MReadOutElementDoubleStrip LVStrip, MReadOutElementDoubleStrip HVStrip);
 
+  // TODO this should require strip energy, not hit energy... 
   //! Get the timing FWHM noise for the specified pixel and Energy
   double GetTimingNoiseFWHM(int PixelCode, double Energy);
 
@@ -162,10 +220,17 @@ class MModuleDepthCalibration : public MModule
 
 
   // protected members:
- protected:
-
-  unordered_map<int, vector<double>> m_Coeffs;
+  protected:
+ 
+  unordered_map<int, vector<double>> m_ChargeSharingDepths; // maps DetID to the depths for which the charge sharing polynomial correction and charge sharing coefficients per-strip-pair were calculated
+  unordered_map<int, vector<vector<double>>> m_ChargeSharingCoeffs; // maps StripPairID to a vector of coefficients, for a vector of depths (needs interpolation)
+  unordered_map<int, vector<vector<double>>> m_ChargeSharingCorrectionCoeffsLV; // maps DetID to the LV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a vector of depths
+  unordered_map<int, vector<vector<double>>> m_ChargeSharingCorrectionCoeffsHV; // maps DetID to the HV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a given depth
+  unordered_map<int, vector<vector<double>>> m_ChargeSharingPolyCoeffsLV; // maps DetID to the LV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a vector of depths
+  unordered_map<int, vector<vector<double>>> m_ChargeSharingPolyCoeffsHV; // maps DetID to the HV coefficients for dTAC vs CS map and charge sharing correction vs CS map, for a given depth
+  unordered_map<int, vector<double>> m_Coeffs; // maps pix id to a vector of coefficients... 
   double m_Coeffs_Energy;
+  MString m_ChargeSharingConfigFileName;
   MString m_CoeffsFileName;
   MString m_SplinesFile;
   unordered_map<int, double> m_Thicknesses;
@@ -183,10 +248,15 @@ class MModuleDepthCalibration : public MModule
   uint64_t m_ErrorSH;
   uint64_t m_ErrorNullSH;
   uint64_t m_ErrorNoE;
+  uint64_t m_ZombieBump;
+  uint64_t m_ChargeSharingLV;
+  uint64_t m_ChargeSharingHV;
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
   MGUIExpoDepthCalibration* m_ExpoDepthCalibration;
+  MGUIExpoPlotTacDiff* m_ExpoPlotTacDiff;
+
 
   // The CTD Map maps each detector (int) to a 2D array of CTD values.
   unordered_map<int, vector<vector<double>>> m_CTDMap;
@@ -194,6 +264,7 @@ class MModuleDepthCalibration : public MModule
   unordered_map<int, vector<TSpline3*>> m_SplineMap;
   bool m_SplinesFileIsLoaded;
   bool m_CoeffsFileIsLoaded;
+  bool m_ChargeSharingConfigFileIsLoaded;
 
   //! The Mask Metrology file name
   MString m_MaskMetrologyFileName;
@@ -208,7 +279,9 @@ class MModuleDepthCalibration : public MModule
   // boolean for use with the card cage at UCSD since it tags all events as detector 11
   bool m_UCSDOverride;
 
-
+  // variable to describe the fraction of charge sharing that we define as a single strip
+  // TODO -- should this be a variable in the config? 
+  double m_SingleStripChargeSharing = 0.9;
 
   // private members:
  private:
