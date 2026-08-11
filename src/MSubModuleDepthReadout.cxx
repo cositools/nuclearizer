@@ -150,7 +150,7 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
           if (m_Coeffs.count(PixelCode) == 1){
             vector<double> Coeffs = m_Coeffs[PixelCode];
             double CTD_FWHM = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
-            double CTD_Sigma = CTD_FWHM / 2.355;
+            double CTD_Sigma = min(abs(CTD_FWHM / 2.355), 50.0);
             // Smear the timing value based on the given CTD resolution
             // --> divide by √2 to obtain TAC resolution from CTD resolution
             SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
@@ -213,7 +213,7 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
           if (m_Coeffs.count(PixelCode) == 1){
             vector<double> Coeffs = m_Coeffs[PixelCode];
             double CTD_FWHM = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
-            double CTD_Sigma = CTD_FWHM / 2.355;
+            double CTD_Sigma = min(abs(CTD_FWHM / 2.355), 50.0);
             // Smear the timing value based on the given CTD resolution
             // --> divide by √2 to obtain TAC resolution from CTD resolution
             SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
