@@ -117,7 +117,7 @@ bool MModuleDepthCalibration::Initialize()
   }
 
   if (m_DetectorIDs.size() == 0) {
-    cout<<"No Strip3D detectors were found."<<endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": No Strip3D detectors were found"<<endl;
     return false; 
   }
 
@@ -134,7 +134,7 @@ bool MModuleDepthCalibration::Initialize()
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
     m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFileName);
     if (m_MaskMetrologyFileIsLoaded == false) {
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "Unable to open Metrology file" << endl;
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Unable to open Metrology file" << endl;
       return false;
     }
   }
@@ -191,21 +191,28 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     if (H->GetGuardRingHitFlag() == true) {
       // For GR Hit, define position to be anywhere within the GR volume to pass through to revan
 
-//      int GRDetID = H->GetStripHit(0)->GetDetectorID();
+      int GRDetID = H->GetStripHit(0)->GetDetectorID();
+
       // Find unique/random position within the GR volume to assign as the hit position, as revan expects
-//      MVector GRPosition = m_Geometry->GetDetector(m_GRDetectors[GRDetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
+      if (m_GRDetectors[GRDetID]->GetName().BeginsWith("GuardRing") == true) {
+        MVector GRPosition = m_Geometry->GetDetector(m_GRDetectors[GRDetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
+      
+        Xpos = GRPosition[0];
+        Ypos = GRPosition[1];
+        Zpos = GRPosition[2];      
+      
+        if (g_Verbosity >= c_Info) cout << m_XmlTag << ": GR Hit: Det ID " << GRDetID << ", " << "set hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
-//      Xpos = GRPosition[0];
-//      Ypos = GRPosition[1];
-//      Zpos = GRPosition[2];      
+        MVector GlobalPositionGR = m_GRDetectors[GRDetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(GRPosition);
+        H->SetPosition(GlobalPositionGR); 
 
-//      if (g_Verbosity >= c_Info) cout << m_XmlTag << "GR Hit :" << GRDetID << ", " << "set hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
-
-//      MVector GlobalPositionGR = m_GRDetectors[GRDetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(GRPosition);
-//      H->SetPosition(GlobalPositionGR); 
+      } else {
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Could not find GuardRing volume for position determination" << endl;
+      }
+      
 
       // Skip past the rest of the calibration and move to next Hit
- //     continue;
+      continue;
  
     } // If not a GR Hit, perform the depth/position calibration...
 
@@ -298,11 +305,11 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         Event->SetDepthCalibrationError("No calibration coefficients");
         ++m_Error1;
       } else if (CTDVec.size() == 0) {
-          if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Empty CTD vector" << endl;
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
       } else if (DepthVec.size() == 0) {
-          if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Empty Depth vector" << endl;
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
       } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
@@ -378,7 +385,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       
       }
     
-      if (g_Verbosity >= c_Info) cout << m_XmlTag << "Strip ID :" << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
+      if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Strip ID: " << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
     }
     
@@ -393,8 +400,8 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     H->SetPosition(GlobalPosition); 
     H->SetPositionResolution(GlobalResolution);
 
-    // For events that have NoDepth, these can be passed through revan with an XE flag and any position within the detector
-    if (H->GetNoDepth() == true) {
+    // For non-GR hits that have NoDepth, these can be passed through revan with an XE flag and any position within the detector
+    if (H->GetNoDepth() == true && H->GetGuardRingHitFlag() == false) {
       DetID = H->GetStripHit(0)->GetDetectorID();
       MVector XEPosition = m_Geometry->GetDetector(m_Detectors[DetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
       
@@ -535,23 +542,24 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
           cout<<"ERROR in MModuleDepthCalibration::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
         }
       }
-    } else if (det->GetTypeName() == "Simple") {
-//      if (det->GetNSensitiveVolumes() == 1) {
-//        MString DetectorName = det->GetName();
-//        string DetName = DetectorName.GetString();
-        
-        // Check that the DetID agrees with the naming scheme GeD_X
-//        if (DetectorName.BeginsWith("GuardRingDetector_GeD_") == true) {
-//          DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // The number after GeD is the COSI detector ID
-//          if (DetID != (DetectorName.ToUnsignedInt()-1)) { // The GR detector ID is +1 compared to the GeD detector for the same DetID.
-//            if (g_Verbosity >= c_Error) {
-//              cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for GR detector "<<DetName<<endl;
-//            }
-//          } else {
-//            m_GRDetectors[DetID-1] = det;
-//          }
-//        }
-//      }
+    } else if (det->GetTypeName() == "Simple" || det->GetTypeName() == "Scintillator") {
+      if (det->GetNSensitiveVolumes() == 1) {
+        MString DetectorName = det->GetName();
+        string DetName = DetectorName.GetString();
+        // Check that the DetID agrees with the naming scheme GuardRingDetector_GeD_
+        if (DetectorName.BeginsWith("GuardRingDetector_GeD_") == true) {
+          DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // The number after GeD is the COSI detector ID
+          if (DetID != (DetectorName.ToUnsignedInt()-1)) { // The GR detector ID is +1 compared to the GeD detector for the same DetID.
+            if (g_Verbosity >= c_Error) {
+              cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for GR detector "<<DetName<<endl;
+            }
+          } else {
+            m_GRDetectors[DetID-1] = det;
+          }
+        } else if (DetectorName == "GuardRingDetector") {
+          m_GRDetectors[DetID-1] = det;
+        }
+      }
     }
   }
   return true;
@@ -580,7 +588,7 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
       std::vector<MString> Tokens = Line.Tokenize(" ");
       m_Coeffs_Energy = Tokens[5].ToDouble();
       if (g_Verbosity >= c_Info) {
-        cout << m_XmlTag << "The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
+        cout << m_XmlTag << ": The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
       }
     } else {
       std::vector<MString> Tokens = Line.Tokenize(",");
@@ -807,7 +815,7 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
   }
   if (H->GetNStripHits() == 0) {
     // Error if no strip hits listed. Bad grade is returned
-    if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: HIT WITH NO STRIP HITS" << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR in MModuleDepthCalibration: HIT WITH NO STRIP HITS" << endl;
     return -1;
   }
    
@@ -819,11 +827,11 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
   for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
     MStripHit* SH = H->GetStripHit(j);
     if (SH == nullptr ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: Depth Calibration: got NULL strip hit :( " << endl;
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR in MModuleDepthCalibration: Depth Calibration: got NULL strip hit :( " << endl;
       return -1;
     }
     if (SH->GetEnergy() == 0 ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: Depth Calibration: got strip without energy :( " << endl; 
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR in MModuleDepthCalibration: Depth Calibration: got strip without energy :( " << endl; 
       return -1;
     }
     if (SH->IsLowVoltageStrip()) {
