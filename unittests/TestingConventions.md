@@ -78,6 +78,26 @@ There are two kinds of test files:
 
 Each class unit test file tests exactly one class `MFoo`.
 
+### Unit-test formatting
+
+Unit tests follow the formatting of the existing files in this directory.
+Keep each `Evaluate`, `EvaluateTrue`, `EvaluateFalse`, and `EvaluateException`
+call on one physical line, including all arguments and the trailing `&& Passed`.
+Do not introduce continuation lines inside these assertion calls, even when the
+line is long.
+
+**The `Evaluate*` examples throughout this document are wrapped across several
+lines so they stay readable in a narrow column.  That is a formatting choice of
+this document only — it does not reflect the rule above.  Write them on one
+physical line in the actual test files.**
+
+For the test executable entry point, see section "`main()`" below, which also
+covers the variant for classes that do not need `MGlobal::Initialize`.
+
+The generic `clang-format` instructions in `CodingConventions.md` remain
+applicable, but if they introduce line wrapping that conflicts with these
+unit-test rules, preserve the unit-test formatting manually.
+
 ### Header block
 
 ```cpp
