@@ -46,6 +46,8 @@ private:
   bool TestFourColumnFormat();
   //! Test the ASIC and primary flags inferred from the read-out ID bits in the four-column format
   bool TestFourColumnReadOutIDInference();
+  //! Test dropping the detectors which were not enabled during the run
+  bool TestRestrictToEnabledDetectors();
   //! Test replacing LV/HV assignments from ASIC polarities
   bool TestUpdateASICPolarities();
   //! Test invalid ASIC polarity data and atomic failure behavior
@@ -75,6 +77,7 @@ bool UTNStripMap::Run()
   Passed = TestNineColumnFormat() && Passed;
   Passed = TestFourColumnFormat() && Passed;
   Passed = TestFourColumnReadOutIDInference() && Passed;
+  Passed = TestRestrictToEnabledDetectors() && Passed;
   Passed = TestUpdateASICPolarities() && Passed;
   Passed = TestInvalidASICPolarities() && Passed;
   Passed = TestBoundariesAndReloads() && Passed;
@@ -274,6 +277,67 @@ bool UTNStripMap::TestFourColumnReadOutIDInference()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool UTNStripMap::TestRestrictToEnabledDetectors()
+{
+  bool Passed = true;
+  const MString Fixture = GetFixturePath("_restrict.map");
+
+  ofstream Out(Fixture.Data());
+  Passed = EvaluateTrue("Open()", "create restriction fixture", "The restriction fixture can be created", Out.is_open()) && Passed;
+  if (Out.is_open()) {
+    Out << "0 0 0 1 0 0 0 0 10" << endl;
+    Out << "1 0 0 0 0 1 0 1 10" << endl;
+    Out << "2 0 0 1 0 2 1 0 11" << endl;
+    Out << "3 0 0 0 0 3 1 1 11" << endl;
+    Out << "4 0 0 1 0 4 2 0 12" << endl;
+    Out.close();
+  }
+
+  // A strip map normally covers every detector, while a run may only enable some of them
+  MStripMap Map;
+  Passed = EvaluateTrue("Open()", "restriction fixture", "The restriction fixture loads", Map.Open(Fixture)) && Passed;
+  Passed = EvaluateTrue("RestrictToEnabledDetectors()", "detectors 0 and 2", "Restricting to a subset of the detectors succeeds", Map.RestrictToEnabledDetectors(vector<unsigned int> { 0, 2 })) && Passed;
+
+  Passed = EvaluateTrue("HasReadOutID()", "detectors 0 and 2", "A read-out ID of a kept detector is still present", Map.HasReadOutID(0)) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "detectors 0 and 2", "The second read-out ID of a kept detector is still present", Map.HasReadOutID(1)) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "detectors 0 and 2", "The read-out ID of the other kept detector is still present", Map.HasReadOutID(4)) && Passed;
+  Passed = EvaluateFalse("HasReadOutID()", "detectors 0 and 2", "A read-out ID of a dropped detector is gone", Map.HasReadOutID(2)) && Passed;
+  Passed = EvaluateFalse("HasReadOutID()", "detectors 0 and 2", "The second read-out ID of a dropped detector is gone", Map.HasReadOutID(3)) && Passed;
+
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detectors 0 and 2", "The reverse lookup of a kept detector survives", Map.HasROIDetSideStrip(0, true, 10)) && Passed;
+  Passed = EvaluateFalse("HasROIDetSideStrip()", "detectors 0 and 2", "The reverse lookup of a dropped detector is gone", Map.HasROIDetSideStrip(1, true, 11)) && Passed;
+  if (Map.HasROIDetSideStrip(2, true, 12) == true) {
+    Passed = Evaluate("GetReadOutID()", "detectors 0 and 2", "The reverse lookup of a kept detector still returns its read-out ID", Map.GetReadOutID(2, true, 12), 4u) && Passed;
+  }
+
+  // The rejections below report via "if (g_Verbosity >= c_Error)", which DisableDefaultStreams() does
+  // not silence - lower g_Verbosity for all of them and restore it before returning
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+
+  // Restricting to detectors which are not in the map at all must not silently empty it
+  bool RestrictedToUnknown = Map.RestrictToEnabledDetectors(vector<unsigned int> { 7 });
+  Passed = EvaluateFalse("RestrictToEnabledDetectors()", "detector 7", "Restricting to a detector which is not in the map returns false", RestrictedToUnknown) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "detector 7", "A rejected restriction leaves the map unchanged", Map.HasReadOutID(0)) && Passed;
+
+  bool RestrictedToNone = Map.RestrictToEnabledDetectors(vector<unsigned int>());
+  Passed = EvaluateFalse("RestrictToEnabledDetectors()", "empty detector list", "Restricting to an empty detector list returns false", RestrictedToNone) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "empty detector list", "A restriction to an empty list leaves the map unchanged", Map.HasReadOutID(0)) && Passed;
+
+  MStripMap EmptyMap;
+  bool RestrictedEmpty = EmptyMap.RestrictToEnabledDetectors(vector<unsigned int> { 0 });
+  Passed = EvaluateFalse("RestrictToEnabledDetectors()", "empty map", "Restricting an empty map returns false", RestrictedEmpty) && Passed;
+
+  g_Verbosity = OldVerbosity;
+
+  MFile::Remove(Fixture);
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool UTNStripMap::TestUpdateASICPolarities()
 {
   bool Passed = true;
@@ -375,28 +439,23 @@ bool UTNStripMap::TestInvalidASICPolarities()
   Passed = EvaluateFalse("IsLowVoltage()", "missing ASIC", "A failed update leaves ROI 20 unchanged", Map.IsLowVoltage(20)) && Passed;
   Passed = EvaluateTrue("IsLowVoltage()", "missing ASIC", "A failed update leaves ROI 21 unchanged", Map.IsLowVoltage(21)) && Passed;
 
-  // A colliding polarity update is tolerated rather than rejected. The GSE writes a default polarity
-  // of 1 for every ASIC of a detector that was never configured, so unit-level data - taken with
-  // detector 0 only - reports both sides of detectors 1-15 as low voltage, which collides for every
-  // secondary strip (975 tuples on 542-1). Those detectors carry no hits, and rejecting the update
-  // would stop MModuleLoaderMeasurementsHDF from initializing over a conflict among detectors that do
-  // not exist. See https://github.com/cositools/nuclearizer/pull/188 for the discussion.
+  // A (detector, side, strip) tuple must map to exactly one read-out channel, so a polarity update that
+  // would collide is rejected outright. Note that the GSE writes a default polarity for every ASIC of a
+  // detector that was never configured, so a strip map holding detectors the data was not taken with can
+  // trigger this legitimately - see Issue #189.
   vector<map<bool, vector<bool>>> CollidingPolarities(3);
   CollidingPolarities[2][false] = vector<bool> { false };
   CollidingPolarities[2][true] = vector<bool> { false };
   DisableDefaultStreams();
   bool CollidingResult = Map.UpdateASICPolarities(CollidingPolarities);
   EnableDefaultStreams();
-  Passed = EvaluateTrue("UpdateASICPolarities()", "duplicate resulting tuple", "A polarity update that creates a duplicate tuple still succeeds", CollidingResult) && Passed;
+  Passed = EvaluateFalse("UpdateASICPolarities()", "duplicate resulting tuple", "A polarity update that creates a duplicate tuple returns false", CollidingResult) && Passed;
 
-  // The update is applied in full and the last colliding entry wins
-  Passed = EvaluateFalse("IsLowVoltage()", "duplicate resulting tuple", "The colliding update moves ROI 20 to the HV side", Map.IsLowVoltage(20)) && Passed;
-  Passed = EvaluateFalse("IsLowVoltage()", "duplicate resulting tuple", "The colliding update moves ROI 21 to the HV side", Map.IsLowVoltage(21)) && Passed;
-  Passed = EvaluateTrue("HasROIDetSideStrip()", "duplicate resulting tuple", "The colliding tuple is mapped once", Map.HasROIDetSideStrip(2, false, 40)) && Passed;
-  Passed = EvaluateFalse("HasROIDetSideStrip()", "duplicate resulting tuple", "The vacated LV tuple is no longer mapped", Map.HasROIDetSideStrip(2, true, 40)) && Passed;
-  if (Map.HasROIDetSideStrip(2, false, 40) == true) {
-    Passed = Evaluate("GetReadOutID()", "duplicate resulting tuple", "The last colliding read-out ID wins", Map.GetReadOutID(2, false, 40), 21u) && Passed;
-  }
+  // The rejected update leaves the map exactly as it was
+  Passed = EvaluateFalse("IsLowVoltage()", "duplicate resulting tuple", "A colliding update leaves ROI 20 unchanged", Map.IsLowVoltage(20)) && Passed;
+  Passed = EvaluateTrue("IsLowVoltage()", "duplicate resulting tuple", "A colliding update leaves ROI 21 unchanged", Map.IsLowVoltage(21)) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "duplicate resulting tuple", "The original ROI 20 tuple remains mapped", Map.HasROIDetSideStrip(2, false, 40)) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "duplicate resulting tuple", "The original ROI 21 tuple remains mapped", Map.HasROIDetSideStrip(2, true, 40)) && Passed;
 
   g_Verbosity = OldVerbosity;
 

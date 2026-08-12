@@ -51,10 +51,13 @@ class MStripMap
   //! A file without any mapping entry is an error, as is a duplicated read-out ID or (detector, side, strip) tuple
   bool Open(const MString& FileName);
 
+  //! Remove all mappings whose detector is not in the given list, e.g. the detectors which were enabled
+  //! during the run - return false and leave the map unchanged if no mapping would remain
+  bool RestrictToEnabledDetectors(const vector<unsigned int>& DetectorIDs);
+
   //! Update which ASICs are LV/HV depending on their polarities, indexed by [detector][is-primary][ASIC]
-  //! Return false and leave the map unchanged if the data is missing for any ASIC. An empty map succeeds.
-  //! If the update maps two read-out IDs onto the same (detector, side, strip) tuple the last one wins,
-  //! because unconfigured detectors carry a default polarity for both sides - see the note in the source
+  //! Return false and leave the map unchanged if the data is missing for any ASIC, or if the update
+  //! would map two read-out IDs onto the same (detector, side, strip) tuple. An empty map succeeds.
   bool UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASICPolarities);
 
   //! Check if we have a certain read-out ID

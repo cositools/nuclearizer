@@ -268,6 +268,45 @@ bool MStripMap::Open(const MString& FileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Keep only the mappings belonging to the given detectors
+bool MStripMap::RestrictToEnabledDetectors(const vector<unsigned int>& DetectorIDs)
+{
+  vector<MSingleStripMapping> Kept;
+  Kept.reserve(m_StripMappings.size());
+  for (const MSingleStripMapping& SM : m_StripMappings) {
+    if (find(DetectorIDs.begin(), DetectorIDs.end(), SM.m_DetectorID) != DetectorIDs.end()) {
+      Kept.push_back(SM);
+    }
+  }
+
+  if (Kept.empty() == true) {
+    if (g_Verbosity >= c_Error) cout << "MStripMap: No strip map entries remain after restricting to the given detectors" << endl;
+    return false;
+  }
+
+  // Dropping entries preserves both the read-out ID ordering and the uniqueness Open() established
+  m_StripMappings = Kept;
+
+  m_DetSideStripToROI.clear();
+  m_DetSideStripToROI.reserve(m_StripMappings.size());
+  for (const MSingleStripMapping& SM : m_StripMappings) {
+    unsigned int Key = 0;
+    if (ComputeDetSideStripKey(SM.m_DetectorID, SM.m_IsLowVoltage, SM.m_StripNumber, Key) == false) {
+      if (g_Verbosity >= c_Error) cout << "MStripMap: Unable to build a lookup key for detector " << SM.m_DetectorID << " strip " << SM.m_StripNumber << endl;
+      m_StripMappings.clear();
+      m_DetSideStripToROI.clear();
+      return false;
+    }
+    m_DetSideStripToROI[Key] = SM.m_ReadOutID;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Update which ASICs are LV/HV depending on their polarities
 bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASICPolarities)
 {
@@ -302,16 +341,14 @@ bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASIC
       if (g_Verbosity >= c_Error) cout << "MStripMap: Unable to build a lookup key for detector " << S.m_DetectorID << " strip " << S.m_StripNumber << endl;
       return false;
     }
-    // A collision is reported but tolerated. A (detector, side, strip) tuple should map to exactly one
-    // read-out channel, but the GSE writes a default polarity of 1 for every ASIC of a detector that was
-    // never configured, so unit-level data - taken with detector 0 only - reports both sides of
-    // detectors 1-15 as low voltage. Those detectors carry no hits, so rejecting the update would stop
-    // the HDF loader over a conflict among detectors that do not exist. Keeping the last entry is also
-    // the behaviour the committed reference files were generated with.
-    // TODO: turn this back into an error once the polarity data can be restricted to detectors with at
-    // least one active channel - see Issue #189
+    // A (detector, side, strip) tuple must map to exactly one read-out channel. Note that the GSE writes
+    // a default polarity for every ASIC of a detector that was never configured, so the polarity data can
+    // mark both sides of an unused detector as low voltage - the strip map must therefore only contain
+    // the detectors the data was actually taken with, or this fires on detectors that were not part of
+    // the run. See Issue #189.
     if (UpdatedDetSideStripToROI.find(Key) != UpdatedDetSideStripToROI.end()) {
-      if (g_Verbosity >= c_Warning) cout << "MStripMap: ASIC polarity update creates a duplicate detector/side/strip tuple for detector " << S.m_DetectorID << " strip " << S.m_StripNumber << " - keeping read-out ID " << S.m_ReadOutID << endl;
+      if (g_Verbosity >= c_Error) cout << "MStripMap: ASIC polarity update creates a duplicate detector/side/strip tuple for detector " << S.m_DetectorID << " strip " << S.m_StripNumber << endl;
+      return false;
     }
     UpdatedDetSideStripToROI[Key] = S.m_ReadOutID;
   }
