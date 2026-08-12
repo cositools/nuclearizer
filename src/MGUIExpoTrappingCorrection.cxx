@@ -2,7 +2,7 @@
  * MGUIExpoTrappingCorrection.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Andreas Zoglauer
  * All rights reserved.
  *
  *
