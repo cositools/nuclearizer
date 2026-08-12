@@ -720,6 +720,10 @@ int main(int argc, char** argv)
 {
   if (MGlobal::Initialize("UTNStripMap", "Unit tests for MStripMap") == false) return 1;
 
+  // Depending on debug or not debug mode - the exceptions either abort or are real exceptions
+  // To make it alwasys the same here, we have to force the exceptions to not use abort
+  MException::UseAbort(false);
+
   UTNStripMap Test;
   return Test.Run() == true ? 0 : 1;
 }
