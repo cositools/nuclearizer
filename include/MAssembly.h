@@ -40,10 +40,15 @@ class MAssembly
   //! Default destructor
   virtual ~MAssembly();
 
-  //! Each interface must be able to parse a command line - 
+  //! Each interface must be able to parse a command line -
   //! this function is called by main()
   bool ParseCommandLine(int argc, char** argv);
-  
+
+  //! Return true if the last call to ParseCommandLine() found a command line error
+  //! ParseCommandLine() also returns false when it did its work and the UI must not be
+  //! launched, e.g. for --help, --auto, and --test - this flag distinguishes the two
+  bool HasCommandLineError() const { return m_HasCommandLineError; }
+
   //! Called when hit Control-C: Set the interrupt which will end the analysis in the supervisor
   void SetInterrupt(bool Flag = true) { m_Supervisor->SetHardInterrupt(Flag); }
 
@@ -82,7 +87,7 @@ class MAssembly
 
   // protected methods:
  protected:
-  
+
   // private methods:
  private:
 
@@ -95,17 +100,17 @@ class MAssembly
  private:
   //! True if the GUI is used
   bool m_UseGui;
-  
+
   //! The store for all user data of the GUI:
   MSupervisor* m_Supervisor;
-  
-  //! The interrupt flag - the analysis will stop when this flag is set
-  bool m_Interrupt;
 
-  
+  //! True if the last call to ParseCommandLine() found a command line error
+  bool m_HasCommandLineError;
+
+
 #ifdef ___CLING___
  public:
-  ClassDef(MAssembly, 1) 
+  ClassDef(MAssembly, 1)
 #endif
 
 };

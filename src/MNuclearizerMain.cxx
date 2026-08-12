@@ -66,7 +66,7 @@ void CatchSignal(int a)
 
 
 //! In the beginning Andreas created main and Andreas said "Let there be code!"
-//! After many years of coding and debugging, Andreas saw all that he had made, 
+//! After many years of coding and debugging, Andreas saw all that he had made,
 //! and it was very good.
 int main(int argc, char** argv)
 {
@@ -83,10 +83,12 @@ int main(int argc, char** argv)
   MAssembly Nuclearizer;
   g_Prg = &Nuclearizer;
   if (Nuclearizer.ParseCommandLine(argc, argv) == false) {
-    return 0;
+    // ParseCommandLine() also returns false when it did all its work and the UI must not
+    // be launched, e.g. for --help, --auto, and --test - only a rejected command line is a failure
+    return Nuclearizer.HasCommandLineError() == true ? 1 : 0;
   } else {
     AppNuclearizer->Run();
-  }  
+  }
 
   return 0;
 }
