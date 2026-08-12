@@ -201,7 +201,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         MStripHit* LVSH = m_DepthCalibration->GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = m_DepthCalibration->GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-        // Get the position value in mm(assumed from event/hit context H)
+        // Get the position value in cm(assumed from event/hit context H)
         double depth_val = H->GetLocalPosition().GetZ();
 
         // Correct the Low Voltage side energy if the hit pointer exists
