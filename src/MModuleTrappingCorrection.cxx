@@ -250,58 +250,63 @@ void MModuleTrappingCorrection::Finalize()
     return;
   }
 
-  // Locate the histograms dynamically from ROOT's global memory map
-  TH1D* histLV = (TH1D*) gDirectory->Get("EnergyHistogramLVFinal");
-  TH1D* histHV = (TH1D*) gDirectory->Get("EnergyHistogramHVFinal");
+  if (g_Verbosity >= c_Info){
+    cout << "INFO: Finalizing Trapping Correction Module..." << endl;
+  } 
 
-  if (histLV == nullptr) histLV = (TH1D*) gDirectory->Get("m_EnergyHistogramLVFinal");
-  if (histHV == nullptr) histHV = (TH1D*) gDirectory->Get("m_EnergyHistogramHVFinal");
+  TH1D* histLV = m_ExpoSpectrum->GetEnergyHistogramLVFinal();
+  TH1D* histHV = m_ExpoSpectrum->GetEnergyHistogramHVFinal();
 
-  // Perform the photopeak fit and direct calculation for the LV peak
+  // --- LV side ---
   if (histLV != nullptr && histLV->GetEntries() > 0) {
-    // Calculate raw FWHM directly from the histogram
+
     m_DirectFWHM_LV = CalculateDirectFWHM(histLV);
 
     TF1* fitFuncLV = GeneratePhotopeakFunction();
     fitFuncLV->SetParameter("Amplitude", histLV->GetBinContent(histLV->GetMaximumBin()));
     histLV->Fit(fitFuncLV, "RQ");
     
-    double mu = fitFuncLV->GetParameter("x0 (Mu)");
-    double fwhm_fit = 2.35482 * fitFuncLV->GetParameter("Sigma Gauss");
-    
-    if (g_Verbosity >= c_Info) {
-      cout << m_XmlTag << " --- LV FINAL SPECTRUM RESULTS ---" << endl;
-      cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
-      cout << "  Fitted Gaussian FWHM : " << fwhm_fit << " keV" << endl;
-      cout << "  Direct Histogram FWHM: " << m_DirectFWHM_LV << " keV" << endl;
-    }
+    double mu_lv = fitFuncLV->GetParameter("x0 (Mu)");
+    double fwhm_fit_lv = 2.35482 * fitFuncLV->GetParameter("Sigma Gauss");
+
+   
+    cout << m_XmlTag << " --- LV FINAL SPECTRUM RESULTS ---" << endl;
+    cout << "  Centroid (Mu)        : " << mu_lv << " keV" << endl;
+    cout << "  Fitted Gaussian FWHM : " << fwhm_fit_lv << " keV" << endl;
+    cout << "  Direct Histogram FWHM: " << m_DirectFWHM_LV << " keV" << endl;
+  
+
     delete fitFuncLV;
+  } else {
+    cout << "WARNING: histLV is null or has 0 entries." << endl;
   }
 
-  // Perform the photopeak fit and direct calculation for the HV peak
+  // --- HV side ---
   if (histHV != nullptr && histHV->GetEntries() > 0) {
-    // Calculate raw FWHM directly from the histogram
+    
     m_DirectFWHM_HV = CalculateDirectFWHM(histHV);
 
     TF1* fitFuncHV = GeneratePhotopeakFunction();
     fitFuncHV->SetParameter("Amplitude", histHV->GetBinContent(histHV->GetMaximumBin()));
     histHV->Fit(fitFuncHV, "RQ");
     
-    double mu = fitFuncHV->GetParameter("x0 (Mu)");
-    double fwhm_fit = 2.35482 * fitFuncHV->GetParameter("Sigma Gauss");
+    double mu_hv = fitFuncHV->GetParameter("x0 (Mu)");
+    double fwhm_fit_hv = 2.35482 * fitFuncHV->GetParameter("Sigma Gauss");
     
-    if (g_Verbosity >= c_Info) {
-      cout << m_XmlTag << " --- HV FINAL SPECTRUM RESULTS ---" << endl;
-      cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
-      cout << "  Fitted Gaussian FWHM : " << fwhm_fit << " keV" << endl;
-      cout << "  Direct Histogram FWHM: " << m_DirectFWHM_HV << " keV" << endl;
-    }
+   
+  cout << m_XmlTag << " --- HV FINAL SPECTRUM RESULTS ---" << endl;
+  cout << "  Centroid (Mu)        : " << mu_hv << " keV" << endl;
+  cout << "  Fitted Gaussian FWHM : " << fwhm_fit_hv << " keV" << endl;
+  cout << "  Direct Histogram FWHM: " << m_DirectFWHM_HV << " keV" << endl;
+  
+
     delete fitFuncHV;
+  } else {
+    cout << "WARNING: histHV is null or has 0 entries." << endl;
   }
 
   return; 
 }
-
 /////////////////////////////////////////////////////////////////////////////////
 
 
@@ -313,7 +318,6 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     return false;
   }
 
-  // Clear existing array data before loading new files
   m_Depths.clear();
   m_CCEs_HV_e.clear();
   m_CCEs_HV_h.clear();
@@ -395,7 +399,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   SimCCEFile.Close();
 
   // Print summary to console if verbose logging is enabled
-  if (g_Verbosity >= 1) {
+  if (g_Verbosity >= c_Info) {
     cout << m_XmlTag << "Loaded parameters: A_HV=" << m_ParamA_HV << ", A_LV=" << m_ParamA_LV
          << ", B=" << m_ParamB << ", C=" << m_ParamC << endl;
     cout << m_XmlTag << "Loaded " << m_Depths.size() << " data points into arrays." << endl;
@@ -547,51 +551,80 @@ TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
 double MModuleTrappingCorrection::CalculateDirectFWHM(TH1D* hist)
 {
   if (hist == nullptr || hist->GetEntries() == 0) return 0.0;
 
-  // 1. Find the maximum bin and its half-maximum height
+  //Locate the peak bin
   int maxBin = hist->GetMaximumBin();
-  double halfMax = hist->GetBinContent(maxBin) / 2.0;
 
-  if (halfMax <= 0.0) return 0.0;
+  if (g_Verbosity >= c_Info){
+    cout << "INFO: Maximum bin located at: " << maxBin << " with content: " << hist->GetBinContent(maxBin) << endl;
+  }
+  
+  double peakHeight = hist->GetBinContent(maxBin);
+  if (peakHeight <= 0.0) return 0.0;
 
-  // 2. Search LEFT for the half-maximum crossing point
-  double xLeft = hist->GetBinCenter(1);
-  for (int b = maxBin; b >= 1; --b) {
-    if (hist->GetBinContent(b) <= halfMax) {
+  //Define a local search window (depends on binning you set on the GUI)
+  // Set the binning in the GUI to 0.1 keV before finalize function is called
+  const int searchWindowBins = 150; 
+  
+  int minSearchBin = std::max(1, maxBin - searchWindowBins);
+  int maxSearchBin = std::min(hist->GetNbinsX(), maxBin + searchWindowBins);
+
+  //Estimate local background level from the window edges
+  double bgLeft  = hist->GetBinContent(minSearchBin);
+  double bgRight = hist->GetBinContent(maxSearchBin);
+  double localBG =  0.0; // assume the background is  zero for now
+  //(bgLeft + bgRight) / 2.0;
+
+  // Calculate net peak height above background
+  double netPeakHeight = peakHeight - localBG;
+  if (netPeakHeight <= 0.0) return 0.0;
+
+  // Target level is half-maximum relative to local background
+  double targetHalfMax = localBG + (netPeakHeight / 2.0);
+
+  //Search left within the restricted window
+  double xLeft = -1.0;
+  for (int b = maxBin; b >= minSearchBin; --b) {
+    if (hist->GetBinContent(b) <= targetHalfMax) {
       double x1 = hist->GetBinCenter(b);
       double y1 = hist->GetBinContent(b);
       double x2 = hist->GetBinCenter(b + 1);
       double y2 = hist->GetBinContent(b + 1);
 
-      // Linear interpolation between bins
-      xLeft = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x1;
+      // Linear interpolation between adjacent bins
+      xLeft = (y2 != y1) ? x1 + (targetHalfMax - y1) * (x2 - x1) / (y2 - y1) : x1;
       break;
     }
   }
 
-  // 3. Search RIGHT for the half-maximum crossing point
-  double xRight = hist->GetBinCenter(hist->GetNbinsX());
-  for (int b = maxBin; b <= hist->GetNbinsX(); ++b) {
-    if (hist->GetBinContent(b) <= halfMax) {
+  //Search right within the restricted window
+  double xRight = -1.0;
+  for (int b = maxBin; b <= maxSearchBin; ++b) {
+    if (hist->GetBinContent(b) <= targetHalfMax) {
       double x1 = hist->GetBinCenter(b - 1);
       double y1 = hist->GetBinContent(b - 1);
       double x2 = hist->GetBinCenter(b);
       double y2 = hist->GetBinContent(b);
 
-      // Linear interpolation between bins
-      xRight = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x2;
+      // Linear interpolation between adjacent bins
+      xRight = (y2 != y1) ? x1 + (targetHalfMax - y1) * (x2 - x1) / (y2 - y1) : x2;
       break;
     }
   }
 
-  // 4. Return total width at half maximum
+  // Ensure valid crossing points were found on both sides
+  if (xLeft < 0.0 || xRight < 0.0) {
+    if (g_Verbosity >= c_Warning) {
+      cout << "WARNING in CalculateDirectFWHM: Peak did not cross half-maximum inside local window." << endl;
+    }
+    return 0.0;
+  }
+
   return (xRight - xLeft);
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
