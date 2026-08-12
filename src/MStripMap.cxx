@@ -7,7 +7,7 @@
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * Andreas Zoglauer & Felix Hagemann.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -50,18 +50,20 @@ ClassImp(MStripMap)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Construct an instance of a strip map
 MStripMap::MStripMap()
 {
-  // Construct an instance of MStripMap
+  // Nothing to do
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! // Delete this instance of a strip map
 MStripMap::~MStripMap()
 {
-  // Delete this instance of MStripMap
+  // Nothing to do
 }
 
 
@@ -265,7 +267,10 @@ bool MStripMap::Open(const MString& FileName)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASICPolarities) {
+
+//! Update which ASICs are LV/HV depending on their polarities
+bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASICPolarities)
+{
   if (m_StripMappings.empty()) return true;
 
   vector<bool> IsLowVoltageSide(m_StripMappings.size());
@@ -297,12 +302,14 @@ bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASIC
       if (g_Verbosity >= c_Error) cout << "MStripMap: Unable to build a lookup key for detector " << S.m_DetectorID << " strip " << S.m_StripNumber << endl;
       return false;
     }
-    // TODO: reject the update instead of keeping the last entry, once the meaning of the "SP" field in
-    // the GSE config JSON is confirmed. A (detector, side, strip) tuple must map to exactly one read-out
-    // channel, but the committed 542-1 and 406-1 config JSONs mark both sides of detectors 1-15 as low
-    // voltage, which collides for every secondary strip. Failing here would stop the HDF loader from
-    // initializing at all, so for now report the collision and keep the last entry - the behaviour the
-    // committed reference files were generated with. See UTNStripMap::TestInvalidASICPolarities().
+    // A collision is reported but tolerated. A (detector, side, strip) tuple should map to exactly one
+    // read-out channel, but the GSE writes a default polarity of 1 for every ASIC of a detector that was
+    // never configured, so unit-level data - taken with detector 0 only - reports both sides of
+    // detectors 1-15 as low voltage. Those detectors carry no hits, so rejecting the update would stop
+    // the HDF loader over a conflict among detectors that do not exist. Keeping the last entry is also
+    // the behaviour the committed reference files were generated with.
+    // TODO: turn this back into an error once the polarity data can be restricted to detectors with at
+    // least one active channel - see Issue #189
     if (UpdatedDetSideStripToROI.find(Key) != UpdatedDetSideStripToROI.end()) {
       if (g_Verbosity >= c_Warning) cout << "MStripMap: ASIC polarity update creates a duplicate detector/side/strip tuple for detector " << S.m_DetectorID << " strip " << S.m_StripNumber << " - keeping read-out ID " << S.m_ReadOutID << endl;
     }
@@ -390,6 +397,8 @@ bool MStripMap::HasROIDetSideStrip(unsigned int DetectorID, bool IsLowVoltage, u
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+//! Reverse lookup: Ret read-out ID for a (detector, side, strip) tuple
 unsigned int MStripMap::GetReadOutID(unsigned int DetectorID, bool IsLowVoltage, unsigned int StripNumber) const
 {
   unsigned int Key = 0;

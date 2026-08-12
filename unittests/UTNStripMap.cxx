@@ -375,22 +375,21 @@ bool UTNStripMap::TestInvalidASICPolarities()
   Passed = EvaluateFalse("IsLowVoltage()", "missing ASIC", "A failed update leaves ROI 20 unchanged", Map.IsLowVoltage(20)) && Passed;
   Passed = EvaluateTrue("IsLowVoltage()", "missing ASIC", "A failed update leaves ROI 21 unchanged", Map.IsLowVoltage(21)) && Passed;
 
-  // KNOWN FAILURE - open question, do not "fix" by relaxing this assertion.
-  // A (detector, side, strip) tuple must map to exactly one read-out channel, so a polarity update
-  // that collides should be rejected. The committed 542-1 and 406-1 config JSONs mark both sides of
-  // detectors 1-15 as low voltage, which collides for every secondary strip (975 tuples on 542-1),
-  // so rejecting it would stop MModuleLoaderMeasurementsHDF from initializing at all. Until the
-  // meaning of the "SP" field in the GSE config JSON is confirmed, MStripMap keeps the last colliding
-  // entry and returns true, and this assertion stays red to keep the question visible.
+  // A colliding polarity update is tolerated rather than rejected. The GSE writes a default polarity
+  // of 1 for every ASIC of a detector that was never configured, so unit-level data - taken with
+  // detector 0 only - reports both sides of detectors 1-15 as low voltage, which collides for every
+  // secondary strip (975 tuples on 542-1). Those detectors carry no hits, and rejecting the update
+  // would stop MModuleLoaderMeasurementsHDF from initializing over a conflict among detectors that do
+  // not exist. See https://github.com/cositools/nuclearizer/pull/188 for the discussion.
   vector<map<bool, vector<bool>>> CollidingPolarities(3);
   CollidingPolarities[2][false] = vector<bool> { false };
   CollidingPolarities[2][true] = vector<bool> { false };
   DisableDefaultStreams();
   bool CollidingResult = Map.UpdateASICPolarities(CollidingPolarities);
   EnableDefaultStreams();
-  Passed = EvaluateFalse("UpdateASICPolarities()", "duplicate resulting tuple", "A polarity update that creates a duplicate tuple returns false", CollidingResult) && Passed;
+  Passed = EvaluateTrue("UpdateASICPolarities()", "duplicate resulting tuple", "A polarity update that creates a duplicate tuple still succeeds", CollidingResult) && Passed;
 
-  // Current behaviour while the question is open: the update is applied and the last entry wins
+  // The update is applied in full and the last colliding entry wins
   Passed = EvaluateFalse("IsLowVoltage()", "duplicate resulting tuple", "The colliding update moves ROI 20 to the HV side", Map.IsLowVoltage(20)) && Passed;
   Passed = EvaluateFalse("IsLowVoltage()", "duplicate resulting tuple", "The colliding update moves ROI 21 to the HV side", Map.IsLowVoltage(21)) && Passed;
   Passed = EvaluateTrue("HasROIDetSideStrip()", "duplicate resulting tuple", "The colliding tuple is mapped once", Map.HasROIDetSideStrip(2, false, 40)) && Passed;

@@ -44,16 +44,17 @@ class MStripMap
   //! Default destructor
   virtual ~MStripMap();
 
-  //! Load a strip map - return false on error and clear the existing map; only full-line comments are supported
+  //! Load a strip map
+  //! Return false on error and clear the existing map; only full-line comments are supported
   //! All records must use the same format: the column count of the first record applies to the whole file
   //! Accepted values are detector 0-15, side 0 (LV) or 1 (HV), and strip 0-64, where strip 64 is the guard ring
   //! A file without any mapping entry is an error, as is a duplicated read-out ID or (detector, side, strip) tuple
   bool Open(const MString& FileName);
 
   //! Update which ASICs are LV/HV depending on their polarities, indexed by [detector][is-primary][ASIC]
-  //! Return false and leave the map unchanged if the data is missing for any ASIC; an empty map succeeds
-  //! TODO: if the update maps two read-out IDs onto the same (detector, side, strip) tuple, the last one
-  //! currently wins and the update still succeeds - this should become an error, see the note in the source
+  //! Return false and leave the map unchanged if the data is missing for any ASIC. An empty map succeeds.
+  //! If the update maps two read-out IDs onto the same (detector, side, strip) tuple the last one wins,
+  //! because unconfigured detectors carry a default polarity for both sides - see the note in the source
   bool UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASICPolarities);
 
   //! Check if we have a certain read-out ID
@@ -94,7 +95,7 @@ class MStripMap
 
   // private members:
  private:
-  //! The internal struct for the map
+  //! The internal struct for the strip map
   struct MSingleStripMapping {
     unsigned int m_ReadOutID;
     unsigned int m_RTB;
@@ -126,7 +127,7 @@ class MStripMap
 
 #ifdef ___CLING___
  public:
-  ClassDef(MStripMap, 0) // no description
+  ClassDef(MStripMap, 0) // A strip map
 #endif
 
 };
