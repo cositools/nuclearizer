@@ -5,6 +5,14 @@ ignore:
   - apps/
   - unittests/
 
+parsers:
+  gcov:
+    branch_detection:
+      conditional: false
+      loop: false
+      method: false
+      macro: false
+
 coverage:
   range: 20..90 # coverage lower than 20 is red, higher than 90 green, between color code
 

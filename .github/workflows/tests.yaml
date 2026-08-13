@@ -139,6 +139,7 @@ jobs:
           set -euo pipefail
           cd $NUCLEARIZER
           export PATH=$MEGALIB/bin:$PATH
+          find $MEGALIB/bin -name "*.gcda" -delete
           make unittests COVERAGE=1 CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
           ${{ github.workspace }}/bin/UTNRunner
 
@@ -162,6 +163,9 @@ jobs:
             --xml coverage.xml \
             --exclude '$NUCLEARIZER/apps/.*' \
             --exclude '$NUCLEARIZER/unittests/.*' \
+            --exclude-throw-branches --exclude-unreachable-branches \
+            --decisions \
+            --gcov-delete \
             -j $(nproc)
 
       - name: Upload Report to Codecov
