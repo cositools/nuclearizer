@@ -138,7 +138,7 @@ class MModuleTrappingCorrection : public MModule
   MModuleDepthCalibration* m_DepthCalibration = nullptr;
 
   //! Updated GUI to display the energy histogram
-  MGUIExpoPlotSpectrum* m_ExpoSpectrum;
+  MGUIExpoTrappingCorrection* m_ExpoSpectrum;
   
   TF1* GeneratePhotopeakFunction();
 

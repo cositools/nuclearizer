@@ -144,12 +144,10 @@ void MModuleTrappingCorrection::CreateExpos()
 
   if (HasExpos() == true) return;
 
-  // Set the histogram display
-  m_ExpoSpectrum = new MGUIExpoPlotSpectrum(this);
+  // Set the histogram display using the new double-canvas GUI class
+  m_ExpoSpectrum = new MGUIExpoTrappingCorrection(this); 
   m_ExpoSpectrum->SetEnergyHistogramParameters(200, 0, 2000);
   m_Expos.push_back(m_ExpoSpectrum);
-
-
 }
 
 
@@ -158,34 +156,19 @@ void MModuleTrappingCorrection::CreateExpos()
 
 bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event) 
 {
-  
   if (Event->GetGuardRingVeto() == true) {
-    //Right now we cannot use events w GR veto 
-    
-    // Event->SetTrappingCorrectionError("GR Veto");
+    // Right now we cannot use events w GR veto 
     return false;
-  
   } else {
-    
-    for (unsigned int i = 0; i < Event->GetNHits(); ++i ){
-      // Each event represents one photon. It contains Hits, representing interaction sites.
-      // H is a pointer to an instance of the MHit class. Each Hit has activated strips, represented by
-      // instances of the MStripHit class.
+    for (unsigned int i = 0; i < Event->GetNHits(); ++i) {
       MHit* H = Event->GetHit(i);
 
       int Grade = m_DepthCalibration->GetHitGrade(H);
 
-      // Handle different grades differently  
-      // Get the position from the depth cal. If error is thrown, record and no depth.
-
-      // GRADE=-1 is an error. Break from the loop and continue.
-      if (Grade < 0){
+      if (Grade < 0 || Grade > 4) {
         H->SetNoDepth();
-      } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
-        H->SetNoDepth();
-      } else { // If the Grade is 0-4, we can handle it.
+      } else { // If Grade is 0-4, proceed with analysis
 
-        // Take a Hit and separate its activated X- and Y-strips into separate vectors.
         vector<MStripHit*> LVStrips;
         vector<MStripHit*> HVStrips;
 
@@ -194,50 +177,58 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
           if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
         }
 
-        // Get the dominant strip for the hit and its energy fraction for both LV and HV sides
-        //s.t we can determine the depth and energy to correct
         double LVEnergyFraction;
         double HVEnergyFraction;
         MStripHit* LVSH = m_DepthCalibration->GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = m_DepthCalibration->GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-        // Get the position value in cm(assumed from event/hit context H)
+        // Local Z depth position
         double depth_val = H->GetLocalPosition().GetZ();
 
-        // Correct the Low Voltage side energy if the hit pointer exists
+        // --- Low Voltage Side ---
         if (LVSH != nullptr) {
-            double rawLVEnergy = LVSH->GetEnergy(); 
-            double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamA_LV, m_ParamB, m_ParamC);
-            
-            LVSH->SetEnergy(correctedLVEnergy);    
+          double rawLVEnergy = LVSH->GetEnergy(); 
+      
+          // --- 1. FILL UNCORRECTED (RAW) ---
+          if (HasExpos() == true) {
+            m_ExpoSpectrum->AddEnergyInitial(rawLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
+          }
+      
+          // --- 2. CALCULATE CORRECTION ---
+          double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamA_LV, m_ParamB, m_ParamC);
+          LVSH->SetEnergy(correctedLVEnergy);    
+      
+          // --- 3. FILL CORRECTED (FINAL) ---
+          if (HasExpos() == true) {
+            m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
+          }
+      }
 
-            if (HasExpos() == true) {
-              m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
-            }
-        }
-
-        // Correct the High Voltage side energy if the hit pointer exists
+        // --- High Voltage Side ---
         if (HVSH != nullptr) {
             double rawHVEnergy = HVSH->GetEnergy(); 
+
+            // 1. Record UNCORRECTED (raw) HV energy to expo spectrum
+            if (HasExpos() == true) {
+              m_ExpoSpectrum->AddEnergyInitial(rawHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
+            }
+
+            // 2. Compute trapping correction
             double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV_e, m_CCEs_HV_h, m_ParamA_HV, m_ParamB, m_ParamC);
-            
             HVSH->SetEnergy(correctedHVEnergy);    
 
+            // 3. Record CORRECTED (final) HV energy to expo spectrum
             if (HasExpos() == true) {
               m_ExpoSpectrum->AddEnergyFinal(correctedHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
             }
         }
-
-
       }
     }
   }
 
   Event->SetAnalysisProgress(MAssembly::c_TrappingCorrection);
-
   return true;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -250,63 +241,68 @@ void MModuleTrappingCorrection::Finalize()
     return;
   }
 
-  if (g_Verbosity >= c_Info){
+  if (g_Verbosity >= c_Info) {
     cout << "INFO: Finalizing Trapping Correction Module..." << endl;
   } 
 
-  TH1D* histLV = m_ExpoSpectrum->GetEnergyHistogramLVFinal();
-  TH1D* histHV = m_ExpoSpectrum->GetEnergyHistogramHVFinal();
+  // Retrieve both uncorrected (Initial) and corrected (Final) histograms
+  TH1D* histLVInit  = m_ExpoSpectrum->GetEnergyHistogramLVInitial();
+  TH1D* histLVFinal = m_ExpoSpectrum->GetEnergyHistogramLVFinal();
 
-  // --- LV side ---
-  if (histLV != nullptr && histLV->GetEntries() > 0) {
+  TH1D* histHVInit  = m_ExpoSpectrum->GetEnergyHistogramHVInitial();
+  TH1D* histHVFinal = m_ExpoSpectrum->GetEnergyHistogramHVFinal();
 
-    m_DirectFWHM_LV = CalculateDirectFWHM(histLV);
+  // Helper lambda to perform fit, output results, and return {mu, fwhm}
+  auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::pair<double, double> {
+    if (hist == nullptr || hist->GetEntries() <= 0) {
+      cout << "WARNING: " << titleLabel << " histogram is null or has 0 entries." << endl;
+      return std::make_pair(0.0, 0.0);
+    }
 
-    TF1* fitFuncLV = GeneratePhotopeakFunction();
-    fitFuncLV->SetParameter("Amplitude", histLV->GetBinContent(histLV->GetMaximumBin()));
-    histLV->Fit(fitFuncLV, "RQ");
-    
-    double mu_lv = fitFuncLV->GetParameter("x0 (Mu)");
-    double fwhm_fit_lv = 2.35482 * fitFuncLV->GetParameter("Sigma Gauss");
+    double directFWHM = CalculateDirectFWHM(hist);
 
-   
-    cout << m_XmlTag << " --- LV FINAL SPECTRUM RESULTS ---" << endl;
-    cout << "  Centroid (Mu)        : " << mu_lv << " keV" << endl;
-    cout << "  Fitted Gaussian FWHM : " << fwhm_fit_lv << " keV" << endl;
-    cout << "  Direct Histogram FWHM: " << m_DirectFWHM_LV << " keV" << endl;
-  
+    TF1* fitFunc = GeneratePhotopeakFunction();
+    fitFunc->SetParameter("Amplitude", hist->GetBinContent(hist->GetMaximumBin()));
+    hist->Fit(fitFunc, "RQ");
 
-    delete fitFuncLV;
-  } else {
-    cout << "WARNING: histLV is null or has 0 entries." << endl;
-  }
+    double mu   = fitFunc->GetParameter("x0 (Mu)");
+    double fwhm = 2.35482 * fitFunc->GetParameter("Sigma Gauss");
 
-  // --- HV side ---
-  if (histHV != nullptr && histHV->GetEntries() > 0) {
-    
-    m_DirectFWHM_HV = CalculateDirectFWHM(histHV);
+    cout << "\n" << m_XmlTag << " --- " << titleLabel << " ---" << endl;
+    cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
+    cout << "  Fitted Gaussian FWHM : " << fwhm << " keV" << endl;
+    cout << "  Direct Histogram FWHM: " << directFWHM << " keV" << endl;
 
-    TF1* fitFuncHV = GeneratePhotopeakFunction();
-    fitFuncHV->SetParameter("Amplitude", histHV->GetBinContent(histHV->GetMaximumBin()));
-    histHV->Fit(fitFuncHV, "RQ");
-    
-    double mu_hv = fitFuncHV->GetParameter("x0 (Mu)");
-    double fwhm_fit_hv = 2.35482 * fitFuncHV->GetParameter("Sigma Gauss");
-    
-   
-  cout << m_XmlTag << " --- HV FINAL SPECTRUM RESULTS ---" << endl;
-  cout << "  Centroid (Mu)        : " << mu_hv << " keV" << endl;
-  cout << "  Fitted Gaussian FWHM : " << fwhm_fit_hv << " keV" << endl;
-  cout << "  Direct Histogram FWHM: " << m_DirectFWHM_HV << " keV" << endl;
-  
+    delete fitFunc;
+    return std::make_pair(mu, fwhm);
+  };
 
-    delete fitFuncHV;
-  } else {
-    cout << "WARNING: histHV is null or has 0 entries." << endl;
-  }
+  cout << "\n========================================================" << endl;
+  cout << "      TRAPPING CORRECTION SPECTRUM FIT RESULTS          " << endl;
+  cout << "========================================================" << endl;
+
+  // --- Fit Uncorrected and Corrected Spectra ---
+  std::pair<double, double> lv_raw   = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
+  std::pair<double, double> lv_corr  = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
+
+  std::pair<double, double> hv_raw   = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
+  std::pair<double, double> hv_corr  = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
+
+  // Summary Comparison Output
+  cout << "\n========================================================" << endl;
+  cout << "                 SUMMARY COMPARISON                     " << endl;
+  cout << "========================================================" << endl;
+  cout << " LV Side: " << endl;
+  cout << "   Raw Centroid: " << lv_raw.first << " keV | Corrected Centroid: " << lv_corr.first << " keV" << endl;
+  cout << "   Raw FWHM    : " << lv_raw.second << " keV | Corrected FWHM    : " << lv_corr.second << " keV" << endl;
+  cout << " HV Side: " << endl;
+  cout << "   Raw Centroid: " << hv_raw.first << " keV | Corrected Centroid: " << hv_corr.first << " keV" << endl;
+  cout << "   Raw FWHM    : " << hv_raw.second << " keV | Corrected FWHM    : " << hv_corr.second << " keV" << endl;
+  cout << "========================================================\n" << endl;
 
   return; 
 }
+
 /////////////////////////////////////////////////////////////////////////////////
 
 

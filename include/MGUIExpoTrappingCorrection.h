@@ -28,6 +28,11 @@
 #include <TRootEmbeddedCanvas.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TLegend.h>
+#include <TGFrame.h>
+#include <TGButton.h>
+#include <TGNumberEntry.h>
+#include <TGLabel.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -66,8 +71,23 @@ class MGUIExpoTrappingCorrection : public MGUIExpo
   //! Set the energy histogram parameters 
   void SetEnergyHistogramParameters(int NBins, double Min, double Max);
 
-  //! Add data to the energy histogram
-  void AddEnergy(double Energy);
+  //! Add data to the uncorrected energy histogram
+  void AddEnergyInitial(double Energy, bool IsNearestNeighbor, bool IsLV);
+
+  //! Add data to the corrected energy histogram
+  void AddEnergyFinal(double Energy, bool IsNearestNeighbor, bool IsLV);
+
+  // //! Add data to the energy histogram
+  // void AddEnergy(double Energy);
+
+  // Callback slot for the Apply button
+  void OnApply();
+
+  // Getters for Finalize analysis
+  TH1D* GetEnergyHistogramLVInitial() const { return m_EnergyLVInitial; }
+  TH1D* GetEnergyHistogramLVFinal()   const { return m_EnergyLVFinal; }
+  TH1D* GetEnergyHistogramHVInitial() const { return m_EnergyHVInitial; }
+  TH1D* GetEnergyHistogramHVFinal()   const { return m_EnergyHVFinal; }
 
   // protected methods:
  protected:
@@ -78,10 +98,28 @@ class MGUIExpoTrappingCorrection : public MGUIExpo
 
   // private members:
  private:
-  //! Energy canvas
-  TRootEmbeddedCanvas* m_EnergyCanvas;
-  //! Energy histogram
-  TH1D* m_Energy;
+  // //! Energy canvas
+  // TRootEmbeddedCanvas* m_EnergyCanvas;
+  // //! Energy histogram
+  // TH1D* m_Energy;
+
+  //! Energy Histograms
+  TH1D* m_EnergyLVInitial;
+  TH1D* m_EnergyLVFinal;
+  TH1D* m_EnergyHVInitial;
+  TH1D* m_EnergyHVFinal;
+
+  //! Canvases & Display elements
+  TRootEmbeddedCanvas* m_CanvasLV;
+  TRootEmbeddedCanvas* m_CanvasHV;
+  TLegend* m_LegendLV;
+  TLegend* m_LegendHV;
+
+  //! Interactive Control Widgets
+  TGNumberEntry* m_EntryNBins;
+  TGNumberEntry* m_EntryMinEnergy;
+  TGNumberEntry* m_EntryMaxEnergy;
+  TGTextButton*  m_ButtonApply;
 
 
 
