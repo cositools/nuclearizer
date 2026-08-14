@@ -308,20 +308,17 @@ bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event)
     MStripHit* SH = Event->GetStripHit(i);
     bool Passed = true;
 
-    // Nearest neighbor hit with slow timing
-    if ((SH->IsNearestNeighbor() == true) && (SH->HasFastTiming() == false)) {
-      double SHTiming = SH->GetTiming();
-      if (SHTiming <= c_FLNoiseCut) {
-        Passed = false;
-      }
-
-    // All other non guard ring hits  
-    } else if (SH->IsGuardRing()==false) {
+    if (SH->IsGuardRing()==false) {
       double SHTiming = SH->GetTiming();
       
+      // Nearest neighbor and direct hit with slow timing
+      if (SH->HasFastTiming() == false) {
+        if (SHTiming <= c_FLNoiseCut) {
+          Passed = false;
+        }
+      
       //Fast-timing hits must satisfy true and chance coincidence cuts
-      if (SH->HasFastTiming()==true) {
-
+      } else {
         if ((SHTiming < TotalOffset) || (SHTiming < MaxTAC - m_CoincidenceWindow)) {
           Passed = false;
         }
