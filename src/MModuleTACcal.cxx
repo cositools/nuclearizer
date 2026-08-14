@@ -297,7 +297,7 @@ bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event)
   }
 
   // 200ns appears to be the minimum acceptable timing value for Nearest Neighbor hits
-  constexpr double c_MinNearestNeighborTiming = 200.0;
+  constexpr double c_FLNoiseCut = 200.0;
 
   // TotalOffset: Earliest time (in ns) after which valid timing hits can appear, start of the allowed timing window
   constexpr double TotalOffset = 3000.0;
@@ -311,7 +311,7 @@ bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event)
     // Nearest neighbor hit with slow timing
     if ((SH->IsNearestNeighbor() == true) && (SH->HasFastTiming() == false)) {
       double SHTiming = SH->GetTiming();
-      if (SHTiming <= c_MinNearestNeighborTiming) {
+      if (SHTiming <= c_FLNoiseCut) {
         Passed = false;
       }
 
