@@ -1,6 +1,5 @@
 /*
- * MGUIOptionsTACcut
-.cxx
+ * MGUIOptionsTACcal.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer, Nicole Rodriguez Cavero
@@ -19,7 +18,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsTACcut.h"
+#include "MGUIOptionsTACcal.h"
 
 // Standard libs:
 
@@ -38,14 +37,14 @@
 #include "MGUIEEntry.h"
 
 // Nuclearizer libs:
-#include "MModuleTACcut.h"
+#include "MModuleTACcal.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsTACcut
+ClassImp(MGUIOptionsTACcal
 )
 #endif
 
@@ -53,7 +52,7 @@ ClassImp(MGUIOptionsTACcut
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTACcut::MGUIOptionsTACcut(MModule* Module) 
+MGUIOptionsTACcal::MGUIOptionsTACcal(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -63,7 +62,7 @@ MGUIOptionsTACcut::MGUIOptionsTACcut(MModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTACcut::~MGUIOptionsTACcut()
+MGUIOptionsTACcal::~MGUIOptionsTACcal()
 {
   // kDeepCleanup is activated 
 }
@@ -72,20 +71,93 @@ MGUIOptionsTACcut::~MGUIOptionsTACcut()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsTACcut::Create()
+void MGUIOptionsTACcal::Create()
 {
   PreCreate();
 
-  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Calibration file:", dynamic_cast<MModuleTACcut*>(m_Module)->GetTACCalFileName());
+  m_TACCalFileSelector = new MGUIEFileSelector(
+    m_OptionsFrame,
+    "Select a TAC Calibration file:",
+    dynamic_cast<MModuleTACcal*>(m_Module)->GetTACCalFileName()
+  );
+
   m_TACCalFileSelector->SetFileType("TAC", "*.csv");
-  TGLayoutHints* TACCalLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+
+  TGLayoutHints* TACCalLayout =
+    new TGLayoutHints(
+      kLHintsTop | kLHintsCenterX | kLHintsExpandX,
+      10, 10, 10, 10
+    );
+
   m_OptionsFrame->AddFrame(m_TACCalFileSelector, TACCalLayout);
 
-  m_TACCutFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a TAC Cut file:", dynamic_cast<MModuleTACcut*>(m_Module)->GetTACCutFileName());
-  m_TACCutFileSelector->SetFileType("TAC", "*.csv");
-  TGLayoutHints* TACCutLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-  m_OptionsFrame->AddFrame(m_TACCutFileSelector, TACCutLayout);
-  
+  TGLayoutHints* LabelLayout =
+    new TGLayoutHints(
+      kLHintsTop | kLHintsLeft,
+      10, 10, 10, 5
+    );
+
+  TGLayoutHints* RBLayout =
+    new TGLayoutHints(
+      kLHintsTop | kLHintsLeft,
+      20, 10, 5, 5
+    );
+
+  TGLayoutHints* RBOptionLayout =
+    new TGLayoutHints(
+      kLHintsTop | kLHintsLeft | kLHintsExpandX,
+      40, 10, 5, 10
+    );
+
+  TGLabel* TACCutLabel =
+  new TGLabel(m_OptionsFrame,
+              "Please choose how to handle TAC cuts:");
+
+  m_OptionsFrame->AddFrame(TACCutLabel, LabelLayout);
+
+  m_TACCutRBIgnore =
+  new TGRadioButton(
+    m_OptionsFrame,
+    "Do not apply TAC cuts",
+    c_TACCutIgnore
+  );
+
+  m_TACCutRBIgnore->Associate(this);
+  m_OptionsFrame->AddFrame(m_TACCutRBIgnore, RBLayout);
+
+  m_TACCutRBApply =
+  new TGRadioButton(
+    m_OptionsFrame,
+    "Apply TAC cuts",
+    c_TACCutApply
+  );
+
+  m_TACCutRBApply->Associate(this);
+  m_OptionsFrame->AddFrame(m_TACCutRBApply, RBLayout);
+
+  m_CoincidenceWindow =
+  new MGUIEEntry(
+    m_OptionsFrame,
+    "Set coincidence window [ns]:",
+    false,
+    dynamic_cast<MModuleTACcal*>(m_Module)->GetCoincidenceWindow(),
+    true,
+    0.0
+  );
+
+  m_OptionsFrame->AddFrame(
+    m_CoincidenceWindow,
+    RBOptionLayout
+  );
+
+  bool ApplyTACCuts = dynamic_cast<MModuleTACcal*>(m_Module)->GetApplyTACCuts();
+
+  if (ApplyTACCuts == true) {
+    ToggleRadioButtons(c_TACCutApply);
+  } else {
+    ToggleRadioButtons(c_TACCutIgnore);
+  }
+
   PostCreate();
 }
 
@@ -93,7 +165,7 @@ void MGUIOptionsTACcut::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTACcut::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsTACcal::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -104,6 +176,14 @@ bool MGUIOptionsTACcut::ProcessMessage(long Message, long Parameter1, long Param
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       break;
+
+    case kCM_RADIOBUTTON:
+      ToggleRadioButtons(Parameter1);
+      break;
+    
+    case kCM_CHECKBUTTON:
+      break;
+
     default:
       break;
     }
@@ -124,15 +204,48 @@ bool MGUIOptionsTACcut::ProcessMessage(long Message, long Parameter1, long Param
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTACcut::OnApply()
+bool MGUIOptionsTACcal::OnApply()
 {
   // Store the data in the module
-  dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
-  dynamic_cast<MModuleTACcut*>(m_Module)->SetTACCutFileName(m_TACCutFileSelector->GetFileName());
+  dynamic_cast<MModuleTACcal*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
 
+  // Apply TAC cuts or not
+  if (m_TACCutRBIgnore->GetState() == kButtonDown) {
+    dynamic_cast<MModuleTACcal*>(m_Module)->
+      SetApplyTACCuts(false);
+  } else if (m_TACCutRBApply->GetState() == kButtonDown) {
+    dynamic_cast<MModuleTACcal*>(m_Module)->
+      SetApplyTACCuts(true);
+  }
+
+  // Coincidence window
+  dynamic_cast<MModuleTACcal*>(m_Module)->
+    SetCoincidenceWindow(
+      m_CoincidenceWindow->GetAsDouble()
+    );
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-// MGUIOptionsTACcut: the end...
+void MGUIOptionsTACcal::ToggleRadioButtons(int WidgetID)
+{
+  if (WidgetID == c_TACCutIgnore) {
+
+    m_TACCutRBIgnore->SetState(kButtonDown);
+    m_TACCutRBApply->SetState(kButtonUp);
+
+    m_CoincidenceWindow->SetEnabled(false);
+
+  } else if (WidgetID == c_TACCutApply) {
+
+    m_TACCutRBIgnore->SetState(kButtonUp);
+    m_TACCutRBApply->SetState(kButtonDown);
+
+    m_CoincidenceWindow->SetEnabled(true);
+  }
+}
+
+
+// MGUIOptionsTACcal: the end...
 ////////////////////////////////////////////////////////////////////////////////

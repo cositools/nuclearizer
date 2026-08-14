@@ -36,7 +36,7 @@
 
 // Nuclearizer libs:
 #include "MModuleDepthCalibration.h"
-#include "MModuleTACcut.h"
+#include "MModuleTACcal.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,11 +98,11 @@ bool MSubModuleDepthReadout::Initialize()
   }
 
   // Load TAC calibration parameters
-  MModuleTACcut TACcut;
-  TACcut.SetTACCalFileName(m_TACCalFileName);
-  if (TACcut.LoadTACCalFile(m_TACCalFileName) == true) {
+  MModuleTACcal TACcal;
+  TACcal.SetTACCalFileName(m_TACCalFileName);
+  if (TACcal.LoadTACCalFile(m_TACCalFileName) == true) {
     // Copy TAC cal parameters
-    m_TACCal = TACcut.GetTACCalParameters();
+    m_TACCal = TACcal.GetTACCalParameters();
   } else {
     return false;
   }
