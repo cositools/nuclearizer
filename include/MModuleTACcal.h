@@ -114,7 +114,11 @@ class MModuleTACcal : public MModule
   // private methods:
  private:
 
+  //! Apply TAC calibration to strip hits
+  bool ApplyTACCal(MReadOutAssembly* Event);
+
   //! Apply TAC cuts to calibrated strip hits
+  //! Assumes ApplyTACCal() has already been called for this event
   bool ApplyTACCuts(MReadOutAssembly* Event);
 
 

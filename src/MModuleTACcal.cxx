@@ -176,6 +176,47 @@ bool MModuleTACcal::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
+  // Always apply TAC calibration
+  if (ApplyTACCal(Event) == false){
+    return false;
+  }
+
+  // Optionally apply TAC cuts
+  if (m_ApplyTACCuts == true) {
+    if (ApplyTACCuts(Event) == false) {
+      return false;
+    }
+  }
+
+  if (HasExpos()) {
+    for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
+
+      MStripHit* SH = Event->GetStripHit(i);
+
+      m_ExpoEnergySpectrum->AddEnergyFinal(
+        SH->GetEnergy(),
+        SH->IsNearestNeighbor(),
+        SH->IsLowVoltageStrip()
+      );
+
+      if ((SH->IsGuardRing() == false) &&
+          (SH->HasFastTiming() == true)) {
+
+        m_ExpoTACcut->AddTAC(
+          SH->GetDetectorID(),
+          SH->GetTiming()
+        );
+      }
+    }
+  }
+
+  return true;
+}
+      
+////////////////////////////////////////////////////////////////////////////////
+
+bool MModuleTACcal::ApplyTACCal(MReadOutAssembly* Event)
+{
   // Loop through all strip hits in the event
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     // Get the current strip hit
@@ -242,40 +283,13 @@ bool MModuleTACcal::AnalyzeEvent(MReadOutAssembly* Event)
       SH->SetTiming(ns_timing); 
     }
   }
+
   // Mark TAC calibration as completed for this event
   Event->SetAnalysisProgress(MAssembly::c_TACcal);
 
-  if (m_ApplyTACCuts == true) {
-    if (ApplyTACCuts(Event) == false) {
-      return false;
-    }
-  }
-
-  if (HasExpos()) {
-    for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
-
-      MStripHit* SH = Event->GetStripHit(i);
-
-      m_ExpoEnergySpectrum->AddEnergyFinal(
-        SH->GetEnergy(),
-        SH->IsNearestNeighbor(),
-        SH->IsLowVoltageStrip()
-      );
-
-      if ((SH->IsGuardRing() == false) &&
-          (SH->HasFastTiming() == true)) {
-
-        m_ExpoTACcut->AddTAC(
-          SH->GetDetectorID(),
-          SH->GetTiming()
-        );
-      }
-    }
-  }
-  
   return true;
 }
-      
+
 ////////////////////////////////////////////////////////////////////////////////
 
 bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event) 
