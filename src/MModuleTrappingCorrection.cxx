@@ -245,7 +245,7 @@ void MModuleTrappingCorrection::Finalize()
     cout << "INFO: Finalizing Trapping Correction Module..." << endl;
   } 
 
-  // Retrieve both uncorrected (Initial) and corrected (Final) histograms
+  // Retrieve both uncorrected and corrected histograms
   TH1D* histLVInit  = m_ExpoSpectrum->GetEnergyHistogramLVInitial();
   TH1D* histLVFinal = m_ExpoSpectrum->GetEnergyHistogramLVFinal();
 

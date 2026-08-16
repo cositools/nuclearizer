@@ -147,6 +147,8 @@ class MModuleTrappingCorrection : public MModule
   double m_DirectFWHM_LV = 0.0;
   double m_DirectFWHM_HV = 0.0;
 
+  TGCheckButton* m_LogYButton;
+
 
 #ifdef ___CLING___
  public:
