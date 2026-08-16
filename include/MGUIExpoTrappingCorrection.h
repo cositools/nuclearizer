@@ -22,7 +22,6 @@
 #include <TGWindow.h>
 #include <TObjArray.h>
 #include <TGFrame.h>
-#include <TGButton.h>
 #include <TString.h>
 #include <TGClient.h>
 #include <TRootEmbeddedCanvas.h>
@@ -121,6 +120,7 @@ class MGUIExpoTrappingCorrection : public MGUIExpo
   TGNumberEntry* m_EntryMaxEnergy;
   TGTextButton*  m_ButtonApply;
 
+  TGCheckButton* m_CheckLogY; 
 
 
 #ifdef ___CLING___

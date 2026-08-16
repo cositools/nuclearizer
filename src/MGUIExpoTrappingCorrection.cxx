@@ -29,6 +29,9 @@
 #include <TCanvas.h>
 #include <TGFrame.h>
 #include <TLegend.h>
+#include <THStack.h>
+#include <TVirtualPad.h>
+#include <algorithm>
 
 // MEGAlib libs:
 #include "MStreams.h"
@@ -48,8 +51,8 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
 {
   m_TabTitle = "Trapping Correction";
 
-  // Default parameters: 200 bins, 0 to 1000 keV
-  m_EnergyLVInitial = new TH1D("EnergyLVInitial", "LV Spectrum (Uncorrected vs Corrected)", 100, 620, 700);
+  // LV Histograms
+  m_EnergyLVInitial = new TH1D("EnergyLVInitial", "LV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
   m_EnergyLVInitial->SetXTitle("Energy [keV]");
   m_EnergyLVInitial->SetYTitle("Counts");
   m_EnergyLVInitial->GetYaxis()->SetNoExponent(kTRUE);
@@ -57,7 +60,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EnergyLVInitial->SetLineWidth(2);
   m_EnergyLVInitial->SetLineStyle(2);
 
-  m_EnergyLVFinal = new TH1D("EnergyLVFinal", "LV Spectrum (Uncorrected vs Corrected)", 100, 620, 700);
+  m_EnergyLVFinal = new TH1D("EnergyLVFinal", "LV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
   m_EnergyLVFinal->SetXTitle("Energy [keV]");
   m_EnergyLVFinal->SetYTitle("Counts");
   m_EnergyLVFinal->GetYaxis()->SetNoExponent(kTRUE);
@@ -65,7 +68,8 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EnergyLVFinal->SetLineWidth(2);
   m_EnergyLVFinal->SetFillColorAlpha(kAzure-9, 0.35);
 
-  m_EnergyHVInitial = new TH1D("EnergyHVInitial", "HV Spectrum (Uncorrected vs Corrected)", 100, 620, 700);
+  // HV Histograms
+  m_EnergyHVInitial = new TH1D("EnergyHVInitial", "HV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
   m_EnergyHVInitial->SetXTitle("Energy [keV]");
   m_EnergyHVInitial->SetYTitle("Counts");
   m_EnergyHVInitial->GetYaxis()->SetNoExponent(kTRUE);
@@ -73,7 +77,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EnergyHVInitial->SetLineWidth(2);
   m_EnergyHVInitial->SetLineStyle(2);
 
-  m_EnergyHVFinal = new TH1D("EnergyHVFinal", "HV Spectrum (Uncorrected vs Corrected)", 100, 620, 700);
+  m_EnergyHVFinal = new TH1D("EnergyHVFinal", "HV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
   m_EnergyHVFinal->SetXTitle("Energy [keV]");
   m_EnergyHVFinal->SetYTitle("Counts");
   m_EnergyHVFinal->GetYaxis()->SetNoExponent(kTRUE);
@@ -81,6 +85,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EnergyHVFinal->SetLineWidth(2);
   m_EnergyHVFinal->SetFillColorAlpha(kOrange-9, 0.35);
 
+  // Initialize canvases and buttons 
   m_CanvasLV = nullptr;
   m_CanvasHV = nullptr;
   m_LegendLV = nullptr;
@@ -89,6 +94,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EntryNBins = nullptr;
   m_EntryMinEnergy = nullptr;
   m_EntryMaxEnergy = nullptr;
+  m_CheckLogY = nullptr;
   m_ButtonApply = nullptr;
 
   SetCleanup(kDeepCleanup);
@@ -98,7 +104,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
 
 MGUIExpoTrappingCorrection::~MGUIExpoTrappingCorrection()
 {
-  // kDeepCleanup handles memory deletion for embedded GUI widgets
+  // Memory cleanup handled by ROOT's kDeepCleanup
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -109,46 +115,49 @@ void MGUIExpoTrappingCorrection::Create()
 
   m_Mutex.Lock();
 
-  // 1. Top Control Bar Frame for parameters
+  // Create labels and buttons on GUI
+  // Top frame
   TGHorizontalFrame* ControlFrame = new TGHorizontalFrame(this, 800, 30);
   
-  // Binning Entry
+  // Binning entry
   TGLabel* LabelBins = new TGLabel(ControlFrame, "Bins:");
   ControlFrame->AddFrame(LabelBins, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
 
   m_EntryNBins = new TGNumberEntry(ControlFrame, 200, 5, -1, TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive);
   ControlFrame->AddFrame(m_EntryNBins, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
-  // Min Energy Entry
+  // Min Energy entry
   TGLabel* LabelMin = new TGLabel(ControlFrame, "Min Energy [keV]:");
   ControlFrame->AddFrame(LabelMin, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
 
   m_EntryMinEnergy = new TGNumberEntry(ControlFrame, 0, 6, -1, TGNumberFormat::kNESRealOne);
   ControlFrame->AddFrame(m_EntryMinEnergy, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
-  // Max Energy Entry
+  // Max Energy entry
   TGLabel* LabelMax = new TGLabel(ControlFrame, "Max Energy [keV]:");
   ControlFrame->AddFrame(LabelMax, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
 
   m_EntryMaxEnergy = new TGNumberEntry(ControlFrame, 1000, 6, -1, TGNumberFormat::kNESRealOne);
   ControlFrame->AddFrame(m_EntryMaxEnergy, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
+  // Log Y Checkbox
+  m_CheckLogY = new TGCheckButton(ControlFrame, "Log Y Scale");
+  ControlFrame->AddFrame(m_CheckLogY, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 10, 10, 2, 2));
+  m_CheckLogY->Connect("Clicked()", "MGUIExpoTrappingCorrection", this, "OnApply()");
+
   // Apply Button
   m_ButtonApply = new TGTextButton(ControlFrame, " Apply Range ");
-  ControlFrame->AddFrame(m_ButtonApply, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 10, 5, 2, 2));
-
-  // Connect the Apply button click to the OnApply method slot
+  ControlFrame->AddFrame(m_ButtonApply, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 5, 2, 2));
   m_ButtonApply->Connect("Clicked()", "MGUIExpoTrappingCorrection", this, "OnApply()");
 
-  // Add the control bar at the top of the tab
   AddFrame(ControlFrame, new TGLayoutHints(kLHintsTop | kLHintsExpandX, 5, 5, 5, 2));
 
-  // 2. Main Canvas Frame (Side-by-Side Plots)
+  // Main Canvas Frame (Side-by-Side Plots)
   TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2);
   TGHorizontalFrame* HFrame = new TGHorizontalFrame(this);
   AddFrame(HFrame, CanvasLayout);
 
-  // LV Canvas
+  // LV Canvas setup
   m_CanvasLV = new TRootEmbeddedCanvas("CanvasLV", HFrame, 100, 100);
   HFrame->AddFrame(m_CanvasLV, CanvasLayout);
 
@@ -164,7 +173,7 @@ void MGUIExpoTrappingCorrection::Create()
   m_LegendLV->AddEntry(m_EnergyLVFinal,   "LV Corrected",   "f");
   m_LegendLV->Draw();
 
-  // HV Canvas
+  // HV Canvas setup
   m_CanvasHV = new TRootEmbeddedCanvas("CanvasHV", HFrame, 100, 100);
   HFrame->AddFrame(m_CanvasHV, CanvasLayout);
 
@@ -183,6 +192,7 @@ void MGUIExpoTrappingCorrection::Create()
   MapSubwindows();
   Layout();
 
+  // Signal that the canvas has been created so we know when we can start to fill it
   m_IsCreated = true;
 
   m_Mutex.UnLock();
@@ -192,19 +202,15 @@ void MGUIExpoTrappingCorrection::Create()
 
 void MGUIExpoTrappingCorrection::OnApply()
 {
-  //! Called when the user clicks "Apply Range" in the GUI
-
+  //Create function has already been run
+  if (m_IsCreated == false) return;
   if (m_EntryNBins == nullptr || m_EntryMinEnergy == nullptr || m_EntryMaxEnergy == nullptr) return;
 
   int nBins   = m_EntryNBins->GetIntNumber();
   double minE = m_EntryMinEnergy->GetNumber();
   double maxE = m_EntryMaxEnergy->GetNumber();
 
-  if (maxE <= minE || nBins <= 0) {
-    cout << "WARNING in MGUIExpoTrappingCorrection: Invalid histogram parameters (" 
-         << nBins << " bins, min=" << minE << ", max=" << maxE << ")" << endl;
-    return;
-  }
+  if (maxE <= minE || nBins <= 0) return;
 
   SetEnergyHistogramParameters(nBins, minE, maxE);
   Update();
@@ -216,47 +222,71 @@ void MGUIExpoTrappingCorrection::SetEnergyHistogramParameters(int NBins, double 
 {
   m_Mutex.Lock();
 
-  m_EnergyLVInitial->SetBins(NBins, Min, Max);
-  m_EnergyLVFinal->SetBins(NBins, Min, Max);
-  m_EnergyHVInitial->SetBins(NBins, Min, Max);
-  m_EnergyHVFinal->SetBins(NBins, Min, Max);
+  // 1. Zoom the X-axis view without altering underlying data/binning
+  if (m_EnergyLVInitial != nullptr) m_EnergyLVInitial->GetXaxis()->SetRangeUser(Min, Max);
+  if (m_EnergyLVFinal != nullptr)   m_EnergyLVFinal->GetXaxis()->SetRangeUser(Min, Max);
+  if (m_EnergyHVInitial != nullptr) m_EnergyHVInitial->GetXaxis()->SetRangeUser(Min, Max);
+  if (m_EnergyHVFinal != nullptr)   m_EnergyHVFinal->GetXaxis()->SetRangeUser(Min, Max);
 
-  // Keep entry controls in sync if set programmatically from code (e.g., CreateExpos)
+  // 2. Update entry boxes
   if (m_EntryNBins != nullptr)     m_EntryNBins->SetIntNumber(NBins);
   if (m_EntryMinEnergy != nullptr) m_EntryMinEnergy->SetNumber(Min);
   if (m_EntryMaxEnergy != nullptr) m_EntryMaxEnergy->SetNumber(Max);
 
   m_Mutex.UnLock();
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void MGUIExpoTrappingCorrection::Update()
 {
+  if (m_IsCreated == false) return;
+
   m_Mutex.Lock();
 
-  if (m_CanvasLV != nullptr && m_CanvasLV->GetCanvas() != nullptr) {
-    m_CanvasLV->GetCanvas()->cd();
+  bool isLog = (m_CheckLogY != nullptr && m_CheckLogY->IsOn());
 
-    double maxLV = std::max(m_EnergyLVInitial->GetMaximum(), m_EnergyLVFinal->GetMaximum());
-    if (maxLV > 0.0) {
-      m_EnergyLVInitial->SetMaximum(maxLV * 1.15);
+  // --- Update LV Canvas ---
+  if (m_CanvasLV != nullptr && m_CanvasLV->GetCanvas() != nullptr) {
+    TCanvas* canvasLV = m_CanvasLV->GetCanvas();
+    canvasLV->cd();
+    canvasLV->SetLogy(isLog ? 1 : 0);
+
+    double maxLVInitial = m_EnergyLVInitial->GetBinContent(m_EnergyLVInitial->GetMaximumBin());
+    double maxLVFinal   = m_EnergyLVFinal->GetBinContent(m_EnergyLVFinal->GetMaximumBin());
+    double realMaxLV    = std::max(maxLVInitial, maxLVFinal);
+
+    if (isLog) {
+      m_EnergyLVInitial->SetMinimum(0.1);
+      m_EnergyLVInitial->SetMaximum(realMaxLV > 0 ? realMaxLV * 5.0 : 10.0);
+    } else {
+      m_EnergyLVInitial->SetMinimum(-1111);
+      m_EnergyLVInitial->SetMaximum(realMaxLV > 0 ? realMaxLV * 1.15 : 10.0);
     }
 
-    m_CanvasLV->GetCanvas()->Modified();
-    m_CanvasLV->GetCanvas()->Update();
+    canvasLV->Modified();
+    canvasLV->Update();
   }
 
+  // --- Update HV Canvas ---
   if (m_CanvasHV != nullptr && m_CanvasHV->GetCanvas() != nullptr) {
-    m_CanvasHV->GetCanvas()->cd();
+    TCanvas* canvasHV = m_CanvasHV->GetCanvas();
+    canvasHV->cd();
+    canvasHV->SetLogy(isLog ? 1 : 0);
 
-    double maxHV = std::max(m_EnergyHVInitial->GetMaximum(), m_EnergyHVFinal->GetMaximum());
-    if (maxHV > 0.0) {
-      m_EnergyHVInitial->SetMaximum(maxHV * 1.15);
+    double maxHVInitial = m_EnergyHVInitial->GetBinContent(m_EnergyHVInitial->GetMaximumBin());
+    double maxHVFinal   = m_EnergyHVFinal->GetBinContent(m_EnergyHVFinal->GetMaximumBin());
+    double realMaxHV    = std::max(maxHVInitial, maxHVFinal);
+
+    if (isLog) {
+      m_EnergyHVInitial->SetMinimum(0.1);
+      m_EnergyHVInitial->SetMaximum(realMaxHV > 0 ? realMaxHV * 5.0 : 10.0);
+    } else {
+      m_EnergyHVInitial->SetMinimum(-1111);
+      m_EnergyHVInitial->SetMaximum(realMaxHV > 0 ? realMaxHV * 1.15 : 10.0);
     }
 
-    m_CanvasHV->GetCanvas()->Modified();
-    m_CanvasHV->GetCanvas()->Update();
+    canvasHV->Modified();
+    canvasHV->Update();
   }
 
   m_Mutex.UnLock();
@@ -268,10 +298,10 @@ void MGUIExpoTrappingCorrection::Reset()
 {
   m_Mutex.Lock();
 
-  m_EnergyLVInitial->Reset();
-  m_EnergyLVFinal->Reset();
-  m_EnergyHVInitial->Reset();
-  m_EnergyHVFinal->Reset();
+  if (m_EnergyLVInitial != nullptr) m_EnergyLVInitial->Reset();
+  if (m_EnergyLVFinal != nullptr)   m_EnergyLVFinal->Reset();
+  if (m_EnergyHVInitial != nullptr) m_EnergyHVInitial->Reset();
+  if (m_EnergyHVFinal != nullptr)   m_EnergyHVFinal->Reset();
 
   m_Mutex.UnLock();
 }
@@ -283,9 +313,9 @@ void MGUIExpoTrappingCorrection::AddEnergyInitial(double Energy, bool IsNearestN
   m_Mutex.Lock();
 
   if (IsLV == true) {
-    m_EnergyLVInitial->Fill(Energy);
+    if (m_EnergyLVInitial != nullptr) m_EnergyLVInitial->Fill(Energy);
   } else {
-    m_EnergyHVInitial->Fill(Energy);
+    if (m_EnergyHVInitial != nullptr) m_EnergyHVInitial->Fill(Energy);
   }
 
   m_Mutex.UnLock();
@@ -298,9 +328,9 @@ void MGUIExpoTrappingCorrection::AddEnergyFinal(double Energy, bool IsNearestNei
   m_Mutex.Lock();
 
   if (IsLV == true) {
-    m_EnergyLVFinal->Fill(Energy);
+    if (m_EnergyLVFinal != nullptr) m_EnergyLVFinal->Fill(Energy);
   } else {
-    m_EnergyHVFinal->Fill(Energy);
+    if (m_EnergyHVFinal != nullptr) m_EnergyHVFinal->Fill(Energy);
   }
 
   m_Mutex.UnLock();
