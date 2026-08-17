@@ -92,7 +92,6 @@ bool UTNDEEStripHit::TestDefaultConstruction()
   Passed = EvaluateFalse("MDEEStripHit()", "default trigger", "Default trigger flag is false", H.m_HasTriggered) && Passed;
   Passed = EvaluateFalse("MDEEStripHit()", "default fast timing", "Default fast timing is false", H.m_HasFastTiming) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default TAC", "Default TAC value is 0", H.m_TAC, (unsigned int) 0) && Passed;
-  Passed = EvaluateNear("MDEEStripHit()", "default temperature", "Default temperature is 0", H.m_Temperature, 0.0, 1e-12) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default sub strip hits", "Default sub strip hit list is empty", (unsigned int) H.m_SubStripHits.size(), (unsigned int) 0) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default shared origin", "Default shared origin list is empty", (unsigned int) H.m_SharedOrigin.size(), (unsigned int) 0) && Passed;
 

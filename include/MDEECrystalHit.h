@@ -84,8 +84,6 @@ struct MDEECrystalHit {
   bool m_HasTriggered;
   //! Is this a guard ring
   bool m_HasVetoed;
-  //! The measured temperature value
-  double m_Temperature;
 
   //! A list of original strip hits making up this strip hit
   vector<MDEECrystalHit> m_SubCrystalHits;

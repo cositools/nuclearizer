@@ -44,7 +44,7 @@ ClassImp(MDEEStripHit)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDEEStripHit::MDEEStripHit() : m_SimulatedEventID(0), m_SimulatedPosition(0,0,0), m_SimulatedPositionInDetector(0,0,0), m_SimulatedRelativeDepth(0), m_SimulatedEnergy(0), m_SimulatedIsGuardRing(false), m_SimulatedHitIndex(0), m_IsGuardRing(false), m_Energy(0), m_ADC(0), m_HasTriggered(false), m_HasFastTiming(false), m_TAC(0), m_Temperature(0)
+MDEEStripHit::MDEEStripHit() : m_SimulatedEventID(0), m_SimulatedPosition(0,0,0), m_SimulatedPositionInDetector(0,0,0), m_SimulatedRelativeDepth(0), m_SimulatedEnergy(0), m_SimulatedIsGuardRing(false), m_SimulatedHitIndex(0), m_IsGuardRing(false), m_Energy(0), m_ADC(0), m_HasTriggered(false), m_HasFastTiming(false), m_TAC(0)
 {
   // Construct an instance of MDEEStripHit
 }

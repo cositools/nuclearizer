@@ -92,8 +92,6 @@ struct MDEEStripHit
   double m_Timing;
   //! The fast shaper peaking time in ns since creation of event
   double m_FastPeakTime;
-  //! The measured temperature value
-  double m_Temperature;
 
   //! A list of original strip hits making up this strip hit
   vector<MDEEStripHit> m_SubStripHits;
