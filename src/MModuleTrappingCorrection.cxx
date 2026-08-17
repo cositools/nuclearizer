@@ -114,22 +114,28 @@ bool MModuleTrappingCorrection::Initialize()
   MSupervisor* S = MSupervisor::GetSupervisor();
   m_EnergyCalibration = (MModuleEnergyCalibration*) S->GetAvailableModuleByXmlTag("EnergyCalibration");
   if (m_EnergyCalibration == nullptr) {
-    cout << "MModuleTrappingCorrection: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
-    return false;
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MModuleTrappingCorrection::Initialize: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
+    }
+       return false;
   }
 
   m_DepthCalibration = (MModuleDepthCalibration*) S->GetAvailableModuleByXmlTag("DepthCalibration");
   if (m_DepthCalibration == nullptr) {
-    cout << "MModuleTrappingCorrection: couldn't resolve pointer to Depth Calibration Module... need access to this module for depth resolution lookup!" << endl;
-    return false;
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MModuleTrappingCorrection::Initialize: couldn't resolve pointer to Depth Calibration Module... need access to this module for depth resolution lookup!" << endl;
+    }
+       return false;
   }
 
 
   m_DetectorIDs = m_DepthCalibration-> GetDetectorIDs();
 
   if (m_DetectorIDs.empty()) {
-    cout << "ERROR in MModuleTrappingCorrection::Initialize: Depth Calibration has no registered detector IDs!" << endl;
-    return false;
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MModuleTrappingCorrection::Initialize: Depth Calibration has no registered detector IDs!" << endl;
+    }
+      return false;
   }
 
   return MModule::Initialize();
@@ -337,48 +343,25 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     }
 
     if (ValidLineCount == 0) {
-      // 1. Read parameters A_HV, A_LV, B, and C from the first line
+      //Read parameters A_HV, A_LV, B, and C from the first line
       if (Tokens.size() == 4) {
         m_ParamA_HV = Tokens[0].ToDouble();
         m_ParamA_LV = Tokens[1].ToDouble();
         m_ParamB    = Tokens[2].ToDouble();
         m_ParamC    = Tokens[3].ToDouble();
 
-        cout << "\n--- Trapping File Sanity Check ---" << endl;
-        cout << "Loaded Parameters -> A_HV: " << m_ParamA_HV 
-             << " | A_LV: " << m_ParamA_LV 
-             << " | B: " << m_ParamB 
-             << " | C: " << m_ParamC << endl;
-
         ValidLineCount++;
       } else {
-        cout << "ERROR in LoadSimCCEFile: Expected 4 parameters (A_HV, A_LV, B, and C) on the first line." << endl;
+        if (g_Verbosity >= c_Error) {
+          cout << "ERROR in LoadSimCCEFile: Expected 4 parameters (A_HV, A_LV, B, and C) on the first line." << endl;
+        }
         SimCCEFile.Close();
         return false;
       }
-    } 
-    else if (ValidLineCount == 1) {
-      // 2. Print column headers line
-      cout << "Loaded Column Headers: ";
-      for (size_t i = 0; i < Tokens.size(); ++i) {
-        cout << Tokens[i] << (i + 1 < Tokens.size() ? " | " : "\n");
-      }
-      ValidLineCount++;
-    } 
+    }  
     else {
-      // 3. Read the 5 data columns into depth and CCE arrays
+      //Read the 5 data columns into depth and CCE arrays
       if (Tokens.size() == 5) {
-        // Print the first 3 data rows to terminal for verification
-        if (ValidLineCount <= 4) {
-          cout << "Data Row " << (ValidLineCount - 1) << ": ";
-          for (size_t i = 0; i < Tokens.size(); ++i) {
-            cout << Tokens[i] << (i + 1 < Tokens.size() ? " | " : "\n");
-          }
-          if (ValidLineCount == 4) {
-            cout << "-----------------------------------\n" << endl;
-          }
-        }
-
         m_Depths.push_back(Tokens[0].ToDouble());
         m_CCEs_HV_e.push_back(Tokens[1].ToDouble());
         m_CCEs_HV_h.push_back(Tokens[2].ToDouble());
@@ -387,7 +370,9 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
         
         ValidLineCount++;
       } else {
-        cout << "ERROR in LoadSimCCEFile: Expected 5 columns on line " << (ValidLineCount + 1) << endl;
+        if (g_Verbosity >= c_Error) {
+          cout << "ERROR in LoadSimCCEFile: Expected 5 columns on line " << (ValidLineCount + 1) << endl;
+        }
       }
     }
   }
