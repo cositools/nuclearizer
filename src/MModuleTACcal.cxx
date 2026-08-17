@@ -2,13 +2,13 @@
  * MModuleTACcal.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer, Nicole Rodriquez Cavero
+ * Copyright (C) by Andreas Zoglauer, Nicole Rodriguez Cavero
  * Sean Pike
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Andreas Zoglauer, Nicole Rodriquez Cavero, Sean Pike.
+ * Andreas Zoglauer, Nicole Rodriguez Cavero, Sean Pike.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -310,7 +310,7 @@ bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event)
     }
   }
 
-  // 200ns appears to be the minimum acceptable timing value for Nearest Neighbor hits
+  // 200ns appears to be the minimum acceptable timing value for all hits
   constexpr double c_FLNoiseCut = 200.0;
 
   // TotalOffset: Earliest time (in ns) after which valid timing hits can appear, start of the allowed timing window
@@ -357,6 +357,9 @@ bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event)
 
 void MModuleTACcal::Finalize()
 {
+  m_TACCal.clear();
+  m_DetectorIDs.clear();
+  
   MModule::Finalize();
 }
 
@@ -433,59 +436,58 @@ bool MModuleTACcal::LoadTACCalFile(MString FName)
   if (F.Open(FName) == false) {
     cout<<m_XmlTag<<": Error: failed to open TAC Calibration file."<<endl;
     return false;
-  } else {
-    MString Line;
-    while (F.ReadLine(Line)) {
-      if (!Line.BeginsWith("#")) {
-        std::vector<MString> Tokens = Line.Tokenize(",");
-        if ((Tokens.size() == 7) || (Tokens.size() == 8)) {
-          int IndexOffset = Tokens.size() % 7;
-          int DetID = Tokens[0+IndexOffset].ToInt();
-          MString SideString = Tokens[1+IndexOffset].Trim();
-          char Side;
-          if (SideString.Length()!=1) {
-            cout<<m_XmlTag<<": Error: Expected 1 character Side, got string \""<<SideString<<"\" in TAC calibration file."<<endl;
-            return false;
-          }
-          else {
-            Side = SideString[0];
-          }
-          int StripID = Tokens[2+IndexOffset].ToInt();
-          double TACCal = Tokens[3+IndexOffset].ToDouble();
-          double TACCalError = Tokens[4+IndexOffset].ToDouble();
-          double Offset = Tokens[5+IndexOffset].ToDouble();
-          double OffsetError = Tokens[6+IndexOffset].ToDouble();
-          vector<double> CalValues;
-          CalValues.push_back(TACCal); CalValues.push_back(Offset); CalValues.push_back(TACCalError); CalValues.push_back(OffsetError);
-          
-          // If this detector has not been encountered yet, create LV and HV calibration maps for it
-          if (m_TACCal.find(DetID) == m_TACCal.end()) {
-            vector<unordered_map<int, vector<double>>> TempVector;
-            unordered_map<int, vector<double>> TempMapLV;
-            unordered_map<int, vector<double>> TempMapHV;
-            m_TACCal[DetID] = TempVector;
-            m_TACCal[DetID].push_back(TempMapLV);
-            m_TACCal[DetID].push_back(TempMapHV);
-          }
+  }
+  MString Line;
+  while (F.ReadLine(Line)) {
+    if (!Line.BeginsWith("#")) {
+      std::vector<MString> Tokens = Line.Tokenize(",");
+      if ((Tokens.size() == 7) || (Tokens.size() == 8)) {
+        int IndexOffset = Tokens.size() % 7;
+        int DetID = Tokens[0+IndexOffset].ToInt();
+        MString SideString = Tokens[1+IndexOffset].Trim();
+        char Side;
+        if (SideString.Length()!=1) {
+          cout<<m_XmlTag<<": Error: Expected 1 character Side, got string \""<<SideString<<"\" in TAC calibration file."<<endl;
+          return false;
+        }
+        else {
+          Side = SideString[0];
+        }
+        int StripID = Tokens[2+IndexOffset].ToInt();
+        double TACCal = Tokens[3+IndexOffset].ToDouble();
+        double TACCalError = Tokens[4+IndexOffset].ToDouble();
+        double Offset = Tokens[5+IndexOffset].ToDouble();
+        double OffsetError = Tokens[6+IndexOffset].ToDouble();
+        vector<double> CalValues;
+        CalValues.push_back(TACCal); CalValues.push_back(Offset); CalValues.push_back(TACCalError); CalValues.push_back(OffsetError);
+        
+        // If this detector has not been encountered yet, create LV and HV calibration maps for it
+        if (m_TACCal.find(DetID) == m_TACCal.end()) {
+          vector<unordered_map<int, vector<double>>> TempVector;
+          unordered_map<int, vector<double>> TempMapLV;
+          unordered_map<int, vector<double>> TempMapHV;
+          m_TACCal[DetID] = TempVector;
+          m_TACCal[DetID].push_back(TempMapLV);
+          m_TACCal[DetID].push_back(TempMapHV);
+        }
 
-          // Keep track of detector IDs contained in the calibration
-          if (find(m_DetectorIDs.begin(), m_DetectorIDs.end(), DetID) == m_DetectorIDs.end()) {
-            m_DetectorIDs.push_back(DetID);
-          }
-          
-          // Store the calibration parameters
-          if (m_SideToIndex.find(Side) != m_SideToIndex.end()) {
-            m_TACCal[DetID][m_SideToIndex[Side]][StripID] = CalValues;
-          } else {
-            cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
-            return false;
-          }
+        // Keep track of detector IDs contained in the calibration
+        if (find(m_DetectorIDs.begin(), m_DetectorIDs.end(), DetID) == m_DetectorIDs.end()) {
+          m_DetectorIDs.push_back(DetID);
+        }
+        
+        // Store the calibration parameters
+        if (m_SideToIndex.find(Side) != m_SideToIndex.end()) {
+          m_TACCal[DetID][m_SideToIndex[Side]][StripID] = CalValues;
+        } else {
+          cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
+          return false;
         }
       }
     }
-    F.Close();
-    sort(m_DetectorIDs.begin(), m_DetectorIDs.end());
   }
+  F.Close();
+  sort(m_DetectorIDs.begin(), m_DetectorIDs.end());
 
   return true;
 }

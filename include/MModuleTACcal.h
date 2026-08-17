@@ -65,7 +65,7 @@ class MModuleTACcal : public MModule
   virtual MXmlNode* CreateXmlConfiguration();
 
   //! Set filename for TAC calibration
-  void SetTACCalFileName( const MString& FileName) {m_TACCalFile = FileName;}
+  void SetTACCalFileName( const MString& FileName) { m_TACCalFile = FileName; }
 
   //! Get filename for TAC calibration
   MString GetTACCalFileName() const {return m_TACCalFile;}
@@ -80,28 +80,16 @@ class MModuleTACcal : public MModule
   unordered_map<int, vector<unordered_map<int, vector<double>>>> GetTACCalParameters() { return m_TACCal; }
 
   //! Enable or disable TAC cuts
-  void SetApplyTACCuts(bool ApplyTACCuts)
-  {
-    m_ApplyTACCuts = ApplyTACCuts;
-  }
+  void SetApplyTACCuts(bool ApplyTACCuts) { m_ApplyTACCuts = ApplyTACCuts; }
 
   //! Return whether TAC cuts are enabled
-  bool GetApplyTACCuts() const
-  {
-    return m_ApplyTACCuts;
-  }
+  bool GetApplyTACCuts() const { return m_ApplyTACCuts; }
 
   //! Set TAC coincidence window in ns
-  void SetCoincidenceWindow(double CoincidenceWindow)
-  {
-    m_CoincidenceWindow = CoincidenceWindow;
-  }
+  void SetCoincidenceWindow(double CoincidenceWindow) { m_CoincidenceWindow = CoincidenceWindow; }
 
   //! Get TAC coincidence window in ns
-  double GetCoincidenceWindow() const
-  {
-    return m_CoincidenceWindow;
-  }
+  double GetCoincidenceWindow() const { return m_CoincidenceWindow; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
