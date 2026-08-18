@@ -62,7 +62,7 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
   m_Name = "TAC Calibration";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "XmlTagTACcal";
+  m_XmlTag = "XmlTagTACCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
