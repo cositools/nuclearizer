@@ -187,7 +187,7 @@ class MHit
   MVector m_PositionResolution;
 
 
-  //! Local/raw position resolution of the hit
+  //! Position of the hit in local detector coordinates
   MVector m_LocalPosition;
 
   //! Energy of the hit
