@@ -1,5 +1,5 @@
 /*
- * MModuleTACcal.h
+ * MModuleTACCalibration.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MModuleTACcal__
-#define __MModuleTACcal__
+#ifndef __MModuleTACCalibration__
+#define __MModuleTACCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,17 +31,17 @@ class MGUIExpoPlotSpectrum;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleTACcal : public MModule
+class MModuleTACCalibration : public MModule
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleTACcal();
+  MModuleTACCalibration();
   //! Default destructor
-  virtual ~MModuleTACcal();
+  virtual ~MModuleTACCalibration();
   
   //! Create a new object of this class 
-  virtual MModuleTACcal* Clone() { return new MModuleTACcal(); }
+  virtual MModuleTACCalibration* Clone() { return new MModuleTACCalibration(); }
 
   //! Initialize the module
   virtual bool Initialize();
@@ -141,7 +141,7 @@ class MModuleTACcal : public MModule
 
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleTACcal, 0) // no description
+  ClassDef(MModuleTACCalibration, 0) // no description
 #endif
 
 };

@@ -64,7 +64,7 @@ using namespace ROOT::Minuit2;
 #include "MModuleEventFilter.h"
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
-#include "MModuleTACcal.h"
+#include "MModuleTACCalibration.h"
 #include "MAssembly.h"
 
 
@@ -419,7 +419,7 @@ bool TrappingCorrection::Analyze()
     MSupervisor* S = MSupervisor::GetSupervisor();
     
   	MModuleLoaderMeasurementsHDF* Loader;
-  	MModuleTACcal* TACCalibrator;
+  	MModuleTACCalibration* TACCalibrator;
   	MModuleEnergyCalibration* EnergyCalibrator;
   	MModuleEventFilter* EventFilter;
 
@@ -438,7 +438,7 @@ bool TrappingCorrection::Analyze()
     ++MNumber;
 
     cout<<"Creating TAC calibrator"<<endl;
-    TACCalibrator = new MModuleTACcal();
+    TACCalibrator = new MModuleTACCalibration();
     TACCalibrator->SetTACCalFileName(m_TACCalFile);
     S->SetModule(TACCalibrator, MNumber);
     ++MNumber;

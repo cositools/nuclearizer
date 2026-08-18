@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsTACcal.cxx
+ * MGUIOptionsTACCalibration.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer, Nicole Rodriguez Cavero
@@ -18,7 +18,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsTACcal.h"
+#include "MGUIOptionsTACCalibration.h"
 
 // Standard libs:
 
@@ -37,14 +37,14 @@
 #include "MGUIEEntry.h"
 
 // Nuclearizer libs:
-#include "MModuleTACcal.h"
+#include "MModuleTACCalibration.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsTACcal
+ClassImp(MGUIOptionsTACCalibration
 )
 #endif
 
@@ -52,7 +52,7 @@ ClassImp(MGUIOptionsTACcal
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTACcal::MGUIOptionsTACcal(MModule* Module) 
+MGUIOptionsTACCalibration::MGUIOptionsTACCalibration(MModule* Module) 
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -62,7 +62,7 @@ MGUIOptionsTACcal::MGUIOptionsTACcal(MModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsTACcal::~MGUIOptionsTACcal()
+MGUIOptionsTACCalibration::~MGUIOptionsTACCalibration()
 {
   // kDeepCleanup is activated 
 }
@@ -71,14 +71,14 @@ MGUIOptionsTACcal::~MGUIOptionsTACcal()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsTACcal::Create()
+void MGUIOptionsTACCalibration::Create()
 {
   PreCreate();
 
   m_TACCalFileSelector = new MGUIEFileSelector(
     m_OptionsFrame,
     "Select a TAC Calibration file:",
-    dynamic_cast<MModuleTACcal*>(m_Module)->GetTACCalFileName()
+    dynamic_cast<MModuleTACCalibration*>(m_Module)->GetTACCalFileName()
   );
 
   m_TACCalFileSelector->SetFileType("TAC", "*.csv");
@@ -140,7 +140,7 @@ void MGUIOptionsTACcal::Create()
     m_OptionsFrame,
     "Set coincidence window [ns]:",
     false,
-    dynamic_cast<MModuleTACcal*>(m_Module)->GetCoincidenceWindow(),
+    dynamic_cast<MModuleTACCalibration*>(m_Module)->GetCoincidenceWindow(),
     true,
     0.0
   );
@@ -150,7 +150,7 @@ void MGUIOptionsTACcal::Create()
     RBOptionLayout
   );
 
-  bool ApplyTACCuts = dynamic_cast<MModuleTACcal*>(m_Module)->GetApplyTACCuts();
+  bool ApplyTACCuts = dynamic_cast<MModuleTACCalibration*>(m_Module)->GetApplyTACCuts();
 
   if (ApplyTACCuts == true) {
     ToggleRadioButtons(c_TACCutApply);
@@ -165,7 +165,7 @@ void MGUIOptionsTACcal::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTACcal::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsTACCalibration::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -204,22 +204,22 @@ bool MGUIOptionsTACcal::ProcessMessage(long Message, long Parameter1, long Param
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsTACcal::OnApply()
+bool MGUIOptionsTACCalibration::OnApply()
 {
   // Store the data in the module
-  dynamic_cast<MModuleTACcal*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
+  dynamic_cast<MModuleTACCalibration*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
 
   // Apply TAC cuts or not
   if (m_TACCutRBIgnore->GetState() == kButtonDown) {
-    dynamic_cast<MModuleTACcal*>(m_Module)->
+    dynamic_cast<MModuleTACCalibration*>(m_Module)->
       SetApplyTACCuts(false);
   } else if (m_TACCutRBApply->GetState() == kButtonDown) {
-    dynamic_cast<MModuleTACcal*>(m_Module)->
+    dynamic_cast<MModuleTACCalibration*>(m_Module)->
       SetApplyTACCuts(true);
   }
 
   // Coincidence window
-  dynamic_cast<MModuleTACcal*>(m_Module)->
+  dynamic_cast<MModuleTACCalibration*>(m_Module)->
     SetCoincidenceWindow(
       m_CoincidenceWindow->GetAsDouble()
     );
@@ -228,7 +228,7 @@ bool MGUIOptionsTACcal::OnApply()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MGUIOptionsTACcal::ToggleRadioButtons(int WidgetID)
+void MGUIOptionsTACCalibration::ToggleRadioButtons(int WidgetID)
 {
   if (WidgetID == c_TACCutIgnore) {
 
@@ -247,5 +247,5 @@ void MGUIOptionsTACcal::ToggleRadioButtons(int WidgetID)
 }
 
 
-// MGUIOptionsTACcal: the end...
+// MGUIOptionsTACCalibration: the end...
 ////////////////////////////////////////////////////////////////////////////////

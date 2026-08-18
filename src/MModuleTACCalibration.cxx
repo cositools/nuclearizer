@@ -1,5 +1,5 @@
 /*
- * MModuleTACcal.cxx
+ * MModuleTACCalibration.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer, Nicole Rodriguez Cavero
@@ -19,16 +19,16 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleTACcal
+// MModuleTACCalibration
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleTACcal.h"
+#include "MModuleTACCalibration.h"
 #include "MGUIExpoTACcut.h"
 #include "MGUIExpoPlotSpectrum.h"
-#include "MGUIOptionsTACcal.h"
+#include "MGUIOptionsTACCalibration.h"
 
 // Standard libs:
 #include <algorithm>
@@ -45,16 +45,16 @@
 
 
 #ifdef ___CLING___
-ClassImp(MModuleTACcal)
+ClassImp(MModuleTACCalibration)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleTACcal::MModuleTACcal() : MModule()
+MModuleTACCalibration::MModuleTACCalibration() : MModule()
 {
-  // Construct an instance of MModuleTACcal
+  // Construct an instance of MModuleTACCalibration
 
   // Set all module relevant information
 
@@ -78,7 +78,7 @@ MModuleTACcal::MModuleTACcal() : MModule()
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!
   m_HasOptionsGUI = true;
-  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTACcal)
+  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTACCalibration)
   // and implement all your GUI options
 
   // Can the program be run multi-threaded
@@ -101,16 +101,16 @@ MModuleTACcal::MModuleTACcal() : MModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleTACcal::~MModuleTACcal()
+MModuleTACCalibration::~MModuleTACCalibration()
 {
-  // Delete this instance of MModuleTACcal
+  // Delete this instance of MModuleTACCalibration
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleTACcal::Initialize()
+bool MModuleTACCalibration::Initialize()
 {
   // Initialize the module 
 
@@ -129,7 +129,7 @@ bool MModuleTACcal::Initialize()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void MModuleTACcal::CreateExpos()
+void MModuleTACCalibration::CreateExpos()
 {
   if (HasExpos() == true) return;
 
@@ -150,10 +150,10 @@ void MModuleTACcal::CreateExpos()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MModuleTACcal::ShowOptionsGUI()
+void MModuleTACCalibration::ShowOptionsGUI()
 {
-  MGUIOptionsTACcal* Options =
-    new MGUIOptionsTACcal(this);
+  MGUIOptionsTACCalibration* Options =
+    new MGUIOptionsTACCalibration(this);
 
   Options->Create();
   gClient->WaitForUnmap(Options);
@@ -161,7 +161,7 @@ void MModuleTACcal::ShowOptionsGUI()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MModuleTACcal::AnalyzeEvent(MReadOutAssembly* Event) 
+bool MModuleTACCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
   if (HasExpos()) {
     for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
@@ -215,7 +215,7 @@ bool MModuleTACcal::AnalyzeEvent(MReadOutAssembly* Event)
       
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MModuleTACcal::ApplyTACCal(MReadOutAssembly* Event)
+bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
 {
   // Loop through all strip hits in the event
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
@@ -292,7 +292,7 @@ bool MModuleTACcal::ApplyTACCal(MReadOutAssembly* Event)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event) 
+bool MModuleTACCalibration::ApplyTACCuts(MReadOutAssembly* Event) 
 {
   // Find the max timing value for non-NN hits of an event
   // This will be used for the coincidence window
@@ -355,7 +355,7 @@ bool MModuleTACcal::ApplyTACCuts(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleTACcal::Finalize()
+void MModuleTACCalibration::Finalize()
 {
   m_TACCal.clear();
   m_DetectorIDs.clear();
@@ -366,7 +366,7 @@ void MModuleTACcal::Finalize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleTACcal::ReadXmlConfiguration(MXmlNode* Node)
+bool MModuleTACCalibration::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
@@ -400,7 +400,7 @@ bool MModuleTACcal::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MModuleTACcal::CreateXmlConfiguration() 
+MXmlNode* MModuleTACCalibration::CreateXmlConfiguration() 
 {
   //! Create an XML node tree from the configuration
 
@@ -426,7 +426,7 @@ MXmlNode* MModuleTACcal::CreateXmlConfiguration()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleTACcal::LoadTACCalFile(MString FName)
+bool MModuleTACCalibration::LoadTACCalFile(MString FName)
 {
   // Read in the TAC Calibration file, which should contain for each strip:
   //  DetID, Side (h or l for high or low voltage), TAC cal, TAC cal error, TAC cal offset, TAC offset error
@@ -492,7 +492,7 @@ bool MModuleTACcal::LoadTACCalFile(MString FName)
   return true;
 }
 
-// MModuleTACcal.cxx: the end...
+// MModuleTACCalibration.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
 
 

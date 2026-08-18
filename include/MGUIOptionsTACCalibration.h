@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsTACcal.h
+ * MGUIOptionsTACCalibration.h
  *
  * Copyright (C) 2008-2010 by Jau-Shian Liang.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsTACcal__
-#define __MGUIOptionsTACcal__
+#ifndef __MGUIOptionsTACCalibration__
+#define __MGUIOptionsTACCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,14 +43,14 @@ class MGUIEEntry;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsTACcal : public MGUIOptions
+class MGUIOptionsTACCalibration : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsTACcal(MModule* Module);
+  MGUIOptionsTACCalibration(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsTACcal();
+  virtual ~MGUIOptionsTACCalibration();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -97,7 +97,7 @@ class MGUIOptionsTACcal : public MGUIOptions
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsTACcal, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsTACCalibration, 1) // basic class for dialog windows
 #endif
 
 };
