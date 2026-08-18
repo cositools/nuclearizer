@@ -180,12 +180,12 @@ class EnergyCalHelper
     return true;
   }
 
-  double ADCToEnergy(int det, char side, int Strip, double adc) const
+  double ADCToEnergy(int det, char side, int Strip, double ADC) const
   {
     int sideInt = (side == 'l') ? 0 : 1;
     const Coeff& c = m_Coeffs[det][sideInt][Strip];
 
-    return c.c3 * pow(adc, 3) + c.c2 * pow(adc, 2) + c.c1 * adc + c.c0;
+    return c.c3 * pow(ADC, 3) + c.c2 * pow(ADC, 2) + c.c1 * ADC + c.c0;
   }
 
  private:
@@ -455,7 +455,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   // -------------------------------------------------------------
 
   int cmd_min_entries = -1;
-  double cmd_noise_search_max_adc = -1;
+  double cmd_noise_search_max_ADC = -1;
   double cmd_fallback_threshold_keV = -1;
 
   string cmd_data_file = "";
@@ -483,12 +483,12 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
       m_HistogramBins = config["analysis"]["histogram_bins"].as<int>();
     }
 
-    if (config["analysis"]["histogram_max_adc"]) {
-      m_HistogramMaxADC = config["analysis"]["histogram_max_adc"].as<double>();
+    if (config["analysis"]["histogram_max_ADC"]) {
+      m_HistogramMaxADC = config["analysis"]["histogram_max_ADC"].as<double>();
     }
 
-    if (config["analysis"]["noise_search_max_adc"]) {
-      m_NoiseSearchMaxADC = config["analysis"]["noise_search_max_adc"].as<double>();
+    if (config["analysis"]["noise_search_max_ADC"]) {
+      m_NoiseSearchMaxADC = config["analysis"]["noise_search_max_ADC"].as<double>();
     }
   }
 
@@ -518,7 +518,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
   static struct option long_options[] = {
     { "min_entries", required_argument, 0, 'm' },
-    { "noise_search_max_adc", required_argument, 0, 'n' },
+    { "noise_search_max_ADC", required_argument, 0, 'n' },
     { "fallback_threshold_keV", required_argument, 0, 'f' },
 
     /* NEW overrides */
@@ -542,7 +542,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
       break;
 
     case 'n':
-      cmd_noise_search_max_adc = atof(optarg);
+      cmd_noise_search_max_ADC = atof(optarg);
       break;
 
     case 'f':
@@ -582,7 +582,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
       cout << "  --output_prefix NAME        Override output file prefix" << endl;
       cout << endl;
       cout << "  --min_entries N              Minimum histogram entries" << endl;
-      cout << "  --noise_search_max_adc N     Max ADC for noise search" << endl;
+      cout << "  --noise_search_max_ADC N     Max ADC for noise search" << endl;
       cout << "  --fallback_threshold_keV N   Default threshold if fit fails" << endl;
       cout << "  --help                       Show this message" << endl;
       cout << endl;
@@ -597,8 +597,8 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     m_MinEntries = cmd_min_entries;
   }
 
-  if (cmd_noise_search_max_adc >= 0) {
-    m_NoiseSearchMaxADC = cmd_noise_search_max_adc;
+  if (cmd_noise_search_max_ADC >= 0) {
+    m_NoiseSearchMaxADC = cmd_noise_search_max_ADC;
   }
 
   if (cmd_fallback_threshold_keV >= 0) {
@@ -658,7 +658,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   cout << "  fallback_threshold_keV: " << m_FallbackThreshold << endl;
   cout << "  NoiseSearchMaxADC:      " << m_NoiseSearchMaxADC << endl;
   cout << "  histogram_bins:         " << m_HistogramBins << endl;
-  cout << "  histogram_max_adc:      " << m_HistogramMaxADC << endl;
+  cout << "  histogram_max_ADC:      " << m_HistogramMaxADC << endl;
   cout << endl;
 
   MString StripMapFile = m_StripMapFile.Data();
@@ -678,7 +678,7 @@ bool MStripThresholdFinder::BuildHistograms()
   map<StripKey, vector<int>> hist_counts;
   map<StripKey, vector<int>> dt0_counts;
   map<StripKey, vector<int>> dt1_counts;
-  map<StripKey, double> adc_to_keV_scale;
+  map<StripKey, double> ADC_to_keV_scale;
   map<StripKey, TH1D*> histograms_TAC;
 
   map<StripKey, map<int, pair<int, int>>> timingCounts;
@@ -768,7 +768,7 @@ bool MStripThresholdFinder::BuildHistograms()
           continue;
         }
 
-        double adc = SH->GetADCUnits();
+        double ADC = SH->GetADCUnits();
         //double energy = SH->GetEnergy();
         int det = SH->GetDetectorID();
         int Strip = SH->GetStripID();
@@ -777,8 +777,8 @@ bool MStripThresholdFinder::BuildHistograms()
         StripKey key { det, side, Strip };
 
 
-        //it_hist->second->Fill(adc);
-        int bin = (int) (adc / m_HistogramMaxADC * m_HistogramBins);
+        //it_hist->second->Fill(ADC);
+        int bin = (int) (ADC / m_HistogramMaxADC * m_HistogramBins);
 
         if (bin >= 0 && bin < m_HistogramBins) {
           if (hist_counts.find(key) == hist_counts.end()) {
@@ -792,19 +792,19 @@ bool MStripThresholdFinder::BuildHistograms()
         // FAST timing accumulation (dt0 vs dt1)
         // -------------------------------------------------------------
 
-        //int adc_bin = static_cast<int>(adc);
+        //int ADC_bin = static_cast<int>(ADC);
         double energy = SH->GetEnergy();
 
         double TAC = SH->GetTAC();
-        int adc_bin = static_cast<int>(adc);
+        int ADC_bin = static_cast<int>(ADC);
 
         // --- dt0 vs dt1 separation ---
         bool is_dt1 = (TAC > 8000); // initial threshold
 
 
         // Initialize bin if needed
-        if (timingCounts[key].find(adc_bin) == timingCounts[key].end()) {
-          timingCounts[key][adc_bin] = { 0, 0 };
+        if (timingCounts[key].find(ADC_bin) == timingCounts[key].end()) {
+          timingCounts[key][ADC_bin] = { 0, 0 };
         }
 
         double maxEnergy = m_EnergyCalHelper.ADCToEnergy(det, side, Strip, m_HistogramMaxADC);
@@ -813,9 +813,9 @@ bool MStripThresholdFinder::BuildHistograms()
 
 
         if (is_dt1) {
-          timingCounts[key][adc_bin].second++;
+          timingCounts[key][ADC_bin].second++;
         } else {
-          timingCounts[key][adc_bin].first++;
+          timingCounts[key][ADC_bin].first++;
         }
 
 
@@ -1113,7 +1113,7 @@ void MStripThresholdFinder::FindFastThresholds()
 
   for (auto& kv : m_TimingCounts) {
     StripKey key = kv.first;
-    auto& adcMap = kv.second;
+    auto& ADCMap = kv.second;
 
     // Skip guard ring for FAST thresholds
     if (key.Strip == 64) {
@@ -1121,7 +1121,7 @@ void MStripThresholdFinder::FindFastThresholds()
     }
 
     int totalCounts = 0;
-    for (auto& a : adcMap) {
+    for (auto& a : ADCMap) {
       totalCounts += a.second.first + a.second.second;
     }
 
@@ -1138,7 +1138,7 @@ void MStripThresholdFinder::FindFastThresholds()
       continue;
     }
 
-    for (auto& a : adcMap) {
+    for (auto& a : ADCMap) {
       if (a.second.first + a.second.second > 0) {
         first_nonzero = a.first + 10;
         break;
@@ -1159,8 +1159,8 @@ void MStripThresholdFinder::FindFastThresholds()
     // -------------------------------------------------------------
     int crossoverADC = -1;
 
-    for (auto& a : adcMap) {
-      int adc_val = a.first;
+    for (auto& a : ADCMap) {
+      int ADC_val = a.first;
       int n0 = a.second.first;
       int n1 = a.second.second;
 
@@ -1170,7 +1170,7 @@ void MStripThresholdFinder::FindFastThresholds()
       }
 
       if (n1 > n0) {
-        crossoverADC = adc_val;
+        crossoverADC = ADC_val;
         break;
       }
     }
@@ -1180,17 +1180,17 @@ void MStripThresholdFinder::FindFastThresholds()
     // Extend search window for stability
     int searchMax = first_nonzero + 800;
 
-    for (int adc = first_nonzero; adc < searchMax; adc++) {
+    for (int ADC = first_nonzero; ADC < searchMax; ADC++) {
       int n_dt0 = 0;
       int n_dt1 = 0;
 
-      for (int a = adc; a < adc + nbins; a++) {
-        if (adcMap.find(a) == adcMap.end()) {
+      for (int a = ADC; a < ADC + nbins; a++) {
+        if (ADCMap.find(a) == ADCMap.end()) {
           continue;
         }
 
-        n_dt0 += adcMap[a].first;
-        n_dt1 += adcMap[a].second;
+        n_dt0 += ADCMap[a].first;
+        n_dt1 += ADCMap[a].second;
       }
 
       int diff;
@@ -1203,7 +1203,7 @@ void MStripThresholdFinder::FindFastThresholds()
 
       if (diff < minDiff) {
         minDiff = diff;
-        bestADC = adc;
+        bestADC = ADC;
       }
     }
 
@@ -1214,19 +1214,19 @@ void MStripThresholdFinder::FindFastThresholds()
 
 
     // prefer physical crossover if available
-    int fast_thresh_adc;
+    int fast_thresh_ADC;
 
     if (crossoverADC > 0) {
-      fast_thresh_adc = crossoverADC;
+      fast_thresh_ADC = crossoverADC;
     } else {
       // fallback to old method
-      fast_thresh_adc = bestADC + nbins / 2;
+      fast_thresh_ADC = bestADC + nbins / 2;
     }
 
-    m_FastThresholdsADC[key] = fast_thresh_adc;
+    m_FastThresholdsADC[key] = fast_thresh_ADC;
 
     double fast_thresh_keV =
-      m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, fast_thresh_adc);
+      m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, fast_thresh_ADC);
 
     m_FastThresholds[key] = fast_thresh_keV;
   }
@@ -1250,8 +1250,8 @@ void MStripThresholdFinder::WriteCSV() const
 
   /* CSV headers */
 
-  csv_HV << "detector_side,Strip,threshold_adc,threshold_keV\n";
-  csv_LV << "detector_side,Strip,threshold_adc,threshold_keV\n";
+  csv_HV << "detector_side,Strip,threshold_ADC,threshold_keV\n";
+  csv_LV << "detector_side,Strip,threshold_ADC,threshold_keV\n";
 
   /* Write rows */
 
@@ -1260,18 +1260,18 @@ void MStripThresholdFinder::WriteCSV() const
     int Strip = kv.first.Strip;
 
     double thr_keV = kv.second;
-    double thr_adc = m_SlowThresholdsADC.at(kv.first);
+    double thr_ADC = m_SlowThresholdsADC.at(kv.first);
 
 
     if (side == 'h') {
       csv_HV << "h,"
              << Strip << ","
-             << thr_adc << ","
+             << thr_ADC << ","
              << thr_keV << "\n";
     } else if (side == 'l') {
       csv_LV << "l,"
              << Strip << ","
-             << thr_adc << ","
+             << thr_ADC << ","
              << thr_keV << "\n";
     }
   }
@@ -1285,8 +1285,8 @@ void MStripThresholdFinder::WriteCSV() const
   ofstream csv_TAC_HV(m_OutputPrefix + "_Fast_HV_thresholds.csv");
   ofstream csv_TAC_LV(m_OutputPrefix + "_Fast_LV_thresholds.csv");
 
-  csv_TAC_HV << "detector_side,Strip,threshold_adc,threshold_keV\n";
-  csv_TAC_LV << "detector_side,Strip,threshold_adc,threshold_keV\n";
+  csv_TAC_HV << "detector_side,Strip,threshold_ADC,threshold_keV\n";
+  csv_TAC_LV << "detector_side,Strip,threshold_ADC,threshold_keV\n";
 
   cout << "Writing FAST CSV entries: " << m_FastThresholds.size() << endl;
 
@@ -1294,13 +1294,13 @@ void MStripThresholdFinder::WriteCSV() const
     char side = kv.first.side;
     int Strip = kv.first.Strip;
 
-    double thr_adc = m_FastThresholdsADC.at(kv.first);
+    double thr_ADC = m_FastThresholdsADC.at(kv.first);
     double thr_keV = kv.second;
 
     if (side == 'h') {
-      csv_TAC_HV << "h," << Strip << "," << thr_adc << "," << thr_keV << "\n";
+      csv_TAC_HV << "h," << Strip << "," << thr_ADC << "," << thr_keV << "\n";
     } else if (side == 'l') {
-      csv_TAC_LV << "l," << Strip << "," << thr_adc << "," << thr_keV << "\n";
+      csv_TAC_LV << "l," << Strip << "," << thr_ADC << "," << thr_keV << "\n";
     }
   }
 
@@ -1604,9 +1604,9 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
   for (auto& kv : m_ADCHistograms) {
     StripKey key = kv.first;
-    TH1D* adcHist = kv.second;
+    TH1D* ADCHist = kv.second;
 
-    adcHist->Write();
+    ADCHist->Write();
 
     int det = key.det;
     char side = key.side;
@@ -1622,7 +1622,7 @@ void MStripThresholdFinder::WriteDiagnostics() const
     TH1D* energyHist = new TH1D(
       name.c_str(),
       name.c_str(),
-      adcHist->GetNbinsX(),
+      ADCHist->GetNbinsX(),
       0,
       maxE);
 
@@ -1632,12 +1632,12 @@ void MStripThresholdFinder::WriteDiagnostics() const
 
     energyHist->GetXaxis()->SetRangeUser(0, 100);
 
-    for (int b = 1; b <= adcHist->GetNbinsX(); b++) {
-      double adc = adcHist->GetBinCenter(b);
-      double energy = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, adc);
-      //double energy = adc;   // TEMP: keep histogram consistent
+    for (int b = 1; b <= ADCHist->GetNbinsX(); b++) {
+      double ADC = ADCHist->GetBinCenter(b);
+      double energy = m_EnergyCalHelper.ADCToEnergy(key.det, key.side, key.Strip, ADC);
+      //double energy = ADC;   // TEMP: keep histogram consistent
 
-      double counts = adcHist->GetBinContent(b);
+      double counts = ADCHist->GetBinContent(b);
 
       int ebin = energyHist->FindBin(energy);
       energyHist->AddBinContent(ebin, counts);

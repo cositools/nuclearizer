@@ -407,7 +407,8 @@ bool TrappingCorrection::Analyze()
     } else {
       MString Line;
       while (F.ReadLine(Line)) {
-        FileNames.push_back(Line.Trim());
+        //FileNames.push_back(Line.Trim());
+		FileNames.push_back(Line.Strip());
       }
     }
   }

@@ -326,7 +326,8 @@ bool TrappingCorrectionAm241::Analyze()
       } else {
         MString Line;
         while (F.ReadLine(Line)) {
-          MString Trimmed = Line.Trim();
+          //MString Trimmed = Line.Trim();
+		  MString Trimmed = Line.Strip();
           if ((Trimmed != "")) {
             if (F.Exists(Trimmed)==true) {
               HDFNames.push_back(Trimmed);
