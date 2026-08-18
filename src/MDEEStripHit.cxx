@@ -65,6 +65,7 @@ MStripHit* MDEEStripHit::Convert()
   SH->SetADCUnits(m_ADC);
   SH->SetTAC(m_TAC);
   SH->HasFastTiming(m_HasFastTiming);
+  SH->IsNearestNeighbor(m_IsNearestNeighbor);
   //SH->AddOrigins();
   SH->IsGuardRing(m_IsGuardRing);
 
