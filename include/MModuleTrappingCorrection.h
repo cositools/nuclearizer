@@ -69,10 +69,10 @@ class MModuleTrappingCorrection : public MModule
   virtual void ShowOptionsGUI();
 
   //! Set filename for SimCCE file
-  void SetSimCCEFileName( const MString& FileName) { m_SimCCEFile = FileName; }
+  void SetSimCCEFileName( const MString& FileName) { m_SimCCEFileName = FileName; }
 
   //! Get filename for SimCCE file
-  MString GetSimCCEFileName() const { return m_SimCCEFile; }
+  MString GetSimCCEFileName() const { return m_SimCCEFileName; }
 
   //! Finalize the module
   virtual void Finalize();
@@ -109,9 +109,8 @@ class MModuleTrappingCorrection : public MModule
   // protected members:
  protected:
 
-  unordered_map<int, vector<double>> m_SimCCE;
   double m_SimCCE_Energy;
-  MString m_SimCCEFile;
+  MString m_SimCCEFileName;
  
   // unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;

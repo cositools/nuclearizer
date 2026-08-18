@@ -106,7 +106,7 @@ MModuleTrappingCorrection::~MModuleTrappingCorrection()
 
 bool MModuleTrappingCorrection::Initialize()
 {
-  m_SimCCEFileIsLoaded = LoadSimCCEFile(m_SimCCEFile);
+  m_SimCCEFileIsLoaded = LoadSimCCEFile(m_SimCCEFileName);
   if (m_SimCCEFileIsLoaded == false) {
     return false;
   }
@@ -457,7 +457,7 @@ bool MModuleTrappingCorrection::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* SimCCEFileNameNode = Node->GetNode("SimCCEFileName");
   if (SimCCEFileNameNode != nullptr) {
-  m_SimCCEFile = SimCCEFileNameNode->GetValue();
+  m_SimCCEFileName = SimCCEFileNameNode->GetValue();
   }
 
   return true;
@@ -471,7 +471,7 @@ MXmlNode* MModuleTrappingCorrection::CreateXmlConfiguration()
   //! Create an XML node tree from the configuration
 
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
-  new MXmlNode(Node, "SimCCEFileName", m_SimCCEFile);
+  new MXmlNode(Node, "SimCCEFileName", m_SimCCEFileName);
   
   return Node;
 }
