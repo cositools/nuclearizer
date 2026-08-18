@@ -87,6 +87,7 @@ void MStripHit::Clear()
 
   m_IsGuardRing = false;
   m_IsNearestNeighbor = false;
+  m_IsAmbiguousNearestNeighbor = false;
 
   m_HasFastTiming = false;
   m_HasCalibratedTiming = false;
@@ -109,8 +110,8 @@ bool MStripHit::Parse(const MString& Line, int Version)
     if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line too short with length "<<Line.Length()<<endl;
     return false;
   }
-
-  if (line[0] == 'S' && line[1] == 'H') {
+  // Read strip hit if line starts with SH (triggered strip hit) or NN (nearest neighbor strip hit)
+  if ((line[0] == 'S' && line[1] == 'H') || (line[0] == 'N' && line[1] == 'N')) {
     unsigned int det_id, strip_id;
     int has_triggered;
     double timing, adc;
@@ -140,7 +141,7 @@ bool MStripHit::Parse(const MString& Line, int Version)
     ParseFlags(flags);
     return true;
   } else {
-    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line starts with '"<<line[0]<<line[1]<<"' instead of 'SH'"<<endl;
+    if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line starts with '"<<line[0]<<line[1]<<"' instead of 'SH' or 'NN'"<<endl;
     return false;
   }
 }
@@ -164,19 +165,35 @@ void MStripHit::AddOrigins(const vector<int>& Origins)
 
 bool MStripHit::StreamDat(ostream& S, int Version)
 {
-  // Stream the strip hit in Nuclearizer's DAT format
-
-  S<<"SH "
-   <<m_ReadOutElement->GetDetectorID()<<" "
-   <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
-   <<m_ReadOutElement->GetStripID()<<" "
-   <<m_HasTriggered<<" "
-   <<setprecision(9)<<m_Timing<<" "
-   <<m_ADCUnits<<" "
-   <<m_Energy<<" "
-   <<m_EnergyResolution<<" "
-   <<MakeFlags()<<endl;
-
+  //! Stream the content to an ASCII file
+  
+  if (m_IsNearestNeighbor == true) {
+    S<<"NN "
+    <<m_ReadOutElement->GetDetectorID()<<" "
+    <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
+    <<m_ReadOutElement->GetStripID()<<" "
+    <<m_HasTriggered<<" "
+    <<setprecision(9)<<m_Timing<<" "
+    <<m_ADCUnits<<" "
+    <<m_Energy<<" "
+    <<m_EnergyResolution<<" "
+    <<MakeFlags()<<endl;
+   
+  }
+  
+  else {
+    S<<"SH "
+    <<m_ReadOutElement->GetDetectorID()<<" "
+    <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
+    <<m_ReadOutElement->GetStripID()<<" "
+    <<m_HasTriggered<<" "
+    <<setprecision(9)<<m_Timing<<" "
+    <<m_ADCUnits<<" "
+    <<m_Energy<<" "
+    <<m_EnergyResolution<<" "
+    <<MakeFlags()<<endl;
+  }
+ 
   return true;
 }
 

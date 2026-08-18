@@ -81,6 +81,7 @@ void MHit::Clear()
   m_EnergyResolution = g_DoubleNotDefined;
 
   m_StripHits.clear();
+  m_NearestNeighborStripHits.clear();
   m_Origins.clear();
 
   m_CrossTalk = false;
@@ -114,6 +115,24 @@ MStripHit* MHit::GetStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MStripHit* MHit::GetNearestNeighborStripHit(unsigned int i)
+{
+  // Return strip hit i
+
+  if (i < m_NearestNeighborStripHits.size()) {
+    return m_StripHits[i];
+  }
+
+  if (g_Verbosity >= c_Error) cout<<"Error in MHit::GetNearestNeighborStripHit: Strip hit index "<<i<<" is out of bounds: "<<m_NearestNeighborStripHits.size()<<" strip hits available"<<endl;
+
+  return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
 void MHit::AddStripHit(MStripHit* StripHit)
 {
   // Add a strip hit
@@ -122,6 +141,21 @@ void MHit::AddStripHit(MStripHit* StripHit)
     m_StripHits.push_back(StripHit);
   } else {
     if (g_Verbosity >= c_Error) cout<<"Error in MHit::AddStripHit: Strip hit is nullptr"<<endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MHit::AddNearestNeighborStripHit(MStripHit* StripHit)
+{
+  // Add a strip hit
+
+  if (StripHit != nullptr) {
+    m_NearestNeighborStripHits.push_back(StripHit);
+  } else {
+    if (g_Verbosity >= c_Error) cout<<"Error in MHit::AddNearestNeighborStripHit: Strip hit is nullptr"<<endl;
   }
 }
 
@@ -175,6 +209,9 @@ bool MHit::StreamDat(ostream& S, int Version)
     // Stream the hit information, including low-voltage and high-voltage energy, then stream the strip hit information
     S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<" "<<m_LVEnergy<<" "<<m_HVEnergy<<endl;
     for (auto SH : m_StripHits) {
+      SH->StreamDat(S, 0);
+    }
+    for (auto SH : m_NearestNeighborStripHits) {
       SH->StreamDat(S, 0);
     }
   } else {

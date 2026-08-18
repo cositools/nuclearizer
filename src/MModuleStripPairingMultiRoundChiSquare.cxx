@@ -234,40 +234,93 @@ float MModuleStripPairingMultiRoundChiSquare::ChargeTrappingCorrection(unsigned 
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Divide an event's strip hits by detector and LV/HV side
-vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectStripHits(MReadOutAssembly* Event)
+tuple<vector<vector<vector<MStripHit*>>>, bool> MModuleStripPairingMultiRoundChiSquare::CollectStripHits(MReadOutAssembly* Event)
 {
 
   // Split hits by detector ID
   vector<unsigned int> DetectorIDs; // List of detector IDs
   vector<vector<vector<MStripHit*>>> StripHits; // list of detector IDs, list of sides (LV and HV), list of strip hits
+  bool IncludingNearestNeighbors = false;
 
   for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's strip hits
     MStripHit* SH = Event->GetStripHit(sh);
-    unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
-
-    // Check if detector is on list
-    bool DetectorFound = false;
-    unsigned int DetectorPos = 0;
-    for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
-      if (DetectorIDs[d] == SH->GetDetectorID()) {
-        DetectorFound = true;
-        DetectorPos = d;
+    
+    // Separate out the triggered and NN strip hits
+    if (SH->IsNearestNeighbor() == false) {
+      
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      
+      // Check if detector is on list
+      bool DetectorFound = false;
+      unsigned int DetectorPos = 0;
+      for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
+        if (DetectorIDs[d] == SH->GetDetectorID()) {
+          DetectorFound = true;
+          DetectorPos = d;
+        }
+      }
+      
+      // Once the correct detector is found, add strip hit to StripHits
+      if (DetectorFound == true) {
+        StripHits[DetectorPos][Side].push_back(SH);
+      } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
+        vector<vector<MStripHit*>> List; // list of sides, list of hits
+        List.push_back(vector<MStripHit*>()); // LV
+        List.push_back(vector<MStripHit*>()); // HV
+        List[Side].push_back(SH);
+        StripHits.push_back(List);
+        DetectorIDs.push_back(SH->GetDetectorID());
       }
     }
-
-    // Once the correct detector is found, add strip hit to StripHits
-    if (DetectorFound == true) {
-      StripHits[DetectorPos][Side].push_back(SH);
-    } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
-      vector<vector<MStripHit*>> List; // list of sides, list of hits
-      List.push_back(vector<MStripHit*>()); // LV
-      List.push_back(vector<MStripHit*>()); // HV
-      List[Side].push_back(SH);
-      StripHits.push_back(List);
-      DetectorIDs.push_back(SH->GetDetectorID());
+    else {
+      IncludingNearestNeighbors = true;
     }
   }
-  return StripHits;
+  return {StripHits, IncludingNearestNeighbors};
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//! Divide an event's nearest neighbor strip hits by detector and LV/HV side
+vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectNearestNeighborStripHits(MReadOutAssembly* Event)
+{
+
+  // Split hits by detector ID
+  vector<unsigned int> DetectorIDs; // List of detector IDs
+  vector<vector<vector<MStripHit*>>> NNStripHits; // list of detector IDs, list of sides (LV and HV), list of strip hits
+
+  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's NN strip hits
+    MStripHit* SH = Event->GetStripHit(sh);
+    
+    // Separate out the triggered and NN strip hits
+    if (SH->IsNearestNeighbor() == true) {
+      
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      
+      // Check if detector is on list
+      bool DetectorFound = false;
+      unsigned int DetectorPos = 0;
+      for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
+        if (DetectorIDs[d] == SH->GetDetectorID()) {
+          DetectorFound = true;
+          DetectorPos = d;
+        }
+      }
+      
+      // Once the correct detector is found, add strip hit to NNStripHits
+      if (DetectorFound == true) {
+        NNStripHits[DetectorPos][Side].push_back(SH);
+      } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
+        vector<vector<MStripHit*>> List; // list of sides, list of hits
+        List.push_back(vector<MStripHit*>()); // LV
+        List.push_back(vector<MStripHit*>()); // HV
+        List[Side].push_back(SH);
+        NNStripHits.push_back(List);
+        DetectorIDs.push_back(SH->GetDetectorID());
+      }
+    }
+  }
+  return NNStripHits;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -276,7 +329,7 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
 bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits)
 {
 
-  // Limit the number of strip hits on each side
+  // Limit the number of (triggered) strip hits on each side
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
       if (StripHits[d][side].size() > m_MaximumStrips) {
@@ -711,6 +764,74 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//! Assign nearest neighbor strip hits to their appropriate hit
+void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAssembly* Event) {
+  
+  vector<vector<vector<MStripHit*>>> NNStripHits = CollectNearestNeighborStripHits(Event); // List of detectors, list of sides, list of strip hits
+  
+  vector<MStripHit*> AssignedNeighbors; // List of all the assigned NN strip hits, in order to check if NNs are double counted
+  
+  for (unsigned int h = 0; h < Event->GetNHits(); h++) {
+    vector<vector<int>> StripIDs; // list of sides, list of strips
+    StripIDs.push_back(vector<int>()); // LV
+    StripIDs.push_back(vector<int>()); // HV
+    bool AssignedDetector = false;
+    int DetectorID; // Define detector ID where hit took place
+    for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
+      // Collect all the strip hits in a hit and split them by side
+      MStripHit* SH = Event->GetHit(h)->GetStripHit(sh);
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      StripIDs[Side].push_back(SH->GetStripID());
+      
+      if (AssignedDetector == false) {
+        DetectorID = SH->GetDetectorID();
+        AssignedDetector = true;
+      }
+    }
+    // For each side, find the edge strip hit. i.e if there's charge sharing between strips 4, 5, and 6, the edges will be 4 and 6
+    int LeftEdgeLV = *min_element(StripIDs[0].begin(), StripIDs[0].end());
+    int RightEdgeLV = *max_element(StripIDs[0].begin(), StripIDs[0].end());
+    int LeftEdgeHV = *min_element(StripIDs[1].begin(), StripIDs[1].end());
+    int RightEdgeHV = *max_element(StripIDs[1].begin(), StripIDs[1].end());
+    
+    // If there are two hits that are one strip hit apart, then the NN strip hit will be added to both hits
+    
+    // Define the LV neighbors
+    for (unsigned int sh = 0; sh < NNStripHits[DetectorID][0].size(); sh++) {
+      MStripHit* NNSH = NNStripHits[DetectorID][0][sh];
+      if ((NNSH->GetStripID() == LeftEdgeLV - 1) or (NNSH->GetStripID() == RightEdgeLV + 1)) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
+        // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
+        if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
+          AssignedNeighbors.push_back(NNSH);
+        }
+        // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
+        else {
+          NNSH->IsAmbiguousNearestNeighbor(true);
+        }
+      }
+    }
+    
+    // Define the HV neighbors
+    for (unsigned int sh = 0; sh < NNStripHits[DetectorID][1].size(); sh++) {
+      MStripHit* NNSH = NNStripHits[DetectorID][1][sh];
+      if ((NNSH->GetStripID() == LeftEdgeHV - 1) or (NNSH->GetStripID() == RightEdgeHV + 1)) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
+      }
+      // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
+      if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
+        AssignedNeighbors.push_back(NNSH);
+      }
+      // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
+      else {
+        NNSH->IsAmbiguousNearestNeighbor(true);
+      }
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 //! Main data analysis routine, which updates the event to a new level
 bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 {
@@ -722,7 +843,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
   }
 
   // Collect strip hits from input event
-  vector<vector<vector<MStripHit*>>> StripHits = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits
+  auto [StripHits, IncludingNearestNeighbors] = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits (and bool saying if running with nearest neighbors or not
 
   // Perform some event selections
   bool CheckStripHits = EventSelection(Event, StripHits);
@@ -840,6 +961,11 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
       
   } // End Detector loop
 
+  // If there are NN strips, assign them to their appropriate hits
+  if (IncludingNearestNeighbors == true) {
+    AssignNearestNeighbors(Event);
+  }
+  
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
 
   return true;
