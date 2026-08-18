@@ -137,6 +137,7 @@ bool MGUIOptionsLoaderMeasurementsHDF::OnApply()
   dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetFileName(m_FileSelectorHDF->GetFileName());
   dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetLoadContinuationFiles(m_LoadContinuationFiles->IsOn());
   dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetFileNameStripMap(m_FileSelectorStripMap->GetFileName());
+  dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->SetIncludeNearestNeighbor(m_IncludeNearestNeighbor->IsOn());
 
   return true;
 }
