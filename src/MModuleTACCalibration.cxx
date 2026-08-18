@@ -69,7 +69,7 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all types this modules handles
-  AddModuleType(MAssembly::c_TACcal);
+  AddModuleType(MAssembly::c_TACCalibration);
 
   // Set all modules, which can follow this module
   AddSucceedingModuleType(MAssembly::c_StripPairing);
@@ -285,7 +285,7 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
   }
 
   // Mark TAC calibration as completed for this event
-  Event->SetAnalysisProgress(MAssembly::c_TACcal);
+  Event->SetAnalysisProgress(MAssembly::c_TACCalibration);
 
   return true;
 }
@@ -347,7 +347,7 @@ bool MModuleTACCalibration::ApplyTACCuts(MReadOutAssembly* Event)
     }
   }
 
-  Event->SetAnalysisProgress(MAssembly::c_TACcut);
+  Event->SetAnalysisProgress(MAssembly::c_TACCalibration);
 
   return true;
 }
