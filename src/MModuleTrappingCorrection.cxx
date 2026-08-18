@@ -372,7 +372,9 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
       } else {
         if (g_Verbosity >= c_Error) {
           cout << "ERROR in LoadSimCCEFile: Expected 5 columns on line " << (ValidLineCount + 1) << endl;
-        }
+        }  
+        SimCCEFile.Close();
+        return false;
       }
     }
   }
