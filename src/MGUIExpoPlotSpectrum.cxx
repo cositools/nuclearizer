@@ -62,7 +62,11 @@ MGUIExpoPlotSpectrum::MGUIExpoPlotSpectrum(MModule* Module) : MGUIExpo(Module)
 
   // Set the new title of the tab here:
   if (Module != nullptr) {
+      if (Module->GetName() == "TAC Calibration") {
+        m_TabTitle = "Energy Spectrum (TAC cuts)";
+      } else {
       m_TabTitle = "Energy Spectrum (" + Module->GetName() + ")";
+      }
   } else {
       m_TabTitle = "Energy Spectrum";
   }
