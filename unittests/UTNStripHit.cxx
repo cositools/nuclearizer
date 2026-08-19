@@ -91,6 +91,7 @@ bool UTNStripHit::TestDefaultConstruction()
   Passed = EvaluateFalse("IsNearestNeighbor()", "default", "Default IsNearestNeighbor is false", H.IsNearestNeighbor()) && Passed;
   Passed = EvaluateFalse("HasFastTiming()", "default", "Default HasFastTiming is false", H.HasFastTiming()) && Passed;
   Passed = EvaluateFalse("HasCalibratedTiming()", "default", "Default HasCalibratedTiming is false", H.HasCalibratedTiming()) && Passed;
+  Passed = EvaluateFalse("HasHighADC()", "default", "Default HasHighADC is false", H.HasHighADC()) && Passed;
   Passed = Evaluate("GetOrigins().size()", "default", "Default origins list is empty", (unsigned int) H.GetOrigins().size(), (unsigned int) 0) && Passed;
 
   // Verify that Clear() reinstates all defaults
@@ -106,6 +107,7 @@ bool UTNStripHit::TestDefaultConstruction()
   H.IsNearestNeighbor(true);
   H.HasFastTiming(true);
   H.HasCalibratedTiming(true);
+  H.HasHighADC(true);
   H.AddOrigins({3, 7});
 
   H.Clear();
@@ -122,6 +124,7 @@ bool UTNStripHit::TestDefaultConstruction()
   Passed = EvaluateFalse("Clear() IsNearestNeighbor", "after clear", "Clear() resets IsNearestNeighbor to false", H.IsNearestNeighbor()) && Passed;
   Passed = EvaluateFalse("Clear() HasFastTiming", "after clear", "Clear() resets HasFastTiming to false", H.HasFastTiming()) && Passed;
   Passed = EvaluateFalse("Clear() HasCalibratedTiming", "after clear", "Clear() resets HasCalibratedTiming to false", H.HasCalibratedTiming()) && Passed;
+  Passed = EvaluateFalse("Clear() HasHighADC", "after clear", "Clear() resets HasHighADC to false", H.HasHighADC()) && Passed;
   Passed = Evaluate("Clear() origins", "after clear", "Clear() empties the origins list", (unsigned int) H.GetOrigins().size(), (unsigned int) 0) && Passed;
 
   return Passed;
@@ -227,6 +230,7 @@ bool UTNStripHit::TestMakeParseFlags()
   //   bit 0 (value 1) = IsGuardRing
   //   bit 1 (value 2) = IsNearestNeighbor
   //   bit 2 (value 4) = HasFastTiming
+  //   bit 3 (value 8) = HasHighADC
 
   MStripHit H;
 
@@ -234,66 +238,80 @@ bool UTNStripHit::TestMakeParseFlags()
   H.IsGuardRing(false);
   H.IsNearestNeighbor(false);
   H.HasFastTiming(false);
+  H.HasHighADC(false);
   Passed = Evaluate("MakeFlags()", "all off", "MakeFlags() returns 0 when no flag is set",
-                    H.MakeFlags(), (unsigned int) 0b000) && Passed;
+                    H.MakeFlags(), (unsigned int) 0b0000) && Passed;
 
   // Only IsGuardRing -> bit 0 = 1
   H.IsGuardRing(true);
   H.IsNearestNeighbor(false);
   H.HasFastTiming(false);
   Passed = Evaluate("MakeFlags()", "guard ring only", "MakeFlags() returns 1 when only IsGuardRing is set",
-                    H.MakeFlags(), (unsigned int) 0b001) && Passed;
+                    H.MakeFlags(), (unsigned int) 0b0001) && Passed;
 
   // Only IsNearestNeighbor -> bit 1 = 2
   H.IsGuardRing(false);
   H.IsNearestNeighbor(true);
   H.HasFastTiming(false);
   Passed = Evaluate("MakeFlags()", "nearest neighbor only", "MakeFlags() returns 2 when only IsNearestNeighbor is set",
-                    H.MakeFlags(), (unsigned int) 0b010) && Passed;
+                    H.MakeFlags(), (unsigned int) 0b0010) && Passed;
 
   // Only HasFastTiming -> bit 2 = 4
   H.IsGuardRing(false);
   H.IsNearestNeighbor(false);
   H.HasFastTiming(true);
   Passed = Evaluate("MakeFlags()", "fast timing only", "MakeFlags() returns 4 when only HasFastTiming is set",
-                    H.MakeFlags(), (unsigned int) 0b100) && Passed;
+                    H.MakeFlags(), (unsigned int) 0b0100) && Passed;
 
-  // All three flags -> 7
+  // Only HasHighADC -> bit 3 = 8
+  H.IsGuardRing(false);
+  H.IsNearestNeighbor(false);
+  H.HasFastTiming(false);
+  H.HasHighADC(true);
+  Passed = Evaluate("MakeFlags()", "high ADC only", "MakeFlags() returns 8 when only HasHighADC is set",
+                    H.MakeFlags(), (unsigned int) 0b1000) && Passed;
+
+  // All four flags -> 15
   H.IsGuardRing(true);
   H.IsNearestNeighbor(true);
   H.HasFastTiming(true);
-  Passed = Evaluate("MakeFlags()", "all flags", "MakeFlags() returns 7 when all three flags are set",
-                    H.MakeFlags(), (unsigned int) 0b111) && Passed;
+  H.HasHighADC(true);
+  Passed = Evaluate("MakeFlags()", "all flags", "MakeFlags() returns 15 when all four flags are set",
+                    H.MakeFlags(), (unsigned int) 0b1111) && Passed;
 
-  // ParseFlags() round-trip: flags=5 (guard ring + fast timing, no nearest neighbor)
+  // ParseFlags() round-trip: flags=13 (guard ring + fast timing + high ADC, no nearest neighbor)
   H.Clear();
-  H.ParseFlags(0b101u);
-  Passed = EvaluateTrue("ParseFlags()", "guard ring bit", "ParseFlags(0b101) sets IsGuardRing true",
+  H.ParseFlags(0b1101u);
+  Passed = EvaluateTrue("ParseFlags()", "guard ring bit", "ParseFlags(0b1101) sets IsGuardRing true",
                         H.IsGuardRing() == true) && Passed;
-  Passed = EvaluateFalse("ParseFlags()", "nearest neighbor bit", "ParseFlags(0b101) leaves IsNearestNeighbor false",
+  Passed = EvaluateFalse("ParseFlags()", "nearest neighbor bit", "ParseFlags(0b1101) leaves IsNearestNeighbor false",
                          H.IsNearestNeighbor()) && Passed;
-  Passed = EvaluateTrue("ParseFlags()", "fast timing bit", "ParseFlags(0b101) sets HasFastTiming true",
+  Passed = EvaluateTrue("ParseFlags()", "fast timing bit", "ParseFlags(0b1101) sets HasFastTiming true",
                         H.HasFastTiming() == true) && Passed;
-  Passed = Evaluate("ParseFlags()", "round-trip", "MakeFlags() reproduces the representative flags value 5 after ParseFlags(5)",
-                    H.MakeFlags(), (unsigned int) 0b101) && Passed;
+  Passed = EvaluateTrue("ParseFlags()", "high ADC bit", "ParseFlags(0b1101) sets HasHighADC true",
+                        H.HasHighADC() == true) && Passed;
+  Passed = Evaluate("ParseFlags()", "round-trip", "MakeFlags() reproduces the representative flags value 13 after ParseFlags(13)",
+                    H.MakeFlags(), (unsigned int) 0b1101) && Passed;
 
   // ParseFlags(0) clears all flags
   H.IsGuardRing(true);
   H.IsNearestNeighbor(true);
   H.HasFastTiming(true);
+  H.HasHighADC(true);
   H.ParseFlags(0);
   Passed = EvaluateFalse("ParseFlags(0)", "guard ring cleared", "ParseFlags(0) clears IsGuardRing", H.IsGuardRing()) && Passed;
   Passed = EvaluateFalse("ParseFlags(0)", "nearest neighbor cleared", "ParseFlags(0) clears IsNearestNeighbor", H.IsNearestNeighbor()) && Passed;
   Passed = EvaluateFalse("ParseFlags(0)", "fast timing cleared", "ParseFlags(0) clears HasFastTiming", H.HasFastTiming()) && Passed;
+  Passed = EvaluateFalse("ParseFlags(0)", "high ADC cleared", "ParseFlags(0) clears HasHighADC", H.HasHighADC()) && Passed;
 
   // HasCalibratedTiming is intentionally not part of the bit mask
   H.Clear();
   H.HasCalibratedTiming(false);
   Passed = Evaluate("MakeFlags()", "calibrated timing false", "MakeFlags() is unchanged when HasCalibratedTiming is false",
-                    H.MakeFlags(), (unsigned int) 0b000) && Passed;
+                    H.MakeFlags(), (unsigned int) 0b0000) && Passed;
   H.HasCalibratedTiming(true);
   Passed = Evaluate("MakeFlags()", "calibrated timing true", "MakeFlags() is unchanged when HasCalibratedTiming is true",
-                    H.MakeFlags(), (unsigned int) 0b000) && Passed;
+                    H.MakeFlags(), (unsigned int) 0b0000) && Passed;
 
   return Passed;
 }

@@ -90,6 +90,7 @@ void MStripHit::Clear()
 
   m_HasFastTiming = false;
   m_HasCalibratedTiming = false;
+  m_HasHighADC = false;
 
   m_Origins.clear();
 }
@@ -227,21 +228,25 @@ void MStripHit::StreamRoa(ostream& S, bool WithADC, bool WithTAC, bool WithEnerg
 unsigned int MStripHit::MakeFlags()
 {
   // Return the bitwise strip-hit flags
-  // Currently, 3 bits:
-  //   v = Has fast timing
-  //    v = Is a nearest neighbor strip hit
-  //     v = Is a guard ring strip hit
-  // 0b111u
+  // Currently, 4 bits:
+  //   v = Has a high ADC value
+  //    v = Has fast timing
+  //     v = Is a nearest neighbor strip hit
+  //      v = Is a guard ring strip hit
+  // 0b1111u
 
-  unsigned int Flags = 0b000u;
+  unsigned int Flags = 0b0000u;
   if (m_IsGuardRing == true) {
-    Flags = Flags | 0b001u;
+    Flags = Flags | 0b0001u;
   }
   if (m_IsNearestNeighbor == true) {
-    Flags = Flags | 0b010u;
+    Flags = Flags | 0b0010u;
   }
   if (m_HasFastTiming == true) {
-    Flags = Flags | 0b100u;
+    Flags = Flags | 0b0100u;
+  }
+  if (m_HasHighADC == true) {
+    Flags = Flags | 0b1000u;
   }
 
   return Flags;
@@ -254,16 +259,18 @@ unsigned int MStripHit::MakeFlags()
 void MStripHit::ParseFlags(unsigned int Flags)
 {
   // Update the strip-hit flags from a bit mask
-  // Currently, 3 bits:
-  //   v = Has fast timing
-  //    v = Is a nearest neighbor
-  //     v = Is a guard ring
-  // 0b111u
+  // Currently, 4 bits:
+  //   v = Has a high ADC value
+  //    v = Has fast timing
+  //     v = Is a nearest neighbor
+  //      v = Is a guard ring
+  // 0b1111u
 
-  // "Flags & 0b001u" extracts bit 0, "!= 0u" turns it into an explicit bool
-  IsGuardRing((Flags & 0b001u) != 0u);
-  IsNearestNeighbor((Flags & 0b010u) != 0u);
-  HasFastTiming((Flags & 0b100u) != 0u);
+  // "Flags & 0b0001u" extracts bit 0, "!= 0u" turns it into an explicit bool
+  IsGuardRing((Flags & 0b0001u) != 0u);
+  IsNearestNeighbor((Flags & 0b0010u) != 0u);
+  HasFastTiming((Flags & 0b0100u) != 0u);
+  HasHighADC((Flags & 0b1000u) != 0u);
 }
 
 

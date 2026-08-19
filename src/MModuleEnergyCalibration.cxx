@@ -162,6 +162,16 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     MStripHit* SH = Event->GetStripHit(i);
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
 
+    // Flag strip hits whose ADC value is close to the ADC saturation limit, since their
+    // calibrated energy is not trustworthy. The hit is kept, it is only marked.
+    if (SH->GetADCUnits() > m_HighADCThreshold) {
+      SH->HasHighADC(true);
+      if (g_Verbosity >= c_Warning) {
+        cout << m_XmlTag << ": Warning: High ADC value " << SH->GetADCUnits() << " for read-out element " << R << endl;
+      }
+      Event->SetHighADC_QualityFlag("High ADC value " + to_string(SH->GetADCUnits()) + " for " + R.ToString().Data());
+    }
+
     TF1* Fit = m_Calibration[R];
     TF1* FitRes = m_ResolutionCalibration[R];
 

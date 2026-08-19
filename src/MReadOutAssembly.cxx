@@ -139,6 +139,9 @@ void MReadOutAssembly::Clear()
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
 
+  m_HighADC_QualityFlag = false;
+  m_HighADCString_QualityFlag.clear();
+
   m_StripPairing_QualityFlag = false;
   m_StripPairingString_QualityFlag.clear();
 
@@ -761,6 +764,17 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     if (m_StripHitBelowThresholdString_QualityFlag.empty() == false) {
       // Append any associated error text
       for (auto i : m_StripHitBelowThresholdString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+  if (m_HighADC_QualityFlag == true) {
+    S<<"QA HighADC";
+    if (m_HighADCString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_HighADCString_QualityFlag) {
         S<<" ("<<i<<")";
       }
     }
