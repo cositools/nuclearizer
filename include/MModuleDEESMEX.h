@@ -137,6 +137,17 @@ class MModuleDEESMEX : public MModule
     return m_ShieldEnergyCorrection.GetShieldEnergyCorrectionFileName();
   }
 
+  //! Set shield energy calibration file name
+  void SetShieldReadoutFileName(const MString& FileName)
+  {
+      m_ShieldReadout.SetShieldReadoutFileName(FileName);
+  }
+  //! Get shield energy calibration file name
+  MString GetShieldReadoutFileName() const
+  {
+      return m_ShieldReadout.GetShieldReadoutFileName();
+  }
+
   //! Set dead time file name
   void SetDeadtimeFileName(const MString& FileName)
   {
