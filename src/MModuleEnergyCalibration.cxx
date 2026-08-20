@@ -165,7 +165,6 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     // Flag strip hits whose ADC value is close to the ADC saturation limit, since their
     // calibrated energy is not trustworthy. The hit is kept, it is only marked.
     if (SH->GetADCUnits() > m_HighADCThreshold) {
-      SH->HasHighADC(true);
       if (g_Verbosity >= c_Warning) {
         cout << m_XmlTag << ": Warning: High ADC value " << SH->GetADCUnits() << " for read-out element " << R << endl;
       }
