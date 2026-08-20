@@ -139,11 +139,6 @@ class MStripHit
   //! Return whether the strip has triggered (ADC values above slow threshold)
   bool HasTriggered() const { return m_HasTriggered; }
 
-  //! Set whether the strip has a high ADC value (close to the ADC saturation limit)
-  void HasHighADC(bool HighADC) { m_HasHighADC = HighADC; }
-  //! Return whether the strip has a high ADC value (close to the ADC saturation limit)
-  bool HasHighADC() const { return m_HasHighADC; }
-
   //! TODO: Rename to HasTiming()
   //! Set the calibrated-timing flag
   void HasCalibratedTiming(bool CalibratedTiming) { m_HasCalibratedTiming = CalibratedTiming; }
@@ -216,8 +211,6 @@ class MStripHit
   bool m_HasFastTiming;
   //! True if the hit has calibrated timing
   bool m_HasCalibratedTiming;
-  //! True if the ADC value is close to the ADC saturation limit
-  bool m_HasHighADC;
 
   //! Origin interaction IDs from the simulation
   vector<int> m_Origins;
