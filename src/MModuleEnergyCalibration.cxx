@@ -169,7 +169,7 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       if (g_Verbosity >= c_Warning) {
         cout << m_XmlTag << ": Warning: High ADC value " << SH->GetADCUnits() << " for read-out element " << R << endl;
       }
-      Event->SetHighADC_QualityFlag("High ADC value " + to_string(SH->GetADCUnits()) + " for " + R.ToString().Data());
+      Event->SetHighADC_QualityFlag("High ADC value " + to_string((int) SH->GetADCUnits()) + " for " + R.ToString().Data());
     }
 
     TF1* Fit = m_Calibration[R];
