@@ -316,7 +316,9 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 {
   MFile SimCCEFile;
   if (SimCCEFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleTrappingCorrection::LoadSimCCEFile: failed to open file." << endl;
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MModuleTrappingCorrection::LoadSimCCEFile: failed to open file " << FileName << endl;
+    }
     return false;
   }
 
@@ -327,65 +329,62 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   m_CCEs_LV_h.clear();
 
   MString Line;
-  int ValidLineCount = 0;
+  bool ParsedHeaderParameters = false;
 
   while (SimCCEFile.ReadLine(Line)) {
-    // Skip comment lines
-    if (Line.BeginsWith('#') == true) {
+ 
+    // Skip empty lines or pure comment lines
+    if (Line.IsEmpty() == true || Line.BeginsWith('#') == true) {
       continue;
     }
 
     std::vector<MString> Tokens = Line.Tokenize(",");
-    
-    // Skip empty lines safely
-    if (Tokens.size() == 0) {
-      continue;
-    }
 
-    if (ValidLineCount == 0) {
-      //Read parameters A_HV, A_LV, B, and C from the first line
+    // Read parameters (A_HV, A_LV, B, C) 
+    if (ParsedHeaderParameters == false) {
       if (Tokens.size() == 4) {
-        m_ParamA_HV = Tokens[0].ToDouble();
-        m_ParamA_LV = Tokens[1].ToDouble();
-        m_ParamB    = Tokens[2].ToDouble();
-        m_ParamC    = Tokens[3].ToDouble();
+        m_ParamA_HV = Tokens[0].Strip().ToDouble();
+        m_ParamA_LV = Tokens[1].Strip().ToDouble();
+        m_ParamB    = Tokens[2].Strip().ToDouble();
+        m_ParamC    = Tokens[3].Strip().ToDouble();
 
-        ValidLineCount++;
+        ParsedHeaderParameters = true;
       } else {
         if (g_Verbosity >= c_Error) {
-          cout << "ERROR in LoadSimCCEFile: Expected 4 parameters (A_HV, A_LV, B, and C) on the first line." << endl;
+          cout << "ERROR in LoadSimCCEFile: Expected 4 parameters (A_HV, A_LV, B, C) on first data line, found " 
+               << Tokens.size() << " tokens." << endl;
         }
         SimCCEFile.Close();
         return false;
       }
-    }  
+    } 
+    // Read CCE curves
     else {
-      //Read the 5 data columns into depth and CCE arrays
       if (Tokens.size() == 5) {
-        m_Depths.push_back(Tokens[0].ToDouble());
-        m_CCEs_HV_e.push_back(Tokens[1].ToDouble());
-        m_CCEs_HV_h.push_back(Tokens[2].ToDouble());
-        m_CCEs_LV_e.push_back(Tokens[3].ToDouble());
-        m_CCEs_LV_h.push_back(Tokens[4].ToDouble());
-        
-        ValidLineCount++;
-      } else {
-        if (g_Verbosity >= c_Error) {
-          cout << "ERROR in LoadSimCCEFile: Expected 5 columns on line " << (ValidLineCount + 1) << endl;
-        }  
-        SimCCEFile.Close();
-        return false;
-      }
+        m_Depths.push_back(Tokens[0].Strip().ToDouble());
+        m_CCEs_HV_e.push_back(Tokens[1].Strip().ToDouble());
+        m_CCEs_HV_h.push_back(Tokens[2].Strip().ToDouble());
+        m_CCEs_LV_e.push_back(Tokens[3].Strip().ToDouble());
+        m_CCEs_LV_h.push_back(Tokens[4].Strip().ToDouble());
+      } 
     }
   }
 
   SimCCEFile.Close();
 
-  // Print summary to console if verbose logging is enabled
+  if (ParsedHeaderParameters == false || m_Depths.size() == 0) {
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in LoadSimCCEFile: No valid CCE data points were loaded!" << endl;
+    }
+    return false;
+  }
+
+  // Console output on successful load
   if (g_Verbosity >= c_Info) {
-    cout << m_XmlTag << "Loaded parameters: A_HV=" << m_ParamA_HV << ", A_LV=" << m_ParamA_LV
-         << ", B=" << m_ParamB << ", C=" << m_ParamC << endl;
-    cout << m_XmlTag << "Loaded " << m_Depths.size() << " data points into arrays." << endl;
+    cout << m_XmlTag << "Loaded CCE simulation parameters from " << FileName << ":" << endl;
+    cout << m_XmlTag << "  A_HV = " << m_ParamA_HV << ", A_LV = " << m_ParamA_LV 
+         << ", B = " << m_ParamB << ", C = " << m_ParamC << endl;
+    cout << m_XmlTag << "  Loaded " << m_Depths.size() << " depth grid points." << endl;
   }
 
   return true;
