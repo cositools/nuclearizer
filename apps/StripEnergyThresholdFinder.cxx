@@ -509,6 +509,7 @@ bool MStripThresholdFinder::BuildHistograms()
   cout << "Number of input files: " << m_InputFiles.size() << endl;
 
   Loader->SetFileNameStripMap(m_StripMapFile.Data());
+  Loader->SetIncludeNearestNeighbor(false);
 
   //NEW Energy Calibrator / MEGAlib module
   MSupervisor* S = MSupervisor::GetSupervisor();
