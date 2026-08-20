@@ -2,12 +2,12 @@
  * TrappingCorrectionCs137.cxx
  *
  *
- * Copyright (C) by Sean Pike.
+ * Copyright (C) by Sophie Haight.
  * All rights reserved.
  *
  *
  * This code implementation is the intellectual property of
- * Sean Pike.
+ * Sophie Haight.
  *
  * By copying, distributing or modifying the Program (or any work
  * based on the Program) you indicate your acceptance of this statement,
@@ -67,13 +67,13 @@ using namespace std;
 
 double g_MinCTD = -250;
 double g_MaxCTD = 250;
-int g_MinCounts = 1200;
+int g_MinCounts = 1000;
 int g_HVStrips = 64;
 int g_LVStrips = 64;
 
 double g_CsPhotopeak = 661.7;
 
-const int NCTDBins = 40;
+const int NCTDBins = 10;
 // We need NCTDBins + 1 edges to define the boundaries of NCTDBins
 double g_CTDBinEdges[NCTDBins + 1]; 
 
@@ -132,7 +132,7 @@ public:
   void Interrupt() { m_Interrupt = true; }
 
   //! Produce functions for fitting
-  // TF1* GenerateCTDFunction(double CTDFitMin, double CTDFitMax, double CTDGuess);
+
   TF1* GeneratePhotopeakFunction();
 
   MStripHit* GetDominantStrip(vector<MStripHit*>& Strips, double& EnergyFraction);
@@ -190,8 +190,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: TrappingCorrection <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -i:   input file name (.hdf5 or .txt with list of hdf5s)"<<endl;
-  Usage<<"         --emin:   minimum Event energy (default 30 keV)"<<endl;
-  Usage<<"         --emax:   maximum Event energy (default 5000 kev)"<<endl;
+  Usage<<"         --emin:   minimum Event energy (default 600 keV)"<<endl;
+  Usage<<"         --emax:   maximum Event energy (default 700 kev)"<<endl;
   Usage<<"         -e:   energy calibration file (.ecal)"<<endl;
   Usage<<"         --tcal:   TAC calibration file"<<endl;
   Usage<<"         --tcut:   TAC cut file"<<endl;
@@ -199,8 +199,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"         -m:   strip map file name (.map)"<<endl;
   Usage<<"         -g:   greedy strip pairing (default is chi-square)"<<endl;
   Usage<<"         -n:   exclude nearest neighbors"<<endl;
-  Usage<<"         -ctdmin :   minimum CTD for binning (default -300 ns)"<<endl;
-  Usage<<"         -ctdmax :   maximum CTD for binning (default 300 ns)"<<endl;
+  Usage<<"         -ctdmin :   minimum CTD for binning (default -250 ns)"<<endl;
+  Usage<<"         -ctdmax :   maximum CTD for binning (default 250 ns)"<<endl;
   Usage<<"         -o:   outfile (default YYYYMMDDHHMMSS)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -332,9 +332,6 @@ bool TrappingCorrectionCs137::Analyze()
   vector<MString> FileNames;
   FileNames.push_back(m_FileName);
   cout << "file name stored" << endl;
-
-  double CTDFitMin = g_MinCTD;
-  double CTDFitMax = g_MaxCTD;
 
   MString InputFile = FileNames[0];
   cout << " input file stored as: " << InputFile << endl;
