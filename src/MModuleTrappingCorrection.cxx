@@ -128,7 +128,7 @@ bool MModuleTrappingCorrection::Initialize()
        return false;
   }
 
-
+// TO DO: remove this check once we successfully process multiple detectors
   m_DetectorIDs = m_DepthCalibration-> GetDetectorIDs();
 
   if (m_DetectorIDs.empty()) {
