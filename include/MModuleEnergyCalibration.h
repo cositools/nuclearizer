@@ -199,6 +199,8 @@ class MModuleEnergyCalibration : public MModule
 
   //! Max value of the ADC units
   static constexpr double m_MaxADCRange = 16383;
+  //! ADC value above which a strip hit is flagged as having a high ADC value
+  static constexpr double m_HighADCThreshold = 14000;
  
 #ifdef ___CLING___
  public:
