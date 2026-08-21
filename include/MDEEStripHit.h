@@ -82,8 +82,6 @@ struct MDEEStripHit
   double m_Energy;
   //! The measured ADC value
   unsigned int m_ADC;
-  //! If the strip exceeds thresholds
-  bool m_HasTriggered;
   //! If the strip has fast timing
   bool m_HasFastTiming;
   //! The measured TAC value in ADC units
