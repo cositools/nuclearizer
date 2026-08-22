@@ -236,9 +236,9 @@ Passed = EvaluateTrue("IsLowVoltageStrip()", "alias true",
                       "IsLowVoltageStrip() returns true after IsXStrip(true)",
                       H.IsLowVoltageStrip() == true) && Passed;
 
-Passed = EvaluateFalse("HasTriggered()", "default",
-                       "Default HasTriggered is false",
-                       H.HasTriggered()) && Passed;
+Passed = EvaluateFalse("HasFastTiming()", "default",
+                       "Default HasFastTiming is false",
+                       H.HasFastTiming()) && Passed;
 ```
 
 Arguments: `Function`, `Input`, `Description`, `bool`.  All four arguments are
