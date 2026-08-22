@@ -125,12 +125,13 @@ class MStripThresholdFinder
   MString m_StripMapFile;
   MString m_OutputPrefix;
 
+  unsigned int m_DetectorID = 0;
   int m_MinEntries = 10;
   double m_FallbackThreshold = 20.0;
-
   int m_HistogramBins = 512;
   double m_HistogramMaxADC = 4096.0;
   double m_NoiseSearchMaxADC = 2200.0;
+  double m_NoiseStartMinCounts = 50.0;
 
   long m_MaxEvents = -1;
 
@@ -168,7 +169,7 @@ int main(int Argc, char** Argv)
   MGlobal::Initialize("Standalone", "ThresholdFinder");
 
   // Set verbosity to c_Error to display errors in the nuclearizer modules
-  g_Verbosity = c_Error;
+  //g_Verbosity = c_Error;
 
   MStripThresholdFinder Finder;
 
@@ -183,7 +184,7 @@ int main(int Argc, char** Argv)
   Finder.FindFastThresholds();
 
   Finder.WriteCSV();
-  Finder.WriteDiagnostics();
+  //Finder.WriteDiagnostics();
 
 
   // -------------------------------------------------------------
@@ -263,6 +264,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   m_HistogramBins = 2048;
   m_HistogramMaxADC = 4096;
   m_NoiseSearchMaxADC = 2200;
+ 
 
   // -------------------------------------------------------------
   // Command line override parameters (optional)
@@ -283,6 +285,11 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   // -------------------------------------------------------------
 
   if (config["analysis"]) {
+	  
+	if (config["analysis"]["detector_id"]) {
+      m_DetectorID = config["analysis"]["detector_id"].as<unsigned int>();
+    }
+	
     if (config["analysis"]["min_entries"]) {
       //minEntries=config["analysis"]["min_entries"].as<int>();
       m_MinEntries = config["analysis"]["min_entries"].as<int>();
@@ -303,6 +310,10 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
     if (config["analysis"]["noise_search_max_ADC"]) {
       m_NoiseSearchMaxADC = config["analysis"]["noise_search_max_ADC"].as<double>();
+    }
+	if (config["analysis"]["noise_start_min_counts"]) {
+      m_NoiseStartMinCounts =
+        config["analysis"]["noise_start_min_counts"].as<double>();
     }
   }
 
@@ -468,6 +479,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
   cout << endl;
   cout << "Active analysis configuration:" << endl;
+  cout << "  detector_id:            " << m_DetectorID << endl;
   cout << "  min_entries:            " << m_MinEntries << endl;
   cout << "  fallback_threshold_keV: " << m_FallbackThreshold << endl;
   cout << "  NoiseSearchMaxADC:      " << m_NoiseSearchMaxADC << endl;
@@ -575,6 +587,44 @@ bool MStripThresholdFinder::BuildHistograms()
 
 
       int NStrips = Event->GetNStripHits();
+	  
+	  bool suspiciousEvent = false;
+
+      for (int j = 0; j < NStrips; ++j) {
+        MStripHit* TestHit = Event->GetStripHit(j);
+
+        if (TestHit->GetDetectorID() != 0) {
+          suspiciousEvent = true;
+          break;
+        }
+      }
+
+      if (suspiciousEvent) {
+
+        cout << endl;
+        cout << "========================================" << endl;
+        cout << "SUSPICIOUS EVENT " << event_counter
+             << "   NStrips=" << NStrips << endl;
+
+        for (int j = 0; j < NStrips; ++j) {
+
+          MStripHit* TestHit = Event->GetStripHit(j);
+
+          cout << "  Hit " << j
+               << " Det=" << TestHit->GetDetectorID()
+               << " Side=" << (TestHit->IsLowVoltageStrip() ? "LV" : "HV")
+               << " Strip=" << TestHit->GetStripID()
+               << " ADC=" << TestHit->GetADCUnits()
+               << " Energy=" << TestHit->GetEnergy()
+               << " TAC=" << TestHit->GetTAC()
+               << endl;
+        }
+
+        cout << "========================================" << endl;
+      }
+
+
+
 
       for (int i = 0; i < NStrips; ++i) {
         MStripHit* SH = Event->GetStripHit(i);
@@ -582,6 +632,28 @@ bool MStripThresholdFinder::BuildHistograms()
         if (!PassHitSelection(SH)) {
           continue;
         }
+		
+		// This calibration run is for Detector 0 only.
+        // Reject hits decoded as belonging to any other detector.
+        if (SH->GetDetectorID() != m_DetectorID) {
+          continue;
+        }
+		
+		if (SH->GetDetectorID() != 0) {
+          cout << "NONZERO DETECTOR HIT:"
+               << " Event=" << event_counter
+               << " Det=" << SH->GetDetectorID()
+               << " Side=" << (SH->IsLowVoltageStrip() ? "LV" : "HV")
+               << " Strip=" << SH->GetStripID()
+               << " ADC=" << SH->GetADCUnits()
+               << " TAC=" << SH->GetTAC()
+               << endl;
+        }
+		
+		
+
+
+
 
         double ADC = SH->GetADCUnits();
         //double energy = SH->GetEnergy();
@@ -622,7 +694,24 @@ bool MStripThresholdFinder::BuildHistograms()
           timingCounts[R][ADC_bin] = { 0, 0 };
         }
 
-        double maxEnergy = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
+        // Addressing fails calibrations of events printed to terminal
+		//double maxEnergy = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
+        //int ebin = (int) (energy / maxEnergy * m_HistogramBins);
+		
+		// Cache maximum calibrated energy once per strip
+        if (ADC_to_keV_scale.find(R) == ADC_to_keV_scale.end()) {
+          
+		  /* cout << "CACHE calibration request: Det "
+               << R.GetDetectorID()
+               << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+               << " Strip " << R.GetStripID()
+               << endl; */
+		  
+		  ADC_to_keV_scale[R] =
+            m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
+        }
+
+        double maxEnergy = ADC_to_keV_scale[R];
 
         int ebin = (int) (energy / maxEnergy * m_HistogramBins);
 
@@ -682,8 +771,9 @@ bool MStripThresholdFinder::BuildHistograms()
     MReadOutElementDoubleStrip R = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
-    //double maxE = 3000.0;  // keV, safe upper bound
+    //double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
+    double maxE = ADC_to_keV_scale[R];
+	//double maxE = 3000.0;  // keV, safe upper bound
 
 
     string name = "dt0_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
@@ -709,8 +799,9 @@ bool MStripThresholdFinder::BuildHistograms()
     MReadOutElementDoubleStrip R = kv.first;
     vector<int>& counts = kv.second;
 
-    double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
-    //double maxE = 3000.0;
+    //double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
+    double maxE = ADC_to_keV_scale[R];
+	//double maxE = 3000.0;
 
     string name = "dt1_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
 
@@ -820,11 +911,14 @@ void MStripThresholdFinder::FindSlowThresholds()
     hist->Smooth(3);
 
     int maxSearchBin = hist->FindBin(m_NoiseSearchMaxADC);
-
-    int startBin = -1;
+    
+	//--------------------------------------------------------------
+	// Original slow threshold algorithm
+	//--------------------------------------------------------------
+	int startBin = -1;
 
     for (int b = 1; b <= maxSearchBin; b++) {
-      if (hist->GetBinContent(b) > 5) {
+      if (hist->GetBinContent(b) > m_NoiseStartMinCounts) {
         startBin = b;
         break;
       }
@@ -848,6 +942,32 @@ void MStripThresholdFinder::FindSlowThresholds()
         break;
       }
     }
+	
+	
+    // -------------------------------------------------------------
+    // Find dominant noise peak
+    //
+    // Ignore small peaks near 0keV from NN events sneaking through
+    // -------------------------------------------------------------
+
+    //int peakBin = -1;
+    //double peakCounts = 0.0;
+
+    //for (int b = 1; b <= maxSearchBin; b++) {
+
+    //  double c = hist->GetBinContent(b);
+
+    //  if (c > peakCounts) {
+    //    peakCounts = c;
+    //    peakBin = b;
+    //  }
+    //}
+
+    // Require a real populated peak
+    //if (peakBin < 0 || peakCounts <= 5) {
+    //  thresholds[R] = m_FallbackThreshold;
+    //  continue;
+    //}
 
     int thresholdBin = peakBin;
 
@@ -883,10 +1003,16 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     double thresholdADC = hist->GetBinCenter(thresholdBin);
 
+/*     cout << "SLOW calibration request: Det "
+         << R.GetDetectorID()
+         << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+         << " Strip " << R.GetStripID()
+         << " ADC " << thresholdADC
+         << endl;
+ */
     /* Convert ADC → keV using SLOW calibration */
     double thresholdKeV =
       m_EnergyCalibration.GetEnergy(R, thresholdADC);
-
 
     if (R.IsLowVoltageStrip() == true) {
       m_StripIndex_LV.push_back(R.GetStripID());
@@ -1039,7 +1165,16 @@ void MStripThresholdFinder::FindFastThresholds()
     }
 
     m_FastThresholdsADC[R] = fast_thresh_ADC;
-
+	
+	// TEMPORARY DIAGNOSTIC:
+    // Print the channel immediately before attempting energy calibration
+/*     cout << "FAST calibration request: Det "
+         << R.GetDetectorID()
+         << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+         << " Strip " << R.GetStripID()
+         << " ADC " << fast_thresh_ADC
+         << endl;
+ */
     double fast_thresh_keV =
       m_EnergyCalibration.GetEnergy(R, fast_thresh_ADC);
 
