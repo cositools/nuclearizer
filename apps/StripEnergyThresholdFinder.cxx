@@ -128,6 +128,7 @@ class MStripThresholdFinder
   unsigned int m_DetectorID = 0;
   int m_MinEntries = 10;
   double m_FallbackThreshold = 20.0;
+  double m_FastFallbackThreshold = 35.0;
   int m_HistogramBins = 512;
   double m_HistogramMaxADC = 4096.0;
   double m_NoiseSearchMaxADC = 2200.0;
@@ -148,11 +149,6 @@ class MStripThresholdFinder
 
   map<MReadOutElementDoubleStrip, double> m_FastThresholds;
   map<MReadOutElementDoubleStrip, double> m_FastThresholdsADC;
-
-  // --- Helpers ---
-  int FindNoisePeakBin(TH1D* Histogram) const;
-  int FindThresholdBin(TH1D* Histogram, int PeakBin) const;
-  int FindCrossoverADC(const map<int, pair<int, int>>& ADCMap, int FirstNonzero) const;
 
   // --- Diagnostics (temporary restore for plotting) ---
   vector<double> m_StripIndex_LV;
@@ -184,7 +180,7 @@ int main(int Argc, char** Argv)
   Finder.FindFastThresholds();
 
   Finder.WriteCSV();
-  //Finder.WriteDiagnostics();
+  Finder.WriteDiagnostics();
 
 
   // -------------------------------------------------------------
@@ -225,7 +221,6 @@ int main(int Argc, char** Argv)
   cout << "  cSlowPixel->Draw()" << endl;
   cout << endl;
 
-
   cout << endl;
   cout << "FAST threshold diagnostics:" << endl;
   cout << "---------------------------------------" << endl;
@@ -254,18 +249,13 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-
   string configFile = argv[1];
   YAML::Node config = YAML::LoadFile(configFile);
 
-
-  //int minEntries=10;
-  //double fallbackThreshold=20;
   m_HistogramBins = 2048;
   m_HistogramMaxADC = 4096;
   m_NoiseSearchMaxADC = 2200;
  
-
   // -------------------------------------------------------------
   // Command line override parameters (optional)
   // -------------------------------------------------------------
@@ -273,6 +263,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   int cmd_min_entries = -1;
   double cmd_noise_search_max_ADC = -1;
   double cmd_fallback_threshold_keV = -1;
+  double cmd_fast_fallback_threshold_keV = -1;
 
   string cmd_data_file = "";
   string cmd_calibration_file = "";
@@ -291,13 +282,15 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     }
 	
     if (config["analysis"]["min_entries"]) {
-      //minEntries=config["analysis"]["min_entries"].as<int>();
       m_MinEntries = config["analysis"]["min_entries"].as<int>();
     }
 
     if (config["analysis"]["fallback_threshold_keV"]) {
-      //fallbackThreshold=config["analysis"]["fallback_threshold_keV"].as<double>();
       m_FallbackThreshold = config["analysis"]["fallback_threshold_keV"].as<double>();
+    }
+	
+	if (config["analysis"]["fast_fallback_threshold_keV"]) {
+      m_FastFallbackThreshold = config["analysis"]["fast_fallback_threshold_keV"].as<double>();
     }
 
     if (config["analysis"]["histogram_bins"]) {
@@ -345,6 +338,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     { "min_entries", required_argument, 0, 'm' },
     { "noise_search_max_ADC", required_argument, 0, 'n' },
     { "fallback_threshold_keV", required_argument, 0, 'f' },
+	{ "fast_fallback_threshold_keV", required_argument, 0, 'F' },
 
     /* NEW overrides */
     { "data_file", required_argument, 0, 'd' },
@@ -372,6 +366,10 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
     case 'f':
       cmd_fallback_threshold_keV = atof(optarg);
+      break;
+	  
+	case 'F':
+      cmd_fast_fallback_threshold_keV = atof(optarg);
       break;
 
     case 'd':
@@ -409,7 +407,9 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
       cout << "  --min_entries N              Minimum histogram entries" << endl;
       cout << "  --noise_search_max_ADC N     Max ADC for noise search" << endl;
       cout << "  --fallback_threshold_keV N   Default threshold if fit fails" << endl;
-      cout << "  --help                       Show this message" << endl;
+      cout << "  --fast_fallback_threshold_keV N   Fast fallback threshold (keV)" << endl;
+
+	  cout << "  --help                       Show this message" << endl;
       cout << endl;
       exit(0);
 
@@ -428,6 +428,10 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
   if (cmd_fallback_threshold_keV >= 0) {
     m_FallbackThreshold = cmd_fallback_threshold_keV;
+  }
+
+  if (cmd_fast_fallback_threshold_keV >= 0) {
+    m_FastFallbackThreshold = cmd_fast_fallback_threshold_keV;
   }
 
 
@@ -482,12 +486,13 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   cout << "  detector_id:            " << m_DetectorID << endl;
   cout << "  min_entries:            " << m_MinEntries << endl;
   cout << "  fallback_threshold_keV: " << m_FallbackThreshold << endl;
+  cout << "  fast_fallback_threshold_keV: " << m_FastFallbackThreshold << endl;
   cout << "  NoiseSearchMaxADC:      " << m_NoiseSearchMaxADC << endl;
   cout << "  histogram_bins:         " << m_HistogramBins << endl;
   cout << "  histogram_max_ADC:      " << m_HistogramMaxADC << endl;
   cout << endl;
 
-  MString StripMapFile = m_StripMapFile.Data();
+ 
 
   return true;
 }
@@ -497,15 +502,13 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 //! Build per-strip ADC and timing histograms from input data
 bool MStripThresholdFinder::BuildHistograms()
 {
-  MString StripMapFile = m_StripMapFile;
   long max_events = m_MaxEvents;
 
-  //map<MReadOutElementDoubleStrip,TH1D*> histograms;
   map<MReadOutElementDoubleStrip, vector<int>> hist_counts;
   map<MReadOutElementDoubleStrip, vector<int>> dt0_counts;
   map<MReadOutElementDoubleStrip, vector<int>> dt1_counts;
   map<MReadOutElementDoubleStrip, double> ADC_to_keV_scale;
-  map<MReadOutElementDoubleStrip, TH1D*> histograms_TAC;
+
 
   map<MReadOutElementDoubleStrip, map<int, pair<int, int>>> timingCounts;
 
@@ -554,7 +557,6 @@ bool MStripThresholdFinder::BuildHistograms()
   MReadOutAssembly* Event = new MReadOutAssembly();
 
   long event_counter = 0;
-  //cout << std::unitbuf;
   auto start_time = std::chrono::steady_clock::now();
   while (!Loader->IsFinished()) {
 
@@ -565,7 +567,6 @@ bool MStripThresholdFinder::BuildHistograms()
     Event->Clear();
 
     if (Loader->IsReady()) {
-      //Loader->AnalyzeEvent(Event);
       Loader->AnalyzeEvent(Event);
       EnergyCalibrator->AnalyzeEvent(Event);
       event_counter++;
@@ -588,7 +589,14 @@ bool MStripThresholdFinder::BuildHistograms()
 
       int NStrips = Event->GetNStripHits();
 	  
-	  bool suspiciousEvent = false;
+	  // -------------------------------------------------------------
+      // TEMPORARY DIAGNOSTIC:
+      // Identify and print events containing unexpected detector IDs.
+      // Uncomment this block when investigating malformed events.
+      // -------------------------------------------------------------
+
+      /*
+      bool suspiciousEvent = false;
 
       for (int j = 0; j < NStrips; ++j) {
         MStripHit* TestHit = Event->GetStripHit(j);
@@ -622,8 +630,7 @@ bool MStripThresholdFinder::BuildHistograms()
 
         cout << "========================================" << endl;
       }
-
-
+      */
 
 
       for (int i = 0; i < NStrips; ++i) {
@@ -633,38 +640,19 @@ bool MStripThresholdFinder::BuildHistograms()
           continue;
         }
 		
-		// This calibration run is for Detector 0 only.
-        // Reject hits decoded as belonging to any other detector.
+
+        // Process only the detector selected in the configuration.
         if (SH->GetDetectorID() != m_DetectorID) {
           continue;
         }
-		
-		if (SH->GetDetectorID() != 0) {
-          cout << "NONZERO DETECTOR HIT:"
-               << " Event=" << event_counter
-               << " Det=" << SH->GetDetectorID()
-               << " Side=" << (SH->IsLowVoltageStrip() ? "LV" : "HV")
-               << " Strip=" << SH->GetStripID()
-               << " ADC=" << SH->GetADCUnits()
-               << " TAC=" << SH->GetTAC()
-               << endl;
-        }
-		
-		
-
-
-
-
+			
         double ADC = SH->GetADCUnits();
-        //double energy = SH->GetEnergy();
 
         MReadOutElementDoubleStrip R;
         R.SetDetectorID(SH->GetDetectorID());
         R.SetStripID(SH->GetStripID());
         R.IsLowVoltageStrip(SH->IsLowVoltageStrip());
 
-
-        //it_hist->second->Fill(ADC);
         int bin = (int) (ADC / m_HistogramMaxADC * m_HistogramBins);
 
         if (bin >= 0 && bin < m_HistogramBins) {
@@ -679,7 +667,6 @@ bool MStripThresholdFinder::BuildHistograms()
         // FAST timing accumulation (dt0 vs dt1)
         // -------------------------------------------------------------
 
-        //int ADC_bin = static_cast<int>(ADC);
         double energy = SH->GetEnergy();
 
         double TAC = SH->GetTAC();
@@ -694,9 +681,6 @@ bool MStripThresholdFinder::BuildHistograms()
           timingCounts[R][ADC_bin] = { 0, 0 };
         }
 
-        // Addressing fails calibrations of events printed to terminal
-		//double maxEnergy = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
-        //int ebin = (int) (energy / maxEnergy * m_HistogramBins);
 		
 		// Cache maximum calibrated energy once per strip
         if (ADC_to_keV_scale.find(R) == ADC_to_keV_scale.end()) {
@@ -830,72 +814,13 @@ bool MStripThresholdFinder::BuildHistograms()
 void MStripThresholdFinder::FindSlowThresholds()
 {
 
+  map<MReadOutElementDoubleStrip, double> thresholds;
+  map<MReadOutElementDoubleStrip, double> thresholdsADC;
+
   m_StripIndex_LV.clear();
   m_StripIndex_HV.clear();
   m_ThresholdValues_LV.clear();
   m_ThresholdValues_HV.clear();
-
-
-  // -------------------------------------------------------------
-  // Threshold finding algorithm
-  // -------------------------------------------------------------
-
-  map<MReadOutElementDoubleStrip, double> thresholds;
-  map<MReadOutElementDoubleStrip, double> thresholdsADC;
-
-  // Progress tracking (slow thresholds)
-  //int totalStrips = m_ADCHistograms.size();
-  //int processedStrips = 0;
-
-  map<int, double> thresholdLV;
-  map<int, double> thresholdHV;
-
-  map<int, double> thresholdLV_ADC;
-  map<int, double> thresholdHV_ADC;
-
-
-  // -------------------------------------------------------------
-  // TAC threshold storage
-  // -------------------------------------------------------------
-
-  // HV/LV split
-
-  map<int, double> thresholdLV_TAC;
-  map<int, double> thresholdHV_TAC;
-
-  map<int, double> thresholdLV_TAC_ADC;
-  map<int, double> thresholdHV_TAC_ADC;
-
-
-  // -------------------------------------------------------------
-  // Diagnostic storage vectors
-  // These vectors allow us to build ROOT diagnostic plots later
-  // -------------------------------------------------------------
-
-  vector<double> StripIndex;
-  vector<double> thresholdValues;
-  vector<double> noisePeakADC;
-
-  // -------------------------------------------------------------
-  // Separate vectors for HV and LV Strip diagnostics
-  // -------------------------------------------------------------
-
-  vector<double> StripIndex_LV;
-  vector<double> StripIndex_HV;
-
-  vector<double> thresholdValues_LV;
-  vector<double> thresholdValues_HV;
-
-
-  // -------------------------------------------------------------
-  // TAC diagnostic vectors
-  // -------------------------------------------------------------
-
-  vector<double> thresholdValues_TAC_LV;
-  vector<double> thresholdValues_TAC_HV;
-
-  vector<double> TACPeakADC_LV;
-  vector<double> TACPeakADC_HV;
 
 
   for (auto& kv : m_ADCHistograms) {
@@ -904,11 +829,28 @@ void MStripThresholdFinder::FindSlowThresholds()
     TH1D* hist = kv.second;
 
     if (hist->GetEntries() < m_MinEntries) {
+
       thresholds[R] = m_FallbackThreshold;
+	  
+	  // Mark the ADC value as invalide since we cannot easily convert back from
+	  // the fallback keV value to ADC bins
+      thresholdsADC[R] = -1.0;
+	  
+	  // If a fallback threshold is used for a slow threshold channel we print a warning
+      cout << "WARNING: SLOW threshold could not be determined for Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << ": only " << hist->GetEntries()
+           << " histogram entries. "
+           << "Using fallback threshold = "
+           << m_FallbackThreshold << " keV."
+           << endl;
+
       continue;
     }
 
-    hist->Smooth(3);
+    //hist->Smooth(3);
 
     int maxSearchBin = hist->FindBin(m_NoiseSearchMaxADC);
     
@@ -925,53 +867,143 @@ void MStripThresholdFinder::FindSlowThresholds()
     }
 
     if (startBin < 0) {
+
       thresholds[R] = m_FallbackThreshold;
+	  thresholdsADC[R] = -1.0;
+
+      cout << "WARNING: SLOW threshold could not be determined for Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << ": no valid noise distribution found below "
+           << m_NoiseSearchMaxADC << " ADC. "
+           << "Using fallback threshold = "
+           << m_FallbackThreshold << " keV."
+           << endl;
+
       continue;
     }
 
     int peakBin = startBin;
     double peakCounts = hist->GetBinContent(startBin);
 
+    const int declineBinsRequired = 3;
+    int declineCount = 0;
+
     for (int b = startBin + 1; b <= maxSearchBin; b++) {
+
       double c = hist->GetBinContent(b);
+	  
+	  /* if (R.GetStripID() == 64 && !R.IsLowVoltageStrip()) {
+        cout << "GR PEAK SEARCH:"
+             << " bin=" << b
+             << " ADC=" << hist->GetBinCenter(b)
+             << " counts=" << c
+             << " currentPeakADC=" << hist->GetBinCenter(peakBin)
+             << " currentPeakCounts=" << peakCounts
+             << " declineCount=" << declineCount
+             << endl;
+      } */
 
       if (c > peakCounts) {
+
+        // Still climbing: update candidate peak
         peakCounts = c;
         peakBin = b;
-      } else if (b > peakBin && c < peakCounts * 0.9) {
-        break;
+        declineCount = 0;
+
+      } else {
+
+        // Counts are now below the candidate peak
+        declineCount++;
+
+        // A sustained decline means we passed the first real peak
+        if (declineCount >= declineBinsRequired) {
+          break;
+        }
       }
     }
+	// -------------------------------------------------------------
+    // TEMPORARY DIAGNOSTIC: report identified noise peak
+    // -------------------------------------------------------------
+
+    // Print out the noise peaks to the temrinal
+    /* cout << "NOISE PEAK: Det "
+         << R.GetDetectorID()
+         << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+         << " Strip " << R.GetStripID()
+         << " startADC=" << hist->GetBinCenter(startBin)
+         << " peakADC=" << hist->GetBinCenter(peakBin)
+         << " peakCounts=" << peakCounts
+         << endl */;
+	
 	
 	
     // -------------------------------------------------------------
-    // Find dominant noise peak
+    // Detect pedestal-like noise distributions
     //
-    // Ignore small peaks near 0keV from NN events sneaking through
+    // Some noisy channels do not have a well-defined noise peak.
+    // Instead, they rise sharply from ~0 counts into a broad
+    // pedestal. For these channels, use the top of the leading edge
+    // rather than searching for a trough after the "peak".
     // -------------------------------------------------------------
 
-    //int peakBin = -1;
-    //double peakCounts = 0.0;
+    bool pedestalLike = false;
+    int pedestalThresholdBin = -1;
 
-    //for (int b = 1; b <= maxSearchBin; b++) {
+    // Look only a few bins beyond the first significant bin
+    const int pedestalLookAheadBins = 8;
+    int pedestalEndBin =
+      min(startBin + pedestalLookAheadBins, maxSearchBin);
 
-    //  double c = hist->GetBinContent(b);
+    // If the spectrum reaches most of the measured noise height
+    // treat it as a pedestal-like leading edge.
+    for (int b = startBin; b <= pedestalEndBin; ++b) {
 
-    //  if (c > peakCounts) {
-    //    peakCounts = c;
-    //    peakBin = b;
-    //  }
-    //}
+      if (hist->GetBinContent(b) >= 0.80 * peakCounts && b - startBin <= 4) {
+        
+        pedestalLike = true;
+		
+		// Continue forward from the upper part of the rising edge
+        // and find where the spectrum stops increasing significantly.
+        // Put the threshold one bin beyond that point.
+        for (int p = b; p < pedestalEndBin; ++p) {
 
-    // Require a real populated peak
-    //if (peakBin < 0 || peakCounts <= 5) {
-    //  thresholds[R] = m_FallbackThreshold;
-    //  continue;
-    //}
+          double current = hist->GetBinContent(p);
+          double next = hist->GetBinContent(p + 1);
+
+          // The leading edge has reached the plateau when the next
+          // bin is no more than 5% higher than the current bin.
+          if (next <= current * 1.05) {
+            pedestalThresholdBin = p + 1;
+		
+            break;
+          }
+        }
+        // Safety fallback: if no flattening point was found within
+        // the look-ahead region, use the end of that region.
+        if (pedestalThresholdBin < 0) {
+          pedestalThresholdBin = pedestalEndBin;
+        }
+
+        break;
+	  }
+    }
 
     int thresholdBin = peakBin;
+    // For pedestal-like spectra, use the top of the sharp leading edge
 
-    if (R.GetStripID() == 64) {
+	if (pedestalLike) {	
+	  // Pedestal-like noise:
+      // use the top of the sharp leading edge.
+      // Applies to both normal strips and guard-rings
+      thresholdBin = pedestalThresholdBin;
+  
+	
+    } else if (R.GetStripID() == 64) {
+		
+	  // Guard ring with a conventional noise peak:
+      // find where the falling edge reaches 50% of peak height.	
       for (int b = peakBin + 1; b <= maxSearchBin; b++) {
         if (hist->GetBinContent(b) <= peakCounts * 0.5) {
           thresholdBin = b;
@@ -979,7 +1011,10 @@ void MStripThresholdFinder::FindSlowThresholds()
         }
       }
     } else {
-      for (int b = peakBin + 1; b <= maxSearchBin; b++) {
+      
+	  // Normal strip with a conventional noise peak:
+      // find the trough to the right of the noise peak.
+	  for (int b = peakBin + 1; b <= maxSearchBin; b++) {
         double c = hist->GetBinContent(b);
 
         if (c < hist->GetBinContent(thresholdBin)) {
@@ -991,16 +1026,50 @@ void MStripThresholdFinder::FindSlowThresholds()
         }
       }
     }
-
+ 
+    /*
+    // Print the GR result to the terminal for debugging
+    if (R.GetStripID() == 64) {
+        cout << "GR FINAL DECISION:"
+             << " pedestalLike=" << pedestalLike
+             << " startADC=" << hist->GetBinCenter(startBin)
+             << " peakADC=" << hist->GetBinCenter(peakBin)
+             << " peakCounts=" << peakCounts
+             << " thresholdADC=" << hist->GetBinCenter(thresholdBin)
+             << " thresholdCounts=" << hist->GetBinContent(thresholdBin)
+             << endl;
+    } */
 
     // -------------------------------------------------------------
     // Shift threshold slightly to the right of the noise trough
     // This prevents thresholds from sitting inside the noise tail
     // -------------------------------------------------------------
 
-    int shiftBins = 2; // move threshold up by a couple of bins
-    thresholdBin = min(thresholdBin + shiftBins, hist->GetNbinsX());
-
+    //int shiftBins = 2; // move threshold up by a couple of bins
+    //thresholdBin = min(thresholdBin + shiftBins, hist->GetNbinsX());
+    if (!pedestalLike) {
+      int shiftBins = 2;
+      thresholdBin = min(thresholdBin + shiftBins, hist->GetNbinsX());
+    }
+	
+	/* if (R.GetStripID() == 64) {
+      cout << "GR AFTER SHIFT:"
+           << " thresholdADC=" << hist->GetBinCenter(thresholdBin)
+           << endl;
+    } */
+	
+	
+	/* if (pedestalLike) {
+      cout << "Pedestal-like noise: Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << " startADC=" << hist->GetBinCenter(startBin)
+           << " edgeADC=" << hist->GetBinCenter(pedestalThresholdBin)
+           << " peakADC=" << hist->GetBinCenter(peakBin)
+           << endl;
+    } */
+	
     double thresholdADC = hist->GetBinCenter(thresholdBin);
 
 /*     cout << "SLOW calibration request: Det "
@@ -1046,8 +1115,6 @@ void MStripThresholdFinder::FindFastThresholds()
     cout << "Warning: No timing data available for fast threshold calculation." << endl;
   }
 
-  map<MReadOutElementDoubleStrip, double> thresholds_TAC_ADC;
-
   // -------------------------------------------------------------
   // Fast threshold finder (dt0 vs dt1 crossover)
   // -------------------------------------------------------------
@@ -1061,17 +1128,100 @@ void MStripThresholdFinder::FindFastThresholds()
       continue;
     }
 
+    // -------------------------------------------------------------
+    // Count total dt0 and dt1 populations
+    // -------------------------------------------------------------
+
     int totalCounts = 0;
+    int totalDt0Counts = 0;
+    int totalDt1Counts = 0;
+
+
     for (auto& a : ADCMap) {
-      totalCounts += a.second.first + a.second.second;
+
+      int n0 = a.second.first;
+      int n1 = a.second.second;
+
+      totalDt0Counts += n0;
+      totalDt1Counts += n1;
+      totalCounts += n0 + n1;
     }
+    
+	double dt1Fraction = 0.0;
 
+    if (totalCounts > 0) {
+      dt1Fraction =
+        static_cast<double>(totalDt1Counts) /
+        static_cast<double>(totalCounts);
+    }
+	
 
-    // Proper m_MinEntries guard
+    // -------------------------------------------------------------
+    // FAST threshold fallback
+    //
+    // A physical dt0/dt1 crossover cannot be determined if there
+    // are too few total events, or if either timing population is
+    // essentially absent.
+    // -------------------------------------------------------------
+
     if (totalCounts < m_MinEntries) {
-      m_FastThresholds[R] = m_FallbackThreshold;
+
+      m_FastThresholds[R] = m_FastFallbackThreshold;
+	  // If a fast fallback value is used, we cannot calculate the ADC value from keV
+	  // We set it to -1 so that it's clearly not real
+	  m_FastThresholdsADC[R] = -1.0;
+
+      cout << "WARNING: FAST threshold could not be determined for Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << ": only " << totalCounts
+           << " total timing counts. "
+           << "Using fallback threshold = "
+           << m_FastFallbackThreshold << " keV."
+           << endl;
+
       continue;
     }
+
+
+    // A valid FAST threshold requires a meaningful population
+    // of both dt0 and dt1 events for every strip. A handful of sparse dt1 counts
+    // distributed across the spectrum is not sufficient to define
+    // a physical crossover.
+    const double minDt1Fraction = 0.05;  // 5%
+
+    if (totalDt0Counts < m_MinEntries ||
+        totalDt1Counts < m_MinEntries ||
+        dt1Fraction < minDt1Fraction) {
+
+      m_FastThresholds[R] = m_FastFallbackThreshold;
+	  m_FastThresholdsADC[R] = -1.0;
+
+      cout << "WARNING: FAST threshold could not be determined for Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << ": insufficient timing populations "
+           << "(dt0=" << totalDt0Counts
+           << ", dt1=" << totalDt1Counts
+           << ", dt1 fraction=" << 100.0 * dt1Fraction << "%). "
+           << "Using fallback threshold = "
+           << m_FastFallbackThreshold << " keV."
+           << endl;
+
+      continue;
+    }
+	
+	// Print out every fast timing population fraction
+	/* cout << "FAST timing populations: Det "
+         << R.GetDetectorID()
+         << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+         << " Strip " << R.GetStripID()
+         << " dt0=" << totalDt0Counts
+         << " dt1=" << totalDt1Counts
+         << " dt1_fraction=" << 100.0 * dt1Fraction << "%"
+         << endl; */
 
     // Find first nonzero ADC
     int first_nonzero = -1;
@@ -1087,7 +1237,18 @@ void MStripThresholdFinder::FindFastThresholds()
     }
 
     if (first_nonzero < 0) {
-      m_FastThresholds[R] = m_FallbackThreshold;
+
+      m_FastThresholds[R] = m_FastFallbackThreshold;
+	  m_FastThresholdsADC[R] = -1.0;
+
+      cout << "WARNING: No valid FAST timing data found for Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << ". Using fallback threshold = "
+           << m_FastFallbackThreshold << " keV."
+           << endl;
+
       continue;
     }
 
@@ -1106,7 +1267,7 @@ void MStripThresholdFinder::FindFastThresholds()
       int n1 = a.second.second;
 
       // Require minimum statistics to avoid noise triggers
-      if (n0 + n1 < 10) {
+      if (n0 + n1 < 50) {
         continue;
       }
 
@@ -1149,7 +1310,18 @@ void MStripThresholdFinder::FindFastThresholds()
     }
 
     if (bestADC < 0) {
-      m_FastThresholds[R] = m_FallbackThreshold;
+
+      m_FastThresholds[R] = m_FastFallbackThreshold;
+	  m_FastThresholdsADC[R] = -1.0;
+
+      cout << "WARNING: No valid FAST threshold solution found for Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << ". Using fallback threshold = "
+           << m_FastFallbackThreshold << " keV."
+           << endl;
+
       continue;
     }
 
@@ -1202,12 +1374,21 @@ void MStripThresholdFinder::WriteCSV()
   ofstream csv_LV(LVOutputCSVFileName);
 
   if (!csv_HV.is_open()) {
-    cerr << "Error: Failed to open CSV output file for HV thresholds:" << HVOutputCSVFileName << endl;
+    cerr << "Error: Failed to open CSV output file for HV thresholds: "
+         << HVOutputCSVFileName << endl;
     return;
   }
 
   if (!csv_LV.is_open()) {
-    cerr << "Error: Failed to open CSV output file for LV thresholds:" << HVOutputCSVFileName << endl;
+    cerr << "Error: Failed to open CSV output file for LV thresholds: "
+         << LVOutputCSVFileName << endl;
+    return;
+  }
+
+
+  if (!csv_LV.is_open()) {
+    cerr << "Error: Failed to open CSV output file for LV thresholds: "
+         << LVOutputCSVFileName << endl;
     return;
   }
 
@@ -1242,7 +1423,7 @@ void MStripThresholdFinder::WriteCSV()
 
 
   // -------------------------------------------------------------
-  // Write CSV threshold tables (SLOW + FAST)
+  // Write Fast CSV threshold tables 
   // -------------------------------------------------------------
 
   // --- FAST CSV ---
