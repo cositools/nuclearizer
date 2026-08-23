@@ -24,6 +24,9 @@
 // Compile Command
 // make (in the main nuclearizer directory)
 
+// This app uses a YAML configuration file, with optional
+// command-line arguments to override selected settings.
+
 // Run command example
 // $MEGALIB/bin/StripEnergyThresholdFinder /your/yaml/file/directory/file.yaml
 

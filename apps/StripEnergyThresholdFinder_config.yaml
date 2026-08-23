@@ -3,16 +3,16 @@ input:
     - /path/to/data/file.hdf5
 
   calibration_file: /path/to/calibration/file.ecal
-  tac_calibration_file: /path/to/tac/calibration/file.csv
   strip_map: /path/to/strip/map/file.map
 
-analysis:
-  min_entries: 10 # number of skipped strips with minum statistics
-  fallback_threshold_keV: 20 # If a threshold cannot be determined set threshold to default value
-  # limit for locating the low-energy noise peak
-  # most noise peaks should be between 100 and 250
-  # Worst case the ADC max should be set to ~1000  
-  noise_search_max_adc: 1800 # Limits peak search to a specific reagion before gamma peaks
-  
 output:
   prefix: output_file_prefix
+
+# Algorithm tunable parameters
+analysis:
+  detector_id: 0                    # Detector ID to analyze
+  min_entries: 2000                 # Minimum statistics required for threshold determination
+  fallback_threshold_keV: 20        # Slow threshold used when no valid threshold can be determined
+  fast_fallback_threshold_keV: 35   # Fast threshold used when no valid crossover can be determined
+  noise_search_max_ADC: 2200        # Upper ADC limit for the slow noise-peak search
+  noise_start_min_counts: 50        # Minimum bin counts required to identify the start of the noise distribution
