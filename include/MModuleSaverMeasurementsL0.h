@@ -29,6 +29,7 @@
 // Nuclearizer libs:
 #include "MModule.h"
 #include "MReadOutAssembly.h"
+#include "MStripMap.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +70,11 @@ class MModuleSaverMeasurementsL0 : public MModule
   //! Get the output file name
   MString GetFileName() const { return m_FileName; }
 
+  //! Set the strip map file name (used for reverse (det,side,strip) → ReadOutID lookup)
+  void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
+  //! Get the strip map file name
+  MString GetFileNameStripMap() const { return m_FileNameStripMap; }
+
   // protected methods:
  protected:
   //! Write CCSDS Primary Header
@@ -103,6 +109,14 @@ class MModuleSaverMeasurementsL0 : public MModule
  private:
   //! Output file name
   MString m_FileName;
+
+  //! Strip map file name. Used for reverse lookup (det,side,strip) → read-out ID
+  MString m_FileNameStripMap;
+
+  //! The loaded strip map
+  MStripMap m_StripMap;
+
+  bool m_StripMapLoaded;
 
   //! Output file stream
   std::ofstream m_OutFile;

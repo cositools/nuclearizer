@@ -30,6 +30,7 @@
 
 // Nuclearizer libs:
 #include "MModule.h"
+#include "MFITSWriterL1a.h"
 
 // CCfits libs
 #include <CCfits/CCfits>
@@ -46,11 +47,13 @@ class MModuleSaverMeasurementsFITS : public MModule
  public:
   //! Default constructor
   MModuleSaverMeasurementsFITS();
+  //! Constructor with explicit XML tag and default output level
+  MModuleSaverMeasurementsFITS(MString XmlTag, int OutputDataLevel, MString Name);
   //! Default destructor
   virtual ~MModuleSaverMeasurementsFITS();
 
   //! Create a new object of this class
-  virtual MModuleSaverMeasurementsFITS* Clone() { return new MModuleSaverMeasurementsFITS(); }
+  virtual MModuleSaverMeasurementsFITS* Clone() { return new MModuleSaverMeasurementsFITS(m_XmlTag, m_OutputDataLevel, m_Name); }
 
   //! Initialize the module
   virtual bool Initialize();
@@ -74,8 +77,8 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Get the output file name
   MString GetFileName() const { return m_FileName; }
 
-  //! Set the output data level: 1 = L1b, 2 = L2
-  void SetOutputDataLevel(int Level) { m_OutputDataLevel = Level; }
+  //! Set the output data level: 0 = L1a, 1 = L1b, 2 = L2
+  void SetOutputDataLevel(int Level) { m_OutputDataLevel = Level; ConfigurePreceedingModules(); }
   //! Get the output data level: 1 = L1b, 2 = L2
   int GetOutputDataLevel() const { return m_OutputDataLevel; }
 
@@ -86,6 +89,8 @@ class MModuleSaverMeasurementsFITS : public MModule
   bool CreateFITSFile(MString FileName);
   //! Flush current batch to FITS file
   bool FlushBatch();
+  //! Configure predecessor requirements for the selected output level
+  void ConfigurePreceedingModules();
 
 
   // private methods:
@@ -101,8 +106,11 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Output file name
   MString m_FileName;
 
-  //! Output data level: 1 = L1b (all events, with QUALITY_FLAG), 2 = L2 (screened, no QUALITY_FLAG)
+  //! Output data level: 0 = L1a (raw hits), 1 = L1b (all events, with QUALITY_FLAG), 2 = L2 (screened, no QUALITY_FLAG)
   int m_OutputDataLevel;
+
+  //! L1a writer, used only when m_OutputDataLevel == 0
+  MFITSWriterL1a m_L1aWriter;
 
   //! The FITS file object pointer
   FITS* m_FITSFile;

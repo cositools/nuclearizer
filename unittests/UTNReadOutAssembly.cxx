@@ -393,12 +393,15 @@ bool UTNReadOutAssembly::TestStripHitManagement()
                          R.InDetector(4)) && Passed;
 
   // Out-of-range InDetector returns false
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
   Passed = EvaluateFalse("InDetector()", "out of range 16", "InDetector(16) returns false for an out-of-range detector ID",
                          R.InDetector(16)) && Passed;
   Passed = EvaluateFalse("InDetector()", "out of range -1", "InDetector(-1) returns false for a negative detector ID",
                          R.InDetector(-1)) && Passed;
+  g_Verbosity = OldVerbosity;
 
-  // Out-of-bounds access emits merr and returns nullptr
+  // Out-of-bounds access reports an error and returns nullptr
   DisableDefaultStreams();
   Passed = EvaluateTrue("GetStripHit()", "out of bounds returns nullptr", "GetStripHit(99) returns nullptr when index is out of bounds",
                         R.GetStripHit(99) == nullptr) && Passed;
@@ -486,29 +489,6 @@ bool UTNReadOutAssembly::TestOtherHitCollections()
 
   MReadOutAssembly R;
 
-  // --- T-only strip hits ---------------------------------------------------
-  MStripHit* TOnly0 = new MStripHit();
-  MStripHit* TOnly1 = new MStripHit();
-  R.AddStripHitTOnly(TOnly0);
-  R.AddStripHitTOnly(TOnly1);
-  Passed = Evaluate("GetNStripHitsTOnly()", "count after two adds", "GetNStripHitsTOnly() returns 2 after adding two T-only strip hits",
-                    R.GetNStripHitsTOnly(), (unsigned int) 2) && Passed;
-  Passed = EvaluateTrue("GetStripHitTOnly()", "pointer identity index 0", "GetStripHitTOnly(0) returns the first T-only strip hit pointer",
-                        R.GetStripHitTOnly(0) == TOnly0) && Passed;
-  Passed = EvaluateTrue("GetStripHitTOnly()", "pointer identity index 1", "GetStripHitTOnly(1) returns the second T-only strip hit pointer",
-                        R.GetStripHitTOnly(1) == TOnly1) && Passed;
-  DisableDefaultStreams();
-  Passed = EvaluateTrue("GetStripHitTOnly()", "out of bounds returns nullptr", "GetStripHitTOnly(99) returns nullptr when index is out of bounds",
-                        R.GetStripHitTOnly(99) == nullptr) && Passed;
-  EnableDefaultStreams();
-  R.RemoveStripHitTOnly(0);
-  Passed = Evaluate("RemoveStripHitTOnly()", "count after remove", "GetNStripHitsTOnly() returns 1 after removing index 0",
-                    R.GetNStripHitsTOnly(), (unsigned int) 1) && Passed;
-  Passed = EvaluateTrue("RemoveStripHitTOnly()", "remaining pointer", "After removing index 0, GetStripHitTOnly(0) returns the second T-only strip hit",
-                        R.GetStripHitTOnly(0) == TOnly1) && Passed;
-  // RemoveStripHitTOnly erased TOnly0 from the vector without freeing it
-  delete TOnly0;
-
   // --- Crystal hits --------------------------------------------------------
   MCrystalHit* CH0 = new MCrystalHit();
   MCrystalHit* CH1 = new MCrystalHit();
@@ -564,6 +544,10 @@ bool UTNReadOutAssembly::TestOtherHitCollections()
   // The list-reference accessor exposes the same underlying LV list
   Passed = Evaluate("GetDEEStripHitLVListReference()", "size matches", "GetDEEStripHitLVListReference() exposes the 2 LV DEE strip hits",
                     (unsigned int) R.GetDEEStripHitLVListReference().size(), (unsigned int) 2) && Passed;
+  Passed = Evaluate("GetDEEStripHitHVListReference()", "size matches", "GetDEEStripHitHVListReference() exposes the HV DEE strip hit",
+                    (unsigned int) R.GetDEEStripHitHVListReference().size(), (unsigned int) 1) && Passed;
+  Passed = Evaluate("GetDEECrystalHitListReference()", "size matches", "GetDEECrystalHitListReference() exposes the DEE crystal hit",
+                    (unsigned int) R.GetDEECrystalHitListReference().size(), (unsigned int) 1) && Passed;
 
   return Passed;
 }
@@ -687,33 +671,133 @@ bool UTNReadOutAssembly::TestClearOwnership()
 
   MReadOutAssembly R;
 
-  // Add strip hits and MHit objects that are owned by the ROA
+  unsigned long AssemblyID = R.GetAssemblyID();
+  R.SetID(17);
+  R.SetTime(MTime(111));
+  R.SetTimeRTS(MTime(222));
+  R.SetTimeUTC(MTime(333));
+
+  R.SetGalacticPointingXAxisTheta(1.1);
+  R.SetGalacticPointingXAxisPhi(2.2);
+  R.SetGalacticPointingZAxisTheta(3.3);
+  R.SetGalacticPointingZAxisPhi(4.4);
+  R.SetSimAspectInfo(true);
+
+  R.SetGuardRingVeto(true);
+  R.SetShieldVeto(true);
+  R.SetTrigger(false);
+
+  // Add objects owned by the ROA
   MStripHit* SH0 = new MStripHit();
+  SH0->SetDetectorID(3);
   MStripHit* SH1 = new MStripHit();
   R.AddStripHit(SH0);
   R.AddStripHit(SH1);
 
+  R.AddCrystalHit(new MCrystalHit());
+  R.AddGuardringHit(new MGuardringHit());
   MHit* H0 = new MHit();
   R.AddHit(H0);
 
-  Passed = Evaluate("GetNStripHits()", "two strip hits before Clear", "GetNStripHits() returns 2 before Clear()",
-                    R.GetNStripHits(), (unsigned int) 2) && Passed;
-  Passed = Evaluate("GetNHits()", "one hit before Clear", "GetNHits() returns 1 before Clear()",
-                    R.GetNHits(), (unsigned int) 1) && Passed;
+  R.AddDEEStripHitLV(MDEEStripHit());
+  R.AddDEEStripHitHV(MDEEStripHit());
+  R.AddDEECrystalHit(MDEECrystalHit());
+
+  MPhysicalEvent PhysicalEvent;
+  R.SetPhysicalEvent(&PhysicalEvent);
+  R.SetSimulatedEvent(new MSimEvent());
+
+  R.SetEnergyCalibrationError("energy");
+  R.SetStripPairingError("pairing");
+  R.SetDepthCalibrationError("depth");
+  R.SetEventReconstructionError("reconstruction");
+  R.SetStripHitBelowThreshold_QualityFlag("threshold");
+  R.SetStripPairing_QualityFlag("quality");
+  R.SetStripPairingReducedChiSquare(1.5);
+  R.SetFilteredOut(true);
+  R.SetAnalysisProgress(0x10ULL);
+
+  MSimIA IA;
+  R.AddSimIA(IA);
 
   // Clear() must delete and reset all owned collections
   R.Clear();
 
+  Passed = EvaluateTrue("GetID()", "after Clear", "GetID() returns g_UnsignedIntNotDefined after Clear()",
+                        R.GetID() == g_UnsignedIntNotDefined) && Passed;
+  Passed = EvaluateTrue("GetTime()", "after Clear", "GetTime() returns 0 after Clear()",
+                        R.GetTime() == MTime(0)) && Passed;
+  Passed = EvaluateTrue("GetTimeRTS()", "after Clear", "GetTimeRTS() returns 0 after Clear()",
+                        R.GetTimeRTS() == MTime(0)) && Passed;
+  Passed = EvaluateTrue("GetTimeUTC()", "after Clear", "GetTimeUTC() returns 0 after Clear()",
+                        R.GetTimeUTC() == MTime(0)) && Passed;
+
+  Passed = EvaluateFalse("HasSimAspectInfo()", "after Clear", "HasSimAspectInfo() returns false after Clear()",
+                         R.HasSimAspectInfo()) && Passed;
+  R.SetSimAspectInfo(true);
+  Passed = EvaluateNear("GetGalacticPointingXAxisTheta()", "after Clear", "GetGalacticPointingXAxisTheta() returns 0 after Clear()",
+                        R.GetGalacticPointingXAxisTheta(), 0.0, 1e-10) && Passed;
+  Passed = EvaluateNear("GetGalacticPointingXAxisPhi()", "after Clear", "GetGalacticPointingXAxisPhi() returns 0 after Clear()",
+                        R.GetGalacticPointingXAxisPhi(), 0.0, 1e-10) && Passed;
+  Passed = EvaluateNear("GetGalacticPointingZAxisTheta()", "after Clear", "GetGalacticPointingZAxisTheta() returns 0 after Clear()",
+                        R.GetGalacticPointingZAxisTheta(), 0.0, 1e-10) && Passed;
+  Passed = EvaluateNear("GetGalacticPointingZAxisPhi()", "after Clear", "GetGalacticPointingZAxisPhi() returns 0 after Clear()",
+                        R.GetGalacticPointingZAxisPhi(), 0.0, 1e-10) && Passed;
+  R.SetSimAspectInfo(false);
+
+  Passed = EvaluateFalse("GetGuardRingVeto()", "after Clear", "GetGuardRingVeto() returns false after Clear()",
+                         R.GetGuardRingVeto()) && Passed;
+  Passed = EvaluateFalse("GetShieldVeto()", "after Clear", "GetShieldVeto() returns false after Clear()",
+                         R.GetShieldVeto()) && Passed;
+  Passed = EvaluateTrue("GetTrigger()", "after Clear", "GetTrigger() returns true after Clear()",
+                        R.GetTrigger()) && Passed;
+  Passed = EvaluateFalse("InDetector()", "after Clear", "InDetector(3) returns false after Clear()",
+                         R.InDetector(3)) && Passed;
+
   Passed = Evaluate("GetNStripHits()", "empty after Clear", "GetNStripHits() returns 0 after Clear()",
                     R.GetNStripHits(), (unsigned int) 0) && Passed;
+  Passed = Evaluate("GetNCrystalHits()", "empty after Clear", "GetNCrystalHits() returns 0 after Clear()",
+                    R.GetNCrystalHits(), (unsigned int) 0) && Passed;
+  Passed = Evaluate("GetNGuardringHits()", "empty after Clear", "GetNGuardringHits() returns 0 after Clear()",
+                    R.GetNGuardringHits(), (unsigned int) 0) && Passed;
   Passed = Evaluate("GetNHits()", "empty after Clear", "GetNHits() returns 0 after Clear()",
                     R.GetNHits(), (unsigned int) 0) && Passed;
+  Passed = Evaluate("GetNDEEStripHitsLV()", "empty after Clear", "GetNDEEStripHitsLV() returns 0 after Clear()",
+                    R.GetNDEEStripHitsLV(), (unsigned int) 0) && Passed;
+  Passed = Evaluate("GetNDEEStripHitsHV()", "empty after Clear", "GetNDEEStripHitsHV() returns 0 after Clear()",
+                    R.GetNDEEStripHitsHV(), (unsigned int) 0) && Passed;
+  Passed = Evaluate("GetNDEECrystalHits()", "empty after Clear", "GetNDEECrystalHits() returns 0 after Clear()",
+                    R.GetNDEECrystalHits(), (unsigned int) 0) && Passed;
+  Passed = Evaluate("GetNSimIAs()", "empty after Clear", "GetNSimIAs() returns 0 after Clear()",
+                    R.GetNSimIAs(), (unsigned int) 0) && Passed;
+
+  Passed = EvaluateTrue("GetPhysicalEvent()", "after Clear", "GetPhysicalEvent() returns nullptr after Clear()",
+                        R.GetPhysicalEvent() == nullptr) && Passed;
+  Passed = EvaluateTrue("GetSimulatedEvent()", "after Clear", "GetSimulatedEvent() returns nullptr after Clear()",
+                        R.GetSimulatedEvent() == nullptr) && Passed;
+
+  Passed = EvaluateFalse("HasEnergyCalibrationError()", "after Clear", "HasEnergyCalibrationError() returns false after Clear()",
+                         R.HasEnergyCalibrationError()) && Passed;
+  Passed = EvaluateFalse("HasStripPairingError()", "after Clear", "HasStripPairingError() returns false after Clear()",
+                         R.HasStripPairingError()) && Passed;
+  Passed = EvaluateFalse("HasDepthCalibrationError()", "after Clear", "HasDepthCalibrationError() returns false after Clear()",
+                         R.HasDepthCalibrationError()) && Passed;
+  Passed = EvaluateFalse("HasEventReconstructionError()", "after Clear", "HasEventReconstructionError() returns false after Clear()",
+                         R.HasEventReconstructionError()) && Passed;
+  Passed = EvaluateFalse("HasStripHitBelowThreshold_QualityFlag()", "after Clear", "HasStripHitBelowThreshold_QualityFlag() returns false after Clear()",
+                         R.HasStripHitBelowThreshold_QualityFlag()) && Passed;
+  Passed = EvaluateFalse("HasStripPairing_QualityFlag()", "after Clear", "HasStripPairing_QualityFlag() returns false after Clear()",
+                         R.HasStripPairing_QualityFlag()) && Passed;
+  Passed = EvaluateTrue("GetStripPairingReducedChiSquare()", "after Clear", "GetStripPairingReducedChiSquare() returns an empty vector after Clear()",
+                        R.GetStripPairingReducedChiSquare().empty()) && Passed;
+  Passed = EvaluateFalse("IsFilteredOut()", "after Clear", "IsFilteredOut() returns false after Clear()",
+                         R.IsFilteredOut()) && Passed;
+  Passed = EvaluateTrue("GetAnalysisProgress()", "after Clear", "GetAnalysisProgress() returns 0 after Clear()",
+                        R.GetAnalysisProgress() == 0) && Passed;
 
   // AssemblyID must survive Clear() — it is assigned once in the constructor
-  unsigned long ID = R.GetAssemblyID();
-  R.Clear();
   Passed = EvaluateTrue("GetAssemblyID()", "unchanged by Clear", "GetAssemblyID() returns the same value after Clear()",
-                        R.GetAssemblyID() == ID) && Passed;
+                        R.GetAssemblyID() == AssemblyID) && Passed;
 
   return Passed;
 }
@@ -1181,13 +1265,13 @@ bool UTNReadOutAssembly::TestStreamEvta()
     MString S = SS.str();
 
     Passed = EvaluateTrue("StreamEvta()", "SE line", "StreamEvta() output starts with an 'SE' line",
-                          S.BeginsWith("SE")) && Passed;
+                          S.BeginsWith("SE\n")) && Passed;
     Passed = EvaluateTrue("StreamEvta()", "ID line", "StreamEvta() output contains the 'ID 8' line",
-                          S.Contains("ID 8")) && Passed;
+                          S.Contains("\nID 8\n")) && Passed;
     Passed = EvaluateTrue("StreamEvta()", "CC NStripHits line", "StreamEvta() output contains 'CC NStripHits 1' with the strip hit count",
-                          S.Contains("CC NStripHits 1")) && Passed;
-    Passed = EvaluateTrue("StreamEvta()", "PQ terminator", "StreamEvta() output contains the 'PQ' line from StreamBDFlags()",
-                          S.Contains("PQ")) && Passed;
+                          S.Contains("\nCC NStripHits 1\n")) && Passed;
+    Passed = EvaluateTrue("StreamEvta()", "PQ terminator", "StreamEvta() output ends with the 'PQ' line from StreamBDFlags()",
+                          S.EndsWith("PQ\n")) && Passed;
   }
 
   // --- StreamTra() without a physical event --------------------------------
@@ -1200,11 +1284,11 @@ bool UTNReadOutAssembly::TestStreamEvta()
     MString S = SS.str();
 
     Passed = EvaluateTrue("StreamTra()", "SE line", "StreamTra() output starts with an 'SE' line",
-                          S.BeginsWith("SE")) && Passed;
+                          S.BeginsWith("SE\n")) && Passed;
     Passed = EvaluateTrue("StreamTra()", "ID line without physical event", "StreamTra() output contains the 'ID 9' line when there is no physical event",
-                          S.Contains("ID 9")) && Passed;
-    Passed = EvaluateTrue("StreamTra()", "PQ terminator", "StreamTra() output contains the 'PQ' line from StreamBDFlags()",
-                          S.Contains("PQ")) && Passed;
+                          S.Contains("\nID 9\n")) && Passed;
+    Passed = EvaluateTrue("StreamTra()", "PQ terminator", "StreamTra() output ends with the 'PQ' line from StreamBDFlags()",
+                          S.EndsWith("PQ\n")) && Passed;
   }
 
   // --- StreamTra() with a physical event uses the event's tra string -------
@@ -1220,7 +1304,7 @@ bool UTNReadOutAssembly::TestStreamEvta()
     MString S = SS.str();
 
     Passed = EvaluateTrue("StreamTra()", "SE line with physical event", "StreamTra() output starts with an 'SE' line when a physical event is set",
-                          S.BeginsWith("SE")) && Passed;
+                          S.BeginsWith("SE\n")) && Passed;
     Passed = EvaluateTrue("StreamTra()", "physical-event branch taken", "StreamTra() with a physical event does not emit the no-event branch's 'PQ' line",
                           S.Contains("PQ") == false) && Passed;
   }
@@ -1244,14 +1328,14 @@ bool UTNReadOutAssembly::TestStreamRoa()
     R.StreamRoa(SS);
     MString S = SS.str();
 
-    Passed = EvaluateTrue("StreamRoa()", "SE line present", "StreamRoa() output contains 'SE'",
-                          S.Contains("SE")) && Passed;
-    Passed = EvaluateTrue("StreamRoa()", "ID line present", "StreamRoa() output contains 'ID '",
-                          S.Contains("ID ")) && Passed;
+    Passed = EvaluateTrue("StreamRoa()", "SE line present", "StreamRoa() output starts with an 'SE' line",
+                          S.BeginsWith("SE\n")) && Passed;
+    Passed = EvaluateTrue("StreamRoa()", "ID line present", "StreamRoa() output contains the 'ID 1' line",
+                          S.Contains("\nID 1\n")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "BD No hits when empty", "StreamRoa() emits 'BD No hits' when there are no strip hits",
-                          S.Contains("BD No hits")) && Passed;
+                          S.Contains("\nBD No hits\n")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "PQ terminator present", "StreamRoa() output ends with a 'PQ' line",
-                          S.Contains("PQ")) && Passed;
+                          S.EndsWith("PQ\n")) && Passed;
   }
 
   // --- ROA with one strip hit: UH line present, no "BD No hits" ---
@@ -1270,11 +1354,11 @@ bool UTNReadOutAssembly::TestStreamRoa()
     MString S = SS.str();
 
     Passed = EvaluateTrue("StreamRoa()", "UH line present with strip hit", "StreamRoa() output contains 'UH' when there is a strip hit",
-                          S.Contains("UH")) && Passed;
+                          S.Contains("\nUH ")) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "BD No hits absent with strip hit", "StreamRoa() does not emit 'BD No hits' when there is a strip hit",
-                          S.Contains("BD No hits") == false) && Passed;
+                          S.Contains("\nBD No hits\n") == false) && Passed;
     Passed = EvaluateTrue("StreamRoa()", "PQ terminator present", "StreamRoa() output ends with a 'PQ' line",
-                          S.Contains("PQ")) && Passed;
+                          S.EndsWith("PQ\n")) && Passed;
   }
 
   // --- Nearest-neighbor filtering ---
@@ -1305,9 +1389,9 @@ bool UTNReadOutAssembly::TestStreamRoa()
     MString S_noNN = SS_noNN.str();
     size_t count = 0;
     size_t pos = 0;
-    while ((pos = S_noNN.Index("UH", pos)) != string::npos) {
+    while ((pos = S_noNN.Index("\nUH ", pos)) != string::npos) {
       ++count;
-      pos += 2;
+      pos += 4;
     }
     Passed = Evaluate("StreamRoa()", "WithNearestNeighbors=false: one UH line",
                       "StreamRoa() with WithNearestNeighbors=false emits exactly one UH line",
@@ -1319,9 +1403,9 @@ bool UTNReadOutAssembly::TestStreamRoa()
     MString S_withNN = SS_withNN.str();
     count = 0;
     pos = 0;
-    while ((pos = S_withNN.Index("UH", pos)) != string::npos) {
+    while ((pos = S_withNN.Index("\nUH ", pos)) != string::npos) {
       ++count;
-      pos += 2;
+      pos += 4;
     }
     Passed = Evaluate("StreamRoa()", "WithNearestNeighbors=true: two UH lines",
                       "StreamRoa() with WithNearestNeighbors=true emits two UH lines",

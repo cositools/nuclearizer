@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsSaverMeasurementsL0.cxx
+ * MGUIOptionsLoaderMeasurementsL0.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer, WingYeung Ma.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MGUIOptionsSaverMeasurementsL0.h"
+#include "MGUIOptionsLoaderMeasurementsL0.h"
 
 // Standard libs:
 
@@ -29,21 +29,21 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MModuleSaverMeasurementsL0.h"
+#include "MModuleLoaderMeasurementsL0.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsSaverMeasurementsL0)
+ClassImp(MGUIOptionsLoaderMeasurementsL0)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsSaverMeasurementsL0::MGUIOptionsSaverMeasurementsL0(MModule* Module)
+MGUIOptionsLoaderMeasurementsL0::MGUIOptionsLoaderMeasurementsL0(MModule* Module)
   : MGUIOptions(Module)
 {
   // standard constructor
@@ -53,7 +53,7 @@ MGUIOptionsSaverMeasurementsL0::MGUIOptionsSaverMeasurementsL0(MModule* Module)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsSaverMeasurementsL0::~MGUIOptionsSaverMeasurementsL0()
+MGUIOptionsLoaderMeasurementsL0::~MGUIOptionsLoaderMeasurementsL0()
 {
   // kDeepCleanup is activated
 }
@@ -62,20 +62,20 @@ MGUIOptionsSaverMeasurementsL0::~MGUIOptionsSaverMeasurementsL0()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsSaverMeasurementsL0::Create()
+void MGUIOptionsLoaderMeasurementsL0::Create()
 {
   PreCreate();
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
 
-  // Output file selector
-  m_FileSelectorOutput = new MGUIEFileSelector(m_OptionsFrame, "Please select output L0 binary file:",
-    dynamic_cast<MModuleSaverMeasurementsL0*>(m_Module)->GetFileName());
-  m_FileSelectorOutput->SetFileType("Binary file", "*.bin");
-  m_OptionsFrame->AddFrame(m_FileSelectorOutput, LabelLayout);
+  m_FileSelectorL0 = new MGUIEFileSelector(m_OptionsFrame, "Please select an L0 binary file:",
+    dynamic_cast<MModuleLoaderMeasurementsL0*>(m_Module)->GetFileName());
+  m_FileSelectorL0->SetFileType("L0 binary file", "*.bin");
+  m_FileSelectorL0->SetFileType("L0 binary file", "*.dat");
+  m_OptionsFrame->AddFrame(m_FileSelectorL0, LabelLayout);
 
-  m_FileSelectorStripMap = new MGUIEFileSelector(m_OptionsFrame, "Please select strip map file (required):",
-    dynamic_cast<MModuleSaverMeasurementsL0*>(m_Module)->GetFileNameStripMap());
+  m_FileSelectorStripMap = new MGUIEFileSelector(m_OptionsFrame, "Please select a strip map file:",
+    dynamic_cast<MModuleLoaderMeasurementsL0*>(m_Module)->GetFileNameStripMap());
   m_FileSelectorStripMap->SetFileType("Strip map file", "*.map");
   m_OptionsFrame->AddFrame(m_FileSelectorStripMap, LabelLayout);
 
@@ -86,7 +86,7 @@ void MGUIOptionsSaverMeasurementsL0::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsSaverMeasurementsL0::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIOptionsLoaderMeasurementsL0::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Modify here if you have more buttons
 
@@ -117,16 +117,16 @@ bool MGUIOptionsSaverMeasurementsL0::ProcessMessage(long Message, long Parameter
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsSaverMeasurementsL0::OnApply()
+bool MGUIOptionsLoaderMeasurementsL0::OnApply()
 {
   // Modify this to store the data in the module!
 
-  dynamic_cast<MModuleSaverMeasurementsL0*>(m_Module)->SetFileName(m_FileSelectorOutput->GetFileName());
-  dynamic_cast<MModuleSaverMeasurementsL0*>(m_Module)->SetFileNameStripMap(m_FileSelectorStripMap->GetFileName());
+  dynamic_cast<MModuleLoaderMeasurementsL0*>(m_Module)->SetFileName(m_FileSelectorL0->GetFileName());
+  dynamic_cast<MModuleLoaderMeasurementsL0*>(m_Module)->SetFileNameStripMap(m_FileSelectorStripMap->GetFileName());
 
   return true;
 }
 
 
-// MGUIOptionsSaverMeasurementsL0: the end...
+// MGUIOptionsLoaderMeasurementsL0: the end...
 ////////////////////////////////////////////////////////////////////////////////

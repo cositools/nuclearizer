@@ -604,7 +604,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         Hit->SetEnergyResolution(EnergyResolution);
         Hit->SetLVEnergy(LVEnergy);
         Hit->SetHVEnergy(HVEnergy);
-        Hit->SetStripHitMultipleTimesX(MultipleHitsOnLV);
+        Hit->SetStripHitMultipleTimesLV(MultipleHitsOnLV);
         Event->AddHit(Hit);
           
 
@@ -651,7 +651,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         Hit->SetEnergyResolution(EnergyResolution);
         Hit->SetLVEnergy(LVEnergy);
         Hit->SetHVEnergy(HVEnergy);
-        Hit->SetStripHitMultipleTimesY(MultipleHitsOnHV);
+        Hit->SetStripHitMultipleTimesHV(MultipleHitsOnHV);
         Event->AddHit(Hit);
 
         HVEnergyTotal += HVEnergy;

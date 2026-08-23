@@ -80,6 +80,7 @@ MModuleSaverMeasurementsL0::MModuleSaverMeasurementsL0() : MModule()
 
   m_SequenceCount = 0;
   m_TotalEventsWritten = 0;
+  m_StripMapLoaded = false;
 }
 
 
@@ -110,6 +111,16 @@ bool MModuleSaverMeasurementsL0::Initialize()
     if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Unable to open output file: " << m_FileName << endl;
     return false;
   }
+
+  if (m_FileNameStripMap == "") {
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Strip map file name is required but not set." << endl;
+    return false;
+  }
+  if (m_StripMap.Open(m_FileNameStripMap) == false) {
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Failed to open strip map file: " << m_FileNameStripMap << endl;
+    return false;
+  }
+  m_StripMapLoaded = true;
 
   m_SequenceCount = 0;
   m_TotalEventsWritten = 0;
@@ -394,8 +405,14 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
   } else {
     eventTime = Event->GetTimeRTS();
   }
-  uint32_t eventSeconds = (uint32_t)eventTime.GetAsSeconds();
-  uint32_t eventNanoseconds = eventTime.GetNanoSeconds();
+
+  // Save time in GPS format
+  MTime gpsTime = Event->ComputeGPSfromRTSTime(eventTime);
+  uint32_t eventSeconds = (uint32_t)gpsTime.GetAsSeconds();
+  uint32_t eventNanoseconds = (uint32_t)gpsTime.GetNanoSeconds();
+
+  // CCSDS secondary header subseconds are 40 MHz DCB ticks (25 ns each)
+  uint32_t subsec40MHz = eventNanoseconds / 25;
 
   // Convert to TRUNC_TIME format: 10 bits seconds + 22 bits 4MHz subseconds
   uint32_t seconds10bit = eventSeconds & 0x3FF;
@@ -412,13 +429,13 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
     MStripHit* hit = Event->GetStripHit(i);
 
     // Get strip info
-    // custom encoding 11-bit strip ID: [detectorID:4][side:1][stripNumber:6]
-    // GetStripID() dont actually return 0-2079 in simulation... Cannot map through the mapping file
-    // TODO: figure out exactly what to do in the future, but now this is a workaround
     int detID = hit->GetDetectorID() & 0xF;     // 4 bits (0-15)
     int side = hit->IsLowVoltageStrip() ? 0 : 1; // 1 bit
     int stripNum = hit->GetStripID() & 0x3F;     // 6 bits (0-63)
-    int stripID = (detID << 7) | (side << 6) | stripNum;
+    int stripID = 0;
+    if (m_StripMap.HasROIDetSideStrip(detID, hit->IsLowVoltageStrip(), stripNum)) {
+      stripID = (int)m_StripMap.GetReadOutID(detID, hit->IsLowVoltageStrip(), stripNum);
+    }
     bool fastTiming = hit->HasFastTiming();
     int adc = (int)hit->GetADCUnits();
     int tac = (int)hit->GetTAC();
@@ -456,7 +473,7 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
   m_SequenceCount = (m_SequenceCount + 1) & 0x3FFF;
 
   // Write Secondary Header
-  WriteSecondaryHeader(eventSeconds, eventNanoseconds);
+  WriteSecondaryHeader(eventSeconds, subsec40MHz);
 
   // Write TRUNC_TIME (4 bytes)
   WriteUInt32BE(truncTime);
@@ -518,6 +535,11 @@ bool MModuleSaverMeasurementsL0::ReadXmlConfiguration(MXmlNode* Node)
     m_FileName = FileNameNode->GetValue();
   }
 
+  MXmlNode* StripMapNode = Node->GetNode("FileNameStripMap");
+  if (StripMapNode != nullptr) {
+    m_FileNameStripMap = StripMapNode->GetValue();
+  }
+
   return true;
 }
 
@@ -531,6 +553,7 @@ MXmlNode* MModuleSaverMeasurementsL0::CreateXmlConfiguration()
 
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
+  new MXmlNode(Node, "FileNameStripMap", m_FileNameStripMap);
 
   return Node;
 }

@@ -57,7 +57,8 @@ jobs:
           create-args: >-
             root=6.32 geant4=11.2 healpix_cxx
             pkg-config make cmake cxx-compiler ccache
-            ccfits=2.6 cfitsio=4.3 hdf5=1.14 yaml-cpp
+
+            ccfits=2.6 cfitsio=4.3 hdf5=1.14 yaml-cpp gcovr
           cache-environment: true
           cache-environment-key: micromamba-${{ runner.os }}-root6.32-geant4.11.2-ccfits2.6-cfitsio4.3-hdf5.1.14
 
@@ -139,6 +140,9 @@ jobs:
           set -euo pipefail
           cd $NUCLEARIZER
           export PATH=$MEGALIB/bin:$PATH
+
+          find $MEGALIB/bin -name "*.gcda" -delete
+
           make unittests COVERAGE=1 CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
           ${{ github.workspace }}/bin/UTNRunner
 
@@ -162,6 +166,9 @@ jobs:
             --xml coverage.xml \
             --exclude '$NUCLEARIZER/apps/.*' \
             --exclude '$NUCLEARIZER/unittests/.*' \
+            --exclude-throw-branches --exclude-unreachable-branches \
+            --decisions \
+            --gcov-delete \
             -j $(nproc)
 
       - name: Upload Report to Codecov
