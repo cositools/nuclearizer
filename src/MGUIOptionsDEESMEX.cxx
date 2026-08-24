@@ -100,12 +100,12 @@ void MGUIOptionsDEESMEX::Create()
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadStripFileName());
   m_DeadStripFileSelector->SetFileType("Dead strips file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadStripFileSelector, LabelLayout);
-  */
-  m_ThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a hardware thresholds file:",
-    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetHardwareThresholdFileName());
-  m_ThresholdFileSelector->SetFileType("Hardware thresholds file", "*.csv");
+
+  m_ThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a thresholds file:",
+    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetThresholdFileName());
+  m_ThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
   m_OptionsFrame->AddFrame(m_ThresholdFileSelector, LabelLayout);
-  /*
+
   m_GuardRingThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a guard ring thresholds file:",
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetGuardRingThresholdFileName());
   m_GuardRingThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
@@ -224,8 +224,7 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableShieldVeto(m_EnableShieldVetoButton->IsOn());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableGuardRingVeto(m_EnableGuardRingVetoButton->IsOn());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyTimingResolutionCalibration(m_TimingResolutionCalibrationButton->IsOn());
-  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetHardwareThresholdFileName(m_ThresholdFileSelector->GetFileName());
-
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());

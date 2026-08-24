@@ -142,15 +142,15 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
       if (SH.m_FastPeakTime > -200.0 && SH.m_FastPeakTime < 10000.0) {
         SH.m_Timing = 4200.0 - SH.m_FastPeakTime;
 
-        // TODO: apply more realistic fast threshold
-        SH.m_HasFastTiming = (SH.m_Energy > 10.0);
+        // TODO: apply fast threshold
+        SH.m_HasFastTiming = true;
 
         if (m_ApplyTimingResolutionCalibration == true){
           int PixelCode = 10000*DetID + 100*StripID + SH.m_OppositeStripID;
           if (m_Coeffs.count(PixelCode) == 1){
             vector<double> Coeffs = m_Coeffs[PixelCode];
             double CTD_FWHM = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
-            double CTD_Sigma = min(abs(CTD_FWHM / 2.355), 50.0);
+            double CTD_Sigma = CTD_FWHM / 2.355;
             // Smear the timing value based on the given CTD resolution
             // --> divide by √2 to obtain TAC resolution from CTD resolution
             SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
@@ -213,7 +213,7 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
           if (m_Coeffs.count(PixelCode) == 1){
             vector<double> Coeffs = m_Coeffs[PixelCode];
             double CTD_FWHM = Coeffs[2] * m_Coeffs_Energy / SH.m_Energy;
-            double CTD_Sigma = min(abs(CTD_FWHM / 2.355), 50.0);
+            double CTD_Sigma = CTD_FWHM / 2.355;
             // Smear the timing value based on the given CTD resolution
             // --> divide by √2 to obtain TAC resolution from CTD resolution
             SH.m_Timing = gRandom->Gaus(SH.m_Timing, CTD_Sigma / TMath::Sqrt(2.0));
