@@ -79,19 +79,39 @@ bool MSubModuleChargeTransport::Initialize()
   // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
   vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
 
-  // Look through the Geometry and get the names and thicknesses of all the detectors.
+  // Look through the Geometry and get the names and thicknesses of all Strip3D detectors.
+  vector<string> DetectorNames;
+  unsigned int DetID = 0;
+  
   for(unsigned int i = 0; i < DetList.size(); ++i){
-
-    unsigned int DetID = i;
-
     MDDetector* det = DetList[i];
-    vector<string> DetectorNames;
     if (det->GetTypeName() == "Strip3D") {
       if (det->GetNSensitiveVolumes() == 1) {
         MDVolume* vol = det->GetSensitiveVolume(0);
-        string det_name = vol->GetName().GetString();
-        if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
-          DetectorNames.push_back(det_name);
+        MString DetectorName = det->GetName();
+        string DetName = DetectorName.GetString();
+        
+        // Check that the DetID agrees with the naming scheme GeD_X
+        if (DetectorName.BeginsWith("GeD_") == true) {
+          DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
+          if (DetID != DetectorName.ToUnsignedInt()) {
+            if (g_Verbosity >= c_Error) {
+              cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for detector "<<DetName<<endl;
+            }
+            // Return false if this is running with the COSI SMEX payload mass model
+            if (m_Geometry->GetName() == "COSI-SMEX-Payload"){
+              return false;
+            }
+          }
+        } else if (m_Geometry->GetName() == "COSI-SMEX-Payload") {
+          if (g_Verbosity >= c_Error) {
+            cout << "ERROR in MModuleDepthCalibration::Initialize: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
+          }
+          return false;
+        }
+
+        if (find(DetectorNames.begin(), DetectorNames.end(), DetName) == DetectorNames.end()) {
+          DetectorNames.push_back(DetName);
           m_Thicknesses[DetID] = 2*(det->GetStructuralSize().GetZ());
           MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
           m_XPitches[DetID] = strip->GetPitchX();
@@ -113,7 +133,7 @@ bool MSubModuleChargeTransport::Initialize()
           }
           
           if (g_Verbosity >= c_Info) {
-            cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
+            cout << "Found detector " << DetName << " corresponding to DetID=" << DetID << "." << endl;
             cout << "Detector width (X): " << m_XWidths[DetID] << endl;
             cout << "Detector width (Y): " << m_YWidths[DetID] << endl;
             cout << "Detector radius (R): " << m_Radii[DetID] << endl;
@@ -125,8 +145,9 @@ bool MSubModuleChargeTransport::Initialize()
           }
           m_DetectorIDs.push_back(DetID);
           m_Detectors[DetID] = det;
+          DetID += 1;
         } else {
-          cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << det_name << endl;
+          cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << DetName << endl;
         }
       } else {
         cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
