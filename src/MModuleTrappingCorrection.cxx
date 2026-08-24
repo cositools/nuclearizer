@@ -243,7 +243,9 @@ void MModuleTrappingCorrection::Finalize()
   MModule::Finalize();
 
   if (m_ExpoSpectrum == nullptr) {
-    cout << "ERROR in MModuleTrappingCorrection::Finalize: Expo plot spectrum is null." << endl;
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MModuleTrappingCorrection::Finalize: Expo plot spectrum is null." << endl;
+    }
     return;
   }
 
@@ -282,30 +284,6 @@ void MModuleTrappingCorrection::Finalize()
     delete fitFunc;
     return std::make_pair(mu, fwhm);
   };
-
-  cout << "\n========================================================" << endl;
-  cout << "      TRAPPING CORRECTION SPECTRUM FIT RESULTS          " << endl;
-  cout << "========================================================" << endl;
-
-  // --- Fit Uncorrected and Corrected Spectra ---
-  std::pair<double, double> lv_raw   = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
-  std::pair<double, double> lv_corr  = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
-
-  std::pair<double, double> hv_raw   = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
-  std::pair<double, double> hv_corr  = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
-
-  // Summary Comparison Output
-  cout << "\n========================================================" << endl;
-  cout << "                 SUMMARY COMPARISON                     " << endl;
-  cout << "========================================================" << endl;
-  cout << " LV Side: " << endl;
-  cout << "   Raw Centroid: " << lv_raw.first << " keV | Corrected Centroid: " << lv_corr.first << " keV" << endl;
-  cout << "   Raw FWHM    : " << lv_raw.second << " keV | Corrected FWHM    : " << lv_corr.second << " keV" << endl;
-  cout << " HV Side: " << endl;
-  cout << "   Raw Centroid: " << hv_raw.first << " keV | Corrected Centroid: " << hv_corr.first << " keV" << endl;
-  cout << "   Raw FWHM    : " << hv_raw.second << " keV | Corrected FWHM    : " << hv_corr.second << " keV" << endl;
-  cout << "========================================================\n" << endl;
-
   return; 
 }
 
