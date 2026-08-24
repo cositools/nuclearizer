@@ -63,6 +63,11 @@ class MModuleEventSaver : public MModule
   //! Set whether the Bad events should be saved
   void SetSaveBadEvents(bool SaveBadEvents) { m_SaveBadEvents = SaveBadEvents; }
 
+  //! Return true if the Poor Quality events should be saved
+  bool GetSavePoorQualityEvents() const { return m_SavePoorQualityEvents; }
+  //! Set whether the Poor Quality events should be saved
+  void SetSavePoorQualityEvents(bool SavePoorQualityEvents) { m_SavePoorQualityEvents = SavePoorQualityEvents; }
+
   //! Return true if the Veto events should be saved
   bool GetSaveVetoEvents() const { return m_SaveVetoEvents; }
   //! Set whether the Veto events should be saved
@@ -192,6 +197,9 @@ class MModuleEventSaver : public MModule
   
   //! Save bad events
   bool m_SaveBadEvents;
+
+  //! Save poor quality events
+  bool m_SavePoorQualityEvents;
 
   //! Save Veto events
   bool m_SaveVetoEvents;

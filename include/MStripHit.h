@@ -134,11 +134,6 @@ class MStripHit
   //! Return whether the strip has passed the fast threshold
   bool HasFastTiming() const { return m_HasFastTiming; }
 
-  //! Set whether the strip has triggered (ADC values above slow threshold)
-  void HasTriggered(bool HasTriggered) { m_HasTriggered = HasTriggered; }
-  //! Return whether the strip has triggered (ADC values above slow threshold)
-  bool HasTriggered() const { return m_HasTriggered; }
-
   //! TODO: Rename to HasTiming()
   //! Set the calibrated-timing flag
   void HasCalibratedTiming(bool CalibratedTiming) { m_HasCalibratedTiming = CalibratedTiming; }
@@ -205,8 +200,6 @@ class MStripHit
   bool m_IsGuardRing;
   //! True if the hit is a nearest neighbor hit
   bool m_IsNearestNeighbor;
-  //! True if the strip has triggered
-  bool m_HasTriggered;
   //! True if the hit has fast timing
   bool m_HasFastTiming;
   //! True if the hit has calibrated timing

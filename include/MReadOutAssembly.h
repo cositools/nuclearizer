@@ -230,6 +230,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the Strip Hit Below Threshold quality flag
   bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
 
+  //! Set the High ADC quality flag
+  void SetHighADC_QualityFlag(const MString& Text = "") { m_HighADC_QualityFlag = true; if (Text != "") m_HighADCString_QualityFlag.push_back(Text); }
+  //! Get the High ADC quality flag
+  bool HasHighADC_QualityFlag() const { return m_HighADC_QualityFlag; }
+
   //! Set the Strip Pairing quality flag
   void SetStripPairing_QualityFlag(const MString& Text = "") { m_StripPairing_QualityFlag = true; if (Text != "") m_StripPairingString_QualityFlag.push_back(Text); }
   //! Get the Strip Pairing quality flag
@@ -260,6 +265,8 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return true if any error flag is set or the event has been filtered out
   //! Veto and quality flags do not affect this result
   bool IsBad() const;
+  //! Returns true if any of the Quality flags have been set
+  bool IsPoorQuality() const;
 
   //! Set a specific analysis progress
   void SetAnalysisProgress(uint64_t Progress) { m_AnalysisProgress |= Progress; }
@@ -409,6 +416,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_StripHitBelowThreshold_QualityFlag;
   //! Strip hit below threshold quality string
   vector<MString> m_StripHitBelowThresholdString_QualityFlag;
+
+  //! High ADC quality flag
+  bool m_HighADC_QualityFlag;
+  //! High ADC quality string
+  vector<MString> m_HighADCString_QualityFlag;
 
   //! Strip pairing quality flag
   bool m_StripPairing_QualityFlag;
