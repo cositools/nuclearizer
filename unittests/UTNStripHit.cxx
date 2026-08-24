@@ -80,7 +80,7 @@ bool UTNStripHit::TestDefaultConstruction()
   Passed = Evaluate("GetDetectorID()", "default", "Default DetectorID is undefined", H.GetDetectorID(), g_UnsignedIntNotDefined) && Passed;
   Passed = Evaluate("GetStripID()", "default", "Default StripID is undefined", H.GetStripID(), g_UnsignedIntNotDefined) && Passed;
   Passed = EvaluateTrue("IsLowVoltageStrip()", "default", "Default strip is on the low voltage side", H.IsLowVoltageStrip()) && Passed;
-  Passed = EvaluateFalse("IsNearestNeighbor()", "default", "Default IsNearestNeighbor is true", H.IsNearestNeighbor()) && Passed;
+  Passed = EvaluateFalse("HasTriggered()", "default", "Default HasTriggered is false", H.HasTriggered()) && Passed;
   Passed = EvaluateNear("GetADCUnits()", "default", "Default ADCUnits is 0", H.GetADCUnits(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetEnergy()", "default", "Default Energy is 0", H.GetEnergy(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetEnergyResolution()", "default", "Default EnergyResolution is 0", H.GetEnergyResolution(), 0.0, 1e-12) && Passed;
@@ -97,7 +97,7 @@ bool UTNStripHit::TestDefaultConstruction()
   H.SetDetectorID(5);
   H.SetStripID(12);
   H.IsLowVoltageStrip(true);
-  H.IsNearestNeighbor(false);
+  H.HasTriggered(true);
   H.SetADCUnits(1234.0);
   H.SetEnergy(511.0);
   H.SetTAC(9999.0);
@@ -113,7 +113,7 @@ bool UTNStripHit::TestDefaultConstruction()
   Passed = Evaluate("Clear() DetectorID", "after clear", "Clear() resets DetectorID to undefined", H.GetDetectorID(), g_UnsignedIntNotDefined) && Passed;
   Passed = Evaluate("Clear() StripID", "after clear", "Clear() resets StripID to undefined", H.GetStripID(), g_UnsignedIntNotDefined) && Passed;
   Passed = EvaluateTrue("Clear() IsLowVoltageStrip", "after clear", "Clear() resets IsLowVoltageStrip to true", H.IsLowVoltageStrip()) && Passed;
-  Passed = EvaluateFalse("Clear() IsNearestNeighbor", "after clear", "Clear() resets IsNearestNeighbor to true", H.IsNearestNeighbor()) && Passed;
+  Passed = EvaluateFalse("Clear() HasTriggered", "after clear", "Clear() resets HasTriggered to false", H.HasTriggered()) && Passed;
   Passed = EvaluateNear("Clear() ADCUnits", "after clear", "Clear() resets ADCUnits to 0", H.GetADCUnits(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("Clear() Energy", "after clear", "Clear() resets Energy to 0", H.GetEnergy(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("Clear() TAC", "after clear", "Clear() resets TAC to 0", H.GetTAC(), 0.0, 1e-12) && Passed;
@@ -158,11 +158,11 @@ bool UTNStripHit::TestGettersSetters()
   H.IsXStrip(false);
   Passed = EvaluateFalse("IsXStrip(bool)/IsXStrip()", "deprecated false", "IsXStrip() returns false after IsXStrip(false)", H.IsXStrip()) && Passed;
 
-  // IsNearestNeighbor
-  H.IsNearestNeighbor(true);
-  Passed = EvaluateTrue("IsNearestNeighbor(bool)/IsNearestNeighbor()", "representative true", "IsNearestNeighbor() returns true after IsNearestNeighbor(true)", H.IsNearestNeighbor()) && Passed;
-  H.IsNearestNeighbor(false);
-  Passed = EvaluateFalse("IsNearestNeighbor(bool)/IsNearestNeighbor()", "representative false", "IsNearestNeighbor() returns false after IsNearestNeighbor(false)", H.IsNearestNeighbor()) && Passed;
+  // HasTriggered
+  H.HasTriggered(true);
+  Passed = EvaluateTrue("HasTriggered(bool)/HasTriggered()", "representative true", "HasTriggered() returns true after HasTriggered(true)", H.HasTriggered()) && Passed;
+  H.HasTriggered(false);
+  Passed = EvaluateFalse("HasTriggered(bool)/HasTriggered()", "representative false", "HasTriggered() returns false after HasTriggered(false)", H.HasTriggered()) && Passed;
 
   // ADCUnits
   H.SetADCUnits(4095.0);
@@ -370,6 +370,7 @@ bool UTNStripHit::TestStreamDatParse()
   Writer.SetDetectorID(2);
   Writer.IsLowVoltageStrip(true);
   Writer.SetStripID(37);
+  Writer.HasTriggered(true);
   Writer.SetTiming(500.123);
   Writer.SetADCUnits(2950.75);
   Writer.SetEnergy(662.0);
@@ -399,6 +400,8 @@ bool UTNStripHit::TestStreamDatParse()
                     Reader.GetStripID(), 37u) && Passed;
   Passed = EvaluateTrue("Parse()", "IsLowVoltageStrip", "Parse() restores the low-voltage-side flag",
                         Reader.IsLowVoltageStrip() == true) && Passed;
+  Passed = EvaluateTrue("Parse()", "HasTriggered", "Parse() restores the representative HasTriggered flag",
+                        Reader.HasTriggered() == true) && Passed;
   Passed = EvaluateNear("Parse()", "Timing", "Parse() restores the representative Timing value 500.123",
                         Reader.GetTiming(), 500.123, 1e-6) && Passed;
   Passed = EvaluateNear("Parse()", "ADCUnits", "Parse() restores the representative ADCUnits value 2950.75",
@@ -437,13 +440,13 @@ bool UTNStripHit::TestStreamDatParse()
                       (unsigned int) Reused.GetOrigins().size(), (unsigned int) 0) && Passed;
   }
 
-  // High voltage side round-trip: verify 'h' marker and IsNearestNeighbor(true) survive StreamDat/Parse
+  // High voltage side round-trip: verify 'h' marker and HasTriggered(false) survive StreamDat/Parse
   {
     MStripHit WriterHV;
     WriterHV.SetDetectorID(5);
     WriterHV.IsLowVoltageStrip(false);
     WriterHV.SetStripID(18);
-    WriterHV.IsNearestNeighbor(true);
+    WriterHV.HasTriggered(false);
     WriterHV.SetTiming(99.5);
     WriterHV.SetADCUnits(1000.0);
     WriterHV.SetEnergy(356.0);
@@ -456,8 +459,8 @@ bool UTNStripHit::TestStreamDatParse()
                           ReaderHV.Parse(LineHV)) && Passed;
     Passed = EvaluateFalse("Parse()", "HV IsLowVoltageStrip", "Parse() restores IsLowVoltageStrip false for a strip on the high voltage side",
                            ReaderHV.IsLowVoltageStrip()) && Passed;
-    Passed = EvaluateTrue("Parse()", "HV IsNearestNeighbor true", "Parse() restores IsNearestNeighbor true for the strip on the high voltage side",
-                           ReaderHV.IsNearestNeighbor()) && Passed;
+    Passed = EvaluateFalse("Parse()", "HV HasTriggered false", "Parse() restores HasTriggered false for the strip on the high voltage side",
+                           ReaderHV.HasTriggered()) && Passed;
     Passed = EvaluateNear("Parse()", "HV Timing", "Parse() restores Timing 99.5 for the strip on the high voltage side",
                           ReaderHV.GetTiming(), 99.5, 1e-6) && Passed;
   }

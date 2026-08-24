@@ -56,7 +56,8 @@ MDEECrystalHit::MDEECrystalHit()
       m_Energy(0),
       m_ADC(0),
       m_HasTriggered(false),
-      m_HasVetoed(false)
+      m_HasVetoed(false),
+      m_Temperature(0)
 {
   // Construct an instance of MDEECrystalHit
 }

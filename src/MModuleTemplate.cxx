@@ -1,5 +1,5 @@
 /*
- * MModuleTemplate.cxx
+ * MSubModuleTemplate.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,103 +18,76 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MModuleTemplate
+// MSubModuleTemplate
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MModuleTemplate.h"
+#include "MSubModuleTemplate.h"
 
 // Standard libs:
 
 // ROOT libs:
-#include "TGClient.h"
 
 // MEGAlib libs:
-#include "MModule.h"
-#include "MGUIOptionsTemplate.h"
+#include "MSubModule.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CLING___
-ClassImp(MModuleTemplate)
+ClassImp(MSubModuleTemplate)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleTemplate::MModuleTemplate() : MModule()
+MSubModuleTemplate::MSubModuleTemplate() : MSubModule()
 {
-  // Construct an instance of MModuleTemplate
+  // Construct an instance of MSubModuleTemplate
 
-  // Set all module relevant information
 
-  // Set the module name --- has to be unique
-  m_Name = "Template";
-
-  // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "XmlTagTemplate";
-
-  // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(MAssembly::c_DetectorEffectsEngine);
-  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
-  AddPreceedingModuleType(MAssembly::c_ChargeSharingCorrection);
-  AddPreceedingModuleType(MAssembly::c_DepthCorrection);
-  AddPreceedingModuleType(MAssembly::c_StripPairing);
-
-  // Set all types this modules handles
-  AddModuleType(MAssembly::c_DetectorEffectsEngine);
-  AddModuleType(MAssembly::c_EnergyCalibration);
-  AddModuleType(MAssembly::c_ChargeSharingCorrection);
-  AddModuleType(MAssembly::c_DepthCorrection);
-  AddModuleType(MAssembly::c_StripPairing);
-  AddModuleType(MAssembly::c_EventReconstruction);
-
-  // Set all modules, which can follow this module
-  AddSucceedingModuleType(MAssembly::c_NoRestriction);
-
-  // Set if this module has an options GUI
-  // Overwrite ShowOptionsGUI() with the call to the GUI!
-  m_HasOptionsGUI = false;
-  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
-  // and implement all your GUI options
-
-  // Can the program be run multi-threaded
-  m_AllowMultiThreading = true;
-
-  // Can we use multiple instances of this class
-  m_AllowMultipleInstances = true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleTemplate::~MModuleTemplate()
+MSubModuleTemplate::~MSubModuleTemplate()
 {
-  // Delete this instance of MModuleTemplate
+  // Delete this instance of MSubModuleTemplate
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleTemplate::Initialize()
+bool MSubModuleTemplate::Initialize()
 {
-  // Initialize the module 
+  // Initialize the module
 
-  return MModule::Initialize();
+  return MSubModule::Initialize();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleTemplate::AnalyzeEvent(MReadOutAssembly* Event) 
+void MSubModuleTemplate::Clear()
+{
+  // Clear for the next event
+
+  MSubModule::Clear();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSubModuleTemplate::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level 
 
@@ -125,33 +98,18 @@ bool MModuleTemplate::AnalyzeEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleTemplate::Finalize()
+void MSubModuleTemplate::Finalize()
 {
   // Finalize the analysis - do all cleanup, i.e., undo Initialize() 
 
-  MModule::Finalize();
+  MSubModule::Finalize();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MModuleTemplate::ShowOptionsGUI()
-{
-  //! Show the options GUI --- has to be overwritten!
-
-  /*
-  MGUIOptionsTemplate* Options = new MGUIOptionsTemplate(this);
-  Options->Create();
-  gClient->WaitForUnmap(Options);
-  */
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MModuleTemplate::ReadXmlConfiguration(MXmlNode* Node)
+bool MSubModuleTemplate::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
@@ -169,7 +127,7 @@ bool MModuleTemplate::ReadXmlConfiguration(MXmlNode* Node)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MModuleTemplate::CreateXmlConfiguration() 
+MXmlNode* MSubModuleTemplate::CreateXmlConfiguration()
 {
   //! Create an XML node tree from the configuration
 
@@ -183,5 +141,5 @@ MXmlNode* MModuleTemplate::CreateXmlConfiguration()
 }
 
 
-// MModuleTemplate.cxx: the end...
+// MSubModuleTemplate.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

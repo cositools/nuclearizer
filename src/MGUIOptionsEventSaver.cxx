@@ -84,7 +84,7 @@ void MGUIOptionsEventSaver::Create()
   // File type frame
 
   m_Mode = new MGUIERBList(TypeFrame, "Please select an output file format:");
-  m_Mode->Add("*.roa file to use with melinator / nuclearizer");
+  m_Mode->Add("*.roa file to use with melinator / nulcearizer");
   m_Mode->Add("*.dat file containing all information for debugging");
   m_Mode->Add("*.evta file to use with revan");
   m_Mode->Add("*.tra file to use with mimrec");
@@ -95,7 +95,7 @@ void MGUIOptionsEventSaver::Create()
 
   m_FileSelector = new MGUIEFileSelector(TypeFrame, "Please select an output file:",
                                          dynamic_cast<MModuleEventSaver*>(m_Module)->GetFileName());
-  m_FileSelector->SetFileType("roa file (read-out assemblies)", "*.roa");
+  m_FileSelector->SetFileType("roa file (read-out assemlies)", "*.roa");
   m_FileSelector->SetFileType("dat file (all info)", "*.dat");
   m_FileSelector->SetFileType("evta file (not reconstructed events)", "*.evta");
   m_FileSelector->SetFileType("tra file (reconstructed events)", "*.tra");
@@ -107,10 +107,6 @@ void MGUIOptionsEventSaver::Create()
   m_SaveBadEvents = new TGCheckButton(GeneralFrame, "Save events which are flagged bad (BD)", 1);
   m_SaveBadEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveBadEvents());
   GeneralFrame->AddFrame(m_SaveBadEvents, FirstLabelLayout);
-
-  m_SavePoorQualityEvents = new TGCheckButton(GeneralFrame, "Save events with quality flag (QA)", 1);
-  m_SavePoorQualityEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSavePoorQualityEvents());
-  GeneralFrame->AddFrame(m_SavePoorQualityEvents, TightButtonLayout);
 
   m_SaveVetoEvents = new TGCheckButton(GeneralFrame, "Save guard ring and shield veto events (Veto)", 1);
   m_SaveVetoEvents->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSaveVetoEvents());
@@ -233,7 +229,6 @@ bool MGUIOptionsEventSaver::OnApply()
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
 
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSaveBadEvents(m_SaveBadEvents->IsOn());
-  dynamic_cast<MModuleEventSaver*>(m_Module)->SetSavePoorQualityEvents(m_SavePoorQualityEvents->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSaveVetoEvents(m_SaveVetoEvents->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetAddTimeTag(m_AddTimeTag->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetSplitFile(m_SplitFile->IsOn());
