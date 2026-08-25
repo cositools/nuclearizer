@@ -237,12 +237,13 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyResolutionCalibration(m_ResolutionCalibrationButton->IsOn());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableGuardRingVeto(m_EnableGuardRingVetoButton->IsOn());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyTimingResolutionCalibration(m_TimingResolutionCalibrationButton->IsOn());
+  
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());
 
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());
-  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDeadStripFileName(m_DeadStripFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationCoeffsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationTACCalFileName(m_DepthCalibrationTACCalFileSelector->GetFileName());

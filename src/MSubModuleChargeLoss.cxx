@@ -87,10 +87,14 @@ bool MSubModuleChargeLoss::Initialize()
 
   MString chargeLossLine;
   while (chargeLossFile.ReadLine(chargeLossLine) == true){
-    if (chargeLossLine.IsEmpty() == true || chargeLossLine.BeginsWith('#') == true){ continue; }
+    if (chargeLossLine.IsEmpty() == true || chargeLossLine.BeginsWith('#') == true){
+      continue;
+    }
 
     vector<MString> chargeLossTokens = chargeLossLine.Tokenize(",");
-    if (chargeLossTokens.size() < 6){ continue; }
+    if (chargeLossTokens.size() < 6){
+      continue;
+    }
 
     int det = (int) chargeLossTokens[0].Strip().ToDouble();
     int side = (int) chargeLossTokens[1].Strip().ToDouble();
@@ -103,7 +107,9 @@ bool MSubModuleChargeLoss::Initialize()
       coreA = chargeLossTokens[6].Strip().ToDouble();
     }
 
-    if (det < 0 || det >= nDets || side < 0 || side >= nSides){ continue; }
+    if (det < 0 || det >= nDets || side < 0 || side >= nSides){
+      continue;
+    }
 
     // new depth value -> start a new depth row for this det/side
     if (chargeLossHaveDepth[det][side] == false || depth != chargeLossCurrentDepth[det][side]){
@@ -149,7 +155,7 @@ bool MSubModuleChargeLoss::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Apply charge loss to adjacent same-side strips that share an interaction origin.
   // The two strip-hit lists (HV and LV) are handled the same way; the side index is
-  // taken from each hit (0 = low voltage, 1 = high voltage) so the right CSV curve is used.
+  // taken from each hit (0 = high voltage, 1 = low voltage) so the right CSV curve is used.
 
   list<MDEEStripHit>* sideLists[2];
   sideLists[0] = &Event->GetDEEStripHitHVListReference();
@@ -158,41 +164,58 @@ bool MSubModuleChargeLoss::AnalyzeEvent(MReadOutAssembly* Event)
   for (int listIndex = 0; listIndex < 2; listIndex++){
     list<MDEEStripHit>& hits = *sideLists[listIndex];
 
-    for (list<MDEEStripHit>::iterator itOne = hits.begin(); itOne != hits.end(); ++itOne){
-      list<MDEEStripHit>::iterator itTwo = itOne;
-      ++itTwo;
-      for ( ; itTwo != hits.end(); ++itTwo){
+    for (list<MDEEStripHit>::iterator hitA = hits.begin(); hitA != hits.end(); ++hitA){
+      list<MDEEStripHit>::iterator hitB = hitA;
+      ++hitB;
+      for ( ; hitB != hits.end(); ++hitB){
 
         // same detector?
-        int det = itOne->m_ROE.GetDetectorID();
-        if (det != itTwo->m_ROE.GetDetectorID()){ continue; }
+        int det = hitA->m_ROE.GetDetectorID();
+        if (det != hitB->m_ROE.GetDetectorID()){
+          continue;
+        }
 
         // adjacent strips?
-        int stripOne = itOne->m_ROE.GetStripID();
-        int stripTwo = itTwo->m_ROE.GetStripID();
-        if (abs(stripOne - stripTwo) != 1){ continue; }
+        int stripOne = hitA->m_ROE.GetStripID();
+        int stripTwo = hitB->m_ROE.GetStripID();
+        if (abs(stripOne - stripTwo) != 1){
+          continue;
+        }
 
+        // TODO: @RAnthonypetersen check with Felix is this is how we want to apply charge loss -- since it's different from how we'll correct for it
         // do the two strips share an interaction origin?
         bool sharedOrigin = false;
-        for (int originOne: itOne->m_SimulatedOrigins){
-          for (int originTwo: itTwo->m_SimulatedOrigins){
-            if (originOne == originTwo){ sharedOrigin = true; break; }
+        for (int originOne: hitA->m_SimulatedOrigins){
+          for (int originTwo: hitB->m_SimulatedOrigins){
+            if (originOne == originTwo){
+              sharedOrigin = true; break;
+            }
           }
-          if (sharedOrigin == true){ break; }
+          if (sharedOrigin == true){
+            break;
+          }
         }
-        if (sharedOrigin == false){ continue; }
+        
+        if (sharedOrigin == false){
+          continue;
+        }
 
-        int side = itOne->m_ROE.IsLowVoltageStrip() ? 0 : 1;
-        if (det < 0 || det >= nDets || side < 0 || side >= nSides){ continue; }
+        int side = hitA->m_ROE.IsLowVoltageStrip() ? 0 : 1;
+        if (det < 0 || det >= nDets || side < 0 || side >= nSides){
+          continue;
+        }
+        
         // no calibration curve loaded for this detector/side -> skip (no correction)
-        if (m_ChargeLossEnergy[det][side].size() == 0){ continue; }
+        if (m_ChargeLossEnergy[det][side].size() == 0){
+          continue;
+        }
 
-        double energyOne = itOne->m_Energy;
-        double energyTwo = itTwo->m_Energy;
+        double energyOne = hitA->m_Energy;
+        double energyB = hitB->m_Energy;
         double trueSum = energyOne + energyTwo;
         double diff = fabs(energyOne - energyTwo);
         // one depth per pair (relative depth; a single CSV depth slice makes this a no-op for now)
-        double depth = 0.5 * (itOne->m_SimulatedRelativeDepth + itTwo->m_SimulatedRelativeDepth);
+        double depth = 0.5 * (hitA->m_SimulatedRelativeDepth + hitB->m_SimulatedRelativeDepth);
 
         // boundary (energy only) and the parabola coefficient a at this energy and depth:
         // edge_a in the edge (|diff| >= boundary), core_a in the core (|diff| < boundary)
@@ -200,22 +223,23 @@ bool MSubModuleChargeLoss::AnalyzeEvent(MReadOutAssembly* Event)
 
         double chargeLossA;
         if (diff >= boundary){
-          chargeLossA = ChargeLossInterp2D(trueSum, depth, m_ChargeLossEnergy[det][side],
-                                           m_ChargeLossDepth[det][side], m_ChargeLossEdgeA[det][side]);
+          chargeLossA = ChargeLossInterp2D(trueSum, depth, m_ChargeLossEnergy[det][side], m_ChargeLossDepth[det][side], m_ChargeLossEdgeA[det][side]);
         }
         else {
-          chargeLossA = ChargeLossInterp2D(trueSum, depth, m_ChargeLossEnergy[det][side],
-                                           m_ChargeLossDepth[det][side], m_ChargeLossCoreA[det][side]);
+          chargeLossA = ChargeLossInterp2D(trueSum, depth, m_ChargeLossEnergy[det][side], m_ChargeLossDepth[det][side], m_ChargeLossCoreA[det][side]);
         }
 
         // loss is zero when one strip holds all the energy (diff = trueSum), deepest at an even split
         double loss = chargeLossA * (trueSum*trueSum - diff*diff);
-        if (loss < 0){ loss = 0; }
+        if (loss < 0){
+          loss = 0;
+        }
 
         if (loss > 0){
           // subtract the same amount from each strip
-          itOne->m_Energy = energyOne - loss/2.0;
-          itTwo->m_Energy = energyTwo - loss/2.0;
+          // TODO: @RAnthonypetersen, right now it's an even split, but is this true? Or is it proportional to charge?
+          hitA->m_Energy = energyA - loss/2.0;
+          hitB->m_Energy = energyTwo - loss/2.0;
           m_ChargeLossCounter++;
         }
       }
@@ -274,23 +298,31 @@ MXmlNode* MSubModuleChargeLoss::CreateXmlConfiguration(MXmlNode* Node)
 double MSubModuleChargeLoss::ChargeLossInterp1D(double chargeLossEnergy,
     const vector<double>& chargeLossEnergyGrid, const vector<double>& chargeLossValueGrid)
 {
-  // Clamped linear interpolation of the value grid over energy; holds the endpoint outside the grid.
+  // Linear interpolation of the value grid over energy; holds the endpoint outside the grid.
 
-  if (chargeLossEnergyGrid.size() == 0){ return 0; }
-  if (chargeLossEnergy <= chargeLossEnergyGrid.front()){ return chargeLossValueGrid.front(); }
-  if (chargeLossEnergy >= chargeLossEnergyGrid.back()){ return chargeLossValueGrid.back(); }
+  if (chargeLossEnergyGrid.size() == 0){
+    return 0;
+  }
+  
+  if (chargeLossEnergy <= chargeLossEnergyGrid.front()){
+    return chargeLossValueGrid.front();
+  }
+  
+  if (chargeLossEnergy >= chargeLossEnergyGrid.back()){
+    return chargeLossValueGrid.back();
+  }
 
   // chargeLossEnergyGrid is sorted ascending: find the bracket around chargeLossEnergy
   unsigned int i = 1;
-  while (i < chargeLossEnergyGrid.size() && chargeLossEnergyGrid[i] < chargeLossEnergy){ i++; }
+  while (i < chargeLossEnergyGrid.size() && chargeLossEnergyGrid[i] < chargeLossEnergy){
+    i++;
+  }
 
   double chargeLossEnergyLow = chargeLossEnergyGrid[i-1];
   double chargeLossEnergyHigh = chargeLossEnergyGrid[i];
   double chargeLossValueLow = chargeLossValueGrid[i-1];
   double chargeLossValueHigh = chargeLossValueGrid[i];
-  return chargeLossValueLow
-       + (chargeLossEnergy - chargeLossEnergyLow)*(chargeLossValueHigh - chargeLossValueLow)
-         /(chargeLossEnergyHigh - chargeLossEnergyLow);
+  return chargeLossValueLow + (chargeLossEnergy - chargeLossEnergyLow)*(chargeLossValueHigh - chargeLossValueLow) / (chargeLossEnergyHigh - chargeLossEnergyLow);
 }
 
 
@@ -303,26 +335,29 @@ double MSubModuleChargeLoss::ChargeLossInterp2D(double chargeLossEnergy, double 
 {
   // Bilinear interpolation of chargeLossValueGrid[iDepth][iEnergy] at (energy, depth); clamps both axes.
 
-  if (chargeLossDepthGrid.size() == 0 || chargeLossEnergyGrid.size() == 0){ return 0; }
+  if (chargeLossDepthGrid.size() == 0 || chargeLossEnergyGrid.size() == 0){
+    return 0;
+  }
 
   // interpolate over energy at each bracketing depth row, then between the two rows in depth
   if (chargeLossDepth <= chargeLossDepthGrid.front()){
     return ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid.front());
   }
+  
   if (chargeLossDepth >= chargeLossDepthGrid.back()){
     return ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid.back());
   }
 
   unsigned int j = 1;
-  while (j < chargeLossDepthGrid.size() && chargeLossDepthGrid[j] < chargeLossDepth){ j++; }
+  while (j < chargeLossDepthGrid.size() && chargeLossDepthGrid[j] < chargeLossDepth){
+    j++;
+  }
 
   double chargeLossDepthLow = chargeLossDepthGrid[j-1];
   double chargeLossDepthHigh = chargeLossDepthGrid[j];
   double chargeLossValueLow = ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid[j-1]);
   double chargeLossValueHigh = ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid[j]);
-  return chargeLossValueLow
-       + (chargeLossDepth - chargeLossDepthLow)*(chargeLossValueHigh - chargeLossValueLow)
-         /(chargeLossDepthHigh - chargeLossDepthLow);
+  return chargeLossValueLow + (chargeLossDepth - chargeLossDepthLow)*(chargeLossValueHigh - chargeLossValueLow) / (chargeLossDepthHigh - chargeLossDepthLow);
 }
 
 
