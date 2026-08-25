@@ -41,6 +41,7 @@ using namespace std;
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
+#include "MTime.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +99,7 @@ bool MModuleLoaderMeasurementsFITS::Initialize()
 
   // Clean:
   m_FileType = "Unknown";
-  
+
   if (MFile::Exists(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileName<<" does not exist."<<endl;
     return false;
@@ -166,7 +167,7 @@ bool MModuleLoaderMeasurementsFITS::OpenFITSFile(MString FileName)
 
     // Validate required columns exist
     const vector<string> requiredColumns = {
-      "TIME", "EVENTTYPE", "NUMSTRIPHIT", "TYPEHIT", "DETID",
+      "TIME", "EVENTID", "EVENTTYPE", "NUMSTRIPHIT", "HITTYPE", "DETID",
       "STRIPID", "SIDEID", "FASTTIME", "PHA", "TAC"
     };
     
@@ -241,9 +242,10 @@ bool MModuleLoaderMeasurementsFITS::ReadBatch()
 
       // Resize vectors to read this batch
       m_BatchTIME.resize(rowsToRead);
+      m_BatchEVENTID.resize(rowsToRead);
       m_BatchEVENTTYPE.resize(rowsToRead);
       m_BatchNUMSTRIPHIT.resize(rowsToRead);
-      m_BatchTYPEHIT.resize(rowsToRead);
+      m_BatchHITTYPE.resize(rowsToRead);
       m_BatchDETID.resize(rowsToRead);
       m_BatchSTRIPID.resize(rowsToRead);
       m_BatchSIDEID.resize(rowsToRead);
@@ -253,11 +255,12 @@ bool MModuleLoaderMeasurementsFITS::ReadBatch()
 
       // Read scalar columns - third parameter is LAST row index, NOT count
       m_ComptonTable->column("TIME").read(m_BatchTIME, m_BatchStartRow, lastRow);
+      m_ComptonTable->column("EVENTID").read(m_BatchEVENTID, m_BatchStartRow, lastRow);
       m_ComptonTable->column("EVENTTYPE").read(m_BatchEVENTTYPE, m_BatchStartRow, lastRow);
       m_ComptonTable->column("NUMSTRIPHIT").read(m_BatchNUMSTRIPHIT, m_BatchStartRow, lastRow);
 
       // Read variable-length array columns
-      m_ComptonTable->column("TYPEHIT").readArrays(m_BatchTYPEHIT, m_BatchStartRow, lastRow);
+      m_ComptonTable->column("HITTYPE").readArrays(m_BatchHITTYPE, m_BatchStartRow, lastRow);
       m_ComptonTable->column("DETID").readArrays(m_BatchDETID, m_BatchStartRow, lastRow);
       m_ComptonTable->column("STRIPID").readArrays(m_BatchSTRIPID, m_BatchStartRow, lastRow);
       m_ComptonTable->column("SIDEID").readArrays(m_BatchSIDEID, m_BatchStartRow, lastRow);
@@ -277,7 +280,7 @@ bool MModuleLoaderMeasurementsFITS::ReadBatch()
       //       <<"TIME="<<m_BatchTIME[i]
       //       <<", EVENTTYPE="<<(int)m_BatchEVENTTYPE[i]
       //       <<", NUMSTRIPHIT="<<(int)m_BatchNUMSTRIPHIT[i]
-      //       <<", TYPEHIT="<<m_BatchTYPEHIT[i][0]
+      //       <<", HITTYPE="<<m_BatchHITTYPE[i][0]
       //       <<", DETID="<<m_BatchDETID[i][0]
       //       <<", STRIPID="<<m_BatchSTRIPID[i][0]
       //       <<", SIDEID="<<m_BatchSIDEID[i][0]
@@ -310,6 +313,10 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   //which mean we will not read a new batch. Instead we will read from the current batch we have
 
   if (ReadBatch() == false) {
+    if (g_Verbosity >= c_Info) {
+      cout << m_XmlTag << ": No more events!" << endl;
+    }
+    m_IsFinished = true;
     return false; // No more events
   }
 
@@ -322,13 +329,13 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   uint8_t numStripHit = m_BatchNUMSTRIPHIT[idx];
 
   // Set event-level properties
-  // Event->SetID();  // TODO: No EventID
-  Event->SetCL(eventTime);     // Mission time in seconds
+  Event->SetID(static_cast<unsigned long>(m_BatchEVENTID[idx]));
+  Event->SetTimeRTS(eventTime);     // Mission time in seconds since Jan 1, 2025
 
   // Loop through strip hits and create MStripHit objects
   for (uint8_t hitIdx = 0; hitIdx < numStripHit; ++hitIdx) {
     // Extract hit data from arrays
-    uint8_t typeHit = m_BatchTYPEHIT[idx][hitIdx];
+    uint8_t typeHit = m_BatchHITTYPE[idx][hitIdx];
     int detID = m_BatchDETID[idx][hitIdx];
     int stripID = m_BatchSTRIPID[idx][hitIdx];
     int sideID = m_BatchSIDEID[idx][hitIdx];

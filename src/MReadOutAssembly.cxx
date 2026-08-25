@@ -46,14 +46,20 @@ ClassImp(MReadOutAssembly)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_EventTimeUTC(0)
+atomic<unsigned long> MReadOutAssembly::s_NextAssemblyID(0);
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_AssemblyID(++s_NextAssemblyID), m_EventTimeUTC(0)
 {
   // Construct an instance of MReadOutAssembly
 
   m_PhysicalEvent = nullptr;
   m_SimEvent = nullptr;
   m_HasSimAspectInfo = false;
- 
+
   Clear();
 }
 
@@ -63,50 +69,10 @@ MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_EventTimeUTC(0)
 
 MReadOutAssembly::~MReadOutAssembly()
 {
-  // Delete all strip hits
-  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    delete m_StripHits[h];
-  }
-  m_StripHits.clear();
+  // Destruct an instance of MReadOutAssembly
 
-  // Delete all TOnly strip hits
-  for (unsigned int h = 0; h < m_StripHitsTOnly.size(); ++h) {
-    delete m_StripHitsTOnly[h];
-  }
-  m_StripHitsTOnly.clear();
-
-  // Delete all DEE Strip hits
-  m_DEEStripHitsLV.clear();
-  m_DEEStripHitsHV.clear();
-  m_DEECrystalHits.clear();
-
-  // Delete all crystal hits
-  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
-    delete m_CrystalHits[h];
-  }
-  m_CrystalHits.clear();
-
-  // Delete all hits
-  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    delete m_Hits[h];
-  }
-  m_Hits.clear();
-
-  // Delete all hits from simulation
-  for (unsigned int h = 0; h < m_HitsSim.size(); ++h) {
-    delete m_HitsSim[h];
-  }
-  m_HitsSim.clear();
-
-  // Delete all guardring hits
-  for (unsigned int h = 0; h < m_GuardringHits.size(); ++h) {
-    delete m_GuardringHits[h];
-  }
-  m_GuardringHits.clear();
-
-  // Delete all Events
-  delete m_SimEvent;
-  delete m_PhysicalEvent;
+  // Clear() also resets state, not just owned memory, but the overhead is small compared to the code duplication it removes
+  Clear();
 }
 
 
@@ -115,35 +81,30 @@ MReadOutAssembly::~MReadOutAssembly()
 
 void MReadOutAssembly::Clear()
 {
-  //! Reset all data
+  // Reset all data
 
   MReadOutSequence::Clear();
-  
+
   m_ID = g_UnsignedIntNotDefined;
-  m_TI = 0;
-  m_CL = 0;
-  m_Time = 0;
+  m_EventTimeRTS = 0;
   m_EventTimeUTC = 0;
-  m_MJD = 0.0;
+
+  m_HasSimAspectInfo = false;
+  m_GalacticPointingXAxisTheta = 0.0;
+  m_GalacticPointingXAxisPhi = 0.0;
+  m_GalacticPointingZAxisTheta = 0.0;
+  m_GalacticPointingZAxisPhi = 0.0;
 
   m_ShieldVeto = false;
   m_GuardRingVeto = false;
   m_Trigger = true;
-
-  for (int DetectorID = 0; DetectorID <= 11; DetectorID++) {
-    m_InDetector[DetectorID] = false;
-  }
+  m_InDetector.fill(false);
 
   // Delete all strip hits
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
     delete m_StripHits[h];
   }
   m_StripHits.clear();
-
-  for (unsigned int h = 0; h < m_StripHitsTOnly.size(); ++h) {
-    delete m_StripHitsTOnly[h];
-  }
-  m_StripHitsTOnly.clear();
 
   for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
     delete m_CrystalHits[h];
@@ -156,12 +117,6 @@ void MReadOutAssembly::Clear()
     delete m_Hits[h];
   }
   m_Hits.clear();
-
- // Delete all hits from simulation
-  for (unsigned int h = 0; h < m_HitsSim.size(); ++h) {
-    delete m_HitsSim[h];
-  }
-  m_HitsSim.clear();
 
   // Delete all guardring hits
   for (unsigned int h = 0; h < m_GuardringHits.size(); ++h) {
@@ -178,16 +133,20 @@ void MReadOutAssembly::Clear()
   m_DepthCalibrationErrorString.clear();
   m_EventReconstructionError = false;
   m_EventReconstructionErrorString.clear();
-  
-  m_StripPairingReducedChiSquare = -1; 
- 
+
+  m_StripPairingReducedChiSquare.clear();
+
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
-    
+
+  m_HighADC_QualityFlag = false;
+  m_HighADCString_QualityFlag.clear();
+
   m_StripPairing_QualityFlag = false;
   m_StripPairingString_QualityFlag.clear();
 
   m_FilteredOut = false;
+  m_AnalysisProgress = 0;
 
   delete m_PhysicalEvent;
   m_PhysicalEvent = nullptr;
@@ -198,7 +157,6 @@ void MReadOutAssembly::Clear()
 
   delete m_SimEvent;
   m_SimEvent = nullptr;
-
 }
 
 
@@ -207,8 +165,10 @@ void MReadOutAssembly::Clear()
 
 void MReadOutAssembly::DeleteHits()
 {
-  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    delete m_Hits[h];
+  // Delete all MHit objects
+
+  for (auto* Hit : m_Hits) {
+    delete Hit;
   }
   m_Hits.clear();
 }
@@ -217,17 +177,20 @@ void MReadOutAssembly::DeleteHits()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MReadOutAssembly::InDetector(int DetectorID)
+bool MReadOutAssembly::InDetector(int DetectorID) const
 {
-  //! Find out if the event contains strip hits in a given detector
-  if ( (DetectorID>=0) && (DetectorID<=11) )
-    {
-      return m_InDetector[DetectorID];
-    }
-  else
-    {
-      return false;
-    }
+  // Find out if the event contains strip hits in a given detector
+
+  if (DetectorID >= 0 && DetectorID <= 15) {
+    return m_InDetector[DetectorID];
+  }
+
+  if (g_Verbosity >= c_Error) {
+    cout<<"Error in MReadOutAssembly::InDetector: detector ID "<<DetectorID
+        <<" out of bounds (valid range: 0-15)"<<endl;
+  }
+
+  return false;
 }
 
 
@@ -236,27 +199,36 @@ bool MReadOutAssembly::InDetector(int DetectorID)
 
 void MReadOutAssembly::SetPhysicalEvent(MPhysicalEvent* Event)
 {
-  //! Set the physical event from event reconstruction
+  // Set the physical event from event reconstruction
   // We make our own local copy here
 
-  m_PhysicalEvent = Event->Duplicate();
+  // Guard against self-assignment: deleting m_PhysicalEvent first would leave
+  // Event dangling before Duplicate() could be called on it
+  if (Event == m_PhysicalEvent) return;
+
+  delete m_PhysicalEvent;
+  if (Event != nullptr) {
+    m_PhysicalEvent = Event->Duplicate();
+  } else {
+    m_PhysicalEvent = nullptr;
+  }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MStripHit* MReadOutAssembly::GetStripHit(unsigned int i) 
-{ 
-  //! Return strip hit i
+MStripHit* MReadOutAssembly::GetStripHit(unsigned int i)
+{
+  // Return strip hit i
 
   if (i < m_StripHits.size()) {
     return m_StripHits[i];
   }
 
-  merr<<"Index out of bounds!"<<show;
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetStripHit: index "<<i<<" out of bounds (size "<<m_StripHits.size()<<")"<<endl;
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -265,10 +237,13 @@ MStripHit* MReadOutAssembly::GetStripHit(unsigned int i)
 
 void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 {
-  //! Add a strip hit
-  int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) ) {
-    m_InDetector[DetectorID]=true;
+  // Add a strip hit
+
+  if (StripHit == nullptr) return;
+
+  unsigned int DetectorID = StripHit->GetDetectorID();
+  if (DetectorID <= 15) {
+    m_InDetector[DetectorID] = true;
   }
   m_StripHits.push_back(StripHit);
 }
@@ -279,59 +254,24 @@ void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 
 void MReadOutAssembly::RemoveStripHit(unsigned int i)
 {
-  //! Remove a strip hit
+  // Remove a strip hit
+
   if (i < m_StripHits.size()) {
+    // BUG: MHit objects retain non-owning references to this strip hit if the caller deletes it
     vector<MStripHit*>::iterator it;
-    it = m_StripHits.begin()+i;
+    it = m_StripHits.begin() + i;
     m_StripHits.erase(it);
-  }
-}
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i) 
-{ 
-  //! Return strip hit i
-
-  if (i < m_StripHitsTOnly.size()) {
-    return m_StripHitsTOnly[i];
-  }
-
-  merr<<"Index out of bounds!"<<show;
-
-  return 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MReadOutAssembly::AddStripHitTOnly(MStripHit* StripHit)
-{
-  //! Add a strip hit
-	//comment this out for now since it might mess with other stuff
-	/*
-  int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) )
-    {
-      m_InDetector[DetectorID]=true;
-    }*/
-  m_StripHitsTOnly.push_back(StripHit);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
-{
-  //! Remove a strip hit
-  if (i < m_StripHitsTOnly.size()) {
-    vector<MStripHit*>::iterator it;
-    it = m_StripHitsTOnly.begin()+i;
-    m_StripHitsTOnly.erase(it);
+    // Recompute the per-detector flags from the remaining strip hits
+    for (unsigned int DetectorID = 0; DetectorID < 16; ++DetectorID) {
+      m_InDetector[DetectorID] = false;
+    }
+    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+      unsigned int DetectorID = m_StripHits[h]->GetDetectorID();
+      if (DetectorID <= 15) {
+        m_InDetector[DetectorID] = true;
+      }
+    }
   }
 }
 
@@ -341,15 +281,15 @@ void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
 
 MCrystalHit* MReadOutAssembly::GetCrystalHit(unsigned int i)
 {
-  //! Return strip hit i
+  // Return crystal hit i
 
   if (i < m_CrystalHits.size()) {
     return m_CrystalHits[i];
   }
 
-  merr<<"Index out of bounds!"<<show;
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetCrystalHit: index "<<i<<" out of bounds (size "<<m_CrystalHits.size()<<")"<<endl;
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -358,12 +298,15 @@ MCrystalHit* MReadOutAssembly::GetCrystalHit(unsigned int i)
 
 void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
 {
-  //! Add a crystal hit
+  // Add a crystal hit
+
+  if (CrystalHit == nullptr) return;
+
   // Note: For ACS detectors, DetectorID is a string (e.g., "X0", "X1", "Y0", "Y1", "Z0", "Z1")
-  // so we can't use it with m_InDetector array which expects numeric indices 0-11.
+  // so we can't use it with m_InDetector array which expects numeric indices 0-15.
   // The m_InDetector tracking is primarily for GeD detectors which have numeric IDs.
   // We skip the m_InDetector tracking for crystal hits.
-  
+
   m_CrystalHits.push_back(CrystalHit);
 }
 
@@ -373,10 +316,11 @@ void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
 
 void MReadOutAssembly::RemoveCrystalHit(unsigned int i)
 {
-  //! Remove a strip hit
+  // Remove a crystal hit
+
   if (i < m_CrystalHits.size()) {
     vector<MCrystalHit*>::iterator it;
-    it = m_CrystalHits.begin()+i;
+    it = m_CrystalHits.begin() + i;
     m_CrystalHits.erase(it);
   }
 }
@@ -385,15 +329,32 @@ void MReadOutAssembly::RemoveCrystalHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MHit* MReadOutAssembly::GetHit(unsigned int i) 
-{ 
-  //! Return hit i
-  
-  if (i < m_Hits.size()) {
-    return m_Hits[i]; 
+MGuardringHit* MReadOutAssembly::GetGuardringHit(unsigned int i)
+{
+  // Return guardring hit i
+
+  if (i < m_GuardringHits.size()) {
+    return m_GuardringHits[i];
   }
 
-  merr<<"Index out of bounds!"<<show;
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetGuardringHit: index "<<i<<" out of bounds (size "<<m_GuardringHits.size()<<")"<<endl;
+
+  return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MHit* MReadOutAssembly::GetHit(unsigned int i)
+{
+  // Return hit i
+
+  if (i < m_Hits.size()) {
+    return m_Hits[i];
+  }
+
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetHit: index "<<i<<" out of bounds (size "<<m_Hits.size()<<")"<<endl;
 
   return nullptr;
 }
@@ -404,10 +365,73 @@ MHit* MReadOutAssembly::GetHit(unsigned int i)
 
 void MReadOutAssembly::RemoveHit(unsigned int i)
 {
-  //! Remove a strip hit
+  // Remove a hit
+
   if (i < m_Hits.size()) {
-    m_Hits.erase(m_Hits.begin()+i);
+    m_Hits.erase(m_Hits.begin() + i);
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeRTSfromUTCTime(MTime UTCTime) const
+{
+  // Compute the RTS time if the event only has UTC time defined
+  // RTS is elapsed time since January 1, 2025 in TT (terrestrial time)
+  // TT (terrestrial time) = TAI (international atomic time) + 32.184 seconds, and TAI = UTC + 37 leap seconds
+
+  MTime RTS_Unix = MTime(2025, 1, 1, 0, 0, 0, 0);
+  MTime RTS_TT = UTCTime - RTS_Unix + 37 + 32.184;
+
+  return RTS_TT;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime) const
+{
+  // Compute the UTC time if the event only has RTS time defined
+  // RTS is elapsed time since January 1, 2025 in TT (terrestrial time)
+  // TT (terrestrial time) = TAI (international atomic time) + 32.184 seconds, and TAI = UTC + 37 leap seconds
+
+  MTime RTS_Unix = MTime(2025, 1, 1, 0, 0, 0, 0);
+  MTime UTCTime = RTSTime + RTS_Unix - 37 - 32.184;
+
+  return UTCTime;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeRTSfromGPSTime(MTime GPSTime) const
+{
+  // Compute RTS time from GPS by converting to UTC, then call ComputeRTSfromUTCTime
+  // UTC = GPS - 18 seconds (GPS time is currently 18 leap seconds ahead of UTC)
+
+  MTime GPS_Unix = MTime(1980, 1, 6, 0, 0, 0, 0);
+  MTime UTCTime = GPS_Unix + GPSTime - 18;
+
+  return ComputeRTSfromUTCTime(UTCTime);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeGPSfromRTSTime(MTime RTSTime) const
+{
+  // Compute GPS time from RTS by calling ComputeUTCfromRTSTime then converting UTC to GPS
+  // GPS = UTC + 18
+
+  MTime GPS_Unix = MTime(1980, 1, 6, 0, 0, 0, 0);
+  MTime UTCTime = ComputeUTCfromRTSTime(RTSTime);
+
+  return UTCTime - GPS_Unix + 18;
 }
 
 
@@ -415,108 +439,125 @@ void MReadOutAssembly::RemoveHit(unsigned int i)
 
 
 bool MReadOutAssembly::Parse(MString& Line, int Version)
-{  
-  // Handles SE, TI, RO, IA
-  if (MReadOutSequence::Parse(Line) == true) return true;
-  
-  /* In base class
-  if (Line.BeginsWith("SE")) return true;
+{
+  // HT, SH, and BD are handled here; malformed HT or SH lines return false
+
   if (Line.BeginsWith("TI")) {
-    m_Time.Set(Line);
+    MTime T(0);
+    if (T.Set(Line) == false) return false;
+    SetTime(T);
+    SetTimeUTC(T);
     return true;
   }
-  */
+
   if (Line.BeginsWith("HT")) {
     MHit* h = new MHit();
-    if( h->Parse(Line,1) ){
+    if (h->Parse(Line, Version) == true) {
       AddHit(h);
       return true;
     } else {
+      delete h;
       return false;
     }
   }
   if (Line.BeginsWith("SH")) {
-    // assuming that the SHs belong to the last read hit
+    // Assume that the SH line belongs to the last read hit
+    if (m_Hits.empty() == true) return false;
     MHit* h = m_Hits.back();
-    if (h != nullptr) {
-      MStripHit* SH = new MStripHit();
-      if (SH->Parse(Line, 2)) {
-        h->AddStripHit(SH);
-        return true;
-      } else {
-        delete SH;
-        return false;
-      }
+    MStripHit* SH = new MStripHit();
+    if (SH->Parse(Line, 2) == true) {
+      AddStripHit(SH);
+      h->AddStripHit(SH);
+      return true;
     } else {
+      delete SH;
       return false;
     }
   }
   if (Line.BeginsWith("BD")) {
-    // set a bad flag
-    // too lazy RN to go thru each flag.  the following should do::
+    // Mark the event as filtered out
     m_FilteredOut = true;
     return true;
   }
 
-
-  return false;
+  // Everything else goes to the tolerant base parser, which also consumes unrecognized lines and returns true
+  return MReadOutSequence::Parse(Line);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
+bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
+{
+  // Read data from a .dat file
 
   MString Line;
-  int i;
-  int MaxIter = 1000;
+  bool EventRead = false;
 
-	Clear();
-	for( i = 0; i < MaxIter; i++ ){
-		//try 1000 times to get the complete event
-		F.ReadLine(Line);
-		const char* line = Line.Data();
-		//vector<MString> tokens = Line.Tokenize(" ");
-		if( Line.BeginsWith("SE") ){
-			if( i != 0 ){
-				//we read the full event in, break now
-				break;
-			}
-		}else if( Line.BeginsWith("ID") ){
-			unsigned int ID;
-			sscanf(&line[3],"%u",&ID);
-			SetID( ID );
-		} else if( Line.BeginsWith("TI") ){
-			MTime T = MTime();
-			T.Set(Line);
-			SetTime( T );
-		} else if( Line.BeginsWith("HT") ){
-			MHit* h = new MHit();
-			h->Parse(Line);
-			AddHit(h);
-		} else if( Line.BeginsWith("SH") ){
-			MStripHit* sh = new MStripHit();
-			sh->Parse(Line);
-			AddStripHit(sh);
-			if( m_Hits.size() > 0 ){
-				//add this SH to the last read in HT
-				MHit* h = m_Hits.back();
-				h->AddStripHit(sh);
-			}
-		} else if( Line.BeginsWith("BD") ){
-			SetFilteredOut(true);
-		}
+  int i = 0;
+  int MaxLinesToRead = 1000;
+
+  Clear();
+  for (i = 0; i < MaxLinesToRead; ++i) {
+    // Try up to "MaxLinesToRead" lines to read the next complete event
+    if (F.ReadLine(Line) == false) {
+      // End of file reached
+      break;
+    }
+    const char* LineData = Line.Data();
+    if (Line.BeginsWith("SE")) {
+      if (i != 0) {
+        // We read the full event in, break now
+        break;
+      }
+    } else if (Line.BeginsWith("ID")) {
+      unsigned int ID = 0;
+      if (sscanf(&LineData[3], "%u", &ID) == 1) {
+        SetID(ID);
+        EventRead = true;
+      } else {
+        if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetNextFromDatFile(): Error parsing ID line"<<endl;
+      }
+    } else if (Line.BeginsWith("TI")) {
+      EventRead = true;
+      MTime T = MTime();
+      T.Set(Line);
+      SetTimeUTC(T);
+    } else if (Line.BeginsWith("HT")) {
+      MHit* h = new MHit();
+      if (h->Parse(Line) == true) {
+        AddHit(h);
+        EventRead = true;
+      } else {
+        delete h;
+      }
+    } else if (Line.BeginsWith("SH")) {
+      MStripHit* sh = new MStripHit();
+      if (sh->Parse(Line) == true) {
+        AddStripHit(sh);
+        EventRead = true;
+        if (m_Hits.size() > 0) {
+          // Add this SH to the last read HT
+          MHit* h = m_Hits.back();
+          h->AddStripHit(sh);
+        }
+      } else {
+        delete sh;
+      }
+    } else if (Line.BeginsWith("BD")) {
+      EventRead = true;
+      SetFilteredOut(true);
+    }
 
   }
 
-  if( i == MaxIter ){
-    cout<<"MReadoutAssembly::GetNextFromFile(): reached MaxIter"<<endl;
+  if (i == MaxLinesToRead) {
+    if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetNextFromDatFile(): Event not fully read after "<<MaxLinesToRead<<" lines"<<endl;
     return false;
-  } else {
-    return true;
   }
 
+  return EventRead;
 }
 
 
@@ -525,39 +566,46 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 
 bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 {
-  //! Stream the content to an ASCII file 
+  // Stream the read-out assembly to an ASCII `.dat` file
 
-  S<<"SE"<<endl;
-  S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
-  S<<"QP "<<m_StripPairingReducedChiSquare<<endl; // Read out strip pairing qualiy factor
-    
-  for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
+  if (Version >= 1 && Version <= 3) {
+    S<<"SE"<<endl;
+    S<<"ID "<<m_ID<<endl;
+
+    if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+      S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+    } else {
+      S<<"TI "<<m_EventTimeUTC<<endl;
+    }
+
+    for (MSimIA& IA: m_SimIAs) {
+      S<<IA.ToSimString()<<endl;
+    }
+
+    if (Version == 1) {
+      for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+        m_StripHits[h]->StreamDat(S, Version);
+      }
+
+      for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+        m_Hits[h]->StreamDat(S, Version);
+      }
+    } else if (Version == 2) {
+      for (auto H : m_Hits) {
+        H->StreamDat(S, 2);
+      }
+    } else if (Version == 3) {
+      for (auto H : m_Hits) {
+        H->StreamDat(S, 3);
+      }
+    }
+
+    StreamBDFlags(S);
+
+    return true;
+  } else {
+    return false;
   }
-  
-  if (Version == 1) {
-    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-      m_StripHits[h]->StreamDat(S, Version);  
-    }
-
-    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-      m_Hits[h]->StreamDat(S, Version);  
-    }
-  } else if (Version == 2) {
-    for (auto H : m_Hits) {
-      H->StreamDat(S, 2);
-    }
-  } else if (Version == 3) {
-     for (auto H : m_Hits) {
-       H->StreamDat(S, 3);
-    }
-  }
-
-  StreamBDFlags(S);
-  
-  return true;
 }
 
 
@@ -566,12 +614,16 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 
 void MReadOutAssembly::StreamEvta(ostream& S)
 {
-  //! Stream the content in MEGAlib's evta format 
+  // Stream the read-out assembly in MEGAlib's EVTA format
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
+
+  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  } else {
+    S<<"TI "<<m_EventTimeUTC<<endl;
+  }
 
   if (m_HasSimAspectInfo){
     S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
@@ -579,15 +631,22 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   }
 
   for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
+    S<<IA.ToSimString()<<endl;
   }
-  
+
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    m_Hits[h]->StreamEvta(S);  
+
+    // Don't print Guard Ring hits as normal strip hits as they don't have positions defined
+    // the corresponding energy is saved in the StripPairing QA message
+    if (m_Hits[h]->GetGuardRingHitFlag() == true) {
+	continue;
+    } else {
+      m_Hits[h]->StreamEvta(S);  
+    }
   }
-  
+
   S<<"CC NStripHits "<<m_StripHits.size()<<endl;
-  
+
   StreamBDFlags(S);
 }
 
@@ -597,15 +656,21 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 
 void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
 {
-  //! Stream the content in MEGAlib's evta format 
+  // Stream the read-out assembly in MEGAlib's ROA format
+  //
+  // WithTemperatures is currently not used, since we don't have that housekeeping info at the moment
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
+
+  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  } else {
+    S<<"TI "<<m_EventTimeUTC<<endl;
+  }
 
   for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
+    S<<IA.ToSimString()<<endl;
   }
 
   unsigned int Counter = 0;
@@ -613,17 +678,17 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
     if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
       continue;
     }
-    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags);
+    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
     ++Counter;
   }
   for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
-    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithTemperatures, WithFlags);
+    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithFlags, WithOrigins);
     ++Counter;
   }
   if (Counter == 0) {
-    S<<"BD No hits"<<endl;;
+    S<<"BD No hits"<<endl;
   }
-  
+
   StreamBDFlags(S);
 }
 
@@ -633,7 +698,7 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
 
 void MReadOutAssembly::StreamTra(ostream& S)
 {
-  //! Stream the content in MEGAlib's evta format
+  // Stream the read-out assembly in MEGAlib's TRA format
 
   S<<"SE"<<endl;
 
@@ -648,25 +713,26 @@ void MReadOutAssembly::StreamTra(ostream& S)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 void MReadOutAssembly::StreamBDFlags(ostream& S)
 {
-  // Stream the BD and QA flags
+  // Stream the BD and QA flags for this assembly
 
   if (m_EnergyCalibrationError == true) {
     S<<"BD EnergyCalibrationError";
     if (m_EnergyCalibrationErrorString.empty() == false) {
-      // iterate through the vectorized error message
+      // Append any associated error text
       for (auto i : m_EnergyCalibrationErrorString) {
         S<<" ("<<i<<")";
       }
     }
     S<<endl;
   }
-   if (m_StripPairingError == true) {
+  if (m_StripPairingError == true) {
     S<<"BD StripPairingError";
     if (m_StripPairingErrorString.empty() == false) {
-      // iterate through the vectorized error message
-      for (auto i : m_StripPairingErrorString) { 
+      // Append any associated error text
+      for (auto i : m_StripPairingErrorString) {
         S<<" ("<<i<<")";
       }
     }
@@ -675,7 +741,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_DepthCalibrationError == true) {
     S<<"BD DepthCalibrationError";
     if (m_DepthCalibrationErrorString.empty() == false) {
-      // iterate through the vectorized error message
+      // Append any associated error text
       for (auto i : m_DepthCalibrationErrorString) {
         S<<" ("<<i<<")";
       }
@@ -685,7 +751,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_EventReconstructionError == true) {
     S<<"BD EventReconstructionError";
     if (m_EventReconstructionErrorString.empty() == false) {
-      // iterate through the vectorized error message
+      // Append any associated error text
       for (auto i : m_EventReconstructionErrorString) {
         S<<" ("<<i<<")";
       }
@@ -696,31 +762,49 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
   if (m_StripHitBelowThreshold_QualityFlag == true) {
     S<<"QA StripHitBelowThreshold";
     if (m_StripHitBelowThresholdString_QualityFlag.empty() == false) {
-      // iterate through the vectorized error message
+      // Append any associated error text
       for (auto i : m_StripHitBelowThresholdString_QualityFlag) {
         S<<" ("<<i<<")";
       }
     }
     S<<endl;
   }
-    
+
+  if (m_HighADC_QualityFlag == true) {
+    S<<"QA HighADC";
+    if (m_HighADCString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_HighADCString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
   if (m_StripPairing_QualityFlag == true) {
     S<<"QA StripPairing";
     if (m_StripPairingString_QualityFlag.empty() == false) {
-      // iterate through the vectorized error message
+      // Append any associated error text
       for (auto i : m_StripPairingString_QualityFlag) {
         S<<" ("<<i<<")";
       }
     }
     S<<endl;
   }
-    
+
   if (m_GuardRingVeto == true) {
     S<<"BD GR Veto"<<endl;
   }
   if (m_ShieldVeto == true) {
     S<<"BD Shield Veto"<<endl;
   }
+
+  S<<"PQ";
+  // Append the strip pairing reduced chi^2 values
+  for (auto i : m_StripPairingReducedChiSquare) {
+    S<<" "<<i;
+  }
+  S<<endl;
 }
 
 
@@ -729,7 +813,8 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
 
 bool MReadOutAssembly::IsGood() const
 {
-  //! Returns true if none of the "bad" or "Error" falgs has been set
+  // Return true if no error flag is set and the event has not been filtered out
+  // Veto and quality flags do not affect this result
 
   if (m_EnergyCalibrationError == true) return false;
   if (m_StripPairingError == true) return false;
@@ -737,7 +822,7 @@ bool MReadOutAssembly::IsGood() const
   if (m_EventReconstructionError == true) return false;
 
   if (m_FilteredOut == true) return false;
-  
+
   return true;
 }
 
@@ -747,7 +832,8 @@ bool MReadOutAssembly::IsGood() const
 
 bool MReadOutAssembly::IsBad() const
 {
-  //! Returns true if none of the "bad" or "Error" flag has been set
+  // Return true if any error flag is set or the event has been filtered out
+  // Veto and quality flags do not affect this result
 
   if (m_EnergyCalibrationError == true) return true;
   if (m_StripPairingError == true) return true;
@@ -758,20 +844,37 @@ bool MReadOutAssembly::IsBad() const
 
   return false;
 }
- 
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::IsPoorQuality() const
+{
+  //! Returns true if none of the Quality flag has been set
+
+  // Let's not filter out the strips below threshold events since these aren't less quality
+  //if (m_StripHitBelowThreshold_QualityFlag == true) return true;
+  if (m_StripPairing_QualityFlag == true) return true;
+
+  if (m_FilteredOut == true) return true;
+
+  return false;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 
+
 bool MReadOutAssembly::IsVeto() const
 {
-  //! Returns true if none of the "bad" or "Error" falgs has been set
+  // Return true if one of the veto flags has been set
 
   if (m_ShieldVeto == true) return true;
   if (m_GuardRingVeto == true) return true;
 
   return false;
 }
-
 
 
 // MReadOutAssembly.cxx: the end...

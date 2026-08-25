@@ -48,7 +48,7 @@ MDEECrystalHit::MDEECrystalHit()
     : m_SimulatedEventID(0),
       m_SimulatedPosition(0, 0, 0),
       m_SimulatedPositionInDetector(0, 0, 0),
-      m_DetectorID(0),
+      m_DetectorID(""),
       m_CrystalID(0),
       m_VoxelInDetector(0, 0, 0),
       m_SimulatedEnergy(0),
@@ -56,8 +56,7 @@ MDEECrystalHit::MDEECrystalHit()
       m_Energy(0),
       m_ADC(0),
       m_HasTriggered(false),
-      m_HasVetoed(false),
-      m_Temperature(0)
+      m_HasVetoed(false)
 {
   // Construct an instance of MDEECrystalHit
 }

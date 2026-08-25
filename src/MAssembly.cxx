@@ -59,12 +59,11 @@ using namespace std;
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
-#include "MModuleLoaderSimulationsSMEX.h"
-#include "MModuleLoaderSimulationsSingleDet.h"
 #include "MModuleLoaderSimulationsCosima.h"
 #include "MModuleLoaderMeasurementsROA.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleLoaderMeasurementsFITS.h"
+#include "MModuleLoaderMeasurementsL0.h"
 #include "MModuleEnergyCalibration.h"
 #include "MModuleDepthCalibration.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
@@ -122,12 +121,11 @@ MAssembly::MAssembly()
   
   m_Supervisor->UseMultiThreading(true);
   
-  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSMEX());
-  m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsSingleDet());
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsCosima());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsROA());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsHDF());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsFITS());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsL0());
 
   m_Supervisor->AddAvailableModule(new MModuleDEESMEX());
 
@@ -141,6 +139,9 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsL0());
   m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS());
+  m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS("XmlTagSaverMeasurementsFITSL1a", 0, "Save events to L1a FITS"));
+  m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS("XmlTagSaverMeasurementsFITSL1b", 1, "Save events to L1b FITS"));
+  m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS("XmlTagSaverMeasurementsFITSL2", 2, "Save events to L2 FITS"));
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
   m_Supervisor->AddAvailableModule(new MModuleRevan());

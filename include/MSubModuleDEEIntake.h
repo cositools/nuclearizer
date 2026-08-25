@@ -1,7 +1,7 @@
 /*
  * MSubModuleDEEIntake.h
  *
- * Copyright (C) by Andreas Zoglauer, Parshad Patel.
+ * Copyright (C) by Andreas Zoglauer, Parshad Patel, Valentina Fioretti.
  * All rights reserved.
  *
  * Please see the source-file for the copyright-notice.
@@ -55,7 +55,7 @@ class MSubModuleDEEIntake : public MSubModule
   //! Clear event data from the module
   virtual void Clear();
 
-  //! Main data analysis routine, which updates the event to a new level 
+  //! Main data analysis routine, which updates the event to a new level
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Finalize the module
@@ -68,27 +68,16 @@ class MSubModuleDEEIntake : public MSubModule
 
   // protected methods:
  protected:
-
   // private methods:
  private:
-
-
-
   // protected members:
  protected:
-
-
   // private members:
  private:
-
-
-
-
 #ifdef ___CLING___
  public:
   ClassDef(MSubModuleDEEIntake, 0) // no description
 #endif
-
 };
 
 #endif
