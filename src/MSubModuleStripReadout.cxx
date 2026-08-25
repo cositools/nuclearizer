@@ -135,27 +135,27 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
     set<MReadOutElementDoubleStrip> NeighborStripHits;
     set<MReadOutElementDoubleStrip> DeadStrips;
     
-    for (MDEEStripHit& SH : *Hits) {
+    for (auto SH = Hits->begin(); SH != Hits->end(); ) {
       
       // If the user wants it applied, apply the FWHM Guassian energy resolution
       if (m_ApplyResolutionCalibration == true) {
         // Look up the FWHM fit for this strip
-        if (m_ResolutionCalibration.count(SH.m_ROE) == 1) {
+        if (m_ResolutionCalibration.count(SH->m_ROE) == 1) {
           
-          double Sigma = m_ResolutionCalibration[SH.m_ROE]->Eval(SH.m_Energy);
+          double Sigma = m_ResolutionCalibration[SH->m_ROE]->Eval(SH->m_Energy);
           
           // Smear the hit energy using a Gaussian distribution
-          SH.m_Energy = gRandom->Gaus(SH.m_Energy, Sigma);
+          SH->m_Energy = gRandom->Gaus(SH->m_Energy, Sigma);
           
           // If energy is lower than zero now, floor it to zero
-          if (SH.m_Energy < 0) {
-            SH.m_Energy = 0;
+          if (SH->m_Energy < 0) {
+            SH->m_Energy = 0;
           }
           
         } else {
           // The fit wasn't found! Handle the error
           if (g_Verbosity >= c_Warning) {
-            cout << m_Name << ": Warning - No resolution calibration fit found for strip ID " << SH.m_ROE.GetStripID() << endl;
+            cout << m_Name << ": Warning - No resolution calibration fit found for strip ID " << SH->m_ROE.GetStripID() << endl;
           }
           // Note, if no resolution calibration is found then the energy remains unsmeared
         }
@@ -163,43 +163,45 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       
       // Apply the inverse energy calibration
       // Look up the fit using the ecal
-      TF1* Fit = m_Calibration[SH.m_ROE];
+      TF1* Fit = m_Calibration[SH->m_ROE];
 
       if (Fit != nullptr) {
         // Apply the inverse energy calibration using ROOT's poly inverter (keV -> ADC) in the allowed ADC range
-        double calculatedADC = Fit->GetX(SH.m_Energy, 0., m_MaxADCRange);
+        double calculatedADC = Fit->GetX(SH->m_Energy, 0., m_MaxADCRange);
         
         // Apply hardware limits
         if (calculatedADC > m_MaxADCRange) calculatedADC = m_MaxADCRange;
         if (calculatedADC < 0) calculatedADC = 0;
         
-        SH.m_ADC = static_cast<unsigned int>(calculatedADC);
+        SH->m_ADC = static_cast<unsigned int>(calculatedADC);
 
         // Apply the hardware threshold to determine if a strip hit is a nearest-neighbor strip or not
-        SH.m_IsNearestNeighbor = SH.m_ADC < m_HardwareThresholdMap[SH.m_ROE];
-        SH.m_HasTriggered = true;
+        SH->m_IsNearestNeighbor = SH->m_ADC < m_HardwareThresholdMap[SH->m_ROE];
 
         // Keep track of all triggered strips and their nearest neighbors
-        if (SH.m_IsNearestNeighbor == false) {
-          TriggeredStripHits.insert(SH.m_ROE);
-          if (SH.m_ROE.GetStripID() > 0) {
-            MReadOutElementDoubleStrip Left = SH.m_ROE;
+        if (SH->m_IsNearestNeighbor == false) {
+          TriggeredStripHits.insert(SH->m_ROE);
+          if (SH->m_ROE.GetStripID() > 0) {
+            MReadOutElementDoubleStrip Left = SH->m_ROE;
             Left.SetStripID(Left.GetStripID() - 1);
             NeighborCandidateStripHits.insert(Left);
           }
-          if (SH.m_ROE.GetStripID() < 63) {
-            MReadOutElementDoubleStrip Right = SH.m_ROE;
+          if (SH->m_ROE.GetStripID() < 63) {
+            MReadOutElementDoubleStrip Right = SH->m_ROE;
             Right.SetStripID(Right.GetStripID() + 1);
             NeighborCandidateStripHits.insert(Right);
           }
         }
-        
+        ++SH;
       } else {
         // If no calibration exists in the .ecal file for this strip set it to ADC value of 0
-        if (g_Verbosity >= c_Warning) cout << m_Name << ": No inverse calibration found for element " << SH.m_ROE << endl;
-        SH.m_ADC = 0;
-        SH.m_HasTriggered = false;
-        DeadStrips.insert(SH.m_ROE);
+        if (g_Verbosity >= c_Warning) cout << m_Name << ": No inverse calibration found for element " << SH->m_ROE << endl;
+        DeadStrips.insert(SH->m_ROE);
+
+        // TODO: Currently, strip hits without a valid energy calibration are erased
+        //       For double-wide / shorted strips, their information should be added
+        //       to the active strip it is connected to
+        SH = Hits->erase(SH);
       }
     }
 
@@ -207,7 +209,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
     for (auto SH = Hits->begin(); SH != Hits->end(); ) {
 
       // Iterate only through nearest neighbor candidates
-      if (SH->m_HasTriggered && SH->m_IsNearestNeighbor == true) {
+      if (SH->m_IsNearestNeighbor == true) {
 
         bool HasTriggeredNeighbor = false;
 
@@ -264,7 +266,6 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       SH.m_Timing = 0;
       SH.m_ADC = 0;
       SH.m_TAC = 0;
-      SH.m_HasTriggered = true;
       SH.m_HasFastTiming = false;
       SH.m_IsNearestNeighbor = true;
       SH.m_IsGuardRing = false;
