@@ -181,15 +181,19 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
         // Keep track of all triggered strips and their nearest neighbors
         if (SH->m_IsNearestNeighbor == false) {
           TriggeredStripHits.insert(SH->m_ROE);
-          if (SH->m_ROE.GetStripID() > 0) {
-            MReadOutElementDoubleStrip Left = SH->m_ROE;
-            Left.SetStripID(Left.GetStripID() - 1);
-            NeighborCandidateStripHits.insert(Left);
-          }
-          if (SH->m_ROE.GetStripID() < 63) {
-            MReadOutElementDoubleStrip Right = SH->m_ROE;
-            Right.SetStripID(Right.GetStripID() + 1);
-            NeighborCandidateStripHits.insert(Right);
+
+          // Only keep track of nearest neighbors for non-GR events
+          if (SH->m_IsGuardRing == false) {
+            if (SH->m_ROE.GetStripID() > 0) {
+              MReadOutElementDoubleStrip Left = SH->m_ROE;
+              Left.SetStripID(Left.GetStripID() - 1);
+              NeighborCandidateStripHits.insert(Left);
+            }
+            if (SH->m_ROE.GetStripID() < 63) {
+              MReadOutElementDoubleStrip Right = SH->m_ROE;
+              Right.SetStripID(Right.GetStripID() + 1);
+              NeighborCandidateStripHits.insert(Right);
+            }
           }
         }
         ++SH;
