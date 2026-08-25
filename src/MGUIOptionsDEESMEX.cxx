@@ -81,6 +81,11 @@ void MGUIOptionsDEESMEX::Create()
                                                           dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDeadtimeFileName());
   m_DeadtimeFileSelector->SetFileType("Deadtime file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadtimeFileSelector, LabelLayout);
+  
+  m_ChargeLossFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge loss coefficients file:",
+                                                   dynamic_cast<MModuleDEESMEX*>(m_Module)->GetChargeLossFileName());
+  m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.csv");
+  m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
 
   /*
   m_DeadStripFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a dead strip file:",
@@ -107,11 +112,6 @@ void MGUIOptionsDEESMEX::Create()
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetCrosstalkFileName());
   m_CrosstalkFileSelector->SetFileType("Crosstalk file", "*.txt");
   m_OptionsFrame->AddFrame(m_CrosstalkFileSelector, LabelLayout);
-
-  m_ChargeLossFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge loss coefficients file:",
-  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetChargeLossFileName());
-  m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.log");
-  m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
 
   m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationCoeffsFileName());

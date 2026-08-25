@@ -154,14 +154,6 @@ protected:
 	bool ParseCrosstalkFile();
 	//! Apply charge loss correction
 	vector<double> ApplyChargeLoss(double energy1, double energy2, int detID, int side, double depth1, double depth2);
-  
-  // RAP added
-  //! Clamped linear interpolation of the value grid over energy. Holds the endpoint outside the grid
-  double ChargeLossInterp1D(double chargeLossEnergy, const vector<double>& chargeLossEnergyGrid, const vector<double>& chargeLossValueGrid);
-  //! Bilinear interpolation of chargeLossValueGrid[iDepth][iEnergy] at (energy, depth); clamps both axes.
-  double ChargeLossInterp2D(double chargeLossEnergy, double chargeLossDepth,
-  const vector<double>& chargeLossEnergyGrid, const vector<double>& chargeLossDepthGrid,
-  const vector<vector<double> >& chargeLossValueGrid);
  
 
 public:
@@ -365,20 +357,8 @@ private:
 	vector<vector<TF1*> > m_ChargeSharingFactors = vector<vector<TF1*> >(nDets, vector<TF1*>(nSides));
  
   //! Charge loss fit coefficients
-	//double m_ChargeLossCoefficients[nDets][nSides][3][2];
+	double m_ChargeLossCoefficients[nDets][nSides][3][2];
 	//for some reason when I turn this into a vector I get a seg fault, too lazy to debug now
-  // RAP updates
-  // Charge-loss curves per detector/side, loaded from the DEE charge-loss CSV
-  // (|diff| > boundary) we subtract loss = edge_a*(trueSum^2 - diff^2); the core
-  // (|diff| ‹ boundary) is left uncorrected (core_a deferred)
-  //! Charge-loss energy range in keV (the CSV grid max; matches the charge-sharing 0-2000 domain)
-  static const int ChargeLossMaxEnergy = 2000;
-  vector<double> m_ChargeLossEnergy[nDets][nSides]; // energy-axis
-  vector<double> m_ChargeLossDepth[nDets][nSides]; // depth-axis grid (right now just 1 entry)
-  vector<double> m_ChargeLossBoundary[nDets][nSides]; // Boundry value (where the edge vs core region starts / ends)
-  vector<vector<double>> m_ChargeLossEdgeALnDets]LnSides]; // edge_a[iDepth][iEnergy] (|diff| >= boundary)
-  vector<vector<double>> m_ChargeLossCoreA[nDets][nSides]; // core_a[iDepth][iEnergy] (|diff| <boundary)
-
 
 	//! Crosstalk coefficients
 	vector<vector<vector<vector<double> > > > m_CrosstalkCoefficients = vector<vector<vector<vector<double> > > >(12, vector<vector<vector<double> > > (2, vector<vector<double> > (2, vector<double> (2))));

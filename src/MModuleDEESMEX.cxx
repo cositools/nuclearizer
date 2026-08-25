@@ -111,6 +111,7 @@ bool MModuleDEESMEX::Initialize()
   if (m_StripTrigger.Initialize() == false) return false;
   if (m_DepthReadout.Initialize() == false) return false;
   if (m_Output.Initialize() == false) return false;
+  if (m_ChargeLoss. Initialize() = false) return false;
 
   return MModule::Initialize();
 }
@@ -186,6 +187,10 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_StripReadout.Clear();
   m_StripReadout.AnalyzeEvent(Event);
   
+  // Step (8b): Charge loss between adjacent same-side strips (before noise/ADC)
+  m_ChargeLoss.Clear ();
+  m_ChargeLoss.AnalyzeEvent (Event);
+  
   // Step (9): Simulate micro-phonics random noise
   m_StripReadoutNoise.Clear();
   m_StripReadoutNoise.AnalyzeEvent(Event);
@@ -245,6 +250,7 @@ void MModuleDEESMEX::Finalize()
   m_StripTrigger.Finalize();
   m_DepthReadout.Finalize();
   m_Output.Finalize();
+  m_ChargeLoss.Finalize();
 
   MModule::Finalize();
 }
@@ -281,6 +287,7 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_StripTrigger.ReadXmlConfiguration(Node);
   m_DepthReadout.ReadXmlConfiguration(Node);
   m_Output.ReadXmlConfiguration(Node);
+  m_ChargeLoss.ReadXmiConfiguration(Node);
   
   // Add noise button
   MXmlNode* ResolutionCalibrationNode = Node->GetNode("ApplyResolutionCalibration");
@@ -311,6 +318,7 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
   m_StripTrigger.CreateXmlConfiguration(Node);
   m_DepthReadout.CreateXmlConfiguration(Node);
   m_Output.CreateXmlConfiguration(Node);
+  m_ChargeLoss.CreateXmlConfiguration(Node);
   
   // Add noise button
   new MXmlNode(Node, "ApplyResolutionCalibration", m_ApplyResolutionCalibration);
