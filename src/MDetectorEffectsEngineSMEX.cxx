@@ -274,7 +274,7 @@ bool MDetectorEffectsEngineSMEX::Initialize()
   m_DriftConstant[11] = driftConstant/sqrt(1000/299.79);
   
   //for debugging charge loss
-  m_ChargeLossHist = new TH2D("CL","",100,632,667,100,0,50);
+  m_ChargeLossHist = new TH2D("CL","",100,0,ChargeLossMaxEnergy,100,0,50);
   
   // The statistics:
   m_NumberOfEventsWithADCOverflows = 0;
@@ -2017,30 +2017,31 @@ vector<double> MDetectorEffectsEngineSMEX::ApplyChargeLoss(double energy1, doubl
   double trueSum = energy1+energy2;
   double diff = abs(energy1-energy2);
 
-  //deal with depth
-  //use average depth? or don't do charge loss if hits dont have the same depth?
-  //	double Depth = (depth1+depth2)/2.;
-  TH1D DepthBins("DB","",3,0,1.5);
-  int depthBin = DepthBins.GetXaxis()->FindBin(depth1)-1;
+  // RAP updated
+  //boundary (energy only) and the parabola coefficient a at this energy and depth:
+  //edge_a in the edge (|diff| >= boundary), core_a in the core (|diff| ‹ boundary)
+  double boundary = ChargeLossInterp1D(trueSum, m_ChargeLossEnergy[detID][side], m_ChargeLossBoundary[detID][side]);
+  double chargeLossA;
   
-  //B = A0 + A1*E
-  double A0 = m_ChargeLossCoefficients[detID][side][depthBin][0];
-  double A1 = m_ChargeLossCoefficients[detID][side][depthBin][1];
-  double B = A0 + A1*trueSum;
-  
-  //try the Dmax thing
-  //	double Dmax = trueSum*(trueSum-511./2)/(trueSum+511./2);
-  //	if (diff < Dmax){ B = 0; }
-  if (B < 0){ B = 0; }
-  
-  //get new sum
-  double newSum;
-  if (trueSum >= 300){
-    newSum = trueSum - B*(trueSum - diff);
+  if (diff >= boundary){
+    chargeLossA = ChargeLossInterp2D(trueSum, depth1, m_ChargeLossEnergy[detID][side], m_ChargeLossDepth[detID][side], m_ChargeLossEdgeA[detID][side]);
   }
   else {
-    newSum = trueSum - (B/(2*trueSum))*(pow(trueSum,2) - pow(diff,2));
+    chargeLossA = ChargeLossInterp2D(trueSum, depth1, m_ChargeLossEnergy[detID][side], m_ChargeLossDepth[detID][side], m_ChargeLossCoreA[detID][side]);
   }
+  
+  //loss is zero when one strip holds all the energy (diff = trueSum), deepest at an even split
+  double loss = chargeLossA*(pow(trueSum, 2) - pow(diff, 2));
+  if (loss < 0){
+    loss = 0;
+  }
+  
+  double newSum = trueSum - loss;
+  //count this pair only if a correction was actually applied
+  if (loss > 0){
+    m_ChargeLossCounter++;
+  }
+  
   
   //get new strip hit energies: subtract same amount from energy1 and energy2
   double sumDiff = trueSum - newSum;
@@ -2064,42 +2065,71 @@ vector<double> MDetectorEffectsEngineSMEX::ApplyChargeLoss(double energy1, doubl
 bool MDetectorEffectsEngineSMEX::InitializeChargeLoss()
 { 
   
-  //coefficients[energy][detector][side][depth]
-  vector<vector<vector<vector<double> > > > coefficients(4, vector<vector<vector<double> > > (nDets, vector<vector<double> > (nSides, vector<double> (3))));
-  
-  MFile File;
-  if (File.Open(m_ChargeLossFileName) == false){
-    cout << "Unable to open file: " << m_ChargeLossFileName << endl;
+  //CSV columns: detector, side, depth_cm, energy_keV, boundary_kev, edge_a, core_a //Grouped by detector/side, then by depth, then ascending energy (same energy grid per depth).
+  MFile chargeLossFile;
+  if (chargeLossFile.Open(m_ChargeLossFileName) == false){
+    cout « "Unable to open charge loss file: " « m_ChargeLossFileName << endl;
     return false;
   }
   
-  MTokenizer Tokenizer;
-  MString Line;
-  
-  vector<double> energies{122,356,662,1333};
-  
-  while (File.ReadLine(Line) == true){
-    Tokenizer.Analyze(Line);
-    //sometimes somehow I read an empty string
-    if (Line.AreIdentical("")){ continue; }
-    
-    double energy = Tokenizer.GetTokenAtAsDouble(0);
-    int det = Tokenizer.GetTokenAtAsInt(1);
-    int side = Tokenizer.GetTokenAtAsInt(2);
-    int depthBin = Tokenizer.GetTokenAtAsInt(3)-1;
-    double B = Tokenizer.GetTokenAtAsDouble(5);
-    
-    int energyIndex = 0;
-    for (unsigned int i=0; i<energies.size(); i++){
-      if (energies[i] == energy){
-        energyIndex = i;
-        break;
-      }
+  //remember the current depth per det/side so we start a new depth row when it changes
+  double chargeLossCurrentDepth[nDets][nSides];
+  bool chargeLossHaveDepth[nDets][nSides];
+  for (int det=0; det<nDets; det++){
+    for (int side=0; side<nSides; side++){
+      chargeLossHaveDepth[det][side] = false;
     }
-    
-    coefficients[energyIndex][det][side][depthBin] = B;
   }
   
+  MString chargeLossLine;
+  
+  while (chargeLossFile.ReadLine(chargeLossLine) = true){
+    if (chargeLossLine.IsEmpty() = true || chargeLossLine.BeginsWith('#') = true){
+      continue;
+    }
+    
+    vector<MString > chargeLossTokens = chargeLossLine.Tokenize(",");
+    
+    if (chargeLossTokens.size() < 6){
+      continue;
+    }
+    
+    int det = (int) chargeLossTokens[0].Strip().ToDouble();
+    int side = (int) chargeLossTokens[1].Strip().ToDouble();
+    double depth = chargeLossTokens[2].Strip().ToDouble();
+    double energy = chargeLossTokens[3].Strip().ToDouble();
+    double boundary = chargeLossTokens[4].Strip().ToDouble();
+    double edgeA = chargeLossTokens[5].Strip().ToDouble();
+    double coreA = 0; //core_a is blank until calibrated, so rn set to 0
+    
+    if (chargeLossTokens.size () >= 7 && chargeLossTokens[6].Strip().IsEmpty() == false){
+      coreA = chargeLossTokens[6].Strip().ToDouble();
+    }
+    
+    if (det ‹ 0 || det >= nDets || side ‹ 0 || side >= nSides){
+      continue;
+    }
+    
+    //new depth value > start a new depth row for this det/side
+    if (chargeLossHaveDepth[det][side] == false || depth != chargeLossCurrentDepth[det][sidel]){
+      m_ChargeLossDepth[det][side].push_back(depth);
+      m_ChargeLossEdgeA[det][side].push_back(vector<double>());
+      m_ChargeLossCoreALdet]lside].push_back(vector<double>());
+      chargeLossCurrentDepth[det][side] = depth;
+      chargeLossHaveDepth[det][side] = true;
+    }
+    
+    //energy grid and boundary are energy-only: record them once, on the first depth row
+    if (m_ChargeLossDepth[det][side].size () = 1){
+      m_ChargeLossEnergy[det][side].push_back(energy);
+      m_ChargeLossBoundary[det][side].push_back(boundary);
+      
+      //append this energy point to the current (last) depth row
+      m_ChargeLossEdgeA[det][side].back().push_back(edgeA);
+      m_ChargeLossCoreA[det][side].back().push_back(coreA);
+    }
+  }
+       
   double *energyArr = &energies[0];
   double points[4];
   double A0;
@@ -2130,11 +2160,73 @@ bool MDetectorEffectsEngineSMEX::InitializeChargeLoss()
       }
     }
   }
-  
+  chargeLossFile.Close();
   return true;
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 
+//! Linear interpolation of the value grid over energy; holds the endpoint outside the grid
+double MDetectorEffectsEngineSMEX::ChargeLossInterp1D(double chargeLossEnergy,
+                                                      const vector<double>& chargeLossEnergyGrid, const vector<double>& chargeLossValueGrid)
+{
+  if (chargeLossEnergyGrid.size () == 0){
+    return 0;
+  }
+  
+  if (chargeLossEnergy <= chargeLossEnergyGrid.front()){
+    return chargeLossValueGrid.front();
+  }
+  
+  if (chargeLossEnergy >= chargeLossEnergyGrid.back()){
+    return
+    chargeLossValueGrid.back();
+  }
+  
+  //chargeLossEnergyGrid is sorted ascending: find the bracket around chargeLossEnergy
+  unsigned int i = 1;
+  while (i ‹ chargeLossEnergyGrid.size() && chargeLossEnergyGridli] < chargeLossEnergy){
+    i++;
+  }
+  
+  double chargeLossEnergyLow = chargeLossEnergyGrid[i-1];
+  double chargeLossEnergyHigh = chargeLossEnergyGrid[i];
+  double chargeLossValueLow = chargeLossValueGrid[i-1];
+  double chargeLossValueHigh = chargeLossValueGrid[i];
+  
+  return chargeLossValueLow + (chargeLossEnergy - chargeLossEnergyLow)*(chargeLossValueHigh - chargeLossValueLow) / (chargeLossEnergyHigh - chargeLossEnergyLow);
+  
+}
+  
+/////////////////////////////////////////////////////////////////////////////////
+
+//! Bilinear interpolation of chargeLossValueGrid[iDepth]liEnergy] at (energy, depth); clamps both axes
+double MDetectorEffectsEngineSMEX::ChargeLossInterp2D(double chargeLossEnergy, double chargeLossDepth, const vector<double>& chargeLossEnergyGrid, const vector<double>& chargeLossDepthGrid, const vector‹vector‹double> ›& chargeLossValueGrid)
+{
+  
+  if (chargeLossDepthGrid.size() = 0 || chargeLossEnergyGrid.size() = 0){ return 0; }
+  
+  //interpolate over energy at each bracketing depth row, then between the two rows in depth
+  if (chargeLossDepth <= chargeLossDepthGrid.front ()){
+    return ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid.front());
+    
+    if (chargeLossDepth >= chargeLossDepthGrid.back()){
+      return ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid.back());
+    }
+    
+    unsigned int j= 1;
+    
+    while (j ‹ chargeLossDepthGrid.size() && chargeLossDepthGrid[j] < chargeLossDepth){j++; }
+    
+    double chargeLossDepthLow = chargeLossDepthGrid[j-1];
+    double chargeLossDepthHigh = chargeLossDepthGrid[j];
+    double chargeLossValueLow = ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid[j-1]);
+    double chargeLossValueHigh = ChargeLossInterp1D(chargeLossEnergy, chargeLossEnergyGrid, chargeLossValueGrid[j]);
+    
+    return chargeLossValueLow + (chargeLossDepth - chargeLossDepthLow)*(chargeLossValueHigh - chargeLossValueLow) / (chargeLossDepthHigh - chargeLossDepthLow);
+}
+
+  
 /////////////////////////////////////////////////////////////////////////////////
 //! Read in charge sharing factors
 bool MDetectorEffectsEngineSMEX::ParseChargeSharingFile()
