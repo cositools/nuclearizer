@@ -139,6 +139,9 @@ void MReadOutAssembly::Clear()
   m_StripHitBelowThreshold_QualityFlag = false;
   m_StripHitBelowThresholdString_QualityFlag.clear();
 
+  m_HighADC_QualityFlag = false;
+  m_HighADCString_QualityFlag.clear();
+
   m_StripPairing_QualityFlag = false;
   m_StripPairingString_QualityFlag.clear();
 
@@ -632,7 +635,14 @@ void MReadOutAssembly::StreamEvta(ostream& S)
   }
 
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    m_Hits[h]->StreamEvta(S);
+
+    // Don't print Guard Ring hits as normal strip hits as they don't have positions defined
+    // the corresponding energy is saved in the StripPairing QA message
+    if (m_Hits[h]->GetGuardRingHitFlag() == true) {
+	continue;
+    } else {
+      m_Hits[h]->StreamEvta(S);  
+    }
   }
 
   S<<"CC NStripHits "<<m_StripHits.size()<<endl;
@@ -647,6 +657,8 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
 {
   // Stream the read-out assembly in MEGAlib's ROA format
+  //
+  // WithTemperatures is currently not used, since we don't have that housekeeping info at the moment
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
@@ -666,7 +678,7 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
     if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
       continue;
     }
-    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithTemperatures, WithFlags, WithOrigins);
+    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
     ++Counter;
   }
   for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
@@ -758,6 +770,17 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     S<<endl;
   }
 
+  if (m_HighADC_QualityFlag == true) {
+    S<<"QA HighADC";
+    if (m_HighADCString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_HighADCString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
   if (m_StripPairing_QualityFlag == true) {
     S<<"QA StripPairing";
     if (m_StripPairingString_QualityFlag.empty() == false) {
@@ -816,6 +839,23 @@ bool MReadOutAssembly::IsBad() const
   if (m_StripPairingError == true) return true;
   if (m_DepthCalibrationError == true) return true;
   if (m_EventReconstructionError == true) return true;
+
+  if (m_FilteredOut == true) return true;
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::IsPoorQuality() const
+{
+  //! Returns true if none of the Quality flag has been set
+
+  // Let's not filter out the strips below threshold events since these aren't less quality
+  //if (m_StripHitBelowThreshold_QualityFlag == true) return true;
+  if (m_StripPairing_QualityFlag == true) return true;
 
   if (m_FilteredOut == true) return true;
 
