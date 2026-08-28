@@ -24,11 +24,11 @@
 // Compile Command
 // make (in the main nuclearizer directory)
 
-// This app uses a YAML configuration file, with optional
+// This app uses an XML configuration file, with optional
 // command-line arguments to override selected settings.
 
 // Run command example
-// $MEGALIB/bin/StripEnergyThresholdFinder /your/yaml/file/directory/file.yaml
+// $MEGALIB/bin/StripEnergyThresholdFinder /path/to/your/xml/config/file.xml
 
 #include <iostream>
 #include <fstream>
@@ -57,8 +57,9 @@ using namespace std;
 #include <iomanip>
 #include <chrono>
 
-/* YAML */
-#include <yaml-cpp/yaml.h>
+/* MEGAlib XML */
+#include "MXmlDocument.h"
+#include "MXmlNode.h"
 
 /* MEGAlib */
 #include "MGlobal.h"
@@ -134,7 +135,7 @@ class MStripThresholdFinder
   double m_FastFallbackThreshold = 35.0;
   int m_HistogramBins = 512;
   double m_HistogramMaxADC = 4096.0;
-  double m_NoiseSearchMaxADC = 2200.0;
+  double m_NoiseSearchMaxKeV = 40.0;
   double m_NoiseStartMinCounts = 50.0;
 
   long m_MaxEvents = -1;
@@ -248,102 +249,155 @@ int main(int Argc, char** Argv)
 bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 {
   if (argc < 2) {
-    cout << "Usage: ./StripEnergyThresholdFinder config.yaml" << endl;
+    cout << "Usage: ./StripEnergyThresholdFinder config.xml" << endl;
     return false;
   }
 
-  string configFile = argv[1];
-  YAML::Node config = YAML::LoadFile(configFile);
+  // -------------------------------------------------------------
+  // Default analysis parameters
+  // -------------------------------------------------------------
 
   m_HistogramBins = 2048;
   m_HistogramMaxADC = 4096;
-  m_NoiseSearchMaxADC = 2200;
- 
+  m_NoiseSearchMaxKeV = 40.0;
+
   // -------------------------------------------------------------
   // Command line override parameters (optional)
   // -------------------------------------------------------------
 
   int cmd_min_entries = -1;
-  double cmd_noise_search_max_ADC = -1;
+  double cmd_noise_search_max_keV = -1;
   double cmd_fallback_threshold_keV = -1;
   double cmd_fast_fallback_threshold_keV = -1;
 
-  string cmd_data_file = "";
   string cmd_calibration_file = "";
   string cmd_Strip_map = "";
   string cmd_output_prefix = "";
+
   m_MaxEvents = -1;
 
   // -------------------------------------------------------------
-  // YAML file input loading
+  // Load XML configuration
   // -------------------------------------------------------------
 
-  if (config["analysis"]) {
-	  
-	if (config["analysis"]["detector_id"]) {
-      m_DetectorID = config["analysis"]["detector_id"].as<unsigned int>();
-    }
-	
-    if (config["analysis"]["min_entries"]) {
-      m_MinEntries = config["analysis"]["min_entries"].as<int>();
-    }
+  MString configFile = argv[1];
 
-    if (config["analysis"]["fallback_threshold_keV"]) {
-      m_FallbackThreshold = config["analysis"]["fallback_threshold_keV"].as<double>();
-    }
-	
-	if (config["analysis"]["fast_fallback_threshold_keV"]) {
-      m_FastFallbackThreshold = config["analysis"]["fast_fallback_threshold_keV"].as<double>();
-    }
+  MXmlDocument* Document = new MXmlDocument();
 
-    if (config["analysis"]["histogram_bins"]) {
-      m_HistogramBins = config["analysis"]["histogram_bins"].as<int>();
-    }
-
-    if (config["analysis"]["histogram_max_ADC"]) {
-      m_HistogramMaxADC = config["analysis"]["histogram_max_ADC"].as<double>();
-    }
-
-    if (config["analysis"]["noise_search_max_ADC"]) {
-      m_NoiseSearchMaxADC = config["analysis"]["noise_search_max_ADC"].as<double>();
-    }
-	if (config["analysis"]["noise_start_min_counts"]) {
-      m_NoiseStartMinCounts =
-        config["analysis"]["noise_start_min_counts"].as<double>();
-    }
-  }
-
-
-  m_InputFiles = config["input"]["data_files"].as<vector<string>>();
-
-  if (m_InputFiles.empty()) {
-    cerr << "Error: No input files provided." << endl;
-    return 1;
-  }
-
-
-  m_CalibrationFile = config["input"]["calibration_file"].as<string>().c_str();
-  m_StripMapFile = config["input"]["strip_map"].as<string>().c_str();
-  m_OutputPrefix = config["output"]["prefix"].as<string>().c_str();
-
-
-  if (m_EnergyCalibration.ReadEnergyCalibrationFile(m_CalibrationFile) == false) {
-    cout << "Failed to load calibration file: " << m_CalibrationFile << endl;
+  if (Document->Load(configFile) == false) {
+    cerr << "Error: Failed to load XML configuration file: "
+         << configFile << endl;
+    delete Document;
     return false;
   }
 
+  // -------------------------------------------------------------
+  // Read analysis configuration
+  // -------------------------------------------------------------
+
+  MXmlNode* AnalysisNode = Document->GetNode("Analysis");
+
+  if (AnalysisNode != nullptr) {
+
+    MXmlNode* Node = nullptr;
+
+    Node = AnalysisNode->GetNode("MinEntries");
+    if (Node != nullptr) {
+      m_MinEntries = Node->GetValueAsInt();
+    }
+
+    Node = AnalysisNode->GetNode("FallbackThresholdKeV");
+    if (Node != nullptr) {
+      m_FallbackThreshold = Node->GetValueAsDouble();
+    }
+
+    Node = AnalysisNode->GetNode("NoiseSearchMaxKeV");
+    if (Node != nullptr) {
+      m_NoiseSearchMaxKeV = Node->GetValueAsDouble();
+    }
+  }
 
   // -------------------------------------------------------------
-  // Modern command line parser using getopt_long
+  // Read input configuration
+  // -------------------------------------------------------------
+
+  MXmlNode* InputNode = Document->GetNode("Input");
+
+  if (InputNode == nullptr) {
+    cerr << "Error: Missing <Input> section in XML configuration." << endl;
+    delete Document;
+    return false;
+  }
+
+  // Read one or more input data files
+  MXmlNode* DataFilesNode = InputNode->GetNode("DataFiles");
+
+  if (DataFilesNode != nullptr) {
+
+    for (unsigned int i = 0; i < DataFilesNode->GetNNodes(); ++i) {
+
+      MXmlNode* DataFileNode = DataFilesNode->GetNode(i);
+
+      if (DataFileNode != nullptr &&
+          DataFileNode->GetName() == "DataFile") {
+        m_InputFiles.push_back(DataFileNode->GetValue().Data());
+      }
+    }
+  }
+
+  if (m_InputFiles.empty()) {
+    cerr << "Error: No input files provided." << endl;
+    delete Document;
+    return false;
+  }
+
+  // Energy calibration file
+  MXmlNode* CalibrationFileNode =
+    InputNode->GetNode("CalibrationFile");
+
+  if (CalibrationFileNode != nullptr) {
+    m_CalibrationFile = CalibrationFileNode->GetValue();
+  }
+
+
+
+  // Strip map
+  MXmlNode* StripMapNode =
+    InputNode->GetNode("StripMap");
+
+  if (StripMapNode != nullptr) {
+    m_StripMapFile = StripMapNode->GetValue();
+  }
+
+  // -------------------------------------------------------------
+  // Read output configuration
+  // -------------------------------------------------------------
+
+  MXmlNode* OutputNode = Document->GetNode("Output");
+
+  if (OutputNode != nullptr) {
+
+    MXmlNode* PrefixNode = OutputNode->GetNode("Prefix");
+
+    if (PrefixNode != nullptr) {
+      m_OutputPrefix = PrefixNode->GetValue();
+    }
+  }
+
+  // We have copied everything we need from the XML tree
+  delete Document;
+  Document = nullptr;
+
+  // -------------------------------------------------------------
+  // Command line parser using getopt_long
   // -------------------------------------------------------------
 
   static struct option long_options[] = {
     { "min_entries", required_argument, 0, 'm' },
-    { "noise_search_max_ADC", required_argument, 0, 'n' },
+    { "noise_search_max_keV", required_argument, 0, 'n' },
     { "fallback_threshold_keV", required_argument, 0, 'f' },
-	{ "fast_fallback_threshold_keV", required_argument, 0, 'F' },
+    { "fast_fallback_threshold_keV", required_argument, 0, 'F' },
 
-    /* NEW overrides */
     { "data_file", required_argument, 0, 'd' },
     { "calibration_file", required_argument, 0, 'c' },
     { "Strip_map", required_argument, 0, 's' },
@@ -354,24 +408,27 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     { 0, 0, 0, 0 }
   };
 
-  optind = 2; // skip program name and YAML file
+  optind = 2; // skip program name and XML file
 
   int opt;
+
   while ((opt = getopt_long(argc, argv, "", long_options, NULL)) != -1) {
+
     switch (opt) {
+
     case 'm':
       cmd_min_entries = atoi(optarg);
       break;
 
     case 'n':
-      cmd_noise_search_max_ADC = atof(optarg);
+      cmd_noise_search_max_keV = atof(optarg);
       break;
 
     case 'f':
       cmd_fallback_threshold_keV = atof(optarg);
       break;
-	  
-	case 'F':
+
+    case 'F':
       cmd_fast_fallback_threshold_keV = atof(optarg);
       break;
 
@@ -398,22 +455,26 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     case 'h':
       cout << endl;
       cout << "Usage:" << endl;
-      cout << "  ./StripEnergyThresholdFinder config.yaml [options]" << endl;
+      cout << "  ./StripEnergyThresholdFinder config.xml [options]" << endl;
       cout << endl;
-      cout << "Options:" << endl;
-      cout << "Input/Output overrides:" << endl;
-      cout << "  --data_file FILE            Override YAML data file" << endl;
-      cout << "  --calibration_file FILE     Override calibration file" << endl;
-      cout << "  --Strip_map FILE            Override Strip map" << endl;
-      cout << "  --output_prefix NAME        Override output file prefix" << endl;
-      cout << endl;
-      cout << "  --min_entries N              Minimum histogram entries" << endl;
-      cout << "  --noise_search_max_ADC N     Max ADC for noise search" << endl;
-      cout << "  --fallback_threshold_keV N   Default threshold if fit fails" << endl;
-      cout << "  --fast_fallback_threshold_keV N   Fast fallback threshold (keV)" << endl;
 
-	  cout << "  --help                       Show this message" << endl;
+      cout << "Options:" << endl;
+
+      cout << "Input/Output overrides:" << endl;
+      cout << "  --data_file FILE                 Add input data file" << endl;
+      cout << "  --calibration_file FILE          Override calibration file" << endl;
+      cout << "  --Strip_map FILE                 Override Strip map" << endl;
+      cout << "  --output_prefix NAME             Override output file prefix" << endl;
       cout << endl;
+
+      cout << "  --min_entries N                  Minimum histogram entries" << endl;
+      cout << "  --noise_search_max_keV N         Max energy for noise search (keV)" << endl;
+      cout << "  --fallback_threshold_keV N       Default threshold if fit fails" << endl;
+      cout << "  --fast_fallback_threshold_keV N  Fast fallback threshold (keV)" << endl;
+      cout << "  --max_events N                   Maximum number of events to process" << endl;
+      cout << "  --help                           Show this message" << endl;
+      cout << endl;
+
       exit(0);
 
     default:
@@ -421,12 +482,16 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     }
   }
 
+  // -------------------------------------------------------------
+  // Apply command line analysis overrides
+  // -------------------------------------------------------------
+
   if (cmd_min_entries >= 0) {
     m_MinEntries = cmd_min_entries;
   }
 
-  if (cmd_noise_search_max_ADC >= 0) {
-    m_NoiseSearchMaxADC = cmd_noise_search_max_ADC;
+  if (cmd_noise_search_max_keV >= 0) {
+    m_NoiseSearchMaxKeV = cmd_noise_search_max_keV;
   }
 
   if (cmd_fallback_threshold_keV >= 0) {
@@ -437,11 +502,9 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     m_FastFallbackThreshold = cmd_fast_fallback_threshold_keV;
   }
 
-
   // -------------------------------------------------------------
-  // Apply command line overrides for input/output
+  // Apply command line input/output overrides
   // -------------------------------------------------------------
-
 
   if (cmd_calibration_file != "") {
     m_CalibrationFile = cmd_calibration_file;
@@ -455,47 +518,78 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     m_OutputPrefix = cmd_output_prefix;
   }
 
+  // -------------------------------------------------------------
+  // Load energy calibration
+  //
+  // Do this AFTER command line overrides so that an overridden
+  // calibration filename is actually the calibration we load.
+  // -------------------------------------------------------------
+
+  if (m_EnergyCalibration.ReadEnergyCalibrationFile(m_CalibrationFile) == false) {
+    cout << "Failed to load calibration file: "
+         << m_CalibrationFile << endl;
+    return false;
+  }
+
+  // -------------------------------------------------------------
   // Determine output directory from first data file
+  // -------------------------------------------------------------
+
   fs::path dataPath(m_InputFiles.back());
   fs::path outputDir = dataPath.parent_path();
 
-  // Resolve m_OutputPrefix path
   fs::path outPath(m_OutputPrefix.Data());
 
   if (!outPath.is_absolute()) {
     m_OutputPrefix = (outputDir / outPath).string();
   }
 
-  // Debug print
-  cout << "Resolved output prefix: " << m_OutputPrefix << endl;
-
+  cout << "Resolved output prefix: "
+       << m_OutputPrefix << endl;
 
   // -------------------------------------------------------------
-  // Save configuration to log file
+  // Print active configuration
   // -------------------------------------------------------------
 
   cout << endl;
-  cout << "  calibration_file:        " << m_CalibrationFile.Data() << endl;
-  cout << "  Strip_map:               " << m_StripMapFile << endl;
-  cout << "  output_prefix:           " << m_OutputPrefix << endl;
+
+  cout << "  calibration_file:        "
+       << m_CalibrationFile.Data() << endl;
+
+  cout << "  Strip_map:               "
+       << m_StripMapFile << endl;
+
+  cout << "  output_prefix:           "
+       << m_OutputPrefix << endl;
 
   cout << "  data_files:" << endl;
+
   for (auto& f : m_InputFiles) {
     cout << "    " << f << endl;
   }
 
   cout << endl;
   cout << "Active analysis configuration:" << endl;
-  cout << "  detector_id:            " << m_DetectorID << endl;
-  cout << "  min_entries:            " << m_MinEntries << endl;
-  cout << "  fallback_threshold_keV: " << m_FallbackThreshold << endl;
-  cout << "  fast_fallback_threshold_keV: " << m_FastFallbackThreshold << endl;
-  cout << "  NoiseSearchMaxADC:      " << m_NoiseSearchMaxADC << endl;
-  cout << "  histogram_bins:         " << m_HistogramBins << endl;
-  cout << "  histogram_max_ADC:      " << m_HistogramMaxADC << endl;
-  cout << endl;
 
- 
+  cout << "  min_entries:              "
+       << m_MinEntries << endl;
+
+  cout << "  fallback_threshold_keV:   "
+       << m_FallbackThreshold << endl;
+
+  cout << "  fast_fallback_threshold_keV: "
+       << m_FastFallbackThreshold << endl;
+
+  cout << "  noise_search_max_keV:     "
+       << m_NoiseSearchMaxKeV << endl;
+
+  cout << "  histogram_bins:           "
+       << m_HistogramBins << endl;
+
+  cout << "  histogram_max_ADC:        "
+       << m_HistogramMaxADC << endl;
+
+  cout << endl;
 
   return true;
 }
@@ -591,7 +685,7 @@ bool MStripThresholdFinder::BuildHistograms()
 
 
       int NStrips = Event->GetNStripHits();
-	  
+
 	  // -------------------------------------------------------------
       // TEMPORARY DIAGNOSTIC:
       // Identify and print events containing unexpected detector IDs.
@@ -642,13 +736,13 @@ bool MStripThresholdFinder::BuildHistograms()
         if (!PassHitSelection(SH)) {
           continue;
         }
-		
+
 
         // Process only the detector selected in the configuration.
         if (SH->GetDetectorID() != m_DetectorID) {
           continue;
         }
-			
+
         double ADC = SH->GetADCUnits();
 
         MReadOutElementDoubleStrip R;
@@ -684,16 +778,16 @@ bool MStripThresholdFinder::BuildHistograms()
           timingCounts[R][ADC_bin] = { 0, 0 };
         }
 
-		
+
 		// Cache maximum calibrated energy once per strip
         if (ADC_to_keV_scale.find(R) == ADC_to_keV_scale.end()) {
-          
+
 		  /* cout << "CACHE calibration request: Det "
                << R.GetDetectorID()
                << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
                << " Strip " << R.GetStripID()
                << endl; */
-		  
+
 		  ADC_to_keV_scale[R] =
             m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
         }
@@ -834,11 +928,11 @@ void MStripThresholdFinder::FindSlowThresholds()
     if (hist->GetEntries() < m_MinEntries) {
 
       thresholds[R] = m_FallbackThreshold;
-	  
+
 	  // Mark the ADC value as invalide since we cannot easily convert back from
 	  // the fallback keV value to ADC bins
       thresholdsADC[R] = -1.0;
-	  
+
 	  // If a fallback threshold is used for a slow threshold channel we print a warning
       cout << "WARNING: SLOW threshold could not be determined for Det "
            << R.GetDetectorID()
@@ -853,10 +947,18 @@ void MStripThresholdFinder::FindSlowThresholds()
       continue;
     }
 
-    //hist->Smooth(3);
+    hist->Smooth(3);
 
-    int maxSearchBin = hist->FindBin(m_NoiseSearchMaxADC);
-    
+    //int maxSearchBin = hist->FindBin(m_NoiseSearchMaxADC);
+
+	double maxSearchADC =
+      m_EnergyCalibration.GetADC(R, m_NoiseSearchMaxKeV);
+
+    int maxSearchBin = hist->FindBin(maxSearchADC);
+
+    // Keep the search inside the histogram
+    maxSearchBin = min(maxSearchBin, hist->GetNbinsX());
+
 	//--------------------------------------------------------------
 	// Original slow threshold algorithm
 	//--------------------------------------------------------------
@@ -879,7 +981,7 @@ void MStripThresholdFinder::FindSlowThresholds()
            << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
            << " Strip " << R.GetStripID()
            << ": no valid noise distribution found below "
-           << m_NoiseSearchMaxADC << " ADC. "
+           << m_NoiseSearchMaxKeV << " keV. "
            << "Using fallback threshold = "
            << m_FallbackThreshold << " keV."
            << endl;
@@ -896,7 +998,7 @@ void MStripThresholdFinder::FindSlowThresholds()
     for (int b = startBin + 1; b <= maxSearchBin; b++) {
 
       double c = hist->GetBinContent(b);
-	  
+
 	  /* if (R.GetStripID() == 64 && !R.IsLowVoltageStrip()) {
         cout << "GR PEAK SEARCH:"
              << " bin=" << b
@@ -939,16 +1041,21 @@ void MStripThresholdFinder::FindSlowThresholds()
          << " peakADC=" << hist->GetBinCenter(peakBin)
          << " peakCounts=" << peakCounts
          << endl */;
-	
-	
-	
+
+
+
     // -------------------------------------------------------------
     // Detect pedestal-like noise distributions
     //
     // Some noisy channels do not have a well-defined noise peak.
-    // Instead, they rise sharply from ~0 counts into a broad
-    // pedestal. For these channels, use the top of the leading edge
-    // rather than searching for a trough after the "peak".
+    // Instead, they rise sharply from ~0 counts into a broad, flat
+    // pedestal. A pedestal-like spectrum must therefore show both:
+    //
+    //   1. A rapid rise to near the maximum noise height
+    //   2. A sustained flat top for several bins
+    //
+    // This prevents conventional noise peaks with a sharp leading
+    // edge and a falling tail from being misidentified as pedestals.
     // -------------------------------------------------------------
 
     bool pedestalLike = false;
@@ -959,15 +1066,106 @@ void MStripThresholdFinder::FindSlowThresholds()
     int pedestalEndBin =
       min(startBin + pedestalLookAheadBins, maxSearchBin);
 
-    // If the spectrum reaches most of the measured noise height
-    // treat it as a pedestal-like leading edge.
+    // Number of consecutive bins required to establish a flat top
+    const int pedestalPlateauBins = 6;
+
+    // Maximum allowed variation from the first plateau bin
+    const double pedestalFlatTolerance = 0.10;  // +/- 10%
+
+	const int pedestalTailCheckBins = 3;
+    const double pedestalTailMinFraction = 0.85;
+
+    // Search for a rapid rise to near the measured noise height
     for (int b = startBin; b <= pedestalEndBin; ++b) {
 
-      if (hist->GetBinContent(b) >= 0.80 * peakCounts && b - startBin <= 4) {
-        
+      if (hist->GetBinContent(b) >= 0.80 * peakCounts &&
+          b - startBin <= 4) {
+
+        // ---------------------------------------------------------
+        // We have found a rapid rise. Now determine whether the
+        // spectrum remains approximately flat for several bins.
+        // ---------------------------------------------------------
+
+        bool flatTop = true;
+        double plateauReference = hist->GetBinContent(b);
+
+        int plateauEndBin =
+          min(b + pedestalPlateauBins - 1, maxSearchBin);
+
+        // Require the full number of plateau bins to be available
+        if (plateauEndBin - b + 1 < pedestalPlateauBins) {
+          flatTop = false;
+        }
+
+        if (flatTop) {
+
+          for (int p = b; p <= plateauEndBin; ++p) {
+
+            double counts = hist->GetBinContent(p);
+
+            double lowerLimit =
+              plateauReference * (1.0 - pedestalFlatTolerance);
+
+            double upperLimit =
+              plateauReference * (1.0 + pedestalFlatTolerance);
+
+            if (counts < lowerLimit || counts > upperLimit) {
+              flatTop = false;
+              break;
+            }
+          }
+        }
+
+        // A rapid rise alone is not sufficient. If the spectrum
+        // does not remain flat, treat it as a conventional peak.
+
+		// ---------------------------------------------------------
+        // A broad conventional peak can appear approximately flat
+        // for several bins near its maximum. A true pedestal should
+        // remain high after the candidate flat region rather than
+        // immediately entering a sustained falling tail.
+        // ---------------------------------------------------------
+
+        if (flatTop) {
+
+          int tailEndBin =
+            min(plateauEndBin + pedestalTailCheckBins, maxSearchBin);
+
+          // Require enough bins beyond the candidate plateau to
+          // determine whether the spectrum remains pedestal-like.
+          if (tailEndBin - plateauEndBin < pedestalTailCheckBins) {
+            flatTop = false;
+          } else {
+
+            for (int p = plateauEndBin + 1; p <= tailEndBin; ++p) {
+
+              double counts = hist->GetBinContent(p);
+
+              if (counts < pedestalTailMinFraction * plateauReference) {
+                flatTop = false;
+                break;
+              }
+            }
+          }
+        }
+
+        if (!flatTop) {
+          continue;
+        }
+
+
+        if (!flatTop) {
+          continue;
+        }
+
+        // ---------------------------------------------------------
+        // Rapid rise + sustained flat top:
+        // classify this channel as pedestal-like.
+        // ---------------------------------------------------------
+
         pedestalLike = true;
-		
-		// Continue forward from the upper part of the rising edge
+
+        // Continue forward from the upper part of the rising edge
         // and find where the spectrum stops increasing significantly.
         // Put the threshold one bin beyond that point.
         for (int p = b; p < pedestalEndBin; ++p) {
@@ -978,11 +1176,18 @@ void MStripThresholdFinder::FindSlowThresholds()
           // The leading edge has reached the plateau when the next
           // bin is no more than 5% higher than the current bin.
           if (next <= current * 1.05) {
-            pedestalThresholdBin = p + 1;
-		
+            // The leading edge has reached the plateau.
+            // Move the threshold a few bins farther into the plateau
+            // to provide margin above the rising noise edge.
+            const int pedestalThresholdOffsetBins = 2;
+
+            pedestalThresholdBin =
+              min(p + 1 + pedestalThresholdOffsetBins, maxSearchBin);
+
             break;
           }
         }
+
         // Safety fallback: if no flattening point was found within
         // the look-ahead region, use the end of that region.
         if (pedestalThresholdBin < 0) {
@@ -990,46 +1195,9 @@ void MStripThresholdFinder::FindSlowThresholds()
         }
 
         break;
-	  }
-    }
-
-    int thresholdBin = peakBin;
-    // For pedestal-like spectra, use the top of the sharp leading edge
-
-	if (pedestalLike) {	
-	  // Pedestal-like noise:
-      // use the top of the sharp leading edge.
-      // Applies to both normal strips and guard-rings
-      thresholdBin = pedestalThresholdBin;
-  
-	
-    } else if (R.GetStripID() == 64) {
-		
-	  // Guard ring with a conventional noise peak:
-      // find where the falling edge reaches 50% of peak height.	
-      for (int b = peakBin + 1; b <= maxSearchBin; b++) {
-        if (hist->GetBinContent(b) <= peakCounts * 0.5) {
-          thresholdBin = b;
-          break;
-        }
-      }
-    } else {
-      
-	  // Normal strip with a conventional noise peak:
-      // find the trough to the right of the noise peak.
-	  for (int b = peakBin + 1; b <= maxSearchBin; b++) {
-        double c = hist->GetBinContent(b);
-
-        if (c < hist->GetBinContent(thresholdBin)) {
-          thresholdBin = b;
-        }
-
-        if (b > peakBin && c > peakCounts * 0.5) {
-          break;
-        }
       }
     }
- 
+
     /*
     // Print the GR result to the terminal for debugging
     if (R.GetStripID() == 64) {
@@ -1044,35 +1212,80 @@ void MStripThresholdFinder::FindSlowThresholds()
     } */
 
     // -------------------------------------------------------------
-    // Shift threshold slightly to the right of the noise trough
-    // This prevents thresholds from sitting inside the noise tail
+    // Determine the slow threshold
     // -------------------------------------------------------------
 
-    //int shiftBins = 2; // move threshold up by a couple of bins
-    //thresholdBin = min(thresholdBin + shiftBins, hist->GetNbinsX());
-    if (!pedestalLike) {
-      int shiftBins = 2;
-      thresholdBin = min(thresholdBin + shiftBins, hist->GetNbinsX());
+    int thresholdBin = peakBin;
+
+    if (pedestalLike) {
+
+      // Pedestal-like distribution:
+      // pedestalThresholdBin already includes the offset that moves
+      // the threshold a few bins into the flat top.
+      thresholdBin = pedestalThresholdBin;
+
+    } else if (R.GetStripID() == 64) {
+
+      // -----------------------------------------------------------
+      // Guard ring:
+      // Find the first bin on the falling side of the noise peak
+      // where the counts have dropped to 50% of the peak height.
+      // -----------------------------------------------------------
+
+      for (int b = peakBin + 1; b <= maxSearchBin; ++b) {
+
+        if (hist->GetBinContent(b) <= 0.50 * peakCounts) {
+          thresholdBin = b;
+          break;
+        }
+      }
+
+    } else {
+
+      // -----------------------------------------------------------
+      // Normal central strip:
+      // Search for the trough to the right of the noise peak.
+      //
+      // Keep track of the lowest bin while moving away from the
+      // noise peak. Stop once the spectrum begins rising into the
+      // physical-event distribution.
+      // -----------------------------------------------------------
+
+      double minCounts = hist->GetBinContent(peakBin);
+
+      for (int b = peakBin + 1; b <= maxSearchBin; ++b) {
+
+        double counts = hist->GetBinContent(b);
+
+        if (counts < minCounts) {
+          minCounts = counts;
+          thresholdBin = b;
+        }
+
+        // Once the spectrum has risen substantially again, we have
+        // passed the trough and should stop searching.
+        if (counts >= 0.50 * peakCounts) {
+          break;
+        }
+      }
     }
-	
-	/* if (R.GetStripID() == 64) {
-      cout << "GR AFTER SHIFT:"
-           << " thresholdADC=" << hist->GetBinCenter(thresholdBin)
-           << endl;
-    } */
-	
-	
-	/* if (pedestalLike) {
-      cout << "Pedestal-like noise: Det "
-           << R.GetDetectorID()
-           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
-           << " Strip " << R.GetStripID()
-           << " startADC=" << hist->GetBinCenter(startBin)
-           << " edgeADC=" << hist->GetBinCenter(pedestalThresholdBin)
-           << " peakADC=" << hist->GetBinCenter(peakBin)
-           << endl;
-    } */
-	
+
+
+    // -------------------------------------------------------------
+    // Shift conventional thresholds slightly to the right
+    //
+    // Pedestal thresholds are NOT shifted here because the pedestal
+    // logic above already moves them a few bins into the flat top.
+    // -------------------------------------------------------------
+
+    if (!pedestalLike) {
+      const int shiftBins = 2;
+      thresholdBin =
+        min(thresholdBin + shiftBins, hist->GetNbinsX());
+    }
+
+
+
     double thresholdADC = hist->GetBinCenter(thresholdBin);
 
 /*     cout << "SLOW calibration request: Det "
@@ -1149,7 +1362,7 @@ void MStripThresholdFinder::FindFastThresholds()
       totalDt1Counts += n1;
       totalCounts += n0 + n1;
     }
-    
+
 	double dt1Fraction = 0.0;
 
     if (totalCounts > 0) {
@@ -1157,7 +1370,7 @@ void MStripThresholdFinder::FindFastThresholds()
         static_cast<double>(totalDt1Counts) /
         static_cast<double>(totalCounts);
     }
-	
+
 
     // -------------------------------------------------------------
     // FAST threshold fallback
@@ -1215,7 +1428,7 @@ void MStripThresholdFinder::FindFastThresholds()
 
       continue;
     }
-	
+
 	// Print out every fast timing population fraction
 	/* cout << "FAST timing populations: Det "
          << R.GetDetectorID()
@@ -1340,7 +1553,7 @@ void MStripThresholdFinder::FindFastThresholds()
     }
 
     m_FastThresholdsADC[R] = fast_thresh_ADC;
-	
+
 	// TEMPORARY DIAGNOSTIC:
     // Print the channel immediately before attempting energy calibration
 /*     cout << "FAST calibration request: Det "
@@ -1426,7 +1639,7 @@ void MStripThresholdFinder::WriteCSV()
 
 
   // -------------------------------------------------------------
-  // Write Fast CSV threshold tables 
+  // Write Fast CSV threshold tables
   // -------------------------------------------------------------
 
   // --- FAST CSV ---

@@ -58,7 +58,7 @@ jobs:
             root=6.32 geant4=11.2 healpix_cxx
             pkg-config make cmake cxx-compiler ccache
 
-            ccfits=2.6 cfitsio=4.3 hdf5=1.14 yaml-cpp=0.8 gcovr
+            ccfits=2.6 cfitsio=4.3 hdf5=1.14 gcovr
           cache-environment: true
           cache-environment-key: micromamba-${{ runner.os }}-root6.32-geant4.11.2-ccfits2.6-cfitsio4.3-hdf5.1.14
 
