@@ -66,7 +66,7 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
   m_Name = "Trapping Correction"; // - correcting energies for charge trapping (by Sophie);
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "XmlTagTrappingCorrection";
+  m_XmlTag = "TrappingCorrection";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
@@ -376,7 +376,7 @@ double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, d
   
   double cce_base_e = Interpolate(depth_val, m_Depths, sim_cce_sorted_e);
   double cce_base_h = Interpolate(depth_val, m_Depths, sim_cce_sorted_h);
-  
+  paramA=1.0;
 
   // Evaluate the physical trapping function model using class global popt variables
   double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
