@@ -120,6 +120,10 @@ void MGUIExpoTrappingCorrection::Create()
 
   m_Mutex.Lock();
 
+  double eMin = 600;
+  double eMax = 700;
+  double nBins = 1000;
+
   // Create labels and buttons on GUI
   // Top frame
   TGHorizontalFrame* ControlFrame = new TGHorizontalFrame(this, 800, 30);
@@ -128,21 +132,21 @@ void MGUIExpoTrappingCorrection::Create()
   TGLabel* LabelBins = new TGLabel(ControlFrame, "Bins:");
   ControlFrame->AddFrame(LabelBins, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
 
-  m_EntryNBins = new TGNumberEntry(ControlFrame, 200, 5, -1, TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive);
+  m_EntryNBins = new TGNumberEntry(ControlFrame, nBins, 5, -1, TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive);
   ControlFrame->AddFrame(m_EntryNBins, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
   // Min Energy entry
   TGLabel* LabelMin = new TGLabel(ControlFrame, "Min Energy [keV]:");
   ControlFrame->AddFrame(LabelMin, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
 
-  m_EntryMinEnergy = new TGNumberEntry(ControlFrame, 0, 6, -1, TGNumberFormat::kNESRealOne);
+  m_EntryMinEnergy = new TGNumberEntry(ControlFrame, eMin, 6, -1, TGNumberFormat::kNESRealOne);
   ControlFrame->AddFrame(m_EntryMinEnergy, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
   // Max Energy entry
   TGLabel* LabelMax = new TGLabel(ControlFrame, "Max Energy [keV]:");
   ControlFrame->AddFrame(LabelMax, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
 
-  m_EntryMaxEnergy = new TGNumberEntry(ControlFrame, 1000, 6, -1, TGNumberFormat::kNESRealOne);
+  m_EntryMaxEnergy = new TGNumberEntry(ControlFrame, eMax, 6, -1, TGNumberFormat::kNESRealOne);
   ControlFrame->AddFrame(m_EntryMaxEnergy, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
   // Log Y Checkbox
