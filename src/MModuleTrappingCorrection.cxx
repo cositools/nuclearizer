@@ -269,7 +269,7 @@ void MModuleTrappingCorrection::Finalize()
 
     double directFWHM = CalculateDirectFWHM(hist);
 
-    TF1* fitFunc = GeneratePhotopeakFunction();
+    TF1* fitFunc = GeneratePhotopeakFunction(hist);
     fitFunc->SetParameter("Amplitude", hist->GetBinContent(hist->GetMaximumBin()));
     hist->Fit(fitFunc, "RQ");
 
@@ -279,14 +279,21 @@ void MModuleTrappingCorrection::Finalize()
     cout << "\n" << m_XmlTag << " --- " << titleLabel << " ---" << endl;
     cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
     cout << "  Fitted Gaussian FWHM : " << fwhm << " keV" << endl;
-    cout << "  Direct Histogram FWHM: " << directFWHM << " keV" << endl;
+    cout << "  Direct Histogram FWHM: " << directFWHM << " keV" << std::endl;
 
     delete fitFunc;
     return std::make_pair(mu, fwhm);
   };
+
+  // --- EXECUTE FITS AND PRINT OUTPUT ---
+  std::pair<double, double> lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
+  std::pair<double, double> lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
+
+  std::pair<double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
+  std::pair<double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
+
   return; 
 }
-
 /////////////////////////////////////////////////////////////////////////////////
 
 
