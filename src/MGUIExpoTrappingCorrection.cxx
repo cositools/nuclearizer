@@ -51,8 +51,13 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
 {
   m_TabTitle = "Trapping Correction";
 
+  double eMin = 600;
+  double eMax = 700;
+  double nBins = 1000;
+
+
   // LV Histograms
-  m_EnergyLVInitial = new TH1D("EnergyLVInitial", "LV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
+  m_EnergyLVInitial = new TH1D("EnergyLVInitial", "LV Spectrum (Uncorrected vs Corrected)", nBins, eMin, eMax);
   m_EnergyLVInitial->SetXTitle("Energy [keV]");
   m_EnergyLVInitial->SetYTitle("Counts");
   m_EnergyLVInitial->GetYaxis()->SetNoExponent(kTRUE);
@@ -60,7 +65,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EnergyLVInitial->SetLineWidth(2);
   m_EnergyLVInitial->SetLineStyle(2);
 
-  m_EnergyLVFinal = new TH1D("EnergyLVFinal", "LV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
+  m_EnergyLVFinal = new TH1D("EnergyLVFinal", "LV Spectrum (Uncorrected vs Corrected)", nBins, eMin, eMax);
   m_EnergyLVFinal->SetXTitle("Energy [keV]");
   m_EnergyLVFinal->SetYTitle("Counts");
   m_EnergyLVFinal->GetYaxis()->SetNoExponent(kTRUE);
@@ -69,7 +74,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EnergyLVFinal->SetFillColorAlpha(kAzure-9, 0.35);
 
   // HV Histograms
-  m_EnergyHVInitial = new TH1D("EnergyHVInitial", "HV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
+  m_EnergyHVInitial = new TH1D("EnergyHVInitial", "HV Spectrum (Uncorrected vs Corrected)", nBins, eMin, eMax);
   m_EnergyHVInitial->SetXTitle("Energy [keV]");
   m_EnergyHVInitial->SetYTitle("Counts");
   m_EnergyHVInitial->GetYaxis()->SetNoExponent(kTRUE);
@@ -77,7 +82,7 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
   m_EnergyHVInitial->SetLineWidth(2);
   m_EnergyHVInitial->SetLineStyle(2);
 
-  m_EnergyHVFinal = new TH1D("EnergyHVFinal", "HV Spectrum (Uncorrected vs Corrected)", 200, 620, 700);
+  m_EnergyHVFinal = new TH1D("EnergyHVFinal", "HV Spectrum (Uncorrected vs Corrected)", nBins, eMin, eMax);
   m_EnergyHVFinal->SetXTitle("Energy [keV]");
   m_EnergyHVFinal->SetYTitle("Counts");
   m_EnergyHVFinal->GetYaxis()->SetNoExponent(kTRUE);

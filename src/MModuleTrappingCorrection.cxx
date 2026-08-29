@@ -269,7 +269,7 @@ void MModuleTrappingCorrection::Finalize()
 
     double directFWHM = CalculateDirectFWHM(hist);
 
-    TF1* fitFunc = GeneratePhotopeakFunction(hist);
+    TF1* fitFunc = GeneratePhotopeakFunction();
     fitFunc->SetParameter("Amplitude", hist->GetBinContent(hist->GetMaximumBin()));
     hist->Fit(fitFunc, "RQ");
 
