@@ -201,7 +201,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
           }
       
           // --- 2. CALCULATE CORRECTION ---
-          double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamA_LV, m_ParamB, m_ParamC);
+          double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h,  m_ParamB, m_ParamC);
           LVSH->SetEnergy(correctedLVEnergy);    
       
           // --- 3. FILL CORRECTED (FINAL) ---
@@ -220,7 +220,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
             }
 
             // 2. Compute trapping correction
-            double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV_e, m_CCEs_HV_h, m_ParamA_HV, m_ParamB, m_ParamC);
+            double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV_e, m_CCEs_HV_h,  m_ParamB, m_ParamC);
             HVSH->SetEnergy(correctedHVEnergy);    
 
             // 3. Record CORRECTED (final) HV energy to expo spectrum
@@ -370,7 +370,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramA, double paramB, double paramC) {
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC) {
 
   // Look up the simulation CCE baseline using the interpolate function
   
@@ -379,7 +379,7 @@ double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, d
   paramA=1.0;
 
   // Evaluate the physical trapping function model using class global popt variables
-  double expected_centroid_scaled = paramA * (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
+  double expected_centroid_scaled =  (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
 
   // Prevent division-by-zero or non-physical negative values
   if (expected_centroid_scaled <= 0.0) {
