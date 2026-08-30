@@ -260,11 +260,46 @@ void MModuleTrappingCorrection::Finalize()
   TH1D* histHVInit  = m_ExpoSpectrum->GetEnergyHistogramHVInitial();
   TH1D* histHVFinal = m_ExpoSpectrum->GetEnergyHistogramHVFinal();
 
-  // Helper lambda to perform fit, output results, and return {mu, fwhm}
-  auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::pair<double, double> {
+  // Helper lambda to calculate FWHM directly from the full continuous TF1 function curve
+  auto CalculateFunctionFWHM = [](TF1* func, double xMin, double xMax, double step = 0.01) -> double {
+    if (func == nullptr) return 0.0;
+
+    double xPeak = func->GetMaximumX(xMin, xMax);
+    double yPeak = func->Eval(xPeak);
+    double halfMax = yPeak / 2.0;
+
+    // Search left for half-max crossing point
+    double xLeft = xPeak;
+    for (double x = xPeak; x >= xMin; x -= step) {
+      if (func->Eval(x) <= halfMax) {
+        // Refine with linear interpolation between step bounds
+        double x1 = x, y1 = func->Eval(x1);
+        double x2 = x + step, y2 = func->Eval(x2);
+        xLeft = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x1;
+        break;
+      }
+    }
+
+    // Search right for half-max crossing point
+    double xRight = xPeak;
+    for (double x = xPeak; x <= xMax; x += step) {
+      if (func->Eval(x) <= halfMax) {
+        // Refine with linear interpolation between step bounds
+        double x1 = x - step, y1 = func->Eval(x1);
+        double x2 = x, y2 = func->Eval(x2);
+        xRight = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x2;
+        break;
+      }
+    }
+
+    return (xRight > xLeft) ? (xRight - xLeft) : 0.0;
+  };
+
+  // Helper lambda to perform fit, output results, and return {mu, gauss_fwhm, full_fit_fwhm, direct_fwhm}
+  auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::tuple<double, double, double, double> {
     if (hist == nullptr || hist->GetEntries() <= 0) {
       cout << "WARNING: " << titleLabel << " histogram is null or has 0 entries." << endl;
-      return std::make_pair(0.0, 0.0);
+      return std::make_tuple(0.0, 0.0, 0.0, 0.0);
     }
 
     double directFWHM = CalculateDirectFWHM(hist);
@@ -273,24 +308,45 @@ void MModuleTrappingCorrection::Finalize()
     fitFunc->SetParameter("Amplitude", hist->GetBinContent(hist->GetMaximumBin()));
     hist->Fit(fitFunc, "RQ");
 
-    double mu   = fitFunc->GetParameter("x0 (Mu)");
-    double fwhm = 2.35482 * fitFunc->GetParameter("Sigma Gauss");
+    double mu         = fitFunc->GetParameter("x0 (Mu)");
+    double gaussFWHM  = 2.35482 * fitFunc->GetParameter("Sigma Gauss");
+    
+    // Evaluate full function FWHM over the fit window (645 keV to 675 keV)
+    double xMinFit = 645.0;
+    double xMaxFit = 675.0;
+    fitFunc->GetRange(xMinFit, xMaxFit);
+    double fullFitFWHM = CalculateFunctionFWHM(fitFunc, xMinFit, xMaxFit);
 
     cout << "\n" << m_XmlTag << " --- " << titleLabel << " ---" << endl;
     cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
-    cout << "  Fitted Gaussian FWHM : " << fwhm << " keV" << endl;
-    cout << "  Direct Histogram FWHM: " << directFWHM << " keV" << std::endl;
+    cout << "  Fitted Gaussian FWHM : " << gaussFWHM << " keV" << endl;
+    cout << "  Full Fit Function FWHM: " << fullFitFWHM << " keV" << endl;
+    cout << "  Direct Histogram FWHM: " << directFWHM << " keV" << endl;
 
     delete fitFunc;
-    return std::make_pair(mu, fwhm);
+    return std::make_tuple(mu, gaussFWHM, fullFitFWHM, directFWHM);
   };
+  
+  // --- Fit Uncorrected and Corrected Spectra ---
+  auto lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
+  auto lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
 
-  // --- EXECUTE FITS AND PRINT OUTPUT ---
-  std::pair<double, double> lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
-  std::pair<double, double> lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
+  auto hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
+  auto hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
 
-  std::pair<double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
-  std::pair<double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
+  // Summary Comparison Output
+  cout << "\n==========================================================================================" << endl;
+  cout << "                                SUMMARY COMPARISON                                         " << endl;
+  cout << "==========================================================================================" << endl;
+  cout << " LV Side: " << endl;
+  cout << "   Raw Centroid: " << std::get<0>(lv_raw)  << " keV | Corrected Centroid: " << std::get<0>(lv_corr)  << " keV" << endl;
+  cout << "   Raw Gaussian FWHM: " << std::get<1>(lv_raw) << " keV | Corrected Gaussian FWHM: " << std::get<1>(lv_corr) << " keV" << endl;
+  cout << "   Raw Full Fit FWHM: " << std::get<2>(lv_raw) << " keV | Corrected Full Fit FWHM: " << std::get<2>(lv_corr) << " keV" << endl;
+  cout << " HV Side: " << endl;
+  cout << "   Raw Centroid: " << std::get<0>(hv_raw)  << " keV | Corrected Centroid: " << std::get<0>(hv_corr)  << " keV" << endl;
+  cout << "   Raw Gaussian FWHM: " << std::get<1>(hv_raw) << " keV | Corrected Gaussian FWHM: " << std::get<1>(hv_corr) << " keV" << endl;
+  cout << "   Raw Full Fit FWHM: " << std::get<2>(hv_raw) << " keV | Corrected Full Fit FWHM: " << std::get<2>(hv_corr) << " keV" << endl;
+  cout << "==========================================================================================\n" << endl;
 
   return; 
 }
