@@ -79,6 +79,11 @@ MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS(MString XmlTag, int O
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventSaver);
 
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
+
+  // Allow multiple savers per sequence
+  SetTypeExclusive(false);
+
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
 
@@ -125,11 +130,6 @@ bool MModuleSaverMeasurementsFITS::Initialize()
 
   // If output data level is 0, call the external m_L1aWriter
   if (m_OutputDataLevel == 0) {
-    // L1b need strip pairing which is not a requirement for L1a.
-    m_PreceedingModules.clear();
-    m_PreceedingModulesHardRequirement.clear();
-    AddPreceedingModuleType(MAssembly::c_EventLoader);
-
     if (m_L1aWriter.Create(m_FileName) == false) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to create L1a FITS file."<<endl;
       return false;
@@ -152,12 +152,18 @@ bool MModuleSaverMeasurementsFITS::Initialize()
 
 void MModuleSaverMeasurementsFITS::ConfigurePreceedingModules()
 {
-  m_PreceedingModules.clear();
-  m_PreceedingModulesHardRequirement.clear();
+  // Start from a clean list
+  ClearPreceedingModuleTypes();
 
-  AddPreceedingModuleType(MAssembly::c_EventLoader);
-  if (m_OutputDataLevel != 0) {
+  // The L1a saver should only be shown right after the measurement loader
+  if (m_OutputDataLevel == 0) {
+    AddPreceedingModuleType(MAssembly::c_EventLoaderMeasurement, true, true);
+  } else if (m_OutputDataLevel == 1 || m_OutputDataLevel == 2) {
+    // For L1b and L2, the saver requires event loader, strip pairing, depth calibration, and event reconstruction
+    AddPreceedingModuleType(MAssembly::c_EventLoader);
     AddPreceedingModuleType(MAssembly::c_StripPairing);
+    AddPreceedingModuleType(MAssembly::c_DepthCorrection);
+    AddPreceedingModuleType(MAssembly::c_EventReconstruction);
   }
 }
 
@@ -692,20 +698,6 @@ bool MModuleSaverMeasurementsFITS::ReadXmlConfiguration(MXmlNode* Node)
   if (FileNameNode != nullptr) {
     m_FileName = FileNameNode->GetValue();
   }
-
-  MXmlNode* OutputLevelNode = Node->GetNode("OutputLevel");
-  if (OutputLevelNode != nullptr) {
-    MString Level = OutputLevelNode->GetValue();
-    if (Level == "L2" || Level == "l2") {
-      m_OutputDataLevel = 2;
-    } else if (Level == "L1a" || Level == "l1a") {
-      m_OutputDataLevel = 0;
-    } else {
-      m_OutputDataLevel = 1;
-    }
-  }
-  ConfigurePreceedingModules();
-
   return true;
 }
 
@@ -720,13 +712,6 @@ MXmlNode* MModuleSaverMeasurementsFITS::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
 
-  const char* lvl = "L1b";
-  switch (m_OutputDataLevel) {
-    case 0: lvl = "L1a"; break;
-    case 2: lvl = "L2";  break;
-    default: lvl = "L1b"; break;   // 1 = L1b
-  }
-  new MXmlNode(Node, "OutputLevel", lvl);
 
   return Node;
 }

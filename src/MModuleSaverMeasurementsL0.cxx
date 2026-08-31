@@ -65,11 +65,17 @@ MModuleSaverMeasurementsL0::MModuleSaverMeasurementsL0() : MModule()
   // Set the XML tag --- has to be unique --- no spaces allowed
   m_XmlTag = "XmlTagSaverMeasurementsL0";
 
-  // Set all modules, which have to be done before this module
+  // Set all modules, which have to be done before this module:
+  // The L0 saver writes simulated events into a binary file - requires an event loader and the detector effects engine module before it
+  // The DEE must be immediately before it
   AddPreceedingModuleType(MAssembly::c_EventLoader);
+  AddPreceedingModuleType(MAssembly::c_DetectorEffectsEngine, true, true);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventSaver);
+
+  // Allow multiple savers per sequence
+  SetTypeExclusive(false);
 
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;

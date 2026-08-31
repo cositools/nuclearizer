@@ -138,7 +138,6 @@ MAssembly::MAssembly()
   
   m_Supervisor->AddAvailableModule(new MModuleEventSaver());
   m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsL0());
-  m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS());
   m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS("XmlTagSaverMeasurementsFITSL1a", 0, "Save events to L1a FITS"));
   m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS("XmlTagSaverMeasurementsFITSL1b", 1, "Save events to L1b FITS"));
   m_Supervisor->AddAvailableModule(new MModuleSaverMeasurementsFITS("XmlTagSaverMeasurementsFITSL2", 2, "Save events to L2 FITS"));
