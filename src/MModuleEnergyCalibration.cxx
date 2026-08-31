@@ -70,7 +70,7 @@ MModuleEnergyCalibration::MModuleEnergyCalibration() : MModule()
   m_Name = "Energy calibrator";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "EnergyCalibration";
+  m_XmlTag = "XmlTagEnergyCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);

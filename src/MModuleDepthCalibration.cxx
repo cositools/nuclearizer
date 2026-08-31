@@ -59,7 +59,7 @@ MModuleDepthCalibration::MModuleDepthCalibration() : MModule()
   m_Name = "Depth Calibration"; // - Determining the depth of each event (by Sean);
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "DepthCalibration";
+  m_XmlTag = "XmlTagDepthCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
@@ -142,7 +142,7 @@ bool MModuleDepthCalibration::Initialize()
   }
 
   MSupervisor* S = MSupervisor::GetSupervisor();
-  m_EnergyCalibration = (MModuleEnergyCalibration*) S->GetAvailableModuleByXmlTag("EnergyCalibration");
+  m_EnergyCalibration = (MModuleEnergyCalibration*) S->GetAvailableModuleByXmlTag("XmlTagEnergyCalibration");
   if (m_EnergyCalibration == nullptr) {
     cout << "MModuleDepthCalibration: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
     return false;
