@@ -101,7 +101,9 @@ class MModuleEnergyCalibration : public MModule
   void SetNearestNeighborThreshold(double Threshold) { m_NearestNeighborThreshold = Threshold; }
   //! Get the threshold value for Nearest Neighbors
   double GetNearestNeighborThreshold() const { return m_NearestNeighborThreshold; }
- 
+
+  //! Get the threshold map
+  map<MReadOutElementDoubleStrip, double> GetHardwareThresholdMap() const { return m_HardwareThresholdMap; }
  
   //! Create the expos
   virtual void CreateExpos();
@@ -194,8 +196,10 @@ class MModuleEnergyCalibration : public MModule
   map<MReadOutElementDoubleStrip, TF1*> m_Calibration; // TF1* is a function to be applied
   //! Resolution Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
-  //! Temperature Calibration map between read-out element and fitted function
+  //! Map between read-out element and slow threshold for analysis purposes
   map<MReadOutElementDoubleStrip, double> m_ThresholdMap;
+  //! Map between read-out element and hardware thresholds on the slow shaper
+  map<MReadOutElementDoubleStrip, double> m_HardwareThresholdMap;
 
   //! Max value of the ADC units
   static constexpr double m_MaxADCRange = 16383;
