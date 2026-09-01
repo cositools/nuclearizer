@@ -27,7 +27,6 @@
 #include "MSubModuleStripTrigger.h"
 
 // Standard libs:
-#include <algorithm>
 #include <limits>
 
 // ROOT libs:
@@ -148,7 +147,7 @@ void MSubModuleStripTrigger::ApplyFastClearDeadtime(const MTime& ShieldVetoTime)
 
 double MSubModuleStripTrigger::CalculateASICDeadtime(vector<int> ASICChannels)
 {
-  // Calculate deadtime for GeD ASICs including nearest neighbor readout
+  // Calculate deadtime for GeD ASICs from the unique channels that were read out (including nearest neighbor)
 
   double deadtime = 0; // temporary deadtime variable
   int countUnique = 0; // temporary unique channel counter
@@ -159,27 +158,8 @@ double MSubModuleStripTrigger::CalculateASICDeadtime(vector<int> ASICChannels)
 
   unordered_set<int> ASICChannelsSet;
 
-  // Sort ASICChannels to process channels in ascending order
-  sort(ASICChannels.begin(), ASICChannels.end());
-
-  // Loop through each channel ID and add nearest neighbors
   for (int ID : ASICChannels) {
-    if (ID == 64) {
-      ASICChannelsSet.insert(ID);
-    } else if (ID == 0 || ID == 32) {
-      // Edge case: If ID is 0 or 32, add the channel and the next channel
-      ASICChannelsSet.insert(ID);
-      ASICChannelsSet.insert(ID + 1);
-    } else if (ID == 31 || ID == 63) {
-      // Edge case: If ID is 31 or 63, add the previous channel and the channel itself
-      ASICChannelsSet.insert(ID - 1);
-      ASICChannelsSet.insert(ID);
-    } else {
-      // General case: Add the previous channel, the channel itself, and the next channel
-      ASICChannelsSet.insert(ID - 1);
-      ASICChannelsSet.insert(ID);
-      ASICChannelsSet.insert(ID + 1);
-    }
+    ASICChannelsSet.insert(ID);
   }
 
   // Count the number of unique channels read out
@@ -189,60 +169,6 @@ double MSubModuleStripTrigger::CalculateASICDeadtime(vector<int> ASICChannels)
   deadtime = m_StripCoincidenceWindow + (m_ASICDeadTimePerChannel * countUnique) + m_StripDelayAfter;
 
   return deadtime;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MSubModuleStripTrigger::CountRate(vector<int> ASICChannels, vector<double> CountTime)
-{
-  // Helper function for getting count rate (including nearest neighbor)
-  
-  if (ASICChannels.empty()) {
-    return false;
-  }
-
-  unordered_set<int> ASICChannelsSet;
-  vector<double> CountTimeVec;
-
-  // Sort ASICChannels to process channels in ascending order
-  sort(ASICChannels.begin(), ASICChannels.end());
-
-  // Loop through each channel ID
-  for (size_t i = 0; i < ASICChannels.size(); i++) {
-    int ID = ASICChannels[i];
-    size_t temp_size = ASICChannelsSet.size();
-
-    if (ID == 64) {
-      // ASICChannelsSet.insert(ID);
-      continue; // Do not include GR hits in count rate calculation as it has its own readout and does not cause nearest neighbor readout
-    } else if (ID == 0 || ID == 32) {
-      ASICChannelsSet.insert(ID);
-      ASICChannelsSet.insert(ID + 1);
-    } else if (ID == 31 || ID == 63) {
-      ASICChannelsSet.insert(ID - 1);
-      ASICChannelsSet.insert(ID);
-    } else {
-      ASICChannelsSet.insert(ID - 1);
-      ASICChannelsSet.insert(ID);
-      ASICChannelsSet.insert(ID + 1);
-    }
-    
-    size_t new_size = ASICChannelsSet.size();
-    for (size_t j = 0; j < (new_size - temp_size); j++) {
-      CountTimeVec.push_back(CountTime[i]);
-    }
-  }
-
-  int h = 0;
-  for (int k : ASICChannelsSet) {
-    m_EventStripIDs.push_back(k);
-    m_EventStripTimes.push_back(CountTimeVec[h]);
-    h++;
-  }
-
-  return true;
 }
 
 
@@ -368,7 +294,6 @@ bool MSubModuleStripTrigger::ProcessStripHits(MReadOutAssembly* Event)
         if (!ASICFirstHitAfterDead) {
           for (int d = 0; d < nDets; d++) {
             for (int a = 0; a < nASICs; a++) {
-              CountRate(m_ASICHitStripID[d][a], m_TempEvtTimes[d][a]);
               m_ASICHitStripID_noDT[d][a].clear();
               m_ASICHitStripID[d][a].clear();
               m_TempEvtTimes[d][a].clear();
