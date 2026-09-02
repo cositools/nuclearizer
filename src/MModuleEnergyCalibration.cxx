@@ -284,7 +284,7 @@ double MModuleEnergyCalibration::GetEnergy(MReadOutElementDoubleStrip R, double 
       Energy = 0.0;
     }
   } else {
-    cout << m_Name << ": GetEnergy: Error unable to find calibration" << endl;
+    if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": GetEnergy: Error unable to find calibration" << endl;
     return 0;
   }
 
@@ -303,7 +303,7 @@ double MModuleEnergyCalibration::GetADC(MReadOutElementDoubleStrip R, double Ene
   if (Fit != nullptr) {
     return Fit->GetX(Energy);
   } else {
-    cout << m_Name << ": GetADC: Error unable to find calibration" << endl;
+    if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": GetADC: Error unable to find calibration" << endl;
     return 0;
   }
 }
@@ -638,12 +638,12 @@ double MModuleEnergyCalibration::LookupEnergyResolution(MStripHit* SH, double En
 
   MReadOutElementDoubleStrip* ROE = dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
   if (ROE == nullptr) {
-    cout << m_Name << ": LookupEnergyResolution: Error unable to get read-out element" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: LookupEnergyResolution unable to get read-out element" << endl;
     return -1;
   }
   TF1* FitRes = m_ResolutionCalibration[*ROE];
   if (FitRes == nullptr) {
-    cout << m_Name << ": LookupEnergyResolutio: Error: Couldn't locate energy resolution" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: LookupEnergyResolution couldn't locate energy resolution" << endl;
     return -1.0;
   } else {
     return FitRes->Eval(Energy);
