@@ -539,12 +539,12 @@ bool MSubModuleStripTrigger::ParseDeadtimeFile()
 
   MParser Parser;
   if (Parser.Open(m_DeadtimeFileName) == false) {
-    cout << m_Name << ": Unable to open deadtime parameters file: " << m_DeadtimeFileName << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: Unable to open deadtime parameters file: " << m_DeadtimeFileName << endl;
     return false;
   }
 
   if (Parser.GetNLines() < 2) {
-    cout << m_Name << ": Deadtime file does not have enough data" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: Deadtime file does not have enough data" << endl;
     return false;
   }
 
