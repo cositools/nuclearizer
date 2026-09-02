@@ -365,10 +365,12 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       // Make sure XYZ resolution are correctly mapped to the global coord system.
       MVector PositionResolution(Xsigma, Ysigma, Zsigma);
       MVector GlobalResolution = ((m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(PositionResolution)) - (m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalOrigin))).Abs();
-      
+     
       H->SetPosition(GlobalPosition); 
 
       H->SetPositionResolution(GlobalResolution);
+
+      H->SetLocalPosition(LocalPosition);
 
 
 

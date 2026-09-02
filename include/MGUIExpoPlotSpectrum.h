@@ -66,6 +66,9 @@ public:
   //! Update the frame
   virtual void Update();
 
+  TH1D* GetEnergyHistogramLVFinal() const { return m_EnergyHistogramLVFinal; }
+  TH1D* GetEnergyHistogramHVFinal() const { return m_EnergyHistogramHVFinal; }
+
 
 protected:
   //! Update the histogram range
@@ -100,6 +103,7 @@ private:
   TH1D* m_EnergyHistogramHVFinal;
   TH1D* m_EnergyHistogramNearestNeighborLVFinal;
   TH1D* m_EnergyHistogramNearestNeighborHVFinal;
+  
 
   // Data buffers (to hold data Initial window opens)
   std::vector<double> m_DataBufferLVInitial;
