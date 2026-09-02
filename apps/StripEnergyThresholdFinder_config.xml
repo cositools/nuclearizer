@@ -1,32 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <StripEnergyThresholdFinder>
-
   <Input>
     <DataFiles>
       <DataFile>/path/to/data/file.hdf5</DataFile>
     </DataFiles>
-
     <CalibrationFile>/path/to/calibration/file.ecal</CalibrationFile>
-    <StripMap>/path/to/strip/map/file.map</StripMap>
+    <StripMap>/path/to/stripmap.map</StripMap>
   </Input>
-
-  <Analysis>
-    <!-- Number of skipped strips with minimum statistics -->
-    <MinEntries>5</MinEntries>
-
-    <!-- If a threshold cannot be determined, set threshold to default value -->
-    <FallbackThresholdKeV>18</FallbackThresholdKeV>
-
-    <!--
-      Limit for locating the low-energy noise peak.
-      This limits the peak search to the region before gamma-ray peaks.
-    -->
-    <NoiseSearchMaxKeV>40</NoiseSearchMaxKeV>
-  </Analysis>
-
   <Output>
-    <Prefix>My_File_Prefix</Prefix>
+    <Prefix>your_output_file_prefix</Prefix>
   </Output>
-
+  <Analysis>
+    <MinEntries>5</MinEntries>
+    <FallbackThresholdKeV>18</FallbackThresholdKeV>
+    <NoiseSearchMaxKeV>40</NoiseSearchMaxKeV>
+    <FastFallbackKeV>34</FastFallbackKeV>
+  </Analysis>
 </StripEnergyThresholdFinder>

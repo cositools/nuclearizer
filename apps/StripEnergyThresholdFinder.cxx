@@ -148,9 +148,15 @@ class MStripThresholdFinder
   map<MReadOutElementDoubleStrip, TH1D*> dt1_hists;
 
   // --- Results ---
+  // Slow software thresholds
   map<MReadOutElementDoubleStrip, double> m_SlowThresholds;
   map<MReadOutElementDoubleStrip, double> m_SlowThresholdsADC;
 
+  // Slow hardware thresholds
+  map<MReadOutElementDoubleStrip, double> m_SlowHardwareThresholds;
+  map<MReadOutElementDoubleStrip, double> m_SlowHardwareThresholdsADC;
+
+  // Fast thresholds
   map<MReadOutElementDoubleStrip, double> m_FastThresholds;
   map<MReadOutElementDoubleStrip, double> m_FastThresholdsADC;
 
@@ -216,13 +222,26 @@ int main(int Argc, char** Argv)
   cout << "  cSlowThresh->Draw()" << endl;
   cout << endl;
 
-  cout << "Example energy spectrum with threshold:" << endl;
+  cout << "Example energy spectrum with software and hardware thresholds:" << endl;
+  cout << "Format = Energy_DetectorID_Side(h/l)_StripID:" << endl;
   cout << "  Energy_0_h_10->Draw()" << endl;
-  cout << "  Energy_0_h_10->GetXaxis()->SetRangeUser(0,30)" << endl;
   cout << endl;
 
   cout << "Pixel threshold heat maps:" << endl;
   cout << "  cSlowPixel->Draw()" << endl;
+  cout << endl;
+
+  cout << endl;
+  cout << "SLOW HARDWARE threshold diagnostics:" << endl;
+  cout << "---------------------------------------" << endl;
+  cout << endl;
+
+  cout << "Slow hardware threshold distribution:" << endl;
+  cout << "  cSlowHardwareDist->Draw()" << endl;
+  cout << endl;
+
+  cout << "Slow hardware threshold vs Strip:" << endl;
+  cout << "  cSlowHardwareThresh->Draw()" << endl;
   cout << endl;
 
   cout << endl;
@@ -238,7 +257,7 @@ int main(int Argc, char** Argv)
   cout << endl;
 
   cout << "dt0 vs dt1 with fast threshold:" << endl;
-  cout << "  cFast_0_l_10->Draw();" << endl;
+  cout << "  cFast_0_l_10->Draw()" << endl;
 
 
   return 0;
@@ -309,6 +328,11 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     Node = AnalysisNode->GetNode("FallbackThresholdKeV");
     if (Node != nullptr) {
       m_FallbackThreshold = Node->GetValueAsDouble();
+    }
+
+	Node = AnalysisNode->GetNode("FastFallbackKeV");
+    if (Node != nullptr) {
+      m_FastFallbackThreshold = Node->GetValueAsDouble();
     }
 
     Node = AnalysisNode->GetNode("NoiseSearchMaxKeV");
@@ -521,7 +545,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   // -------------------------------------------------------------
   // Load energy calibration
   //
-  // Do this AFTER command line overrides so that an overridden
+  // We do this after command line overrides so that an overridden
   // calibration filename is actually the calibration we load.
   // -------------------------------------------------------------
 
@@ -689,7 +713,7 @@ bool MStripThresholdFinder::BuildHistograms()
 	  // -------------------------------------------------------------
       // TEMPORARY DIAGNOSTIC:
       // Identify and print events containing unexpected detector IDs.
-      // Uncomment this block when investigating malformed events.
+      // Uncomment this block when investigating suspicious events.
       // -------------------------------------------------------------
 
       /*
@@ -882,7 +906,6 @@ bool MStripThresholdFinder::BuildHistograms()
 
     //double maxE = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
     double maxE = ADC_to_keV_scale[R];
-	//double maxE = 3000.0;
 
     string name = "dt1_" + to_string(R.GetDetectorID()) + "_" + (R.IsLowVoltageStrip() ? 'l' : 'h') + "_" + to_string(R.GetStripID());
 
@@ -1049,7 +1072,7 @@ void MStripThresholdFinder::FindSlowThresholds()
     //
     // Some noisy channels do not have a well-defined noise peak.
     // Instead, they rise sharply from ~0 counts into a broad, flat
-    // pedestal. A pedestal-like spectrum must therefore show both:
+    // pedestal. A pedestal-like spectrum must show both:
     //
     //   1. A rapid rise to near the maximum noise height
     //   2. A sustained flat top for several bins
@@ -1060,6 +1083,10 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     bool pedestalLike = false;
     int pedestalThresholdBin = -1;
+
+	// Save the measured plateau height so it can also be used
+    // to determine the slow hardware threshold.
+    double pedestalPlateauCounts = -1.0;
 
     // Look only a few bins beyond the first significant bin
     const int pedestalLookAheadBins = 8;
@@ -1116,12 +1143,9 @@ void MStripThresholdFinder::FindSlowThresholds()
           }
         }
 
-        // A rapid rise alone is not sufficient. If the spectrum
-        // does not remain flat, treat it as a conventional peak.
-
 		// ---------------------------------------------------------
         // A broad conventional peak can appear approximately flat
-        // for several bins near its maximum. A true pedestal should
+        // for several bins near its maximum. A pedestal should
         // remain high after the candidate flat region rather than
         // immediately entering a sustained falling tail.
         // ---------------------------------------------------------
@@ -1164,6 +1188,7 @@ void MStripThresholdFinder::FindSlowThresholds()
         // ---------------------------------------------------------
 
         pedestalLike = true;
+		pedestalPlateauCounts = plateauReference;
 
         // Continue forward from the upper part of the rising edge
         // and find where the spectrum stops increasing significantly.
@@ -1210,6 +1235,78 @@ void MStripThresholdFinder::FindSlowThresholds()
              << " thresholdCounts=" << hist->GetBinContent(thresholdBin)
              << endl;
     } */
+
+
+	// -------------------------------------------------------------
+    // Determine the slow HARDWARE threshold
+    //
+    // The hardware threshold is defined as the 50% point on the
+    // rising edge of the identified low-energy feature.
+    //
+    // For a conventional peak, use 50% of the peak height.
+    // For a pedestal-like feature, use 50% of the plateau height.
+    // -------------------------------------------------------------
+
+    double hardwareReferenceCounts = peakCounts;
+
+    if (pedestalLike && pedestalPlateauCounts > 0.0) {
+      hardwareReferenceCounts = pedestalPlateauCounts;
+    }
+
+    double hardwareHalfHeight = 0.50 * hardwareReferenceCounts;
+
+    int hardwareThresholdBin = -1;
+
+    // Search from the beginning of the identified feature toward
+    // the peak/plateau for the first crossing of the 50% level.
+    for (int b = startBin; b <= peakBin; ++b) {
+
+      if (hist->GetBinContent(b) >= hardwareHalfHeight) {
+        hardwareThresholdBin = b;
+        break;
+      }
+    }
+
+    // If the 50% crossing could not be found, mark this hardware
+    // threshold as invalid rather than altering the software result.
+    if (hardwareThresholdBin >= 1) {
+
+      double hardwareThresholdADC =
+        hist->GetBinCenter(hardwareThresholdBin);
+
+      double hardwareThresholdKeV =
+        m_EnergyCalibration.GetEnergy(R, hardwareThresholdADC);
+
+      m_SlowHardwareThresholdsADC[R] = hardwareThresholdADC;
+      m_SlowHardwareThresholds[R] = hardwareThresholdKeV;
+
+	  // -------------------------------------------------------------
+      // TEMPORARY DIAGNOSTIC:
+      // Print the slow hardware threshold so we can verify that the
+      // 50% rising-edge calculation is behaving as expected.
+      // -------------------------------------------------------------
+
+      /* cout << "SLOW HARDWARE threshold: Det "
+           << R.GetDetectorID()
+           << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+           << " Strip " << R.GetStripID()
+           << " | pedestalLike=" << pedestalLike
+           << " | startADC=" << hist->GetBinCenter(startBin)
+           << " | peakADC=" << hist->GetBinCenter(peakBin)
+           << " | referenceCounts=" << hardwareReferenceCounts
+           << " | halfHeight=" << hardwareHalfHeight
+           << " | hardwareADC=" << hardwareThresholdADC
+           << " | hardwareKeV=" << hardwareThresholdKeV
+           << endl; */
+
+
+    } else {
+
+      m_SlowHardwareThresholdsADC[R] = -1.0;
+      m_SlowHardwareThresholds[R] = -1.0;
+    }
+
+
 
     // -------------------------------------------------------------
     // Determine the slow threshold
@@ -1639,6 +1736,66 @@ void MStripThresholdFinder::WriteCSV()
 
 
   // -------------------------------------------------------------
+  // Write SLOW hardware threshold CSV tables
+  // -------------------------------------------------------------
+
+  MString HardwareHVOutputCSVFileName =
+    m_OutputPrefix + "_Slow_Hardware_HV_thresholds.csv";
+
+  MString HardwareLVOutputCSVFileName =
+    m_OutputPrefix + "_Slow_Hardware_LV_thresholds.csv";
+
+  ofstream csv_Hardware_HV(HardwareHVOutputCSVFileName);
+  ofstream csv_Hardware_LV(HardwareLVOutputCSVFileName);
+
+  if (!csv_Hardware_HV.is_open()) {
+    cerr << "Error: Failed to open CSV output file for HV hardware thresholds: "
+         << HardwareHVOutputCSVFileName << endl;
+    return;
+  }
+
+  if (!csv_Hardware_LV.is_open()) {
+    cerr << "Error: Failed to open CSV output file for LV hardware thresholds: "
+         << HardwareLVOutputCSVFileName << endl;
+    return;
+  }
+
+  // CSV headers
+  csv_Hardware_HV
+    << "detector_side,Strip,threshold_ADC,threshold_keV\n";
+
+  csv_Hardware_LV
+    << "detector_side,Strip,threshold_ADC,threshold_keV\n";
+
+  // Write rows
+  for (const auto& kv : m_SlowHardwareThresholds) {
+
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
+
+    double thr_keV = kv.second;
+    double thr_ADC = m_SlowHardwareThresholdsADC[R];
+
+    if (R.IsLowVoltageStrip() == true) {
+
+      csv_Hardware_LV
+        << "l,"
+        << Strip << ","
+        << thr_ADC << ","
+        << thr_keV << "\n";
+
+    } else {
+
+      csv_Hardware_HV
+        << "h,"
+        << Strip << ","
+        << thr_ADC << ","
+        << thr_keV << "\n";
+    }
+  }
+
+
+  // -------------------------------------------------------------
   // Write Fast CSV threshold tables
   // -------------------------------------------------------------
 
@@ -1668,6 +1825,10 @@ void MStripThresholdFinder::WriteCSV()
 
   csv_HV.close();
   csv_LV.close();
+
+  csv_Hardware_HV.close();
+  csv_Hardware_LV.close();
+
   csv_TAC_HV.close();
   csv_TAC_LV.close();
 }
@@ -1829,6 +1990,207 @@ void MStripThresholdFinder::WriteDiagnostics()
   hSlowDist_LV->Write();
   hSlowDist_HV->Write();
 
+
+  // -------------------------------------------------------------
+  // SLOW HARDWARE threshold per Strip (HV vs LV scatter)
+  // -------------------------------------------------------------
+
+  TGraph* gSlowHardwareThresh_LV = new TGraph();
+  TGraph* gSlowHardwareThresh_HV = new TGraph();
+
+  gSlowHardwareThresh_LV->SetName("SlowHardwareThresh_LV");
+  gSlowHardwareThresh_HV->SetName("SlowHardwareThresh_HV");
+
+  gSlowHardwareThresh_LV->SetTitle(
+    "Slow Hardware Threshold per Strip;Strip;Hardware Threshold (keV)");
+
+  gSlowHardwareThresh_LV->SetMarkerStyle(20);
+  gSlowHardwareThresh_LV->SetMarkerSize(1.0);
+  gSlowHardwareThresh_LV->SetMarkerColor(kBlue);
+
+  gSlowHardwareThresh_HV->SetMarkerStyle(20);
+  gSlowHardwareThresh_HV->SetMarkerSize(1.0);
+  gSlowHardwareThresh_HV->SetMarkerColor(kRed);
+
+
+  // Fill graphs
+  for (const auto& kv : m_SlowHardwareThresholds) {
+
+    MReadOutElementDoubleStrip R = kv.first;
+    int Strip = R.GetStripID();
+    double Threshold = kv.second;
+
+    // Ignore invalid hardware thresholds
+    if (Threshold < 0.0) {
+      continue;
+    }
+
+    if (R.IsLowVoltageStrip() == true) {
+
+      gSlowHardwareThresh_LV->SetPoint(
+        gSlowHardwareThresh_LV->GetN(),
+        Strip,
+        Threshold);
+
+    } else {
+
+      gSlowHardwareThresh_HV->SetPoint(
+        gSlowHardwareThresh_HV->GetN(),
+        Strip,
+        Threshold);
+    }
+  }
+
+
+  // -------------------------------------------------------------
+  // Canvas with LV and HV overlaid
+  // -------------------------------------------------------------
+
+  TCanvas* cSlowHardwareThresh =
+    new TCanvas(
+      "cSlowHardwareThresh",
+      "Slow Hardware Threshold per Strip",
+      800,
+      600);
+
+  cSlowHardwareThresh->cd();
+
+  gSlowHardwareThresh_LV->Draw("AP");
+
+
+  // Determine plotting range
+  double hardwareYmin = 1e9;
+  double hardwareYmax = -1e9;
+
+  for (const auto& kv : m_SlowHardwareThresholds) {
+
+    double v = kv.second;
+
+    if (v < 0.0) {
+      continue;
+    }
+
+    if (v < hardwareYmin) {
+      hardwareYmin = v;
+    }
+
+    if (v > hardwareYmax) {
+      hardwareYmax = v;
+    }
+  }
+
+  if (hardwareYmax > hardwareYmin) {
+
+    double hardwarePad =
+      0.10 * (hardwareYmax - hardwareYmin);
+
+    gSlowHardwareThresh_LV->GetYaxis()->SetRangeUser(
+      hardwareYmin - hardwarePad,
+      hardwareYmax + hardwarePad);
+  }
+
+  gSlowHardwareThresh_HV->Draw("P SAME");
+
+  TLegend* legSlowHardwareScatter =
+    new TLegend(0.70, 0.72, 0.80, 0.80);
+
+  legSlowHardwareScatter->AddEntry(
+    gSlowHardwareThresh_LV, "LV", "p");
+
+  legSlowHardwareScatter->AddEntry(
+    gSlowHardwareThresh_HV, "HV", "p");
+
+  legSlowHardwareScatter->SetTextSize(0.02);
+  legSlowHardwareScatter->SetBorderSize(1);
+  legSlowHardwareScatter->SetFillStyle(0);
+
+  legSlowHardwareScatter->Draw();
+
+  cSlowHardwareThresh->Modified();
+  cSlowHardwareThresh->Update();
+
+  cSlowHardwareThresh->Write();
+  gSlowHardwareThresh_LV->Write();
+  gSlowHardwareThresh_HV->Write();
+
+  // -------------------------------------------------------------
+  // SLOW HARDWARE threshold distribution (HV vs LV separated)
+  // -------------------------------------------------------------
+
+  TH1D* hSlowHardwareDist_LV = new TH1D(
+    "SlowHardwareThresholdDistribution_LV",
+    "Slow Hardware Threshold Distribution;Hardware Threshold (keV);Counts",
+    100, 0, 50);
+
+  TH1D* hSlowHardwareDist_HV = new TH1D(
+    "SlowHardwareThresholdDistribution_HV",
+    "Slow Hardware Threshold Distribution;Hardware Threshold (keV);Counts",
+    100, 0, 50);
+
+
+  // Styling
+  hSlowHardwareDist_LV->SetLineColor(kBlue);
+  hSlowHardwareDist_LV->SetLineWidth(2);
+
+  hSlowHardwareDist_HV->SetLineColor(kRed);
+  hSlowHardwareDist_HV->SetLineWidth(2);
+
+
+  // Fill histograms
+  for (const auto& kv : m_SlowHardwareThresholds) {
+
+    MReadOutElementDoubleStrip R = kv.first;
+    double Threshold = kv.second;
+
+    if (Threshold < 0.0) {
+      continue;
+    }
+
+    if (R.IsLowVoltageStrip() == true) {
+      hSlowHardwareDist_LV->Fill(Threshold);
+    } else {
+      hSlowHardwareDist_HV->Fill(Threshold);
+    }
+  }
+
+
+  // -------------------------------------------------------------
+  // Canvas with legend
+  // -------------------------------------------------------------
+
+  TCanvas* cSlowHardwareDist =
+    new TCanvas(
+      "cSlowHardwareDist",
+      "Slow Hardware Threshold Distribution",
+      800,
+      600);
+
+  cSlowHardwareDist->cd();
+
+  hSlowHardwareDist_LV->Draw("HIST");
+  hSlowHardwareDist_HV->Draw("HIST SAME");
+
+  TLegend* legSlowHardware =
+    new TLegend(0.70, 0.72, 0.80, 0.80);
+
+  legSlowHardware->AddEntry(
+    hSlowHardwareDist_LV, "LV", "l");
+
+  legSlowHardware->AddEntry(
+    hSlowHardwareDist_HV, "HV", "l");
+
+  legSlowHardware->Draw();
+
+  cSlowHardwareDist->Modified();
+  cSlowHardwareDist->Update();
+
+  cSlowHardwareDist->Write();
+  hSlowHardwareDist_LV->Write();
+  hSlowHardwareDist_HV->Write();
+
+
+
+
   // -------------------------------------------------------------
   // FAST threshold per Strip histogram
   // -------------------------------------------------------------
@@ -1976,7 +2338,7 @@ void MStripThresholdFinder::WriteDiagnostics()
       maxE);
 
     energyHist->SetTitle(Form(
-      "Slow Threshold (det=%d side=%c Strip=%d);Energy (keV);Counts",
+      "Slow Software and Hardware Thresholds (det=%d side=%c Strip=%d);Energy (keV);Counts",
       R.GetDetectorID(), R.IsLowVoltageStrip() ? 'l' : 'h', R.GetStripID()));
 
     energyHist->GetXaxis()->SetRangeUser(0, 100);
@@ -1992,16 +2354,57 @@ void MStripThresholdFinder::WriteDiagnostics()
       energyHist->AddBinContent(ebin, counts);
     }
 
-    double Threshold = m_SlowThresholds[R];
+    // -------------------------------------------------------------
+    // Software slow threshold
+    // -------------------------------------------------------------
 
-    TLine* line = new TLine(Threshold, 0, Threshold, energyHist->GetMaximum());
-    line->SetLineColor(kRed);
-    line->SetLineWidth(2);
+    if (m_SlowThresholds.count(R) == 1) {
 
-    energyHist->GetListOfFunctions()->Add(line);
+      double softwareThreshold =
+        m_SlowThresholds[R];
+
+      TLine* softwareLine =
+        new TLine(
+          softwareThreshold,
+          0,
+          softwareThreshold,
+          energyHist->GetMaximum());
+
+      softwareLine->SetLineColor(kRed);
+      softwareLine->SetLineWidth(2);
+
+      energyHist->GetListOfFunctions()->Add(softwareLine);
+    }
+
+
+    // -------------------------------------------------------------
+    // Hardware slow threshold
+    // -------------------------------------------------------------
+
+    if (m_SlowHardwareThresholds.count(R) == 1 &&
+        m_SlowHardwareThresholds[R] >= 0.0) {
+
+      double hardwareThreshold =
+        m_SlowHardwareThresholds[R];
+
+      TLine* hardwareLine =
+        new TLine(
+          hardwareThreshold,
+          0,
+          hardwareThreshold,
+          energyHist->GetMaximum());
+
+      hardwareLine->SetLineColor(kBlue);
+      hardwareLine->SetLineWidth(2);
+      hardwareLine->SetLineStyle(2);
+
+      energyHist->GetListOfFunctions()->Add(hardwareLine);
+    }
+
 
     energyHist->Write();
-  }
+
+ }
 
 
   // -------------------------------------------------------------
