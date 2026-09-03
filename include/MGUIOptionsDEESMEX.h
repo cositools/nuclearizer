@@ -95,8 +95,10 @@ class MGUIOptionsDEESMEX : public MGUIOptions
   TGCheckButton* m_StopAfter;
   //! Entry field for the maximum number of accepted events
   MGUIEEntry* m_MaximumAcceptedEvents;
-  //! ACS DEE energy correction file
+  //! Shield DEE energy correction file
   MGUIEFileSelector* m_ShieldEnergyCorrectionFileSelector;
+  //! Shield DEE Readout energy calibration file
+  MGUIEFileSelector* m_ShieldReadoutFileSelector;
   //! Select deadtime constants file
   MGUIEFileSelector* m_DeadtimeFileSelector;
   

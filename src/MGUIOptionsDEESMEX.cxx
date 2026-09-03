@@ -159,6 +159,13 @@ void MGUIOptionsDEESMEX::Create()
   m_ShieldEnergyCorrectionFileSelector->SetFileType("Shield DEE energy correction file", "*.csv");
   m_OptionsFrame->AddFrame(m_ShieldEnergyCorrectionFileSelector, LabelLayout);
 
+  // shield energy calibration file
+  m_ShieldReadoutFileSelector = new MGUIEFileSelector(m_OptionsFrame,
+                                                                 "Please select an energy calibration file for the Shield DEE Readout:",
+                                                                 dynamic_cast<MModuleDEESMEX*>(m_Module)->GetShieldReadoutFileName());
+  m_ShieldReadoutFileSelector->SetFileType("Shield DEE Readout energy calibration file", "*.csv");
+  m_OptionsFrame->AddFrame(m_ShieldReadoutFileSelector, LabelLayout);
+  
   /*
   m_ApplyFudgeFactorSelector = new TGCheckButton(m_OptionsFrame, "Apply fudge factor to better match fluxes", 1);
   m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetApplyFudgeFactor());
@@ -211,7 +218,8 @@ bool MGUIOptionsDEESMEX::OnApply()
 
   // Shield options:
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetShieldEnergyCorrectionFileName(m_ShieldEnergyCorrectionFileSelector->GetFileName());
-
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetShieldReadoutFileName(m_ShieldReadoutFileSelector->GetFileName());
+    
   // GeD options:
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthCoefficientsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
