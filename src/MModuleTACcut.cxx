@@ -106,22 +106,22 @@ bool MModuleTACcut::Initialize()
   // Initialize the module 
 
   if (LoadTACCalFile(m_TACCalFile) == false) {
-    cout<<m_XmlTag<<": Error: TAC Calibration file could not be loaded."<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: TAC Calibration file could not be loaded."<<endl;
     return false;
   }
 
   if (LoadTACCutFile(m_TACCutFile) == false) {
-    cout<<m_XmlTag<<": Error: TAC Cut file could not be loaded."<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: TAC Cut file could not be loaded."<<endl;
     return false;
   }
 
   // Some sanity checks:
   if (m_TACCal.size() == 0) {
-    cout<<m_XmlTag<<": The TAC calibration data set is empty"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The TAC calibration data set is empty"<<endl;
     return false;
   }
   if (m_TACCut.size() == 0) {
-    cout<<m_XmlTag<<": The TAC cut data set is empty"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The TAC cut data set is empty"<<endl;
     return false;
   }
 
@@ -171,27 +171,39 @@ bool MModuleTACcut::AnalyzeEvent(MReadOutAssembly* Event)
     }
 
     if (DetID >= m_TACCal.size()) {
-      cout<<m_XmlTag<<": Error: DetID "<<DetID<<" is not in TACCal (max det ID: "<<m_TACCal.size()-1<<") - skipping event"<<endl;
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Error: DetID "<<DetID<<" is not in TACCal (max det ID: "<<m_TACCal.size()-1<<") - skipping event"<<endl;
+      }
       return false;
     }
     if (m_TACCal[DetID][m_SideToIndex[Side]][StripID].size() == 0 && SH->IsGuardRing() == false) {
-      cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" has no calibration entries) - skipping event"<<endl;
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" has no calibration entries) - skipping event"<<endl;
+      }
       return false;
     }
     if ((StripID >= m_TACCal[DetID][m_SideToIndex[Side]].size()) && (SH->IsGuardRing()==false)) {
-      cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" is not in TACCal (max strip ID: "<<m_TACCal[DetID][m_SideToIndex[Side]].size()-1<<") - skipping event"<<endl;
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" is not in TACCal (max strip ID: "<<m_TACCal[DetID][m_SideToIndex[Side]].size()-1<<") - skipping event"<<endl;
+      }
       return false;
     }
     if (DetID >= m_TACCut.size()) {
-      cout<<m_XmlTag<<": Error: DetID "<<DetID<<" is not in TACCut (max det ID: "<<m_TACCut.size()-1<<") - skipping event"<<endl;
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Error: DetID "<<DetID<<" is not in TACCut (max det ID: "<<m_TACCut.size()-1<<") - skipping event"<<endl;
+      }
       return false;
     }
     if (m_TACCut[DetID][m_SideToIndex[Side]][StripID].size() == 0 && SH->IsGuardRing()==false) {
-      cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" has no entries) - skipping event"<<endl;
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" has no entries) - skipping event"<<endl;
+      }
       return false;
     }
     if ((StripID >= m_TACCut[DetID][m_SideToIndex[Side]].size()) && (SH->IsGuardRing()==false)) {
-      cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" is not in TACCut (max strip ID: "<<m_TACCut[DetID][m_SideToIndex[Side]].size()-1<<") - skipping event"<<endl;
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Error: StripID "<<StripID<<" on side "<<Side<<" is not in TACCut (max strip ID: "<<m_TACCut[DetID][m_SideToIndex[Side]].size()-1<<") - skipping event"<<endl;
+      }
       return false;
     }
   }
@@ -345,7 +357,7 @@ bool MModuleTACcut::LoadTACCalFile(MString FName)
   // ReadOutID, Detector, Side, Strip, TAC cal, TAC cal error, TAC offset, TAC offset error
   MFile F;
   if (F.Open(FName) == false) {
-    cout<<m_XmlTag<<": Error: failed to open TAC Calibration file."<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: failed to open TAC Calibration file."<<endl;
     return false;
   } else {
     MString Line;
@@ -358,7 +370,7 @@ bool MModuleTACcut::LoadTACCalFile(MString FName)
           MString SideString = Tokens[1+IndexOffset].Trim();
           char Side;
           if (SideString.Length()!=1) {
-            cout<<m_XmlTag<<": Error: Expected 1 character Side, got string \""<<SideString<<"\" in TAC calibration file."<<endl;
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Expected 1 character Side, got string \""<<SideString<<"\" in TAC calibration file."<<endl;
             return false;
           }
           else {
@@ -388,7 +400,7 @@ bool MModuleTACcut::LoadTACCalFile(MString FName)
           if (m_SideToIndex.find(Side) != m_SideToIndex.end()) {
             m_TACCal[DetID][m_SideToIndex[Side]][StripID] = CalValues;
           } else {
-            cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
             return false;
           }
         }
@@ -414,7 +426,7 @@ bool MModuleTACcut::LoadTACCutFile(MString FName)
   MFile F;
   bool OldFormatMessage = false;
   if (F.Open(FName) == false) {
-    cout<<m_XmlTag<<": Error: failed to open TAC Cut file."<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: failed to open TAC Cut file."<<endl;
     return false;
   } else {
     MString Line;
@@ -426,7 +438,7 @@ bool MModuleTACcut::LoadTACCutFile(MString FName)
           MString SideString = Tokens[1];
           char Side;
           if (SideString.Length()!=1) {
-            cout<<m_XmlTag<<": Error: Expected 1 character Side, got string:\""<<SideString<<"\" in TAC cut file."<<endl;
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Expected 1 character Side, got string:\""<<SideString<<"\" in TAC cut file."<<endl;
             return false;
           } else {
             Side = SideString[0];
@@ -435,7 +447,7 @@ bool MModuleTACcut::LoadTACCutFile(MString FName)
           double ShapingOffset = Tokens[3].ToDouble();
           double CoincidenceWindow = Tokens[4].ToDouble();
           if ((Tokens.size() == 5) && (OldFormatMessage==false)) {
-            cout<<m_XmlTag<<": Error: TAC cut file is using the old format. Using default values for FL noise cut, flag delay, disable time, and flag-to-enable delay."<<endl;
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: TAC cut file is using the old format. Using default values for FL noise cut, flag delay, disable time, and flag-to-enable delay."<<endl;
             OldFormatMessage = true;
           }
           double DisableTime = 1400;
@@ -448,7 +460,7 @@ bool MModuleTACcut::LoadTACCutFile(MString FName)
             FLNoiseCut = Tokens[7].ToDouble();
             FlagDelay = Tokens[8].ToDouble();
           } else if (Tokens.size()!=5) {
-            cout<<m_XmlTag<<": Error: Unrecognized TAC cut file format. Number of parameters is "<<Tokens.size()<<"."<<endl;
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unrecognized TAC cut file format. Number of parameters is "<<Tokens.size()<<"."<<endl;
             return false;
           }
           vector<double> CutParams;
@@ -470,7 +482,7 @@ bool MModuleTACcut::LoadTACCutFile(MString FName)
           if (m_SideToIndex.find(Side) != m_SideToIndex.end()) {
             m_TACCut[DetID][m_SideToIndex[Side]][StripID] = CutParams;
           } else {
-            cout<<m_XmlTag<<": Error: Unable to identify Side "<<Side<<" In TAC cut file."<<endl;
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to identify Side "<<Side<<" In TAC cut file."<<endl;
             return false;
           }
         }

@@ -100,7 +100,7 @@ bool MModuleRevan::Initialize()
 
   m_ReconstructionGeometry = new MGeometryRevan();
   if (m_ReconstructionGeometry->ScanSetupFile(m_Geometry->GetFileName(), false) == false) {
-    cout<<"Loading of geometry "<<m_ReconstructionGeometry->GetName()<<" failed!!"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Loading of geometry "<<m_ReconstructionGeometry->GetName()<<" failed!!"<<endl;
     return false;
   }
 
@@ -115,7 +115,7 @@ bool MModuleRevan::Initialize()
   m_RawEventAnalyzer->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
 
   if (m_RawEventAnalyzer->PreAnalysis() == false) {
-    cout<<"Revan pre-analysis failed!"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Revan pre-analysis failed!"<<endl;
     return false;
   }
 
