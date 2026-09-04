@@ -193,54 +193,65 @@ void MHit::StreamEvta(ostream& S)
 {
   // Stream the hit in MEGAlib's EVTA format
 
-  // Assemble the origin information
-  vector<int> Origins;
+  if ((m_GuardRingHit == false) && (m_NoDepth == false)) {
 
-  // Only origins existing on both low-voltage and high-voltage strips count
-  vector<int> LVOrigins;
-  vector<int> HVOrigins;
-  for (unsigned int s = 0; s < GetNStripHits(); ++s) {
-    MStripHit* StripHit = m_StripHits[s];
-    vector<int> NewOrigins = StripHit->GetOrigins();
-    if (StripHit->IsLowVoltageStrip() == true) {
-      for (int o: NewOrigins) {
-        LVOrigins.push_back(o);
-      }
-    } else {
-      for (int o: NewOrigins) {
-        HVOrigins.push_back(o);
-      }
-    }
-  }
+    // Assemble the origin information
+    vector<int> Origins;
 
-  sort(LVOrigins.begin(), LVOrigins.end());
-  LVOrigins.erase(unique(LVOrigins.begin(), LVOrigins.end()), LVOrigins.end());
-  sort(HVOrigins.begin(), HVOrigins.end());
-  HVOrigins.erase(unique(HVOrigins.begin(), HVOrigins.end()), HVOrigins.end());
-
-  set_intersection(LVOrigins.begin(), LVOrigins.end(),
-                   HVOrigins.begin(), HVOrigins.end(),
-                   std::back_inserter(Origins));
-
-  if ((LVOrigins.size() != 0 || HVOrigins.size() != 0) && Origins.size() == 0) {
-    // If strip pairing mixed the hits completely, keep the mixed origin information
+    // Only origins existing on both low-voltage and high-voltage strips count
+    vector<int> LVOrigins;
+    vector<int> HVOrigins;
     for (unsigned int s = 0; s < GetNStripHits(); ++s) {
       MStripHit* StripHit = m_StripHits[s];
       vector<int> NewOrigins = StripHit->GetOrigins();
-      for (int o: NewOrigins) {
-        Origins.push_back(o);
+      if (StripHit->IsLowVoltageStrip() == true) {
+        for (int o: NewOrigins) {
+          LVOrigins.push_back(o);
+        }
+      } else {
+        for (int o: NewOrigins) {
+          HVOrigins.push_back(o);
+        }
       }
     }
-    sort(Origins.begin(), Origins.end());
-    Origins.erase(unique(Origins.begin(), Origins.end()), Origins.end());
-  }
 
-  S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
-    <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution;
-  for (unsigned int i = 0; i < Origins.size(); ++i) {
-    S<<";"<<Origins[i];
+    sort(LVOrigins.begin(), LVOrigins.end());
+    LVOrigins.erase(unique(LVOrigins.begin(), LVOrigins.end()), LVOrigins.end());
+    sort(HVOrigins.begin(), HVOrigins.end());
+    HVOrigins.erase(unique(HVOrigins.begin(), HVOrigins.end()), HVOrigins.end());
+
+    set_intersection(LVOrigins.begin(), LVOrigins.end(),
+                    HVOrigins.begin(), HVOrigins.end(),
+                    std::back_inserter(Origins));
+
+    if ((LVOrigins.size() != 0 || HVOrigins.size() != 0) && Origins.size() == 0) {
+      // If strip pairing mixed the hits completely, keep the mixed origin information
+      for (unsigned int s = 0; s < GetNStripHits(); ++s) {
+        MStripHit* StripHit = m_StripHits[s];
+        vector<int> NewOrigins = StripHit->GetOrigins();
+        for (int o: NewOrigins) {
+          Origins.push_back(o);
+        }
+      }
+      sort(Origins.begin(), Origins.end());
+      Origins.erase(unique(Origins.begin(), Origins.end()), Origins.end());
+    }
+
+    S<<"HT 3;"<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy
+      <<";"<<m_PositionResolution.GetX()<<";"<<m_PositionResolution.GetY()<<";"<<m_PositionResolution.GetZ()<<";"<<m_EnergyResolution;
+    for (unsigned int i = 0; i < Origins.size(); ++i) {
+      S<<";"<<Origins[i];
+    }
+    S<<endl;
+
+  } else if (m_GuardRingHit == true) {
+    S<<"GR "<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy;   
+    S<<endl;
+
+  } else if (m_NoDepth == true) {
+    S<<"XE "<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy;
+    S<<endl;
   }
-  S<<endl;
 }
 
 
