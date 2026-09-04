@@ -66,7 +66,7 @@ MModuleTrappingCorrection::MModuleTrappingCorrection() : MModule()
   m_Name = "Trapping Correction"; // - correcting energies for charge trapping (by Sophie);
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "TrappingCorrection";
+  m_XmlTag = "XmlTagTrappingCorrection";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
@@ -165,18 +165,43 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   if (Event->GetGuardRingVeto() == true) {
     // Right now we cannot use events w GR veto 
     return false;
-  } else {
-    for (unsigned int i = 0; i < Event->GetNHits(); ++i) {
-      MHit* H = Event->GetHit(i);
+  } 
+
+  // Make sure CCE depth vectors are loaded from the parameter file
+  if (m_Depths.empty()) {
+    return true;
+  }
+
+  // Get the exact Z boundaries directly from the loaded parameter file
+  const double min_param_depth = std::min(m_Depths.front(), m_Depths.back()); 
+  const double max_param_depth = std::max(m_Depths.front(), m_Depths.back()); 
+
+  for (unsigned int i = 0; i < Event->GetNHits(); ++i) {
+    MHit* H = Event->GetHit(i);
 
       int Grade = m_DepthCalibration->GetHitGrade(H);
 
-      if (Grade < 0 || Grade > 4) {
-        H->SetNoDepth();
-      } else { // If Grade is 0-4, proceed with analysis
+    // Skip trapping correction if Grade is invalid or hit has no depth calibration
+    if (Grade < 0 || Grade > 4 ) {
+      H->SetNoDepth();
+      continue; 
+    } 
 
-        vector<MStripHit*> LVStrips;
-        vector<MStripHit*> HVStrips;
+    // Local Z depth position (in cm) from the hit
+    double depth_val = H->GetLocalPosition().GetZ();
+
+    // --- CHECK HIT DEPTH AGAINST PARAMETER FILE BOUNDS ---
+    bool is_depth_out_of_bounds = (depth_val < min_param_depth || depth_val > max_param_depth);
+
+    if (is_depth_out_of_bounds) {
+      cout << "WARNING [TrappingCorrection]: Hit Z = " << depth_val << " cm is OUTSIDE "
+            << "parameter file bounds [" << min_param_depth << ", " << max_param_depth << "] cm! "
+            << "Leaving hit uncorrected." << endl;  
+    }
+
+    // Classify strips
+    vector<MStripHit*> LVStrips;
+    vector<MStripHit*> HVStrips;
 
         for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
           MStripHit* SH = H->GetStripHit(j);
@@ -188,31 +213,30 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         MStripHit* LVSH = m_DepthCalibration->GetDominantStrip(LVStrips, LVEnergyFraction); 
         MStripHit* HVSH = m_DepthCalibration->GetDominantStrip(HVStrips, HVEnergyFraction); 
 
-        // Local Z depth position
-        double depth_val = H->GetLocalPosition().GetZ();
+    // --- LV Side ---
+    if (LVSH != nullptr) {
+      double rawLVEnergy = LVSH->GetEnergy(); 
 
-        // --- Low Voltage Side ---
-        if (LVSH != nullptr) {
-          double rawLVEnergy = LVSH->GetEnergy(); 
-      
-          // --- 1. FILL UNCORRECTED (RAW) ---
-          if (HasExpos() == true) {
-            m_ExpoSpectrum->AddEnergyInitial(rawLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
-          }
-      
-          // --- 2. CALCULATE CORRECTION ---
-          double correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h,  m_ParamB, m_ParamC);
-          LVSH->SetEnergy(correctedLVEnergy);    
-      
-          // --- 3. FILL CORRECTED (FINAL) ---
-          if (HasExpos() == true) {
-            m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
-          }
+      if (HasExpos() == true) {
+        m_ExpoSpectrum->AddEnergyInitial(rawLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
       }
 
-        // --- High Voltage Side ---
-        if (HVSH != nullptr) {
-            double rawHVEnergy = HVSH->GetEnergy(); 
+      // If out-of-bounds, do NOT pass to GetSimBasedCorrectedEnergy; retain raw energy
+      double correctedLVEnergy = rawLVEnergy;
+      if (!is_depth_out_of_bounds) {
+        correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamB, m_ParamC);
+      }
+
+      LVSH->SetEnergy(correctedLVEnergy);    
+
+      if (HasExpos() == true) {
+        m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
+      }
+    }
+
+    // --- HV Side  ---
+    if (HVSH != nullptr) {
+      double rawHVEnergy = HVSH->GetEnergy(); 
 
             // 1. Record UNCORRECTED (raw) HV energy to expo spectrum
             if (HasExpos() == true) {
@@ -295,7 +319,8 @@ void MModuleTrappingCorrection::Finalize()
     return (xRight > xLeft) ? (xRight - xLeft) : 0.0;
   };
 
-  // Helper lambda to perform fit, output results, and return {mu, gauss_fwhm, full_fit_fwhm, direct_fwhm}
+  // Helper lambda to perform fit, output results
+  // returns : mu, gauss_fwhm, full_fit_fwhm, direct_fwhm
   auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::tuple<double, double, double, double> {
     if (hist == nullptr || hist->GetEntries() <= 0) {
       cout << "WARNING: " << titleLabel << " histogram is null or has 0 entries." << endl;
@@ -316,37 +341,56 @@ void MModuleTrappingCorrection::Finalize()
     double xMaxFit = 675.0;
     fitFunc->GetRange(xMinFit, xMaxFit);
     double fullFitFWHM = CalculateFunctionFWHM(fitFunc, xMinFit, xMaxFit);
+     
 
-    cout << "\n" << m_XmlTag << " --- " << titleLabel << " ---" << endl;
+    cout << "\n" << " --- " << titleLabel << " ---" << endl;
     cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
     cout << "  Fitted Gaussian FWHM : " << gaussFWHM << " keV" << endl;
     cout << "  Full Fit Function FWHM: " << fullFitFWHM << " keV" << endl;
     cout << "  Direct Histogram FWHM: " << directFWHM << " keV" << endl;
 
+
     delete fitFunc;
     return std::make_tuple(mu, gaussFWHM, fullFitFWHM, directFWHM);
   };
   
-  // --- Fit Uncorrected and Corrected Spectra ---
-  auto lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
-  auto lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
+  // --- EXECUTE FITS ---
+  std::tuple<double, double, double, double> lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
+  std::tuple<double, double, double, double> lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
 
-  auto hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
-  auto hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
+  std::tuple<double, double, double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
+  std::tuple<double, double, double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
 
-  // Summary Comparison Output
-  cout << "\n==========================================================================================" << endl;
-  cout << "                                SUMMARY COMPARISON                                         " << endl;
-  cout << "==========================================================================================" << endl;
-  cout << " LV Side: " << endl;
-  cout << "   Raw Centroid: " << std::get<0>(lv_raw)  << " keV | Corrected Centroid: " << std::get<0>(lv_corr)  << " keV" << endl;
-  cout << "   Raw Gaussian FWHM: " << std::get<1>(lv_raw) << " keV | Corrected Gaussian FWHM: " << std::get<1>(lv_corr) << " keV" << endl;
-  cout << "   Raw Full Fit FWHM: " << std::get<2>(lv_raw) << " keV | Corrected Full Fit FWHM: " << std::get<2>(lv_corr) << " keV" << endl;
-  cout << " HV Side: " << endl;
-  cout << "   Raw Centroid: " << std::get<0>(hv_raw)  << " keV | Corrected Centroid: " << std::get<0>(hv_corr)  << " keV" << endl;
-  cout << "   Raw Gaussian FWHM: " << std::get<1>(hv_raw) << " keV | Corrected Gaussian FWHM: " << std::get<1>(hv_corr) << " keV" << endl;
-  cout << "   Raw Full Fit FWHM: " << std::get<2>(hv_raw) << " keV | Corrected Full Fit FWHM: " << std::get<2>(hv_corr) << " keV" << endl;
-  cout << "==========================================================================================\n" << endl;
+  // Helper lambda to print formatted delta comparison between raw and corrected results
+  auto PrintTrappingCorrectionSummary = [](const string& channelLabel, 
+                                           const std::tuple<double, double, double, double>& raw, 
+                                           const std::tuple<double, double, double, double>& corr) 
+  {
+    double mu_raw          = std::get<0>(raw);
+    double gauss_fwhm_raw  = std::get<1>(raw);
+    double full_fwhm_raw   = std::get<2>(raw);
+
+    double mu_corr          = std::get<0>(corr);
+    double gauss_fwhm_corr  = std::get<1>(corr);
+    double full_fwhm_corr   = std::get<2>(corr);
+
+    // Calculate changes: (Corrected - Raw)
+    double lineShift        = mu_corr - mu_raw;
+    double deltaGaussFWHM   = std::sqrt(std::pow(gauss_fwhm_raw,2) - std::pow(gauss_fwhm_corr,2));
+    double deltaFullFitFWHM = std::sqrt(std::pow(full_fwhm_raw,2) - std::pow(full_fwhm_corr,2));
+
+    cout << "\n=======================================================" << endl;
+    cout << "   TRAPPING CORRECTION SUMMARY: " << channelLabel << endl;
+    cout << "=======================================================" << endl;
+    cout << " Centroid Shift (Delta Mu)      : " << lineShift << " keV (" << mu_raw << " -> " << mu_corr << ")" << endl;
+    cout << " Gaussian FWHM Change           : " << deltaGaussFWHM << " keV (" << gauss_fwhm_raw << " -> " << gauss_fwhm_corr << ")" << endl;
+    cout << " Full Fit Function FWHM Change  : " << deltaFullFitFWHM << " keV (" << full_fwhm_raw << " -> " << full_fwhm_corr << ")" << endl;
+    cout << "=======================================================\n" << endl;
+  };
+
+  // --- OUTPUT DELTA COMPARISONS ---
+  PrintTrappingCorrectionSummary("LOW VOLTAGE (LV) STRIPS", lv_raw, lv_corr);
+  PrintTrappingCorrectionSummary("HIGH VOLTAGE (HV) STRIPS", hv_raw, hv_corr);
 
   return; 
 }
@@ -401,6 +445,11 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     } 
     // Read CCE curves
     else {
+      // Check if line is the column header text and skip it
+      if (Line.Contains("z_depth_mm") == true) {
+        continue;
+      }
+
       if (Tokens.size() == 5) {
         m_Depths.push_back(Tokens[0].Strip().ToDouble());
         m_CCEs_HV_e.push_back(Tokens[1].Strip().ToDouble());
@@ -433,14 +482,15 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC) {
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC)
+{
 
-  // Look up the simulation CCE baseline using the interpolate function
-  
+  if (sim_cce_sorted_e.empty() || sim_cce_sorted_h.empty()) {
+    return uncorrected_energy;
+  }
   double cce_base_e = Interpolate(depth_val, m_Depths, sim_cce_sorted_e);
   double cce_base_h = Interpolate(depth_val, m_Depths, sim_cce_sorted_h);
-  paramA=1.0;
-
+  
   // Evaluate the physical trapping function model using class global popt variables
   double expected_centroid_scaled =  (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
 
@@ -449,10 +499,8 @@ double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, d
       return uncorrected_energy;
   }
 
-  //Reconstruct the true un-trapped energy 
   return uncorrected_energy / expected_centroid_scaled;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -596,8 +644,8 @@ double MModuleTrappingCorrection::CalculateDirectFWHM(TH1D* hist)
   int maxSearchBin = std::min(hist->GetNbinsX(), maxBin + searchWindowBins);
 
   //Estimate local background level from the window edges
-  double bgLeft  = hist->GetBinContent(minSearchBin);
-  double bgRight = hist->GetBinContent(maxSearchBin);
+  // double bgLeft  = hist->GetBinContent(minSearchBin);
+  // double bgRight = hist->GetBinContent(maxSearchBin);
   double localBG =  0.0; // assume the background is  zero for now
   //(bgLeft + bgRight) / 2.0;
 
