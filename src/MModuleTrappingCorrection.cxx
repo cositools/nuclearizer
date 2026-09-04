@@ -339,76 +339,74 @@ void MModuleTrappingCorrection::Finalize()
     return (xRight > xLeft) ? (xRight - xLeft) : 0.0;
   };
 
-  // Helper lambda to perform fit, output results
-  // returns : mu, gauss_fwhm, full_fit_fwhm
-  auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::tuple<double, double, double, double> {
+  /// Helper lambda to perform fit, output results
+  // returns : tuple<mu, gauss_fwhm, full_fit_fwhm>
+  auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::tuple<double, double, double> {
     if (hist == nullptr || hist->GetEntries() <= 0) {
       cout << "WARNING: " << titleLabel << " histogram is null or has 0 entries." << endl;
-      return std::make_tuple(0.0, 0.0, 0.0, 0.0);
+      return std::make_tuple(0.0, 0.0, 0.0);
     }
 
     TF1* fitFunc = GeneratePhotopeakFunction();
     fitFunc->SetParameter("Amplitude", hist->GetBinContent(hist->GetMaximumBin()));
     hist->Fit(fitFunc, "RQ");
 
-    double mu         = fitFunc->GetParameter("x0 (Mu)");
-    double gaussFWHM  = 2.35482 * fitFunc->GetParameter("Sigma Gauss");
+    double mu        = fitFunc->GetParameter("x0 (Mu)");
+    double gaussFWHM = 2.35482 * fitFunc->GetParameter("Sigma Gauss");
     
     // Evaluate full function FWHM over the fit window (645 keV to 675 keV)
     double xMinFit = 645.0;
     double xMaxFit = 675.0;
     fitFunc->GetRange(xMinFit, xMaxFit);
     double fullFitFWHM = CalculateFunctionFWHM(fitFunc, xMinFit, xMaxFit);
-     
 
-    cout << "\n" << " --- " << titleLabel << " ---" << endl;
-    cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
-    cout << "  Fitted Gaussian FWHM : " << gaussFWHM << " keV" << endl;
+    cout << "\n --- " << titleLabel << " ---" << endl;
+    cout << "  Centroid (Mu)         : " << mu << " keV" << endl;
+    cout << "  Fitted Gaussian FWHM  : " << gaussFWHM << " keV" << endl;
     cout << "  Full Fit Function FWHM: " << fullFitFWHM << " keV" << endl;
-
 
     delete fitFunc;
     return std::make_tuple(mu, gaussFWHM, fullFitFWHM);
   };
   
   // --- EXECUTE FITS ---
-  std::tuple<double, double, double, double> lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
-  std::tuple<double, double, double, double> lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
+  std::tuple<double, double, double> lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
+  std::tuple<double, double, double> lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
 
-  std::tuple<double, double, double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
-  std::tuple<double, double, double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
+  std::tuple<double, double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
+  std::tuple<double, double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
 
-  // Helper lambda to print formatted delta comparison between raw and corrected results
+  // Helper lambda to print formatted delta comparison
   auto PrintTrappingCorrectionSummary = [](const string& channelLabel, 
-                                           const std::tuple<double, double, double, double>& raw, 
-                                           const std::tuple<double, double, double, double>& corr) 
+                                           const std::tuple<double, double, double>& raw, 
+                                           const std::tuple<double, double, double>& corr) 
   {
-    double mu_raw          = std::get<0>(raw);
-    double gauss_fwhm_raw  = std::get<1>(raw);
-    double full_fwhm_raw   = std::get<2>(raw);
+    double mu_raw         = std::get<0>(raw);
+    double gauss_fwhm_raw = std::get<1>(raw);
+    double full_fwhm_raw  = std::get<2>(raw);
 
-    double mu_corr          = std::get<0>(corr);
-    double gauss_fwhm_corr  = std::get<1>(corr);
-    double full_fwhm_corr   = std::get<2>(corr);
+    double mu_corr         = std::get<0>(corr);
+    double gauss_fwhm_corr = std::get<1>(corr);
+    double full_fwhm_corr  = std::get<2>(corr);
 
-    // Calculate changes: (Raw - Corrected)
+    // Calculate shifts and relative resolution changes
     double lineShift        = mu_corr - mu_raw;
-    double deltaGaussFWHM   = std::sqrt(std::pow(gauss_fwhm_raw,2) - std::pow(gauss_fwhm_corr,2));
-    double deltaFullFitFWHM = std::sqrt(std::pow(full_fwhm_raw,2) - std::pow(full_fwhm_corr,2));
+    double deltaGaussFWHM   = gauss_fwhm_corr - gauss_fwhm_raw;
+    double deltaFullFitFWHM = full_fwhm_corr - full_fwhm_raw;
 
     cout << "\n=======================================================" << endl;
     cout << "   TRAPPING CORRECTION SUMMARY: " << channelLabel << endl;
     cout << "=======================================================" << endl;
-    cout << " Centroid Shift (Delta Mu)      : " << lineShift << " keV (" << mu_raw << " -> " << mu_corr << ")" << endl;
-    cout << " Gaussian FWHM Change           : " << deltaGaussFWHM << " keV (" << gauss_fwhm_raw << " -> " << gauss_fwhm_corr << ")" << endl;
-    cout << " Full Fit Function FWHM Change  : " << deltaFullFitFWHM << " keV (" << full_fwhm_raw << " -> " << full_fwhm_corr << ")" << endl;
+    cout << " Centroid Shift (Delta Mu)     : " << lineShift << " keV (" << mu_raw << " -> " << mu_corr << ")" << endl;
+    cout << " Gaussian FWHM Change          : " << deltaGaussFWHM << " keV (" << gauss_fwhm_raw << " -> " << gauss_fwhm_corr << ")" << endl;
+    cout << " Full Fit Function FWHM Change : " << deltaFullFitFWHM << " keV (" << full_fwhm_raw << " -> " << full_fwhm_corr << ")" << endl;
     cout << "=======================================================\n" << endl;
   };
 
   // --- OUTPUT DELTA COMPARISONS ---
   PrintTrappingCorrectionSummary("LOW VOLTAGE (LV) STRIPS", lv_raw, lv_corr);
   PrintTrappingCorrectionSummary("HIGH VOLTAGE (HV) STRIPS", hv_raw, hv_corr);
-
+  
   return; 
 }
 /////////////////////////////////////////////////////////////////////////////////
