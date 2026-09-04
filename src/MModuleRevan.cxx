@@ -76,6 +76,8 @@ MModuleRevan::MModuleRevan() : MModule()
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
+
+  m_RawEventAnalyzer = nullptr;
 }
 
 
