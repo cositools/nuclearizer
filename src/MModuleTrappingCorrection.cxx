@@ -340,14 +340,12 @@ void MModuleTrappingCorrection::Finalize()
   };
 
   // Helper lambda to perform fit, output results
-  // returns : mu, gauss_fwhm, full_fit_fwhm, direct_fwhm
+  // returns : mu, gauss_fwhm, full_fit_fwhm
   auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::tuple<double, double, double, double> {
     if (hist == nullptr || hist->GetEntries() <= 0) {
       cout << "WARNING: " << titleLabel << " histogram is null or has 0 entries." << endl;
       return std::make_tuple(0.0, 0.0, 0.0, 0.0);
     }
-
-    double directFWHM = CalculateDirectFWHM(hist);
 
     TF1* fitFunc = GeneratePhotopeakFunction();
     fitFunc->SetParameter("Amplitude", hist->GetBinContent(hist->GetMaximumBin()));
@@ -367,11 +365,10 @@ void MModuleTrappingCorrection::Finalize()
     cout << "  Centroid (Mu)        : " << mu << " keV" << endl;
     cout << "  Fitted Gaussian FWHM : " << gaussFWHM << " keV" << endl;
     cout << "  Full Fit Function FWHM: " << fullFitFWHM << " keV" << endl;
-    cout << "  Direct Histogram FWHM: " << directFWHM << " keV" << endl;
 
 
     delete fitFunc;
-    return std::make_tuple(mu, gaussFWHM, fullFitFWHM, directFWHM);
+    return std::make_tuple(mu, gaussFWHM, fullFitFWHM);
   };
   
   // --- EXECUTE FITS ---
@@ -394,7 +391,7 @@ void MModuleTrappingCorrection::Finalize()
     double gauss_fwhm_corr  = std::get<1>(corr);
     double full_fwhm_corr   = std::get<2>(corr);
 
-    // Calculate changes: (Corrected - Raw)
+    // Calculate changes: (Raw - Corrected)
     double lineShift        = mu_corr - mu_raw;
     double deltaGaussFWHM   = std::sqrt(std::pow(gauss_fwhm_raw,2) - std::pow(gauss_fwhm_corr,2));
     double deltaFullFitFWHM = std::sqrt(std::pow(full_fwhm_raw,2) - std::pow(full_fwhm_corr,2));
@@ -603,85 +600,6 @@ TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
 
   return PhotopeakFunction;
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-double MModuleTrappingCorrection::CalculateDirectFWHM(TH1D* hist)
-{
-  if (hist == nullptr || hist->GetEntries() == 0) return 0.0;
-
-  //Locate the peak bin
-  int maxBin = hist->GetMaximumBin();
-
-  if (g_Verbosity >= c_Info){
-    cout << "INFO: Maximum bin located at: " << maxBin << " with content: " << hist->GetBinContent(maxBin) << endl;
-  }
-  
-  double peakHeight = hist->GetBinContent(maxBin);
-  if (peakHeight <= 0.0) return 0.0;
-
-  //Define a local search window (depends on binning you set on the GUI)
-  // Set the binning in the GUI to 0.1 keV before finalize function is called
-  const int searchWindowBins = 150; 
-  
-  int minSearchBin = std::max(1, maxBin - searchWindowBins);
-  int maxSearchBin = std::min(hist->GetNbinsX(), maxBin + searchWindowBins);
-
-  //Estimate local background level from the window edges
-  // double bgLeft  = hist->GetBinContent(minSearchBin);
-  // double bgRight = hist->GetBinContent(maxSearchBin);
-  double localBG =  0.0; // assume the background is  zero for now
-  //(bgLeft + bgRight) / 2.0;
-
-  // Calculate net peak height above background
-  double netPeakHeight = peakHeight - localBG;
-  if (netPeakHeight <= 0.0) return 0.0;
-
-  // Target level is half-maximum relative to local background
-  double targetHalfMax = localBG + (netPeakHeight / 2.0);
-
-  //Search left within the restricted window
-  double xLeft = -1.0;
-  for (int b = maxBin; b >= minSearchBin; --b) {
-    if (hist->GetBinContent(b) <= targetHalfMax) {
-      double x1 = hist->GetBinCenter(b);
-      double y1 = hist->GetBinContent(b);
-      double x2 = hist->GetBinCenter(b + 1);
-      double y2 = hist->GetBinContent(b + 1);
-
-      // Linear interpolation between adjacent bins
-      xLeft = (y2 != y1) ? x1 + (targetHalfMax - y1) * (x2 - x1) / (y2 - y1) : x1;
-      break;
-    }
-  }
-
-  //Search right within the restricted window
-  double xRight = -1.0;
-  for (int b = maxBin; b <= maxSearchBin; ++b) {
-    if (hist->GetBinContent(b) <= targetHalfMax) {
-      double x1 = hist->GetBinCenter(b - 1);
-      double y1 = hist->GetBinContent(b - 1);
-      double x2 = hist->GetBinCenter(b);
-      double y2 = hist->GetBinContent(b);
-
-      // Linear interpolation between adjacent bins
-      xRight = (y2 != y1) ? x1 + (targetHalfMax - y1) * (x2 - x1) / (y2 - y1) : x2;
-      break;
-    }
-  }
-
-  // Ensure valid crossing points were found on both sides
-  if (xLeft < 0.0 || xRight < 0.0) {
-    if (g_Verbosity >= c_Warning) {
-      cout << "WARNING in CalculateDirectFWHM: Peak did not cross half-maximum inside local window." << endl;
-    }
-    return 0.0;
-  }
-
-  return (xRight - xLeft);
-}
-////////////////////////////////////////////////////////////////////////////////
-
 
 // MModuleTrappingCorrection.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

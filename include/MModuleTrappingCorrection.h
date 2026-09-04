@@ -83,10 +83,6 @@ class MModuleTrappingCorrection : public MModule
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
   
-  // Getters to retrieve the calculated values after Finalize() runs
-  double GetDirectFWHM_LV() const { return m_DirectFWHM_LV; }
-  double GetDirectFWHM_HV() const { return m_DirectFWHM_HV; }
-
   // protected methods:
  protected:
 
@@ -118,18 +114,6 @@ class MModuleTrappingCorrection : public MModule
 
   bool m_SimCCEFileIsLoaded;
 
-  // double m_ParamA_HV;
-  // double m_ParamA_LV;
-  // double m_ParamB;
-  // double m_ParamC;
-  // std::vector<double> m_Depths;
-  // std::vector<double> m_CCEs_HV_e;
-  // std::vector<double> m_CCEs_HV_h;
-  // std::vector<double> m_CCEs_LV_e;
-  // std::vector<double> m_CCEs_LV_h;
-
-
-
   // private members:
  private:
 
@@ -139,11 +123,6 @@ class MModuleTrappingCorrection : public MModule
   MGUIExpoTrappingCorrection* m_ExpoSpectrum;
   
   TF1* GeneratePhotopeakFunction();
-
-  double CalculateDirectFWHM(TH1D* hist);
-  
-  double m_DirectFWHM_LV = 0.0;
-  double m_DirectFWHM_HV = 0.0;
 
   TGCheckButton* m_LogYButton;
 
