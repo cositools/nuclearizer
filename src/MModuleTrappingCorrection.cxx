@@ -162,27 +162,16 @@ void MModuleTrappingCorrection::CreateExpos()
 
 bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event) 
 {
-  if (Event->GetGuardRingVeto() == true) {
-    // Right now we cannot use events w GR veto 
-    return false;
+
+  if (Event->GetGuardRingVeto() || m_DetectorParamMap.empty()) {
   } 
-
-  // Make sure CCE depth vectors are loaded from the parameter file
-  if (m_Depths.empty()) {
-    return true;
-  }
-
-  // Get the exact Z boundaries directly from the loaded parameter file
-  const double min_param_depth = std::min(m_Depths.front(), m_Depths.back()); 
-  const double max_param_depth = std::max(m_Depths.front(), m_Depths.back()); 
 
   for (unsigned int i = 0; i < Event->GetNHits(); ++i) {
     MHit* H = Event->GetHit(i);
 
-      int Grade = m_DepthCalibration->GetHitGrade(H);
 
-    // Skip trapping correction if Grade is invalid or hit has no depth calibration
-    if (Grade < 0 || Grade > 4 ) {
+    int Grade = m_DepthCalibration->GetHitGrade(H);
+    if (Grade < 0 || Grade > 4) {
       H->SetNoDepth();
       continue; 
     } 
@@ -190,67 +179,98 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     // Local Z depth position (in cm) from the hit
     double depth_val = H->GetLocalPosition().GetZ();
 
-    // --- CHECK HIT DEPTH AGAINST PARAMETER FILE BOUNDS ---
-    bool is_depth_out_of_bounds = (depth_val < min_param_depth || depth_val > max_param_depth);
-
-    if (is_depth_out_of_bounds) {
-      cout << "WARNING [TrappingCorrection]: Hit Z = " << depth_val << " cm is OUTSIDE "
-            << "parameter file bounds [" << min_param_depth << ", " << max_param_depth << "] cm! "
-            << "Leaving hit uncorrected." << endl;  
-    }
-
-    // Classify strips
+    // Separate strip hits into LV and HV lists
     vector<MStripHit*> LVStrips;
     vector<MStripHit*> HVStrips;
 
-        for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
-          MStripHit* SH = H->GetStripHit(j);
-          if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
+
+    for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
+      MStripHit* SH = H->GetStripHit(j);
+      if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH);
+      else HVStrips.push_back(SH);
+    }
+
+    // To account for charge sharing, get the dominant strip in each category and its energy fraction
+    double LVEnergyFraction = 0.0;
+    double HVEnergyFraction = 0.0;
+    MStripHit* LVSH = m_DepthCalibration->GetDominantStrip(LVStrips, LVEnergyFraction); 
+    MStripHit* HVSH = m_DepthCalibration->GetDominantStrip(HVStrips, HVEnergyFraction); 
+  
+    // --- Low Voltage (LV) Side ---
+    if (LVSH != nullptr) {
+      int detID = LVSH->GetDetectorID();
+      // Iterate through detector param map to look up pre-loaded parameters for this detector
+      auto it = m_DetectorParamMap.find(detID);
+
+      if (it != m_DetectorParamMap.end()) {
+        // Define a reference to the detector param struct 
+        // Access the parameter data once the iterator is fixed
+        const DetectorTrappingData& detData = it->second;
+
+        // Check depth bounds using this specific detector's CCE grid limits
+        double min_param_depth = std::min(detData.m_Depths.front(), detData.m_Depths.back());
+        double max_param_depth = std::max(detData.m_Depths.front(), detData.m_Depths.back());
+        bool is_depth_out_of_bounds = (depth_val < min_param_depth || depth_val > max_param_depth);
+
+        double rawLVEnergy = LVSH->GetEnergy(); 
+
+        if (HasExpos() == true) {
+          m_ExpoSpectrum->AddEnergyInitial(rawLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
         }
 
-        double LVEnergyFraction;
-        double HVEnergyFraction;
-        MStripHit* LVSH = m_DepthCalibration->GetDominantStrip(LVStrips, LVEnergyFraction); 
-        MStripHit* HVSH = m_DepthCalibration->GetDominantStrip(HVStrips, HVEnergyFraction); 
+        double correctedLVEnergy = rawLVEnergy;
+        if (!is_depth_out_of_bounds) {
+          correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, detData.m_Depths, detData.m_CCEs_LV_e, detData.m_CCEs_LV_h, detData.m_ParamB, detData.m_ParamC);
+        }
 
-    // --- LV Side ---
-    if (LVSH != nullptr) {
-      double rawLVEnergy = LVSH->GetEnergy(); 
+        LVSH->SetEnergy(correctedLVEnergy);    
 
-      if (HasExpos() == true) {
-        m_ExpoSpectrum->AddEnergyInitial(rawLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
-      }
-
-      // If out-of-bounds, do NOT pass to GetSimBasedCorrectedEnergy; retain raw energy
-      double correctedLVEnergy = rawLVEnergy;
-      if (!is_depth_out_of_bounds) {
-        correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, m_CCEs_LV_e, m_CCEs_LV_h, m_ParamB, m_ParamC);
-      }
-
-      LVSH->SetEnergy(correctedLVEnergy);    
-
-      if (HasExpos() == true) {
-        m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
+        if (HasExpos() == true) {
+          m_ExpoSpectrum->AddEnergyFinal(correctedLVEnergy, LVSH->IsNearestNeighbor(), LVSH->IsLowVoltageStrip());
+        }
+      } else {
+        if (g_Verbosity >= c_Warning) {
+          cout << "WARNING [TrappingCorrection]: LV Strip Detector ID " << detID << " not found in map!" << endl;
+        }
       }
     }
 
-    // --- HV Side  ---
+    // --- High Voltage (HV) Side ---
     if (HVSH != nullptr) {
-      double rawHVEnergy = HVSH->GetEnergy(); 
+            int detID = HVSH->GetDetectorID();
+      // Iterate through detector param map to look up pre-loaded parameters for this detector
+      auto it = m_DetectorParamMap.find(detID);
 
-            // 1. Record UNCORRECTED (raw) HV energy to expo spectrum
-            if (HasExpos() == true) {
-              m_ExpoSpectrum->AddEnergyInitial(rawHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
-            }
 
-            // 2. Compute trapping correction
-            double correctedHVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawHVEnergy, m_CCEs_HV_e, m_CCEs_HV_h,  m_ParamB, m_ParamC);
-            HVSH->SetEnergy(correctedHVEnergy);    
+      if (it != m_DetectorParamMap.end()) {
+        // Define a reference to the detector param struct 
+        // Access the parameter data once the iterator is fixed
+        const DetectorTrappingData& detData = it->second;
 
-            // 3. Record CORRECTED (final) HV energy to expo spectrum
-            if (HasExpos() == true) {
-              m_ExpoSpectrum->AddEnergyFinal(correctedHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
-            }
+        // Check depth bounds using this specific detector's CCE grid limits
+        double min_param_depth = std::min(detData.m_Depths.front(), detData.m_Depths.back());
+        double max_param_depth = std::max(detData.m_Depths.front(), detData.m_Depths.back());
+        bool is_depth_out_of_bounds = (depth_val < min_param_depth || depth_val > max_param_depth);
+
+        double rawHVEnergy = HVSH->GetEnergy(); 
+        
+        if (HasExpos() == true) {
+          m_ExpoSpectrum->AddEnergyInitial(rawHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
+        }
+        double correctedHVEnergy = rawHVEnergy;
+        if (!is_depth_out_of_bounds) {
+          correctedHVEnergy = GetSimBasedCorrectedEnergy( depth_val, rawHVEnergy, detData.m_Depths, detData.m_CCEs_HV_e, detData.m_CCEs_HV_h, detData.m_ParamB, detData.m_ParamC);
+        }
+
+        HVSH->SetEnergy(correctedHVEnergy);    
+
+        if (HasExpos() == true) {
+          m_ExpoSpectrum->AddEnergyFinal(correctedHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
+        }
+      } else {
+        if (g_Verbosity >= c_Warning) {
+          cout << "WARNING [TrappingCorrection]: HV Strip Detector ID " << detID << " not found in map!" << endl;
+
         }
       }
     }
@@ -259,7 +279,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   Event->SetAnalysisProgress(MAssembly::c_TrappingCorrection);
   return true;
 }
-
+    
 /////////////////////////////////////////////////////////////////////////////////
 
 void MModuleTrappingCorrection::Finalize()
@@ -400,91 +420,55 @@ void MModuleTrappingCorrection::Finalize()
 bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 {
   MFile SimCCEFile;
-  if (SimCCEFile.Open(FileName) == false) {
-    if (g_Verbosity >= c_Error) {
-      cout << "ERROR in MModuleTrappingCorrection::LoadSimCCEFile: failed to open file " << FileName << endl;
-    }
-    return false;
-  }
+  if (!SimCCEFile.Open(FileName)) return false;
 
-  m_Depths.clear();
-  m_CCEs_HV_e.clear();
-  m_CCEs_HV_h.clear();
-  m_CCEs_LV_e.clear();
-  m_CCEs_LV_h.clear();
-
+  m_DetectorParamMap.clear();
   MString Line;
-  bool ParsedHeaderParameters = false;
+  int currentDetID = -1;
 
   while (SimCCEFile.ReadLine(Line)) {
- 
-    // Skip empty lines or pure comment lines
-    if (Line.IsEmpty() == true || Line.BeginsWith('#') == true) {
+    Line = Line.Strip();
+    if (Line.IsEmpty()) continue;
+
+    // Detect section header: "### <Detector ID>"
+    if (Line.BeginsWith("###")) {
+      std::vector<MString> Tokens = Line.Tokenize(" ");
+      if (Tokens.size() >= 1) {
+        currentDetID = Tokens.back().Strip().ToInt();
+      }
       continue;
     }
 
+    if (currentDetID < 0 || Line.BeginsWith('#')) continue;
+
     std::vector<MString> Tokens = Line.Tokenize(",");
+    DetectorTrappingData& det = m_DetectorParamMap[currentDetID];
 
-    // Read parameters (A_HV, A_LV, B, C) 
-    if (ParsedHeaderParameters == false) {
-      if (Tokens.size() == 4) {
-        m_ParamA_HV = Tokens[0].Strip().ToDouble();
-        m_ParamA_LV = Tokens[1].Strip().ToDouble();
-        m_ParamB    = Tokens[2].Strip().ToDouble();
-        m_ParamC    = Tokens[3].Strip().ToDouble();
-
-        ParsedHeaderParameters = true;
-      } else {
-        if (g_Verbosity >= c_Error) {
-          cout << "ERROR in LoadSimCCEFile: Expected 4 parameters (A_HV, A_LV, B, C) on first data line, found " 
-               << Tokens.size() << " tokens." << endl;
-        }
-        SimCCEFile.Close();
-        return false;
-      }
-    } 
-    // Read CCE curves
-    else {
-      // Check if line is the column header text and skip it
-      if (Line.Contains("z_depth_mm") == true) {
-        continue;
-      }
-
-      if (Tokens.size() == 5) {
-        m_Depths.push_back(Tokens[0].Strip().ToDouble());
-        m_CCEs_HV_e.push_back(Tokens[1].Strip().ToDouble());
-        m_CCEs_HV_h.push_back(Tokens[2].Strip().ToDouble());
-        m_CCEs_LV_e.push_back(Tokens[3].Strip().ToDouble());
-        m_CCEs_LV_h.push_back(Tokens[4].Strip().ToDouble());
-      } 
+    // Read parameters (A_HV, A_LV, B, C)
+    if (det.m_Depths.empty() && Tokens.size() == 4) {
+      det.m_ParamA_HV = Tokens[0].Strip().ToDouble();
+      det.m_ParamA_LV = Tokens[1].Strip().ToDouble();
+      det.m_ParamB    = Tokens[2].Strip().ToDouble();
+      det.m_ParamC    = Tokens[3].Strip().ToDouble();
+    }
+    // Read CCE depth curves
+    else if (Tokens.size() == 5 && !Line.Contains("z_depth")) {
+      det.m_Depths.push_back(Tokens[0].Strip().ToDouble());
+      det.m_CCEs_HV_e.push_back(Tokens[1].Strip().ToDouble());
+      det.m_CCEs_HV_h.push_back(Tokens[2].Strip().ToDouble());
+      det.m_CCEs_LV_e.push_back(Tokens[3].Strip().ToDouble());
+      det.m_CCEs_LV_h.push_back(Tokens[4].Strip().ToDouble());
     }
   }
 
   SimCCEFile.Close();
-
-  if (ParsedHeaderParameters == false || m_Depths.size() == 0) {
-    if (g_Verbosity >= c_Error) {
-      cout << "ERROR in LoadSimCCEFile: No valid CCE data points were loaded!" << endl;
-    }
-    return false;
-  }
-
-  // Console output on successful load
-  if (g_Verbosity >= c_Info) {
-    cout << m_XmlTag << "Loaded CCE simulation parameters from " << FileName << ":" << endl;
-    cout << m_XmlTag << "  A_HV = " << m_ParamA_HV << ", A_LV = " << m_ParamA_LV 
-         << ", B = " << m_ParamB << ", C = " << m_ParamC << endl;
-    cout << m_XmlTag << "  Loaded " << m_Depths.size() << " depth grid points." << endl;
-  }
-
-  return true;
+  return !m_DetectorParamMap.empty();
 }
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC)
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& depths, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC)
 {
-
   if (sim_cce_sorted_e.empty() || sim_cce_sorted_h.empty()) {
     return uncorrected_energy;
   }

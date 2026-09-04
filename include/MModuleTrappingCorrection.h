@@ -87,7 +87,6 @@ class MModuleTrappingCorrection : public MModule
   double GetDirectFWHM_LV() const { return m_DirectFWHM_LV; }
   double GetDirectFWHM_HV() const { return m_DirectFWHM_HV; }
 
-
   // protected methods:
  protected:
 
@@ -95,7 +94,7 @@ class MModuleTrappingCorrection : public MModule
   bool LoadSimCCEFile(MString FName);
 
   //! Get the Sim-based corrected energy given the depth value, uncorrected energy, and the sorted Sim CCE values
-  double GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC);
+  double GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& depths, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC);
 
   //! Interpolate a value given x, xp, and fp
   double Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp);
@@ -119,15 +118,15 @@ class MModuleTrappingCorrection : public MModule
 
   bool m_SimCCEFileIsLoaded;
 
-  double m_ParamA_HV;
-  double m_ParamA_LV;
-  double m_ParamB;
-  double m_ParamC;
-  std::vector<double> m_Depths;
-  std::vector<double> m_CCEs_HV_e;
-  std::vector<double> m_CCEs_HV_h;
-  std::vector<double> m_CCEs_LV_e;
-  std::vector<double> m_CCEs_LV_h;
+  // double m_ParamA_HV;
+  // double m_ParamA_LV;
+  // double m_ParamB;
+  // double m_ParamC;
+  // std::vector<double> m_Depths;
+  // std::vector<double> m_CCEs_HV_e;
+  // std::vector<double> m_CCEs_HV_h;
+  // std::vector<double> m_CCEs_LV_e;
+  // std::vector<double> m_CCEs_LV_h;
 
 
 
@@ -147,6 +146,26 @@ class MModuleTrappingCorrection : public MModule
   double m_DirectFWHM_HV = 0.0;
 
   TGCheckButton* m_LogYButton;
+
+  //! struct definition for trapping parameters and CCE curves for each detector
+  struct DetectorTrappingData {
+    double m_ParamA_HV = 1.0;
+    double m_ParamA_LV = 1.0;
+    double m_ParamB    = 0.0;
+    double m_ParamC    = 0.0;
+
+    std::vector<double> m_Depths;
+    std::vector<double> m_CCEs_HV_e;
+    std::vector<double> m_CCEs_HV_h;
+    std::vector<double> m_CCEs_LV_e;
+    std::vector<double> m_CCEs_LV_h;
+  };
+
+  //! Helper method using the struct pointer
+  const DetectorTrappingData* GetDetectorData(int DetID) const;
+
+  //! Stores trapping parameters and CCE curves for all loaded detectors
+  std::map<int, DetectorTrappingData> m_DetectorParamMap; 
 
 
 #ifdef ___CLING___
