@@ -179,10 +179,10 @@ int main(int Argc, char** Argv)
 
   MStripThresholdFinder Finder;
 
-  if (!Finder.ParseCommandLine(Argc, Argv)) {
+  if (Finder.ParseCommandLine(Argc, Argv) == false) {
     return 1;
   }
-  if (!Finder.BuildHistograms()) {
+  if (Finder.BuildHistograms() == false) {
     return 1;
   }
 
@@ -268,7 +268,7 @@ int main(int Argc, char** Argv)
 bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 {
   if (argc < 2) {
-    cout << "Usage: ./StripEnergyThresholdFinder config.xml" << endl;
+    cout << "Usage: StripEnergyThresholdFinder config.xml" << endl;
     return false;
   }
 
@@ -369,7 +369,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     }
   }
 
-  if (m_InputFiles.empty()) {
+  if (m_InputFiles.empty() == true) {
     cerr << "Error: No input files provided." << endl;
     delete Document;
     return false;
@@ -479,7 +479,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     case 'h':
       cout << endl;
       cout << "Usage:" << endl;
-      cout << "  ./StripEnergyThresholdFinder config.xml [options]" << endl;
+      cout << "  StripEnergyThresholdFinder config.xml [options]" << endl;
       cout << endl;
 
       cout << "Options:" << endl;
@@ -564,7 +564,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
   fs::path outPath(m_OutputPrefix.Data());
 
-  if (!outPath.is_absolute()) {
+  if (outPath.is_absolute() == false) {
     m_OutputPrefix = (outputDir / outPath).string();
   }
 
@@ -663,14 +663,14 @@ bool MStripThresholdFinder::BuildHistograms()
   ++ModuleIndex;
 
 
-  if (!Loader->Initialize())
+  if (Loader->Initialize() == false)
 
   {
     cerr << "Failed to initialize loader!" << endl;
     return false;
   }
 
-  if (!EnergyCalibrator->Initialize()) {
+  if (EnergyCalibrator->Initialize() == false) {
     cerr << "Failed to initialize energy calibration!" << endl;
     return false;
   }
@@ -679,7 +679,7 @@ bool MStripThresholdFinder::BuildHistograms()
 
   long event_counter = 0;
   auto start_time = std::chrono::steady_clock::now();
-  while (!Loader->IsFinished()) {
+  while (Loader->IsFinished() == false) {
 
     if (max_events > 0 && event_counter >= max_events) {
       break;
@@ -687,7 +687,7 @@ bool MStripThresholdFinder::BuildHistograms()
 
     Event->Clear();
 
-    if (Loader->IsReady()) {
+    if (Loader->IsReady() == true) {
       Loader->AnalyzeEvent(Event);
       EnergyCalibrator->AnalyzeEvent(Event);
       event_counter++;
@@ -834,7 +834,7 @@ bool MStripThresholdFinder::BuildHistograms()
 
         auto& counts = (is_dt1 ? dt1_counts[R] : dt0_counts[R]);
 
-        if (counts.empty()) {
+        if (counts.empty() == true) {
           counts.resize(m_HistogramBins, 0);
         }
 
@@ -952,7 +952,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
       thresholds[R] = m_FallbackThreshold;
 
-	  // Mark the ADC value as invalide since we cannot easily convert back from
+	  // Mark the ADC value as invalid since we cannot easily convert back from
 	  // the fallback keV value to ADC bins
       thresholdsADC[R] = -1.0;
 
@@ -1124,7 +1124,7 @@ void MStripThresholdFinder::FindSlowThresholds()
           flatTop = false;
         }
 
-        if (flatTop) {
+        if (flatTop == true) {
 
           for (int p = b; p <= plateauEndBin; ++p) {
 
@@ -1150,7 +1150,7 @@ void MStripThresholdFinder::FindSlowThresholds()
         // immediately entering a sustained falling tail.
         // ---------------------------------------------------------
 
-        if (flatTop) {
+        if (flatTop == true) {
 
           int tailEndBin =
             min(plateauEndBin + pedestalTailCheckBins, maxSearchBin);
@@ -1173,12 +1173,7 @@ void MStripThresholdFinder::FindSlowThresholds()
           }
         }
 
-        if (!flatTop) {
-          continue;
-        }
-
-
-        if (!flatTop) {
+        if (flatTop == false) {
           continue;
         }
 
@@ -1249,7 +1244,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     double hardwareReferenceCounts = peakCounts;
 
-    if (pedestalLike && pedestalPlateauCounts > 0.0) {
+    if (pedestalLike == true && pedestalPlateauCounts > 0.0) {
       hardwareReferenceCounts = pedestalPlateauCounts;
     }
 
@@ -1314,7 +1309,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     int thresholdBin = peakBin;
 
-    if (pedestalLike) {
+    if (pedestalLike == true) {
 
       // Pedestal-like distribution:
       // pedestalThresholdBin already includes the offset that moves
@@ -1375,7 +1370,7 @@ void MStripThresholdFinder::FindSlowThresholds()
     // logic above already moves them a few bins into the flat top.
     // -------------------------------------------------------------
 
-    if (!pedestalLike) {
+    if (pedestalLike == false) {
       const int shiftBins = 2;
       thresholdBin =
         min(thresholdBin + shiftBins, hist->GetNbinsX());
@@ -1424,7 +1419,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 void MStripThresholdFinder::FindFastThresholds()
 {
 
-  if (m_TimingCounts.empty()) {
+  if (m_TimingCounts.empty() == true) {
     cout << "Warning: No timing data available for fast threshold calculation." << endl;
   }
 
@@ -1538,7 +1533,7 @@ void MStripThresholdFinder::FindFastThresholds()
 
     // Find first nonzero ADC
     int first_nonzero = -1;
-    if (kv.second.empty()) {
+    if (kv.second.empty() == true) {
       continue;
     }
 
@@ -1672,7 +1667,7 @@ void MStripThresholdFinder::FindFastThresholds()
 void MStripThresholdFinder::WriteCSV()
 {
 
-  if (m_SlowThresholds.empty() && m_FastThresholds.empty()) {
+  if (m_SlowThresholds.empty() == true && m_FastThresholds.empty() == true) {
     cout << "Warning: No thresholds available to write to CSV." << endl;
   }
 
@@ -1686,20 +1681,13 @@ void MStripThresholdFinder::WriteCSV()
   ofstream csv_HV(HVOutputCSVFileName);
   ofstream csv_LV(LVOutputCSVFileName);
 
-  if (!csv_HV.is_open()) {
+  if (csv_HV.is_open() == false) {
     cerr << "Error: Failed to open CSV output file for HV thresholds: "
          << HVOutputCSVFileName << endl;
     return;
   }
 
-  if (!csv_LV.is_open()) {
-    cerr << "Error: Failed to open CSV output file for LV thresholds: "
-         << LVOutputCSVFileName << endl;
-    return;
-  }
-
-
-  if (!csv_LV.is_open()) {
+  if (csv_LV.is_open() == false) {
     cerr << "Error: Failed to open CSV output file for LV thresholds: "
          << LVOutputCSVFileName << endl;
     return;
@@ -1748,13 +1736,13 @@ void MStripThresholdFinder::WriteCSV()
   ofstream csv_Hardware_HV(HardwareHVOutputCSVFileName);
   ofstream csv_Hardware_LV(HardwareLVOutputCSVFileName);
 
-  if (!csv_Hardware_HV.is_open()) {
+  if (csv_Hardware_HV.is_open() == false) {
     cerr << "Error: Failed to open CSV output file for HV hardware thresholds: "
          << HardwareHVOutputCSVFileName << endl;
     return;
   }
 
-  if (!csv_Hardware_LV.is_open()) {
+  if (csv_Hardware_LV.is_open() == false) {
     cerr << "Error: Failed to open CSV output file for LV hardware thresholds: "
          << HardwareLVOutputCSVFileName << endl;
     return;
@@ -1837,7 +1825,7 @@ void MStripThresholdFinder::WriteCSV()
 void MStripThresholdFinder::WriteDiagnostics()
 {
 
-  if (m_SlowThresholds.empty() && m_FastThresholds.empty()) {
+  if (m_SlowThresholds.empty() == true && m_FastThresholds.empty() == true) {
     cout << "Warning: No thresholds available for diagnostics." << endl;
   }
 
@@ -2217,7 +2205,7 @@ void MStripThresholdFinder::WriteDiagnostics()
   // Threshold vs Strip for HV and LV sides
   // -------------------------------------------------------------
 
-  if (!m_StripIndex_LV.empty()) {
+  if (m_StripIndex_LV.empty() == false) {
     TGraph Threshold_vs_Strip_LV(
       m_StripIndex_LV.size(),
       m_StripIndex_LV.data(),
@@ -2231,7 +2219,7 @@ void MStripThresholdFinder::WriteDiagnostics()
     Threshold_vs_Strip_LV.Write();
   }
 
-  if (!m_StripIndex_HV.empty()) {
+  if (m_StripIndex_HV.empty() == false) {
     TGraph Threshold_vs_Strip_HV(
       m_StripIndex_HV.size(),
       m_StripIndex_HV.data(),
@@ -2302,7 +2290,7 @@ void MStripThresholdFinder::WriteDiagnostics()
       line->Draw("SAME");
 
       // Legend entry (fix from earlier)
-      leg->AddEntry(line, "Fast Thresholdeshold", "l");
+      leg->AddEntry(line, "Fast Threshold", "l");
     }
 
     //leg->AddEntry((TObject*)0, "Fast Threshold", ""); // label only
