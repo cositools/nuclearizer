@@ -55,24 +55,34 @@ ClassImp(MModuleSaverMeasurementsFITS)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS() : MModule()
+MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS() :
+  MModuleSaverMeasurementsFITS("XmlTagSaverMeasurementsFITS", 1, "Save events to FITS files (L1b/L2)")
+{
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS(MString XmlTag, int OutputDataLevel, MString Name) : MModule()
 {
   // Construct an instance of MModuleSaverMeasurementsFITS
 
   // Set all module relevant information
 
   // Set the module name --- has to be unique
-  m_Name = "Save events to FITS files (L1b/L2)";
+  m_Name = Name;
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "XmlTagSaverMeasurementsFITS";
-
-  // Set all modules, which have to be done before this module
-  AddPreceedingModuleType(MAssembly::c_EventLoader);
-  AddPreceedingModuleType(MAssembly::c_StripPairing);
+  m_XmlTag = XmlTag;
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventSaver);
+
+  AddSucceedingModuleType(MAssembly::c_NoRestriction);
+
+  // Allow multiple savers per sequence
+  SetTypeExclusive(false);
 
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
@@ -88,10 +98,12 @@ MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS() : MModule()
   m_TotalEventsSkipped = 0;
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
-  m_OutputDataLevel = 1; // 1 = L1b (default), 2 = L2
+  m_OutputDataLevel = OutputDataLevel; // 0 = L1a, 1 = L1b, 2 = L2
   m_FirstEventTime_RTS = 0.0;
   m_LastEventTime_RTS = 0.0;
   m_HasEvents = false;
+
+  ConfigurePreceedingModules();
 }
 
 
@@ -118,11 +130,6 @@ bool MModuleSaverMeasurementsFITS::Initialize()
 
   // If output data level is 0, call the external m_L1aWriter
   if (m_OutputDataLevel == 0) {
-    // L1b need strip pairing which is not a requirement for L1a.
-    m_PreceedingModules.clear();
-    m_PreceedingModulesHardRequirement.clear();
-    AddPreceedingModuleType(MAssembly::c_EventLoader);
-
     if (m_L1aWriter.Create(m_FileName) == false) {
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to create L1a FITS file."<<endl;
       return false;
@@ -137,6 +144,27 @@ bool MModuleSaverMeasurementsFITS::Initialize()
   }
 
   return MModule::Initialize();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleSaverMeasurementsFITS::ConfigurePreceedingModules()
+{
+  // Start from a clean list
+  ClearPreceedingModuleTypes();
+
+  // The L1a saver should only be shown right after the measurement loader
+  if (m_OutputDataLevel == 0) {
+    AddPreceedingModuleType(MAssembly::c_EventLoaderMeasurement, true, true);
+  } else if (m_OutputDataLevel == 1 || m_OutputDataLevel == 2) {
+    // For L1b and L2, the saver requires event loader, strip pairing, depth calibration, and event reconstruction
+    AddPreceedingModuleType(MAssembly::c_EventLoader);
+    AddPreceedingModuleType(MAssembly::c_StripPairing);
+    AddPreceedingModuleType(MAssembly::c_DepthCorrection);
+    AddPreceedingModuleType(MAssembly::c_EventReconstruction);
+  }
 }
 
 
@@ -159,7 +187,7 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
 
     // Add some keywords to primary HDU
     m_PrimaryHDU->addKey("TELESCOP", "COSI", "Mission name");
-    m_PrimaryHDU->addKey("INSTRUME", "GeD", "Instrument name");
+    m_PrimaryHDU->addKey("INSTRUME", "GED", "Instrument name");
     m_PrimaryHDU->addKey("OBS_ID", "YYYYMMDD", "Observation ID"); //OBS_ID should have the same YYYYMMDD as the filename
     m_PrimaryHDU->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date");  //DATE-OBS should have the start date and time of the data, and this should match the YYYYMMDD in the filename
     m_PrimaryHDU->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date");   //DATE-END should have the stop time of the data, i.e. the last timestamp
@@ -172,7 +200,7 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%dT%H:%M:%S", utc);
     m_PrimaryHDU->addKey("DATE", string(dateBuffer), "File creation date (UTC)"); //DATE should have the date of the file creation
 
-    m_PrimaryHDU->addKey("CREATOR", "TBD", "Software that created this file");
+    m_PrimaryHDU->addKey("CREATOR", "Nuclearizer", "Software that create 1st the file");
 
     // Define columns for science data table per HEASARC Tech Agreement v1.1.
     bool isL1b = (m_OutputDataLevel == 1);
@@ -256,15 +284,15 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     m_ScienceTable->addKey("CLOCKAPP", "F", "If clock corrections are applied (T/F)");
     m_ScienceTable->addKey("DATE-OBS", "yyyy-mm-ddThh:mm:ss", "Start Date"); //placeholder, this will be written after we read through all the events
     m_ScienceTable->addKey("DATE-END", "yyyy-mm-ddThh:mm:ss", "Stop Date"); // 
-    m_ScienceTable->addKey("TSTART", 0.0, "Start time"); //placeholder, this will be written after we read through all the events
-    m_ScienceTable->addKey("TSTOP", 0.0, "Stop time"); //
+    m_ScienceTable->addKey("TSTART", 0.0, "[s] Observation start"); //placeholder, this will be written after we read through all the events
+    m_ScienceTable->addKey("TSTOP", 0.0, "[s] Observation stop"); //
     m_ScienceTable->addKey("HDUCLASS", "OGIP", "format conforms to OGIP standard");
     m_ScienceTable->addKey("HDUCLAS1", "ARRAY", "hduclass1");
     m_ScienceTable->addKey("HDUCLAS2", "TOTAL", "hduclas2");
-    m_ScienceTable->addKey("CREATOR", "TBD", "Software that create 1st the file");
-    m_ScienceTable->addKey("PROCVER", "MM.XX.NN.YY", "Processing Version");
-    m_ScienceTable->addKey("CALDBVER", "csYYYYMMDD", "CALDB version");
-    m_ScienceTable->addKey("SEQPNUM", "nn", "Times the dataset has been processed");
+    m_ScienceTable->addKey("CREATOR", "Nuclearizer", "Software that create 1st the file");
+    m_ScienceTable->addKey("PROCVER", "00.00.00.00", "Processing version");  // MM.XX.YY.NN; ICD reserves MM=00 for development/testing
+    m_ScienceTable->addKey("CALDBVER", "cs20230401", "CALDB index version used");  // provisional value per ICD until first CALDB ingestion
+    m_ScienceTable->addKey("SEQPNUM", 0, "Times the dataset has been processed");
     m_ScienceTable->addKey("ORIGIN", "SSL", "Origin of the FITS files");
     m_ScienceTable->addKey("DATE", string(dateBuffer), "File creation date (UTC)"); //DATE should have the date of the file creation (same as primary header)
     // CHECKSUM and DATASUM are written at file close in Finalize()
@@ -331,8 +359,7 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   uint8_t eventClass = 5;   // 5 = unknown
   uint32_t eventID = (uint32_t)Event->GetID();
   
-  // TODO: figure out where to get VETO
-  uint8_t veto = 0;
+  uint8_t veto = Event->IsVeto() ? 1 : 0;
   std::string quality_flag;
 
   // L2: fixed-length 10 hit arrays, zero-padded 
@@ -606,8 +633,8 @@ void MModuleSaverMeasurementsFITS::Finalize()
       // Update science table HDU
       m_ScienceTable->addKey("DATE-OBS", string(startBuf), "Start Date");
       m_ScienceTable->addKey("DATE-END", string(stopBuf), "Stop Date");
-      m_ScienceTable->addKey("TSTART", m_FirstEventTime_RTS, "Start time (RTS)");
-      m_ScienceTable->addKey("TSTOP", m_LastEventTime_RTS, "Stop time (RTS)");
+      m_ScienceTable->addKey("TSTART", m_FirstEventTime_RTS, "[s] Observation start");
+      m_ScienceTable->addKey("TSTOP", m_LastEventTime_RTS, "[s] Observation stop");
 
       // Also update OBS_ID to match the start date (YYYYMMDD format)
       char obsIdBuf[16];
@@ -671,19 +698,6 @@ bool MModuleSaverMeasurementsFITS::ReadXmlConfiguration(MXmlNode* Node)
   if (FileNameNode != nullptr) {
     m_FileName = FileNameNode->GetValue();
   }
-
-  MXmlNode* OutputLevelNode = Node->GetNode("OutputLevel");
-  if (OutputLevelNode != nullptr) {
-    MString Level = OutputLevelNode->GetValue();
-    if (Level == "L2" || Level == "l2") {
-      m_OutputDataLevel = 2;
-    } else if (Level == "L1a" || Level == "l1a") {
-      m_OutputDataLevel = 0;
-    } else {
-      m_OutputDataLevel = 1;
-    }
-  }
-
   return true;
 }
 
@@ -698,13 +712,6 @@ MXmlNode* MModuleSaverMeasurementsFITS::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
   new MXmlNode(Node, "FileName", m_FileName);
 
-  const char* lvl = "L1b";
-  switch (m_OutputDataLevel) {
-    case 0: lvl = "L1a"; break;
-    case 2: lvl = "L2";  break;
-    default: lvl = "L1b"; break;   // 1 = L1b
-  }
-  new MXmlNode(Node, "OutputLevel", lvl);
 
   return Node;
 }

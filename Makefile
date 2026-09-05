@@ -87,7 +87,7 @@ NUCLEARIZER              := $(TOPLEVEL)
 NUCLEARIZER_DIR          := $(NUCLEARIZER)
 NUCLEARIZER_PRG          := $(BN)/nuclearizer
 NUCLEARIZER_CXX_MAIN     := $(NUCLEARIZER_DIR)/src/MNuclearizerMain.cxx
-NUCLEARIZER_CXX_FILTERED := $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_DIR)/src/MModuleTemplate.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSingleDet.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSMEX.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSingleDet.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSMEX.cxx $(NUCLEARIZER_DIR)/src/MGUIOptionsLoaderSimulations.cxx
+NUCLEARIZER_CXX_FILTERED := $(NUCLEARIZER_CXX_MAIN) $(NUCLEARIZER_DIR)/src/MModuleTemplate.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSingleDet.cxx $(NUCLEARIZER_DIR)/src/MDetectorEffectsEngineSMEX.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSingleDet.cxx $(NUCLEARIZER_DIR)/src/MModuleLoaderSimulationsSMEX.cxx $(NUCLEARIZER_DIR)/src/MGUIOptionsLoaderSimulations.cxx $(NUCLEARIZER_DIR)/src/MDepthCalibrator.cxx
 NUCLEARIZER_CXX_FILES    := $(wildcard $(NUCLEARIZER_DIR)/src/*.cxx)
 NUCLEARIZER_CXX_FILES    := $(filter-out $(NUCLEARIZER_CXX_FILTERED),$(NUCLEARIZER_CXX_FILES))
 NUCLEARIZER_LIBS         := $(addprefix $(LB)/,$(notdir $(NUCLEARIZER_CXX_FILES:.cxx=.o)))
@@ -118,6 +118,12 @@ NUCLEARIZER_UT_PRGS := $(patsubst $(NUCLEARIZER_DIR)/unittests/%,$(BN)/%,$(NUCLE
 # External MEGAlib libraries
 ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
 
+
+# Coverage-specific flags (added when standard COVERAGE=1 is passed)
+ifeq ($(COVERAGE), 1)
+    CXXFLAGS += -O0 -g --coverage
+    LDFLAGS  += --coverage
+endif
 
 #----------------------------------------------------------------
 # Command rules

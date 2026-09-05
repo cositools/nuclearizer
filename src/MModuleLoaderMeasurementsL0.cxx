@@ -20,7 +20,7 @@
 //
 // MModuleLoaderMeasurementsL0
 //
-// Reads CCSDS DD packets from an L0 binary file and converts them into
+// Reads CCSDS science packets from an L0 binary file and converts them into
 // MReadOutAssembly events with strip hits.
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +62,9 @@ static const size_t L0_FILE_HEADER_SIZE = 20;         // 20 byte: 4 bytes ID, 2 
 static const size_t L0_CRC_TRAILER_SIZE = 2;          //16-bit CRC-CCITT checksum of the file
 static const size_t CCSDS_PRIMARY_HEADER_SIZE = 6;
 static const size_t CCSDS_SECONDARY_HEADER_SIZE = 8;
-static const uint16_t APID_DD = 0x0DD;
+static const uint16_t APID_GRB_COMPTON = 0x0DD;
+static const uint16_t APID_PRIMARY_SCIENCE = 0x0E2;
+static const uint16_t APID_ANCILLARY_SCIENCE = 0x0E3;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +117,7 @@ MModuleLoaderMeasurementsL0::MModuleLoaderMeasurementsL0() : MModuleLoaderMeasur
 {
   // Construct an instance of MModuleLoaderMeasurementsL0
 
-  m_Name = "Measurement loader for L0 binary files (DD packets)";
+  m_Name = "Measurement loader for L0 science binary files";
   m_XmlTag = "XmlTagMeasurementLoaderL0";
 
   m_IsStartModule = true;
@@ -188,7 +190,7 @@ bool MModuleLoaderMeasurementsL0::OpenL0File(MString FileName)
 
   // Auto-detect file format: peek at first 4 bytes.
   //   MOC-simulator output: starts with 0x434F5349 ("COSI") magic
-  //   Raw nuclearizer output: starts with 0x08DD... (CCSDS primary header)
+  //   Raw nuclearizer output: starts with a CCSDS primary header
   uint8_t magicBuf[4];
   m_InFile.read(reinterpret_cast<char*>(magicBuf), 4);
   if (m_InFile.gcount() != 4) {
@@ -254,10 +256,12 @@ bool MModuleLoaderMeasurementsL0::ReadNextPacket(MReadOutAssembly* Event)
   // Total bytes after primary header = pktDataLen + 1
   size_t payloadSize = pktDataLen + 1;
 
-  if (apid != APID_DD) {
+  if (apid != APID_GRB_COMPTON &&
+      apid != APID_PRIMARY_SCIENCE &&
+      apid != APID_ANCILLARY_SCIENCE) {
     if (g_Verbosity >= c_Error) {
       cout << m_XmlTag << ": Unexpected APID 0x" << hex << apid << dec
-           << " in file (expected 0x" << hex << APID_DD << dec << "). Stopping." << endl;
+           << " in file (expected 0x0DD, 0x0E2, or 0x0E3). Stopping." << endl;
     }
     m_IsFinished = true;
     return false;
@@ -286,9 +290,9 @@ bool MModuleLoaderMeasurementsL0::ReadNextPacket(MReadOutAssembly* Event)
     cursor += CCSDS_SECONDARY_HEADER_SIZE;
   }
 
-  // DD payload: TRUNC_TIME (4) + HITS/HLEN/ETYPE (3) + HIT_DATA (HLEN bytes)
+  // Science payload: TRUNC_TIME (4) + HITS/HLEN/ETYPE (3) + HIT_DATA (HLEN bytes)
   if (rest.size() < cursor + 7) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": DD payload too short"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Science payload too short"<<endl;
     return false;
   }
 

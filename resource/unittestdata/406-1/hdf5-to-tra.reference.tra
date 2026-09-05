@@ -1337,6 +1337,7 @@ SE
 ID 171
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.052900) (Strip hit removed with energy 11.981073) (Strip hit removed with energy 8.771925) (Strip hit removed with energy 7.845102) (Strip hit removed with energy 8.958687) (Strip hit removed with energy 14.364213) (Strip hit removed with energy 15.618454) (Strip hit removed with energy -28.297535) (Strip hit removed with energy -7.770818)
+QA HighADC (High ADC value 15804 for Detector: 0, side: LV, strip: 20) (High ADC value 16013 for Detector: 0, side: LV, strip: 21) (High ADC value 16006 for Detector: 0, side: LV, strip: 22) (High ADC value 15449 for Detector: 0, side: LV, strip: 23) (High ADC value 15058 for Detector: 0, side: HV, strip: 53) (High ADC value 16015 for Detector: 0, side: HV, strip: 54) (High ADC value 16038 for Detector: 0, side: HV, strip: 55)
 QA StripPairing (Best reduced chi square is not below 25 (466.978427)) (GR Hit: Detector ID 0 and Energy 294.916417)
 BD GR Veto
 PQ 466.978
@@ -9626,6 +9627,7 @@ ID 1253
 BD StripPairingError (More than maximum number of strip hits allowed on one side (7))
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 6.961407) (Strip hit removed with energy 8.933764) (Strip hit removed with energy 17.695176) (Strip hit removed with energy 11.402859) (Strip hit removed with energy 7.629766) (Strip hit removed with energy 17.062778) (Strip hit removed with energy 13.739803)
+QA HighADC (High ADC value 16033 for Detector: 0, side: LV, strip: 42) (High ADC value 15965 for Detector: 0, side: LV, strip: 43) (High ADC value 16077 for Detector: 0, side: HV, strip: 61)
 BD GR Veto
 PQ
 SE
@@ -9919,6 +9921,7 @@ ID 1293
 BD StripPairingError (More than maximum number of strip hits allowed on one side (8))
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 10.624611) (Strip hit removed with energy 18.359129) (Strip hit removed with energy 14.883559) (Strip hit removed with energy 10.931843) (Strip hit removed with energy 8.633496) (Strip hit removed with energy 8.894950) (Strip hit removed with energy 12.278867) (Strip hit removed with energy -0.823052)
+QA HighADC (High ADC value 14135 for Detector: 0, side: LV, strip: 1) (High ADC value 16123 for Detector: 0, side: LV, strip: 64) (High ADC value 16014 for Detector: 0, side: HV, strip: 64)
 BD GR Veto
 PQ
 SE
@@ -24905,6 +24908,7 @@ SE
 ID 3247
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 7.116343) (Strip hit removed with energy 10.714684) (Strip hit removed with energy 18.330011) (Strip hit removed with energy 15.782019) (Strip hit removed with energy 15.881703) (Strip hit removed with energy 10.092588) (Strip hit removed with energy 7.156331) (Strip hit removed with energy 8.711120) (Strip hit removed with energy 7.829357) (Strip hit removed with energy 8.236825) (Strip hit removed with energy 12.113871)
+QA HighADC (High ADC value 14773 for Detector: 0, side: LV, strip: 8) (High ADC value 14062 for Detector: 0, side: LV, strip: 11) (High ADC value 16065 for Detector: 0, side: HV, strip: 2) (High ADC value 14972 for Detector: 0, side: HV, strip: 3)
 QA StripPairing (Best reduced chi square is not below 25 (478.096823)) (Best strip pairing contains more than 5 strip groupings on one side) (Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: 5332.539902)) (Event contains multiple hits on a single strip) (GR Hit: Detector ID 0 and Energy 181.908526)
 BD GR Veto
 PQ 478.097
@@ -28409,6 +28413,7 @@ SE
 ID 3706
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 7.938531) (Strip hit removed with energy 10.729861) (Strip hit removed with energy 11.572864) (Strip hit removed with energy 13.057852)
+QA HighADC (High ADC value 14691 for Detector: 0, side: LV, strip: 64)
 QA StripPairing (Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: 21.583803)) (GR Hit: Detector ID 0 and Energy 2008.377728)
 BD GR Veto
 PQ 0.688171
@@ -36526,6 +36531,7 @@ SE
 ID 4784
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 8.000643) (Strip hit removed with energy 7.667605) (Strip hit removed with energy 9.765564) (Strip hit removed with energy 7.838833) (Strip hit removed with energy 12.329513) (Strip hit removed with energy 16.020982) (Strip hit removed with energy 17.575923) (Strip hit removed with energy 12.322915) (Strip hit removed with energy 11.493931) (Strip hit removed with energy 7.947770) (Strip hit removed with energy 9.194799) (Strip hit removed with energy 14.312189) (Strip hit removed with energy 16.240531) (Strip hit removed with energy -9.221858) (Strip hit removed with energy 18.540329)
+QA HighADC (High ADC value 16123 for Detector: 0, side: LV, strip: 64) (High ADC value 16014 for Detector: 0, side: HV, strip: 64)
 QA StripPairing (Best reduced chi square is not below 25 (42.859504)) (Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: 129.529017)) (Event contains multiple hits on a single strip) (GR Hit: Detector ID 0 and Energy 34.480688) (GR Hit: Detector ID 0 and Energy 68.944180) (GR Hit: Detector ID 0 and Energy 2243.958918)
 BD GR Veto
 PQ 42.8595
@@ -38958,6 +38964,7 @@ SE
 ID 5102
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 10.847868) (Strip hit removed with energy 10.407519) (Strip hit removed with energy 7.814563) (Strip hit removed with energy 7.832260) (Strip hit removed with energy 12.573667) (Strip hit removed with energy 13.002596) (Strip hit removed with energy 13.516989) (Strip hit removed with energy 10.361103) (Strip hit removed with energy 8.906325) (Strip hit removed with energy -10.986370)
+QA HighADC (High ADC value 16040 for Detector: 0, side: LV, strip: 58) (High ADC value 16055 for Detector: 0, side: LV, strip: 59) (High ADC value 15997 for Detector: 0, side: LV, strip: 60) (High ADC value 16056 for Detector: 0, side: LV, strip: 61) (High ADC value 15696 for Detector: 0, side: LV, strip: 64) (High ADC value 15813 for Detector: 0, side: HV, strip: 7) (High ADC value 16041 for Detector: 0, side: HV, strip: 8) (High ADC value 16011 for Detector: 0, side: HV, strip: 9) (High ADC value 16021 for Detector: 0, side: HV, strip: 10) (High ADC value 15915 for Detector: 0, side: HV, strip: 12) (High ADC value 15970 for Detector: 0, side: HV, strip: 64)
 QA StripPairing (Best reduced chi square is not below 25 (1063.315896)) (GR Hit: Detector ID 0 and Energy 2390.281672)
 BD GR Veto
 PQ 1063.32
@@ -40532,6 +40539,7 @@ ID 5314
 BD StripPairingError (More than maximum number of strip hits allowed on one side (8))
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 10.953168) (Strip hit removed with energy 15.073470) (Strip hit removed with energy 15.021121) (Strip hit removed with energy 14.916823) (Strip hit removed with energy 9.691315) (Strip hit removed with energy 8.445107) (Strip hit removed with energy 6.878826) (Strip hit removed with energy 10.837057)
+QA HighADC (High ADC value 16042 for Detector: 0, side: LV, strip: 41) (High ADC value 16121 for Detector: 0, side: LV, strip: 64) (High ADC value 15979 for Detector: 0, side: HV, strip: 64)
 BD GR Veto
 PQ
 SE
@@ -49355,6 +49363,7 @@ ID 6482
 BD StripPairingError (More than maximum number of strip hits allowed on one side (8))
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 6.740801) (Strip hit removed with energy 6.303791) (Strip hit removed with energy 8.010620) (Strip hit removed with energy 9.084545) (Strip hit removed with energy 12.185240) (Strip hit removed with energy 13.419191) (Strip hit removed with energy 18.605867) (Strip hit removed with energy 13.114570)
+QA HighADC (High ADC value 16123 for Detector: 0, side: LV, strip: 64) (High ADC value 16014 for Detector: 0, side: HV, strip: 64)
 BD GR Veto
 PQ
 SE
@@ -56122,6 +56131,7 @@ ID 7371
 BD StripPairingError (More than maximum number of strip hits allowed on one side (11))
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.135602) (Strip hit removed with energy 10.825201) (Strip hit removed with energy 10.925057) (Strip hit removed with energy 18.841883)
+QA HighADC (High ADC value 15979 for Detector: 0, side: LV, strip: 2) (High ADC value 15990 for Detector: 0, side: LV, strip: 3) (High ADC value 14353 for Detector: 0, side: LV, strip: 4) (High ADC value 14982 for Detector: 0, side: LV, strip: 5) (High ADC value 16012 for Detector: 0, side: HV, strip: 49) (High ADC value 15344 for Detector: 0, side: HV, strip: 50) (High ADC value 14266 for Detector: 0, side: HV, strip: 53)
 BD GR Veto
 PQ
 SE

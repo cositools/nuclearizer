@@ -187,6 +187,16 @@ X, DataPoint, IsNonZero
   ```
 
 
+For a simple one-statement diagnostic guard, prefer the compact form used
+throughout the project:
+
+```cpp
+if (g_Verbosity >= c_Error) cout << "Error: Unable to open file" << endl;
+```
+
+Do not expand this form to a multi-line braced block unless the guarded code
+contains multiple statements or the longer form materially improves clarity.
+
 ### 6. **Whitespace in Expressions**
 
 - **Space Around Operators**: Always add a space before and after most binary operators (=, +, -, &&, etc.). The exce[tion are * and / in math expresions, to visualize the order of operations.
