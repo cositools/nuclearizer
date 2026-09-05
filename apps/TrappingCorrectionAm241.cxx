@@ -344,7 +344,6 @@ bool TrappingCorrectionAm241::Analyze()
     for (unsigned int f = 0; f<HDFNames.size(); ++f) {
 
       MString File = HDFNames[f];
-      cout<<"Beginning analysis of file "<<File<<endl;
 
       // Create and initialize nuclearizer modules
       MSupervisor* S = MSupervisor::GetSupervisor();
@@ -355,7 +354,6 @@ bool TrappingCorrectionAm241::Analyze()
     	MModuleEventFilter* EventFilter;
 
       unsigned int MNumber = 0;
-      cout<<"Creating HDF5 loader"<<endl;
       Loader = new MModuleLoaderMeasurementsHDF();
       Loader->SetFileNameStripMap(m_StripMapFile);
       Loader->SetFileName(File);
@@ -363,21 +361,18 @@ bool TrappingCorrectionAm241::Analyze()
       S->SetModule(Loader, MNumber);
       ++MNumber;
 
-      cout<<"Creating TAC calibrator"<<endl;
       TACCalibrator = new MModuleTACcut();
       TACCalibrator->SetTACCalFileName(m_TACCalFile);
       TACCalibrator->SetTACCutFileName(m_TACCutFile);
       S->SetModule(TACCalibrator, MNumber);
       ++MNumber;
      
-      cout<<"Creating energy calibrator"<<endl;
       EnergyCalibrator = new MModuleEnergyCalibration();
       EnergyCalibrator->SetFileName(m_EcalFile);
       //EnergyCalibrator->EnablePreampTempCorrection(false);
       S->SetModule(EnergyCalibrator, MNumber);
       ++MNumber;
 
-      cout<<"Creating Event filter"<<endl;
       // Only use events with 1 to 3 Strip Hits on each side
       // After strip pairing, we'll also filter to make sure we're only looking at single Hits
       EventFilter = new MModuleEventFilter();
@@ -391,8 +386,7 @@ bool TrappingCorrectionAm241::Analyze()
       EventFilter->SetMaximumTotalEnergy(m_MaxEnergy*2); // Multiply by 2 because this is the event-level energy, i.e. sum over both sides
       S->SetModule(EventFilter, MNumber);
       ++MNumber;
-      
-      cout<<"Creating strip pairing"<<endl;
+
       MModule* Pairing;
       if (m_MultiRoundStripPairing == true) {
         Pairing = new MModuleStripPairingMultiRoundChiSquare();
@@ -401,22 +395,16 @@ bool TrappingCorrectionAm241::Analyze()
       }
       S->SetModule(Pairing, MNumber);
 
-      cout<<"Initializing Loader"<<endl;
       if (Loader->Initialize() == false) return false;
-      cout<<"Initializing TAC calibrator"<<endl;
       if (TACCalibrator->Initialize() == false) return false;
-      cout<<"Initializing Energy calibrator"<<endl;
       if (EnergyCalibrator->Initialize() == false) return false;
-      cout<<"Initializing Event filter"<<endl;
       if (EventFilter->Initialize() == false) return false;
-      cout<<"Initializing Pairing"<<endl;
       if (Pairing->Initialize() == false) return false;
 
       bool IsFinished = false;
       MReadOutAssembly* Event = new MReadOutAssembly();
 
       // Pass Events through each module. Once calibrated, add the Event to the histograms
-      cout<<"Analyzing..."<<endl;
       while ((IsFinished == false) && (m_Interrupt == false)) {
         Event->Clear();
 
@@ -475,7 +463,7 @@ bool TrappingCorrectionAm241::Analyze()
                   MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
                   MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction);
                   
-                  if ((LVSH->HasCalibratedTiming()==true) && (HVSH->HasCalibratedTiming()==true)) {
+                  if ((LVSH->HasCalibratedTiming()==true) && (HVSH->HasCalibratedTiming()==true)&& (LVSH != nullptr) && (HVSH != nullptr)) {
                     
                     double CTD = LVSH->GetTiming() - HVSH->GetTiming();
                     

@@ -119,13 +119,20 @@ class MModuleDepthCalibration : public MModule
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
 
+  //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
+  MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
+
+
+  //! Determine the Grade (geometry of charge sharing) of the Hit
+  int GetHitGrade(MHit* H);
+
+  const std::vector<unsigned int>& GetDetectorIDs() const { return m_DetectorIDs; }
+  
   //! Finalize
   void Finalize();
 
   // protected methods:
  protected:
-  //! Returns the strip with most energy from vector Strips, also gives back the energy fraction
-  MStripHit* GetDominantStrip(std::vector<MStripHit*>& Strips, double& EnergyFraction);
   
   //! Retrieve the appropriate Depth values given the DetID
   vector<double> GetDepth(int DetID);
@@ -140,9 +147,6 @@ class MModuleDepthCalibration : public MModule
   
   //! Adds a Depth-to-CTD relation
   bool AddDepthCTD(vector<double> Depth, vector<vector<double>> CTDArr, int DetID, unordered_map<int, vector<double>>& DepthGrid, unordered_map<int,vector<vector<double>>>& CTDMap, unordered_map<int,vector<TSpline3*>>& SplineMap, unsigned int NPoints);
-
-  //! Determine the Grade (geometry of charge sharing) of the Hit
-  int GetHitGrade(MHit* H);
 
   //! Return the coefficients for a pixel
   vector<double>* GetPixelCoeffs(int PixelCode);

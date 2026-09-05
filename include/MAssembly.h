@@ -73,6 +73,7 @@ class MAssembly
   static const uint64_t c_FlagHits                 = (1 << 22);
   static const uint64_t c_Diagnostics              = (1 << 23);
   static const uint64_t c_ResponseGeneration       = (1 << 24);
+  static const uint64_t c_TrappingCorrection       = (1 << 25);
 
 
   // IMPORTANT:
