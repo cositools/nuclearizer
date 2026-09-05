@@ -467,8 +467,8 @@ double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, d
   if (sim_cce_sorted_e.empty() || sim_cce_sorted_h.empty()) {
     return uncorrected_energy;
   }
-  double cce_base_e = Interpolate(depth_val, m_Depths, sim_cce_sorted_e);
-  double cce_base_h = Interpolate(depth_val, m_Depths, sim_cce_sorted_h);
+  double cce_base_e = Interpolate(depth_val, depths, sim_cce_sorted_e);
+  double cce_base_h = Interpolate(depth_val, depths, sim_cce_sorted_h);
   
   // Evaluate the physical trapping function model using class global popt variables
   double expected_centroid_scaled =  (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
