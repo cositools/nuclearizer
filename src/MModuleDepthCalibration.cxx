@@ -132,6 +132,13 @@ bool MModuleDepthCalibration::Initialize()
     return false;
   }
 
+  // TODO: make this optional
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
+  if (LoadDisabledStripsFile(m_DisabledStripsFileName) == false) {
+    return false;
+  }
+
   if (m_MaskMetrologyEnabled == true) {
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
     m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFileName);
@@ -512,6 +519,100 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
 
   return true;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleDepthCalibration::LoadDisabledStripsFile(MString FileName)
+{
+
+  // Read in the file of disabled strips
+  // Dead strips: DetID Side Strip
+  // e.g. 0 h 31 = HV strip 31 on Detector with ID 0 is dead (not read out at all)
+  // Shorted strips: DetID Side Strip ReadOutVia
+  // e.g. 0 l 14 15 = LV strip 14 on Detector with ID 0 is shorted to LV strip 15, and read out via LV strip 15
+
+  MFile DisabledStripsFile;
+  if (DisabledStripsFile.Open(FileName) == false) {
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: LoadDisabledStripsFile failed to open file." << endl;
+    return false;
+  }
+
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
+
+  MString Line;
+  while (DisabledStripsFile.ReadLine(Line) == true) {
+
+    // Skip lines empty lines or lines starting with #
+    if (Line.IsEmpty() == true || Line.BeginsWith('#') == true) continue;
+  
+    vector<MString> Tokens = Line.Tokenize(" ");
+    
+    // Dead strips have 3 tokens, shorted strips have 4 tokens
+    if (Tokens.size() == 3 || Tokens.size() == 4) {
+
+      int DetID = Tokens[0].ToInt(); // Detector ID
+      MString Side = Tokens[1].ToString(); // side is a string, either 'l' or 'h'
+      int StripID = Tokens[2].ToInt(); // Strip number of the disabled strip
+
+      MReadOutElementDoubleStrip R;
+      R.SetDetectorID(DetID);
+      R.IsLowVoltageStrip(Side == "l");
+      R.SetStripID(StripID);
+
+      // Add the strip to the list of disabled strips (or throw an error for multiple entries)
+      if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R) != m_DisabledStrips.end()) {
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Multiple disabled-strip entries found for " << R << endl;
+        return false;
+      }
+      m_DisabledStrips.push_back(R);
+
+      // For shorted strips also keep track of which strip the disabled strip is connected to
+      if (Tokens.size() == 4) {
+        int ReadOutVia = Tokens[3].ToInt();
+
+        MReadOutElementDoubleStrip RActive;
+        RActive.SetDetectorID(DetID);
+        RActive.IsLowVoltageStrip(Side == "l");
+        RActive.SetStripID(ReadOutVia);
+        
+        if (abs(StripID - ReadOutVia) != 1) {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: The double-wide strip numbers " << StripID << " and " << ReadOutVia 
+                 << " for the " << (Side == "l" ? "LV" : "HV") << " side of detector " << DetID << " are not adjacent" << endl;
+          }
+          return false;
+        }
+
+        // Throw an error when creating multiple entries for the same active strip in m_ShortedStrips
+        // TODO: Also allow for triple-wide strips etc.
+        if (m_ShortedStrips.find(RActive) != m_ShortedStrips.end()) {
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Multiple shorted-strip entries found for " << RActive << endl;
+          return false;
+        }
+
+        // Add the active strip to the list of shorted strip
+        tuple<int,int> ShortedStrip = minmax({StripID, ReadOutVia});
+        m_ShortedStrips[RActive] = ShortedStrip;
+
+      }
+
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": ERROR: LoadDisabledStripsFile expects lines to have 3 or 4 entries, but received " << Tokens.size() << endl;
+        cout << "The faulty line is: " << Line << endl;
+      }
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
 
 
 bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
@@ -1077,17 +1178,22 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* CoeffsFileNameNode = Node->GetNode("CoeffsFileName");
   if (CoeffsFileNameNode != nullptr) {
-  m_CoeffsFileName = CoeffsFileNameNode->GetValue();
+    m_CoeffsFileName = CoeffsFileNameNode->GetValue();
   }
 
   MXmlNode* SplinesFileNameNode = Node->GetNode("SplinesFileName");
   if (SplinesFileNameNode != nullptr) {
-  m_SplinesFile = SplinesFileNameNode->GetValue();
+    m_SplinesFile = SplinesFileNameNode->GetValue();
+  }
+
+  MXmlNode* DisabledStripsFileNameNode = Node->GetNode("DisabledStripsFileName");
+  if (DisabledStripsFileNameNode != nullptr) {
+    m_DisabledStripsFileName = DisabledStripsFileNameNode->GetValue();
   }
 
   MXmlNode* MasKMetrologyNode = Node->GetNode("MaskMetrology");
   if (MasKMetrologyNode != nullptr) {
-      m_MaskMetrologyEnabled = (bool) MasKMetrologyNode->GetValueAsBoolean();
+    m_MaskMetrologyEnabled = (bool) MasKMetrologyNode->GetValueAsBoolean();
   }
 
   MXmlNode* MaskMetrologyFileNameNode = Node->GetNode("MaskMetrologyFileName");
@@ -1097,7 +1203,7 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* UCSDOverrideNode = Node->GetNode("UCSDOverride");
   if (UCSDOverrideNode != nullptr) {
-      m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsBoolean();
+    m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsBoolean();
   }
 
   return true;
@@ -1113,6 +1219,7 @@ MXmlNode* MModuleDepthCalibration::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFileName);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
+  new MXmlNode(Node, "DisabledStripsFileName", m_DisabledStripsFileName);
   new MXmlNode(Node, "MaskMetrology", (bool)m_MaskMetrologyEnabled);
   new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFileName);
   new MXmlNode(Node, "UCSDOverride", (bool)m_UCSDOverride);  
@@ -1150,6 +1257,9 @@ void MModuleDepthCalibration::Finalize()
   m_DepthGrid.clear();
   m_SplineMap.clear();
   m_DetectorIDs.clear();
+
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
 
 }
 

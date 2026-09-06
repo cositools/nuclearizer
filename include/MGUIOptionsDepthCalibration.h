@@ -74,6 +74,9 @@ class MGUIOptionsDepthCalibration : public MGUIOptions
   //! Select spline file to load, splines will convert CTD->Depth
   MGUIEFileSelector* m_SplinesFileSelector;
 
+  //! Select dead strips file to load
+  MGUIEFileSelector* m_DisabledStripsFileSelector;
+
   //! Use metrology correction
   bool m_UseMaskMetCorr;
   //! Check button to use metrology correction

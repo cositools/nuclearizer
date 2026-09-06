@@ -78,6 +78,11 @@ void MGUIOptionsDepthCalibration::Create()
 //  TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_SplinesFileSelector, LabelLayout);
 
+  m_DisabledStripsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Select a disabled strips file:",
+      dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetDisabledStripsFileName());
+  m_SplinesFileSelector->SetFileType("disabled strips", "*.csv");
+  m_OptionsFrame->AddFrame(m_DisabledStripsFileSelector, LabelLayout);
+
   m_MaskMetModeCB = new TGCheckButton(m_OptionsFrame, "Enable mask metrology correction and read calibration from file:", c_MetrologyFile);
   m_MaskMetModeCB->SetState((dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable() == true) ? kButtonDown : kButtonUp);
   m_MaskMetModeCB->Associate(this);
@@ -161,6 +166,7 @@ bool MGUIOptionsDepthCalibration::OnApply()
 
   dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetDisabledStripsFileName(m_DisabledStripsFileSelector->GetFileName());
 
   if (dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable() != m_UseMaskMetCorr) dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetMaskMetrologyCorrectionEnable(m_UseMaskMetCorr);
 
