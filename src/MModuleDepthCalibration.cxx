@@ -302,24 +302,31 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         double LVTiming = LVSH->GetTiming();
         double HVTiming = HVSH->GetTiming();
 
-        // If there aren't coefficients loaded, then report a depth calibration error.
-        if( Coeffs == nullptr ){
+        // If the hit is on a disabled strip, if there aren't coefficients loaded, then report a depth calibration error.
+        if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_LV) != m_DisabledStrips.end()) {
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("Strip hit on disabled LV strip");
+          ++m_Error1;
+        } else if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_HV) != m_DisabledStrips.end()) {
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("Strip hit on disabled HV strip");
+        } else if (Coeffs == nullptr){
           // Set the bad flag for depth
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
         } else if (CTDVec.size() == 0) {
-            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No calibration coefficients");
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No calibration coefficients");
         } else if (DepthVec.size() == 0) {
-            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No calibration coefficients");
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No calibration coefficients");
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
-            ++m_Error3;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No timing");
+          ++m_Error3;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No timing");
         } else {
           
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
