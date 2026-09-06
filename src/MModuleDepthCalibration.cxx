@@ -132,11 +132,14 @@ bool MModuleDepthCalibration::Initialize()
     return false;
   }
 
-  // TODO: make this optional
   m_DisabledStrips.clear();
   m_ShortedStrips.clear();
-  if (LoadDisabledStripsFile(m_DisabledStripsFileName) == false) {
-    return false;
+  // Parse list of disabled strips (or skip if no file name was passed)
+  if (m_AccountForDisabledStrips == true && m_DisabledStripsFileName.IsEmpty() == false) {
+    if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Reading in disabled strips from " << m_DisabledStripsFileName << endl; 
+    if (LoadDisabledStripsFile(m_DisabledStripsFileName) == false) {
+      return false;
+    }
   }
 
   if (m_MaskMetrologyEnabled == true) {
@@ -1186,6 +1189,11 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
     m_SplinesFile = SplinesFileNameNode->GetValue();
   }
 
+  MXmlNode* AccountForDisabledStripsNode = Node->GetNode("AccountForDisabledStrips");
+  if (AccountForDisabledStripsNode != nullptr) {
+    m_AccountForDisabledStrips = (bool) AccountForDisabledStripsNode->GetValueAsBoolean();
+  }
+
   MXmlNode* DisabledStripsFileNameNode = Node->GetNode("DisabledStripsFileName");
   if (DisabledStripsFileNameNode != nullptr) {
     m_DisabledStripsFileName = DisabledStripsFileNameNode->GetValue();
@@ -1219,6 +1227,7 @@ MXmlNode* MModuleDepthCalibration::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFileName);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
+  new MXmlNode(Node, "AccountForDisabledStrips", (bool)m_AccountForDisabledStrips);
   new MXmlNode(Node, "DisabledStripsFileName", m_DisabledStripsFileName);
   new MXmlNode(Node, "MaskMetrology", (bool)m_MaskMetrologyEnabled);
   new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFileName);

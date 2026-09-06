@@ -87,6 +87,11 @@ class MModuleDepthCalibration : public MModule
   //! Get filename for disabled strips
   MString GetDisabledStripsFileName() const { return m_DisabledStripsFileName; }
 
+  //! Enable/Disable accounting for disabled strips
+  void SetAccountForDisabledStrips(bool X) { m_AccountForDisabledStrips = X; }
+  //! Get enable/disable accounting for disabled strips
+  bool GetAccountForDisabledStrips() const { return m_AccountForDisabledStrips; }
+
   //TODO Remove UCSD code here and place within it's own branch
   //! Set whether the data came from the card cage at UCSD
   void SetUCSDOverride( bool Override ) { m_UCSDOverride = Override; }
@@ -209,6 +214,8 @@ class MModuleDepthCalibration : public MModule
   map<MReadOutElementDoubleStrip, tuple<unsigned int, unsigned int>> m_ShortedStrips;
   // ! The disabled strips file name
   MString m_DisabledStripsFileName;
+
+  bool m_AccountForDisabledStrips;
 
   //! The Mask Metrology file name
   MString m_MaskMetrologyFileName;
