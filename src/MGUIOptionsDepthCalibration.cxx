@@ -104,7 +104,7 @@ void MGUIOptionsDepthCalibration::Create()
 
   m_UseMaskMetCorr = dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable();
 
-  TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
+  // TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
 
   m_MaskMetrologyFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", 
     dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyFileName());

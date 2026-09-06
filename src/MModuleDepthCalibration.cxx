@@ -249,34 +249,52 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         int HVStripID = HVSH->GetStripID();
         int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
-       //Define the X/Y positions based on the detector pitch and number of strip hits
+        //Define the X/Y positions based on the detector pitch and number of strip hits
         // LV strip 0 is in -ve X direction, HV strip 0 is in -ve Y direction.
         // Confusingly, the strips parallel to the Y axis determines the X position, and the "X strips" determine the Y position
         double Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
         double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
         double Zpos = 0.0;
 
-        if (m_MaskMetrologyEnabled == true) {
-          // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
-          MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
-          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
-
-          // Find the intercept of the two dominate strips based on the mask metrology, and update Xpos and Ypos	  
-          vector<double> inter = GetStripIntersection(R_LV, R_HV);
-          Xpos = inter[0];
-          Ypos = inter[1];
-
-	}
-
-
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
-
         double Xsigma = m_YPitches[DetID]/sqrt(12.0);
         double Ysigma = m_XPitches[DetID]/sqrt(12.0);
         double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
 
-        vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
+        // Define two new readout elements to help determine the intersection of these two strips
+        MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
+        MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
 
+        // Account for shorted strips
+        // Shorted strip on the LV side => adjust Xpos and Xsigma
+        if (m_ShortedStrips.find(R_LV) != m_ShortedStrips.end()){
+          unsigned int LeftLVStripID, RightLVStripID;
+          tie(LeftLVStripID, RightLVStripID) = m_ShortedStrips[R_LV];
+          // Assign Xpos as the mean of the lowest and highest LV StripID
+          Xpos = m_YPitches[DetID] * (((double) LeftLVStripID + (double) RightLVStripID) / 2 - ((m_NYStrips[DetID]-1)/2.0));
+          // Scale XSigma by the number of LV strips that are shorted together
+          Xsigma = (RightLVStripID - LeftLVStripID) * m_YPitches[DetID]/sqrt(12.0);
+        }
+
+        // Shorted strip on the HV side => adjust Ypos and Ysigma
+        if (m_ShortedStrips.find(R_HV) != m_ShortedStrips.end()){
+          unsigned int LeftHVStripID, RightHVStripID;
+          tie(LeftHVStripID, RightHVStripID) = m_ShortedStrips[R_HV];
+          // Assign Ypos as the mean of the lowest and highest HV StripID
+          Ypos = m_XPitches[DetID]*(((double) LeftHVStripID + (double) RightHVStripID) / 2 - ((m_NXStrips[DetID]-1)/2.0));
+          // Scale YSigma by the number of HV strips that are shorted together
+          Ysigma = (RightHVStripID - LeftHVStripID) * m_YPitches[DetID]/sqrt(12.0);
+        }
+
+        // TODO: Account for double-wide strips also when using the mask metrology
+        if (m_MaskMetrologyEnabled == true) {
+          // Find the intercept of the two dominant strips based on the mask metrology, and update Xpos and Ypos	  
+          vector<double> inter = GetStripIntersection(R_LV, R_HV);
+          Xpos = inter[0];
+          Ypos = inter[1];
+        }
+
+        vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
         vector<double> CTDVec = GetCTD(DetID, Grade);
         vector<double> DepthVec = GetDepth(DetID);
 
@@ -464,7 +482,7 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
     MDDetector* det = DetList[i];
     if (det->GetTypeName() == "Strip3D") {
       if (det->GetNSensitiveVolumes() == 1) {
-        MDVolume* vol = det->GetSensitiveVolume(0);
+        // MDVolume* vol = det->GetSensitiveVolume(0);
         MString DetectorName = det->GetName();
         string DetName = DetectorName.GetString();
         
