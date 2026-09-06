@@ -132,6 +132,16 @@ bool MModuleDepthCalibration::Initialize()
     return false;
   }
 
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
+  // Parse list of disabled strips (or skip if no file name was passed)
+  if (m_AccountForDisabledStrips == true && m_DisabledStripsFileName.IsEmpty() == false) {
+    if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Reading in disabled strips from " << m_DisabledStripsFileName << endl; 
+    if (LoadDisabledStripsFile(m_DisabledStripsFileName) == false) {
+      return false;
+    }
+  }
+
   if (m_MaskMetrologyEnabled == true) {
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
     m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFileName);
@@ -239,34 +249,52 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         int HVStripID = HVSH->GetStripID();
         int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
-       //Define the X/Y positions based on the detector pitch and number of strip hits
+        //Define the X/Y positions based on the detector pitch and number of strip hits
         // LV strip 0 is in -ve X direction, HV strip 0 is in -ve Y direction.
         // Confusingly, the strips parallel to the Y axis determines the X position, and the "X strips" determine the Y position
         double Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
         double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
         double Zpos = 0.0;
 
-        if (m_MaskMetrologyEnabled == true) {
-          // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
-          MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
-          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
-
-          // Find the intercept of the two dominate strips based on the mask metrology, and update Xpos and Ypos	  
-          vector<double> inter = GetStripIntersection(R_LV, R_HV);
-          Xpos = inter[0];
-          Ypos = inter[1];
-
-	}
-
-
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
-
         double Xsigma = m_YPitches[DetID]/sqrt(12.0);
         double Ysigma = m_XPitches[DetID]/sqrt(12.0);
         double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
 
-        vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
+        // Define two new readout elements to help determine the intersection of these two strips
+        MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
+        MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
 
+        // Account for shorted strips
+        // Shorted strip on the LV side => adjust Xpos and Xsigma
+        if (m_ShortedStrips.find(R_LV) != m_ShortedStrips.end()){
+          unsigned int LeftLVStripID, RightLVStripID;
+          tie(LeftLVStripID, RightLVStripID) = m_ShortedStrips[R_LV];
+          // Assign Xpos as the mean of the lowest and highest LV StripID
+          Xpos = m_YPitches[DetID] * (((double) LeftLVStripID + (double) RightLVStripID) / 2 - ((m_NYStrips[DetID]-1)/2.0));
+          // Scale XSigma by the number of LV strips that are shorted together
+          Xsigma = (RightLVStripID - LeftLVStripID) * m_YPitches[DetID]/sqrt(12.0);
+        }
+
+        // Shorted strip on the HV side => adjust Ypos and Ysigma
+        if (m_ShortedStrips.find(R_HV) != m_ShortedStrips.end()){
+          unsigned int LeftHVStripID, RightHVStripID;
+          tie(LeftHVStripID, RightHVStripID) = m_ShortedStrips[R_HV];
+          // Assign Ypos as the mean of the lowest and highest HV StripID
+          Ypos = m_XPitches[DetID]*(((double) LeftHVStripID + (double) RightHVStripID) / 2 - ((m_NXStrips[DetID]-1)/2.0));
+          // Scale YSigma by the number of HV strips that are shorted together
+          Ysigma = (RightHVStripID - LeftHVStripID) * m_YPitches[DetID]/sqrt(12.0);
+        }
+
+        // TODO: Account for double-wide strips also when using the mask metrology
+        if (m_MaskMetrologyEnabled == true) {
+          // Find the intercept of the two dominant strips based on the mask metrology, and update Xpos and Ypos	  
+          vector<double> inter = GetStripIntersection(R_LV, R_HV);
+          Xpos = inter[0];
+          Ypos = inter[1];
+        }
+
+        vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
         vector<double> CTDVec = GetCTD(DetID, Grade);
         vector<double> DepthVec = GetDepth(DetID);
 
@@ -274,24 +302,31 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         double LVTiming = LVSH->GetTiming();
         double HVTiming = HVSH->GetTiming();
 
-        // If there aren't coefficients loaded, then report a depth calibration error.
-        if( Coeffs == nullptr ){
+        // If the hit is on a disabled strip, if there aren't coefficients loaded, then report a depth calibration error.
+        if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_LV) != m_DisabledStrips.end()) {
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("Strip hit on disabled LV strip");
+          ++m_Error1;
+        } else if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_HV) != m_DisabledStrips.end()) {
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("Strip hit on disabled HV strip");
+        } else if (Coeffs == nullptr){
           // Set the bad flag for depth
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
         } else if (CTDVec.size() == 0) {
-            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No calibration coefficients");
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No calibration coefficients");
         } else if (DepthVec.size() == 0) {
-            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No calibration coefficients");
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No calibration coefficients");
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
-            ++m_Error3;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No timing");
+          ++m_Error3;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No timing");
         } else {
           
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
@@ -454,7 +489,7 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
     MDDetector* det = DetList[i];
     if (det->GetTypeName() == "Strip3D") {
       if (det->GetNSensitiveVolumes() == 1) {
-        MDVolume* vol = det->GetSensitiveVolume(0);
+        // MDVolume* vol = det->GetSensitiveVolume(0);
         MString DetectorName = det->GetName();
         string DetName = DetectorName.GetString();
         
@@ -512,6 +547,100 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
 
   return true;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleDepthCalibration::LoadDisabledStripsFile(MString FileName)
+{
+
+  // Read in the file of disabled strips
+  // Dead strips: DetID Side Strip
+  // e.g. 0 h 31 = HV strip 31 on Detector with ID 0 is dead (not read out at all)
+  // Shorted strips: DetID Side Strip ReadOutVia
+  // e.g. 0 l 14 15 = LV strip 14 on Detector with ID 0 is shorted to LV strip 15, and read out via LV strip 15
+
+  MFile DisabledStripsFile;
+  if (DisabledStripsFile.Open(FileName) == false) {
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: LoadDisabledStripsFile failed to open file." << endl;
+    return false;
+  }
+
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
+
+  MString Line;
+  while (DisabledStripsFile.ReadLine(Line) == true) {
+
+    // Skip lines empty lines or lines starting with #
+    if (Line.IsEmpty() == true || Line.BeginsWith('#') == true) continue;
+  
+    vector<MString> Tokens = Line.Tokenize(" ");
+    
+    // Dead strips have 3 tokens, shorted strips have 4 tokens
+    if (Tokens.size() == 3 || Tokens.size() == 4) {
+
+      int DetID = Tokens[0].ToInt(); // Detector ID
+      MString Side = Tokens[1].ToString(); // side is a string, either 'l' or 'h'
+      int StripID = Tokens[2].ToInt(); // Strip number of the disabled strip
+
+      MReadOutElementDoubleStrip R;
+      R.SetDetectorID(DetID);
+      R.IsLowVoltageStrip(Side == "l");
+      R.SetStripID(StripID);
+
+      // Add the strip to the list of disabled strips (or throw an error for multiple entries)
+      if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R) != m_DisabledStrips.end()) {
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Multiple disabled-strip entries found for " << R << endl;
+        return false;
+      }
+      m_DisabledStrips.push_back(R);
+
+      // For shorted strips also keep track of which strip the disabled strip is connected to
+      if (Tokens.size() == 4) {
+        int ReadOutVia = Tokens[3].ToInt();
+
+        MReadOutElementDoubleStrip RActive;
+        RActive.SetDetectorID(DetID);
+        RActive.IsLowVoltageStrip(Side == "l");
+        RActive.SetStripID(ReadOutVia);
+        
+        if (abs(StripID - ReadOutVia) != 1) {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: The double-wide strip numbers " << StripID << " and " << ReadOutVia 
+                 << " for the " << (Side == "l" ? "LV" : "HV") << " side of detector " << DetID << " are not adjacent" << endl;
+          }
+          return false;
+        }
+
+        // Throw an error when creating multiple entries for the same active strip in m_ShortedStrips
+        // TODO: Also allow for triple-wide strips etc.
+        if (m_ShortedStrips.find(RActive) != m_ShortedStrips.end()) {
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Multiple shorted-strip entries found for " << RActive << endl;
+          return false;
+        }
+
+        // Add the active strip to the list of shorted strip
+        tuple<int,int> ShortedStrip = minmax({StripID, ReadOutVia});
+        m_ShortedStrips[RActive] = ShortedStrip;
+
+      }
+
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": ERROR: LoadDisabledStripsFile expects lines to have 3 or 4 entries, but received " << Tokens.size() << endl;
+        cout << "The faulty line is: " << Line << endl;
+      }
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
 
 
 bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
@@ -1077,17 +1206,27 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* CoeffsFileNameNode = Node->GetNode("CoeffsFileName");
   if (CoeffsFileNameNode != nullptr) {
-  m_CoeffsFileName = CoeffsFileNameNode->GetValue();
+    m_CoeffsFileName = CoeffsFileNameNode->GetValue();
   }
 
   MXmlNode* SplinesFileNameNode = Node->GetNode("SplinesFileName");
   if (SplinesFileNameNode != nullptr) {
-  m_SplinesFile = SplinesFileNameNode->GetValue();
+    m_SplinesFile = SplinesFileNameNode->GetValue();
+  }
+
+  MXmlNode* AccountForDisabledStripsNode = Node->GetNode("AccountForDisabledStrips");
+  if (AccountForDisabledStripsNode != nullptr) {
+    m_AccountForDisabledStrips = (bool) AccountForDisabledStripsNode->GetValueAsBoolean();
+  }
+
+  MXmlNode* DisabledStripsFileNameNode = Node->GetNode("DisabledStripsFileName");
+  if (DisabledStripsFileNameNode != nullptr) {
+    m_DisabledStripsFileName = DisabledStripsFileNameNode->GetValue();
   }
 
   MXmlNode* MasKMetrologyNode = Node->GetNode("MaskMetrology");
   if (MasKMetrologyNode != nullptr) {
-      m_MaskMetrologyEnabled = (bool) MasKMetrologyNode->GetValueAsBoolean();
+    m_MaskMetrologyEnabled = (bool) MasKMetrologyNode->GetValueAsBoolean();
   }
 
   MXmlNode* MaskMetrologyFileNameNode = Node->GetNode("MaskMetrologyFileName");
@@ -1097,7 +1236,7 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* UCSDOverrideNode = Node->GetNode("UCSDOverride");
   if (UCSDOverrideNode != nullptr) {
-      m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsBoolean();
+    m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsBoolean();
   }
 
   return true;
@@ -1113,6 +1252,8 @@ MXmlNode* MModuleDepthCalibration::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
   new MXmlNode(Node, "CoeffsFileName", m_CoeffsFileName);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
+  new MXmlNode(Node, "AccountForDisabledStrips", (bool)m_AccountForDisabledStrips);
+  new MXmlNode(Node, "DisabledStripsFileName", m_DisabledStripsFileName);
   new MXmlNode(Node, "MaskMetrology", (bool)m_MaskMetrologyEnabled);
   new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFileName);
   new MXmlNode(Node, "UCSDOverride", (bool)m_UCSDOverride);  
@@ -1150,6 +1291,9 @@ void MModuleDepthCalibration::Finalize()
   m_DepthGrid.clear();
   m_SplineMap.clear();
   m_DetectorIDs.clear();
+
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
 
 }
 

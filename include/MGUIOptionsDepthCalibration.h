@@ -74,6 +74,13 @@ class MGUIOptionsDepthCalibration : public MGUIOptions
   //! Select spline file to load, splines will convert CTD->Depth
   MGUIEFileSelector* m_SplinesFileSelector;
 
+  //! Account for disabled strips
+  bool m_AccountForDisabledStrips;
+  //! Check button to account for disabled strips
+  TGCheckButton* m_DisabledStripsCB;
+  //! Select disabled strips file to load
+  MGUIEFileSelector* m_DisabledStripsFileSelector;
+
   //! Use metrology correction
   bool m_UseMaskMetCorr;
   //! Check button to use metrology correction
@@ -85,7 +92,7 @@ class MGUIOptionsDepthCalibration : public MGUIOptions
   TGCheckButton* m_UCSDOverride;
 
   //! IDs of check buttons
-  enum ButtonIDs {c_MetrologyFile};
+  enum ButtonIDs {c_MetrologyFile, c_DisabledStripsFile};
 
 #ifdef ___CLING___
  public:

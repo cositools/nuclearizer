@@ -78,6 +78,25 @@ void MGUIOptionsDepthCalibration::Create()
 //  TGLayoutHints* Label2Layout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_SplinesFileSelector, LabelLayout);
 
+  m_DisabledStripsCB = new TGCheckButton(m_OptionsFrame, "Account for disabled strips and read list of disabled strips from file:", c_DisabledStripsFile);
+  m_DisabledStripsCB->SetState((dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetAccountForDisabledStrips() == true) ? kButtonDown : kButtonUp);
+  m_DisabledStripsCB->Associate(this);
+  m_OptionsFrame->AddFrame(m_DisabledStripsCB, LabelLayout);
+
+  m_AccountForDisabledStrips = dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetAccountForDisabledStrips();
+
+  m_DisabledStripsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", 
+    dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetDisabledStripsFileName());
+  m_DisabledStripsFileSelector->SetFileType("disabled strips", "*.csv");
+  m_OptionsFrame->AddFrame(m_DisabledStripsFileSelector, LabelLayout);
+
+  if (m_AccountForDisabledStrips == true) {
+    m_DisabledStripsFileSelector->SetEnabled(true);
+  } else {
+    m_DisabledStripsFileSelector->SetEnabled(false);
+  }
+
+  
   m_MaskMetModeCB = new TGCheckButton(m_OptionsFrame, "Enable mask metrology correction and read calibration from file:", c_MetrologyFile);
   m_MaskMetModeCB->SetState((dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable() == true) ? kButtonDown : kButtonUp);
   m_MaskMetModeCB->Associate(this);
@@ -85,19 +104,18 @@ void MGUIOptionsDepthCalibration::Create()
 
   m_UseMaskMetCorr = dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable();
 
-  TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
+  // TGLayoutHints* FileLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, m_FontScaler*65 + 21*m_FontScaler, m_FontScaler*65, 0, 2*m_FontScaler);
 
-  m_MaskMetrologyFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyFileName());
+  m_MaskMetrologyFileSelector = new MGUIEFileSelector(m_OptionsFrame, "", 
+    dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyFileName());
   m_MaskMetrologyFileSelector->SetFileType("metrology", "*.metrology.csv");
   m_OptionsFrame->AddFrame(m_MaskMetrologyFileSelector, LabelLayout);
-
 
   if (m_UseMaskMetCorr == true) {
     m_MaskMetrologyFileSelector->SetEnabled(true);
   } else {
     m_MaskMetrologyFileSelector->SetEnabled(false);
   }
-
 
 
   m_UCSDOverride = new TGCheckButton(m_OptionsFrame, "Check this box if you're using the card cage at UCSD", 1);
@@ -134,6 +152,15 @@ bool MGUIOptionsDepthCalibration::ProcessMessage(long Message, long Parameter1, 
             m_MaskMetrologyFileSelector->SetEnabled(false);
           }
           break;
+        case c_DisabledStripsFile:
+          if (m_DisabledStripsCB->GetState() == kButtonDown) {
+            m_AccountForDisabledStrips = true;
+            m_DisabledStripsFileSelector->SetEnabled(true);
+          } else if (m_DisabledStripsCB->GetState() == kButtonUp) {
+            m_AccountForDisabledStrips = false;
+            m_DisabledStripsFileSelector->SetEnabled(false);
+          }
+          break;
       }
     default:
       break;
@@ -161,6 +188,7 @@ bool MGUIOptionsDepthCalibration::OnApply()
 
   dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetCoeffsFileName(m_CoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetSplinesFileName(m_SplinesFileSelector->GetFileName());
+  dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetDisabledStripsFileName(m_DisabledStripsFileSelector->GetFileName());
 
   if (dynamic_cast<MModuleDepthCalibration*>(m_Module)->GetMaskMetrologyCorrectionEnable() != m_UseMaskMetCorr) dynamic_cast<MModuleDepthCalibration*>(m_Module)->SetMaskMetrologyCorrectionEnable(m_UseMaskMetCorr);
 
