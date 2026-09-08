@@ -70,8 +70,8 @@ class MGUIOptionsTACCalibration : public MGUIOptions
 
   //! Widget IDs
   enum {
-  c_TACCutIgnore = 120,
-  c_TACCutApply = 121
+    c_TACCutIgnore = 120,
+    c_TACCutApply = 121
   };
   
   // protected members:
