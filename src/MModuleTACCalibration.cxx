@@ -180,7 +180,7 @@ bool MModuleTACCalibration::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Optionally apply TAC cuts
-  if (m_ApplyTACCuts == true) {
+  if (m_ApplyTACCuts == true && Event->HasTACCalibrationError() == false) {
     if (ApplyTACCuts(Event) == false) {
       return false;
     }
@@ -247,26 +247,23 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
 
       int SideIndex = m_SideToIndex[Side];
 
-      // Check that this strip has TAC calibration parameters
-      if (m_TACCal[DetID][SideIndex].find(StripID) ==
-          m_TACCal[DetID][SideIndex].end()) {
+      auto TACCalibration = m_TACCal[DetID][SideIndex].find(StripID);
+      if (TACCalibration == m_TACCal[DetID][SideIndex].end() || TACCalibration->second.size() <2){
 
-        cout<<m_XmlTag
-            <<": Error: StripID "<<StripID
-            <<" on side "<<Side
-            <<" has no TAC calibration entries - skipping event"
-            <<endl;
-        return false;
-      }
+        if (g_Verbosity >= c_Warning) {
+          cout<< m_XmlTag
+              <<": Warning: No valid TAC calibration for DETID"<< DetID
+              <<", StripID "<< StripID
+              <<", Side "<< Side
+              <<endl;
+        }
 
-      // Need at least slope and offset
-      if (m_TACCal[DetID][SideIndex][StripID].size() < 2) {
-        cout<<m_XmlTag
-            <<": Error: StripID "<<StripID
-            <<" on side "<<Side
-            <<" does not have enough TAC calibration parameters - skipping event"
-            <<endl;
-        return false;
+        Event->SetTACCalibrationError(
+          "No valid TAC calibration for DetID " + to_string(DetID) + 
+          ", StripID " + to_string(StripID)
+        );
+
+        continue;
       }
 
       // Raw TAC value
@@ -274,8 +271,8 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
       
       // Convert TAC value into timing in ns
       double ns_timing =
-          TAC_timing*m_TACCal[DetID][SideIndex][StripID][0]
-          + m_TACCal[DetID][SideIndex][StripID][1];
+          TAC_timing*TACCalibration->second[0]
+          + TACCalibration->second[1];
 
       // Store calibrated timing
       SH->SetTiming(ns_timing); 
