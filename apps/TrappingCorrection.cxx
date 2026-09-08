@@ -64,7 +64,7 @@ using namespace ROOT::Minuit2;
 #include "MModuleEventFilter.h"
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
-#include "MModuleTACcut.h"
+#include "MModuleTACCalibration.h"
 #include "MAssembly.h"
 
 
@@ -153,7 +153,6 @@ private:
   MString m_FileName;
   MString m_EcalFile;
   MString m_TACCalFile;
-  MString m_TACCutFile;
   MString m_StripMapFile;
   //! output file names
   MString m_OutFile;
@@ -277,7 +276,6 @@ bool TrappingCorrection::ParseCommandLine(int argc, char** argv)
   Usage<<"         --emax:   maximum Event energy (default 5000 kev)"<<endl;
   Usage<<"         -e:   energy calibration file (.ecal)"<<endl;
   Usage<<"         --tcal:   TAC calibration file"<<endl;
-  Usage<<"         --tcut:   TAC cut file"<<endl;
   Usage<<"         -p:   do pixel-by-pixel correction"<<endl;
   Usage<<"         -m:   strip map file name (.map)"<<endl;
   Usage<<"         -mr:   multi-round chi sqaure strip pairing (default is chi-square)"<<endl;
@@ -319,7 +317,7 @@ bool TrappingCorrection::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "--tcut") || (Option == "-m")) {
+    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m")) {
       if (!((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
@@ -349,11 +347,6 @@ bool TrappingCorrection::ParseCommandLine(int argc, char** argv)
     if (Option == "--tcal") {
       m_TACCalFile = argv[++i];
       cout<<"Accepting file name: "<<m_TACCalFile<<endl;
-    } 
-
-    if (Option == "--tcut") {
-      m_TACCutFile = argv[++i];
-      cout<<"Accepting file name: "<<m_TACCutFile<<endl;
     } 
 
     if (Option == "-o"){
@@ -426,7 +419,7 @@ bool TrappingCorrection::Analyze()
     MSupervisor* S = MSupervisor::GetSupervisor();
     
   	MModuleLoaderMeasurementsHDF* Loader;
-  	MModuleTACcut* TACCalibrator;
+  	MModuleTACCalibration* TACCalibrator;
   	MModuleEnergyCalibration* EnergyCalibrator;
   	MModuleEventFilter* EventFilter;
 
@@ -445,9 +438,8 @@ bool TrappingCorrection::Analyze()
     ++MNumber;
 
     cout<<"Creating TAC calibrator"<<endl;
-    TACCalibrator = new MModuleTACcut();
+    TACCalibrator = new MModuleTACCalibration();
     TACCalibrator->SetTACCalFileName(m_TACCalFile);
-    TACCalibrator->SetTACCutFileName(m_TACCutFile);
     S->SetModule(TACCalibrator, MNumber);
     ++MNumber;
    

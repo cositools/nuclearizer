@@ -60,7 +60,7 @@ using namespace std;
 #include "MModuleEventFilter.h"
 #include "MModuleStripPairingChiSquare.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
-#include "MModuleTACcut.h"
+#include "MModuleTACCalibration.h"
 #include "MAssembly.h"
 
 
@@ -106,7 +106,6 @@ private:
   MString m_LVFileName;
   MString m_EcalFile;
   MString m_TACCalFile;
-  MString m_TACCutFile;
   MString m_StripMapFile;
   //! output file names
   MString m_OutFile;
@@ -159,7 +158,6 @@ bool TrappingCorrectionAm241::ParseCommandLine(int argc, char** argv)
   Usage<<"         --emax:   maximum Event energy (default 70 kev)"<<endl;
   Usage<<"         -e:   energy calibration file (.ecal)"<<endl;
   Usage<<"         --tcal:   TAC calibration file"<<endl;
-  Usage<<"         --tcut:   TAC cut file"<<endl;
   Usage<<"         -p:   do pixel-by-pixel correction"<<endl;
   Usage<<"         -m:   strip map file name (.map)"<<endl;
   Usage<<"         -mr:   multi-round chi square strip pairing (default is chi-square)"<<endl;
@@ -227,9 +225,6 @@ bool TrappingCorrectionAm241::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--tcal") {
       m_TACCalFile = argv[++i];
       cout<<"Accepting file name: "<<m_TACCalFile<<endl;
-    } else if (Option == "--tcut") {
-      m_TACCutFile = argv[++i];
-      cout<<"Accepting file name: "<<m_TACCutFile<<endl;
     } else if (Option == "-m") {
       m_StripMapFile = argv[++i];
       cout<<"Accepting file name: "<<m_StripMapFile<<endl;
@@ -350,7 +345,7 @@ bool TrappingCorrectionAm241::Analyze()
       MSupervisor* S = MSupervisor::GetSupervisor();
       
     	MModuleLoaderMeasurementsHDF* Loader;
-    	MModuleTACcut* TACCalibrator;
+    	MModuleTACCalibration* TACCalibrator;
     	MModuleEnergyCalibration* EnergyCalibrator;
     	MModuleEventFilter* EventFilter;
 
@@ -364,12 +359,11 @@ bool TrappingCorrectionAm241::Analyze()
       ++MNumber;
 
       cout<<"Creating TAC calibrator"<<endl;
-      TACCalibrator = new MModuleTACcut();
+      TACCalibrator = new MModuleTACCalibration();
       TACCalibrator->SetTACCalFileName(m_TACCalFile);
-      TACCalibrator->SetTACCutFileName(m_TACCutFile);
       S->SetModule(TACCalibrator, MNumber);
       ++MNumber;
-     
+
       cout<<"Creating energy calibrator"<<endl;
       EnergyCalibrator = new MModuleEnergyCalibration();
       EnergyCalibrator->SetFileName(m_EcalFile);

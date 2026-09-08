@@ -1,5 +1,5 @@
 /*
- * MModuleTACcut.h
+ * MModuleTACCalibration.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,89 +9,87 @@
  */
 
 
-#ifndef __MModuleTACcut__
-#define __MModuleTACcut__
+#ifndef __MModuleTACCalibration__
+#define __MModuleTACCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Standard libs:
-#include <algorithm>
-
-// ROOT libs:
-#include "TGClient.h"
-#include "TH1.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MModule.h"
-#include "MGUIExpoTACcut.h"
-#include "MGUIExpoPlotSpectrum.h"
 
 
 // Forward declarations:
+class MGUIExpoTACcut;
+class MGUIExpoPlotSpectrum;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MModuleTACcut : public MModule
+class MModuleTACCalibration : public MModule
 {
   // public interface:
  public:
   //! Default constructor
-  MModuleTACcut();
+  MModuleTACCalibration();
   //! Default destructor
-  virtual ~MModuleTACcut();
+  virtual ~MModuleTACCalibration();
   
   //! Create a new object of this class 
-  virtual MModuleTACcut* Clone() { return new MModuleTACcut(); }
+  virtual MModuleTACCalibration* Clone() { return new MModuleTACCalibration(); }
 
   //! Initialize the module
   virtual bool Initialize();
 
-  //! Create expos 
-  virtual void CreateExpos();
-
   //! Finalize the module
   virtual void Finalize();
 
-  //! Main data analysis routine, which updates the event to a new level 
-  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
+  //! Create Expos
+  virtual void CreateExpos();
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
+  //! Main data analysis routine, which updates the event to a new level 
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
   //! Read the configuration data from an XML node
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
+
   //! Create an XML node tree from the configuration
   virtual MXmlNode* CreateXmlConfiguration();
 
-  ///////////// Creating functions that will update and get the min/max TAC values //////////////////////////
-
   //! Set filename for TAC calibration
-  void SetTACCalFileName( const MString& FileName) {m_TACCalFile = FileName;}
+  void SetTACCalFileName( const MString& FileName) { m_TACCalFile = FileName; }
+
   //! Get filename for TAC calibration
   MString GetTACCalFileName() const {return m_TACCalFile;}
 
-  //! Set filename for TAC cut
-  void SetTACCutFileName( const MString& FileName) {m_TACCutFile = FileName;}
-  //! Get filename for TAC cut
-  MString GetTACCutFileName() const {return m_TACCutFile;}
-
   //! Load the TAC calibration file
   bool LoadTACCalFile(MString FName);
-
-  //! Load the TAC cut file
-  bool LoadTACCutFile(MString FName);
 
   //! Set the TAC calibration parameters
   void SetTACCalParameters(unordered_map<int, vector<unordered_map<int, vector<double>>>> TACCal) { m_TACCal = TACCal; }
 
   //! Get the TAC calibration parameters
   unordered_map<int, vector<unordered_map<int, vector<double>>>> GetTACCalParameters() { return m_TACCal; }
+
+  //! Enable or disable TAC cuts
+  void SetApplyTACCuts(bool ApplyTACCuts) { m_ApplyTACCuts = ApplyTACCuts; }
+
+  //! Return whether TAC cuts are enabled
+  bool GetApplyTACCuts() const { return m_ApplyTACCuts; }
+
+  //! Set TAC coincidence window in ns
+  void SetCoincidenceWindow(double CoincidenceWindow) { m_CoincidenceWindow = CoincidenceWindow; }
+
+  //! Get TAC coincidence window in ns
+  double GetCoincidenceWindow() const { return m_CoincidenceWindow; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
@@ -104,6 +102,12 @@ class MModuleTACcut : public MModule
   // private methods:
  private:
 
+  //! Apply TAC calibration to strip hits
+  bool ApplyTACCal(MReadOutAssembly* Event);
+
+  //! Apply TAC cuts to calibrated strip hits
+  //! Assumes ApplyTACCal() has already been called for this event
+  bool ApplyTACCuts(MReadOutAssembly* Event);
 
 
   // protected members:
@@ -115,29 +119,29 @@ class MModuleTACcut : public MModule
   //! TAC calibration parameter file name
   MString m_TACCalFile;
 
-  //! TAC cut parameter files
-  MString m_TACCutFile;
-
   //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration parameters
   unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCal;
 
-  //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC cut parameters
-  unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCut;
-
-  //! Map characters representing sides of the detectors indices to avoid mistakes
+  //! Map characters representing detector sides to LV/HV indices
   unordered_map<char, int> m_SideToIndex;
 
   //! Vector of Detector IDs
   vector<unsigned int> m_DetectorIDs;
 
-  MGUIExpoTACcut* m_ExpoTACcut;
+  //! TAC coincidence window in ns
+  double m_CoincidenceWindow;
 
+  //! Option to apply TAC cuts after TAC calibration
+  bool m_ApplyTACCuts;
+
+  //! TAC distribution and energy spectra
+  MGUIExpoTACcut* m_ExpoTACcut;
   MGUIExpoPlotSpectrum* m_ExpoEnergySpectrum;
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MModuleTACcut, 0) // no description
+  ClassDef(MModuleTACCalibration, 0) // no description
 #endif
 
 };

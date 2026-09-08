@@ -74,7 +74,7 @@ using namespace std;
 #include "MModuleSaverMeasurementsFITS.h"
 #include "MModuleResponseGenerator.h"
 #include "MModuleRevan.h"
-#include "MModuleTACcut.h"
+#include "MModuleTACCalibration.h"
 // #include "MModuleNearestNeighbor.h"
 #include "MModuleDiagnostics.h"
 #include "MModuleDiagnosticsEnergyPerStrip.h"
@@ -144,7 +144,7 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
   m_Supervisor->AddAvailableModule(new MModuleResponseGenerator());
   m_Supervisor->AddAvailableModule(new MModuleRevan());
-  m_Supervisor->AddAvailableModule(new MModuleTACcut());
+  m_Supervisor->AddAvailableModule(new MModuleTACCalibration());
   // m_Supervisor->AddAvailableModule(new MModuleNearestNeighbor());
 
   m_Supervisor->AddAvailableModule(new MModuleDiagnostics());

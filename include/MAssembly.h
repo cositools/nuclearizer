@@ -53,8 +53,8 @@ class MAssembly
   static const uint64_t c_EventLoaderMeasurement   = (1 << 2);  // = 4
   static const uint64_t c_EventOrdering            = (1 << 3);  // = 8
   static const uint64_t c_Coincidence              = (1 << 4);  // = 16
-  static const uint64_t c_TACcut                   = (1 << 5);  // = 32
-  static const uint64_t c_NearestNeighbor          = (1 << 6);  // = 32
+  static const uint64_t c_TACCalibration           = (1 << 5);  // = 32
+  static const uint64_t c_NearestNeighbor          = (1 << 6);  // = 64
   static const uint64_t c_DetectorEffectsEngine    = (1 << 7);
   static const uint64_t c_EventFilter              = (1 << 8);
   static const uint64_t c_EnergyCalibration        = (1 << 9);

@@ -2,7 +2,7 @@
  * MGUIExpoTACcut.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer, Nicole Rodriquez Cavero.
+ * Copyright (C) by Andreas Zoglauer, Nicole Rodriguez Cavero.
  * All rights reserved.
  *
  *
@@ -49,7 +49,7 @@ MGUIExpoTACcut::MGUIExpoTACcut(MModule* Module) : MGUIExpo(Module)
   // standard constructor
 
   // Set the new title of the tab here:
-  m_TabTitle = "TAC Calibration";
+  m_TabTitle = "TAC Cuts";
   
   // Set the histogram arrangment
   // SetTACHistogramArrangement(1, 1);

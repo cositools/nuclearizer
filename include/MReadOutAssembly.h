@@ -208,6 +208,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the energy calibration error flag
   bool HasEnergyCalibrationError() const { return m_EnergyCalibrationError; }
 
+  //! Set the TAC calibration error flag
+  void SetTACCalibrationError(const MString& Text = "") { m_TACCalibrationError = true; if (Text != "") m_TACCalibrationErrorString.push_back(Text); }
+  //! Get the TAC calibration error flag
+  bool HasTACCalibrationError() const { return m_TACCalibrationError; }
+
   //! Set the strip pairing error flag
   void SetStripPairingError(const MString& Text = "") { m_StripPairingError = true; if (Text != "") m_StripPairingErrorString.push_back(Text); }
   //! Get the strip pairing error flag
@@ -394,6 +399,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_EnergyCalibrationError;
   //! Energy calibration error string
   vector<MString> m_EnergyCalibrationErrorString;
+
+  //! TAC calibration error flag
+  bool m_TACCalibrationError;
+  //! TAC calibration error string
+  vector<MString> m_TACCalibrationErrorString;
 
   //! Strip pairing error flag
   bool m_StripPairingError;

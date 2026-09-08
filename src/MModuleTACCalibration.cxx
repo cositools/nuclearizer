@@ -1,0 +1,493 @@
+/*
+ * MModuleTACCalibration.cxx
+ *
+ *
+ * Copyright (C) by Andreas Zoglauer, Nicole Rodriguez Cavero
+ * Sean Pike
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer, Nicole Rodriguez Cavero, Sean Pike.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MModuleTACCalibration
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MModuleTACCalibration.h"
+#include "MGUIExpoTACcut.h"
+#include "MGUIExpoPlotSpectrum.h"
+#include "MGUIOptionsTACCalibration.h"
+
+// Standard libs:
+#include <algorithm>
+#include <limits>
+
+// ROOT libs:
+
+
+// MEGAlib libs:
+#include "MModule.h"
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CLING___
+ClassImp(MModuleTACCalibration)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MModuleTACCalibration::MModuleTACCalibration() : MModule()
+{
+  // Construct an instance of MModuleTACCalibration
+
+  // Set all module relevant information
+
+  // Set the module name --- has to be unique
+  m_Name = "TAC Calibration";
+
+  // Set the XML tag --- has to be unique --- no spaces allowed
+  m_XmlTag = "XmlTagTACCalibration";
+
+  // Set all modules, which have to be done before this module
+  AddPreceedingModuleType(MAssembly::c_EventLoader);
+
+  // Set all types this modules handles
+  AddModuleType(MAssembly::c_TACCalibration);
+
+  // Set all modules, which can follow this module
+  AddSucceedingModuleType(MAssembly::c_StripPairing);
+
+  // Set if this module has an options GUI
+  // Overwrite ShowOptionsGUI() with the call to the GUI!
+  m_HasOptionsGUI = true;
+  // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTACCalibration)
+  // and implement all your GUI options
+
+  // Can the program be run multi-threaded
+  m_AllowMultiThreading = true;
+
+  // Can we use multiple instances of this class
+  m_AllowMultipleInstances = true;
+
+  // Applying taccuts by default
+  m_ApplyTACCuts = true;
+
+  // Default coincidence window in ns
+  m_CoincidenceWindow = 600.0;
+
+  m_SideToIndex = {{'l', 0}, {'h', 1}, {'0', 0}, {'1', 1}, {'p', 0}, {'n', 1}};
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MModuleTACCalibration::~MModuleTACCalibration()
+{
+  // Delete this instance of MModuleTACCalibration
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleTACCalibration::Initialize()
+{
+  // Initialize the module 
+
+  if (LoadTACCalFile(m_TACCalFile) == false) {
+    cout<<m_XmlTag<<": Error: TAC Calibration file could not be loaded."<<endl;
+    return false;
+  }
+
+  // Some sanity checks:
+  if (m_TACCal.size() == 0) {
+    cout<<m_XmlTag<<": The TAC calibration data set is empty"<<endl;
+    return false;
+  }
+
+  return MModule::Initialize();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void MModuleTACCalibration::CreateExpos()
+{
+  if (HasExpos() == true) return;
+
+  m_ExpoTACcut = new MGUIExpoTACcut(this);
+
+  m_ExpoTACcut->SetTACHistogramArrangement(m_DetectorIDs);
+
+  for (unsigned int i = 0; i < m_DetectorIDs.size(); ++i) {
+    unsigned int DetID = m_DetectorIDs[i];
+    m_ExpoTACcut->SetTACHistogramParameters(DetID, 200, 0, 6000);
+  }
+
+  m_Expos.push_back(m_ExpoTACcut);
+
+  m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
+  m_Expos.push_back(m_ExpoEnergySpectrum);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void MModuleTACCalibration::ShowOptionsGUI()
+{
+  MGUIOptionsTACCalibration* Options =
+    new MGUIOptionsTACCalibration(this);
+
+  Options->Create();
+  gClient->WaitForUnmap(Options);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool MModuleTACCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
+{
+  if (HasExpos()) {
+    for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
+
+      MStripHit* SH = Event->GetStripHit(i);
+
+      m_ExpoEnergySpectrum->AddEnergyInitial(
+        SH->GetEnergy(),
+        SH->IsNearestNeighbor(),
+        SH->IsLowVoltageStrip()
+      );
+    }
+  }
+
+  // Always apply TAC calibration
+  if (ApplyTACCal(Event) == false){
+    return false;
+  }
+
+  // Optionally apply TAC cuts
+  if (m_ApplyTACCuts == true && Event->HasTACCalibrationError() == false) {
+    if (ApplyTACCuts(Event) == false) {
+      return false;
+    }
+  }
+
+  if (HasExpos()) {
+    for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
+
+      MStripHit* SH = Event->GetStripHit(i);
+
+      m_ExpoEnergySpectrum->AddEnergyFinal(
+        SH->GetEnergy(),
+        SH->IsNearestNeighbor(),
+        SH->IsLowVoltageStrip()
+      );
+
+      if ((SH->IsGuardRing() == false) &&
+          (SH->HasFastTiming() == true)) {
+
+        m_ExpoTACcut->AddTAC(
+          SH->GetDetectorID(),
+          SH->GetTiming()
+        );
+      }
+    }
+  }
+
+  return true;
+}
+      
+////////////////////////////////////////////////////////////////////////////////
+
+bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
+{
+  // Loop through all strip hits in the event
+  for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
+    // Get the current strip hit
+    MStripHit* SH = Event->GetStripHit(i);
+
+    // Guard rings are intentionally not TAC calibrated
+    if (SH->IsGuardRing() == false) {
+
+      int DetID = SH->GetDetectorID();
+      int StripID = SH->GetStripID();
+      char Side = SH->IsLowVoltageStrip() ? 'l' : 'h';
+      
+      // Check that this detector exists in the TAC calibration
+      if (m_TACCal.find(DetID) == m_TACCal.end()) {
+        cout<<m_XmlTag
+            <<": Error: DetID "<<DetID
+            <<" has no TAC calibration entries - skipping event"
+            <<endl;
+        return false;
+      }
+
+      // Check that this side is understood
+      if (m_SideToIndex.find(Side) == m_SideToIndex.end()) {
+        cout<<m_XmlTag
+            <<": Error: Unable to identify Side "<<Side
+            <<" - skipping event"
+            <<endl;
+        return false;
+      }
+
+      int SideIndex = m_SideToIndex[Side];
+
+      auto TACCalibration = m_TACCal[DetID][SideIndex].find(StripID);
+      if (TACCalibration == m_TACCal[DetID][SideIndex].end() || TACCalibration->second.size() <2){
+
+        if (g_Verbosity >= c_Warning) {
+          cout<< m_XmlTag
+              <<": Warning: No valid TAC calibration for DETID"<< DetID
+              <<", StripID "<< StripID
+              <<", Side "<< Side
+              <<endl;
+        }
+
+        Event->SetTACCalibrationError(
+          "No valid TAC calibration for DetID " + to_string(DetID) + 
+          ", StripID " + to_string(StripID)
+        );
+
+        continue;
+      }
+
+      // Raw TAC value
+      double TAC_timing = SH->GetTAC();
+      
+      // Convert TAC value into timing in ns
+      double ns_timing =
+          TAC_timing*TACCalibration->second[0]
+          + TACCalibration->second[1];
+
+      // Store calibrated timing
+      SH->SetTiming(ns_timing); 
+    }
+  }
+
+  // Mark TAC calibration as completed for this event
+  Event->SetAnalysisProgress(MAssembly::c_TACCalibration);
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool MModuleTACCalibration::ApplyTACCuts(MReadOutAssembly* Event) 
+{
+  // Find the max timing value for non-NN hits of an event
+  // This will be used for the coincidence window
+  double MaxTAC = -numeric_limits<double>::max();
+
+  for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
+    MStripHit* SH = Event->GetStripHit(i);
+
+    if ((SH->IsGuardRing() == false) && (SH->HasFastTiming() == true) && (SH ->IsNearestNeighbor()==false)){
+        double ns_timing = SH->GetTiming();
+      
+      if (ns_timing> MaxTAC) {
+        MaxTAC = ns_timing;
+      }
+    }
+  }
+
+  // 200ns appears to be the minimum acceptable timing value for all hits
+  constexpr double c_FLNoiseCut = 200.0;
+
+  // TotalOffset: Earliest time (in ns) after which valid timing hits can appear, start of the allowed timing window
+  constexpr double TotalOffset = 3000.0;
+  
+  // Apply TAC cuts
+  
+  for (unsigned int i = 0; i < Event->GetNStripHits();) {
+    MStripHit* SH = Event->GetStripHit(i);
+    bool Passed = true;
+
+    if (SH->IsGuardRing()==false) {
+      double SHTiming = SH->GetTiming();
+      
+      // Nearest neighbor and direct hit with slow timing
+      if (SH->HasFastTiming() == false) {
+        if (SHTiming <= c_FLNoiseCut) {
+          Passed = false;
+        }
+      
+      //Fast-timing hits must satisfy true and chance coincidence cuts
+      } else {
+        if ((SHTiming < TotalOffset) || (SHTiming < MaxTAC - m_CoincidenceWindow)) {
+          Passed = false;
+        }
+      }
+    }
+
+    if (Passed == true) {
+      ++i;
+    } else {
+      Event->RemoveStripHit(i);
+      delete SH;
+    }
+  }
+
+  Event->SetAnalysisProgress(MAssembly::c_TACCalibration);
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleTACCalibration::Finalize()
+{
+  m_TACCal.clear();
+  m_DetectorIDs.clear();
+  
+  MModule::Finalize();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleTACCalibration::ReadXmlConfiguration(MXmlNode* Node)
+{
+  //! Read the configuration data from an XML node
+
+  MXmlNode* TACCalFileNameNode = Node->GetNode("TACCalFileName");
+  if (TACCalFileNameNode != nullptr) {
+    SetTACCalFileName(TACCalFileNameNode->GetValue());
+  }
+
+  MXmlNode* ApplyTACCutsNode = Node->GetNode("ApplyTACCuts");
+  if (ApplyTACCutsNode != nullptr) {
+    SetApplyTACCuts(ApplyTACCutsNode->GetValueAsBoolean());
+  }
+
+  MXmlNode* TACCutNode = Node->GetNode("TACCut");
+  if (TACCutNode != nullptr) {
+
+    MXmlNode* CoincidenceWindowNode =
+      TACCutNode->GetNode("CoincidenceWindow");
+
+    if (CoincidenceWindowNode != nullptr) {
+      SetCoincidenceWindow(
+        CoincidenceWindowNode->GetValueAsDouble()
+      );
+    }
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MXmlNode* MModuleTACCalibration::CreateXmlConfiguration() 
+{
+  //! Create an XML node tree from the configuration
+
+  MXmlNode* Node = new MXmlNode(0, m_XmlTag);
+  
+  new MXmlNode(Node, "TACCalFileName", m_TACCalFile);
+
+  new MXmlNode(Node, "ApplyTACCuts", m_ApplyTACCuts);
+  
+  MXmlNode* TACCutNode =
+    new MXmlNode(Node, "TACCut");
+
+  new MXmlNode(
+    TACCutNode,
+    "CoincidenceWindow",
+    m_CoincidenceWindow
+  );
+
+  return Node;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleTACCalibration::LoadTACCalFile(MString FName)
+{
+  // Read in the TAC Calibration file, which should contain for each strip:
+  //  DetID, Side (h or l for high or low voltage), TAC cal, TAC cal error, TAC cal offset, TAC offset error
+  // OR:
+  // ReadOutID, Detector, Side, Strip, TAC cal, TAC cal error, TAC offset, TAC offset error
+  MFile F;
+  if (F.Open(FName) == false) {
+    cout<<m_XmlTag<<": Error: failed to open TAC Calibration file."<<endl;
+    return false;
+  }
+  MString Line;
+  while (F.ReadLine(Line)) {
+    if (!Line.BeginsWith("#")) {
+      std::vector<MString> Tokens = Line.Tokenize(",");
+      if ((Tokens.size() == 7) || (Tokens.size() == 8)) {
+        int IndexOffset = Tokens.size() % 7;
+        int DetID = Tokens[0+IndexOffset].ToInt();
+        MString SideString = Tokens[1+IndexOffset].Trim();
+        char Side;
+        if (SideString.Length()!=1) {
+          cout<<m_XmlTag<<": Error: Expected 1 character Side, got string \""<<SideString<<"\" in TAC calibration file."<<endl;
+          return false;
+        }
+        else {
+          Side = SideString[0];
+        }
+        int StripID = Tokens[2+IndexOffset].ToInt();
+        double TACCal = Tokens[3+IndexOffset].ToDouble();
+        double TACCalError = Tokens[4+IndexOffset].ToDouble();
+        double Offset = Tokens[5+IndexOffset].ToDouble();
+        double OffsetError = Tokens[6+IndexOffset].ToDouble();
+        vector<double> CalValues;
+        CalValues.push_back(TACCal); CalValues.push_back(Offset); CalValues.push_back(TACCalError); CalValues.push_back(OffsetError);
+        
+        // If this detector has not been encountered yet, create LV and HV calibration maps for it
+        if (m_TACCal.find(DetID) == m_TACCal.end()) {
+          vector<unordered_map<int, vector<double>>> TempVector;
+          unordered_map<int, vector<double>> TempMapLV;
+          unordered_map<int, vector<double>> TempMapHV;
+          m_TACCal[DetID] = TempVector;
+          m_TACCal[DetID].push_back(TempMapLV);
+          m_TACCal[DetID].push_back(TempMapHV);
+        }
+
+        // Keep track of detector IDs contained in the calibration
+        if (find(m_DetectorIDs.begin(), m_DetectorIDs.end(), DetID) == m_DetectorIDs.end()) {
+          m_DetectorIDs.push_back(DetID);
+        }
+        
+        // Store the calibration parameters
+        if (m_SideToIndex.find(Side) != m_SideToIndex.end()) {
+          m_TACCal[DetID][m_SideToIndex[Side]][StripID] = CalValues;
+        } else {
+          cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
+          return false;
+        }
+      }
+    }
+  }
+  F.Close();
+  sort(m_DetectorIDs.begin(), m_DetectorIDs.end());
+
+  return true;
+}
+
+// MModuleTACCalibration.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
+
+
