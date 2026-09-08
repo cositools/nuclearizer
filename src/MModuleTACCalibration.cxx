@@ -66,14 +66,12 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
-  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_TACCalibration);
 
   // Set all modules, which can follow this module
   AddSucceedingModuleType(MAssembly::c_StripPairing);
-  AddSucceedingModuleType(MAssembly::c_DepthCorrection);
 
   // Set if this module has an options GUI
   // Overwrite ShowOptionsGUI() with the call to the GUI!

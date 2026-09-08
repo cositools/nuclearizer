@@ -98,11 +98,11 @@ bool MSubModuleDepthReadout::Initialize()
   }
 
   // Load TAC calibration parameters
-  MModuleTACCalibration TACcal;
-  TACcal.SetTACCalFileName(m_TACCalFileName);
-  if (TACcal.LoadTACCalFile(m_TACCalFileName) == true) {
+  MModuleTACCalibration TACCalibration;
+  TACCalibration.SetTACCalFileName(m_TACCalFileName);
+  if (TACCalibration.LoadTACCalFile(m_TACCalFileName) == true) {
     // Copy TAC cal parameters
-    m_TACCal = TACcal.GetTACCalParameters();
+    m_TACCal = TACCalibration.GetTACCalParameters();
   } else {
     return false;
   }
