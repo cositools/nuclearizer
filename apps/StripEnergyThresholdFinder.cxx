@@ -332,8 +332,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
       MXmlNode* DataFileNode = DataFilesNode->GetNode(i);
 
-      if (DataFileNode != nullptr &&
-          DataFileNode->GetName() == "DataFile") {
+      if (DataFileNode != nullptr) {
         m_InputFileNames.push_back(DataFileNode->GetValue().Data());
       }
     }
@@ -609,15 +608,10 @@ bool MStripThresholdFinder::BuildHistograms()
 
   MModuleLoaderMeasurementsHDF* Loader = new MModuleLoaderMeasurementsHDF();
 
-  Loader->SetFileName(m_InputFileNames[0].c_str());
-
-  cout << "Loading file: " << m_InputFileNames[0] << endl;
-  cout << "Number of input files: " << m_InputFileNames.size() << endl;
-
   Loader->SetFileNameStripMap(m_StripMapFileName.Data());
   Loader->SetIncludeNearestNeighbor(false);
 
-  //NEW Energy Calibrator / MEGAlib module
+  // Energy calibrator / MEGAlib module
   MSupervisor* S = MSupervisor::GetSupervisor();
 
   unsigned int ModuleIndex = 0;
@@ -632,12 +626,7 @@ bool MStripThresholdFinder::BuildHistograms()
   S->SetModule(EnergyCalibrator, ModuleIndex);
   ++ModuleIndex;
 
-
-  if (Loader->Initialize() == false) {
-    cerr << "Failed to initialize loader!" << endl;
-    return false;
-  }
-
+  // The energy calibration is common to all input files, so initialize it once.
   if (EnergyCalibrator->Initialize() == false) {
     cerr << "Failed to initialize energy calibration!" << endl;
     return false;
@@ -647,172 +636,195 @@ bool MStripThresholdFinder::BuildHistograms()
 
   long event_counter = 0;
   auto start_time = std::chrono::steady_clock::now();
-  while (Loader->IsFinished() == false) {
 
+  cout << "Number of input files: " << m_InputFileNames.size() << endl;
+
+  // Process each input HDF5 file while accumulating into the same histograms.
+  for (const auto& InputFileName : m_InputFileNames) {
+
+    // m_MaxEvents is a global limit across all input files.
     if (max_events > 0 && event_counter >= max_events) {
       break;
     }
 
-    Event->Clear();
+    cout << "Loading file: " << InputFileName << endl;
 
-    if (Loader->IsReady() == true) {
-      Loader->AnalyzeEvent(Event);
-      EnergyCalibrator->AnalyzeEvent(Event);
-      event_counter++;
+    Loader->SetFileName(InputFileName.c_str());
 
-      // -------------------------------------------------------------
-      // GLOBAL progress
-      // -------------------------------------------------------------
+    // Initialize() resets the loader state and opens the current file.
+    if (Loader->Initialize() == false) {
+      cerr << "Failed to initialize loader for file: "
+           << InputFileName << endl;
+      return false;
+    }
 
-      if (event_counter % 1000000 == 0) {
-        auto now = std::chrono::steady_clock::now();
-        double elapsed = std::chrono::duration<double>(now - start_time).count();
+    while (Loader->IsFinished() == false) {
 
-        double rate = event_counter / elapsed;
-
-        cout << "Processed events: " << event_counter
-             << " | Rate: " << rate << " events/s"
-             << endl;
+      if (max_events > 0 && event_counter >= max_events) {
+        break;
       }
 
+      Event->Clear();
 
-      int NStrips = Event->GetNStripHits();
+      if (Loader->IsReady() == true) {
+        Loader->AnalyzeEvent(Event);
+        EnergyCalibrator->AnalyzeEvent(Event);
+        event_counter++;
 
-	    // -------------------------------------------------------------
-      // TEMPORARY DIAGNOSTIC:
-      // Identify and print events containing unexpected detector IDs.
-      // Uncomment this block when investigating suspicious events.
-      // -------------------------------------------------------------
+        // -------------------------------------------------------------
+        // GLOBAL progress
+        // -------------------------------------------------------------
 
-      /*
-      bool suspiciousEvent = false;
+        if (event_counter % 1000000 == 0) {
+          auto now = std::chrono::steady_clock::now();
+          double elapsed = std::chrono::duration<double>(now - start_time).count();
 
-      for (int j = 0; j < NStrips; ++j) {
-        MStripHit* TestHit = Event->GetStripHit(j);
+          double rate = event_counter / elapsed;
 
-        if (TestHit->GetDetectorID() != 0) {
-          suspiciousEvent = true;
-          break;
-        }
-      }
-
-      if (suspiciousEvent) {
-
-        cout << endl;
-        cout << "========================================" << endl;
-        cout << "SUSPICIOUS EVENT " << event_counter
-             << "   NStrips=" << NStrips << endl;
-
-        for (int j = 0; j < NStrips; ++j) {
-
-          MStripHit* TestHit = Event->GetStripHit(j);
-
-          cout << "  Hit " << j
-               << " Det=" << TestHit->GetDetectorID()
-               << " Side=" << (TestHit->IsLowVoltageStrip() ? "LV" : "HV")
-               << " Strip=" << TestHit->GetStripID()
-               << " ADC=" << TestHit->GetADCUnits()
-               << " Energy=" << TestHit->GetEnergy()
-               << " TAC=" << TestHit->GetTAC()
+          cout << "Processed events: " << event_counter
+               << " | Rate: " << rate << " events/s"
                << endl;
         }
 
-        cout << "========================================" << endl;
-      }
-      */
+        int NStrips = Event->GetNStripHits();
 
+        // -------------------------------------------------------------
+        // TEMPORARY DIAGNOSTIC:
+        // Identify and print events containing unexpected detector IDs.
+        // Uncomment this block when investigating suspicious events.
+        // -------------------------------------------------------------
 
-      for (int i = 0; i < NStrips; ++i) {
-        MStripHit* SH = Event->GetStripHit(i);
+        /*
+        bool suspiciousEvent = false;
 
-        if (SH == nullptr) {
-          continue;
+        for (int j = 0; j < NStrips; ++j) {
+          MStripHit* TestHit = Event->GetStripHit(j);
+
+          if (TestHit->GetDetectorID() != 0) {
+            suspiciousEvent = true;
+            break;
+          }
         }
 
-        // Process only the detector selected in the configuration.
-        if (SH->GetDetectorID() != m_DetectorID) {
-          continue;
-        }
+        if (suspiciousEvent) {
 
-        double ADC = SH->GetADCUnits();
+          cout << endl;
+          cout << "========================================" << endl;
+          cout << "SUSPICIOUS EVENT " << event_counter
+               << "   NStrips=" << NStrips << endl;
 
-        MReadOutElementDoubleStrip R;
-        R.SetDetectorID(SH->GetDetectorID());
-        R.SetStripID(SH->GetStripID());
-        R.IsLowVoltageStrip(SH->IsLowVoltageStrip());
+          for (int j = 0; j < NStrips; ++j) {
 
-        int bin = (int) (ADC / m_HistogramMaxADC * m_HistogramBins);
+            MStripHit* TestHit = Event->GetStripHit(j);
 
-        if (bin >= 0 && bin < m_HistogramBins) {
-          if (hist_counts.find(R) == hist_counts.end()) {
-            hist_counts[R] = vector<int>(m_HistogramBins, 0);
+            cout << "  Hit " << j
+                 << " Det=" << TestHit->GetDetectorID()
+                 << " Side=" << (TestHit->IsLowVoltageStrip() ? "LV" : "HV")
+                 << " Strip=" << TestHit->GetStripID()
+                 << " ADC=" << TestHit->GetADCUnits()
+                 << " Energy=" << TestHit->GetEnergy()
+                 << " TAC=" << TestHit->GetTAC()
+                 << endl;
           }
 
-          hist_counts[R][bin]++;
+          cout << "========================================" << endl;
         }
+        */
 
-        // -------------------------------------------------------------
-        // FAST timing accumulation (dt0 vs dt1)
-        // -------------------------------------------------------------
+        for (int i = 0; i < NStrips; ++i) {
+          MStripHit* SH = Event->GetStripHit(i);
 
-        double energy = SH->GetEnergy();
+          if (SH == nullptr) {
+            continue;
+          }
 
-        double TAC = SH->GetTAC();
-        int ADC_bin = static_cast<int>(ADC);
+          // Process only the detector selected in the configuration.
+          if (SH->GetDetectorID() != m_DetectorID) {
+            continue;
+          }
 
-        // --- dt0 vs dt1 separation ---
-        bool is_dt1 = (TAC > 8000); // initial threshold
+          double ADC = SH->GetADCUnits();
 
+          MReadOutElementDoubleStrip R;
+          R.SetDetectorID(SH->GetDetectorID());
+          R.SetStripID(SH->GetStripID());
+          R.IsLowVoltageStrip(SH->IsLowVoltageStrip());
 
-        // Initialize bin if needed
-        if (timingCounts[R].count(ADC_bin) == 0) {
-          timingCounts[R][ADC_bin] = { 0, 0 };
-        }
+          int bin = (int) (ADC / m_HistogramMaxADC * m_HistogramBins);
 
-        // Cache maximum calibrated energy once per strip
-        if (ADC_to_keV_scale.find(R) == ADC_to_keV_scale.end()) {
+          if (bin >= 0 && bin < m_HistogramBins) {
+            if (hist_counts.find(R) == hist_counts.end()) {
+              hist_counts[R] = vector<int>(m_HistogramBins, 0);
+            }
 
-          // cout << "CACHE calibration request: Det "
-          //      << R.GetDetectorID()
-          //      << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
-          //      << " Strip " << R.GetStripID()
-          //      << endl;
+            hist_counts[R][bin]++;
+          }
 
-          ADC_to_keV_scale[R] = m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
-        }
+          // -------------------------------------------------------------
+          // FAST timing accumulation (dt0 vs dt1)
+          // -------------------------------------------------------------
 
-        double maxEnergy = ADC_to_keV_scale[R];
+          double energy = SH->GetEnergy();
 
-        int ebin = (int) (energy / maxEnergy * m_HistogramBins);
+          double TAC = SH->GetTAC();
+          int ADC_bin = static_cast<int>(ADC);
 
+          // --- dt0 vs dt1 separation ---
+          bool is_dt1 = (TAC > 8000); // initial threshold
 
-        if (is_dt1) {
-          timingCounts[R][ADC_bin].second++;
-        } else {
-          timingCounts[R][ADC_bin].first++;
-        }
+          // Initialize bin if needed
+          if (timingCounts[R].count(ADC_bin) == 0) {
+            timingCounts[R][ADC_bin] = { 0, 0 };
+          }
 
+          // Cache maximum calibrated energy once per strip
+          if (ADC_to_keV_scale.find(R) == ADC_to_keV_scale.end()) {
 
-        // -------------------------------------------------------------
-        // SEPARATE: fill smooth dt0/dt1 histograms in ENERGY space
-        // -------------------------------------------------------------
+            // cout << "CACHE calibration request: Det "
+            //      << R.GetDetectorID()
+            //      << " Side " << (R.IsLowVoltageStrip() ? "LV" : "HV")
+            //      << " Strip " << R.GetStripID()
+            //      << endl;
 
-        auto& counts = (is_dt1 ? dt1_counts[R] : dt0_counts[R]);
+            ADC_to_keV_scale[R] =
+              m_EnergyCalibration.GetEnergy(R, m_HistogramMaxADC);
+          }
 
-        if (counts.empty() == true) {
-          counts.resize(m_HistogramBins, 0);
-        }
+          double maxEnergy = ADC_to_keV_scale[R];
 
-        if (ebin >= 0 && ebin < m_HistogramBins) {
-          counts[ebin]++;
+          int ebin = (int) (energy / maxEnergy * m_HistogramBins);
+
+          if (is_dt1) {
+            timingCounts[R][ADC_bin].second++;
+          } else {
+            timingCounts[R][ADC_bin].first++;
+          }
+
+          // -------------------------------------------------------------
+          // SEPARATE: fill smooth dt0/dt1 histograms in ENERGY space
+          // -------------------------------------------------------------
+
+          auto& counts = (is_dt1 ? dt1_counts[R] : dt0_counts[R]);
+
+          if (counts.empty() == true) {
+            counts.resize(m_HistogramBins, 0);
+          }
+
+          if (ebin >= 0 && ebin < m_HistogramBins) {
+            counts[ebin]++;
+          }
         }
       }
     }
+
+    // Close/reset the current HDF5 file before loading the next one.
+    Loader->Finalize();
   }
+
   cout << endl;
+  cout << "Total events processed: " << event_counter << endl;
 
   // Save into class
-
 
   for (auto& kv : hist_counts) {
     MReadOutElementDoubleStrip R = kv.first;
