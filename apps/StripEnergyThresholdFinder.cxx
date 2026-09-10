@@ -100,6 +100,7 @@ class MStripThresholdFinder
   MString m_OutputPrefix;
 
   unsigned int m_DetectorID = 0;
+  bool m_ProcessAllDetectors = false;
   int m_MinEntries = 10;
   double m_FallbackThresholdKeV = 20.0;
   double m_FastFallbackThresholdKeV = 35.0;
@@ -284,32 +285,54 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   // Read analysis configuration
   // -------------------------------------------------------------
 
-  MXmlNode* AnalysisNode = Document->GetNode("Analysis");
+    MXmlNode* AnalysisNode = Document->GetNode("Analysis");
 
-  if (AnalysisNode != nullptr) {
+    if (AnalysisNode != nullptr) {
 
-    MXmlNode* Node = nullptr;
+      MXmlNode* Node = nullptr;
 
-    Node = AnalysisNode->GetNode("MinEntries");
-    if (Node != nullptr) {
-      m_MinEntries = Node->GetValueAsInt();
+      // Detector selection
+      Node = AnalysisNode->GetNode("DetectorID");
+      if (Node != nullptr) {
+        m_DetectorID = std::stoi(Node->GetValue().Data());
+      }
+
+      Node = AnalysisNode->GetNode("ProcessAllDetectors");
+      if (Node != nullptr) {
+        string Value = Node->GetValue().Data();
+
+        if (Value == "true" || Value == "True" || Value == "TRUE") {
+          m_ProcessAllDetectors = true;
+        } else if (Value == "false" || Value == "False" || Value == "FALSE") {
+          m_ProcessAllDetectors = false;
+        } else {
+          cerr << "Error: <ProcessAllDetectors> must be true or false." << endl;
+          delete Document;
+          return false;
+        }
+      }
+
+      // Analysis parameters
+      Node = AnalysisNode->GetNode("MinEntries");
+      if (Node != nullptr) {
+        m_MinEntries = Node->GetValueAsInt();
+      }
+
+      Node = AnalysisNode->GetNode("FallbackThresholdKeV");
+      if (Node != nullptr) {
+        m_FallbackThresholdKeV = Node->GetValueAsDouble();
+      }
+
+      Node = AnalysisNode->GetNode("NoiseSearchMaxKeV");
+      if (Node != nullptr) {
+        m_NoiseSearchMaxKeV = Node->GetValueAsDouble();
+      }
+
+      Node = AnalysisNode->GetNode("FastFallbackKeV");
+      if (Node != nullptr) {
+        m_FastFallbackThresholdKeV = Node->GetValueAsDouble();
+      }
     }
-
-    Node = AnalysisNode->GetNode("FallbackThresholdKeV");
-    if (Node != nullptr) {
-      m_FallbackThresholdKeV = Node->GetValueAsDouble();
-    }
-
-	  Node = AnalysisNode->GetNode("FastFallbackKeV");
-    if (Node != nullptr) {
-      m_FastFallbackThresholdKeV = Node->GetValueAsDouble();
-    }
-
-    Node = AnalysisNode->GetNode("NoiseSearchMaxKeV");
-    if (Node != nullptr) {
-      m_NoiseSearchMaxKeV = Node->GetValueAsDouble();
-    }
-  }
 
   // -------------------------------------------------------------
   // Read input configuration
@@ -545,6 +568,7 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
   // -------------------------------------------------------------
 
   cout << endl;
+  cout << "Active analysis configuration:" << endl;
 
   cout << "  calibration_file:        "
        << m_CalibrationFileName.Data() << endl;
@@ -561,8 +585,18 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     cout << "    " << f << endl;
   }
 
-  cout << endl;
-  cout << "Active analysis configuration:" << endl;
+  cout << "  detector_selection:       ";
+  if (m_ProcessAllDetectors == true) {
+    cout << "All detectors" << endl;
+  } else {
+    cout << "Detector " << m_DetectorID << endl;
+  }
+
+  cout << "  detector_ID:              "
+       << m_DetectorID << endl;
+
+  cout << "  process_all_detectors:    "
+       << (m_ProcessAllDetectors ? "true" : "false") << endl;
 
   cout << "  min_entries:              "
        << m_MinEntries << endl;
@@ -598,6 +632,9 @@ bool MStripThresholdFinder::BuildHistograms()
   map<MReadOutElementDoubleStrip, vector<int>> dt0_counts;
   map<MReadOutElementDoubleStrip, vector<int>> dt1_counts;
   map<MReadOutElementDoubleStrip, double> ADC_to_keV_scale;
+  // Count strip hits by detector ID for diagnostics
+  map<unsigned int, long> detectorHitCounts;
+  long acceptedDetectorHits = 0;
 
 
   map<MReadOutElementDoubleStrip, map<int, pair<int, int>>> timingCounts;
@@ -738,10 +775,17 @@ bool MStripThresholdFinder::BuildHistograms()
             continue;
           }
 
-          // Process only the detector selected in the configuration.
-          if (SH->GetDetectorID() != m_DetectorID) {
+          // Count every detector ID encountered before detector selection
+          detectorHitCounts[SH->GetDetectorID()]++;
+
+          // Process either all detectors or only the detector selected
+          // in the configuration.
+          if (m_ProcessAllDetectors == false &&
+              SH->GetDetectorID() != m_DetectorID) {
             continue;
           }
+
+          acceptedDetectorHits++;
 
           double ADC = SH->GetADCUnits();
 
@@ -823,6 +867,16 @@ bool MStripThresholdFinder::BuildHistograms()
 
   cout << endl;
   cout << "Total events processed: " << event_counter << endl;
+
+  cout << endl;
+  cout << "Detector ID hit counts:" << endl;
+
+  for (const auto& entry : detectorHitCounts) {
+    cout << "  Detector " << entry.first
+         << ": " << entry.second << " hits" << endl;
+  }
+  cout << "Accepted detector hits: "
+       << acceptedDetectorHits << endl;
 
   // Save into class
 
@@ -1617,7 +1671,7 @@ void MStripThresholdFinder::FindFastThresholds()
     //     << " Strip " << R.GetStripID()
     //     << " ADC " << fast_thresh_ADC
     //     << endl;
- 
+
     double fast_thresh_keV = m_EnergyCalibration.GetEnergy(R, fast_thresh_ADC);
 
     m_FastThresholds[R] = fast_thresh_keV;
