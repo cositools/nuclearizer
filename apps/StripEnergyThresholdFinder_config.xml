@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StripEnergyThresholdFinder>
+  <Input>
+    <DataFiles>
+      <DataFile index="0">/path/to/your/data/file0.hdf5</DataFile>
+      <DataFile index="1">/path/to/your/data/file1.hdf5</DataFile>
+    </DataFiles>
+    <CalibrationFile>/path/to/calibration/file.ecal</CalibrationFile>
+    <StripMap>/path/to/stripmap.map</StripMap>
+  </Input>
+  <Output>
+    <Prefix>your_output_file_prefix</Prefix>
+  </Output>
+  <Analysis>
+    <MinEntries>5</MinEntries>
+    <FallbackThresholdKeV>18</FallbackThresholdKeV>
+    <NoiseSearchMaxKeV>40</NoiseSearchMaxKeV>
+    <FastFallbackKeV>34</FastFallbackKeV>
+  </Analysis>
+</StripEnergyThresholdFinder>
