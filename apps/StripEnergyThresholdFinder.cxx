@@ -73,6 +73,44 @@ using namespace std;
 #include "MStripHit.h"
 #include "MString.h"
 
+// -----------------------------------------------------------------------------
+// Threshold-finding algorithm constants
+// -----------------------------------------------------------------------------
+
+// Detector/readout
+constexpr int GUARD_RING_STRIP_ID = 64;
+
+// Timing classification
+constexpr double FAST_TIMING_TAC_THRESHOLD = 8000.0;
+
+// SLOW threshold finder
+constexpr int SLOW_SMOOTH_ITERATIONS = 3;
+constexpr int SLOW_PEAK_DECLINE_BINS = 3;
+constexpr double SLOW_THRESHOLD_RECOVERY_FRACTION = 0.50;
+constexpr double GUARD_RING_THRESHOLD_FRACTION = 0.50;
+constexpr int SLOW_THRESHOLD_OFFSET_BINS = 2;
+
+// Pedestal-like noise detection
+constexpr int PEDESTAL_LOOK_AHEAD_BINS = 10;
+constexpr int PEDESTAL_PLATEAU_BINS = 8;
+constexpr double PEDESTAL_FLAT_TOLERANCE = 0.10;
+constexpr int PEDESTAL_TAIL_CHECK_BINS = 3;
+constexpr double PEDESTAL_TAIL_MIN_FRACTION = 0.85;
+constexpr double PEDESTAL_RISE_FRACTION = 0.80;
+constexpr int PEDESTAL_MAX_RISE_BINS = 4;
+constexpr double PEDESTAL_FLATTENING_FACTOR = 1.05;
+constexpr int PEDESTAL_THRESHOLD_OFFSET_BINS = 2;
+
+// SLOW hardware threshold
+constexpr double HARDWARE_THRESHOLD_FRACTION = 0.50;
+
+// FAST threshold finder
+constexpr double FAST_MIN_DT1_FRACTION = 0.05;
+constexpr int FAST_FIRST_ADC_OFFSET = 10;
+constexpr int FAST_MIN_CROSSOVER_COUNTS = 50;
+constexpr int FAST_CROSSOVER_WINDOW_BINS = 21;
+constexpr int FAST_SEARCH_RANGE_ADC = 800;
+
 
 //! Class for determining strip energy thresholds from histogrammed data
 class MStripThresholdFinder
@@ -872,7 +910,7 @@ bool MStripThresholdFinder::BuildHistograms()
           int ADC_bin = static_cast<int>(ADC);
 
           // --- dt0 vs dt1 separation ---
-          bool is_dt1 = (TAC > 8000); // initial threshold
+          bool is_dt1 = (TAC > FAST_TIMING_TAC_THRESHOLD); // initial threshold
 
           // Initialize bin if needed
           if (timingCounts[R].count(ADC_bin) == 0) {
@@ -1078,7 +1116,7 @@ void MStripThresholdFinder::FindSlowThresholds()
       continue;
     }
 
-    hist->Smooth(3);
+    hist->Smooth(SLOW_SMOOTH_ITERATIONS);
 
     //int maxSearchBin = hist->FindBin(m_NoiseSearchMaxADC);
 
@@ -1123,14 +1161,13 @@ void MStripThresholdFinder::FindSlowThresholds()
     int peakBin = startBin;
     double peakCounts = hist->GetBinContent(startBin);
 
-    const int declineBinsRequired = 3;
     int declineCount = 0;
 
     for (int b = startBin + 1; b <= maxSearchBin; b++) {
 
       double c = hist->GetBinContent(b);
 
-      // if (R.GetStripID() == 64 && !R.IsLowVoltageStrip()) {
+      // if (R.GetStripID() == GUARD_RING_STRIP_ID && !R.IsLowVoltageStrip()) {
       //   cout << "GR PEAK SEARCH:"
       //        << " bin=" << b
       //        << " ADC=" << hist->GetBinCenter(b)
@@ -1154,7 +1191,7 @@ void MStripThresholdFinder::FindSlowThresholds()
         declineCount++;
 
         // A sustained decline means we passed the first real peak
-        if (declineCount >= declineBinsRequired) {
+        if (declineCount >= SLOW_PEAK_DECLINE_BINS) {
           break;
         }
       }
@@ -1195,25 +1232,16 @@ void MStripThresholdFinder::FindSlowThresholds()
     // to determine the slow hardware threshold.
     double pedestalPlateauCounts = -1.0;
 
-    // Look only a few bins beyond the first significant bin
-    const int pedestalLookAheadBins = 8;
-    int pedestalEndBin =
-      min(startBin + pedestalLookAheadBins, maxSearchBin);
+    // Look at only several bins beyond the first significant bin
+        int pedestalEndBin =
+      min(startBin + PEDESTAL_LOOK_AHEAD_BINS, maxSearchBin);
 
-    // Number of consecutive bins required to establish a flat top
-    const int pedestalPlateauBins = 6;
-
-    // Maximum allowed variation from the first plateau bin
-    const double pedestalFlatTolerance = 0.10; // +/- 10%
-
-    const int pedestalTailCheckBins = 3;
-    const double pedestalTailMinFraction = 0.85;
 
     // Search for a rapid rise to near the measured noise height
     for (int b = startBin; b <= pedestalEndBin; ++b) {
 
-      if (hist->GetBinContent(b) >= 0.80 * peakCounts &&
-          b - startBin <= 4) {
+      if (hist->GetBinContent(b) >= PEDESTAL_RISE_FRACTION * peakCounts &&
+          b - startBin <= PEDESTAL_MAX_RISE_BINS) {
 
         // ---------------------------------------------------------
         // We have found a rapid rise. Now determine whether the
@@ -1224,10 +1252,10 @@ void MStripThresholdFinder::FindSlowThresholds()
         double plateauReference = hist->GetBinContent(b);
 
         int plateauEndBin =
-          min(b + pedestalPlateauBins - 1, maxSearchBin);
+          min(b + PEDESTAL_PLATEAU_BINS - 1, maxSearchBin);
 
         // Require the full number of plateau bins to be available
-        if (plateauEndBin - b + 1 < pedestalPlateauBins) {
+        if (plateauEndBin - b + 1 < PEDESTAL_PLATEAU_BINS) {
           flatTop = false;
         }
 
@@ -1238,10 +1266,10 @@ void MStripThresholdFinder::FindSlowThresholds()
             double counts = hist->GetBinContent(p);
 
             double lowerLimit =
-              plateauReference * (1.0 - pedestalFlatTolerance);
+              plateauReference * (1.0 - PEDESTAL_FLAT_TOLERANCE);
 
             double upperLimit =
-              plateauReference * (1.0 + pedestalFlatTolerance);
+              plateauReference * (1.0 + PEDESTAL_FLAT_TOLERANCE);
 
             if (counts < lowerLimit || counts > upperLimit) {
               flatTop = false;
@@ -1260,11 +1288,11 @@ void MStripThresholdFinder::FindSlowThresholds()
         if (flatTop == true) {
 
           int tailEndBin =
-            min(plateauEndBin + pedestalTailCheckBins, maxSearchBin);
+            min(plateauEndBin + PEDESTAL_TAIL_CHECK_BINS, maxSearchBin);
 
           // Require enough bins beyond the candidate plateau to
           // determine whether the spectrum remains pedestal-like.
-          if (tailEndBin - plateauEndBin < pedestalTailCheckBins) {
+          if (tailEndBin - plateauEndBin < PEDESTAL_TAIL_CHECK_BINS) {
             flatTop = false;
           } else {
 
@@ -1272,7 +1300,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
               double counts = hist->GetBinContent(p);
 
-              if (counts < pedestalTailMinFraction * plateauReference) {
+              if (counts < PEDESTAL_TAIL_MIN_FRACTION * plateauReference) {
                 flatTop = false;
                 break;
               }
@@ -1302,14 +1330,13 @@ void MStripThresholdFinder::FindSlowThresholds()
 
           // The leading edge has reached the plateau when the next
           // bin is no more than 5% higher than the current bin.
-          if (next <= current * 1.05) {
+          if (next <= current * PEDESTAL_FLATTENING_FACTOR) {
             // The leading edge has reached the plateau.
             // Move the threshold a few bins farther into the plateau
             // to provide margin above the rising noise edge.
-            const int pedestalThresholdOffsetBins = 2;
 
             pedestalThresholdBin =
-              min(p + 1 + pedestalThresholdOffsetBins, maxSearchBin);
+              min(p + 1 + PEDESTAL_THRESHOLD_OFFSET_BINS, maxSearchBin);
 
             break;
           }
@@ -1327,7 +1354,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
     /*
     // Print the GR result to the terminal for debugging
-    if (R.GetStripID() == 64) {
+    if (R.GetStripID() == GUARD_RING_STRIP_ID) {
         cout << "GR FINAL DECISION:"
              << " pedestalLike=" << pedestalLike
              << " startADC=" << hist->GetBinCenter(startBin)
@@ -1355,7 +1382,7 @@ void MStripThresholdFinder::FindSlowThresholds()
       hardwareReferenceCounts = pedestalPlateauCounts;
     }
 
-    double hardwareHalfHeight = 0.50 * hardwareReferenceCounts;
+    double hardwareHalfHeight = HARDWARE_THRESHOLD_FRACTION * hardwareReferenceCounts;
 
     int hardwareThresholdBin = -1;
 
@@ -1432,7 +1459,7 @@ void MStripThresholdFinder::FindSlowThresholds()
       // the threshold a few bins into the flat top.
       thresholdBin = pedestalThresholdBin;
 
-    } else if (R.GetStripID() == 64) {
+    } else if (R.GetStripID() == GUARD_RING_STRIP_ID) {
 
       // -----------------------------------------------------------
       // Guard ring:
@@ -1442,7 +1469,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
       for (int b = peakBin + 1; b <= maxSearchBin; ++b) {
 
-        if (hist->GetBinContent(b) <= 0.50 * peakCounts) {
+        if (hist->GetBinContent(b) <= GUARD_RING_THRESHOLD_FRACTION * peakCounts) {
           thresholdBin = b;
           break;
         }
@@ -1472,7 +1499,7 @@ void MStripThresholdFinder::FindSlowThresholds()
 
         // Once the spectrum has risen substantially again, we have
         // passed the trough and should stop searching.
-        if (counts >= 0.50 * peakCounts) {
+        if (counts >= SLOW_THRESHOLD_RECOVERY_FRACTION * peakCounts) {
           break;
         }
       }
@@ -1487,9 +1514,8 @@ void MStripThresholdFinder::FindSlowThresholds()
     // -------------------------------------------------------------
 
     if (pedestalLike == false) {
-      const int shiftBins = 2;
       thresholdBin =
-        min(thresholdBin + shiftBins, hist->GetNbinsX());
+        min(thresholdBin + SLOW_THRESHOLD_OFFSET_BINS, hist->GetNbinsX());
     }
 
     double thresholdADC = hist->GetBinCenter(thresholdBin);
@@ -1537,7 +1563,7 @@ void MStripThresholdFinder::FindFastThresholds()
     auto& ADCMap = kv.second;
 
     // Skip guard ring for FAST thresholds
-    if (R.GetStripID() == 64) {
+    if (R.GetStripID() == GUARD_RING_STRIP_ID) {
       continue;
     }
 
@@ -1601,11 +1627,10 @@ void MStripThresholdFinder::FindFastThresholds()
     // of both dt0 and dt1 events for every strip. A handful of sparse dt1 counts
     // distributed across the spectrum is not sufficient to define
     // a physical crossover.
-    const double minDt1Fraction = 0.05; // 5%
 
     if (totalDt0Counts < m_MinEntries ||
         totalDt1Counts < m_MinEntries ||
-        dt1Fraction < minDt1Fraction) {
+        dt1Fraction < FAST_MIN_DT1_FRACTION) {
 
       m_FastThresholds[R] = m_FastFallbackThresholdKeV;
       m_FastThresholdsADC[R] = -1.0;
@@ -1643,7 +1668,7 @@ void MStripThresholdFinder::FindFastThresholds()
 
     for (auto& a : ADCMap) {
       if (a.second.first + a.second.second > 0) {
-        first_nonzero = a.first + 10;
+        first_nonzero = a.first + FAST_FIRST_ADC_OFFSET;
         break;
       }
     }
@@ -1679,7 +1704,7 @@ void MStripThresholdFinder::FindFastThresholds()
       int n1 = a.second.second;
 
       // Require minimum statistics to avoid noise triggers
-      if (n0 + n1 < 50) {
+      if (n0 + n1 < FAST_MIN_CROSSOVER_COUNTS) {
         continue;
       }
 
@@ -1689,10 +1714,10 @@ void MStripThresholdFinder::FindFastThresholds()
       }
     }
 
-    int nbins = 21;
+    const int nbins = FAST_CROSSOVER_WINDOW_BINS;
 
     // Extend search window for stability
-    int searchMax = first_nonzero + 800;
+    int searchMax = first_nonzero + FAST_SEARCH_RANGE_ADC;
 
     for (int ADC = first_nonzero; ADC < searchMax; ADC++) {
       int n_dt0 = 0;
@@ -2691,7 +2716,7 @@ void MStripThresholdFinder::WriteDiagnostics()
     MReadOutElementDoubleStrip R = kv.first;
     double Threshold = kv.second;
 
-    if (R.GetStripID() == 64) {
+    if (R.GetStripID() == GUARD_RING_STRIP_ID) {
       continue; // The GR has no fast threshold
     }
 
@@ -2769,7 +2794,7 @@ void MStripThresholdFinder::WriteDiagnostics()
     MReadOutElementDoubleStrip R = kv.first;
     double Threshold = kv.second;
 
-    if (R.GetStripID() == 64) {
+    if (R.GetStripID() == GUARD_RING_STRIP_ID) {
       continue; // No fast GR threshold
     }
 
