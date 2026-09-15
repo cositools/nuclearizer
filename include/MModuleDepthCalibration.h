@@ -82,6 +82,16 @@ class MModuleDepthCalibration : public MModule
   //! Get filename for CTD->Depth splines
   MString GetMaskMetrologyFileName() const { return m_MaskMetrologyFileName; }
 
+  //! Set filename for disabled strips
+  void SetDisabledStripsFileName( const MString& FileName) { m_DisabledStripsFileName = FileName; }
+  //! Get filename for disabled strips
+  MString GetDisabledStripsFileName() const { return m_DisabledStripsFileName; }
+
+  //! Enable/Disable accounting for disabled strips
+  void SetAccountForDisabledStrips(bool X) { m_AccountForDisabledStrips = X; }
+  //! Get enable/disable accounting for disabled strips
+  bool GetAccountForDisabledStrips() const { return m_AccountForDisabledStrips; }
+
   //TODO Remove UCSD code here and place within it's own branch
   //! Set whether the data came from the card cage at UCSD
   void SetUCSDOverride( bool Override ) { m_UCSDOverride = Override; }
@@ -112,6 +122,9 @@ class MModuleDepthCalibration : public MModule
 
   //! Get the CTD->Depth Spline CTD map
   unordered_map<int, vector<vector<double>>> GetCTDMap() { return m_CTDMap; }
+
+  //! Load the disabled strips file
+  bool LoadDisabledStripsFile(MString FName);
 
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
@@ -194,6 +207,15 @@ class MModuleDepthCalibration : public MModule
   unordered_map<int, vector<TSpline3*>> m_SplineMap;
   bool m_SplinesFileIsLoaded;
   bool m_CoeffsFileIsLoaded;
+
+  //! The list of all disabled strips
+  vector<MReadOutElementDoubleStrip> m_DisabledStrips;
+  //! The list of all shorted (currently only allows for double-wide) strips 
+  map<MReadOutElementDoubleStrip, tuple<unsigned int, unsigned int>> m_ShortedStrips;
+  // ! The disabled strips file name
+  MString m_DisabledStripsFileName;
+
+  bool m_AccountForDisabledStrips;
 
   //! The Mask Metrology file name
   MString m_MaskMetrologyFileName;
