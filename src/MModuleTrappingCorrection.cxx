@@ -445,7 +445,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
       det.m_ParamC    = Tokens[3].Strip().ToDouble();
     }
     // Read CCE depth curves
-    else if (Tokens.size() == 5 && !Line.Contains("z_depth")) {
+    else if (Tokens.size() == 5) {
       det.m_Depths.push_back(Tokens[0].Strip().ToDouble());
       det.m_CCEs_HV_e.push_back(Tokens[1].Strip().ToDouble());
       det.m_CCEs_HV_h.push_back(Tokens[2].Strip().ToDouble());
