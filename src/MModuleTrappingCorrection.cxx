@@ -367,37 +367,39 @@ void MModuleTrappingCorrection::Finalize()
   std::tuple<double, double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
   std::tuple<double, double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
 
-  // Helper lambda to print formatted delta comparison
-  auto PrintTrappingCorrectionSummary = [](const string& channelLabel, 
-                                           const std::tuple<double, double, double>& raw, 
-                                           const std::tuple<double, double, double>& corr) 
-  {
-    double mu_raw         = std::get<0>(raw);
-    double gauss_fwhm_raw = std::get<1>(raw);
-    double full_fwhm_raw  = std::get<2>(raw);
+  if (g_Verbosity >= c_Info) {
+    // Helper lambda to print formatted delta comparison
+    auto PrintTrappingCorrectionSummary = [](const string& channelLabel, 
+                                            const std::tuple<double, double, double>& raw, 
+                                            const std::tuple<double, double, double>& corr) 
+    {
+      double mu_raw         = std::get<0>(raw);
+      double gauss_fwhm_raw = std::get<1>(raw);
+      double full_fwhm_raw  = std::get<2>(raw);
 
-    double mu_corr         = std::get<0>(corr);
-    double gauss_fwhm_corr = std::get<1>(corr);
-    double full_fwhm_corr  = std::get<2>(corr);
+      double mu_corr         = std::get<0>(corr);
+      double gauss_fwhm_corr = std::get<1>(corr);
+      double full_fwhm_corr  = std::get<2>(corr);
 
-    // Calculate shifts and relative resolution changes
-    double lineShift        = mu_corr - mu_raw;
-    double deltaGaussFWHM   = gauss_fwhm_corr - gauss_fwhm_raw;
-    double deltaFullFitFWHM = full_fwhm_corr - full_fwhm_raw;
+      // Calculate shifts and relative resolution changes
+      double lineShift        = mu_corr - mu_raw;
+      double deltaGaussFWHM   = std::sqrt(std::pow(gauss_fwhm_raw,2) - std::pow(gauss_fwhm_corr,2));
+      double deltaFullFitFWHM = std::sqrt(std::pow(full_fwhm_raw,2) - std::pow(full_fwhm_corr, 2));
 
-    cout << "\n=======================================================" << endl;
-    cout << "   TRAPPING CORRECTION SUMMARY: " << channelLabel << endl;
-    cout << "=======================================================" << endl;
-    cout << " Centroid Shift (Delta Mu)     : " << lineShift << " keV (" << mu_raw << " -> " << mu_corr << ")" << endl;
-    cout << " Gaussian FWHM Change          : " << deltaGaussFWHM << " keV (" << gauss_fwhm_raw << " -> " << gauss_fwhm_corr << ")" << endl;
-    cout << " Full Fit Function FWHM Change : " << deltaFullFitFWHM << " keV (" << full_fwhm_raw << " -> " << full_fwhm_corr << ")" << endl;
-    cout << "=======================================================\n" << endl;
-  };
+      cout << "\n=======================================================" << endl;
+      cout << "   TRAPPING CORRECTION SUMMARY: " << channelLabel << endl;
+      cout << "=======================================================" << endl;
+      cout << " Centroid Shift (Delta Mu)     : " << lineShift << " keV (" << mu_raw << " -> " << mu_corr << ")" << endl;
+      cout << " Gaussian FWHM Change          : " << deltaGaussFWHM << " keV (" << gauss_fwhm_raw << " -> " << gauss_fwhm_corr << ")" << endl;
+      cout << " Full Fit Function FWHM Change : " << deltaFullFitFWHM << " keV (" << full_fwhm_raw << " -> " << full_fwhm_corr << ")" << endl;
+      cout << "=======================================================\n" << endl;
+    };
 
-  // --- OUTPUT DELTA COMPARISONS ---
-  PrintTrappingCorrectionSummary("LOW VOLTAGE (LV) STRIPS", lv_raw, lv_corr);
-  PrintTrappingCorrectionSummary("HIGH VOLTAGE (HV) STRIPS", hv_raw, hv_corr);
-  
+    // --- OUTPUT DELTA COMPARISONS ---
+    PrintTrappingCorrectionSummary("LOW VOLTAGE (LV) STRIPS", lv_raw, lv_corr);
+    PrintTrappingCorrectionSummary("HIGH VOLTAGE (HV) STRIPS", hv_raw, hv_corr);
+  }
+
   return; 
 }
 /////////////////////////////////////////////////////////////////////////////////
