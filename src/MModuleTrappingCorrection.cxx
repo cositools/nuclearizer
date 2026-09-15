@@ -127,16 +127,6 @@ bool MModuleTrappingCorrection::Initialize()
     }
        return false;
   }
-  
-// TO DO: remove this check once we successfully process multiple detectors
-  m_DetectorIDs = m_DepthCalibration->GetDetectorIDs();
-
-  if (m_DetectorIDs.empty()) {
-    if (g_Verbosity >= c_Error) {
-      cout << "ERROR in MModuleTrappingCorrection::Initialize: Depth Calibration has no registered detector IDs!" << endl;
-    }
-    return false;
-  }
 
   return MModule::Initialize();
 }
