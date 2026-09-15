@@ -119,7 +119,7 @@ bool MModuleTrappingCorrection::Initialize()
     }
        return false;
   }
-
+  
   m_DepthCalibration = (MModuleDepthCalibration*) S->GetAvailableModuleByXmlTag("DepthCalibration");
   if (m_DepthCalibration == nullptr) {
     if (g_Verbosity >= c_Error) {
@@ -127,7 +127,7 @@ bool MModuleTrappingCorrection::Initialize()
     }
        return false;
   }
-
+  
 // TO DO: remove this check once we successfully process multiple detectors
   m_DetectorIDs = m_DepthCalibration->GetDetectorIDs();
 
@@ -415,7 +415,12 @@ void MModuleTrappingCorrection::Finalize()
 bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 {
   MFile SimCCEFile;
-  if (!SimCCEFile.Open(FileName)) return false;
+  if (SimCCEFile.Open(FileName) == false) {
+    if (g_Verbosity >= c_Error) {
+      cout << m_XmlTag << ": ERROR: Could not open CCE file " << FileName << endl;
+    }
+    return false;
+  }
 
   m_DetectorParamMap.clear();
   MString Line;
@@ -423,7 +428,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
   while (SimCCEFile.ReadLine(Line)) {
     Line = Line.Strip();
-    if (Line.IsEmpty()) continue;
+    if (Line.IsEmpty() == true) continue;
 
     // Detect section header: "### <Detector ID>"
     if (Line.BeginsWith("###")) {
@@ -457,7 +462,14 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   }
 
   SimCCEFile.Close();
-  return !m_DetectorParamMap.empty();
+  if (m_DetectorParamMap.empty() == true) {
+    if (g_Verbosity >= c_Error) {
+      cout << m_XmlTag << ": ERROR: Obtained an empty charge trapping parameter map when reading CCE file " << FileName << endl;
+    }
+    return false;
+  }
+
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
