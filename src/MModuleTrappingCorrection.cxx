@@ -527,7 +527,7 @@ bool MModuleTrappingCorrection::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* SimCCEFileNameNode = Node->GetNode("SimCCEFileName");
   if (SimCCEFileNameNode != nullptr) {
-  m_SimCCEFileName = SimCCEFileNameNode->GetValue();
+    m_SimCCEFileName = SimCCEFileNameNode->GetValue();
   }
 
   return true;
