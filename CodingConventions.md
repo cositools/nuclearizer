@@ -37,14 +37,14 @@ To format a file do the following:
 
 ## New classes
 
-For new classes, copy and modify an existing one, or use the MModuleTemplate class as tempplate.
+For new classes, copy and modify an existing one, or use the MModuleTemplate class as template.
 
 ## Naming
 
 ### Classes
 
 * Due to historic reasons, all classes start with M.
-* Modules start with MModule
+* Modules start with MModule, with XML tags starting with XmlTag
 * Option GUI's start with MGUIOptions
 * Expo (= data display) GUI's start with MGUIExpo
 

@@ -70,17 +70,17 @@ MModuleEnergyCalibration::MModuleEnergyCalibration() : MModule()
   m_Name = "Energy calibrator";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "EnergyCalibration";
+  m_XmlTag = "XmlTagEnergyCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
-  // AddPreceedingModuleType(MAssembly::c_TACcut);
+  // AddPreceedingModuleType(MAssembly::c_TACCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(MAssembly::c_TACcut);
+  AddSucceedingModuleType(MAssembly::c_TACCalibration);
 
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
