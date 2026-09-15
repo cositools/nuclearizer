@@ -210,7 +210,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         }
 
         double correctedLVEnergy = rawLVEnergy;
-        if (!is_depth_out_of_bounds) {
+        if (is_depth_out_of_bounds == false) {
           correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, detData.m_Depths, detData.m_CCEs_LV_e, detData.m_CCEs_LV_h, detData.m_ParamB, detData.m_ParamC);
         }
 
@@ -249,7 +249,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
           m_ExpoSpectrum->AddEnergyInitial(rawHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
         }
         double correctedHVEnergy = rawHVEnergy;
-        if (!is_depth_out_of_bounds) {
+        if (is_depth_out_of_bounds == false) {
           correctedHVEnergy = GetSimBasedCorrectedEnergy( depth_val, rawHVEnergy, detData.m_Depths, detData.m_CCEs_HV_e, detData.m_CCEs_HV_h, detData.m_ParamB, detData.m_ParamC);
         }
 
@@ -467,7 +467,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& depths, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC)
 {
-  if (sim_cce_sorted_e.empty() || sim_cce_sorted_h.empty()) {
+  if (sim_cce_sorted_e.empty() == true || sim_cce_sorted_h.empty() == true) {
     return uncorrected_energy;
   }
   double cce_base_e = Interpolate(depth_val, depths, sim_cce_sorted_e);
