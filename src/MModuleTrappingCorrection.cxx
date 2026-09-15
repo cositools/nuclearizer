@@ -418,6 +418,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   m_DetectorParamMap.clear();
   MString Line;
   int currentDetID = -1;
+  std::set<MString> SeenTokens; // track detector IDs to avoid duplicates
 
   while (SimCCEFile.ReadLine(Line)) {
     Line = Line.Strip();
@@ -426,8 +427,24 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     // Detect section header: "### <Detector ID>"
     if (Line.BeginsWith("###")) {
       std::vector<MString> Tokens = Line.Tokenize(" ");
-      if (Tokens.size() >= 1) {
-        currentDetID = Tokens.back().Strip().ToInt();
+      // Check if a token exists after "###"
+      if (Tokens.size() >= 2) {
+        // Assign detector ID
+        currentDetID = Tokens.back().Strip().ToInt(); 
+
+        // The token directly following "###":
+        MString TargetToken = Tokens[1]; 
+
+        // Check if the token was already seen in the file
+        if (SeenTokens.find(TargetToken) != SeenTokens.end()) {
+          if (g_Verbosity >= c_Error) {
+            cout << "ERROR: Duplicate token '" << TargetToken << endl;
+          }
+          return false; 
+        } 
+        // Insert new unique token into the set
+        SeenTokens.insert(TargetToken);
+        
       }
       continue;
     }
