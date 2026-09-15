@@ -164,6 +164,7 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
 {
 
   if (Event->GetGuardRingVeto() || m_DetectorParamMap.empty()) {
+    continue;
   } 
 
   for (unsigned int i = 0; i < Event->GetNHits(); ++i) {
