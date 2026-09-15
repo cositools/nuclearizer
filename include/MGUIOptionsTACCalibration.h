@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsTACcut.h
+ * MGUIOptionsTACCalibration.h
  *
  * Copyright (C) 2008-2010 by Jau-Shian Liang.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsTACcut__
-#define __MGUIOptionsTACcut__
+#ifndef __MGUIOptionsTACCalibration__
+#define __MGUIOptionsTACCalibration__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,14 +43,14 @@ class MGUIEEntry;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsTACcut : public MGUIOptions
+class MGUIOptionsTACCalibration : public MGUIOptions
 {
   // public Session:
  public:
   //! Default constructor
-  MGUIOptionsTACcut(MModule* Module);
+  MGUIOptionsTACCalibration(MModule* Module);
   //! Default destructor
-  virtual ~MGUIOptionsTACcut();
+  virtual ~MGUIOptionsTACCalibration();
 
   //! Process all button, etc. messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
@@ -58,13 +58,22 @@ class MGUIOptionsTACcut : public MGUIOptions
   //! The creation part which gets overwritten
   virtual void Create();
 
+
   // protected methods:
  protected:
 
   //! Actions after the Apply or OK button has been pressed
   virtual bool OnApply();
 
+  //! Toggle TAC cut radio buttons and coincidence window entry
+  void ToggleRadioButtons(int WidgetID);
 
+  //! Widget IDs
+  enum {
+    c_TACCutIgnore = 120,
+    c_TACCutApply = 121
+  };
+  
   // protected members:
  protected:
   //! The detector IDs as a string
@@ -73,9 +82,14 @@ class MGUIOptionsTACcut : public MGUIOptions
   //! Select TAC Calibration file to load, converts readout timing to nanoseconds
   MGUIEFileSelector* m_TACCalFileSelector;
 
-  //! Select TAC Cut file to load, which specifies the parameters for removing strip hits
-  MGUIEFileSelector* m_TACCutFileSelector;
+  //! Do not apply TAC cuts
+  TGRadioButton* m_TACCutRBIgnore;
 
+  //! Apply TAC cuts
+  TGRadioButton* m_TACCutRBApply;
+
+  //! TAC coincidence window in ns
+  MGUIEEntry* m_CoincidenceWindow;
 	
   // private members:
  private:
@@ -83,7 +97,7 @@ class MGUIOptionsTACcut : public MGUIOptions
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsTACcut, 1) // basic class for dialog windows
+  ClassDef(MGUIOptionsTACCalibration, 1) // basic class for dialog windows
 #endif
 
 };

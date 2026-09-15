@@ -127,6 +127,8 @@ void MReadOutAssembly::Clear()
   // Delete all event flags and associated variables
   m_EnergyCalibrationError = false;
   m_EnergyCalibrationErrorString.clear();
+  m_TACCalibrationError = false;
+  m_TACCalibrationErrorString.clear();
   m_StripPairingError = false;
   m_StripPairingErrorString.clear();
   m_DepthCalibrationError = false;
@@ -728,6 +730,16 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     }
     S<<endl;
   }
+  if (m_TACCalibrationError == true) {
+    S<<"BD TACCalibrationError";
+    if (m_TACCalibrationErrorString.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_TACCalibrationErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
   if (m_StripPairingError == true) {
     S<<"BD StripPairingError";
     if (m_StripPairingErrorString.empty() == false) {
@@ -817,6 +829,7 @@ bool MReadOutAssembly::IsGood() const
   // Veto and quality flags do not affect this result
 
   if (m_EnergyCalibrationError == true) return false;
+  if (m_TACCalibrationError == true) return false;
   if (m_StripPairingError == true) return false;
   if (m_DepthCalibrationError == true) return false;
   if (m_EventReconstructionError == true) return false;
@@ -836,6 +849,7 @@ bool MReadOutAssembly::IsBad() const
   // Veto and quality flags do not affect this result
 
   if (m_EnergyCalibrationError == true) return true;
+  if (m_TACCalibrationError == true) return true;
   if (m_StripPairingError == true) return true;
   if (m_DepthCalibrationError == true) return true;
   if (m_EventReconstructionError == true) return true;
