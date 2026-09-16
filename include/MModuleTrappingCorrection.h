@@ -82,6 +82,18 @@ class MModuleTrappingCorrection : public MModule
 
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
+
+  //! Set the photopeak mu value
+  void SetPhotopeakMu(double mu) { m_PhotopeakMu = mu; }
+
+  //! Get the photopeak mu value
+  double GetPhotopeakMu() const  { return m_PhotopeakMu; }
+  
+  //! Get photopeak fit min 
+  double GetFitMinEnergy() const { return m_PhotopeakMu - 20.0; }
+
+  //! Get photopeak fit max
+  double GetFitMaxEnergy() const { return m_PhotopeakMu + 20.0; }
   
   // protected methods:
  protected:
@@ -125,6 +137,9 @@ class MModuleTrappingCorrection : public MModule
   TF1* GeneratePhotopeakFunction();
 
   TGCheckButton* m_LogYButton;
+
+  //! Default centroid value
+  double m_PhotopeakMu = 661.7; 
 
   //! struct definition for trapping parameters and CCE curves for each detector
   struct DetectorTrappingData {

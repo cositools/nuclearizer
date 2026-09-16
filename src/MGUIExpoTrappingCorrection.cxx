@@ -36,6 +36,9 @@
 // MEGAlib libs:
 #include "MStreams.h"
 
+// Nuclearizer libs:
+#include "MModuleTrappingCorrection.h"
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -120,12 +123,10 @@ void MGUIExpoTrappingCorrection::Create()
 
   m_Mutex.Lock();
 
-  double eMin = 600;
-  double eMax = 700;
+  double defaultMu = 661.7; // Default for Cs-137 
   double nBins = 1000;
 
-  // Create labels and buttons on GUI
-  // Top frame
+  // Top control frame
   TGHorizontalFrame* ControlFrame = new TGHorizontalFrame(this, 800, 30);
   
   // Binning entry
@@ -135,19 +136,12 @@ void MGUIExpoTrappingCorrection::Create()
   m_EntryNBins = new TGNumberEntry(ControlFrame, nBins, 5, -1, TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive);
   ControlFrame->AddFrame(m_EntryNBins, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
-  // Min Energy entry
-  TGLabel* LabelMin = new TGLabel(ControlFrame, "Min Energy [keV]:");
-  ControlFrame->AddFrame(LabelMin, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
+  // Photopeak Mu entry
+  TGLabel* LabelMu = new TGLabel(ControlFrame, "Photopeak [keV]:");
+  ControlFrame->AddFrame(LabelMu, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
 
-  m_EntryMinEnergy = new TGNumberEntry(ControlFrame, eMin, 6, -1, TGNumberFormat::kNESRealOne);
-  ControlFrame->AddFrame(m_EntryMinEnergy, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
-
-  // Max Energy entry
-  TGLabel* LabelMax = new TGLabel(ControlFrame, "Max Energy [keV]:");
-  ControlFrame->AddFrame(LabelMax, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 2, 2, 2));
-
-  m_EntryMaxEnergy = new TGNumberEntry(ControlFrame, eMax, 6, -1, TGNumberFormat::kNESRealOne);
-  ControlFrame->AddFrame(m_EntryMaxEnergy, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
+  m_EntryPhotopeakMu = new TGNumberEntry(ControlFrame, defaultMu, 6, -1, TGNumberFormat::kNESRealOne);
+  ControlFrame->AddFrame(m_EntryPhotopeakMu, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 2, 10, 2, 2));
 
   // Log Y Checkbox
   m_CheckLogY = new TGCheckButton(ControlFrame, "Log Y Scale");
@@ -155,7 +149,7 @@ void MGUIExpoTrappingCorrection::Create()
   m_CheckLogY->Connect("Clicked()", "MGUIExpoTrappingCorrection", this, "OnApply()");
 
   // Apply Button
-  m_ButtonApply = new TGTextButton(ControlFrame, " Apply Range ");
+  m_ButtonApply = new TGTextButton(ControlFrame, " Apply ");
   ControlFrame->AddFrame(m_ButtonApply, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 5, 5, 2, 2));
   m_ButtonApply->Connect("Clicked()", "MGUIExpoTrappingCorrection", this, "OnApply()");
 
@@ -211,15 +205,26 @@ void MGUIExpoTrappingCorrection::Create()
 
 void MGUIExpoTrappingCorrection::OnApply()
 {
-  //Create function has already been run
   if (m_IsCreated == false) return;
-  if (m_EntryNBins == nullptr || m_EntryMinEnergy == nullptr || m_EntryMaxEnergy == nullptr) return;
+  if (m_EntryNBins == nullptr || m_EntryPhotopeakMu == nullptr) return;
 
-  int nBins   = m_EntryNBins->GetIntNumber();
-  double minE = m_EntryMinEnergy->GetNumber();
-  double maxE = m_EntryMaxEnergy->GetNumber();
+  int nBins = m_EntryNBins->GetIntNumber();
+  double mu = m_EntryPhotopeakMu->GetNumber();
 
-  if (maxE <= minE || nBins <= 0) return;
+  if (mu <= 20.0 || nBins <= 0) return;
+
+  // Calculate dynamic histogram bounds based on mu 
+  double minE = mu - 50.0;
+  double maxE = mu + 50.0;
+
+  // Pass mu directly to the underlying module
+  if (m_Module != nullptr) {
+    // Dynamic cast if m_Module is stored as a generic MModule*
+    MModuleTrappingCorrection* module = dynamic_cast<MModuleTrappingCorrection*>(m_Module);
+    if (module != nullptr) {
+      module->SetPhotopeakMu(mu);
+    }
+  }
 
   SetEnergyHistogramParameters(nBins, minE, maxE);
   Update();

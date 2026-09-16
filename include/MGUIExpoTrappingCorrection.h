@@ -88,6 +88,7 @@ class MGUIExpoTrappingCorrection : public MGUIExpo
   TH1D* GetEnergyHistogramHVInitial() const { return m_EnergyHVInitial; }
   TH1D* GetEnergyHistogramHVFinal()   const { return m_EnergyHVFinal; }
 
+
   // protected methods:
  protected:
 
@@ -122,6 +123,8 @@ class MGUIExpoTrappingCorrection : public MGUIExpo
 
   TGCheckButton* m_CheckLogY; 
 
+  //! GUI input for peak position
+  TGNumberEntry* m_EntryPhotopeakMu; 
 
 #ifdef ___CLING___
  public:

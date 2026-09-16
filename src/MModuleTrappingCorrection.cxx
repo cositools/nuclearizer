@@ -585,8 +585,13 @@ TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
   // Combine components with an overall normalization scaling factor [0]
   MString fullFormula = "[0] * (" + gaussStr + " + " + expTailStr + " + " + linTailStr + ")";
 
-  // Instantiate TF1 over your expected fit window
-  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", fullFormula.Data(), 645, 675);
+  // Get dynamic fit range centered on the photopeak
+  double fitMin = GetFitMinEnergy(); // mu - 20.0
+  double fitMax = GetFitMaxEnergy(); // mu + 20.0
+  double muInitial = GetPhotopeakMu();
+
+  // Construct the fit function with dynamic limits
+  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", fullFormula.Data(), fitMin, fitMax);
 
   // Set Parameter Names
   PhotopeakFunction->SetParName(0, "Amplitude");
@@ -600,7 +605,7 @@ TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
 
   // Provide initial sensible guesses for a Cs137 photopeak
   PhotopeakFunction->SetParameter("Amplitude", 1000);
-  PhotopeakFunction->SetParameter("x0 (Mu)", 661.7);
+  PhotopeakFunction->SetParameter("x0 (Mu)", muInitial);
   PhotopeakFunction->SetParameter("Sigma Gauss", 2.0);
   PhotopeakFunction->SetParameter("BoverA", 0.05);
   PhotopeakFunction->SetParameter("Gamma", 0.5);
@@ -610,7 +615,7 @@ TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
 
   // Set boundary limits to stabilize convergence
   PhotopeakFunction->SetParLimits(0, 1, 1e8);
-  PhotopeakFunction->SetParLimits(1, 645, 675);     // Keeps peak centered around 662 keV
+  PhotopeakFunction->SetParLimits(1, fitMin, fitMax);     // Keeps peak centered around Mu 
   PhotopeakFunction->SetParLimits(2, 0.5, 10);      // Prevents sigma from blowing up or hitting zero
   PhotopeakFunction->SetParLimits(3, 0.0, 1.0);     // Tail shouldn't be larger than the main peak
   PhotopeakFunction->SetParLimits(4, 0.001, 2.0);   // Standard range for exponential decay factor
