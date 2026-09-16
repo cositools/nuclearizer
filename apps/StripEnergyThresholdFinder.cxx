@@ -80,9 +80,6 @@ using namespace std;
 // Detector/readout
 constexpr int GUARD_RING_STRIP_ID = 64;
 
-// Timing classification
-constexpr double FAST_TIMING_TAC_THRESHOLD = 8000.0;
-
 // SLOW threshold finder
 constexpr int SLOW_SMOOTH_ITERATIONS = 3;
 constexpr int SLOW_PEAK_DECLINE_BINS = 3;
@@ -906,11 +903,10 @@ bool MStripThresholdFinder::BuildHistograms()
 
           double energy = SH->GetEnergy();
 
-          double TAC = SH->GetTAC();
           int ADC_bin = static_cast<int>(ADC);
 
           // --- dt0 vs dt1 separation ---
-          bool is_dt1 = (TAC > FAST_TIMING_TAC_THRESHOLD); // initial threshold
+          bool is_dt1 = SH->HasFastTiming();
 
           // Initialize bin if needed
           if (timingCounts[R].count(ADC_bin) == 0) {
