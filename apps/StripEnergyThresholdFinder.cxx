@@ -1706,6 +1706,16 @@ void MStripThresholdFinder::FindFastThresholds()
 
       if (n1 > n0) {
         crossoverADC = ADC_val;
+        // Make sure that this is an actual crossover and not just the first bin
+        // with more than FAST_MIN_CROSSOVER_COUNTS where n1 was above n0
+        while (n1 > n0 && ADC_val >= first_nonzero) {
+          crossoverADC = ADC_val;
+          ADC_val--; 
+          if (ADCMap.find(ADC_val) != ADCMap.end()) {
+            n0 = ADCMap[ADC_val].first;
+            n1 = ADCMap[ADC_val].second;
+          }
+        }
         break;
       }
     }
