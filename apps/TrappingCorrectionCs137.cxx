@@ -61,7 +61,7 @@ using namespace std;
 #include "MModuleEventFilter.h"
 #include "MModuleStripPairingMultiRoundChiSquare.h"
 #include "MModuleStripPairingChiSquare.h"
-#include "MModuleTACcut.h"
+#include "MModuleTACCalibration.h"
 #include "MAssembly.h"
 
 
@@ -144,7 +144,7 @@ public:
   MString m_FileName;
   MString m_EcalFile;
   MString m_TACCalFile;
-  MString m_TACCutFile;
+  MString m_TACCalibrationFile;
   MString m_StripMapFile;
   //! output file names
   MString m_OutFile;
@@ -271,8 +271,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
     } 
 
     if (Option == "--tcut") {
-      m_TACCutFile = argv[++i];
-      cout<<"Accepting file name: "<<m_TACCutFile<<endl;
+      m_TACCalibrationFile = argv[++i];
+      cout<<"Accepting file name: "<<m_TACCalibrationFile<<endl;
     } 
 
     if (Option == "-o"){
@@ -381,7 +381,7 @@ bool TrappingCorrectionCs137::Analyze()
     MSupervisor* S = MSupervisor::GetSupervisor();
     
     MModuleLoaderMeasurementsHDF* Loader;
-    MModuleTACcut* TACCalibrator;
+    MModuleTACCalibration* TACCalibrator;
     MModuleEnergyCalibration* EnergyCalibrator;
     MModuleEventFilter* EventFilter;
 
@@ -395,9 +395,9 @@ bool TrappingCorrectionCs137::Analyze()
     ++MNumber;
 
     cout << "Creating TAC calibrator" << endl;
-    TACCalibrator = new MModuleTACcut();
+    TACCalibrator = new MModuleTACCalibration();
     TACCalibrator->SetTACCalFileName(m_TACCalFile);
-    TACCalibrator->SetTACCutFileName(m_TACCutFile);
+    TACCalibrator->SetTACCalFileName(m_TACCalibrationFile);
     S->SetModule(TACCalibrator, MNumber);
     ++MNumber;
     
