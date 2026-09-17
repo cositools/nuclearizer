@@ -85,13 +85,12 @@ void MGUIOptionsLoaderMeasurementsHDF::Create()
     dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->GetFileNameStripMap());
   m_FileSelectorStripMap->SetFileType("Strip map file", "*.map");
   m_OptionsFrame->AddFrame(m_FileSelectorStripMap, LabelLayout);
-  
+
   // Nearest neighbor checkbox
   m_IncludeNearestNeighbor = new TGCheckButton(m_OptionsFrame, "Include Nearest Neighbors");
   m_IncludeNearestNeighbor->SetOn(dynamic_cast<MModuleLoaderMeasurementsHDF*>(m_Module)->GetIncludeNearestNeighbor());
   m_IncludeNearestNeighbor->Associate(this);
   m_OptionsFrame->AddFrame(m_IncludeNearestNeighbor, LabelLayout);
-
 
   PostCreate();
 }
