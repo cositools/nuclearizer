@@ -236,16 +236,14 @@ void MGUIExpoTrappingCorrection::SetEnergyHistogramParameters(int NBins, double 
 {
   m_Mutex.Lock();
 
-  // 1. Zoom the X-axis view without altering underlying data/binning
-  if (m_EnergyLVInitial != nullptr) m_EnergyLVInitial->GetXaxis()->SetRangeUser(Min, Max);
-  if (m_EnergyLVFinal != nullptr)   m_EnergyLVFinal->GetXaxis()->SetRangeUser(Min, Max);
-  if (m_EnergyHVInitial != nullptr) m_EnergyHVInitial->GetXaxis()->SetRangeUser(Min, Max);
-  if (m_EnergyHVFinal != nullptr)   m_EnergyHVFinal->GetXaxis()->SetRangeUser(Min, Max);
+  // Re-define histogram axis boundaries to match the new energy window
+  if (m_EnergyLVInitial != nullptr) m_EnergyLVInitial->SetBins(NBins, Min, Max);
+  if (m_EnergyLVFinal != nullptr)   m_EnergyLVFinal->SetBins(NBins, Min, Max);
+  if (m_EnergyHVInitial != nullptr) m_EnergyHVInitial->SetBins(NBins, Min, Max);
+  if (m_EnergyHVFinal != nullptr)   m_EnergyHVFinal->SetBins(NBins, Min, Max);
 
-  // 2. Update entry boxes
-  if (m_EntryNBins != nullptr)     m_EntryNBins->SetIntNumber(NBins);
-  if (m_EntryMinEnergy != nullptr) m_EntryMinEnergy->SetNumber(Min);
-  if (m_EntryMaxEnergy != nullptr) m_EntryMaxEnergy->SetNumber(Max);
+  // Update entry box
+  if (m_EntryNBins != nullptr) m_EntryNBins->SetIntNumber(NBins);
 
   m_Mutex.UnLock();
 }
@@ -265,16 +263,32 @@ void MGUIExpoTrappingCorrection::Update()
     canvasLV->cd();
     canvasLV->SetLogy(isLog ? 1 : 0);
 
+    // Get raw maximum bin content
     double maxLVInitial = m_EnergyLVInitial->GetBinContent(m_EnergyLVInitial->GetMaximumBin());
     double maxLVFinal   = m_EnergyLVFinal->GetBinContent(m_EnergyLVFinal->GetMaximumBin());
     double realMaxLV    = std::max(maxLVInitial, maxLVFinal);
 
     if (isLog) {
-      m_EnergyLVInitial->SetMinimum(0.1);
-      m_EnergyLVInitial->SetMaximum(realMaxLV > 0 ? realMaxLV * 5.0 : 10.0);
+      double minLogLV = (realMaxLV > 0.1) ? 0.1 : 0.01;
+      double maxLogLV = (realMaxLV > 0.1) ? realMaxLV * 5.0 : 10.0;
+
+      m_EnergyLVInitial->SetMinimum(minLogLV);
+      m_EnergyLVInitial->SetMaximum(maxLogLV);
+      m_EnergyLVFinal->SetMinimum(minLogLV);
+      m_EnergyLVFinal->SetMaximum(maxLogLV);
     } else {
+      // 1. Reset ROOT's cached axis boundaries completely
       m_EnergyLVInitial->SetMinimum(-1111);
-      m_EnergyLVInitial->SetMaximum(realMaxLV > 0 ? realMaxLV * 1.15 : 10.0);
+      m_EnergyLVInitial->SetMaximum(-1111);
+      m_EnergyLVFinal->SetMinimum(-1111);
+      m_EnergyLVFinal->SetMaximum(-1111);
+
+      // 2. Explicitly assign linear range
+      double maxLinLV = (realMaxLV > 0) ? realMaxLV * 1.15 : 10.0;
+      m_EnergyLVInitial->SetMinimum(0.0);
+      m_EnergyLVInitial->SetMaximum(maxLinLV);
+      m_EnergyLVFinal->SetMinimum(0.0);
+      m_EnergyLVFinal->SetMaximum(maxLinLV);
     }
 
     canvasLV->Modified();
@@ -287,16 +301,32 @@ void MGUIExpoTrappingCorrection::Update()
     canvasHV->cd();
     canvasHV->SetLogy(isLog ? 1 : 0);
 
+    // Get raw maximum bin content
     double maxHVInitial = m_EnergyHVInitial->GetBinContent(m_EnergyHVInitial->GetMaximumBin());
     double maxHVFinal   = m_EnergyHVFinal->GetBinContent(m_EnergyHVFinal->GetMaximumBin());
     double realMaxHV    = std::max(maxHVInitial, maxHVFinal);
 
     if (isLog) {
-      m_EnergyHVInitial->SetMinimum(0.1);
-      m_EnergyHVInitial->SetMaximum(realMaxHV > 0 ? realMaxHV * 5.0 : 10.0);
+      double minLogHV = (realMaxHV > 0.1) ? 0.1 : 0.01;
+      double maxLogHV = (realMaxHV > 0.1) ? realMaxHV * 5.0 : 10.0;
+
+      m_EnergyHVInitial->SetMinimum(minLogHV);
+      m_EnergyHVInitial->SetMaximum(maxLogHV);
+      m_EnergyHVFinal->SetMinimum(minLogHV);
+      m_EnergyHVFinal->SetMaximum(maxLogHV);
     } else {
+      // 1. Reset ROOT's cached axis boundaries completely
       m_EnergyHVInitial->SetMinimum(-1111);
-      m_EnergyHVInitial->SetMaximum(realMaxHV > 0 ? realMaxHV * 1.15 : 10.0);
+      m_EnergyHVInitial->SetMaximum(-1111);
+      m_EnergyHVFinal->SetMinimum(-1111);
+      m_EnergyHVFinal->SetMaximum(-1111);
+
+      // 2. Explicitly assign linear range
+      double maxLinHV = (realMaxHV > 0) ? realMaxHV * 1.15 : 10.0;
+      m_EnergyHVInitial->SetMinimum(0.0);
+      m_EnergyHVInitial->SetMaximum(maxLinHV);
+      m_EnergyHVFinal->SetMinimum(0.0);
+      m_EnergyHVFinal->SetMaximum(maxLinHV);
     }
 
     canvasHV->Modified();

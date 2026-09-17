@@ -367,7 +367,7 @@ void MModuleTrappingCorrection::Finalize()
   std::tuple<double, double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
   std::tuple<double, double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
 
-  if (g_Verbosity >= c_Info) {
+  if (g_Verbosity >= c_Error) {
     // Helper lambda to print formatted delta comparison
     auto PrintTrappingCorrectionSummary = [](const string& channelLabel, 
                                             const std::tuple<double, double, double>& raw, 
