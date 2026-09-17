@@ -96,8 +96,9 @@ class MSubModuleDepthReadout : public MSubModule
   //! Filename of the depth calibration coefficients (stretch, offset, timing noise, ...)
   MString m_DepthCoefficientsFileName;
 
-  //! Map of the depth calibration coefficients
-  unordered_map<int, vector<double>> m_Coeffs;
+  //! Map: detector ID (int) -> mean stretch over all pixels / strips
+  unordered_map<int, vector<unordered_map<int, vector<double>>>> m_StripCoeffs;
+
   //! Reference energy of the depth calibration coefficients
   double m_Coeffs_Energy;
 
