@@ -54,9 +54,9 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
 {
   m_TabTitle = "Trapping Correction";
 
-  double eMin = 600;
-  double eMax = 700;
-  double nBins = 1000;
+  double eMin = 0.0;
+  double eMax = 2000.0;
+  int nBins = 20000;
 
 
   // LV Histograms
@@ -236,11 +236,11 @@ void MGUIExpoTrappingCorrection::SetEnergyHistogramParameters(int NBins, double 
 {
   m_Mutex.Lock();
 
-  // Re-define histogram axis boundaries to match the new energy window
-  if (m_EnergyLVInitial != nullptr) m_EnergyLVInitial->SetBins(NBins, Min, Max);
-  if (m_EnergyLVFinal != nullptr)   m_EnergyLVFinal->SetBins(NBins, Min, Max);
-  if (m_EnergyHVInitial != nullptr) m_EnergyHVInitial->SetBins(NBins, Min, Max);
-  if (m_EnergyHVFinal != nullptr)   m_EnergyHVFinal->SetBins(NBins, Min, Max);
+  // Zoom the X-axis view without altering underlying histogram data or bin contents
+  if (m_EnergyLVInitial != nullptr) m_EnergyLVInitial->GetXaxis()->SetRangeUser(Min, Max);
+  if (m_EnergyLVFinal != nullptr)   m_EnergyLVFinal->GetXaxis()->SetRangeUser(Min, Max);
+  if (m_EnergyHVInitial != nullptr) m_EnergyHVInitial->GetXaxis()->SetRangeUser(Min, Max);
+  if (m_EnergyHVFinal != nullptr)   m_EnergyHVFinal->GetXaxis()->SetRangeUser(Min, Max);
 
   // Update entry box
   if (m_EntryNBins != nullptr) m_EntryNBins->SetIntNumber(NBins);
@@ -257,16 +257,29 @@ void MGUIExpoTrappingCorrection::Update()
 
   bool isLog = (m_CheckLogY != nullptr && m_CheckLogY->IsOn());
 
+  // Helper lambda to calculate max content strictly within visible X-axis range
+  auto GetVisibleMax = [](TH1D* hist) -> double {
+    if (hist == nullptr) return 0.0;
+    
+    TAxis* axis = hist->GetXaxis();
+    int minBin = axis->GetFirst(); // First visible bin
+    int maxBin = axis->GetLast();  // Last visible bin
+    
+    double maxVal = 0.0;
+    for (int b = minBin; b <= maxBin; ++b) {
+      double content = hist->GetBinContent(b);
+      if (content > maxVal) maxVal = content;
+    }
+    return maxVal;
+  };
+
   // --- Update LV Canvas ---
   if (m_CanvasLV != nullptr && m_CanvasLV->GetCanvas() != nullptr) {
     TCanvas* canvasLV = m_CanvasLV->GetCanvas();
     canvasLV->cd();
     canvasLV->SetLogy(isLog ? 1 : 0);
 
-    // Get raw maximum bin content
-    double maxLVInitial = m_EnergyLVInitial->GetBinContent(m_EnergyLVInitial->GetMaximumBin());
-    double maxLVFinal   = m_EnergyLVFinal->GetBinContent(m_EnergyLVFinal->GetMaximumBin());
-    double realMaxLV    = std::max(maxLVInitial, maxLVFinal);
+    double realMaxLV = std::max(GetVisibleMax(m_EnergyLVInitial), GetVisibleMax(m_EnergyLVFinal));
 
     if (isLog) {
       double minLogLV = (realMaxLV > 0.1) ? 0.1 : 0.01;
@@ -277,13 +290,11 @@ void MGUIExpoTrappingCorrection::Update()
       m_EnergyLVFinal->SetMinimum(minLogLV);
       m_EnergyLVFinal->SetMaximum(maxLogLV);
     } else {
-      // 1. Reset ROOT's cached axis boundaries completely
       m_EnergyLVInitial->SetMinimum(-1111);
       m_EnergyLVInitial->SetMaximum(-1111);
       m_EnergyLVFinal->SetMinimum(-1111);
       m_EnergyLVFinal->SetMaximum(-1111);
 
-      // 2. Explicitly assign linear range
       double maxLinLV = (realMaxLV > 0) ? realMaxLV * 1.15 : 10.0;
       m_EnergyLVInitial->SetMinimum(0.0);
       m_EnergyLVInitial->SetMaximum(maxLinLV);
@@ -301,10 +312,7 @@ void MGUIExpoTrappingCorrection::Update()
     canvasHV->cd();
     canvasHV->SetLogy(isLog ? 1 : 0);
 
-    // Get raw maximum bin content
-    double maxHVInitial = m_EnergyHVInitial->GetBinContent(m_EnergyHVInitial->GetMaximumBin());
-    double maxHVFinal   = m_EnergyHVFinal->GetBinContent(m_EnergyHVFinal->GetMaximumBin());
-    double realMaxHV    = std::max(maxHVInitial, maxHVFinal);
+    double realMaxHV = std::max(GetVisibleMax(m_EnergyHVInitial), GetVisibleMax(m_EnergyHVFinal));
 
     if (isLog) {
       double minLogHV = (realMaxHV > 0.1) ? 0.1 : 0.01;
@@ -315,13 +323,11 @@ void MGUIExpoTrappingCorrection::Update()
       m_EnergyHVFinal->SetMinimum(minLogHV);
       m_EnergyHVFinal->SetMaximum(maxLogHV);
     } else {
-      // 1. Reset ROOT's cached axis boundaries completely
       m_EnergyHVInitial->SetMinimum(-1111);
       m_EnergyHVInitial->SetMaximum(-1111);
       m_EnergyHVFinal->SetMinimum(-1111);
       m_EnergyHVFinal->SetMaximum(-1111);
 
-      // 2. Explicitly assign linear range
       double maxLinHV = (realMaxHV > 0) ? realMaxHV * 1.15 : 10.0;
       m_EnergyHVInitial->SetMinimum(0.0);
       m_EnergyHVInitial->SetMaximum(maxLinHV);
