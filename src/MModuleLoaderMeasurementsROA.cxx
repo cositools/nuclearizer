@@ -38,10 +38,11 @@
 #include "MReadOutSequence.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
+#include "MReadOutDataEnergy.h"
+#include "MReadOutDataFlags.h"
+#include "MReadOutDataOrigins.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataTAC.h"
-#include "MReadOutDataEnergy.h"
-#include "MReadOutDataOrigins.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -200,6 +201,8 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
       dynamic_cast<const MReadOutDataEnergy*>(RO.GetReadOutData().Get(MReadOutDataEnergy::m_TypeID));
     const MReadOutDataOrigins* Origins =
       dynamic_cast<const MReadOutDataOrigins*>(RO.GetReadOutData().Get(MReadOutDataOrigins::m_TypeID));
+    const MReadOutDataFlags* Flags = 
+      dynamic_cast<const MReadOutDataFlags*>(RO.GetReadOutData().Get(MReadOutDataFlags::m_TypeID));
     
     
     MStripHit* SH = new MStripHit();
@@ -221,6 +224,9 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
     }
     if (Origins != nullptr) {
       SH->AddOrigins(Origins->GetOrigins());
+    }
+    if (Flags != nullptr) {
+      SH->ParseFlags(Flags->GetFlags());
     }
     
     Event->AddStripHit(SH);

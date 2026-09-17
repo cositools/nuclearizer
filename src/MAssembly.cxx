@@ -55,6 +55,7 @@ using namespace std;
 #include "MFretalonRegistry.h"
 #include "MReadOutDataTAC.h"
 #include "MReadOutDataEnergy.h"
+#include "MReadOutDataFlags.h"
 #include "MReadOutAssembly.h"
 #include "MModule.h"
 #include "MGUIExpoCombinedViewer.h"
@@ -108,6 +109,9 @@ MAssembly::MAssembly()
 
   MReadOutDataEnergy Energy;
   MFretalonRegistry::Instance().Register(Energy);
+
+  MReadOutDataFlags Flags;
+  MFretalonRegistry::Instance().Register(Flags);
 
   // Create the supervisor
   m_Supervisor = MSupervisor::GetSupervisor();
