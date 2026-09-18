@@ -263,7 +263,7 @@ bool UTNModuleLoaderMeasurementsTRA::TestGettersSetters()
     Types |= Loader.GetModuleType(t);
   }
   Passed = EvaluateTrue("GetModuleType()", "loader types", "The module is an event loader", (Types & MAssembly::c_EventLoader) != 0) && Passed;
-  Passed = EvaluateFalse("GetModuleType()", "loader types", "The module is no loader of measured read-outs", (Types & MAssembly::c_EventLoaderMeasurement) != 0) && Passed;
+  Passed = EvaluateTrue("GetModuleType()", "loader types", "The module is a loader of measurements", (Types & MAssembly::c_EventLoaderMeasurement) != 0) && Passed;
   Passed = EvaluateTrue("GetModuleType()", "energy calibration", "The module provides energy calibration", (Types & MAssembly::c_EnergyCalibration) != 0) && Passed;
   Passed = EvaluateTrue("GetModuleType()", "TAC calibration", "The module provides TAC calibration", (Types & MAssembly::c_TACCalibration) != 0) && Passed;
   Passed = EvaluateTrue("GetModuleType()", "strip pairing", "The module provides strip pairing", (Types & MAssembly::c_StripPairing) != 0) && Passed;
@@ -626,8 +626,8 @@ bool UTNModuleLoaderMeasurementsTRA::TestSaverRequirements()
   Passed = EvaluateTrue("Initialize()", "fixture tra file", "Initialize() succeeds for an existing tra file", Loader != nullptr) && Passed;
   if (Passed == false) return Passed;
 
-  // L2 is the only FITS level which can follow this loader: L1a and L1b describe the measured
-  // read-outs, which a tra file does not contain
+  // L1b and L2 need the analysis up to event reconstruction, L1a needs the measured read-outs,
+  // which a tra file does not contain
   MModuleSaverMeasurementsFITS SaverL2("XmlTagSaverMeasurementsFITSL2", 2, "Save events to L2 FITS");
   MModuleSaverMeasurementsFITS SaverL1b("XmlTagSaverMeasurementsFITSL1b", 1, "Save events to L1b FITS");
   MModuleSaverMeasurementsFITS SaverL1a("XmlTagSaverMeasurementsFITSL1a", 0, "Save events to L1a FITS");
@@ -637,15 +637,15 @@ bool UTNModuleLoaderMeasurementsTRA::TestSaverRequirements()
 
   unsigned int NEvents = 0;
   bool AllAcceptedL2 = true;
-  bool AnyAcceptedL1b = false;
+  bool AllAcceptedL1b = true;
   bool AnyAcceptedL1a = false;
   MReadOutAssembly Event;
   while (Loader->AnalyzeEvent(&Event) == true) {
     if (SaverL2.FullfillsRequirements(&Event) == false) {
       AllAcceptedL2 = false;
     }
-    if (SaverL1b.FullfillsRequirements(&Event) == true) {
-      AnyAcceptedL1b = true;
+    if (SaverL1b.FullfillsRequirements(&Event) == false) {
+      AllAcceptedL1b = false;
     }
     if (SaverL1a.FullfillsRequirements(&Event) == true) {
       AnyAcceptedL1a = true;
@@ -655,13 +655,12 @@ bool UTNModuleLoaderMeasurementsTRA::TestSaverRequirements()
 
   Passed = Evaluate("AnalyzeEvent()", "fixture tra file", "All events with ET line are loaded", NEvents, 14u) && Passed;
   Passed = EvaluateTrue("FullfillsRequirements()", "loaded events", "The L2 FITS saver accepts every loaded event", AllAcceptedL2) && Passed;
-  Passed = EvaluateFalse("FullfillsRequirements()", "loaded events", "The L1b FITS saver accepts no loaded event, since it needs the measured read-outs", AnyAcceptedL1b) && Passed;
-  Passed = EvaluateFalse("FullfillsRequirements()", "loaded events", "The L1a FITS saver accepts no loaded event, since it needs the measured read-outs", AnyAcceptedL1a) && Passed;
+  Passed = EvaluateTrue("FullfillsRequirements()", "loaded events", "The L1b FITS saver accepts every loaded event", AllAcceptedL1b) && Passed;
+  Passed = EvaluateFalse("FullfillsRequirements()", "loaded events", "The L1a FITS saver accepts no loaded event, since the measurement progress flag is not set", AnyAcceptedL1a) && Passed;
 
-  // The sequence checks of the supervisor use the module types, so the loader must not offer
-  // itself as a loader of measured read-outs either
-  Passed = EvaluateFalse("ProvidesModuleType()", "measurement loader", "The loader does not provide the measurement loader type the L1a and L1b savers require", Loader->ProvidesModuleType(MAssembly::c_EventLoaderMeasurement)) && Passed;
-  Passed = EvaluateTrue("ProvidesModuleType()", "event loader", "The loader still provides the event loader type", Loader->ProvidesModuleType(MAssembly::c_EventLoader)) && Passed;
+  // The type comes from MModuleLoaderMeasurements, the progress flag is not set by this loader
+  Passed = EvaluateTrue("ProvidesModuleType()", "measurement loader", "The loader provides the measurement loader type", Loader->ProvidesModuleType(MAssembly::c_EventLoaderMeasurement)) && Passed;
+  Passed = EvaluateTrue("ProvidesModuleType()", "event loader", "The loader provides the event loader type", Loader->ProvidesModuleType(MAssembly::c_EventLoader)) && Passed;
 
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
