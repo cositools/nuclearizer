@@ -47,7 +47,7 @@ class MHit
 
   // Strip hits:
 
-  //! Return the number of strip hits
+  //! Return the number of triggered strip hits
   unsigned int GetNStripHits() const { return m_StripHits.size(); }
   //! Return strip hit i or nullptr if i is out of bounds
   //! Ownership stays elsewhere
