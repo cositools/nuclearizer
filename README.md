@@ -1,5 +1,7 @@
 # COSI's calibration tool nuclearizer
 
+[![Codecov](https://codecov.io/gh/cositools/nuclearizer/branch/develop/em/graph/badge.svg)](https://codecov.io/gh/cositools/nuclearizer)
+
 ## What is nuclearizer?
 
 Nuclearizer is the detectior calibration tool of the gamma-ray telescope COSI, the Compton Spectrometer and Imager.

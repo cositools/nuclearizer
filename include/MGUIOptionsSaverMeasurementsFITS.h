@@ -74,7 +74,6 @@ class MGUIOptionsSaverMeasurementsFITS : public MGUIOptions
   MGUIEFileSelector* m_FileSelectorFITS;
 
   //! Select output level: L1b or L2
-  TGComboBox* m_OutputDataLevelCombo;
 
 
 

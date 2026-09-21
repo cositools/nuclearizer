@@ -74,7 +74,7 @@ MModuleStripPairingMultiRoundChiSquare::MModuleStripPairingMultiRoundChiSquare()
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
-  AddPreceedingModuleType(MAssembly::c_TACcut);
+  AddPreceedingModuleType(MAssembly::c_TACCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_StripPairing);

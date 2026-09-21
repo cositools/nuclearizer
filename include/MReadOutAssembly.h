@@ -208,6 +208,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the energy calibration error flag
   bool HasEnergyCalibrationError() const { return m_EnergyCalibrationError; }
 
+  //! Set the TAC calibration error flag
+  void SetTACCalibrationError(const MString& Text = "") { m_TACCalibrationError = true; if (Text != "") m_TACCalibrationErrorString.push_back(Text); }
+  //! Get the TAC calibration error flag
+  bool HasTACCalibrationError() const { return m_TACCalibrationError; }
+
   //! Set the strip pairing error flag
   void SetStripPairingError(const MString& Text = "") { m_StripPairingError = true; if (Text != "") m_StripPairingErrorString.push_back(Text); }
   //! Get the strip pairing error flag
@@ -229,6 +234,11 @@ class MReadOutAssembly : public MReadOutSequence
   void SetStripHitBelowThreshold_QualityFlag(const MString& Text = "") { m_StripHitBelowThreshold_QualityFlag = true; if (Text != "") m_StripHitBelowThresholdString_QualityFlag.push_back(Text); }
   //! Get the Strip Hit Below Threshold quality flag
   bool HasStripHitBelowThreshold_QualityFlag() const { return m_StripHitBelowThreshold_QualityFlag; }
+
+  //! Set the High ADC quality flag
+  void SetHighADC_QualityFlag(const MString& Text = "") { m_HighADC_QualityFlag = true; if (Text != "") m_HighADCString_QualityFlag.push_back(Text); }
+  //! Get the High ADC quality flag
+  bool HasHighADC_QualityFlag() const { return m_HighADC_QualityFlag; }
 
   //! Set the Strip Pairing quality flag
   void SetStripPairing_QualityFlag(const MString& Text = "") { m_StripPairing_QualityFlag = true; if (Text != "") m_StripPairingString_QualityFlag.push_back(Text); }
@@ -260,6 +270,8 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return true if any error flag is set or the event has been filtered out
   //! Veto and quality flags do not affect this result
   bool IsBad() const;
+  //! Returns true if any of the Quality flags have been set
+  bool IsPoorQuality() const;
 
   //! Set a specific analysis progress
   void SetAnalysisProgress(uint64_t Progress) { m_AnalysisProgress |= Progress; }
@@ -388,6 +400,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Energy calibration error string
   vector<MString> m_EnergyCalibrationErrorString;
 
+  //! TAC calibration error flag
+  bool m_TACCalibrationError;
+  //! TAC calibration error string
+  vector<MString> m_TACCalibrationErrorString;
+
   //! Strip pairing error flag
   bool m_StripPairingError;
   //! Strip pairing error string
@@ -409,6 +426,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_StripHitBelowThreshold_QualityFlag;
   //! Strip hit below threshold quality string
   vector<MString> m_StripHitBelowThresholdString_QualityFlag;
+
+  //! High ADC quality flag
+  bool m_HighADC_QualityFlag;
+  //! High ADC quality string
+  vector<MString> m_HighADCString_QualityFlag;
 
   //! Strip pairing quality flag
   bool m_StripPairing_QualityFlag;

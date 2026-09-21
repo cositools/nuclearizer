@@ -119,6 +119,12 @@ NUCLEARIZER_UT_PRGS := $(patsubst $(NUCLEARIZER_DIR)/unittests/%,$(BN)/%,$(NUCLE
 ALLLIBS = -L$(LB) -lResponseCreator -lFretalonBase -lSivan -lRevanGui -lRevan -lMimrec -lGeomega -lSpectralyzeGui -lSpectralyze -lCommonMisc -lCommonGui -L$(MEGALIB)/lib -L$(LB) 
 
 
+# Coverage-specific flags (added when standard COVERAGE=1 is passed)
+ifeq ($(COVERAGE), 1)
+    CXXFLAGS += -O0 -g --coverage
+    LDFLAGS  += --coverage
+endif
+
 #----------------------------------------------------------------
 # Command rules
 #
