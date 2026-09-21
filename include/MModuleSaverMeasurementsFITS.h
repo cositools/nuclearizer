@@ -77,12 +77,6 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Get the output file name
   MString GetFileName() const { return m_FileName; }
 
-  //! Set the output data level: 0 = L1a, 1 = L1b, 2 = L2
-  void SetOutputDataLevel(int Level) { m_OutputDataLevel = Level; ConfigurePreceedingModules(); }
-  //! Get the output data level: 1 = L1b, 2 = L2
-  int GetOutputDataLevel() const { return m_OutputDataLevel; }
-
-
   // protected methods:
  protected:
   //! Create the FITS file and extensions
