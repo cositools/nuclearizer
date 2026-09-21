@@ -27,7 +27,6 @@
 #include "MModuleLoaderMeasurementsTRA.h"
 
 // Standard libs:
-#include <algorithm>
 
 // ROOT libs:
 #include "TGClient.h"
@@ -157,19 +156,7 @@ bool MModuleLoaderMeasurementsTRA::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
-  // Hits: Compton events carry their hit sequence, photo events a single position and energy
-  if (PhysicalEvent->GetNHits() > 0) {
-    for (unsigned int h = 0; h < PhysicalEvent->GetNHits(); ++h) {
-      const MPhysicalEventHit& PhysicalHit = PhysicalEvent->GetHit(h);
-
-      MHit* Hit = new MHit();
-      Hit->SetPosition(PhysicalHit.GetPosition());
-      Hit->SetPositionResolution(PhysicalHit.GetPositionUncertainty());
-      Hit->SetEnergy(PhysicalHit.GetEnergy());
-      Hit->SetEnergyResolution(PhysicalHit.GetEnergyUncertainty());
-      Event->AddHit(Hit);
-    }
-  } else if (PhysicalEvent->GetType() == MPhysicalEvent::c_Photo) {
+  if (PhysicalEvent->GetType() == MPhysicalEvent::c_Photo) {
     MPhotoEvent* Photo = dynamic_cast<MPhotoEvent*>(PhysicalEvent);
     if (Photo != nullptr) {
       // The tra file has no uncertainties for photo events
@@ -180,6 +167,21 @@ bool MModuleLoaderMeasurementsTRA::AnalyzeEvent(MReadOutAssembly* Event)
       Hit->SetEnergyResolution(0.0);
       Event->AddHit(Hit);
     }
+  } else if (PhysicalEvent->GetType() == MPhysicalEvent::c_Compton) {
+    for (unsigned int h = 0; h < PhysicalEvent->GetNHits(); ++h) {
+      const MPhysicalEventHit& PhysicalHit = PhysicalEvent->GetHit(h);
+
+      MHit* Hit = new MHit();
+      Hit->SetPosition(PhysicalHit.GetPosition());
+      Hit->SetPositionResolution(PhysicalHit.GetPositionUncertainty());
+      Hit->SetEnergy(PhysicalHit.GetEnergy());
+      Hit->SetEnergyResolution(PhysicalHit.GetEnergyUncertainty());
+      Event->AddHit(Hit);
+    }
+  } else if (PhysicalEvent->GetType() == MPhysicalEvent::c_Unidentifiable) {
+    // Can not do anything else here
+  } else {
+    if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": No hits are created for "<<PhysicalEvent->GetTypeString()<<endl;
   }
 
   // The assembly stores its own copy

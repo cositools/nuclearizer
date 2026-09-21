@@ -21,11 +21,13 @@ using namespace std;
 #include "MFile.h"
 #include "MPhysicalEvent.h"
 #include "MUnitTest.h"
+#include "MXmlDocument.h"
 #include "MXmlNode.h"
 
 // Nuclearizer:
 #include "MAssembly.h"
 #include "MHit.h"
+#include "MModuleEventSaver.h"
 #include "MModuleLoaderMeasurementsTRA.h"
 #include "MModuleSaverMeasurementsFITS.h"
 #include "MReadOutAssembly.h"
@@ -59,6 +61,8 @@ private:
   bool TestSaverRequirements();
   //! Test the committed 542-1 tra reference file
   bool TestCommittedData();
+  //! Test that a tra file read by the loader and written by the event saver is unchanged
+  bool TestRoundTripTra();
 
   //! Write the fixture tra file and return its name, or "" on error
   MString WriteFixture();
@@ -83,6 +87,7 @@ bool UTNModuleLoaderMeasurementsTRA::Run()
   Passed = TestReinitialize() && Passed;
   Passed = TestSaverRequirements() && Passed;
   Passed = TestCommittedData() && Passed;
+  Passed = TestRoundTripTra() && Passed;
 
   // ShowOptionsGUI() opens an interactive ROOT GUI; it cannot be exercised in a
   // headless unit test and is intentionally left uncovered.
@@ -746,6 +751,80 @@ bool UTNModuleLoaderMeasurementsTRA::TestCommittedData()
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "No other event has hits", NOtherWithoutHits, 1146u) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "542-1 reference tra file", "The first IDs skip the event without ET line", FirstIDs == vector<unsigned long>({ 1, 2, 4, 5, 6 })) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "The last ID is 6803", LastID, (unsigned long) 6803) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNModuleLoaderMeasurementsTRA::TestRoundTripTra()
+{
+  bool Passed = true;
+
+  const char* NuclearizerEnv = getenv("NUCLEARIZER");
+  if (NuclearizerEnv == nullptr || NuclearizerEnv[0] == '\0') {
+    mout<<"TestRoundTripTra: NUCLEARIZER not set - skipping test"<<endl;
+    return Passed;
+  }
+  MString DataDir = MString(NuclearizerEnv) + "/resource/unittestdata/UTModuleLoaderMeasurementTRA";
+  MString ConfigFileName = DataDir + "/ComptonOnly.cfg";
+  MString InputFileName = DataDir + "/ComptonOnly.tra";
+
+  Passed = EvaluateTrue("AnalyzeEvent()", "round trip", "The round trip configuration exists", MFile::Exists(ConfigFileName)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "round trip", "The Compton-only tra file exists", MFile::Exists(InputFileName)) && Passed;
+  if (Passed == false) return Passed;
+
+  // The module options are those of the configuration
+  MXmlDocument Document;
+  Passed = EvaluateTrue("ReadXmlConfiguration()", "round trip", "The round trip configuration can be loaded", Document.Load(ConfigFileName)) && Passed;
+  MXmlNode* Options = Document.GetNode("ModuleOptions");
+  MXmlNode* LoaderNode = (Options != nullptr) ? Options->GetNode("XmlTagMeasurementLoaderTRA") : nullptr;
+  MXmlNode* SaverNode = (Options != nullptr) ? Options->GetNode("XmlTagEventSaver") : nullptr;
+  Passed = EvaluateTrue("ReadXmlConfiguration()", "round trip", "The configuration has options for the loader and the event saver", LoaderNode != nullptr && SaverNode != nullptr) && Passed;
+  if (Passed == false) return Passed;
+
+  MModuleLoaderMeasurementsTRA Loader;
+  Loader.ReadXmlConfiguration(LoaderNode);
+
+  MModuleEventSaver Saver;
+  Saver.ReadXmlConfiguration(SaverNode);
+  Passed = Evaluate("ReadXmlConfiguration()", "round trip", "The configuration selects the tra format", Saver.GetMode(), MModuleEventSaver::c_TraFile) && Passed;
+  Passed = EvaluateFalse("ReadXmlConfiguration()", "round trip", "The configuration writes a single file", Saver.GetSplitFile()) && Passed;
+
+  // Written into the temporary directory, not the source tree
+  MString OutputFileName = GetTemporaryFileName("ComptonOnly.test.tra");
+  Saver.SetFileName(OutputFileName);
+
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+  bool LoaderInitialized = Loader.Initialize();
+  bool SaverInitialized = Saver.Initialize();
+  g_Verbosity = OldVerbosity;
+
+  Passed = EvaluateTrue("Initialize()", "round trip", "The loader can be initialized with the configured file", LoaderInitialized) && Passed;
+  Passed = EvaluateTrue("Initialize()", "round trip", "The event saver can be initialized for a tra file", SaverInitialized) && Passed;
+  if (Passed == false) return Passed;
+
+  unsigned int NEvents = 0;
+  MReadOutAssembly Event;
+  while (Loader.AnalyzeEvent(&Event) == true) {
+    Saver.AnalyzeEvent(&Event);
+    ++NEvents;
+  }
+
+  g_Verbosity = c_Quiet;
+  Loader.Finalize();
+  Saver.Finalize();
+  g_Verbosity = OldVerbosity;
+
+  Passed = Evaluate("AnalyzeEvent()", "round trip", "All 7 events are loaded", NEvents, 7u) && Passed;
+
+  // The input was itself written by the event saver, so the whole file including its header has to match
+  Passed = EvaluateFilesIdentical("AnalyzeEvent()", "round trip", "The saved tra file is identical to the loaded one", OutputFileName, InputFileName) && Passed;
+
+  RemoveTemporaryFile(OutputFileName);
 
   return Passed;
 }
