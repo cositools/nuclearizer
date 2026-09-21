@@ -120,7 +120,7 @@ MStripHit* MHit::GetNearestNeighborStripHit(unsigned int i)
   // Return strip hit i
 
   if (i < m_NearestNeighborStripHits.size()) {
-    return m_StripHits[i]; // THIS IS WRONG
+    return m_NearestNeighborStripHits[i];
   }
 
   if (g_Verbosity >= c_Error) cout<<"Error in MHit::GetNearestNeighborStripHit: Strip hit index "<<i<<" is out of bounds: "<<m_NearestNeighborStripHits.size()<<" strip hits available"<<endl;
