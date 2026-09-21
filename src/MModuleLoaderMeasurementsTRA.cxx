@@ -117,7 +117,7 @@ bool MModuleLoaderMeasurementsTRA::AnalyzeEvent(MReadOutAssembly* Event)
 
   MPhysicalEvent* PhysicalEvent = m_TraFile.GetNextEvent();
   if (PhysicalEvent == nullptr) {
-    if (g_Verbosity >= c_Info) cout<<m_Name<<": No more events!"<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events!"<<endl;
     m_IsFinished = true;
     return false;
   }
