@@ -61,6 +61,7 @@ using namespace std;
 #include "MModuleTransmitterRealta.h"
 #include "MModuleLoaderSimulationsCosima.h"
 #include "MModuleLoaderMeasurementsROA.h"
+#include "MModuleLoaderMeasurementsTRA.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleLoaderMeasurementsFITS.h"
 #include "MModuleLoaderMeasurementsL0.h"
@@ -123,6 +124,7 @@ MAssembly::MAssembly()
   
   m_Supervisor->AddAvailableModule(new MModuleLoaderSimulationsCosima());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsROA());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsTRA());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsHDF());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsFITS());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsL0());
