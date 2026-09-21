@@ -37,6 +37,7 @@
 #include "MModule.h"
 #include "MGUIOptionsStripPairing.h"
 #include "MGUIOptionsStripPairingMultiRoundChiSquare.h"
+#include "MModuleLoaderMeasurementsHDF.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -234,7 +235,7 @@ float MModuleStripPairingMultiRoundChiSquare::ChargeTrappingCorrection(unsigned 
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Divide an event's strip hits by detector and LV/HV side
-tuple<vector<vector<vector<MStripHit*>>>, bool> MModuleStripPairingMultiRoundChiSquare::CollectStripHits(MReadOutAssembly* Event)
+vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectStripHits(MReadOutAssembly* Event)
 {
 
   // Split hits by detector ID
@@ -272,11 +273,8 @@ tuple<vector<vector<vector<MStripHit*>>>, bool> MModuleStripPairingMultiRoundChi
         DetectorIDs.push_back(SH->GetDetectorID());
       }
     }
-    else {
-      IncludingNearestNeighbors = true;
-    }
   }
-  return {StripHits, IncludingNearestNeighbors};
+  return StripHits;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -843,8 +841,8 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     return false;
   }
 
-  // Collect strip hits from input event
-  auto [StripHits, IncludingNearestNeighbors] = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits (and bool saying if running with nearest neighbors or not)
+  // Collect triggered strip hits from input event
+  vector<vector<vector<MStripHit*>>> StripHits = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits
 
   // Perform some event selections
   bool CheckStripHits = EventSelection(Event, StripHits);
@@ -963,7 +961,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
   } // End Detector loop
 
   // If there are NN strips, assign them to their appropriate hits
-  if (IncludingNearestNeighbors == true) {
+  if (m_IncludeNearestNeighbor == true) {
     AssignNearestNeighbors(Event);
   }
   
