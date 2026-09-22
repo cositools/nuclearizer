@@ -51,10 +51,11 @@ class MHit
   unsigned int GetNStripHits() const { return m_StripHits.size(); }
   //! Return strip hit i or nullptr if i is out of bounds
   //! Ownership stays elsewhere
+  //! This includes only triggered strip hits
   MStripHit* GetStripHit(unsigned int i);
   //! Return nearest neighbor strip hit i or nullptr if i is out of bounds
   MStripHit* GetNearestNeighborStripHit(unsigned int i);
-  //! Add a strip hit
+  //! Add a triggered strip hit
   //! Ownership stays elsewhere
   void AddStripHit(MStripHit* StripHit);
   //! Add a nearest neighbor strip hit
