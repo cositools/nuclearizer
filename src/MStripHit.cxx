@@ -77,7 +77,6 @@ void MStripHit::Clear()
   // Reset all data
 
   m_ReadOutElement->Clear();
-  m_HasTriggered = false;
   m_ADCUnits = 0;
   m_Energy = 0;
   m_EnergyResolution = 0;
@@ -132,7 +131,7 @@ bool MStripHit::Parse(const MString& Line, int Version)
     SetDetectorID(det_id);
     IsLowVoltageStrip(pos_strip == 'l');
     SetStripID(strip_id);
-    HasTriggered(has_triggered != 0);
+    IsNearestNeighbor(has_triggered == 0);
     SetTiming(timing);
     SetADCUnits(adc);
     SetEnergy(energy);
@@ -170,7 +169,7 @@ bool MStripHit::StreamDat(ostream& S, int Version)
    <<m_ReadOutElement->GetDetectorID()<<" "
    <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
    <<m_ReadOutElement->GetStripID()<<" "
-   <<m_HasTriggered<<" "
+   <<(m_IsNearestNeighbor == false)<<" "
    <<setprecision(9)<<m_Timing<<" "
    <<m_ADCUnits<<" "
    <<m_Energy<<" "

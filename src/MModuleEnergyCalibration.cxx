@@ -70,17 +70,17 @@ MModuleEnergyCalibration::MModuleEnergyCalibration() : MModule()
   m_Name = "Energy calibrator";
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "EnergyCalibration";
+  m_XmlTag = "XmlTagEnergyCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
-  // AddPreceedingModuleType(MAssembly::c_TACcut);
+  // AddPreceedingModuleType(MAssembly::c_TACCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all modules, which can follow this module
-  AddSucceedingModuleType(MAssembly::c_TACcut);
+  AddSucceedingModuleType(MAssembly::c_TACCalibration);
 
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
@@ -161,6 +161,15 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
     MStripHit* SH = Event->GetStripHit(i);
     MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
+
+    // Flag strip hits whose ADC value is close to the ADC saturation limit, since their
+    // calibrated energy is not trustworthy. The hit is kept, it is only marked.
+    if (SH->GetADCUnits() > m_HighADCThreshold) {
+      if (g_Verbosity >= c_Warning) {
+        cout << m_XmlTag << ": Warning: High ADC value " << (int) SH->GetADCUnits() << " for read-out element " << R << endl;
+      }
+      Event->SetHighADC_QualityFlag("High ADC value " + to_string((int) SH->GetADCUnits()) + " for " + R.ToString().Data());
+    }
 
     TF1* Fit = m_Calibration[R];
     TF1* FitRes = m_ResolutionCalibration[R];
