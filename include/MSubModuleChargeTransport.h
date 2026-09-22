@@ -111,11 +111,15 @@ class MSubModuleChargeTransport : public MSubModule
 
   list<MDEEStripHit> m_ChargeTransportHits;
 
-  //! Filename of the depth calibration coefficients (stretch, offset, timing noise, ...)
+  //! Filename of the strip-based depth calibration coefficients (stretch, offset, timing noise, ...)
   MString m_DepthCoefficientsFileName;
 
-  //! Map of the depth calibration coefficients
-  unordered_map<int, vector<double>> m_Coeffs;
+  //! Map: detector ID (int) -> mean stretch over all pixels / strips
+  unordered_map<int, double> m_MeanStretch;
+  //! Map: detector ID (int) -> mean offset over all pixels / strips
+  unordered_map<int, double> m_MeanOffset;
+  //! Map: detector ID (int) -> Side (LV=0, HV=1) -> Strip ID -> Depth calibration coefficients (per strip)
+  unordered_map<int, vector<unordered_map<int, vector<double>>>> m_StripCoeffs;
 
   //! Filename of CTD->Depth splines
   MString m_DepthSplinesFileName;
