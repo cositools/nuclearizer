@@ -100,7 +100,7 @@ void MStripHit::Clear()
 
 bool MStripHit::Parse(const MString& Line, int Version)
 {
-  // Parse the hit from a string starting with SH
+  // Parse the hit from a string starting with SH or NN
 
   Clear();
 
@@ -109,6 +109,7 @@ bool MStripHit::Parse(const MString& Line, int Version)
     if (g_Verbosity >= c_Error) cout<<"Error in MStripHit::Parse: line too short with length "<<Line.Length()<<endl;
     return false;
   }
+  
   // Read strip hit if line starts with SH (triggered strip hit) or NN (nearest neighbor strip hit)
   if ((line[0] == 'S' && line[1] == 'H') || (line[0] == 'N' && line[1] == 'N')) {
     unsigned int det_id, strip_id;
@@ -171,6 +172,7 @@ bool MStripHit::StreamDat(ostream& S, int Version)
     <<m_ReadOutElement->GetDetectorID()<<" "
     <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
     <<m_ReadOutElement->GetStripID()<<" "
+    <<(m_IsNearestNeighbor == false)<<" "
     <<setprecision(9)<<m_Timing<<" "
     <<m_ADCUnits<<" "
     <<m_Energy<<" "
@@ -184,6 +186,7 @@ bool MStripHit::StreamDat(ostream& S, int Version)
     <<m_ReadOutElement->GetDetectorID()<<" "
     <<((m_ReadOutElement->IsLowVoltageStrip() == true) ? "l" : "h")<<" "
     <<m_ReadOutElement->GetStripID()<<" "
+    <<(m_IsNearestNeighbor == false)<<" "
     <<setprecision(9)<<m_Timing<<" "
     <<m_ADCUnits<<" "
     <<m_Energy<<" "
