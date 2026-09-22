@@ -137,6 +137,17 @@ class MModuleDEESMEX : public MModule
     return m_ShieldEnergyCorrection.GetShieldEnergyCorrectionFileName();
   }
 
+  //! Set hardware threshold file name
+  void SetHardwareThresholdFileName(const MString& FileName)
+  {
+    m_StripReadout.SetHardwareThresholdFileName(FileName);
+  }
+  //! Get hardware threshold file name
+  MString GetHardwareThresholdFileName() const
+  {
+    return m_StripReadout.GetHardwareThresholdFileName();
+  }
+
   //! Set dead time file name
   void SetDeadtimeFileName(const MString& FileName)
   {
