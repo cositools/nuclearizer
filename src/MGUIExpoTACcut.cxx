@@ -98,7 +98,7 @@ void MGUIExpoTACcut::SetTACHistogramArrangement(const vector<unsigned int> DetID
   unsigned int max_columns = 4;
 
   unsigned int NDetectors = DetIDs.size();
-  cout<<"MGUIExpoTACcut::SetTACHistogramArrangement: Number of detectors:"<< NDetectors<<endl;
+  if (g_Verbosity >= c_Info) cout<<"MGUIExpoTACcut::SetTACHistogramArrangement: Number of detectors:"<< NDetectors<<endl;
 
   for (unsigned int i=0; i < NDetectors; ++i) {
     // iterate over detector IDs, make the map from ID to plot position, and initialize the histograms
