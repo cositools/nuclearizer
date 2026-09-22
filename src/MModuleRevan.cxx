@@ -76,6 +76,10 @@ MModuleRevan::MModuleRevan() : MModule()
   // Allow the use of multiple threads and instances
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
+
+  m_Settings = nullptr;
+  m_ReconstructionGeometry = nullptr;
+  m_RawEventAnalyzer = nullptr;
 }
 
 
@@ -84,7 +88,10 @@ MModuleRevan::MModuleRevan() : MModule()
 
 MModuleRevan::~MModuleRevan()
 {
+  // Sequence is important
   delete m_RawEventAnalyzer;
+  delete m_ReconstructionGeometry;
+  delete m_Settings;
 }
 
 
@@ -94,17 +101,23 @@ MModuleRevan::~MModuleRevan()
 bool MModuleRevan::Initialize()
 {
   // Initialize the module
-  
+
+  // This first since it uses/stores the other two pointers:
+  delete m_RawEventAnalyzer;
+  m_RawEventAnalyzer = nullptr;
+
+  delete m_Settings;
   m_Settings = new MSettingsRevan();
   m_Settings->Read(m_RevanConfigurationFileName);
 
+  delete m_ReconstructionGeometry;
   m_ReconstructionGeometry = new MGeometryRevan();
   if (m_ReconstructionGeometry->ScanSetupFile(m_Geometry->GetFileName(), false) == false) {
     cout<<"Loading of geometry "<<m_ReconstructionGeometry->GetName()<<" failed!!"<<endl;
     return false;
   }
 
-   // Initialize the raw event analyzer
+  // Initialize the raw event analyzer
   m_RawEventAnalyzer = new MRawEventAnalyzer();
   m_RawEventAnalyzer->SetGeometry(m_ReconstructionGeometry);
   m_RawEventAnalyzer->SetSettings(m_Settings);
@@ -128,13 +141,17 @@ bool MModuleRevan::Initialize()
 
 void MModuleRevan::Finalize()
 {
-  // Initialize the module 
+  // Finalize the module
   
   MModule::Finalize();
   
   delete m_RawEventAnalyzer;
   m_RawEventAnalyzer = nullptr;
-  
+  delete m_ReconstructionGeometry;
+  m_ReconstructionGeometry = nullptr;
+  delete m_Settings;
+  m_Settings = nullptr;
+
   return;
 }
 
