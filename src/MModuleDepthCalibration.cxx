@@ -519,6 +519,8 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
     }
 
     MDDetector* det = DetList[i];
+
+    // First find all GeDs
     if (det->GetTypeName() == "Strip3D") {
       if (det->GetNSensitiveVolumes() == 1) {
         // MDVolume* vol = det->GetSensitiveVolume(0);
@@ -574,22 +576,66 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
           cout<<"ERROR in MModuleDepthCalibration::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
         }
       }
+
+    // Check for GR detector volumes
     } else if (det->GetTypeName() == "Simple" || det->GetTypeName() == "Scintillator") {
+
       if (det->GetNSensitiveVolumes() == 1) {
         MString DetectorName = det->GetName();
         string DetName = DetectorName.GetString();
-        // Check that the DetID agrees with the naming scheme GuardRingDetector_GeD_
-        if (DetectorName.BeginsWith("GuardRingDetector_GeD_") == true) {
-          DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // The number after GeD is the COSI detector ID
-          if (DetID != (DetectorName.ToUnsignedInt()-1)) { // The GR detector ID is +1 compared to the GeD detector for the same DetID.
+
+        if (Geometry->GetName() == "COSI-SMEX-Payload") {
+          // COSI-SMEX-Payload expects GuardRingDetector_GeD_X naming scheme
+          if (DetectorName.BeginsWith("GuardRingDetector_GeD_") == true) {
+            DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // The number after GeD is the COSI detector ID
+            unsigned int GRDetID = DetectorName.ToUnsignedInt(); // The GR detector ID is the same as the GeD detector number
+
+            if (DetID != (GRDetID + 1)) {  // DetID will be +1 compared to GeD # based on the DetID++ above for loop
+              if (g_Verbosity >= c_Error) {
+                cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for GR detector "<<DetName<<endl;
+              }
+              return false;
+            } else {
+              m_GRDetectors[GRDetID] = det;
+            }
+          } else if (DetectorName.BeginsWith("GuardRing") == true) { // Throw an error for a GR DetectorName that is unexpected
             if (g_Verbosity >= c_Error) {
-              cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for GR detector "<<DetName<<endl;
+              cout << "ERROR in MModuleDepthCalibration::Initialize: COSI-SMEX-Payload expects all guard ring detectors to follow the name scheme GuardRingDetector_GeD_X, but found " << DetName << endl;
+            }
+            return false;
+          } 
+        } else {
+          // STTC mass models expect GuardRingDetector naming
+          if (DetectorName == "GuardRingDetector") {
+
+            if (DetID != 1) { // DetID = 1 here even for a single GeD due to the DetID++ in the loop above 
+              if (g_Verbosity >= c_Error) {
+                cout << "ERROR in MModuleDepthCalibration::Initialize: GuardRingDetector " << DetName << " expected at DetID=1, but found at DetID=" << DetID << endl;
+              }
+            } else {
+              m_GRDetectors[0] = det; // Make Det ID 0 for the mapping for STTC mass model
+            }
+          // EM Mass model expects GuardRingDetector_Q0DX, where X is the detector name
+          } else if (DetectorName.BeginsWith("GuardRingDetector_Q0D") == true) {
+            DetectorName.RemoveAllInPlace("GuardRingDetector_Q0D"); // The number after Q0D is the detector ID
+            unsigned int GRDetID = DetectorName.ToUnsignedInt(); 
+          
+            if (DetID != (GRDetID + 1)) { // DetID will be +1 compared to GeD # based on the DetID++ above for loop
+              if (g_Verbosity >= c_Error) {
+                cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID=" << DetID << " for GR detector " << DetName << endl;
+              }
+            } else {
+              m_GRDetectors[GRDetID] = det;
             }
           } else {
-            m_GRDetectors[DetID-1] = det;
+            if (g_Verbosity >= c_Error) {
+              cout << "ERROR in MModuleDepthCalibration::Initialize: Unexpected guard ring detector name " << DetName << endl;
+            }
           }
-        } else if (DetectorName == "GuardRingDetector") {
-          m_GRDetectors[DetID-1] = det;
+        }
+      } else {
+        if (g_Verbosity >= c_Error) {
+          cout << "ERROR in MModuleDepthCalibration::Initialize: Found a guard ring detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
         }
       }
     }
