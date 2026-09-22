@@ -173,7 +173,18 @@ bool MHit::StreamDat(ostream& S, int Version)
     }
   } else if (Version == 3) {
     // Stream the hit information, including low-voltage and high-voltage energy, then stream the strip hit information
-    S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<" "<<m_LVEnergy<<" "<<m_HVEnergy<<endl;
+    if ((m_GuardRingHit == false) && (m_NoDepth == false)) {
+      S<<"HT "<<m_Position.GetX()<<" "<<m_Position.GetY()<<" "<<m_Position.GetZ()<<" "<<m_Energy<<" "<<m_LVEnergy<<" "<<m_HVEnergy<<endl;
+      
+    } else if (m_GuardRingHit == true) {
+      S<<"GR "<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy;   
+      S<<endl;
+
+    } else if (m_NoDepth == true) {
+      S<<"XE "<<m_Position.GetX()<<";"<<m_Position.GetY()<<";"<<m_Position.GetZ()<<";"<<m_Energy;
+      S<<endl;
+    }
+    
     for (auto SH : m_StripHits) {
       SH->StreamDat(S, 0);
     }
