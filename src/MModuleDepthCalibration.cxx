@@ -318,14 +318,6 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         Ypos = inter[1];
       }
 
-     if (m_MaskMetrologyEnabled == true) {
-        // Find the intercept of the two dominate strips based on the mask metrology, and update Xpos and Ypos	  
-        vector<double> inter = GetStripIntersection(R_LV, R_HV);
-        Xpos = inter[0];
-        Ypos = inter[1];
-      }
-
-
       // Now try and get z position
       double CTD_s = 0.0;
 
@@ -372,15 +364,8 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
         double noise = GetTimingNoiseFWHM(PixelCode, H->GetEnergy());
 
-        // If the CTD is not crazy out of range, stick it on the edge of the detector and report a QA flag:
-        if ((CTD_s < CTDmin) && (CTD_s > (CTDmin - 5.0*noise))) {
-          CTD_s = CTDmin;
-          Event->SetDepthCalibrationError("Forced to edge");
-        } else if ((CTD_s > CTDmax) && (CTD_s < (CTDmax + 5.0*noise))) {
-          CTD_s = CTDmax;
-          Event->SetDepthCalibrationError("Forced to edge");
-        } else if ((CTD_s < (CTDmin - 5.0*noise)) || (CTD_s > (CTDmax + 5.0*noise))) {
-          // If the CTD is >5 sigma away from the max/min CTD, then don't calibrate this hit and return an error
+        //if the CTD is out of range, check if we should reject the event.
+        if ((CTD_s < (CTDmin - 2.0*noise)) || (CTD_s > (CTDmax + 2.0*noise))) {
           H->SetNoDepth();
           Event->SetDepthCalibrationError("Out of Range");
           ++m_Error2;
@@ -390,44 +375,46 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
         // This way we can avoid problems like non-monotonicity or assigning depth to events "outside" the detector 
         // Note that this requires that we don't massively overestimate the timing noise
-        // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
-        // Utlize symmetry of the normal distribution.
-        vector<double> prob_dist = norm_pdf(CTDVec, CTD_s, noise/2.355);
-            
-        // Weight the depth by probability
-        double prob_sum = 0.0;
-        for (unsigned int k=0; k < prob_dist.size(); ++k) {     
-          prob_sum += prob_dist[k];
-        }
-        double weighted_depth = 0.0;
-
-        for (unsigned int k = 0; k < DepthVec.size(); ++k) {
-          weighted_depth += prob_dist[k] * DepthVec[k];
-        }
-
-        // Calculate the expectation value of the depth
-        double mean_depth = weighted_depth/prob_sum;
-
-        // Calculate the standard deviation of the depth
-        double depth_var = 0.0;
-
-        for (unsigned int k=0; k < DepthVec.size(); ++k) {
-          depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0); 
-        }
-
-        Zsigma =  sqrt(depth_var/prob_sum);
-        Zpos = mean_depth;
-        // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
-
-        // Add the depth to the GUI histogram.
-        if (Event->HasStripPairingError()==false) {
-          if (HasExpos() == true) {
-            m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
-          }
-        }
         
-        m_NoError+=1;
-      
+        else {
+          // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
+          // Utlize symmetry of the normal distribution.
+          vector<double> prob_dist = norm_pdf(CTDVec, CTD_s, noise/2.355);
+            
+          // Weight the depth by probability
+          double prob_sum = 0.0;
+          for (unsigned int k=0; k < prob_dist.size(); ++k) {     
+            prob_sum += prob_dist[k];
+          }
+          double weighted_depth = 0.0;
+
+          for (unsigned int k = 0; k < DepthVec.size(); ++k) {
+            weighted_depth += prob_dist[k] * DepthVec[k];
+          }
+
+          // Calculate the expectation value of the depth
+          double mean_depth = weighted_depth/prob_sum;
+
+          // Calculate the standard deviation of the depth
+          double depth_var = 0.0;
+
+          for (unsigned int k=0; k < DepthVec.size(); ++k) {
+            depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0); 
+          }
+
+          Zsigma =  sqrt(depth_var/prob_sum);
+          Zpos = mean_depth;
+          // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
+
+          // Add the depth to the GUI histogram.
+          if (Event->HasStripPairingError()==false) {
+            if (HasExpos() == true) {
+              m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+            }
+          }
+        
+          m_NoError+=1;
+        }
       }
     
       if (g_Verbosity >= c_Info) cout << m_XmlTag << "Strip ID: " << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
