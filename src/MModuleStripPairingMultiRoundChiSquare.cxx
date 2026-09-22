@@ -241,7 +241,6 @@ vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::Colle
   // Split hits by detector ID
   vector<unsigned int> DetectorIDs; // List of detector IDs
   vector<vector<vector<MStripHit*>>> StripHits; // list of detector IDs, list of sides (LV and HV), list of triggered strip hits
-  bool IncludingNearestNeighbors = false;
 
   for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's triggered strip hits
     MStripHit* SH = Event->GetStripHit(sh);
@@ -840,9 +839,19 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     Event->SetAnalysisProgress(MAssembly::c_StripPairing);
     return false;
   }
-
+  
+  // Flag if the event includes any NN strip hits
+  bool IncludingNearestNeighbors = false;
+  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // loop over the strip hits of an event (both triggered and NN)
+    MStripHit* SH = Event->GetStripHit(sh);
+    
+    if (SH->IsNearestNeighbor() == true) {
+      IncludingNearestNeighbors = true;
+      break;
+    }
+  }
   // Collect triggered strip hits from input event
-  vector<vector<vector<MStripHit*>>> StripHits = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits
+  vector<vector<vector<MStripHit*>>> StripHits = CollectStripHits(Event); // List of detectors, list of sides, list of triggered strip hits
 
   // Perform some event selections
   bool CheckStripHits = EventSelection(Event, StripHits);
@@ -961,7 +970,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
   } // End Detector loop
 
   // If there are NN strips, assign them to their appropriate hits
-  if (m_IncludeNearestNeighbor == true) {
+  if (IncludingNearestNeighbors == true) {
     AssignNearestNeighbors(Event);
   }
   
