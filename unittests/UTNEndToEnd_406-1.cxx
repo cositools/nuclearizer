@@ -25,7 +25,7 @@ using namespace std;
 #include "MUnitTest.h"
 
 
-//! End-to-end test: run nuclearizer on the 406-1 HDF5 data and verify the .tra output.
+//! End-to-end test: run nuclearizer on the 406-1 HDF5 data and verify the .tra and .roa output, and read the .roa output back.
 //!
 //! Design notes:
 //!  - Fully automatic: takes no command-line arguments and needs no interactive
@@ -44,6 +44,12 @@ public:
 private:
   //! Run nuclearizer on the 406-1 HDF5 input and compare the output to the reference .tra file
   bool TestHDF5ToTra();
+  //! Run nuclearizer on the 406-1 HDF5 input and compare the output to the reference .roa file
+  bool TestHDF5ToRoa();
+  //! Read the reference .roa file with nuclearizer, write it again, and compare it to itself
+  bool TestRoaToRoa();
+  //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg, whose output is <Name>.<Suffix>, and compare it to ReferenceName
+  bool TestConfiguration(const MString& Name, const MString& Suffix, const MString& ReferenceName);
   //! Run nuclearizer with arguments and capture stdout/stderr in a log file
   int RunNuclearizer(const MString& Arguments, const MString& LogFile);
   //! Compare generated output with the reference file
@@ -59,6 +65,8 @@ bool UTNEndToEnd_406_1::Run()
   bool Passed = true;
 
   Passed = TestHDF5ToTra() && Passed;
+  Passed = TestHDF5ToRoa() && Passed;
+  Passed = TestRoaToRoa() && Passed;
 
   Summarize();
 
@@ -71,6 +79,34 @@ bool UTNEndToEnd_406_1::Run()
 
 bool UTNEndToEnd_406_1::TestHDF5ToTra()
 {
+  return TestConfiguration("hdf5-to-tra", "tra", "hdf5-to-tra.reference.tra");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNEndToEnd_406_1::TestHDF5ToRoa()
+{
+  return TestConfiguration("hdf5-to-roa", "roa", "hdf5-to-roa.reference.roa");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNEndToEnd_406_1::TestRoaToRoa()
+{
+  // The configuration reads hdf5-to-roa.reference.roa, so writing it again has to reproduce it
+  return TestConfiguration("roa-to-roa", "roa", "hdf5-to-roa.reference.roa");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNEndToEnd_406_1::TestConfiguration(const MString& Name, const MString& Suffix, const MString& ReferenceName)
+{
   bool Passed = true;
 
   // Require $NUCLEARIZER to locate the data files
@@ -82,35 +118,35 @@ bool UTNEndToEnd_406_1::TestHDF5ToTra()
 
   MString NuclearizerDir(NuclearizerEnv);
   MString DataDir       = NuclearizerDir + "/resource/unittestdata/406-1";
-  MString ConfigFile    = DataDir + "/hdf5-to-tra.nuclearizer.cfg";
-  MString OutputFile    = MString("/tmp/UTNEndToEnd_406-1_") + (unsigned int) getpid() + ".tra";
-  MString ReferenceFile = DataDir + "/hdf5-to-tra.reference.tra";
-  MString TestConfigFile = MString("/tmp/UTNEndToEnd_406-1_") + (unsigned int) getpid() + ".cfg";
+  MString ConfigFile    = DataDir + "/" + Name + ".nuclearizer.cfg";
+  MString OutputFile    = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + "." + Suffix;
+  MString ReferenceFile = DataDir + "/" + ReferenceName;
+  MString TestConfigFile = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + ".cfg";
 
   // The log file name carries the process ID so concurrent end-to-end tests
   // (and repeated runs) never share or clobber the same log.
-  MString LogFile = MString("/tmp/UTNEndToEnd_406-1_") + (unsigned int) getpid() + ".log";
+  MString LogFile = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + ".log";
 
   // Verify that the config and reference files are present before running anything
-  Passed = EvaluateTrue("End-to-end test 406-1", "nuclearizer config file",
+  Passed = EvaluateTrue("End-to-end test 406-1", Name + " config file",
                         "The nuclearizer config file exists",
                         MFile::Exists(ConfigFile)) && Passed;
-  Passed = EvaluateTrue("End-to-end test 406-1", ".tra reference file",
-                        "The reference .tra file exists",
+  Passed = EvaluateTrue("End-to-end test 406-1", Name + " reference file",
+                        "The reference file exists",
                         MFile::Exists(ReferenceFile)) && Passed;
   if (Passed == false) return Passed;
 
   ifstream ConfigIn(ConfigFile.Data());
-  Passed = EvaluateTrue("End-to-end test 406-1", "temporary config input",
+  Passed = EvaluateTrue("End-to-end test 406-1", Name + " temporary config input",
                         "The nuclearizer config file can be opened for reading",
                         ConfigIn.is_open()) && Passed;
   ofstream ConfigOut(TestConfigFile.Data());
-  Passed = EvaluateTrue("End-to-end test 406-1", "temporary config output",
+  Passed = EvaluateTrue("End-to-end test 406-1", Name + " temporary config output",
                         "The temporary nuclearizer config file can be opened for writing",
                         ConfigOut.is_open()) && Passed;
   if (Passed == false) return Passed;
 
-  const MString ConfigOutputFile = "$(NUCLEARIZER)/resource/unittestdata/406-1/hdf5-to-tra.tra";
+  const MString ConfigOutputFile = "$(NUCLEARIZER)/resource/unittestdata/406-1/" + Name + "." + Suffix;
   string Line;
   while (getline(ConfigIn, Line)) {
     MString ConfigLine(Line.c_str());
@@ -129,7 +165,7 @@ bool UTNEndToEnd_406_1::TestHDF5ToTra()
   // Run nuclearizer fully automatically; stdout and stderr are captured to LogFile
   MString NuclearizerArguments = MString("-c ") + TestConfigFile + " -a -n";
   int Status = RunNuclearizer(NuclearizerArguments, LogFile);
-  Passed = EvaluateTrue("End-to-end test 406-1", "exit status",
+  Passed = EvaluateTrue("End-to-end test 406-1", Name + " exit status",
                         "nuclearizer exits with status 0 (log: " + LogFile + ")",
                         Status == 0) && Passed;
   if (Passed == false) {
@@ -139,8 +175,8 @@ bool UTNEndToEnd_406_1::TestHDF5ToTra()
   }
 
   // Verify the output file was produced by this run
-  Passed = EvaluateTrue("End-to-end test 406-1", "output file",
-                        "The output .tra file was created",
+  Passed = EvaluateTrue("End-to-end test 406-1", Name + " output file",
+                        "The output file of " + Name + " was created",
                         MFile::Exists(OutputFile)) && Passed;
   if (Passed == false) {
     MFile::Remove(TestConfigFile);

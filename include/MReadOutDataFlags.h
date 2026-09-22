@@ -1,0 +1,111 @@
+/*
+ * MReadOutDataFlags.h
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
+#ifndef __MReadOutDataFlags__
+#define __MReadOutDataFlags__
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Standard libs:
+#include <iostream>
+using namespace std;
+
+// ROOT libs:
+
+// MEGAlib libs:
+#include "MGlobal.h"
+#include "MTokenizer.h"
+#include "MReadOutData.h"
+
+// Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read-out data consisting of the hit flags as bit mask
+class MReadOutDataFlags : public MReadOutData
+{
+  // public interface:
+ public:
+  //! The type name --- must be unique
+  static const MString m_Type;
+  //! The type name ID --- must be unique
+  static const long m_TypeID;
+
+  //! Default constructor
+  MReadOutDataFlags();
+  //! Constructor given the data
+  MReadOutDataFlags(MReadOutData* Data);
+  //! Simple default destructor
+  virtual ~MReadOutDataFlags();
+
+  //! Return the type of this read-out data --- hard coded to save space
+  virtual MString GetType() const { return m_Type; }
+  //! Return the type ID of this read-out data --- hard coded to save memory
+  virtual long GetTypeID() const { return m_TypeID; }
+
+  //! Clear the content of this read-out data element
+  virtual void Clear();
+
+  //! Set the flags
+  void SetFlags(unsigned int Flags) { m_Flags = Flags; }
+  //! Get the flags
+  unsigned int GetFlags() const { return m_Flags; }
+
+  //! Clone this data element - the returned element must be deleted
+  virtual MReadOutDataFlags* Clone() const;
+  
+  //! Return the number of parsable elements
+  virtual unsigned int GetNumberOfParsableElements() const;  
+  //! Return the data as parsable string
+  virtual MString ToParsableString(bool WithDescriptor = false) const; 
+  //! Parse the data from the tokenizer 
+  virtual bool Parse(const MTokenizer& T, unsigned int StartElement);
+  
+  //! Dump a string
+  virtual MString ToString() const;
+  
+  
+  // protected methods:
+ protected:
+
+  // private methods:
+ private:
+
+
+
+  // protected members:
+ protected:
+  //! The flags as bit mask
+  unsigned int m_Flags;
+
+  // private members:
+ private:
+
+
+
+#ifdef ___CLING___
+ public:
+  ClassDef(MReadOutDataFlags, 0) // Read-out data flags
+#endif
+
+};
+
+//! Streamify the read-out data
+ostream& operator<<(ostream& os, const MReadOutDataFlags& R);
+
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////

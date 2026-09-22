@@ -26,6 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MString.h"
 #include "MFile.h"
+#include "MReadOutFileFormat.h"
 
 // Nuclearizer libs:
 #include "MModule.h"
@@ -233,6 +234,8 @@ class MModuleEventSaver : public MModule
   bool m_RoaWithOrigins;
   //! True if we should include next neighbors in the data stream
   bool m_RoaWithNearestNeighbors;
+  //! The read-out units of the roa file
+  MReadOutFileFormat m_RoaFileFormat;
   
   //! Main output stream for file
   MFile m_Out;

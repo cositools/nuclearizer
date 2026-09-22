@@ -33,6 +33,7 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MTokenizer.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -442,7 +443,7 @@ MTime MReadOutAssembly::ComputeGPSfromRTSTime(MTime RTSTime) const
 
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
-  // HT, SH, and BD are handled here; malformed HT or SH lines return false
+  // HT, SH, BD, QA, and PQ are handled here; malformed HT or SH lines and unknown flags return false
 
   if (Line.BeginsWith("TI")) {
     MTime T(0);
@@ -476,10 +477,8 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
       return false;
     }
   }
-  if (Line.BeginsWith("BD")) {
-    // Mark the event as filtered out
-    m_FilteredOut = true;
-    return true;
+  if (Line.BeginsWith("BD") || Line.BeginsWith("QA") || Line.BeginsWith("PQ")) {
+    return ParseBDFlags(Line);
   }
 
   // Everything else goes to the tolerant base parser, which also consumes unrecognized lines and returns true
@@ -547,9 +546,9 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
       } else {
         delete sh;
       }
-    } else if (Line.BeginsWith("BD")) {
+    } else if (Line.BeginsWith("BD") || Line.BeginsWith("QA") || Line.BeginsWith("PQ")) {
       EventRead = true;
-      SetFilteredOut(true);
+      ParseBDFlags(Line);
     }
 
   }
@@ -817,6 +816,85 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     S<<" "<<i;
   }
   S<<endl;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse a BD, QA, or PQ line as written by StreamBDFlags
+//! Return false if the flag is unknown
+bool MReadOutAssembly::ParseBDFlags(const MString& Line)
+{
+  // "PQ <chi square> <chi square> ..."
+  if (Line.BeginsWith("PQ")) {
+    MTokenizer T;
+    T.Analyze(Line);
+    for (unsigned int t = 1; t < T.GetNTokens(); ++t) {
+      SetStripPairingReducedChiSquare(T.GetTokenAtAsDouble(t));
+    }
+    return true;
+  }
+
+  // "BD <Flag> (<Text>) (<Text>) ..." and "QA <Flag> (<Text>) ..."
+  const MString Rest = Line.GetSubString(3);
+  size_t Bracket = Rest.Index(" (");
+  const MString Flag = Rest.GetSubString(0, Bracket);
+  vector<MString> Texts;
+  while (Bracket != MString::npos) {
+    size_t Start = Bracket + 2;
+    size_t End = Rest.Index(") (", Start);
+    if (End == MString::npos) {
+      End = Rest.Last(')');
+      if (End == MString::npos || End < Start) End = Rest.Length();
+      Texts.push_back(Rest.GetSubString(Start, End - Start));
+      break;
+    }
+    Texts.push_back(Rest.GetSubString(Start, End - Start));
+    Bracket = End + 1;
+  }
+  // The setters ignore an empty text
+  if (Texts.empty() == true) Texts.push_back("");
+
+  if (Line.BeginsWith("BD")) {
+    if (Flag == "EnergyCalibrationError") {
+      for (const MString& T: Texts) SetEnergyCalibrationError(T);
+    } else if (Flag == "TACCalibrationError") {
+      for (const MString& T: Texts) SetTACCalibrationError(T);
+    } else if (Flag == "StripPairingError") {
+      for (const MString& T: Texts) SetStripPairingError(T);
+    } else if (Flag == "DepthCalibrationError") {
+      for (const MString& T: Texts) SetDepthCalibrationError(T);
+    } else if (Flag == "EventReconstructionError") {
+      for (const MString& T: Texts) SetEventReconstructionError(T);
+    } else if (Flag == "GR Veto") {
+      SetGuardRingVeto();
+    } else if (Flag == "Shield Veto") {
+      SetShieldVeto();
+    } else if (Flag == "No hits") {
+      // Written by StreamRoa for events without hits, nothing to set
+    } else {
+      if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Unknown BD flag: "<<Line<<endl;
+      return false;
+    }
+    return true;
+  }
+
+  if (Line.BeginsWith("QA")) {
+    if (Flag == "StripHitBelowThreshold") {
+      for (const MString& T: Texts) SetStripHitBelowThreshold_QualityFlag(T);
+    } else if (Flag == "HighADC") {
+      for (const MString& T: Texts) SetHighADC_QualityFlag(T);
+    } else if (Flag == "StripPairing") {
+      for (const MString& T: Texts) SetStripPairing_QualityFlag(T);
+    } else {
+      if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Unknown QA flag: "<<Line<<endl;
+      return false;
+    }
+    return true;
+  }
+
+  return false;
 }
 
 
