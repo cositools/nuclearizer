@@ -128,8 +128,13 @@ class MStripHit
   void IsNearestNeighbor(bool NearestNeighbor) { m_IsNearestNeighbor = NearestNeighbor; }
   //! Return whether the strip is a nearest-neighbor hit
   bool IsNearestNeighbor() const { return m_IsNearestNeighbor; }
-
-  //! Set whether the strip has passed the fast threshold
+  
+  //! Set if this is an ambiguous neighbor (ie. associated with multiple hits)
+  void IsAmbiguousNearestNeighbor(bool AmbiguousNearestNeighbor) { m_IsAmbiguousNearestNeighbor = AmbiguousNearestNeighbor; }
+  //! Return boolean indicating whether strip is an ambiguous nearest neighbor (default is false for triggered strips)
+  bool IsAmbiguousNearestNeighbor() const { return m_IsAmbiguousNearestNeighbor; }
+    
+  //! Set the Fast Timing flag
   void HasFastTiming(bool FastTiming) { m_HasFastTiming = FastTiming; }
   //! Return whether the strip has passed the fast threshold
   bool HasFastTiming() const { return m_HasFastTiming; }
@@ -200,6 +205,9 @@ class MStripHit
   bool m_IsGuardRing;
   //! True if the hit is a nearest neighbor hit
   bool m_IsNearestNeighbor;
+  //! True if the nearest neighbor strip hit is associated with multiple strip paired hits
+  bool m_IsAmbiguousNearestNeighbor;
+
   //! True if the hit has fast timing
   bool m_HasFastTiming;
   //! True if the hit has calibrated timing
