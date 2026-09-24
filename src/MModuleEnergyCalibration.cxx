@@ -284,7 +284,7 @@ double MModuleEnergyCalibration::GetEnergy(MReadOutElementDoubleStrip R, double 
       Energy = 0.0;
     }
   } else {
-    cout << m_Name << ": GetEnergy: Error unable to find calibration" << endl;
+    if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": GetEnergy: Error unable to find calibration" << endl;
     return 0;
   }
 
@@ -303,7 +303,7 @@ double MModuleEnergyCalibration::GetADC(MReadOutElementDoubleStrip R, double Ene
   if (Fit != nullptr) {
     return Fit->GetX(Energy);
   } else {
-    cout << m_Name << ": GetADC: Error unable to find calibration" << endl;
+    if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": GetADC: Error unable to find calibration" << endl;
     return 0;
   }
 }
@@ -324,6 +324,9 @@ void MModuleEnergyCalibration::Finalize()
   for (auto& F : m_ResolutionCalibration) {
     delete F.second;
   }
+
+  m_ThresholdMap.clear();
+  m_HardwareThresholdMap.clear();
 
   return;
 }
@@ -543,7 +546,7 @@ bool MModuleEnergyCalibration::ReadSlowThresholdCutFile(MString FileName) {
         int DetID = Tokens[1 + IndexOffset].ToInt(); // Detector ID
         MString Side = Tokens[2 + IndexOffset].ToString(); // side is a string, either 'l' or 'h'
         int StripID = Tokens[3 + IndexOffset].ToInt(); // stripID
-        //int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
+        int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
         double ThresholdKeVFile = Tokens[5 + IndexOffset].ToDouble(); //energy threshold in keV
 
         MReadOutElementDoubleStrip R;
@@ -551,7 +554,8 @@ bool MModuleEnergyCalibration::ReadSlowThresholdCutFile(MString FileName) {
         R.SetStripID(StripID);
         R.IsLowVoltageStrip(Side == "l");
 
-        // map detectorID, strip number, and voltage side to the threshold (keV)
+        // map detectorID, strip number, and voltage side to the threshold (both ADC and keV)
+        m_HardwareThresholdMap[R] = ThresholdADC;
         m_ThresholdMap[R] = ThresholdKeVFile;
       }
     }
@@ -638,12 +642,12 @@ double MModuleEnergyCalibration::LookupEnergyResolution(MStripHit* SH, double En
 
   MReadOutElementDoubleStrip* ROE = dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
   if (ROE == nullptr) {
-    cout << m_Name << ": LookupEnergyResolution: Error unable to get read-out element" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: LookupEnergyResolution unable to get read-out element" << endl;
     return -1;
   }
   TF1* FitRes = m_ResolutionCalibration[*ROE];
   if (FitRes == nullptr) {
-    cout << m_Name << ": LookupEnergyResolutio: Error: Couldn't locate energy resolution" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: LookupEnergyResolution couldn't locate energy resolution" << endl;
     return -1.0;
   } else {
     return FitRes->Eval(Energy);
