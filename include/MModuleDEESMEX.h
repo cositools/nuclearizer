@@ -149,15 +149,9 @@ class MModuleDEESMEX : public MModule
   }
 
   //! Set dead time file name
-  void SetDeadtimeFileName(const MString& FileName)
-  {
-    m_StripTrigger.SetDeadtimeFileName(FileName);
-  }
+  void SetDeadtimeFileName(const MString& FileName) { m_DeadtimeFileName = FileName; }
   //! Get dead time file name
-  MString GetDeadtimeFileName() const
-  {
-    return m_StripTrigger.GetDeadtimeFileName();
-  }
+  MString GetDeadtimeFileName() const { return m_DeadtimeFileName; }
   
   //! Button to apply the FWHM energy resolution to the energies
   bool GetApplyResolutionCalibration() const { return m_ApplyResolutionCalibration; }
@@ -227,6 +221,9 @@ class MModuleDEESMEX : public MModule
 
   //! The file name of the depth-calibration coefficients
   MString m_DepthCoefficientsFileName;
+
+  //! The file name of the dead time parameters
+  MString m_DeadtimeFileName;
 
   //! Option to add noise to the strip energies
   bool m_ApplyResolutionCalibration; 

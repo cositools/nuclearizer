@@ -401,11 +401,6 @@ bool MSubModuleShieldTrigger::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
-  MXmlNode* DeadtimeFileNode = Node->GetNode("DeadtimeFileName");
-  if (DeadtimeFileNode != nullptr) {
-    m_DeadtimeFileName = DeadtimeFileNode->GetValue();
-  }
-
   return true;
 }
 
@@ -417,8 +412,6 @@ MXmlNode* MSubModuleShieldTrigger::CreateXmlConfiguration(MXmlNode* Node)
 {
   //! Create an XML node tree from the configuration
   
-  new MXmlNode(Node, "DeadtimeFileName", m_DeadtimeFileName);
-
   return Node;
 }
 
