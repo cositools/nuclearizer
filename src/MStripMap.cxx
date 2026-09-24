@@ -214,8 +214,8 @@ bool MStripMap::Open(const MString& FileName)
       // Infer the rest of the information from the ReadOutID
       if (SM.m_ReadOutID < 2048) {
         // Regular strip contacts
-        SM.m_RTB = (SM.m_ReadOutID >> 8) & 0x01;
-        SM.m_DRM = (SM.m_ReadOutID >> 7) & 0x01;
+        SM.m_RTB = (SM.m_ReadOutID >> 10) & 0x01;
+        SM.m_DRM = (SM.m_ReadOutID >> 7) & 0x07;
         SM.m_IsPrimary = (SM.m_ReadOutID >> 6) & 0x01;
         SM.m_ASICID = (SM.m_ReadOutID >> 5) & 0x01;
         SM.m_ChannelID = SM.m_ReadOutID & 0x1F;
