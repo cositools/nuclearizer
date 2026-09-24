@@ -833,23 +833,29 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
 //! Main data analysis routine, which updates the event to a new level
 bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Check if there are actually any strip hits (triggered or un-triggered)
-  if (Event->GetNStripHits() == 0) {
-    Event->SetStripPairingError("No strip hits");
-    Event->SetAnalysisProgress(MAssembly::c_StripPairing);
-    return false;
-  }
-  
-  // Flag if the event includes any NN strip hits
+  // Check if there are actually any triggered strip hits
+  bool TriggeredStrips = false;
+  // Also, flag if the event includes any NN strip hits
   bool IncludingNearestNeighbors = false;
   for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // loop over the strip hits of an event (both triggered and NN)
     MStripHit* SH = Event->GetStripHit(sh);
-    
-    if (SH->IsNearestNeighbor() == true) {
+    if ((SH->IsNearestNeighbor() == true) && (IncludingNearestNeighbors == false)) { // if seeing a NN strip for the first time, set to true
       IncludingNearestNeighbors = true;
+    }
+    else if ((SH->IsNearestNeighbor() == false) && (TriggeredStrips == false)) { // if seeing a triggered strip for the first time, set to true
+      TriggeredStrips = true;
+    }
+    else if ((IncludingNearestNeighbors == true) && (TriggeredStrips == true)) { // if encountered both a NN and triggered strip, then stop the for loop early
       break;
     }
   }
+  
+  if (TriggeredStrips == false) {
+    Event->SetStripPairingError("No triggered strip hits");
+    Event->SetAnalysisProgress(MAssembly::c_StripPairing);
+    return false;
+  }
+
   // Collect triggered strip hits from input event
   vector<vector<vector<MStripHit*>>> TriggeredStripHits = CollectTriggeredStripHits(Event); // List of detectors, list of sides, list of triggered strip hits
 
@@ -859,7 +865,8 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
   if (CheckTriggeredStripHits == false) {
     return false;
   }
-
+  
+ 
   // Find seed combinations from which all strip combinations will be computed
 
   // Define Combinations as list of: detector IDs, sides, strip combinations, set of grouped strips (ex. charge sharing on adjacent strip), strip

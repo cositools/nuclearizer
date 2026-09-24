@@ -301,7 +301,7 @@ SE
 ET UN
 ID 36
 TI 1771332026.052045867
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -316,7 +316,7 @@ SE
 ET UN
 ID 38
 TI 1771332026.057855517
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -488,14 +488,14 @@ BD GR Veto
 PQ
 SE
 ID 60
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.550874)
 BD GR Veto
 PQ
 SE
 ID 61
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.550874)
 BD GR Veto
@@ -517,14 +517,14 @@ CH 0 2.25798 -1.15647 1.39533 86.4721 0 0.0336036 0.0282248 0.0336036 1.37075 0
 CH 1 2.02517 -0.43489 1.74455 157.984 0 0.0336036 0.0177666 0.0336036 1.472 0
 SE
 ID 63
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
 PQ
 SE
 ID 64
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -728,7 +728,7 @@ PP 1.32673 -0.457283 0.114859
 PW 0
 SE
 ID 90
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.993674)
 BD GR Veto
@@ -829,7 +829,7 @@ PP 2.02517 -0.669017 1.97736
 PW 0
 SE
 ID 103
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.426043)
 BD GR Veto
@@ -1037,7 +1037,7 @@ CC NStripHits 2
 PE 30.0252
 SE
 ID 129
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.608806)
 BD GR Veto
@@ -1198,7 +1198,7 @@ SE
 ET UN
 ID 149
 TI 1771332026.171987236
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -1327,7 +1327,7 @@ SE
 ET UN
 ID 166
 TI 1771332026.185824253
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -1554,7 +1554,7 @@ SE
 ET UN
 ID 196
 TI 1771332026.220903620
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -1610,7 +1610,7 @@ BD GR Veto
 PQ 0.122239
 SE
 ID 204
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -1690,7 +1690,7 @@ SE
 ET UN
 ID 215
 TI 1771332026.240326354
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -1742,7 +1742,7 @@ CH 0 2.4908 -0.923781 1.27892 100.844 0 0.0336036 0.0226111 0.0336036 1.42039 0
 CH 1 2.02517 -0.23582 1.51173 133.268 0 0.0336036 0.022765 0.0336036 1.99269 0
 SE
 ID 221
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -2037,14 +2037,14 @@ BD GR Veto
 PQ
 SE
 ID 260
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.223976)
 BD GR Veto
 PQ
 SE
 ID 261
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.897077)
 BD GR Veto
@@ -2104,7 +2104,7 @@ PP -1.69983 0.303433 -4.30858
 PW 0
 SE
 ID 269
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.772253)
 BD GR Veto
@@ -2210,7 +2210,7 @@ PP 4.23689 0.217534 -0.467172
 PW 0
 SE
 ID 282
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
@@ -2329,7 +2329,7 @@ SE
 ET UN
 ID 296
 TI 1771332026.318572288
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -2379,7 +2379,7 @@ SE
 ET UN
 ID 303
 TI 1771332026.323481455
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -2410,7 +2410,7 @@ SE
 ET UN
 ID 307
 TI 1771332026.330257105
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -2591,21 +2591,21 @@ SE
 ET UN
 ID 332
 TI 1771332026.356634855
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 333
 TI 1771332026.356850939
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 334
 TI 1771332026.357364722
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -2710,7 +2710,7 @@ BD GR Veto
 PQ 0.000581225
 SE
 ID 346
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -2799,7 +2799,7 @@ SE
 ET UN
 ID 358
 TI 1771332026.385248289
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -2829,7 +2829,7 @@ SE
 ET UN
 ID 361
 TI 1771332026.388700256
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -2880,7 +2880,7 @@ SE
 ET UN
 ID 367
 TI 1771332026.394915989
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -2945,7 +2945,7 @@ SE
 ET UN
 ID 376
 TI 1771332026.406813023
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -3152,7 +3152,7 @@ BD GR Veto
 PQ 0.124524
 SE
 ID 403
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -3206,14 +3206,14 @@ SE
 ET UN
 ID 408
 TI 1771332026.440136774
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 409
 TI 1771332026.441467907
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -3340,7 +3340,7 @@ SE
 ET UN
 ID 425
 TI 1771332026.467097057
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -3391,14 +3391,14 @@ SE
 ET UN
 ID 432
 TI 1771332026.470734141
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 433
 TI 1771332026.472885874
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -3863,7 +3863,7 @@ SE
 ET UN
 ID 497
 TI 1771332026.545863859
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4145,7 +4145,7 @@ SE
 ET UN
 ID 531
 TI 1771332026.576969976
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4257,7 +4257,7 @@ PP -1.00139 -1.16364 1.62814
 PW 0
 SE
 ID 545
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -4342,7 +4342,7 @@ SE
 ET UN
 ID 555
 TI 1771332026.595319626
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4357,7 +4357,7 @@ SE
 ET UN
 ID 557
 TI 1771332026.596670043
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4510,7 +4510,7 @@ SE
 ET UN
 ID 576
 TI 1771332026.617995910
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4631,7 +4631,7 @@ SE
 ET UN
 ID 593
 TI 1771332026.638159143
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4776,7 +4776,7 @@ SE
 ET UN
 ID 612
 TI 1771332026.670145861
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4870,7 +4870,7 @@ SE
 ET UN
 ID 625
 TI 1771332026.680979544
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -4883,7 +4883,7 @@ PP -1.1178 -0.490085 0.696891
 PW 0
 SE
 ID 627
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.772253)
 BD GR Veto
@@ -5065,7 +5065,7 @@ BD GR Veto
 PQ 0.996269
 SE
 ID 647
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -5110,7 +5110,7 @@ PP 2.02517 0.32145 2.09377
 PW 0
 SE
 ID 652
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -5195,7 +5195,7 @@ CC NStripHits 2
 PE 29.4254
 SE
 ID 663
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -5281,7 +5281,7 @@ PP 4.12048 -0.764486 -3.37733
 PW 0
 SE
 ID 674
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.445359)
 BD GR Veto
@@ -5788,7 +5788,7 @@ SE
 ET UN
 ID 740
 TI 1771332026.788728446
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -5855,7 +5855,7 @@ CH 0 -2.28186 0.086733 -2.7953 104.953 0 0.0336036 0.0297082 0.0336036 1.94815 0
 CH 1 0.395484 0.0185248 -4.19217 197.814 0 0.0336036 0.0186509 0.0336036 1.48522 0
 SE
 ID 747
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -6071,7 +6071,7 @@ SE
 ET UN
 ID 775
 TI 1771332026.823812930
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -6162,7 +6162,7 @@ SE
 ET UN
 ID 785
 TI 1771332026.832225247
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -6263,7 +6263,7 @@ SE
 ET UN
 ID 799
 TI 1771332026.846161047
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -6531,7 +6531,7 @@ SE
 ET UN
 ID 833
 TI 1771332026.881158514
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -6558,14 +6558,14 @@ BD GR Veto
 PQ
 SE
 ID 837
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.550874)
 BD GR Veto
 PQ
 SE
 ID 838
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.714324)
 BD GR Veto
@@ -6587,7 +6587,7 @@ SE
 ET UN
 ID 841
 TI 1771332026.886635781
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -6653,7 +6653,7 @@ BD GR Veto
 PQ 0.00467779
 SE
 ID 850
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -6701,7 +6701,7 @@ SE
 ET UN
 ID 855
 TI 1771332026.901998348
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -6849,7 +6849,7 @@ SE
 ET UN
 ID 875
 TI 1771332026.930451498
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7183,7 +7183,7 @@ SE
 ET UN
 ID 914
 TI 1771332026.975041816
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7213,7 +7213,7 @@ SE
 ET UN
 ID 918
 TI 1771332026.980891416
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7231,7 +7231,7 @@ BD GR Veto
 PQ 36.0823
 SE
 ID 921
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.281913)
 BD GR Veto
@@ -7307,7 +7307,7 @@ SE
 ET UN
 ID 931
 TI 1771332026.994257683
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7413,7 +7413,7 @@ SE
 ET UN
 ID 945
 TI 1771332027.008985400
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7432,7 +7432,7 @@ PP 2.25798 0.347102 -2.67889
 PW 0
 SE
 ID 948
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -7454,7 +7454,7 @@ SE
 ET UN
 ID 951
 TI 1771332027.012143816
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7504,7 +7504,7 @@ SE
 ET UN
 ID 957
 TI 1771332027.015386816
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7568,7 +7568,7 @@ SE
 ET UN
 ID 966
 TI 1771332027.021059767
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7653,7 +7653,7 @@ SE
 ET UN
 ID 977
 TI 1771332027.033975900
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7674,7 +7674,7 @@ SE
 ET UN
 ID 980
 TI 1771332027.035554100
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7761,7 +7761,7 @@ BD GR Veto
 PQ 0.0106195
 SE
 ID 991
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -7827,7 +7827,7 @@ SE
 ET UN
 ID 999
 TI 1771332027.064508017
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -7874,7 +7874,7 @@ BD GR Veto
 PQ
 SE
 ID 1006
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.654655) (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -7952,14 +7952,14 @@ BD GR Veto
 PQ
 SE
 ID 1017
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.570180)
 BD GR Veto
 PQ
 SE
 ID 1018
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -7974,7 +7974,7 @@ PP 2.14158 0.329225 0.114859
 PW 0
 SE
 ID 1020
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -8005,7 +8005,7 @@ SE
 ET UN
 ID 1024
 TI 1771332027.090454184
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -8039,7 +8039,7 @@ BD GR Veto
 PQ 5.45821
 SE
 ID 1029
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -8076,7 +8076,7 @@ PP 3.65486 0.156756 -1.28202
 PW 0
 SE
 ID 1034
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -8141,7 +8141,7 @@ CC NStripHits 2
 PE 206.985
 SE
 ID 1042
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.772253)
 BD GR Veto
@@ -8221,7 +8221,7 @@ BD GR Veto
 PQ 0.00504751
 SE
 ID 1052
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.176453)
 BD GR Veto
@@ -8671,7 +8671,7 @@ CC NStripHits 4
 PE 301.499
 SE
 ID 1109
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -8692,7 +8692,7 @@ CC NStripHits 2
 PE 32.6179
 SE
 ID 1112
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -8834,7 +8834,7 @@ SE
 ET UN
 ID 1130
 TI 1771332027.203267053
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9161,7 +9161,7 @@ SE
 ET UN
 ID 1170
 TI 1771332027.247155837
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9190,7 +9190,7 @@ SE
 ET UN
 ID 1174
 TI 1771332027.248762504
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9204,7 +9204,7 @@ SE
 ET UN
 ID 1176
 TI 1771332027.249457887
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9253,7 +9253,7 @@ SE
 ET UN
 ID 1183
 TI 1771332027.256691604
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9361,7 +9361,7 @@ SE
 ET UN
 ID 1194
 TI 1771332027.268090804
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9425,7 +9425,7 @@ SE
 ET UN
 ID 1203
 TI 1771332027.279433137
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9590,7 +9590,7 @@ SE
 ET UN
 ID 1224
 TI 1771332027.297583471
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -9699,12 +9699,12 @@ SE
 ET UN
 ID 1239
 TI 1771332027.308939705
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 1240
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
@@ -9794,7 +9794,7 @@ SE
 ET UN
 ID 1251
 TI 1771332027.322907422
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -10097,7 +10097,7 @@ PP -1.1178 0.102096 0.114859
 PW 0
 SE
 ID 1292
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.426043)
 BD GR Veto
@@ -10271,7 +10271,7 @@ CC NStripHits 5
 PE 129.36
 SE
 ID 1313
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
@@ -10318,7 +10318,7 @@ BD GR Veto
 PQ 0.227181
 SE
 ID 1320
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -10463,7 +10463,7 @@ SE
 ET UN
 ID 1340
 TI 1771332027.412123073
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -10628,12 +10628,12 @@ SE
 ET UN
 ID 1363
 TI 1771332027.431951090
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 1364
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
@@ -10677,7 +10677,7 @@ SE
 ET UN
 ID 1370
 TI 1771332027.436268157
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -10692,14 +10692,14 @@ SE
 ET UN
 ID 1372
 TI 1771332027.441219124
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 1373
 TI 1771332027.442025657
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -11049,7 +11049,7 @@ SE
 ET UN
 ID 1417
 TI 1771332027.486704508
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -11111,7 +11111,7 @@ CC NStripHits 1
 PE 0
 SE
 ID 1426
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -11149,7 +11149,7 @@ SE
 ET UN
 ID 1431
 TI 1771332027.498678074
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -11176,7 +11176,7 @@ BD GR Veto
 PQ 0.0156718
 SE
 ID 1435
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.445359)
 BD GR Veto
@@ -11282,12 +11282,12 @@ SE
 ET UN
 ID 1448
 TI 1771332027.516879591
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 1449
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -11341,7 +11341,7 @@ SE
 ET UN
 ID 1456
 TI 1771332027.528250908
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -11546,12 +11546,12 @@ SE
 ET UN
 ID 1481
 TI 1771332027.561305576
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 1482
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -11735,12 +11735,12 @@ SE
 ET UN
 ID 1506
 TI 1771332027.583930843
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 1507
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
@@ -11771,7 +11771,7 @@ SE
 ET UN
 ID 1511
 TI 1771332027.587653576
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -11818,7 +11818,7 @@ CC NStripHits 3
 PE 169.115
 SE
 ID 1518
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.752938)
 BD GR Veto
@@ -11865,7 +11865,7 @@ SE
 ET UN
 ID 1523
 TI 1771332027.598645859
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -11915,7 +11915,7 @@ PP 0.511891 0.239465 1.74455
 PW 0
 SE
 ID 1529
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -11998,7 +11998,7 @@ SE
 ET UN
 ID 1539
 TI 1771332027.621894260
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12104,7 +12104,7 @@ SE
 ET UN
 ID 1551
 TI 1771332027.638515293
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12189,7 +12189,7 @@ SE
 ET UN
 ID 1563
 TI 1771332027.657276827
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12235,7 +12235,7 @@ SE
 ET UN
 ID 1568
 TI 1771332027.661847777
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12249,7 +12249,7 @@ SE
 ET UN
 ID 1570
 TI 1771332027.665268294
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12368,7 +12368,7 @@ SE
 ET UN
 ID 1585
 TI 1771332027.680262744
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12388,7 +12388,7 @@ SE
 ET UN
 ID 1588
 TI 1771332027.681210161
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12413,28 +12413,28 @@ BD GR Veto
 PQ
 SE
 ID 1592
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
 PQ
 SE
 ID 1593
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.935700)
 BD GR Veto
 PQ
 SE
 ID 1594
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.772253)
 BD GR Veto
 PQ
 SE
 ID 1595
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -12456,7 +12456,7 @@ SE
 ET UN
 ID 1598
 TI 1771332027.688105811
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12513,7 +12513,7 @@ CH 0 -2.74748 0.245697 -4.07577 381.949 0 0.0336036 0.0170333 0.0336036 1.26601 
 CH 1 -2.39827 -0.188448 -2.7953 259.611 0 0.0336036 0.0129703 0.0336036 1.15318 0
 SE
 ID 1604
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -12617,7 +12617,7 @@ SE
 ET UN
 ID 1618
 TI 1771332027.707114411
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12736,7 +12736,7 @@ PP 3.53845 0.157342 0.464078
 PW 0
 SE
 ID 1632
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -12842,7 +12842,7 @@ SE
 ET UN
 ID 1643
 TI 1771332027.729699678
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -12933,7 +12933,7 @@ SE
 ET UN
 ID 1653
 TI 1771332027.742820395
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -13001,14 +13001,14 @@ SE
 ET UN
 ID 1661
 TI 1771332027.754650612
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 1662
 TI 1771332027.755209562
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -13209,7 +13209,7 @@ SE
 ET UN
 ID 1687
 TI 1771332027.784914679
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -13380,7 +13380,7 @@ SE
 ET UN
 ID 1709
 TI 1771332027.818025996
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -13605,7 +13605,7 @@ SE
 ET UN
 ID 1738
 TI 1771332027.856141630
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -13620,7 +13620,7 @@ SE
 ET UN
 ID 1740
 TI 1771332027.856513197
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -13792,7 +13792,7 @@ BD GR Veto
 PQ 0.440577
 SE
 ID 1763
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -13826,7 +13826,7 @@ CC NStripHits 2
 PE 28.7148
 SE
 ID 1768
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.320564)
 BD GR Veto
@@ -13849,21 +13849,21 @@ CH 1 3.42205 -0.66398 1.97736 107.568 0 0.0336036 0.0245258 0.0336036 1.00378 0
 CH 2 3.30564 -0.417181 1.51173 130.148 0 0.0336036 0.0232817 0.0336036 1.45894 0
 SE
 ID 1770
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.320564)
 BD GR Veto
 PQ
 SE
 ID 1771
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
 PQ
 SE
 ID 1772
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.993674)
 BD GR Veto
@@ -14200,7 +14200,7 @@ SE
 ET UN
 ID 1813
 TI 1771332027.929835832
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -14334,7 +14334,7 @@ SE
 ET UN
 ID 1829
 TI 1771332027.951046032
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -14547,7 +14547,7 @@ CC NStripHits 2
 PE 29.8388
 SE
 ID 1856
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -14673,7 +14673,7 @@ CC NStripHits 4
 PE 0
 SE
 ID 1872
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -14872,7 +14872,7 @@ SE
 ET UN
 ID 1897
 TI 1771332028.022542117
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15036,7 +15036,7 @@ SE
 ET UN
 ID 1917
 TI 1771332028.041854384
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15103,7 +15103,7 @@ SE
 ET UN
 ID 1926
 TI 1771332028.053275217
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15150,7 +15150,7 @@ BD GR Veto
 PQ 0.227661
 SE
 ID 1933
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -15159,7 +15159,7 @@ SE
 ET UN
 ID 1934
 TI 1771332028.063029767
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15239,7 +15239,7 @@ BD GR Veto
 PQ 0.00669528
 SE
 ID 1944
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.752938)
 BD GR Veto
@@ -15297,7 +15297,7 @@ SE
 ET UN
 ID 1951
 TI 1771332028.082008868
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15317,7 +15317,7 @@ CC NStripHits 2
 PE 61.3446
 SE
 ID 1954
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -15337,7 +15337,7 @@ CC NStripHits 3
 PE 79.678
 SE
 ID 1957
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.550874)
 BD GR Veto
@@ -15409,7 +15409,7 @@ SE
 ET UN
 ID 1967
 TI 1771332028.091718618
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15438,7 +15438,7 @@ PP 0.861109 -0.403209 1.27892
 PW 0
 SE
 ID 1971
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.772253)
 BD GR Veto
@@ -15493,7 +15493,7 @@ CC NStripHits 2
 PE 32.5828
 SE
 ID 1979
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -15502,7 +15502,7 @@ SE
 ET UN
 ID 1980
 TI 1771332028.103295601
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15629,7 +15629,7 @@ SE
 ET UN
 ID 1995
 TI 1771332028.114724201
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15760,7 +15760,7 @@ CC NStripHits 4
 PE 63.5559
 SE
 ID 2012
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.550874)
 BD GR Veto
@@ -15792,7 +15792,7 @@ SE
 ET UN
 ID 2015
 TI 1771332028.128986852
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15880,7 +15880,7 @@ SE
 ET UN
 ID 2026
 TI 1771332028.139346952
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -15895,7 +15895,7 @@ SE
 ET UN
 ID 2028
 TI 1771332028.144786035
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16070,7 +16070,7 @@ SE
 ET UN
 ID 2051
 TI 1771332028.171274186
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16132,7 +16132,7 @@ SE
 ET UN
 ID 2059
 TI 1771332028.178889719
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16209,7 +16209,7 @@ CC NStripHits 2
 PE 34.1508
 SE
 ID 2070
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.993674)
 BD GR Veto
@@ -16297,7 +16297,7 @@ PP 2.72361 0.357446 2.6758
 PW 0
 SE
 ID 2081
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -16349,7 +16349,7 @@ SE
 ET UN
 ID 2088
 TI 1771332028.207284353
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16372,7 +16372,7 @@ SE
 ET UN
 ID 2091
 TI 1771332028.210916653
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16462,7 +16462,7 @@ SE
 ET UN
 ID 2102
 TI 1771332028.223553220
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16483,7 +16483,7 @@ SE
 ET UN
 ID 2105
 TI 1771332028.226596987
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16574,14 +16574,14 @@ SE
 ET UN
 ID 2116
 TI 1771332028.235809553
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 2117
 TI 1771332028.236062503
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16659,7 +16659,7 @@ CC NStripHits 1
 PE 0
 SE
 ID 2128
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -16742,7 +16742,7 @@ SE
 ET UN
 ID 2138
 TI 1771332028.256593087
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16839,7 +16839,7 @@ SE
 ET UN
 ID 2150
 TI 1771332028.268732504
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16853,7 +16853,7 @@ SE
 ET UN
 ID 2152
 TI 1771332028.271425554
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16914,7 +16914,7 @@ SE
 ET UN
 ID 2161
 TI 1771332028.283474271
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16933,7 +16933,7 @@ SE
 ET UN
 ID 2164
 TI 1771332028.284738154
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -16990,7 +16990,7 @@ PP -1.69983 0.121478 -4.07577
 PW 0
 SE
 ID 2172
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.916386)
 BD GR Veto
@@ -17032,7 +17032,7 @@ CC NStripHits 4
 PE 100.309
 SE
 ID 2178
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.608806)
 BD GR Veto
@@ -17092,7 +17092,7 @@ CH 0 -0.186547 -0.560524 2.09377 92.1965 0 0.0336036 0.0278369 0.0336036 0.99679
 CH 1 -0.419359 -0.305985 2.32658 185.29 0 0.0336036 0.0161243 0.0336036 1.17162 0
 SE
 ID 2185
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.079834)
 BD GR Veto
@@ -17101,7 +17101,7 @@ SE
 ET UN
 ID 2186
 TI 1771332028.311426738
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -17445,7 +17445,7 @@ BD GR Veto
 PQ 0.0113051
 SE
 ID 2231
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.223976)
 BD GR Veto
@@ -17477,7 +17477,7 @@ SE
 ET UN
 ID 2235
 TI 1771332028.366118939
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -17537,7 +17537,7 @@ SE
 ET UN
 ID 2242
 TI 1771332028.370679656
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -17693,7 +17693,7 @@ SE
 ET UN
 ID 2262
 TI 1771332028.390915739
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -17840,7 +17840,7 @@ BD GR Veto
 PQ 0.814105
 SE
 ID 2281
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.589490)
 BD GR Veto
@@ -17964,7 +17964,7 @@ SE
 ET UN
 ID 2294
 TI 1771332028.426087557
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -18128,7 +18128,7 @@ SE
 ET UN
 ID 2317
 TI 1771332028.454103107
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -18286,7 +18286,7 @@ SE
 ET UN
 ID 2337
 TI 1771332028.468709724
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -18376,14 +18376,14 @@ CH 0 1.09392 -0.615063 -3.02811 201.128 0 0.0336036 0.013453 0.0336036 1.48857 0
 CH 1 1.90877 0.228728 -2.9117 157.398 0 0.0336036 0.0259782 0.0336036 1.03555 0
 SE
 ID 2347
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
 PQ
 SE
 ID 2348
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.589490)
 BD GR Veto
@@ -18476,7 +18476,7 @@ CH 1 3.07283 -0.0284312 0.696891 94.9738 0 0.0336036 0.0353534 0.0336036 1.02147
 CH 2 3.42205 0.164267 1.16252 116.911 0 0.0336036 0.0310423 0.0336036 1.13803 0
 SE
 ID 2360
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.243283)
 BD GR Veto
@@ -18515,7 +18515,7 @@ SE
 ET UN
 ID 2365
 TI 1771332028.499400191
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -18820,7 +18820,7 @@ SE
 ET UN
 ID 2399
 TI 1771332028.532505525
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -18952,14 +18952,14 @@ SE
 ET UN
 ID 2416
 TI 1771332028.558529992
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 2417
 TI 1771332028.558711392
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -19094,7 +19094,7 @@ PP 2.37439 0.218551 -0.350766
 PW 0
 SE
 ID 2435
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.608806)
 BD GR Veto
@@ -19274,7 +19274,7 @@ CC NStripHits 1
 PE 0
 SE
 ID 2458
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -19467,7 +19467,7 @@ PP -0.0701406 0.244952 2.09377
 PW 0
 SE
 ID 2481
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -19678,7 +19678,7 @@ BD GR Veto
 PQ 0.0954555
 SE
 ID 2507
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.570180)
 BD GR Veto
@@ -19755,14 +19755,14 @@ SE
 ET UN
 ID 2517
 TI 1771332028.676774011
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 2518
 TI 1771332028.677596044
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -19802,7 +19802,7 @@ SE
 ET UN
 ID 2524
 TI 1771332028.679749327
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -19833,7 +19833,7 @@ BD GR Veto
 PQ
 SE
 ID 2529
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.589490)
 BD GR Veto
@@ -19847,7 +19847,7 @@ CC NStripHits 1
 PE 0
 SE
 ID 2531
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -19888,7 +19888,7 @@ SE
 ET UN
 ID 2536
 TI 1771332028.687289111
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -19899,7 +19899,7 @@ BD GR Veto
 PQ 0.00918489
 SE
 ID 2538
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.445359)
 BD GR Veto
@@ -20074,7 +20074,7 @@ BD GR Veto
 PQ 0.153051
 SE
 ID 2560
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -20155,7 +20155,7 @@ PP -2.9803 0.348564 -0.699984
 PW 0
 SE
 ID 2570
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -20208,7 +20208,7 @@ SE
 ET UN
 ID 2576
 TI 1771332028.733121378
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -20258,7 +20258,7 @@ SE
 ET UN
 ID 2583
 TI 1771332028.742489095
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -20522,7 +20522,7 @@ SE
 ET UN
 ID 2616
 TI 1771332028.774980362
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -20625,14 +20625,14 @@ PP 2.84002 -0.208916 -0.00154687
 PW 0
 SE
 ID 2629
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.589490)
 BD GR Veto
 PQ
 SE
 ID 2630
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.445359)
 BD GR Veto
@@ -20843,7 +20843,7 @@ SE
 ET UN
 ID 2658
 TI 1771332028.814497546
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -20858,7 +20858,7 @@ SE
 ET UN
 ID 2660
 TI 1771332028.821586963
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -21308,7 +21308,7 @@ CC NStripHits 2
 PE 65.3531
 SE
 ID 2719
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.281913)
 BD GR Veto
@@ -21321,7 +21321,7 @@ BD GR Veto
 PQ
 SE
 ID 2721
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -21516,7 +21516,7 @@ SE
 ET UN
 ID 2748
 TI 1771332028.908021131
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -21574,7 +21574,7 @@ SE
 ET UN
 ID 2756
 TI 1771332028.914627231
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -22040,7 +22040,7 @@ SE
 ET UN
 ID 2815
 TI 1771332028.981039833
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -22130,7 +22130,7 @@ SE
 ET UN
 ID 2827
 TI 1771332028.990025949
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -22294,7 +22294,7 @@ SE
 ET UN
 ID 2847
 TI 1771332029.008662683
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -22348,7 +22348,7 @@ BD GR Veto
 PQ 0.456597
 SE
 ID 2855
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -22628,7 +22628,7 @@ SE
 ET UN
 ID 2891
 TI 1771332029.056916284
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -22867,14 +22867,14 @@ BD GR Veto
 PQ
 SE
 ID 2923
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.223976)
 BD GR Veto
 PQ
 SE
 ID 2924
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -22925,7 +22925,7 @@ PP 2.84002 0.156467 -2.9117
 PW 0
 SE
 ID 2931
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.281913)
 BD GR Veto
@@ -23022,7 +23022,7 @@ PP 0.0462656 -0.752233 -1.28202
 PW 0
 SE
 ID 2942
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.935700)
 BD GR Veto
@@ -23044,7 +23044,7 @@ SE
 ET UN
 ID 2945
 TI 1771332029.105134485
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -23088,7 +23088,7 @@ SE
 ET UN
 ID 2951
 TI 1771332029.112867568
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -23108,7 +23108,7 @@ SE
 ET UN
 ID 2954
 TI 1771332029.117289168
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -23269,7 +23269,7 @@ SE
 ET UN
 ID 2976
 TI 1771332029.140625385
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -23375,7 +23375,7 @@ SE
 ET UN
 ID 2989
 TI 1771332029.153186469
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -23628,7 +23628,7 @@ BD GR Veto
 PQ 3.22755
 SE
 ID 3022
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -23668,7 +23668,7 @@ SE
 ET UN
 ID 3027
 TI 1771332029.188371186
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -23807,7 +23807,7 @@ SE
 ET UN
 ID 3046
 TI 1771332029.211780103
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -23881,7 +23881,7 @@ SE
 ET UN
 ID 3056
 TI 1771332029.226810570
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -24051,7 +24051,7 @@ SE
 ET UN
 ID 3078
 TI 1771332029.252965254
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -24132,7 +24132,7 @@ SE
 ET UN
 ID 3088
 TI 1771332029.263113621
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -24213,7 +24213,7 @@ PP 0.0462656 0.0599388 2.55939
 PW 0
 SE
 ID 3100
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -24302,7 +24302,7 @@ BD GR Veto
 PQ
 SE
 ID 3112
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.714324)
 BD GR Veto
@@ -24596,7 +24596,7 @@ BD GR Veto
 PQ 0.694191
 SE
 ID 3150
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -24613,14 +24613,14 @@ SE
 ET UN
 ID 3152
 TI 1771332029.322795838
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 3153
 TI 1771332029.323078555
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -24681,7 +24681,7 @@ SE
 ET UN
 ID 3160
 TI 1771332029.328665588
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -24740,7 +24740,7 @@ SE
 ET UN
 ID 3168
 TI 1771332029.334999922
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -24913,7 +24913,7 @@ CC NStripHits 2
 PE 53.5932
 SE
 ID 3189
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.503341)
 BD GR Veto
@@ -25019,7 +25019,7 @@ SE
 ET UN
 ID 3202
 TI 1771332029.357772555
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25116,7 +25116,7 @@ SE
 ET UN
 ID 3214
 TI 1771332029.370480056
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25261,7 +25261,7 @@ SE
 ET UN
 ID 3232
 TI 1771332029.390738506
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25321,7 +25321,7 @@ SE
 ET UN
 ID 3240
 TI 1771332029.403420023
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25479,7 +25479,7 @@ SE
 ET UN
 ID 3259
 TI 1771332029.424563790
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25659,7 +25659,7 @@ SE
 ET UN
 ID 3281
 TI 1771332029.449936974
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25757,7 +25757,7 @@ SE
 ET UN
 ID 3295
 TI 1771332029.461969057
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25867,7 +25867,7 @@ SE
 ET UN
 ID 3309
 TI 1771332029.474246891
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25904,7 +25904,7 @@ SE
 ET UN
 ID 3314
 TI 1771332029.481097291
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -25932,12 +25932,12 @@ SE
 ET UN
 ID 3318
 TI 1771332029.483691374
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 3319
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.079834)
 BD GR Veto
@@ -25952,7 +25952,7 @@ PP -1.81623 0.230211 -4.6578
 PW 0
 SE
 ID 3321
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.281913)
 BD GR Veto
@@ -25996,7 +25996,7 @@ PP 2.84002 -0.877972 -3.95936
 PW 0
 SE
 ID 3327
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -26011,7 +26011,7 @@ PP 1.90877 -0.689798 1.62814
 PW 0
 SE
 ID 3329
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -26078,7 +26078,7 @@ CC NStripHits 2
 PE 36.8867
 SE
 ID 3337
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -26170,7 +26170,7 @@ PP 0.162672 0.233327 -0.350766
 PW 0
 SE
 ID 3348
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -26232,7 +26232,7 @@ PP 3.07283 -1.12284 -0.583578
 PW 0
 SE
 ID 3356
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -26282,7 +26282,7 @@ CC NStripHits 2
 PE 33.9616
 SE
 ID 3363
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -26444,7 +26444,7 @@ PP -0.302953 0.359851 -1.16561
 PW 0
 SE
 ID 3385
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.570180)
 BD GR Veto
@@ -26527,7 +26527,7 @@ SE
 ET UN
 ID 3396
 TI 1771332029.574680092
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -26607,7 +26607,7 @@ PP -0.768578 -1.13025 0.114859
 PW 0
 SE
 ID 3406
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -26616,7 +26616,7 @@ SE
 ET UN
 ID 3407
 TI 1771332029.584569443
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -26943,7 +26943,7 @@ SE
 ET UN
 ID 3445
 TI 1771332029.621253777
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27136,7 +27136,7 @@ SE
 ET UN
 ID 3473
 TI 1771332029.647049127
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27173,7 +27173,7 @@ SE
 ET UN
 ID 3478
 TI 1771332029.653116660
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27362,7 +27362,7 @@ SE
 ET UN
 ID 3504
 TI 1771332029.684782661
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27428,7 +27428,7 @@ SE
 ET UN
 ID 3513
 TI 1771332029.694428028
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27510,7 +27510,7 @@ PP -0.419359 -1.1178 1.39533
 PW 0
 SE
 ID 3523
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -27591,7 +27591,7 @@ SE
 ET UN
 ID 3532
 TI 1771332029.715877978
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27704,7 +27704,7 @@ SE
 ET UN
 ID 3547
 TI 1771332029.726633178
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27850,7 +27850,7 @@ SE
 ET UN
 ID 3566
 TI 1771332029.758788229
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27865,7 +27865,7 @@ SE
 ET UN
 ID 3568
 TI 1771332029.760676812
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -27898,7 +27898,7 @@ SE
 ET UN
 ID 3573
 TI 1771332029.764157429
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -28682,7 +28682,7 @@ SE
 ET UN
 ID 3673
 TI 1771332029.861675414
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -28873,14 +28873,14 @@ CC NStripHits 8
 PE 344.292
 SE
 ID 3697
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.060526)
 BD GR Veto
 PQ
 SE
 ID 3698
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.445359)
 BD GR Veto
@@ -28889,7 +28889,7 @@ SE
 ET UN
 ID 3699
 TI 1771332029.885920598
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -28972,14 +28972,14 @@ SE
 ET UN
 ID 3710
 TI 1771332029.899489281
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 3711
 TI 1771332029.900887265
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -29165,7 +29165,7 @@ SE
 ET UN
 ID 3733
 TI 1771332029.921101915
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -29193,7 +29193,7 @@ SE
 ET UN
 ID 3737
 TI 1771332029.921767915
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -29238,7 +29238,7 @@ SE
 ET UN
 ID 3743
 TI 1771332029.932422565
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -29319,7 +29319,7 @@ SE
 ET UN
 ID 3753
 TI 1771332029.943518665
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -29387,7 +29387,7 @@ SE
 ET UN
 ID 3762
 TI 1771332029.952616365
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -29461,7 +29461,7 @@ PP 0.0462656 0.308227 -2.7953
 PW 0
 SE
 ID 3772
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.993674)
 BD GR Veto
@@ -29860,7 +29860,7 @@ SE
 ET UN
 ID 3826
 TI 1771332030.017070500
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -29922,7 +29922,7 @@ BD GR Veto
 PQ
 SE
 ID 3835
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -30036,7 +30036,7 @@ SE
 ET UN
 ID 3849
 TI 1771332030.043740434
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -30064,7 +30064,7 @@ SE
 ET UN
 ID 3853
 TI 1771332030.046262800
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -30252,7 +30252,7 @@ BD GR Veto
 PQ
 SE
 ID 3879
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -30266,7 +30266,7 @@ CC NStripHits 2
 PE 34.3883
 SE
 ID 3881
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.752938)
 BD GR Veto
@@ -30319,7 +30319,7 @@ PP 2.14158 0.239268 0.464078
 PW 0
 SE
 ID 3888
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -30653,7 +30653,7 @@ PP 0.0462656 0.353545 -2.56248
 PW 0
 SE
 ID 3930
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -30701,7 +30701,7 @@ SE
 ET UN
 ID 3936
 TI 1771332030.135447135
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -30721,7 +30721,7 @@ SE
 ET UN
 ID 3939
 TI 1771332030.136605668
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -30852,7 +30852,7 @@ SE
 ET UN
 ID 3957
 TI 1771332030.154682202
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -30873,7 +30873,7 @@ SE
 ET UN
 ID 3960
 TI 1771332030.158806019
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -30979,7 +30979,7 @@ SE
 ET UN
 ID 3974
 TI 1771332030.171085102
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -31091,7 +31091,7 @@ SE
 ET UN
 ID 3988
 TI 1771332030.182032353
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -31145,14 +31145,14 @@ PP -1.00139 0.324632 -4.30858
 PW 0
 SE
 ID 3996
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
 PQ
 SE
 ID 3997
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -31390,7 +31390,7 @@ PP 2.95642 0.310299 -1.74764
 PW 0
 SE
 ID 4026
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.223976)
 BD GR Veto
@@ -31441,7 +31441,7 @@ SE
 ET UN
 ID 4032
 TI 1771332030.231247103
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -31485,14 +31485,14 @@ SE
 ET UN
 ID 4037
 TI 1771332030.236935803
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 4038
 TI 1771332030.237697387
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -31794,7 +31794,7 @@ BD GR Veto
 PQ
 SE
 ID 4079
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.916386)
 BD GR Veto
@@ -31907,7 +31907,7 @@ SE
 ET UN
 ID 4094
 TI 1771332030.299687638
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -32048,7 +32048,7 @@ SE
 ET UN
 ID 4113
 TI 1771332030.318508938
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -32552,7 +32552,7 @@ PP 1.90877 0.146063 -2.32967
 PW 0
 SE
 ID 4177
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.830229)
 BD GR Veto
@@ -32569,7 +32569,7 @@ SE
 ET UN
 ID 4179
 TI 1771332030.375572639
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -32604,7 +32604,7 @@ PP 0.162672 -0.62411 -1.98045
 PW 0
 SE
 ID 4184
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -32762,7 +32762,7 @@ SE
 ET UN
 ID 4205
 TI 1771332030.405213856
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -32901,7 +32901,7 @@ SE
 ET UN
 ID 4221
 TI 1771332030.421736123
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33038,7 +33038,7 @@ SE
 ET UN
 ID 4239
 TI 1771332030.445264724
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33220,7 +33220,7 @@ CC NStripHits 3
 PE 83.7076
 SE
 ID 4264
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -33302,7 +33302,7 @@ SE
 ET UN
 ID 4275
 TI 1771332030.490510641
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33352,7 +33352,7 @@ SE
 ET UN
 ID 4282
 TI 1771332030.495541208
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33402,7 +33402,7 @@ SE
 ET UN
 ID 4289
 TI 1771332030.501833341
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33446,7 +33446,7 @@ SE
 ET UN
 ID 4295
 TI 1771332030.508784941
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33509,14 +33509,14 @@ SE
 ET UN
 ID 4302
 TI 1771332030.516505091
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 4303
 TI 1771332030.518001458
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33553,7 +33553,7 @@ SE
 ET UN
 ID 4308
 TI 1771332030.523091775
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33641,7 +33641,7 @@ SE
 ET UN
 ID 4319
 TI 1771332030.529093608
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33800,7 +33800,7 @@ SE
 ET UN
 ID 4339
 TI 1771332030.545727275
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -33857,7 +33857,7 @@ SE
 ET UN
 ID 4346
 TI 1771332030.555129109
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -34051,7 +34051,7 @@ SE
 ET UN
 ID 4370
 TI 1771332030.586871093
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -34286,7 +34286,7 @@ SE
 ET UN
 ID 4401
 TI 1771332030.621967927
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -34333,7 +34333,7 @@ SE
 ET UN
 ID 4408
 TI 1771332030.630572360
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -34406,7 +34406,7 @@ BD GR Veto
 PQ 0.375013
 SE
 ID 4419
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -34559,7 +34559,7 @@ SE
 ET UN
 ID 4440
 TI 1771332030.658734160
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -34789,7 +34789,7 @@ SE
 ET UN
 ID 4468
 TI 1771332030.683797311
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -34802,7 +34802,7 @@ SE
 ET UN
 ID 4470
 TI 1771332030.684345711
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -34821,7 +34821,7 @@ BD GR Veto
 PQ 0.000204785
 SE
 ID 4473
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.570180)
 BD GR Veto
@@ -35050,7 +35050,7 @@ SE
 ET UN
 ID 4504
 TI 1771332030.713897728
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -35191,7 +35191,7 @@ SE
 ET UN
 ID 4522
 TI 1771332030.734120528
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -35287,7 +35287,7 @@ SE
 ET UN
 ID 4533
 TI 1771332030.745875262
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -35342,7 +35342,7 @@ SE
 ET UN
 ID 4541
 TI 1771332030.754516512
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -35407,7 +35407,7 @@ SE
 ET UN
 ID 4550
 TI 1771332030.761313379
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -35625,7 +35625,7 @@ SE
 ET UN
 ID 4579
 TI 1771332030.792001479
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -35683,7 +35683,7 @@ SE
 ET UN
 ID 4587
 TI 1771332030.804869130
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -35930,7 +35930,7 @@ CC NStripHits 3
 PE 63.8423
 SE
 ID 4621
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -36293,7 +36293,7 @@ PP 3.30564 -0.482321 -0.234359
 PW 0
 SE
 ID 4669
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -36306,7 +36306,7 @@ BD GR Veto
 PQ 0.23126
 SE
 ID 4671
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -36416,7 +36416,7 @@ SE
 ET UN
 ID 4685
 TI 1771332030.893650664
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -37115,7 +37115,7 @@ CC NStripHits 2
 PE 30.3741
 SE
 ID 4777
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -37124,7 +37124,7 @@ SE
 ET UN
 ID 4778
 TI 1771332030.993451749
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -37303,7 +37303,7 @@ SE
 ET UN
 ID 4801
 TI 1771332031.017490583
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -37324,7 +37324,7 @@ PP 4.12048 0.364937 -3.49373
 PW 0
 SE
 ID 4804
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
@@ -37446,7 +37446,7 @@ SE
 ET UN
 ID 4820
 TI 1771332031.032966733
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -37739,7 +37739,7 @@ BD GR Veto
 PQ
 SE
 ID 4859
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.589490)
 BD GR Veto
@@ -37752,7 +37752,7 @@ BD GR Veto
 PQ 0.076975
 SE
 ID 4861
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -37813,7 +37813,7 @@ SE
 ET UN
 ID 4867
 TI 1771332031.088791134
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -37868,7 +37868,7 @@ BD GR Veto
 PQ 0.0478214
 SE
 ID 4875
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -37987,7 +37987,7 @@ SE
 ET UN
 ID 4889
 TI 1771332031.115936351
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -38101,7 +38101,7 @@ SE
 ET UN
 ID 4902
 TI 1771332031.125968735
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -38139,7 +38139,7 @@ SE
 ET UN
 ID 4907
 TI 1771332031.130419152
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -38362,7 +38362,7 @@ SE
 ET UN
 ID 4936
 TI 1771332031.160670869
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -38507,14 +38507,14 @@ PP -0.768578 0.320134 1.86095
 PW 0
 SE
 ID 4955
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
 PQ
 SE
 ID 4956
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -38793,7 +38793,7 @@ SE
 ET UN
 ID 4988
 TI 1771332031.226514103
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -38941,7 +38941,7 @@ PP 3.65486 0.334723 1.27892
 PW 0
 SE
 ID 5008
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.406731)
 BD GR Veto
@@ -39022,7 +39022,7 @@ SE
 ET UN
 ID 5019
 TI 1771332031.262734304
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39067,7 +39067,7 @@ SE
 ET UN
 ID 5025
 TI 1771332031.265939187
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39094,7 +39094,7 @@ SE
 ET UN
 ID 5029
 TI 1771332031.267961937
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39122,7 +39122,7 @@ SE
 ET UN
 ID 5033
 TI 1771332031.272600104
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39205,7 +39205,7 @@ CC NStripHits 2
 PE 28.7077
 SE
 ID 5045
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -39335,7 +39335,7 @@ SE
 ET UN
 ID 5060
 TI 1771332031.302042671
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39569,7 +39569,7 @@ SE
 ET UN
 ID 5092
 TI 1771332031.333747155
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39809,7 +39809,7 @@ SE
 ET UN
 ID 5123
 TI 1771332031.367973256
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39896,7 +39896,7 @@ SE
 ET UN
 ID 5134
 TI 1771332031.381637823
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -39971,7 +39971,7 @@ SE
 ET UN
 ID 5144
 TI 1771332031.391634256
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40220,7 +40220,7 @@ SE
 ET UN
 ID 5177
 TI 1771332031.427682223
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40242,14 +40242,14 @@ SE
 ET UN
 ID 5180
 TI 1771332031.432573457
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 5181
 TI 1771332031.437762323
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40263,14 +40263,14 @@ SE
 ET UN
 ID 5183
 TI 1771332031.442019774
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 5184
 TI 1771332031.442619140
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40339,14 +40339,14 @@ SE
 ET UN
 ID 5192
 TI 1771332031.450600074
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 5193
 TI 1771332031.450718440
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40396,7 +40396,7 @@ SE
 ET UN
 ID 5200
 TI 1771332031.460243991
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40604,7 +40604,7 @@ BD GR Veto
 PQ
 SE
 ID 5229
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.099148)
 BD GR Veto
@@ -40627,14 +40627,14 @@ PP 3.53845 0.0493168 -3.49373
 PW 0
 SE
 ID 5232
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.916386)
 BD GR Veto
 PQ
 SE
 ID 5233
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -40684,7 +40684,7 @@ BD GR Veto
 PQ
 SE
 ID 5240
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -40715,7 +40715,7 @@ SE
 ET UN
 ID 5244
 TI 1771332031.500440908
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40745,7 +40745,7 @@ SE
 ET UN
 ID 5248
 TI 1771332031.502200775
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -40847,7 +40847,7 @@ PP 4.00408 0.326157 -4.07577
 PW 0
 SE
 ID 5261
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -41003,7 +41003,7 @@ SE
 ET UN
 ID 5282
 TI 1771332031.535916725
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41262,7 +41262,7 @@ BD GR Veto
 PQ 0.0813612
 SE
 ID 5318
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -41305,7 +41305,7 @@ PP -2.39827 -0.996523 1.86095
 PW 0
 SE
 ID 5324
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -41333,7 +41333,7 @@ SE
 ET UN
 ID 5328
 TI 1771332031.585981426
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41389,7 +41389,7 @@ CH 0 -1.1178 0.256533 -3.61014 124.95 0 0.0336036 0.037652 0.0336036 1.19373 0
 CH 1 -0.768578 0.124653 -4.42498 135.68 0 0.0336036 0.0255398 0.0336036 1.01569 0
 SE
 ID 5335
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -41413,14 +41413,14 @@ SE
 ET UN
 ID 5337
 TI 1771332031.594752476
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 5338
 TI 1771332031.597833009
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41571,7 +41571,7 @@ SE
 ET UN
 ID 5359
 TI 1771332031.618376976
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41688,7 +41688,7 @@ SE
 ET UN
 ID 5375
 TI 1771332031.630536293
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41710,7 +41710,7 @@ SE
 ET UN
 ID 5378
 TI 1771332031.633206543
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41754,7 +41754,7 @@ SE
 ET UN
 ID 5384
 TI 1771332031.637267243
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41785,7 +41785,7 @@ SE
 ET UN
 ID 5388
 TI 1771332031.643673360
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41808,7 +41808,7 @@ SE
 ET UN
 ID 5391
 TI 1771332031.648628910
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41830,7 +41830,7 @@ SE
 ET UN
 ID 5394
 TI 1771332031.652856594
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -41996,7 +41996,7 @@ BD GR Veto
 PQ
 SE
 ID 5418
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -42011,7 +42011,7 @@ PP 2.4908 0.0109025 -1.39842
 PW 0
 SE
 ID 5420
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.752938)
 BD GR Veto
@@ -42076,7 +42076,7 @@ PP -1.58342 -0.709686 -3.26092
 PW 0
 SE
 ID 5428
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -42193,7 +42193,7 @@ PP 4.3533 0.145173 0.696891
 PW 0
 SE
 ID 5444
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -42202,7 +42202,7 @@ SE
 ET UN
 ID 5445
 TI 1771332031.711405845
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -42361,7 +42361,7 @@ CC NStripHits 1
 PE 0
 SE
 ID 5466
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.281913)
 BD GR Veto
@@ -42392,7 +42392,7 @@ PP 4.12048 -0.633448 0.347672
 PW 0
 SE
 ID 5470
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -42416,7 +42416,7 @@ SE
 ET UN
 ID 5473
 TI 1771332031.743135912
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -42436,7 +42436,7 @@ SE
 ET UN
 ID 5476
 TI 1771332031.747200729
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -42514,7 +42514,7 @@ SE
 ET UN
 ID 5486
 TI 1771332031.758523229
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -42574,7 +42574,7 @@ SE
 ET UN
 ID 5494
 TI 1771332031.765904212
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -42682,7 +42682,7 @@ BD GR Veto
 PQ
 SE
 ID 5510
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -42896,7 +42896,7 @@ SE
 ET UN
 ID 5535
 TI 1771332031.810861430
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -42980,7 +42980,7 @@ SE
 ET UN
 ID 5547
 TI 1771332031.824835997
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -42992,7 +42992,7 @@ CC NStripHits 2
 PE 117.469
 SE
 ID 5549
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -43131,7 +43131,7 @@ SE
 ET UN
 ID 5568
 TI 1771332031.841576014
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43161,7 +43161,7 @@ SE
 ET UN
 ID 5571
 TI 1771332031.842631414
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43293,7 +43293,7 @@ SE
 ET UN
 ID 5589
 TI 1771332031.873474997
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43357,14 +43357,14 @@ BD GR Veto
 PQ
 SE
 ID 5598
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.060526)
 BD GR Veto
 PQ
 SE
 ID 5599
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.079834)
 BD GR Veto
@@ -43481,7 +43481,7 @@ SE
 ET UN
 ID 5614
 TI 1771332031.894071181
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43548,7 +43548,7 @@ SE
 ET UN
 ID 5623
 TI 1771332031.905934565
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43662,14 +43662,14 @@ SE
 ET UN
 ID 5639
 TI 1771332031.922366048
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 5640
 TI 1771332031.923595965
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43749,7 +43749,7 @@ SE
 ET UN
 ID 5651
 TI 1771332031.938269098
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43882,7 +43882,7 @@ SE
 ET UN
 ID 5668
 TI 1771332031.957883299
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -43997,7 +43997,7 @@ SE
 ET UN
 ID 5683
 TI 1771332031.975648716
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -44032,7 +44032,7 @@ PP 3.07283 -0.835234 -4.42498
 PW 0
 SE
 ID 5688
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -44098,14 +44098,14 @@ CC NStripHits 7
 PE 278.681
 SE
 ID 5697
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
 PQ
 SE
 ID 5698
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.595884) (Strip hit removed with energy 13.384731) (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -44490,7 +44490,7 @@ SE
 ET UN
 ID 5747
 TI 1771332032.037543667
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -44691,7 +44691,7 @@ SE
 ET UN
 ID 5773
 TI 1771332032.067066134
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -44890,7 +44890,7 @@ SE
 ET UN
 ID 5798
 TI 1771332032.085989801
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -44961,7 +44961,7 @@ SE
 ET UN
 ID 5807
 TI 1771332032.098925834
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -45184,7 +45184,7 @@ SE
 ET UN
 ID 5837
 TI 1771332032.131540718
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -45227,7 +45227,7 @@ SE
 ET UN
 ID 5842
 TI 1771332032.133931668
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -45350,7 +45350,7 @@ PP 2.37439 0.3257 -0.00154687
 PW 0
 SE
 ID 5859
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -45442,7 +45442,7 @@ SE
 ET UN
 ID 5870
 TI 1771332032.166734252
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -45474,7 +45474,7 @@ BD GR Veto
 PQ 0.460283
 SE
 ID 5875
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -45556,7 +45556,7 @@ BD GR Veto
 PQ 18.7068
 SE
 ID 5885
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.262595)
 BD GR Veto
@@ -45569,7 +45569,7 @@ BD GR Veto
 PQ
 SE
 ID 5887
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -45706,7 +45706,7 @@ SE
 ET UN
 ID 5904
 TI 1771332032.209984370
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -45758,7 +45758,7 @@ PP -2.04905 0.0465014 2.6758
 PW 0
 SE
 ID 5911
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -45828,7 +45828,7 @@ SE
 ET UN
 ID 5919
 TI 1771332032.232128453
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -46139,7 +46139,7 @@ BD GR Veto
 PQ
 SE
 ID 5957
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.733629)
 BD GR Veto
@@ -46198,7 +46198,7 @@ SE
 ET UN
 ID 5964
 TI 1771332032.289192254
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -46290,7 +46290,7 @@ SE
 ET UN
 ID 5977
 TI 1771332032.300514438
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -46497,7 +46497,7 @@ SE
 ET UN
 ID 6005
 TI 1771332032.331950438
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -46568,7 +46568,7 @@ BD GR Veto
 PQ 1.48233
 SE
 ID 6015
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.550874)
 BD GR Veto
@@ -46577,19 +46577,19 @@ SE
 ET UN
 ID 6016
 TI 1771332032.343447089
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 6017
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.198436) (Strip hit removed with energy 14.810899)
 BD GR Veto
 PQ
 SE
 ID 6018
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.198436) (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -46738,7 +46738,7 @@ SE
 ET UN
 ID 6038
 TI 1771332032.358056272
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -46774,7 +46774,7 @@ PP 0.861109 0.262004 1.04611
 PW 0
 SE
 ID 6042
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -46870,7 +46870,7 @@ SE
 ET UN
 ID 6054
 TI 1771332032.375953172
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -46946,7 +46946,7 @@ PP 3.53845 -1.03344 1.86095
 PW 0
 SE
 ID 6064
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -46976,7 +46976,7 @@ PP 3.88767 0.30359 -0.117953
 PW 0
 SE
 ID 6068
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -47249,7 +47249,7 @@ BD GR Veto
 PQ
 SE
 ID 6103
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -47270,7 +47270,7 @@ BD GR Veto
 PQ
 SE
 ID 6106
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -47289,14 +47289,14 @@ BD GR Veto
 PQ
 SE
 ID 6109
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
 PQ
 SE
 ID 6110
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.406731)
 BD GR Veto
@@ -47384,7 +47384,7 @@ SE
 ET UN
 ID 6122
 TI 1771332032.437074757
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -47532,7 +47532,7 @@ SE
 ET UN
 ID 6138
 TI 1771332032.452099840
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -47568,14 +47568,14 @@ SE
 ET UN
 ID 6142
 TI 1771332032.454452624
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 6143
 TI 1771332032.455766390
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -47699,7 +47699,7 @@ SE
 ET UN
 ID 6157
 TI 1771332032.467145757
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -47764,7 +47764,7 @@ SE
 ET UN
 ID 6166
 TI 1771332032.473862624
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -47786,7 +47786,7 @@ SE
 ET UN
 ID 6169
 TI 1771332032.475281624
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -47806,7 +47806,7 @@ SE
 ET UN
 ID 6172
 TI 1771332032.477052691
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -47860,7 +47860,7 @@ PP 3.42205 0.269877 1.27892
 PW 0
 SE
 ID 6180
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.118466)
 BD GR Veto
@@ -47909,7 +47909,7 @@ PP 0.0462656 0.358035 2.21017
 PW 0
 SE
 ID 6187
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.079834)
 BD GR Veto
@@ -48155,7 +48155,7 @@ SE
 ET UN
 ID 6218
 TI 1771332032.530172942
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -48205,14 +48205,14 @@ BD GR Veto
 PQ 0.0210907
 SE
 ID 6224
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.320564)
 BD GR Veto
 PQ
 SE
 ID 6225
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.935700)
 BD GR Veto
@@ -48285,7 +48285,7 @@ SE
 ET UN
 ID 6235
 TI 1771332032.552973792
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -48445,7 +48445,7 @@ SE
 ET UN
 ID 6256
 TI 1771332032.576663342
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -48490,7 +48490,7 @@ BD GR Veto
 PQ 45.752
 SE
 ID 6263
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.503341)
 BD GR Veto
@@ -48658,7 +48658,7 @@ SE
 ET UN
 ID 6286
 TI 1771332032.609129743
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -48671,7 +48671,7 @@ SE
 ET UN
 ID 6288
 TI 1771332032.612936460
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -48814,7 +48814,7 @@ PP 2.6072 0.309298 2.44298
 PW 0
 SE
 ID 6306
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -49059,7 +49059,7 @@ PP -2.16545 -0.413366 2.32658
 PW 0
 SE
 ID 6337
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -49130,7 +49130,7 @@ SE
 ET UN
 ID 6346
 TI 1771332032.668064327
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -49265,7 +49265,7 @@ CC NStripHits 2
 PE 30.7761
 SE
 ID 6364
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -49300,7 +49300,7 @@ CH 0 -2.63108 -0.730536 -3.49373 190.216 0 0.0336036 0.0146207 0.0336036 1.40313
 CH 1 -2.51467 -0.893591 -3.02811 177.346 0 0.0336036 0.0133755 0.0336036 2.01444 0
 SE
 ID 6368
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.464681)
 BD GR Veto
@@ -49410,7 +49410,7 @@ SE
 ET UN
 ID 6382
 TI 1771332032.709975478
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -49706,7 +49706,7 @@ CH 0 2.25798 -0.633839 -3.02811 80.2827 0 0.0336036 0.0335138 0.0336036 1.01362 
 CH 1 2.72361 -1.15714 -2.67889 273.697 0 0.0336036 0.0185648 0.0336036 1.02482 0
 SE
 ID 6419
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.589490)
 BD GR Veto
@@ -49768,7 +49768,7 @@ SE
 ET UN
 ID 6427
 TI 1771332032.753152312
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -50050,7 +50050,7 @@ SE
 ET UN
 ID 6464
 TI 1771332032.790133046
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -50071,7 +50071,7 @@ SE
 ET UN
 ID 6467
 TI 1771332032.791701663
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -50210,7 +50210,7 @@ SE
 ET UN
 ID 6485
 TI 1771332032.805038346
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -50319,7 +50319,7 @@ SE
 ET UN
 ID 6499
 TI 1771332032.820979380
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -50601,7 +50601,7 @@ SE
 ET UN
 ID 6536
 TI 1771332032.867990531
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -50728,7 +50728,7 @@ BD GR Veto
 PQ
 SE
 ID 6553
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -50747,7 +50747,7 @@ BD GR Veto
 PQ
 SE
 ID 6556
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -51053,7 +51053,7 @@ SE
 ET UN
 ID 6595
 TI 1771332032.922095298
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -51158,7 +51158,7 @@ SE
 ET UN
 ID 6608
 TI 1771332032.946049249
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -51526,7 +51526,7 @@ PP -0.186547 -0.931711 2.55939
 PW 0
 SE
 ID 6656
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -51572,7 +51572,7 @@ CC NStripHits 4
 PE 219.637
 SE
 ID 6662
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -51588,7 +51588,7 @@ SE
 ET UN
 ID 6664
 TI 1771332033.003077000
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -51736,7 +51736,7 @@ SE
 ET UN
 ID 6684
 TI 1771332033.025190767
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -51945,7 +51945,7 @@ SE
 ET UN
 ID 6711
 TI 1771332033.048813534
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -52092,7 +52092,7 @@ SE
 ET UN
 ID 6730
 TI 1771332033.066710851
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -52233,7 +52233,7 @@ BD GR Veto
 PQ
 SE
 ID 6748
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.570180)
 BD GR Veto
@@ -52247,7 +52247,7 @@ CC NStripHits 2
 PE 35.0695
 SE
 ID 6750
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.752938)
 BD GR Veto
@@ -52263,7 +52263,7 @@ SE
 ET UN
 ID 6752
 TI 1771332033.085288468
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -52294,7 +52294,7 @@ SE
 ET UN
 ID 6756
 TI 1771332033.091095918
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -52429,7 +52429,7 @@ SE
 ET UN
 ID 6774
 TI 1771332033.114649501
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -52655,7 +52655,7 @@ SE
 ET UN
 ID 6802
 TI 1771332033.146339885
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -52758,7 +52758,7 @@ SE
 ET UN
 ID 6817
 TI 1771332033.157835519
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -53009,7 +53009,7 @@ CC NStripHits 2
 PE 52.7232
 SE
 ID 6850
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -53018,7 +53018,7 @@ SE
 ET UN
 ID 6851
 TI 1771332033.193757853
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -53439,7 +53439,7 @@ SE
 ET UN
 ID 6905
 TI 1771332033.246583104
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -53683,7 +53683,7 @@ PP 4.00408 0.246083 -3.61014
 PW 0
 SE
 ID 6939
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -53814,7 +53814,7 @@ SE
 ET UN
 ID 6957
 TI 1771332033.297129438
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -53836,7 +53836,7 @@ SE
 ET UN
 ID 6960
 TI 1771332033.300146521
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -54223,7 +54223,7 @@ SE
 ET UN
 ID 7007
 TI 1771332033.348570172
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -54483,7 +54483,7 @@ PP 0.279078 0.353162 -2.21327
 PW 0
 SE
 ID 7039
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.017964) (Strip hit removed with energy 10.502155) (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -54859,7 +54859,7 @@ SE
 ET UN
 ID 7088
 TI 1771332033.431388307
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -54918,7 +54918,7 @@ SE
 ET UN
 ID 7095
 TI 1771332033.436921590
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -54939,7 +54939,7 @@ PP -0.652172 0.325427 -0.583578
 PW 0
 SE
 ID 7098
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -55076,7 +55076,7 @@ SE
 ET UN
 ID 7115
 TI 1771332033.458489740
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -55137,7 +55137,7 @@ SE
 ET UN
 ID 7123
 TI 1771332033.465580241
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -55319,14 +55319,14 @@ SE
 ET UN
 ID 7147
 TI 1771332033.490800658
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 7148
 TI 1771332033.491578474
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -55456,7 +55456,7 @@ SE
 ET UN
 ID 7164
 TI 1771332033.508120025
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -55522,7 +55522,7 @@ SE
 ET UN
 ID 7173
 TI 1771332033.517364091
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -55607,7 +55607,7 @@ SE
 ET UN
 ID 7183
 TI 1771332033.526637708
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -55684,7 +55684,7 @@ SE
 ET UN
 ID 7191
 TI 1771332033.531936958
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -55725,7 +55725,7 @@ SE
 ET UN
 ID 7197
 TI 1771332033.536153758
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -56075,14 +56075,14 @@ SE
 ET UN
 ID 7245
 TI 1771332033.587825793
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 7246
 TI 1771332033.588399976
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -56195,7 +56195,7 @@ SE
 ET UN
 ID 7262
 TI 1771332033.605515793
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -56246,7 +56246,7 @@ SE
 ET UN
 ID 7269
 TI 1771332033.613092743
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -56588,7 +56588,7 @@ SE
 ET UN
 ID 7309
 TI 1771332033.655321610
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -56804,7 +56804,7 @@ CC NStripHits 2
 PE 36.4125
 SE
 ID 7336
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.223976)
 BD GR Veto
@@ -56895,7 +56895,7 @@ SE
 ET UN
 ID 7348
 TI 1771332033.694418544
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -56908,7 +56908,7 @@ PP 3.18923 -0.99782 1.97736
 PW 0
 SE
 ID 7350
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -56962,7 +56962,7 @@ SE
 ET UN
 ID 7357
 TI 1771332033.701647045
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -57059,7 +57059,7 @@ SE
 ET UN
 ID 7369
 TI 1771332033.718695245
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -57155,7 +57155,7 @@ SE
 ET UN
 ID 7382
 TI 1771332033.732143095
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -57477,7 +57477,7 @@ BD GR Veto
 PQ 0.224423
 SE
 ID 7426
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.320564)
 BD GR Veto
@@ -57501,7 +57501,7 @@ SE
 ET UN
 ID 7429
 TI 1771332033.776276112
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -57653,7 +57653,7 @@ SE
 ET UN
 ID 7448
 TI 1771332033.795695713
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -57682,7 +57682,7 @@ SE
 ET UN
 ID 7452
 TI 1771332033.800281613
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -58287,14 +58287,14 @@ CC NStripHits 2
 PE 33.4169
 SE
 ID 7528
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.387425)
 BD GR Veto
 PQ
 SE
 ID 7529
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -58370,7 +58370,7 @@ SE
 ET UN
 ID 7538
 TI 1771332033.893145164
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -58596,7 +58596,7 @@ BD GR Veto
 PQ 0.0305988
 SE
 ID 7569
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.570180)
 BD GR Veto
@@ -58771,7 +58771,7 @@ CH 0 -0.652172 -0.651049 -3.02811 93.6087 0 0.0336036 0.0290646 0.0336036 1.3888
 CH 1 -0.535766 -0.550264 -2.56248 209.156 0 0.0336036 0.0128021 0.0336036 1.00051 0
 SE
 ID 7589
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.137790)
 BD GR Veto
@@ -58823,7 +58823,7 @@ PP 3.77127 0.0761772 1.97736
 PW 0
 SE
 ID 7596
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.570180)
 BD GR Veto
@@ -58832,7 +58832,7 @@ SE
 ET UN
 ID 7597
 TI 1771332033.948894282
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -58930,7 +58930,7 @@ SE
 ET UN
 ID 7610
 TI 1771332033.957338982
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -58968,14 +58968,14 @@ SE
 ET UN
 ID 7614
 TI 1771332033.959529182
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 7615
 TI 1771332033.959875849
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -58995,7 +58995,7 @@ PP 2.14158 0.259119 0.347672
 PW 0
 SE
 ID 7618
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.157119)
 BD GR Veto
@@ -59010,7 +59010,7 @@ PP 0.279078 -0.405261 -0.117953
 PW 0
 SE
 ID 7620
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.974344)
 BD GR Veto
@@ -59082,7 +59082,7 @@ SE
 ET UN
 ID 7629
 TI 1771332033.974810882
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -59234,7 +59234,7 @@ SE
 ET UN
 ID 7649
 TI 1771332033.999375283
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -59253,7 +59253,7 @@ BD GR Veto
 PQ 0.0155693
 SE
 ID 7652
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -59302,7 +59302,7 @@ SE
 ET UN
 ID 7659
 TI 1771332034.004101600
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -59722,7 +59722,7 @@ SE
 ET UN
 ID 7715
 TI 1771332034.077598117
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -59767,7 +59767,7 @@ BD GR Veto
 PQ
 SE
 ID 7722
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.223976)
 BD GR Veto
@@ -59782,7 +59782,7 @@ SE
 ET UN
 ID 7724
 TI 1771332034.084310368
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -59819,7 +59819,7 @@ SE
 ET UN
 ID 7729
 TI 1771332034.090195301
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -59879,7 +59879,7 @@ SE
 ET UN
 ID 7737
 TI 1771332034.098767518
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -59938,7 +59938,7 @@ SE
 ET UN
 ID 7744
 TI 1771332034.105055368
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -60010,7 +60010,7 @@ PP -0.768578 -0.138601 2.6758
 PW 0
 SE
 ID 7754
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.733824) (Strip hit removed with energy 15.395013) (Strip hit removed with energy 16.935700)
 BD GR Veto
@@ -60034,7 +60034,7 @@ SE
 ET UN
 ID 7757
 TI 1771332034.122949868
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -60212,7 +60212,7 @@ PP -2.39827 0.341037 0.929703
 PW 0
 SE
 ID 7782
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.791573)
 BD GR Veto
@@ -60269,7 +60269,7 @@ PP -2.9803 -0.420912 -0.467172
 PW 0
 SE
 ID 7790
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -60338,7 +60338,7 @@ SE
 ET UN
 ID 7799
 TI 1771332034.170230102
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -60403,7 +60403,7 @@ SE
 ET UN
 ID 7807
 TI 1771332034.179271619
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -60431,7 +60431,7 @@ PP 3.65486 0.282594 -3.72655
 PW 0
 SE
 ID 7811
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.445359)
 BD GR Veto
@@ -60518,7 +60518,7 @@ SE
 ET UN
 ID 7822
 TI 1771332034.190549536
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -60817,7 +60817,7 @@ SE
 ET UN
 ID 7861
 TI 1771332034.244707970
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -60853,7 +60853,7 @@ SE
 ET UN
 ID 7865
 TI 1771332034.248458570
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -60887,7 +60887,7 @@ SE
 ET UN
 ID 7870
 TI 1771332034.252123820
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -61117,7 +61117,7 @@ SE
 ET UN
 ID 7898
 TI 1771332034.280503371
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -61163,7 +61163,7 @@ PP 0.0462656 0.362066 -1.16561
 PW 0
 SE
 ID 7905
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.426043)
 BD GR Veto
@@ -61265,7 +61265,7 @@ SE
 ET UN
 ID 7918
 TI 1771332034.296045338
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -61337,7 +61337,7 @@ BD GR Veto
 PQ 0.17038
 SE
 ID 7928
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.079834)
 BD GR Veto
@@ -61479,7 +61479,7 @@ SE
 ET UN
 ID 7947
 TI 1771332034.325918538
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -61528,7 +61528,7 @@ SE
 ET UN
 ID 7952
 TI 1771332034.333943405
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -61681,7 +61681,7 @@ PP -2.28186 0.300572 -3.49373
 PW 0
 SE
 ID 7973
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -61947,7 +61947,7 @@ SE
 ET UN
 ID 8005
 TI 1771332034.385821239
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -62070,7 +62070,7 @@ PP -0.535766 0.221415 -3.37733
 PW 0
 SE
 ID 8021
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.060526)
 BD GR Veto
@@ -62115,7 +62115,7 @@ SE
 ET UN
 ID 8027
 TI 1771332034.409183356
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -62259,7 +62259,7 @@ SE
 ET UN
 ID 8047
 TI 1771332034.427861907
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -62280,7 +62280,7 @@ SE
 ET UN
 ID 8050
 TI 1771332034.431592507
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -62295,7 +62295,7 @@ SE
 ET UN
 ID 8052
 TI 1771332034.433395890
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -62445,7 +62445,7 @@ SE
 ET UN
 ID 8069
 TI 1771332034.447922657
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -62646,12 +62646,12 @@ SE
 ET UN
 ID 8096
 TI 1771332034.470767257
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ID 8097
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.647454)
 BD GR Veto
@@ -62759,7 +62759,7 @@ BD GR Veto
 PQ
 SE
 ID 8110
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 18.243283)
 BD GR Veto
@@ -62862,7 +62862,7 @@ SE
 ET UN
 ID 8124
 TI 1771332034.496498908
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -63492,7 +63492,7 @@ SE
 ET UN
 ID 8205
 TI 1771332034.589303676
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -63527,7 +63527,7 @@ CH 0 1.21033 0.315241 0.580484 61.8553 0 0.0336036 0.0538576 0.0336036 1.00821 0
 CH 1 0.628297 -0.252864 0.347672 291.806 0 0.0336036 0.0127553 0.0336036 1.1432 0
 SE
 ID 8208
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.810899)
 BD GR Veto
@@ -63600,7 +63600,7 @@ SE
 ET UN
 ID 8217
 TI 1771332034.602889060
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -63716,7 +63716,7 @@ SE
 ET UN
 ID 8232
 TI 1771332034.627011027
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -63967,7 +63967,7 @@ SE
 ET UN
 ID 8265
 TI 1771332034.663447694
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -64020,7 +64020,7 @@ SE
 ET UN
 ID 8272
 TI 1771332034.669009461
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -64074,7 +64074,7 @@ BD GR Veto
 PQ 0.106278
 SE
 ID 8279
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.877774)
 BD GR Veto
@@ -64083,7 +64083,7 @@ SE
 ET UN
 ID 8280
 TI 1771332034.680413761
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -64160,7 +64160,7 @@ SE
 ET UN
 ID 8290
 TI 1771332034.690540061
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -64429,7 +64429,7 @@ SE
 ET UN
 ID 8326
 TI 1771332034.727803062
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -64502,7 +64502,7 @@ SE
 ET UN
 ID 8336
 TI 1771332034.745499595
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -64554,7 +64554,7 @@ SE
 ET UN
 ID 8343
 TI 1771332034.751965029
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -65026,7 +65026,7 @@ SE
 ET UN
 ID 8406
 TI 1771332034.813034630
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -65047,7 +65047,7 @@ SE
 ET UN
 ID 8409
 TI 1771332034.814004813
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -65549,21 +65549,21 @@ PP 3.42205 0.312705 0.580484
 PW 0
 SE
 ID 8470
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
 PQ
 SE
 ID 8471
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 19.060526)
 BD GR Veto
 PQ
 SE
 ID 8472
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
@@ -65667,7 +65667,7 @@ PP 2.25798 -1.11022 -3.61014
 PW 0
 SE
 ID 8486
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.320564)
 BD GR Veto
@@ -65877,7 +65877,7 @@ SE
 ET UN
 ID 8513
 TI 1771332034.926919298
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -66159,7 +66159,7 @@ PP -1.00139 -0.924179 0.347672
 PW 0
 SE
 ID 8550
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 14.484008)
 BD GR Veto
@@ -66209,7 +66209,7 @@ BD GR Veto
 PQ 681.795
 SE
 ID 8557
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 13.993674)
 BD GR Veto
@@ -66301,7 +66301,7 @@ PP -1.93264 0.356459 -2.09686
 PW 0
 SE
 ID 8570
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 16.281913)
 BD GR Veto
@@ -66375,7 +66375,7 @@ SE
 ET UN
 ID 8579
 TI 1771332034.994978816
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -66480,7 +66480,7 @@ SE
 ET UN
 ID 8593
 TI 1771332035.011177266
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -66592,7 +66592,7 @@ SE
 ET UN
 ID 8607
 TI 1771332035.030048233
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -66942,7 +66942,7 @@ SE
 ET UN
 ID 8651
 TI 1771332035.076506301
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -67226,7 +67226,7 @@ BD GR Veto
 PQ 0.0100196
 SE
 ID 8691
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.628127)
 BD GR Veto
@@ -67439,7 +67439,7 @@ SE
 ET UN
 ID 8719
 TI 1771332035.150952219
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -67636,14 +67636,14 @@ SE
 ET UN
 ID 8746
 TI 1771332035.175967636
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 8747
 TI 1771332035.176105786
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -67720,7 +67720,7 @@ BD GR Veto
 PQ
 SE
 ID 8757
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 15.301236)
 BD GR Veto
@@ -67780,7 +67780,7 @@ SE
 ET UN
 ID 8765
 TI 1771332035.191950653
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -67887,7 +67887,7 @@ SE
 ET UN
 ID 8777
 TI 1771332035.204835436
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -67985,7 +67985,7 @@ SE
 ET UN
 ID 8788
 TI 1771332035.217157820
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -68123,7 +68123,7 @@ SE
 ET UN
 ID 8805
 TI 1771332035.235656270
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -68143,7 +68143,7 @@ SE
 ET UN
 ID 8808
 TI 1771332035.239241570
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -68256,7 +68256,7 @@ SE
 ET UN
 ID 8821
 TI 1771332035.257024854
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -68447,7 +68447,7 @@ PP 2.72361 0.356106 -4.30858
 PW 0
 SE
 ID 8844
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 BD DepthCalibrationError (GR Veto)
 QA StripHitBelowThreshold (Strip hit removed with energy 17.589490)
 BD GR Veto
@@ -68627,14 +68627,14 @@ SE
 ET UN
 ID 8869
 TI 1771332035.307579905
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
 ET UN
 ID 8870
 TI 1771332035.308680421
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
@@ -69042,7 +69042,7 @@ SE
 ET UN
 ID 8922
 TI 1771332035.366976022
-BD StripPairingError (No strip hits)
+BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
