@@ -187,42 +187,54 @@ bool MModuleEventSaver::Initialize()
   } else if (m_Mode == c_RoaFile) {
     Header<<endl;
     Header<<"TYPE ROA"<<endl;
-    Header<<"UF doublesidedstrip ";
-    bool IsFirst = true;
+
+    // Prepare the read-out data flags for strip and cystal hits
+    vector<MString> StripData;
+    vector<MString> CrystalData;
     if (m_RoaWithADCs == true) {
-      if (IsFirst == false) Header<<"_";
-      Header<<"adc";
-      IsFirst = false;
+      StripData.push_back("adc");
+      CrystalData.push_back("adc");
     }
     if (m_RoaWithTACs == true) {
-      if (IsFirst == false) Header<<"_";
-      Header<<"tac";
-      IsFirst = false;
+      StripData.push_back("tac");
     }
     if (m_RoaWithEnergies == true) {
-      if (IsFirst == false) Header<<"_";
-      Header<<"energy";
-      IsFirst = false;
+      StripData.push_back("energy");
+      CrystalData.push_back("energy");
     }
     if (m_RoaWithTimings == true) {
-      if (IsFirst == false) Header<<"_";
-      Header<<"timing";
-      IsFirst = false;
-    }
-    if (m_RoaWithTemperatures == true) {
-      if (IsFirst == false) Header<<"_";
-      Header<<"temperature";
-      IsFirst = false;
+      StripData.push_back("timing");
     }
     if (m_RoaWithFlags == true) {
-      if (IsFirst == false) Header<<"_";
-      Header<<"flags";
-      IsFirst = false;
+      StripData.push_back("flags");
+      CrystalData.push_back("flags");
     }
     if (m_RoaWithOrigins == true) {
-      if (IsFirst == false) Header<<"_";
-      Header<<"origins";
-      IsFirst = false;
+      StripData.push_back("origins");
+      CrystalData.push_back("origins");
+    }
+
+    MString StripType;
+    for (unsigned int d = 0; d < StripData.size(); ++d) {
+      if (d != 0) StripType += "-";
+      StripType += StripData[d];
+    }
+    MString CrystalType;
+    for (unsigned int d = 0; d < CrystalData.size(); ++d) {
+      if (d != 0) CrystalType += "-";
+      CrystalType += CrystalData[d];
+    }
+
+    m_RoaFileFormat.Clear();
+    if (m_RoaFileFormat.AddReadOutUnit("UH", "doublesidedstrip", StripType) == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to define the roa read-out unit of the strip hits"<<endl;
+      return false;
+    }
+    if (CrystalType != "") {
+      m_RoaFileFormat.AddReadOutUnit("UC", "voxel3d", CrystalType);
+    }
+    for (unsigned int u = 0; u < m_RoaFileFormat.GetNumberOfReadOutUnits(); ++u) {
+      Header<<m_RoaFileFormat.GetUFLine(u)<<endl;
     }
     Header<<endl;
   } else {
@@ -326,8 +338,8 @@ void MModuleEventSaver::Finalize()
   m_Out.WriteLine();
   if (m_NumberOfSimulatedEvents > 0) {
     m_Out.WriteLine(MString("TS ") + m_NumberOfSimulatedEvents);
+    m_Out.WriteLine();
   }
-  m_Out.WriteLine();
   m_Out.Close();
   
   
@@ -498,6 +510,7 @@ MXmlNode* MModuleEventSaver::CreateXmlConfiguration()
   new MXmlNode(Node, "RoaWithTACs", m_RoaWithTACs);
   new MXmlNode(Node, "RoaWithEnergies", m_RoaWithEnergies);
   new MXmlNode(Node, "RoaWithTimings", m_RoaWithTimings);
+  new MXmlNode(Node, "RoaWithTemperatures", m_RoaWithTemperatures);
   new MXmlNode(Node, "RoaWithFlags", m_RoaWithFlags);
   new MXmlNode(Node, "RoaWithOrigins", m_RoaWithOrigins);
   new MXmlNode(Node, "RoaWithNearestNeighbors", m_RoaWithNearestNeighbors);

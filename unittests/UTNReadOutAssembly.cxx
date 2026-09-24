@@ -69,6 +69,8 @@ private:
   bool TestStreamRoa();
   //! Test unique assembly IDs across instances and across Clear()
   bool TestAssemblyIDUniqueness();
+  //! Test that BD, QA, and PQ lines are read back into the flags instead of filtering the event
+  bool TestParseBDFlags();
 };
 
 
@@ -93,6 +95,7 @@ bool UTNReadOutAssembly::Run()
   Passed = TestStreamEvta() && Passed;
   Passed = TestStreamRoa() && Passed;
   Passed = TestAssemblyIDUniqueness() && Passed;
+  Passed = TestParseBDFlags() && Passed;
 
   Summarize();
 
@@ -854,14 +857,16 @@ bool UTNReadOutAssembly::TestParse()
                            R.Parse(SHLine)) && Passed;
   }
 
-  // --- BD line sets the filtered-out flag ----------------------------------
+  // --- BD line sets its flag, not the filtered-out flag ---------------------
   {
     MReadOutAssembly R;
-    MString BDLine("BD some reason");
-    Passed = EvaluateTrue("Parse()", "BD line", "Parse() returns true for a BD line",
+    MString BDLine("BD DepthCalibrationError (Out of Range)");
+    Passed = EvaluateTrue("Parse()", "BD line", "Parse() returns true for a known BD line",
                           R.Parse(BDLine)) && Passed;
-    Passed = EvaluateTrue("Parse()", "BD sets FilteredOut", "Parse() of a BD line sets the filtered-out flag",
-                          R.IsFilteredOut()) && Passed;
+    Passed = EvaluateTrue("Parse()", "BD sets its flag", "Parse() of a BD line sets the corresponding flag",
+                          R.HasDepthCalibrationError()) && Passed;
+    Passed = EvaluateFalse("Parse()", "BD does not filter", "Parse() of a BD line does not set the filtered-out flag",
+                           R.IsFilteredOut()) && Passed;
   }
 
   // --- An unrecognized line is tolerantly consumed -------------------------
@@ -1535,6 +1540,101 @@ bool UTNReadOutAssembly::TestAssemblyIDUniqueness()
   R0.Clear();
   Passed = EvaluateTrue("GetAssemblyID()", "unchanged by Clear", "GetAssemblyID() returns the same value before and after Clear()",
                         R0.GetAssemblyID() == ID0) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNReadOutAssembly::TestParseBDFlags()
+{
+  bool Passed = true;
+
+  // All flags, with no, one, and two texts, and a text containing brackets
+  MReadOutAssembly Written;
+  Written.SetEnergyCalibrationError();
+  Written.SetTACCalibrationError("No calibration");
+  Written.SetStripPairingError("First reason");
+  Written.SetStripPairingError("Second reason");
+  Written.SetDepthCalibrationError("More than maximum number of strip hits allowed on one side (7)");
+  Written.SetEventReconstructionError();
+  Written.SetStripHitBelowThreshold_QualityFlag("Strip 3");
+  Written.SetHighADC_QualityFlag();
+  Written.SetStripPairing_QualityFlag("Chi square");
+  Written.SetGuardRingVeto();
+  Written.SetShieldVeto();
+  Written.SetStripPairingReducedChiSquare(1.5);
+  Written.SetStripPairingReducedChiSquare(2.25);
+
+  ostringstream WrittenFlags;
+  Written.StreamBDFlags(WrittenFlags);
+
+  // Read back line by line through Parse(), which is used when reading roa files
+  MReadOutAssembly Read;
+  istringstream Lines(WrittenFlags.str());
+  string Line;
+  bool AllParsed = true;
+  while (getline(Lines, Line)) {
+    MString L(Line.c_str());
+    AllParsed = Read.Parse(L) && AllParsed;
+  }
+  Passed = EvaluateTrue("Parse()", "all BD, QA, and PQ lines", "All lines written by StreamBDFlags() are recognized", AllParsed) && Passed;
+  Passed = EvaluateFalse("Parse()", "all BD, QA, and PQ lines", "An event with BD lines is not filtered out", Read.IsFilteredOut()) && Passed;
+  Passed = EvaluateTrue("Parse()", "all BD, QA, and PQ lines", "The read event is bad", Read.IsBad()) && Passed;
+  Passed = EvaluateTrue("Parse()", "all BD, QA, and PQ lines", "The read event is vetoed", Read.IsVeto()) && Passed;
+
+  ostringstream ReadFlags;
+  Read.StreamBDFlags(ReadFlags);
+  Passed = Evaluate("ParseBDFlags()", "all BD, QA, and PQ lines", "Writing the read flags reproduces the original lines including texts and chi squares",
+                    MString(ReadFlags.str()), MString(WrittenFlags.str())) && Passed;
+
+  // Single flags
+  MReadOutAssembly Veto;
+  Passed = EvaluateTrue("ParseBDFlags()", "BD GR Veto", "The guard ring veto line is recognized", Veto.ParseBDFlags("BD GR Veto")) && Passed;
+  Passed = EvaluateTrue("ParseBDFlags()", "BD GR Veto", "The guard ring veto is set", Veto.GetGuardRingVeto()) && Passed;
+  Passed = EvaluateFalse("ParseBDFlags()", "BD GR Veto", "The shield veto is not set", Veto.GetShieldVeto()) && Passed;
+  Passed = EvaluateTrue("ParseBDFlags()", "BD GR Veto", "A vetoed event is still good", Veto.IsGood()) && Passed;
+
+  MReadOutAssembly NoHits;
+  Passed = EvaluateTrue("ParseBDFlags()", "BD No hits", "The line written for events without hits is recognized", NoHits.ParseBDFlags("BD No hits")) && Passed;
+  Passed = EvaluateTrue("ParseBDFlags()", "BD No hits", "It sets no flag", NoHits.IsGood() && NoHits.IsVeto() == false) && Passed;
+
+  MReadOutAssembly Unknown;
+  const int PreviousVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+  const bool UnknownBD = Unknown.ParseBDFlags("BD SomethingElse");
+  const bool UnknownQA = Unknown.ParseBDFlags("QA SomethingElse");
+  g_Verbosity = PreviousVerbosity;
+  Passed = EvaluateFalse("ParseBDFlags()", "BD SomethingElse", "An unknown BD flag is reported", UnknownBD) && Passed;
+  Passed = EvaluateFalse("ParseBDFlags()", "QA SomethingElse", "An unknown QA flag is reported", UnknownQA) && Passed;
+  Passed = EvaluateTrue("ParseBDFlags()", "unknown flags", "Unknown flags set nothing and do not filter the event", Unknown.IsGood() && Unknown.IsVeto() == false && Unknown.IsFilteredOut() == false) && Passed;
+
+  // The same through GetNextFromDatFile()
+  MString DatFile("/tmp/UTNReadOutAssembly_bdflags.dat");
+  ofstream Out(DatFile.Data());
+  Out << "SE" << endl;
+  Out << "ID 7" << endl;
+  Out << "HT 1.0 2.0 3.0 511.0" << endl;
+  Out << "BD StripPairingError (No strip hits)" << endl;
+  Out << "BD GR Veto" << endl;
+  Out << "PQ 3.5" << endl;
+  Out << "SE" << endl;
+  Out.close();
+
+  MReadOutAssembly Dat;
+  MFile F;
+  if (F.Open(DatFile) == true) {
+    Passed = EvaluateTrue("GetNextFromDatFile()", "event with BD lines", "The event is read", Dat.GetNextFromDatFile(F)) && Passed;
+    F.Close();
+    Passed = EvaluateFalse("GetNextFromDatFile()", "event with BD lines", "The event is not filtered out", Dat.IsFilteredOut()) && Passed;
+    Passed = EvaluateTrue("GetNextFromDatFile()", "event with BD lines", "The strip pairing error and the guard ring veto are set", Dat.HasStripPairingError() && Dat.GetGuardRingVeto()) && Passed;
+    Passed = EvaluateSize("GetNextFromDatFile()", "event with BD lines", "The chi square of the PQ line is read", Dat.GetStripPairingReducedChiSquare().size(), 1) && Passed;
+  } else {
+    Passed = EvaluateTrue("GetNextFromDatFile()", "event with BD lines", "The .dat fixture file can be opened", false) && Passed;
+  }
+  MFile::Remove(DatFile);
 
   return Passed;
 }
