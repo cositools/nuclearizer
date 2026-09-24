@@ -212,11 +212,21 @@ bool MStripMap::Open(const MString& FileName)
       }
       
       // Infer the rest of the information from the ReadOutID
-      SM.m_RTB = (SM.m_ReadOutID >> 8) & 0x01;
-      SM.m_DRM = (SM.m_ReadOutID >> 7) & 0x01;
-      SM.m_IsPrimary = (SM.m_ReadOutID >> 6) & 0x01;
-      SM.m_ASICID = (SM.m_ReadOutID >> 5) & 0x01;
-      SM.m_ChannelID = SM.m_ReadOutID & 0x1F;
+      if (SM.m_ReadOutID < 2048) {
+        // Regular strip contacts
+        SM.m_RTB = (SM.m_ReadOutID >> 8) & 0x01;
+        SM.m_DRM = (SM.m_ReadOutID >> 7) & 0x01;
+        SM.m_IsPrimary = (SM.m_ReadOutID >> 6) & 0x01;
+        SM.m_ASICID = (SM.m_ReadOutID >> 5) & 0x01;
+        SM.m_ChannelID = SM.m_ReadOutID & 0x1F;
+      } else {
+        // Guard ring contacts (always channel 15 on ASIC 2)
+        SM.m_RTB = (SM.m_ReadOutID >> 4) & 0x01;
+        SM.m_DRM = (SM.m_ReadOutID >> 1) & 0x07;
+        SM.m_IsPrimary = SM.m_ReadOutID & 0x01;
+        SM.m_ASICID = 2;
+        SM.m_ChannelID = 15;
+      }
 
       m_StripMappings.push_back(SM);
     } else {
