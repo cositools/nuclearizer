@@ -74,11 +74,11 @@ LIBS += $(H5LIBS) $(CCFITSLIBS)
 
 # Fretalon core:
 FRETALON_DIR          := $(MEGALIB)/src/fretalon/framework
-FRETALON_CXX_MAIN     := $(FRETALON_DIR)/src/MAssembly.cxx $(FRETALON_DIR)/src/MReadOutAssembly.cxx
+FRETALON_FILTEREDOUT  := MAssembly MReadOutAssembly MModuleSaver MModuleLoaderRoa MGUIOptionsLoaderRoa MGUIOptionsFileChooser MModuleInterfaceFileName MModuleTemplate MGUIOptionsTemplate
 FRETALON_CXX_FILES    := $(wildcard $(FRETALON_DIR)/src/*.cxx)
-FRETALON_CXX_FILES    := $(filter-out $(FRETALON_CXX_MAIN),$(FRETALON_CXX_FILES))
+FRETALON_CXX_FILES    := $(filter-out $(patsubst %,$(FRETALON_DIR)/src/%.cxx,$(FRETALON_FILTEREDOUT)),$(FRETALON_CXX_FILES))
 FRETALON_H_FILES      := $(wildcard $(FRETALON_DIR)/inc/*.h)
-FRETALON_H_FILES      := $(filter-out $(FRETALON_DIR)/inc/MAssembly.h $(FRETALON_DIR)/inc/MReadOutAssembly.h,$(FRETALON_H_FILES))
+FRETALON_H_FILES      := $(filter-out $(patsubst %,$(FRETALON_DIR)/inc/%.h,$(FRETALON_FILTEREDOUT)),$(FRETALON_H_FILES))
 FRETALON_LIBS         := $(addprefix $(LB)/,$(notdir $(FRETALON_CXX_FILES:.cxx=.o)))
 FRETALON_DEP_FILES    := $(FRETALON_LIBS:.o=.d)
 
