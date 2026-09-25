@@ -407,6 +407,8 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
       H->SetPositionResolution(GlobalResolution);
 
+      H->SetLocalPosition(LocalPosition);
+
 
 
       }
