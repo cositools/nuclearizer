@@ -101,7 +101,9 @@ class MModuleEnergyCalibration : public MModule
   void SetNearestNeighborThreshold(double Threshold) { m_NearestNeighborThreshold = Threshold; }
   //! Get the threshold value for Nearest Neighbors
   double GetNearestNeighborThreshold() const { return m_NearestNeighborThreshold; }
- 
+
+  //! Get the threshold map
+  map<MReadOutElementDoubleStrip, double> GetHardwareThresholdMap() const { return m_HardwareThresholdMap; }
  
   //! Create the expos
   virtual void CreateExpos();
@@ -114,6 +116,12 @@ class MModuleEnergyCalibration : public MModule
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
+
+  //! Read the energy and energy resolution calibration from an .ecal file
+  virtual bool ReadEnergyCalibrationFile(MString FileName);
+
+  //! Read the slow thresholds from a file
+  virtual bool ReadSlowThresholdCutFile(MString FileName);
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();
@@ -130,6 +138,16 @@ class MModuleEnergyCalibration : public MModule
   double GetEnergy(MReadOutElementDoubleStrip R, double ADC);
   //! Standalone function to return ADC of certain strip given energy
   double GetADC(MReadOutElementDoubleStrip R, double energy);
+
+  //! Get the energy calibration function map
+  void SetCalibration(map<MReadOutElementDoubleStrip, TF1*> Calibration) { m_Calibration = Calibration; }
+  //! Get the energy calibration function map
+  map<MReadOutElementDoubleStrip, TF1*> GetCalibration() { return m_Calibration; }
+
+  //! Get the energy resolution calibration function map
+  void SetResolutionCalibration(map<MReadOutElementDoubleStrip, TF1*> ResolutionCalibration) { m_ResolutionCalibration = ResolutionCalibration; }
+  //! Get the energy resolution calibration function map
+  map<MReadOutElementDoubleStrip, TF1*> GetResolutionCalibration() { return m_ResolutionCalibration; }
 
 
   // protected methods:
@@ -178,8 +196,15 @@ class MModuleEnergyCalibration : public MModule
   map<MReadOutElementDoubleStrip, TF1*> m_Calibration; // TF1* is a function to be applied
   //! Resolution Calibration map between read-out element and fitted function
   map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
-  //! Temperature Calibration map between read-out element and fitted function
+  //! Map between read-out element and slow threshold for analysis purposes
   map<MReadOutElementDoubleStrip, double> m_ThresholdMap;
+  //! Map between read-out element and hardware thresholds on the slow shaper
+  map<MReadOutElementDoubleStrip, double> m_HardwareThresholdMap;
+
+  //! Max value of the ADC units
+  static constexpr double m_MaxADCRange = 16383;
+  //! ADC value above which a strip hit is flagged as having a high ADC value
+  static constexpr double m_HighADCThreshold = 14000;
  
 #ifdef ___CLING___
  public:

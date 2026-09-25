@@ -2,7 +2,7 @@
  * MGUIExpoTACcut.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer, Nicole Rodriquez Cavero.
+ * Copyright (C) by Andreas Zoglauer, Nicole Rodriguez Cavero.
  * All rights reserved.
  *
  *
@@ -49,7 +49,7 @@ MGUIExpoTACcut::MGUIExpoTACcut(MModule* Module) : MGUIExpo(Module)
   // standard constructor
 
   // Set the new title of the tab here:
-  m_TabTitle = "TAC Calibration";
+  m_TabTitle = "TAC Cuts";
   
   // Set the histogram arrangment
   // SetTACHistogramArrangement(1, 1);
@@ -98,7 +98,7 @@ void MGUIExpoTACcut::SetTACHistogramArrangement(const vector<unsigned int> DetID
   unsigned int max_columns = 4;
 
   unsigned int NDetectors = DetIDs.size();
-  cout<<"MGUIExpoTACcut::SetTACHistogramArrangement: Number of detectors:"<< NDetectors<<endl;
+  if (g_Verbosity >= c_Info) cout<<"MGUIExpoTACcut::SetTACHistogramArrangement: Number of detectors:"<< NDetectors<<endl;
 
   for (unsigned int i=0; i < NDetectors; ++i) {
     // iterate over detector IDs, make the map from ID to plot position, and initialize the histograms

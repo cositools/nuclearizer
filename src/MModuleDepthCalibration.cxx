@@ -59,12 +59,12 @@ MModuleDepthCalibration::MModuleDepthCalibration() : MModule()
   m_Name = "Depth Calibration"; // - Determining the depth of each event (by Sean);
 
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "DepthCalibration";
+  m_XmlTag = "XmlTagDepthCalibration";
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration, true);
   AddPreceedingModuleType(MAssembly::c_StripPairing, true);
-  AddPreceedingModuleType(MAssembly::c_TACcut, true);
+  AddPreceedingModuleType(MAssembly::c_TACCalibration, true);
 //  AddPreceedingModuleType(MAssembly::c_CrosstalkCorrection, false); // Soft requirement
 
   // Set all types this modules handles
@@ -84,7 +84,7 @@ MModuleDepthCalibration::MModuleDepthCalibration() : MModule()
   m_AllowMultiThreading = true;
   m_AllowMultipleInstances = false;
 
-  m_Coeffs_Energy = 0;
+  m_Coeffs_Energy = 59.5;
 
   m_NoError = 0;
   m_Error1 = 0;
@@ -114,63 +114,16 @@ MModuleDepthCalibration::~MModuleDepthCalibration()
 bool MModuleDepthCalibration::Initialize()
 {
 
-  // The detectors need to be in the same order as DetIDs.
-  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
-  vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
-
-  // Look through the Geometry and get the names and thicknesses of all the detectors.
-  for (unsigned int i = 0; i < DetList.size(); ++i) {
-    // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
-    // If using the card cage at UCSD, default to DetID=11.
-    unsigned int DetID = i;
-    if (m_UCSDOverride == true) {
-      DetID = 11;
-    }
-
-    MDDetector* det = DetList[i];
-    vector<string> DetectorNames;
-    if (det->GetTypeName() == "Strip3D") {
-      if (det->GetNSensitiveVolumes() == 1) {
-        MDVolume* vol = det->GetSensitiveVolume(0);
-        string det_name = vol->GetName().GetString();
-        if (find(DetectorNames.begin(), DetectorNames.end(), det_name) == DetectorNames.end()) {
-          DetectorNames.push_back(det_name);
-          m_Thicknesses[DetID] = 2 * (det->GetStructuralSize().GetZ());
-          MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
-          m_XPitches[DetID] = strip->GetPitchX();
-          m_YPitches[DetID] = strip->GetPitchY();
-          m_NXStrips[DetID] = strip->GetNStripsX();
-          m_NYStrips[DetID] = strip->GetNStripsY();
-
-          if (g_Verbosity >= c_Info) {
-            cout << "Found detector " << det_name << " corresponding to DetID=" << DetID << "." << endl;
-            cout << "Detector thickness: " << m_Thicknesses[DetID] << endl;
-            cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
-            cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
-            cout << "X strip pitch: " << m_XPitches[DetID] << endl;
-            cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
-          }
-          m_DetectorIDs.push_back(DetID);
-          m_Detectors[DetID] = det;
-        } else {
-          if (g_Verbosity >= c_Error) {
-            cout<<"ERROR in MModuleDepthCalibration::Initialize: Found a duplicate detector: "<<det_name<<endl;
-          }
-        }
-      } else {
-        if (g_Verbosity >= c_Error) {
-          cout<<"ERROR in MModuleDepthCalibration::Initialize: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
-        }
-      }
-    }
+  if (LoadDetectorDimensions(m_Geometry) == false) {
+    return false;
   }
 
   if (m_DetectorIDs.size() == 0) {
-    cout<<"No Strip3D detectors were found."<<endl;
+    if (g_Verbosity >= c_Error) cout<< m_XmlTag << ": ERROR: No Strip3D detectors were found."<<endl;
     return false; 
   }
 
-  m_CoeffsFileIsLoaded = LoadCoeffsFile(m_CoeffsFile);
+  m_CoeffsFileIsLoaded = LoadCoeffsFile(m_CoeffsFileName);
   if (m_CoeffsFileIsLoaded == false) {
     return false;
   }
@@ -179,19 +132,31 @@ bool MModuleDepthCalibration::Initialize()
     return false;
   }
 
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
+  // Parse list of disabled strips (or skip if no file name was passed)
+  if (m_AccountForDisabledStrips == true && m_DisabledStripsFileName.IsEmpty() == false) {
+    if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Reading in disabled strips from " << m_DisabledStripsFileName << endl; 
+    if (LoadDisabledStripsFile(m_DisabledStripsFileName) == false) {
+      return false;
+    }
+  }
+
   if (m_MaskMetrologyEnabled == true) {
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
-    m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFile);
-    if (m_MaskMetrologyFile == false) {
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "Unable to open Metrology file" << endl;
+    m_MaskMetrologyFileIsLoaded = LoadMaskMetrologyFile(m_MaskMetrologyFileName);
+    if (m_MaskMetrologyFileIsLoaded == false) {
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Unable to open Metrology file" << endl;
       return false;
     }
   }
 
   MSupervisor* S = MSupervisor::GetSupervisor();
-  m_EnergyCalibration = (MModuleEnergyCalibration*) S->GetAvailableModuleByXmlTag("EnergyCalibration");
+  m_EnergyCalibration = (MModuleEnergyCalibration*) S->GetAvailableModuleByXmlTag("XmlTagEnergyCalibration");
   if (m_EnergyCalibration == nullptr) {
-    cout << "MModuleDepthCalibration: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
+    if (g_Verbosity >= c_Error) {
+      cout << m_XmlTag << ": ERROR: Could not resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
+    }
     return false;
   }
 
@@ -286,34 +251,52 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         int HVStripID = HVSH->GetStripID();
         int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
 
-       //Define the X/Y positions based on the detector pitch and number of strip hits
+        //Define the X/Y positions based on the detector pitch and number of strip hits
         // LV strip 0 is in -ve X direction, HV strip 0 is in -ve Y direction.
         // Confusingly, the strips parallel to the Y axis determines the X position, and the "X strips" determine the Y position
         double Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
         double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
         double Zpos = 0.0;
 
-        if (m_MaskMetrologyEnabled == true) {
-          // If we are applying the mask metrology correction, first define two new readout elements to help determine the intersection of these two strips
-          MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
-          MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
-
-          // Find the intercept of the two dominate strips based on the mask metrology, and update Xpos and Ypos	  
-          vector<double> inter = GetStripIntersection(R_LV, R_HV);
-          Xpos = inter[0];
-          Ypos = inter[1];
-
-	}
-
-
         // TODO: Calculate X and Y positions more rigorously using charge sharing.
-
         double Xsigma = m_YPitches[DetID]/sqrt(12.0);
         double Ysigma = m_XPitches[DetID]/sqrt(12.0);
         double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
 
-        vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
+        // Define two new readout elements to help determine the intersection of these two strips
+        MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
+        MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
 
+        // Account for shorted strips
+        // Shorted strip on the LV side => adjust Xpos and Xsigma
+        if (m_ShortedStrips.find(R_LV) != m_ShortedStrips.end()){
+          unsigned int LeftLVStripID, RightLVStripID;
+          tie(LeftLVStripID, RightLVStripID) = m_ShortedStrips[R_LV];
+          // Assign Xpos as the mean of the lowest and highest LV StripID
+          Xpos = m_YPitches[DetID] * (((double) LeftLVStripID + (double) RightLVStripID) / 2 - ((m_NYStrips[DetID]-1)/2.0));
+          // Scale XSigma by the number of LV strips that are shorted together
+          Xsigma = (RightLVStripID - LeftLVStripID) * m_YPitches[DetID]/sqrt(12.0);
+        }
+
+        // Shorted strip on the HV side => adjust Ypos and Ysigma
+        if (m_ShortedStrips.find(R_HV) != m_ShortedStrips.end()){
+          unsigned int LeftHVStripID, RightHVStripID;
+          tie(LeftHVStripID, RightHVStripID) = m_ShortedStrips[R_HV];
+          // Assign Ypos as the mean of the lowest and highest HV StripID
+          Ypos = m_XPitches[DetID]*(((double) LeftHVStripID + (double) RightHVStripID) / 2 - ((m_NXStrips[DetID]-1)/2.0));
+          // Scale YSigma by the number of HV strips that are shorted together
+          Ysigma = (RightHVStripID - LeftHVStripID) * m_YPitches[DetID]/sqrt(12.0);
+        }
+
+        // TODO: Account for double-wide strips also when using the mask metrology
+        if (m_MaskMetrologyEnabled == true) {
+          // Find the intercept of the two dominant strips based on the mask metrology, and update Xpos and Ypos	  
+          vector<double> inter = GetStripIntersection(R_LV, R_HV);
+          Xpos = inter[0];
+          Ypos = inter[1];
+        }
+
+        vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
         vector<double> CTDVec = GetCTD(DetID, Grade);
         vector<double> DepthVec = GetDepth(DetID);
 
@@ -321,24 +304,31 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         double LVTiming = LVSH->GetTiming();
         double HVTiming = HVSH->GetTiming();
 
-        // If there aren't coefficients loaded, then report a depth calibration error.
-        if( Coeffs == nullptr ){
+        // If the hit is on a disabled strip, if there aren't coefficients loaded, then report a depth calibration error.
+        if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_LV) != m_DisabledStrips.end()) {
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("Strip hit on disabled LV strip");
+          ++m_Error1;
+        } else if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_HV) != m_DisabledStrips.end()) {
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("Strip hit on disabled HV strip");
+        } else if (Coeffs == nullptr){
           // Set the bad flag for depth
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
           ++m_Error1;
         } else if (CTDVec.size() == 0) {
-            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty CTD vector" << endl;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No calibration coefficients");
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Empty CTD vector" << endl;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No calibration coefficients");
         } else if (DepthVec.size() == 0) {
-            if (g_Verbosity >= c_Error) cout << m_XmlTag << "Empty Depth vector" << endl;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No calibration coefficients");
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Empty Depth vector" << endl;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No calibration coefficients");
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
-            ++m_Error3;
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("No timing");
+          ++m_Error3;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No timing");
         } else {
           
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
@@ -403,7 +393,7 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           }
         }
 
-      if (g_Verbosity >= c_Info) cout << m_XmlTag << "Strip ID :" << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
+      if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Strip ID :" << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
       MVector LocalPosition(Xpos, Ypos, Zpos);
       MVector LocalOrigin(0.0, 0.0, 0.0);
@@ -467,7 +457,7 @@ double MModuleDepthCalibration::GetTimingNoiseFWHM(int PixelCode, double Energy)
   // Should follow 1/E relation
   // TODO: Determine real energy dependence and implement it here.
   double noiseFWHM = 0.0;
-  if (m_Coeffs_Energy != 0) {
+  if (m_CoeffsFileIsLoaded == true) {
     noiseFWHM = m_Coeffs[PixelCode][2] * m_Coeffs_Energy/Energy;
     if (noiseFWHM < 3.0*2.355) {
       noiseFWHM = 3.0*2.355;
@@ -482,25 +472,202 @@ double MModuleDepthCalibration::GetTimingNoiseFWHM(int PixelCode, double Energy)
 /////////////////////////////////////////////////////////////////////////////////
 
 
+bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
+{
+
+  // The detectors need to be in the same order as DetIDs.
+  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
+  vector<MDDetector*> DetList = Geometry->GetDetectorList();
+
+  // Look through the Geometry and get the names and thicknesses of all Strip3D detectors.
+  vector<string> DetectorNames;
+  unsigned int DetID = 0;
+
+  for (unsigned int i = 0; i < DetList.size(); ++i) {
+    // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
+    // If using the card cage at UCSD, default to DetID=11.
+    if (m_UCSDOverride == true) {
+      DetID = 11;
+    }
+
+    MDDetector* det = DetList[i];
+    if (det->GetTypeName() == "Strip3D") {
+      if (det->GetNSensitiveVolumes() == 1) {
+        // MDVolume* vol = det->GetSensitiveVolume(0);
+        MString DetectorName = det->GetName();
+        string DetName = DetectorName.GetString();
+        
+        // Check that the DetID agrees with the naming scheme GeD_X
+        if (DetectorName.BeginsWith("GeD_") == true) {
+          DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
+          if (DetID != DetectorName.ToUnsignedInt()) {
+            if (g_Verbosity >= c_Error) {
+              cout << m_XmlTag << ": ERROR: Non-matching DetID="<<DetID<<" for detector "<<DetName<<endl;
+            }
+            // Return false if this is running with the COSI SMEX payload mass model
+            if (Geometry->GetName() == "COSI-SMEX-Payload"){
+              return false;
+            }
+          }
+        } else if (Geometry->GetName() == "COSI-SMEX-Payload") {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
+          }
+          return false;
+        }
+
+        if (find(DetectorNames.begin(), DetectorNames.end(), DetName) == DetectorNames.end()) {
+          DetectorNames.push_back(DetName);
+          m_Thicknesses[DetID] = 2 * (det->GetStructuralSize().GetZ());
+          MDStrip3D* strip = dynamic_cast<MDStrip3D*>(det);
+          m_XPitches[DetID] = strip->GetPitchX();
+          m_YPitches[DetID] = strip->GetPitchY();
+          m_NXStrips[DetID] = strip->GetNStripsX();
+          m_NYStrips[DetID] = strip->GetNStripsY();
+
+          if (g_Verbosity >= c_Info) {
+            cout << "Found detector " << DetName << " corresponding to DetID=" << DetID << "." << endl;
+            cout << "Detector thickness: " << m_Thicknesses[DetID] << endl;
+            cout << "Number of X strips: " << m_NXStrips[DetID] << endl;
+            cout << "Number of Y strips: " << m_NYStrips[DetID] << endl;
+            cout << "X strip pitch: " << m_XPitches[DetID] << endl;
+            cout << "Y strip pitch: " << m_YPitches[DetID] << endl;
+          }
+          m_DetectorIDs.push_back(DetID);
+          m_Detectors[DetID] = det;
+          DetID += 1;
+        } else {
+          if (g_Verbosity >= c_Error) {
+            cout<<m_XmlTag<<": ERROR: Found a duplicate detector: "<<DetName<<endl;
+          }
+        }
+      } else {
+        if (g_Verbosity >= c_Error) {
+          cout<<m_XmlTag<<": ERROR: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModuleDepthCalibration::LoadDisabledStripsFile(MString FileName)
+{
+
+  // Read in the file of disabled strips
+  // Dead strips: DetID Side Strip
+  // e.g. 0 h 31 = HV strip 31 on Detector with ID 0 is dead (not read out at all)
+  // Shorted strips: DetID Side Strip ReadOutVia
+  // e.g. 0 l 14 15 = LV strip 14 on Detector with ID 0 is shorted to LV strip 15, and read out via LV strip 15
+
+  MFile DisabledStripsFile;
+  if (DisabledStripsFile.Open(FileName) == false) {
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: LoadDisabledStripsFile failed to open file." << endl;
+    return false;
+  }
+
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
+
+  MString Line;
+  while (DisabledStripsFile.ReadLine(Line) == true) {
+
+    // Skip lines empty lines or lines starting with #
+    if (Line.IsEmpty() == true || Line.BeginsWith('#') == true) continue;
+  
+    vector<MString> Tokens = Line.Tokenize(" ");
+    
+    // Dead strips have 3 tokens, shorted strips have 4 tokens
+    if (Tokens.size() == 3 || Tokens.size() == 4) {
+
+      int DetID = Tokens[0].ToInt(); // Detector ID
+      MString Side = Tokens[1].ToString(); // side is a string, either 'l' or 'h'
+      int StripID = Tokens[2].ToInt(); // Strip number of the disabled strip
+
+      MReadOutElementDoubleStrip R;
+      R.SetDetectorID(DetID);
+      R.IsLowVoltageStrip(Side == "l");
+      R.SetStripID(StripID);
+
+      // Add the strip to the list of disabled strips (or throw an error for multiple entries)
+      if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R) != m_DisabledStrips.end()) {
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Multiple disabled-strip entries found for " << R << endl;
+        return false;
+      }
+      m_DisabledStrips.push_back(R);
+
+      // For shorted strips also keep track of which strip the disabled strip is connected to
+      if (Tokens.size() == 4) {
+        int ReadOutVia = Tokens[3].ToInt();
+
+        MReadOutElementDoubleStrip RActive;
+        RActive.SetDetectorID(DetID);
+        RActive.IsLowVoltageStrip(Side == "l");
+        RActive.SetStripID(ReadOutVia);
+        
+        if (abs(StripID - ReadOutVia) != 1) {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: The double-wide strip numbers " << StripID << " and " << ReadOutVia 
+                 << " for the " << (Side == "l" ? "LV" : "HV") << " side of detector " << DetID << " are not adjacent" << endl;
+          }
+          return false;
+        }
+
+        // Throw an error when creating multiple entries for the same active strip in m_ShortedStrips
+        // TODO: Also allow for triple-wide strips etc.
+        if (m_ShortedStrips.find(RActive) != m_ShortedStrips.end()) {
+          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Multiple shorted-strip entries found for " << RActive << endl;
+          return false;
+        }
+
+        // Add the active strip to the list of shorted strip
+        tuple<int,int> ShortedStrip = minmax({StripID, ReadOutVia});
+        m_ShortedStrips[RActive] = ShortedStrip;
+
+      }
+
+    } else {
+      if (g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": ERROR: LoadDisabledStripsFile expects lines to have 3 or 4 entries, but received " << Tokens.size() << endl;
+        cout << "The faulty line is: " << Line << endl;
+      }
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
 bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 {
   // Read in the stretch and offset file, which should have a header line with information on the measurements:
   // ### 800 V 80 K 59.5 keV
   // And which should contain for each pixel:
-  // Pixel code (10000*det + 100*LVStrip + HVStrip), Stretch, Offset, Timing/CTD noise, Chi2 for the CTD fit (for diagnostics mainly)
+  // Pixel code (10000*det + 100*LVStrip + HVStrip), Stretch, Offset, Timing/CTD noise in units of sigma, Chi2 for the CTD fit (for diagnostics mainly)
 
   MFile CoeffsFile;
   if (CoeffsFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleDepthCalibration::LoadCoeffsFile: failed to open coefficients file." << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Failed to open depth coefficients file." << endl;
     return false;
   }
 
   MString Line;
-  while (CoeffsFile.ReadLine(Line)) {
+  while (CoeffsFile.ReadLine(Line) == true) {
     if (Line.BeginsWith('#') == true) {
       std::vector<MString> Tokens = Line.Tokenize(" ");
       m_Coeffs_Energy = Tokens[5].ToDouble();
-      if (g_Verbosity >= c_Info) cout << m_XmlTag << "The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
+      if (g_Verbosity >= c_Info) {
+        cout << m_XmlTag << ": The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
+      }
     } else {
       std::vector<MString> Tokens = Line.Tokenize(",");
       if (Tokens.size() == 5) {
@@ -535,12 +702,14 @@ std::vector<double>* MModuleDepthCalibration::GetPixelCoeffs(int PixelCode)
       return &m_Coeffs[PixelCode];
     } else {
       if (g_Verbosity >= c_Warning) {
-        cout << "MModuleDepthCalibration::GetPixelCoeffs: cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
+        cout << m_XmlTag << ": GetPixelCoeffs cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
       }
       return nullptr;
     }
   } else {
-    cout << "MModuleDepthCalibration::GetPixelCoeffs: cannot get stretch and offset; file has not yet been loaded." << endl;
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": GetPixelCoeffs cannot get stretch and offset; file has not yet been loaded." << endl;
+    }
     return nullptr;
   }
 
@@ -568,11 +737,11 @@ bool MModuleDepthCalibration::LoadSplinesFile(MString FileName)
 {
   // Input spline files should have the following format:
   // ### DetID, HV, Temperature, Photopeak Energy (TODO: More? Fewer?)
-  // depth, ctd0, ctd1, ctd2.... (Basically, allow for CTDs for different subpixel regions)
+  // depth, ctd0, (optional) e_drift_times, (optional) h_drift_times
   // '' '' ''
   MFile SplineFile; 
   if (SplineFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleDepthCalibration::LoadSplinesFile: failed to open splines file." << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: LoadSplinesFile failed to open depth splines file." << endl;
     return false;
   }
 
@@ -585,7 +754,7 @@ bool MModuleDepthCalibration::LoadSplinesFile(MString FileName)
   while (SplineFile.ReadLine(Line)) {
     if (Line.Length() != 0) {
       if (Line.BeginsWith("#") == true) {
-        // If we've reached a new ctd spline then record the previous one in the m_SplineMaps and start a new one.
+        // If we've reached a new CTD spline then record the previous one in the m_SplineMaps and start a new one.
         vector<MString> tokens = Line.Tokenize(" ");
 
         if (DepthVec.size() > 0) {
@@ -599,7 +768,7 @@ bool MModuleDepthCalibration::LoadSplinesFile(MString FileName)
         vector<MString> tokens = Line.Tokenize(",");
         DepthVec.push_back(tokens[0].ToDouble());
 
-        // Multiple CTDs allowed.
+        // Multiple columns allowed (first column CTD, then optional charge carrier drift times needed for DEE)
         for (unsigned int i = 0; i < (tokens.size() - 1); ++i) {
           while (i>=CTDArr.size()) {
             vector<double> TempVec;
@@ -632,7 +801,7 @@ bool MModuleDepthCalibration::LoadMaskMetrologyFile(MString FileName)
   // Det ID, Side (l,h), Strip ID (0-63), x_mm, y_mm, z_mm, roll_deg, pitch_deg, yaw_deg
   MFile MetrologyFile;
   if (MetrologyFile.Open(FileName) == false) {
-    cout << "ERROR in MModuleDepthCalibration::LoadMaskMetrologyFile: failed to open metrology file." << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: LoadMaskMetrologyFile failed to open metrology file." << endl;
     return false;
   } 
 
@@ -660,7 +829,7 @@ bool MModuleDepthCalibration::LoadMaskMetrologyFile(MString FileName)
         // Make the map that defines the metrology info for each readout element
         m_MaskMetrology[R] = maskmet;
       } else {
-        cout << "ERROR in MModuleDepthCalibration::LoadMaskMetrologyFile: incorrect number of tokens in the file." << endl;
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: LoadMaskMetrologyFile found incorrect number of tokens in the file." << endl;
         return false;
       }
     }
@@ -696,7 +865,7 @@ vector<double> MModuleDepthCalibration::GetStripIntersection(MReadOutElementDoub
   double denominator1 = tan(LVStripMet[5]*TMath::DegToRad());
   double denominator2 = tan((HVStripMet[5]-90)*TMath::DegToRad())-1/tan(LVStripMet[5]*TMath::DegToRad());
   if (denominator1 == 0.0 || denominator2 == 0.0) {
-    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Strip Intersection gives divide by zero - returning unrotated hit position" << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Strip Intersection gives divide by zero - returning unrotated hit position" << endl;
     double Xpos = m_YPitches[DetID]*((double)R_LVStrip.GetStripID() - ((m_NYStrips[DetID]-1)/2.0));
     double Ypos = m_XPitches[DetID]*((double)R_HVStrip.GetStripID() - ((m_NXStrips[DetID]-1)/2.0));
     return {Xpos, Ypos}; 
@@ -726,7 +895,7 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
   }
   if (H->GetNStripHits() == 0) {
     // Error if no strip hits listed. Bad grade is returned
-    if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: HIT WITH NO STRIP HITS" << endl;
+    if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Hit with no strip hits" << endl;
     return -1;
   }
    
@@ -737,12 +906,12 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
   vector<int> HVStripIDs;
   for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
     MStripHit* SH = H->GetStripHit(j);
-    if (SH == nullptr ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: Depth Calibration: got NULL strip hit :( " << endl;
+    if (SH == nullptr) { 
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Got nullptr as strip hit :( " << endl;
       return -1;
     }
-    if (SH->GetEnergy() == 0 ) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << "ERROR in MModuleDepthCalibration: Depth Calibration: got strip without energy :( " << endl; 
+    if (SH->GetEnergy() == 0) { 
+      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Got strip without energy :( " << endl; 
       return -1;
     }
     if (SH->IsLowVoltageStrip()) {
@@ -756,9 +925,9 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
   }
 
   // If the same strip has multiple hits, this is a bad grade.
-  bool MultiHitX = H->GetStripHitMultipleTimesX();
-  bool MultiHitY = H->GetStripHitMultipleTimesY();
-  if (MultiHitX || MultiHitY) {
+  bool MultiHitLV = H->GetStripHitMultipleTimesLV();
+  bool MultiHitHV = H->GetStripHitMultipleTimesHV();
+  if (MultiHitLV || MultiHitHV) {
     return 5;  
   }
 
@@ -770,7 +939,7 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
     int LVmax = * std::max_element(LVStripIDs.begin(), LVStripIDs.end());
 
     // If the strip hits are not all adjacent, it's a bad grade.
-    if ( ((HVmax - HVmin) >= (HVStrips.size())) || ((LVmax - LVmin) >= (LVStrips.size())) ) {
+    if ( ((HVmax - HVmin) >= (int) HVStrips.size()) || ((LVmax - LVmin) >= (int) LVStrips.size()) ) {
       return 6;
     }
   }
@@ -864,14 +1033,16 @@ bool MModuleDepthCalibration::AddDepthCTD(vector<double> Depth, vector<vector<do
   double MaxDepth = * std::max_element(Depth.begin(), Depth.end());
   double MinDepth = * std::min_element(Depth.begin(), Depth.end());
   if (fabs((MaxDepth-MinDepth) - m_Thicknesses[DetID]) > 0.01) {
-    cout<<"ERROR in MModuleDepthCalibration::AddDepthCTD: The thickness of detector "<<DetID<<" listed in the geometry file does not match the depth-CTD file."<<endl;
-    cout<<"Geometry file gives "<<m_Thicknesses[DetID]<<"cm, while the depth-CTD file gives "<<(MaxDepth-MinDepth)<<"cm."<<endl;
+    if (g_Verbosity >= c_Error) {
+      cout<<m_XmlTag<<": ERROR: The thickness of detector "<<DetID<<" listed in the geometry file does not match the depth-CTD file."<<endl;
+      cout<<"Geometry file gives "<<m_Thicknesses[DetID]<<"cm, while the depth-CTD file gives "<<(MaxDepth-MinDepth)<<"cm."<<endl;
+    }
     return false;
   }
 
   // Check to make sure splines haven't already been loaded for this detector
   if (SplineMap.count(DetID)>0) {
-    cout<<"MModuleDepthCalibration::AddDepthCTD: Splines already added for DetID "<<DetID<<"."<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": ERROR: Multiple depth splines found for DetID "<<DetID<<"."<<endl;
     return false;
   } else {
     vector<TSpline3*> TempVec;
@@ -943,20 +1114,24 @@ vector<double> MModuleDepthCalibration::GetCTD(int DetID, int Grade)
 {
   // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
 
-  if (!m_SplinesFileIsLoaded) {
-    cout << "MModuleDepthCalibration::GetCTD: cannot return Depth to CTD relation because the file was not loaded." << endl;
+  if (m_SplinesFileIsLoaded == false) {
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": GetCTD cannot return Depth to CTD relation because the file was not loaded." << endl;
+    }
     return vector<double> ();
   }
   // If there is a CTD array for the given detector, return it.
-  // If the Grade is larger than the number of CTD vectors stored, then just return Grade 0 vector.
+  // Always return the Grade 0 CTD array
   if (m_CTDMap.count(DetID) > 0) {
-    if ( ((int)m_CTDMap[DetID].size()) > Grade) {
-      return (m_CTDMap[DetID][Grade]);
-    } else {
-      return (m_CTDMap[DetID][0]);
-    }
+    // if ( ((int)m_CTDMap[DetID].size()) > Grade) {
+    //   return m_CTDMap[DetID][Grade];
+    // } else {
+      return m_CTDMap[DetID][0];
+    // }
   } else {
-    cout << "MModuleDepthCalibration::GetCTD: No CTD map is loaded for Det " << DetID << "." << endl;
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": GetCTD: No CTD map is loaded for Det " << DetID << "." << endl;
+    }
     return vector<double> ();
   }
 }
@@ -967,20 +1142,22 @@ vector<double> MModuleDepthCalibration::GetCTD(int DetID, int Grade)
 
 vector<double> MModuleDepthCalibration::GetDepth(int DetID)
 {
-  // Retrieves the appropriate CTD vector given the Detector ID and Event Grade passed
+  // Retrieves the appropriate depth grid given the Detector ID
 
-  if (!m_SplinesFileIsLoaded) {
-    cout << "MModuleDepthCalibration::GetDepth: cannot return Depth grid because the file was not loaded." << endl;
+  if (m_SplinesFileIsLoaded == false) {
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": GetDepth cannot return Depth grid because the file was not loaded." << endl;
+    }
     return vector<double> ();
   }
 
-  // If there is a CTD array for the given detector, return it.
-  // If the Grade is larger than the number of CTD vectors stored, then just return Grade 0 vector.
   if (m_DepthGrid.count(DetID) > 0){
     return m_DepthGrid[DetID];
-    } else {
-      cout << "MModuleDepthCalibration::GetDepth: No Depth grid is loaded for Det " << DetID << "." << endl;
-      return vector<double> ();
+  } else {
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": GetDepth: No Depth grid is loaded for Det " << DetID << "." << endl;
+    }
+    return vector<double> ();
   }
 } 
 
@@ -989,24 +1166,28 @@ vector<double> MModuleDepthCalibration::GetDepth(int DetID)
 
 TSpline3* MModuleDepthCalibration::GetSpline(int DetID, int Grade)
 {
-  // Retrieves the appropriate depth->CTD spline given the Detector ID and Event Grade passed
+  // Retrieves the appropriate depth->CTD spline given the Detector ID
 
-  if( !m_SplinesFileIsLoaded ){
-    cout << "MModuleDepthCalibration::GetSpline: cannot return Depth to CTD spline because the file was not loaded." << endl;
+  if(m_SplinesFileIsLoaded == false){
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": GetSpline cannot return Depth to CTD spline because the file was not loaded." << endl;
+    }
     return nullptr;
   }
 
   // If there is a spline for the given detector, return it.
-  // If the Grade is larger than the number of splines stored, then just return Grade 0 spline.
+  // Always return Grade 0 (CTD) spline.
   if( m_SplineMap.count(DetID) > 0 ){
-    if ( ((int)m_SplineMap[DetID].size()) > Grade) {
-      return (m_SplineMap[DetID][Grade]);
-    }
-    else {
-      return (m_SplineMap[DetID][0]);
-    }
+    // if ( ((int)m_SplineMap[DetID].size()) > Grade) {
+    //   return m_SplineMap[DetID][Grade];
+    // }
+    // else {
+      return m_SplineMap[DetID][0];
+    // }
   } else {
-    cout << "MModuleDepthCalibration::GetSpline: No spline is loaded for Det " << DetID << "." << endl;
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": GetSpline: No spline is loaded for Det " << DetID << "." << endl;
+    }
     return nullptr;
   }
 }
@@ -1033,27 +1214,37 @@ bool MModuleDepthCalibration::ReadXmlConfiguration(MXmlNode* Node)
 
   MXmlNode* CoeffsFileNameNode = Node->GetNode("CoeffsFileName");
   if (CoeffsFileNameNode != nullptr) {
-  m_CoeffsFile = CoeffsFileNameNode->GetValue();
+    m_CoeffsFileName = CoeffsFileNameNode->GetValue();
   }
 
   MXmlNode* SplinesFileNameNode = Node->GetNode("SplinesFileName");
   if (SplinesFileNameNode != nullptr) {
-  m_SplinesFile = SplinesFileNameNode->GetValue();
+    m_SplinesFile = SplinesFileNameNode->GetValue();
+  }
+
+  MXmlNode* AccountForDisabledStripsNode = Node->GetNode("AccountForDisabledStrips");
+  if (AccountForDisabledStripsNode != nullptr) {
+    m_AccountForDisabledStrips = (bool) AccountForDisabledStripsNode->GetValueAsBoolean();
+  }
+
+  MXmlNode* DisabledStripsFileNameNode = Node->GetNode("DisabledStripsFileName");
+  if (DisabledStripsFileNameNode != nullptr) {
+    m_DisabledStripsFileName = DisabledStripsFileNameNode->GetValue();
   }
 
   MXmlNode* MasKMetrologyNode = Node->GetNode("MaskMetrology");
   if (MasKMetrologyNode != nullptr) {
-      m_MaskMetrologyEnabled = (bool) MasKMetrologyNode->GetValueAsBoolean();
+    m_MaskMetrologyEnabled = (bool) MasKMetrologyNode->GetValueAsBoolean();
   }
 
   MXmlNode* MaskMetrologyFileNameNode = Node->GetNode("MaskMetrologyFileName");
   if (MaskMetrologyFileNameNode != nullptr) {
-    m_MaskMetrologyFile = MaskMetrologyFileNameNode->GetValue();
+    m_MaskMetrologyFileName = MaskMetrologyFileNameNode->GetValue();
   }
 
   MXmlNode* UCSDOverrideNode = Node->GetNode("UCSDOverride");
   if (UCSDOverrideNode != nullptr) {
-      m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsBoolean();
+    m_UCSDOverride = (bool) UCSDOverrideNode->GetValueAsBoolean();
   }
 
   return true;
@@ -1067,10 +1258,12 @@ MXmlNode* MModuleDepthCalibration::CreateXmlConfiguration()
   //! Create an XML node tree from the configuration
 
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
-  new MXmlNode(Node, "CoeffsFileName", m_CoeffsFile);
+  new MXmlNode(Node, "CoeffsFileName", m_CoeffsFileName);
   new MXmlNode(Node, "SplinesFileName", m_SplinesFile);
+  new MXmlNode(Node, "AccountForDisabledStrips", (bool)m_AccountForDisabledStrips);
+  new MXmlNode(Node, "DisabledStripsFileName", m_DisabledStripsFileName);
   new MXmlNode(Node, "MaskMetrology", (bool)m_MaskMetrologyEnabled);
-  new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFile);
+  new MXmlNode(Node, "MaskMetrologyFileName", m_MaskMetrologyFileName);
   new MXmlNode(Node, "UCSDOverride", (bool)m_UCSDOverride);  
   
   return Node;
@@ -1080,19 +1273,22 @@ void MModuleDepthCalibration::Finalize()
 {
 
   MModule::Finalize();
-  cout << "###################" << endl;
-  cout << "AWL depth cal stats" << endl;
-  cout << "###################" << endl;
-  cout << "Good hits: " << m_NoError << endl;
-  cout << "Number of hits missing calibration coefficients: " << m_Error1 << endl;
-  cout << "Number of hits too far outside of detector: " << m_Error2 << endl;
-  cout << "Number of hits missing timing information: " << m_Error3 << endl;
-  cout << "Number of hits with strips hit multiple times: " << m_Error5 << endl;
-  cout << "Number of hits with non-adjacent strip hits: " << m_Error6 << endl;
-  cout << "Number of hits with too many strip hits: " << m_Error4 << endl;
-  cout << "Number of hits with no strip hits on one or both sides: " << m_ErrorSH << endl;
-  cout << "Number of hits with null strip hits: " << m_ErrorNullSH << endl;
-  cout << "Number of hits 0 energy on a strip hit: " << m_ErrorNoE << endl;
+
+  if (g_Verbosity >= c_Info) {
+    cout << "###################" << endl;
+    cout << "AWL depth cal stats" << endl;
+    cout << "###################" << endl;
+    cout << "Good hits: " << m_NoError << endl;
+    cout << "Number of hits missing calibration coefficients: " << m_Error1 << endl;
+    cout << "Number of hits too far outside of detector: " << m_Error2 << endl;
+    cout << "Number of hits missing timing information: " << m_Error3 << endl;
+    cout << "Number of hits with strips hit multiple times: " << m_Error5 << endl;
+    cout << "Number of hits with non-adjacent strip hits: " << m_Error6 << endl;
+    cout << "Number of hits with too many strip hits: " << m_Error4 << endl;
+    cout << "Number of hits with no strip hits on one or both sides: " << m_ErrorSH << endl;
+    cout << "Number of hits with null strip hits: " << m_ErrorNullSH << endl;
+    cout << "Number of hits 0 energy on a strip hit: " << m_ErrorNoE << endl;
+  }
 
   // Clean up maps and vectors
   m_Coeffs.clear();
@@ -1106,6 +1302,9 @@ void MModuleDepthCalibration::Finalize()
   m_DepthGrid.clear();
   m_SplineMap.clear();
   m_DetectorIDs.clear();
+
+  m_DisabledStrips.clear();
+  m_ShortedStrips.clear();
 
 }
 

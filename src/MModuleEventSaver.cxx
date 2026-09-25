@@ -75,6 +75,7 @@ MModuleEventSaver::MModuleEventSaver() : MModule()
   m_InternalFileName = "";
   m_Zip = false;
   m_SaveBadEvents = true;
+  m_SavePoorQualityEvents = true;
   m_SaveVetoEvents = true;
   m_AddTimeTag = false;
     
@@ -345,6 +346,10 @@ bool MModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
     if (Event->IsBad() == true) return true;
   }
 
+  if (m_SavePoorQualityEvents == false) {
+    if (Event->IsPoorQuality() == true) return true;
+  }
+
   if (m_SaveVetoEvents == false) {
     if (Event->IsVeto() == true) return true;
   }
@@ -415,6 +420,10 @@ bool MModuleEventSaver::ReadXmlConfiguration(MXmlNode* Node)
   if (SaveBadEventsNode != 0) {
     m_SaveBadEvents = SaveBadEventsNode->GetValueAsBoolean();
   }
+  MXmlNode* SavePoorQualityEventsNode = Node->GetNode("SavePoorQualityEvents");
+  if (SavePoorQualityEventsNode != 0) {
+    m_SavePoorQualityEvents = SavePoorQualityEventsNode->GetValueAsBoolean();
+  }
   MXmlNode* SaveVetoEventsNode = Node->GetNode("SaveVetoEvents");
   if (SaveVetoEventsNode != 0) {
     m_SaveVetoEvents = SaveVetoEventsNode->GetValueAsBoolean();
@@ -480,6 +489,7 @@ MXmlNode* MModuleEventSaver::CreateXmlConfiguration()
   new MXmlNode(Node, "FileName", m_FileName);
   new MXmlNode(Node, "Mode", m_Mode);
   new MXmlNode(Node, "SaveBadEvents", m_SaveBadEvents);
+  new MXmlNode(Node, "SavePoorQualityEvents", m_SavePoorQualityEvents);
   new MXmlNode(Node, "SaveVetoEvents", m_SaveVetoEvents);
   new MXmlNode(Node, "AddTimeTag", m_AddTimeTag);
   new MXmlNode(Node, "SplitFile", m_SplitFile);

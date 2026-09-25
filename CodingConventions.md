@@ -37,14 +37,14 @@ To format a file do the following:
 
 ## New classes
 
-For new classes, copy and modify an existing one, or use the MModuleTemplate class as tempplate.
+For new classes, copy and modify an existing one, or use the MModuleTemplate class as template.
 
 ## Naming
 
 ### Classes
 
 * Due to historic reasons, all classes start with M.
-* Modules start with MModule
+* Modules start with MModule, with XML tags starting with XmlTag
 * Option GUI's start with MGUIOptions
 * Expo (= data display) GUI's start with MGUIExpo
 
@@ -186,6 +186,16 @@ X, DataPoint, IsNonZero
     }
   ```
 
+
+For a simple one-statement diagnostic guard, prefer the compact form used
+throughout the project:
+
+```cpp
+if (g_Verbosity >= c_Error) cout << "Error: Unable to open file" << endl;
+```
+
+Do not expand this form to a multi-line braced block unless the guarded code
+contains multiple statements or the longer form materially improves clarity.
 
 ### 6. **Whitespace in Expressions**
 

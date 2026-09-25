@@ -113,11 +113,12 @@ class MModuleLoaderMeasurementsFITS : public MModuleLoaderMeasurements
 
   //! Batch data storage for scalar columns
   std::vector<double> m_BatchTIME;
+  std::vector<uint32_t> m_BatchEVENTID;
   std::vector<uint8_t> m_BatchEVENTTYPE;
   std::vector<uint8_t> m_BatchNUMSTRIPHIT;
 
   //! Batch data storage for variable-length array columns
-  std::vector<std::valarray<uint8_t>> m_BatchTYPEHIT;
+  std::vector<std::valarray<uint8_t>> m_BatchHITTYPE;
   std::vector<std::valarray<int>> m_BatchDETID;
   std::vector<std::valarray<int>> m_BatchSTRIPID;
   std::vector<std::valarray<int>> m_BatchSIDEID;

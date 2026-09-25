@@ -72,6 +72,8 @@ class MGUIOptionsSaverMeasurementsL0 : public MGUIOptions
   //! Select which output file to save to
   MGUIEFileSelector* m_FileSelectorOutput;
 
+  MGUIEFileSelector* m_FileSelectorStripMap;
+
 
 
 #ifdef ___CLING___

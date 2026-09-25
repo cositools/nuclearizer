@@ -19,6 +19,7 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TSpline.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -47,6 +48,15 @@ class MSubModuleChargeTransport : public MSubModule
   MSubModuleChargeTransport(MSubModuleChargeTransport&&) = delete;
   //! No move operators
   MSubModuleChargeTransport& operator=(MSubModuleChargeTransport&&) = delete;
+
+  //! Set filename for CTD->Depth splines
+  void SetDepthSplinesFileName( const MString& FileName) { m_DepthSplinesFileName = FileName; }
+  //! Get filename for CTD->Depth splines
+  MString GetDepthSplinesFileName() const {return m_DepthSplinesFileName; }
+  //! Set filename for coefficients file
+  void SetDepthCoefficientsFileName( const MString& FileName) { m_DepthCoefficientsFileName = FileName; }
+  //! Get filename for coefficients file
+  MString GetDepthCoefficientsFileName() const { return m_DepthCoefficientsFileName; }
 
   //! Default destructor
   virtual ~MSubModuleChargeTransport();
@@ -101,6 +111,26 @@ class MSubModuleChargeTransport : public MSubModule
 
   list<MDEEStripHit> m_ChargeTransportHits;
 
+  //! Filename of the depth calibration coefficients (stretch, offset, timing noise, ...)
+  MString m_DepthCoefficientsFileName;
+
+  //! Map of the depth calibration coefficients
+  unordered_map<int, vector<double>> m_Coeffs;
+
+  //! Filename of CTD->Depth splines
+  MString m_DepthSplinesFileName;
+
+  // Analog of the CTD-to-depth splines in MModuleDepthCalibration:
+  //! Map: detector ID (int) -> vector containing depth values
+  unordered_map<int, vector<double>> m_DepthGrid;
+  //! Map: detector ID (int) -> simulated electron drift times (+ electronics) for the depth values in m_DepthGrid
+  unordered_map<int, vector<double>> m_ElectronDriftTimes;
+  //! The corresponding electron-drift-time interpolation spline
+  unordered_map<int, TSpline3*> m_ElectronDriftSplines;
+  //! Map: detector ID (int) -> simulated hole drift times (+ electronics) for the depth values in m_DepthGrid
+  unordered_map<int, vector<double>> m_HoleDriftTimes;
+  //! The corresponding hole-drift-time interpolation spline
+  unordered_map<int, TSpline3*> m_HoleDriftSplines;
 
   // private members:
  private:
