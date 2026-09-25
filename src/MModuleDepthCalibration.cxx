@@ -1,6 +1,4 @@
-/*
- * MModuleDepthCalibration.cxx
- *
+ /*
  *
  * Copyright (C) 2008-2008 by Andreas Zoglauer, Alex Lowell, 
  * 				Sean Pike, Carolyn Kierans.
@@ -189,233 +187,267 @@ void MModuleDepthCalibration::CreateExpos()
 
 bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
-  
-  if (Event->GetGuardRingVeto() == true) {
-    //TODO: Handle events with GR vetos    
-    
-    Event->SetDepthCalibrationError("GR Veto");
-    return false;
-  
-  } else {
-    
-    for (unsigned int i = 0; i < Event->GetNHits(); ++i ){
-      // Each event represents one photon. It contains Hits, representing interaction sites.
-      // H is a pointer to an instance of the MHit class. Each Hit has activated strips, represented by
-      // instances of the MStripHit class.
-      MHit* H = Event->GetHit(i);
 
-      int Grade = GetHitGrade(H);
+  for (unsigned int i = 0; i < Event->GetNHits(); ++i ) {
+    // H is a pointer to an instance of the MHit class. Each Hit has activated strips, represented by
+    // instances of the MStripHit class.
+    MHit* H = Event->GetHit(i);
+    int DetID = H->GetStripHit(0)->GetDetectorID();
 
-      // Handle different grades differently    
-      // GRADE=-1 is an error. Break from the loop and continue.
-      if (Grade < 0){
-        H->SetNoDepth();
-        Event->SetDepthCalibrationError("Error in depth calibration");
-        if (Grade == -1) {
-          ++m_ErrorSH;
-        } else if (Grade == -2) {
-          ++m_ErrorNullSH;
-        } else if (Grade == -3) {
-          ++m_ErrorNoE;
-        }
-      } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
-        H->SetNoDepth();
-        Event->SetDepthCalibrationError("Multiple hits on single strip");
-        if (Grade==5) {
-          ++m_Error5;
-        } else if (Grade==6) {
-          ++m_Error6;
-        }
-      } else { // If the Grade is 0-4, we can handle it.
+    //Initalize position variables:
+    double Xpos = 0.0, Ypos = 0.0, Zpos = 0.0;
+    double Xsigma = 0.0, Ysigma = 0.0, Zsigma = 0.0;
 
-        // Calculate the position. If error is thrown, record and no depth.
-        // Take a Hit and separate its activated X- and Y-strips into separate vectors.
-        vector<MStripHit*> LVStrips;
-        vector<MStripHit*> HVStrips;
 
-        for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
-          MStripHit* SH = H->GetStripHit(j);
-          if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
-        }
+    // First, check for GR Hits
+    if (H->GetGuardRingHitFlag() == true) {
+      // For GR Hit, define position to be anywhere within the GR volume to pass through to revan
 
-        double LVEnergyFraction;
-        double HVEnergyFraction;
-        MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
-        MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
+      int GRDetID = H->GetStripHit(0)->GetDetectorID();
 
-        double CTD_s = 0.0;
-
-        //now try and get z position
-        int DetID = LVSH->GetDetectorID();
-        int LVStripID = LVSH->GetStripID();
-        int HVStripID = HVSH->GetStripID();
-        int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
-
-        //Define the X/Y positions based on the detector pitch and number of strip hits
-        // LV strip 0 is in -ve X direction, HV strip 0 is in -ve Y direction.
-        // Confusingly, the strips parallel to the Y axis determines the X position, and the "X strips" determine the Y position
-        double Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
-        double Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
-        double Zpos = 0.0;
-
-        // TODO: Calculate X and Y positions more rigorously using charge sharing.
-        double Xsigma = m_YPitches[DetID]/sqrt(12.0);
-        double Ysigma = m_XPitches[DetID]/sqrt(12.0);
-        double Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
-
-        // Define two new readout elements to help determine the intersection of these two strips
-        MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
-        MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
-
-        // Account for shorted strips
-        // Shorted strip on the LV side => adjust Xpos and Xsigma
-        if (m_ShortedStrips.find(R_LV) != m_ShortedStrips.end()){
-          unsigned int LeftLVStripID, RightLVStripID;
-          tie(LeftLVStripID, RightLVStripID) = m_ShortedStrips[R_LV];
-          // Assign Xpos as the mean of the lowest and highest LV StripID
-          Xpos = m_YPitches[DetID] * (((double) LeftLVStripID + (double) RightLVStripID) / 2 - ((m_NYStrips[DetID]-1)/2.0));
-          // Scale XSigma by the number of LV strips that are shorted together
-          Xsigma = (RightLVStripID - LeftLVStripID) * m_YPitches[DetID]/sqrt(12.0);
-        }
-
-        // Shorted strip on the HV side => adjust Ypos and Ysigma
-        if (m_ShortedStrips.find(R_HV) != m_ShortedStrips.end()){
-          unsigned int LeftHVStripID, RightHVStripID;
-          tie(LeftHVStripID, RightHVStripID) = m_ShortedStrips[R_HV];
-          // Assign Ypos as the mean of the lowest and highest HV StripID
-          Ypos = m_XPitches[DetID]*(((double) LeftHVStripID + (double) RightHVStripID) / 2 - ((m_NXStrips[DetID]-1)/2.0));
-          // Scale YSigma by the number of HV strips that are shorted together
-          Ysigma = (RightHVStripID - LeftHVStripID) * m_YPitches[DetID]/sqrt(12.0);
-        }
-
-        // TODO: Account for double-wide strips also when using the mask metrology
-        if (m_MaskMetrologyEnabled == true) {
-          // Find the intercept of the two dominant strips based on the mask metrology, and update Xpos and Ypos	  
-          vector<double> inter = GetStripIntersection(R_LV, R_HV);
-          Xpos = inter[0];
-          Ypos = inter[1];
-        }
-
-        vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
-        vector<double> CTDVec = GetCTD(DetID, Grade);
-        vector<double> DepthVec = GetDepth(DetID);
-
-        // TODO: For Card Cage, may need to add noise
-        double LVTiming = LVSH->GetTiming();
-        double HVTiming = HVSH->GetTiming();
-
-        // If the hit is on a disabled strip, if there aren't coefficients loaded, then report a depth calibration error.
-        if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_LV) != m_DisabledStrips.end()) {
-          H->SetNoDepth();
-          Event->SetDepthCalibrationError("Strip hit on disabled LV strip");
-          ++m_Error1;
-        } else if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_HV) != m_DisabledStrips.end()) {
-          H->SetNoDepth();
-          Event->SetDepthCalibrationError("Strip hit on disabled HV strip");
-        } else if (Coeffs == nullptr){
-          // Set the bad flag for depth
-          H->SetNoDepth();
-          Event->SetDepthCalibrationError("No calibration coefficients");
-          ++m_Error1;
-        } else if (CTDVec.size() == 0) {
-          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Empty CTD vector" << endl;
-          H->SetNoDepth();
-          Event->SetDepthCalibrationError("No calibration coefficients");
-        } else if (DepthVec.size() == 0) {
-          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Empty Depth vector" << endl;
-          H->SetNoDepth();
-          Event->SetDepthCalibrationError("No calibration coefficients");
-        } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
-          ++m_Error3;
-          H->SetNoDepth();
-          Event->SetDepthCalibrationError("No timing");
-        } else {
-          
-          // If there are coefficients and timing information is loaded, try calculating the CTD and depth
-          double CTD = (HVTiming - LVTiming);
-
-          // Confirmed that this matches SP's python code.
-          CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
-
-          double Xmin = * std::min_element(CTDVec.begin(), CTDVec.end());
-          double Xmax = * std::max_element(CTDVec.begin(), CTDVec.end());
-
-          double noise = GetTimingNoiseFWHM(PixelCode, H->GetEnergy());
-
-          //if the CTD is out of range, check if we should reject the event.
-          if ((CTD_s < (Xmin - 2.0*noise)) || (CTD_s > (Xmax + 2.0*noise))) {
-            H->SetNoDepth();
-            Event->SetDepthCalibrationError("Out of Range");
-            ++m_Error2;
-          }
-
-          // If the CTD is in range, calculate the depth
-          // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
-          // This way we can avoid problems like non-monotonicity or assigning depth to events "outside" the detector 
-          // Note that this requires that we don't massively overestimate the timing noise
-          else {
-            // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
-            // Utlize symmetry of the normal distribution.
-            vector<double> prob_dist = norm_pdf(CTDVec, CTD_s, noise/2.355);
-            
-            // Weight the depth by probability
-        	  double prob_sum = 0.0;
-        	  for (unsigned int k=0; k < prob_dist.size(); ++k) {
-        	    prob_sum += prob_dist[k];
-        	  }
-            double weighted_depth = 0.0;
-
-            for (unsigned int k = 0; k < DepthVec.size(); ++k) {
-              weighted_depth += prob_dist[k] * DepthVec[k];
-            }
-
-            // Calculate the expectation value of the depth
-            double mean_depth = weighted_depth/prob_sum;
-
-            // Calculate the standard deviation of the depth
-            double depth_var = 0.0;
-
-            for (unsigned int k=0; k < DepthVec.size(); ++k) {
-              depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0);
-            }
-
-            Zsigma =  sqrt(depth_var/prob_sum);
-            Zpos = mean_depth;
-            // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
-
-            // Add the depth to the GUI histogram.
-            if (Event->HasStripPairingError()==false) {
-              if (HasExpos() == true) {
-                m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
-              }
-            }
-            m_NoError+=1;
-          }
-        }
-
-      if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Strip ID :" << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
-
-      MVector LocalPosition(Xpos, Ypos, Zpos);
-      MVector LocalOrigin(0.0, 0.0, 0.0);
-      MVector GlobalPosition = m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalPosition);
-
-      // Make sure XYZ resolution are correctly mapped to the global coord system.
-      MVector PositionResolution(Xsigma, Ysigma, Zsigma);
-      MVector GlobalResolution = ((m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(PositionResolution)) - (m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalOrigin))).Abs();
+      // Find unique/random position within the GR volume to assign as the hit position, as revan expects
+      if (m_GRDetectors[GRDetID]->GetName().BeginsWith("GuardRing") == true) {
+        MVector GRPosition = m_Geometry->GetDetector(m_GRDetectors[GRDetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
       
-      H->SetPosition(GlobalPosition); 
+        Xpos = GRPosition[0];
+        Ypos = GRPosition[1];
+        Zpos = GRPosition[2];      
+      
+        if (g_Verbosity >= c_Info) cout << m_XmlTag << ": GR Hit: Det ID " << GRDetID << ", " << "set hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
 
-      H->SetPositionResolution(GlobalResolution);
+        MVector GlobalPositionGR = m_GRDetectors[GRDetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(GRPosition);
+        H->SetPosition(GlobalPositionGR); 
 
-
-
+      } else {
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": Could not find GuardRing volume for position determination" << endl;
       }
+      
+
+      // Skip past the rest of the calibration and move to next Hit
+      continue;
+ 
+    } // If not a GR Hit, perform the depth/position calibration...
+
+
+    //TODO: Rename Grade variables
+    // The event "Grade" is the sub-pixel region determined via charge sharing
+    int Grade = GetHitGrade(H);
+    // GRADE=-1 is an error. Break from the loop and continue.
+    if (Grade < 0){
+      H->SetNoDepth();
+      Event->SetDepthCalibrationError("Error in depth calibration");
+      if (Grade == -1) {
+        ++m_ErrorSH;
+      } else if (Grade == -2) {
+        ++m_ErrorNullSH;
+      } else if (Grade == -3) {
+        ++m_ErrorNoE;
+      }
+    } else if (Grade > 4) { // GRADE=5 is some complicated geometry with multiple hits on a single strip. GRADE=6 means not all strips are adjacent.
+      H->SetNoDepth();
+      if (Event->HasDepthCalibrationError() == false) {
+        // Check if the DepthCalibrationError is already define for the Event before duplciating it
+        Event->SetDepthCalibrationError("Multiple hits on single strip");
+      }
+      if (Grade==5) {
+        ++m_Error5;
+      } else if (Grade==6) {
+        ++m_Error6;
+      }
+    } else { // If the Grade is 0-4, we can handle it.
+
+
+      // Take a Hit and separate its activated X- and Y-strips into separate vectors.
+      vector<MStripHit*> LVStrips;
+      vector<MStripHit*> HVStrips;
+
+      for (unsigned int j = 0; j < H->GetNStripHits(); ++j) {
+        MStripHit* SH = H->GetStripHit(j);
+        if (SH->IsLowVoltageStrip()) LVStrips.push_back(SH); else HVStrips.push_back(SH);
+      }
+
+      double LVEnergyFraction;
+      double HVEnergyFraction;
+      MStripHit* LVSH = GetDominantStrip(LVStrips, LVEnergyFraction); 
+      MStripHit* HVSH = GetDominantStrip(HVStrips, HVEnergyFraction); 
+
+      int LVStripID = LVSH->GetStripID();
+      int HVStripID = HVSH->GetStripID();
+      int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;
+
+      // TODO: Calculate X and Y positions more rigorously using charge sharing.
+
+      // Define the X/Y positions based on the detector pitch and number of strip hits
+      // LV strip 0 is in -ve X direction, HV strip 0 is in -ve Y direction.
+      // Confusingly, the strips parallel to the Y axis determines the X position, and the "X strips" determine the Y position
+      Xpos = m_YPitches[DetID]*((double)LVStripID - ((m_NYStrips[DetID]-1)/2.0));
+      Ypos = m_XPitches[DetID]*((double)HVStripID - ((m_NXStrips[DetID]-1)/2.0));
+
+      Xsigma = m_YPitches[DetID]/sqrt(12.0);
+      Ysigma = m_XPitches[DetID]/sqrt(12.0);
+      Zsigma = m_Thicknesses[DetID]/sqrt(12.0);
+
+      // Define two new readout elements to help determine the intersection of these two strips
+      MReadOutElementDoubleStrip R_LV = *dynamic_cast<MReadOutElementDoubleStrip*>(LVSH->GetReadOutElement());
+      MReadOutElementDoubleStrip R_HV = *dynamic_cast<MReadOutElementDoubleStrip*>(HVSH->GetReadOutElement());
+
+      // Account for shorted strips
+      // Shorted strip on the LV side => adjust Xpos and Xsigma
+      if (m_ShortedStrips.find(R_LV) != m_ShortedStrips.end()){
+        unsigned int LeftLVStripID, RightLVStripID;
+        tie(LeftLVStripID, RightLVStripID) = m_ShortedStrips[R_LV];
+        // Assign Xpos as the mean of the lowest and highest LV StripID
+        Xpos = m_YPitches[DetID] * (((double) LeftLVStripID + (double) RightLVStripID) / 2 - ((m_NYStrips[DetID]-1)/2.0));
+        // Scale XSigma by the number of LV strips that are shorted together
+        Xsigma = (RightLVStripID - LeftLVStripID) * m_YPitches[DetID]/sqrt(12.0);
+      }
+
+      // Shorted strip on the HV side => adjust Ypos and Ysigma
+      if (m_ShortedStrips.find(R_HV) != m_ShortedStrips.end()){
+        unsigned int LeftHVStripID, RightHVStripID;
+        tie(LeftHVStripID, RightHVStripID) = m_ShortedStrips[R_HV];
+        // Assign Ypos as the mean of the lowest and highest HV StripID
+        Ypos = m_XPitches[DetID]*(((double) LeftHVStripID + (double) RightHVStripID) / 2 - ((m_NXStrips[DetID]-1)/2.0));
+        // Scale YSigma by the number of HV strips that are shorted together
+        Ysigma = (RightHVStripID - LeftHVStripID) * m_YPitches[DetID]/sqrt(12.0);
+      }
+
+      // TODO: Account for double-wide strips also when using the mask metrology
+      if (m_MaskMetrologyEnabled == true) {
+        // Find the intercept of the two dominant strips based on the mask metrology, and update Xpos and Ypos	  
+        vector<double> inter = GetStripIntersection(R_LV, R_HV);
+        Xpos = inter[0];
+        Ypos = inter[1];
+      }
+
+      // Now try and get z position
+      double CTD_s = 0.0;
+
+      vector<double>* Coeffs = GetPixelCoeffs(PixelCode);
+      vector<double> CTDVec = GetCTD(DetID, Grade);
+      vector<double> DepthVec = GetDepth(DetID);
+
+      double LVTiming = LVSH->GetTiming();
+      double HVTiming = HVSH->GetTiming();
+
+      // If the hit is on a disabled strip, if there aren't coefficients loaded, then report a depth calibration error.
+      if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_LV) != m_DisabledStrips.end()) {
+        H->SetNoDepth();
+        Event->SetDepthCalibrationError("Strip hit on disabled LV strip");
+        ++m_Error1;
+      } else if (find(m_DisabledStrips.begin(), m_DisabledStrips.end(), R_HV) != m_DisabledStrips.end()) {
+        H->SetNoDepth();
+        Event->SetDepthCalibrationError("Strip hit on disabled HV strip");
+      } else if (Coeffs == nullptr){
+        // Set the bad flag for depth
+        H->SetNoDepth();
+        Event->SetDepthCalibrationError("No calibration coefficients");
+        ++m_Error1;
+      } else if (CTDVec.size() == 0) {
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Empty CTD vector" << endl;
+        H->SetNoDepth();
+        Event->SetDepthCalibrationError("No calibration coefficients");
+      } else if (DepthVec.size() == 0) {
+        if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Empty Depth vector" << endl;
+        H->SetNoDepth();
+        Event->SetDepthCalibrationError("No calibration coefficients");
+      } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
+        ++m_Error3;
+        H->SetNoDepth();
+        Event->SetDepthCalibrationError("No timing");
+      } else {
+          
+        // If there are coefficients and timing information is loaded, try calculating the CTD and depth
+        double CTD = (HVTiming - LVTiming);
+        CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
+
+        double CTDmin = * std::min_element(CTDVec.begin(), CTDVec.end());
+        double CTDmax = * std::max_element(CTDVec.begin(), CTDVec.end());
+
+        double noise = GetTimingNoiseFWHM(PixelCode, H->GetEnergy());
+
+        //if the CTD is out of range, check if we should reject the event.
+        if ((CTD_s < (CTDmin - 2.0*noise)) || (CTD_s > (CTDmax + 2.0*noise))) {
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("Out of Range");
+          ++m_Error2;
+        }
+
+        // Now, calculate the depth
+        // Rather than plugging CTD into a spline to get depth, use the depth-CTD relation to calculate a probability-weighted depth value.
+        // This way we can avoid problems like non-monotonicity or assigning depth to events "outside" the detector 
+        // Note that this requires that we don't massively overestimate the timing noise
+        
+        else {
+          // Calculate the probability given timing noise of CTD_s corresponding to the values of depth in DepthVec
+          // Utlize symmetry of the normal distribution.
+          vector<double> prob_dist = norm_pdf(CTDVec, CTD_s, noise/2.355);
+            
+          // Weight the depth by probability
+          double prob_sum = 0.0;
+          for (unsigned int k=0; k < prob_dist.size(); ++k) {     
+            prob_sum += prob_dist[k];
+          }
+          double weighted_depth = 0.0;
+
+          for (unsigned int k = 0; k < DepthVec.size(); ++k) {
+            weighted_depth += prob_dist[k] * DepthVec[k];
+          }
+
+          // Calculate the expectation value of the depth
+          double mean_depth = weighted_depth/prob_sum;
+
+          // Calculate the standard deviation of the depth
+          double depth_var = 0.0;
+
+          for (unsigned int k=0; k < DepthVec.size(); ++k) {
+            depth_var += prob_dist[k] * pow(DepthVec[k] - mean_depth, 2.0); 
+          }
+
+          Zsigma =  sqrt(depth_var/prob_sum);
+          Zpos = mean_depth;
+          // Zpos = mean_depth - (m_Thicknesses[DetID]/2.0);
+
+          // Add the depth to the GUI histogram.
+          if (Event->HasStripPairingError()==false) {
+            if (HasExpos() == true) {
+              m_ExpoDepthCalibration->AddDepth(DetID, Zpos);
+            }
+          }
+        
+          m_NoError+=1;
+        }
+      }
+    
+      if (g_Verbosity >= c_Info) cout << m_XmlTag << "Strip ID: " << LVStripID << " " << HVStripID << endl << "Hit position: "<< Xpos << " " << Ypos << " " << Zpos << endl;
+
     }
+    
+    MVector LocalPosition(Xpos, Ypos, Zpos);
+    MVector LocalOrigin(0.0, 0.0, 0.0);
+    MVector GlobalPosition = m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalPosition);
+
+    // Make sure XYZ resolution are correctly mapped to the global coord system.
+    MVector PositionResolution(Xsigma, Ysigma, Zsigma);
+    MVector GlobalResolution = ((m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(PositionResolution)) - (m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(LocalOrigin))).Abs();
+      
+    H->SetPosition(GlobalPosition); 
+    H->SetPositionResolution(GlobalResolution);
+
+    // For non-GR hits that have NoDepth, these can be passed through revan with an XE flag and any position within the detector
+    if (H->GetNoDepth() == true && H->GetGuardRingHitFlag() == false) {
+      DetID = H->GetStripHit(0)->GetDetectorID();
+      MVector XEPosition = m_Geometry->GetDetector(m_Detectors[DetID]->GetName())->GetSensitiveVolume(0)->GetRandomPositionExclusivelyInside();
+      
+      MVector GlobalPositionXE = m_Detectors[DetID]->GetSensitiveVolume(0)->GetPositionInWorldVolume(XEPosition);
+      H->SetPosition(GlobalPositionXE);
+    }
+
   }
-
+    
   Event->SetAnalysisProgress(MAssembly::c_DepthCorrection | MAssembly::c_PositionDetermiation);
-
   return true;
+
 }
 
 
@@ -489,6 +521,8 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
     }
 
     MDDetector* det = DetList[i];
+
+    // First find all GeDs
     if (det->GetTypeName() == "Strip3D") {
       if (det->GetNSensitiveVolumes() == 1) {
         // MDVolume* vol = det->GetSensitiveVolume(0);
@@ -544,9 +578,70 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
           cout<<m_XmlTag<<": ERROR: Found a Strip3D detector with "<<det->GetNSensitiveVolumes()<<" Sensitive Volumes."<<endl;
         }
       }
+
+    // Check for GR detector volumes
+    } else if (det->GetTypeName() == "Simple" || det->GetTypeName() == "Scintillator") {
+
+      if (det->GetNSensitiveVolumes() == 1) {
+        MString DetectorName = det->GetName();
+        string DetName = DetectorName.GetString();
+
+        if (Geometry->GetName() == "COSI-SMEX-Payload") {
+          // COSI-SMEX-Payload expects GuardRingDetector_GeD_X naming scheme
+          if (DetectorName.BeginsWith("GuardRingDetector_GeD_") == true) {
+            DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // The number after GeD is the COSI detector ID
+            unsigned int GRDetID = DetectorName.ToUnsignedInt(); // The GR detector ID is the same as the GeD detector number
+
+            if (DetID != (GRDetID + 1)) {  // DetID will be +1 compared to GeD # based on the DetID++ above for loop
+              if (g_Verbosity >= c_Error) {
+                cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for GR detector "<<DetName<<endl;
+              }
+              return false;
+            } else {
+              m_GRDetectors[GRDetID] = det;
+            }
+          } else if (DetectorName.BeginsWith("GuardRing") == true) { // Throw an error for a GR DetectorName that is unexpected
+            if (g_Verbosity >= c_Error) {
+              cout << "ERROR in MModuleDepthCalibration::Initialize: COSI-SMEX-Payload expects all guard ring detectors to follow the name scheme GuardRingDetector_GeD_X, but found " << DetName << endl;
+            }
+            return false;
+          } 
+        } else {
+          // STTC mass models expect GuardRingDetector naming
+          if (DetectorName == "GuardRingDetector") {
+
+            if (DetID != 1) { // DetID = 1 here even for a single GeD due to the DetID++ in the loop above 
+              if (g_Verbosity >= c_Error) {
+                cout << "ERROR in MModuleDepthCalibration::Initialize: GuardRingDetector " << DetName << " expected at DetID=1, but found at DetID=" << DetID << endl;
+              }
+            } else {
+              m_GRDetectors[0] = det; // Make Det ID 0 for the mapping for STTC mass model
+            }
+          // EM Mass model expects GuardRingDetector_Q0DX, where X is the detector name
+          } else if (DetectorName.BeginsWith("GuardRingDetector_Q0D") == true) {
+            DetectorName.RemoveAllInPlace("GuardRingDetector_Q0D"); // The number after Q0D is the detector ID
+            unsigned int GRDetID = DetectorName.ToUnsignedInt(); 
+          
+            if (DetID != (GRDetID + 1)) { // DetID will be +1 compared to GeD # based on the DetID++ above for loop
+              if (g_Verbosity >= c_Error) {
+                cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID=" << DetID << " for GR detector " << DetName << endl;
+              }
+            } else {
+              m_GRDetectors[GRDetID] = det;
+            }
+          } else {
+            if (g_Verbosity >= c_Error) {
+              cout << "ERROR in MModuleDepthCalibration::Initialize: Unexpected guard ring detector name " << DetName << endl;
+            }
+          }
+        }
+      } else {
+        if (g_Verbosity >= c_Error) {
+          cout << "ERROR in MModuleDepthCalibration::Initialize: Found a guard ring detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
+        }
+      }
     }
   }
-
   return true;
 }
 
@@ -1296,6 +1391,7 @@ void MModuleDepthCalibration::Finalize()
   m_XPitches.clear();
   m_YPitches.clear();
   m_Detectors.clear();
+  m_GRDetectors.clear();
   m_CTDMap.clear();
   m_DepthGrid.clear();
   m_SplineMap.clear();
