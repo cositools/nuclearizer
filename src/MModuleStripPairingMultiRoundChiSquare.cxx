@@ -37,6 +37,7 @@
 #include "MModule.h"
 #include "MGUIOptionsStripPairing.h"
 #include "MGUIOptionsStripPairingMultiRoundChiSquare.h"
+#include "MModuleLoaderMeasurementsHDF.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,7 +146,7 @@ bool MModuleStripPairingMultiRoundChiSquare::Initialize()
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Function returns new combinations of strips based on seed combinations
-vector<vector<vector<unsigned int>>> MModuleStripPairingMultiRoundChiSquare::FindNewCombinations(const vector<vector<vector<unsigned int>>>& OldOnes, const vector<MStripHit*>& StripHits, bool RoundTwo)
+vector<vector<vector<unsigned int>>> MModuleStripPairingMultiRoundChiSquare::FindNewCombinations(const vector<vector<vector<unsigned int>>>& OldOnes, const vector<MStripHit*>& TriggeredStripHits, bool RoundTwo)
 {
   // Define new vector of ints NewOnes
   vector<vector<vector<unsigned int>>> NewOnes; // <list> of <combinations> of <combined strips>
@@ -167,7 +168,7 @@ vector<vector<vector<unsigned int>>> MModuleStripPairingMultiRoundChiSquare::Fin
         // Reserve once since this temporary vector mirrors NewCombinedStrips in size.
         NewCombinedAsIDs.reserve(NewCombinedStrips.size());
         for (unsigned int s = 0; s < NewCombinedStrips.size(); ++s) {
-          NewCombinedAsIDs.push_back(StripHits[NewCombinedStrips[s]]->GetStripID()); // Translates the hit number to the actual strip ID
+          NewCombinedAsIDs.push_back(TriggeredStripHits[NewCombinedStrips[s]]->GetStripID()); // Translates the hit number to the actual strip ID
         }
         sort(NewCombinedAsIDs.begin(), NewCombinedAsIDs.end());
 
@@ -234,59 +235,108 @@ float MModuleStripPairingMultiRoundChiSquare::ChargeTrappingCorrection(unsigned 
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Divide an event's strip hits by detector and LV/HV side
-vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectStripHits(MReadOutAssembly* Event)
+vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectTriggeredStripHits(MReadOutAssembly* Event)
 {
 
   // Split hits by detector ID
   vector<unsigned int> DetectorIDs; // List of detector IDs
-  vector<vector<vector<MStripHit*>>> StripHits; // list of detector IDs, list of sides (LV and HV), list of strip hits
+  vector<vector<vector<MStripHit*>>> TriggeredStripHits; // list of detector IDs, list of sides (LV and HV), list of triggered strip hits
 
-  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's strip hits
+  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate TriggeredStripHits with this event's triggered strip hits
     MStripHit* SH = Event->GetStripHit(sh);
-    unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
-
-    // Check if detector is on list
-    bool DetectorFound = false;
-    unsigned int DetectorPos = 0;
-    for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
-      if (DetectorIDs[d] == SH->GetDetectorID()) {
-        DetectorFound = true;
-        DetectorPos = d;
+    
+    // Separate out the triggered and NN strip hits
+    if (SH->IsNearestNeighbor() == false) {
+      
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      
+      // Check if detector is on list
+      bool DetectorFound = false;
+      unsigned int DetectorPos = 0;
+      for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
+        if (DetectorIDs[d] == SH->GetDetectorID()) {
+          DetectorFound = true;
+          DetectorPos = d;
+        }
+      }
+      
+      // Once the correct detector is found, add strip hit to TriggeredStripHits
+      if (DetectorFound == true) {
+        TriggeredStripHits[DetectorPos][Side].push_back(SH);
+      } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
+        vector<vector<MStripHit*>> List; // list of sides, list of hits
+        List.push_back(vector<MStripHit*>()); // LV
+        List.push_back(vector<MStripHit*>()); // HV
+        List[Side].push_back(SH);
+        TriggeredStripHits.push_back(List);
+        DetectorIDs.push_back(SH->GetDetectorID());
       }
     }
+  }
+  return TriggeredStripHits;
+}
 
-    // Once the correct detector is found, add strip hit to StripHits
-    if (DetectorFound == true) {
-      StripHits[DetectorPos][Side].push_back(SH);
-    } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
-      vector<vector<MStripHit*>> List; // list of sides, list of hits
-      List.push_back(vector<MStripHit*>()); // LV
-      List.push_back(vector<MStripHit*>()); // HV
-      List[Side].push_back(SH);
-      StripHits.push_back(List);
-      DetectorIDs.push_back(SH->GetDetectorID());
+////////////////////////////////////////////////////////////////////////////////
+
+//! Divide an event's nearest neighbor strip hits by detector and LV/HV side
+vector<vector<vector<MStripHit*>>> MModuleStripPairingMultiRoundChiSquare::CollectNearestNeighborStripHits(MReadOutAssembly* Event)
+{
+
+  // Split hits by detector ID
+  vector<unsigned int> DetectorIDs; // List of detector IDs
+  vector<vector<vector<MStripHit*>>> NNStripHits; // list of detector IDs, list of sides (LV and HV), list of nearest neighbor strip hits
+
+  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // Populate StripHits with this event's nearest neighbor strip hits
+    MStripHit* SH = Event->GetStripHit(sh);
+    
+    // Separate out the triggered and nearest neighbor strip hits
+    if (SH->IsNearestNeighbor() == true) {
+      
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      
+      // Check if detector is on list
+      bool DetectorFound = false;
+      unsigned int DetectorPos = 0;
+      for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
+        if (DetectorIDs[d] == SH->GetDetectorID()) {
+          DetectorFound = true;
+          DetectorPos = d;
+        }
+      }
+      
+      // Once the correct detector is found, add strip hit to NNStripHits
+      if (DetectorFound == true) {
+        NNStripHits[DetectorPos][Side].push_back(SH);
+      } else { // If encountering a new detector, initialize list of sides/hits corresponding to that detector
+        vector<vector<MStripHit*>> List; // list of sides, list of hits
+        List.push_back(vector<MStripHit*>()); // LV
+        List.push_back(vector<MStripHit*>()); // HV
+        List[Side].push_back(SH);
+        NNStripHits.push_back(List);
+        DetectorIDs.push_back(SH->GetDetectorID());
+      }
     }
   }
-  return StripHits;
+  return NNStripHits;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Read in strip hits on each side for each detector and perform quality selections
-bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits)
+bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& TriggeredStripHits)
 {
 
-  // Limit the number of strip hits on each side
-  for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
+  // Limit the number of (triggered) strip hits on each side
+  for (unsigned int d = 0; d < TriggeredStripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <= 1; ++side) { // Side loop
-      if (StripHits[d][side].size() > m_MaximumStrips) {
-        Event->SetStripPairingError("More than maximum number of strip hits allowed on one side (" + to_string(StripHits[d][side].size()) + ")");
+      if (TriggeredStripHits[d][side].size() > m_MaximumStrips) {
+        Event->SetStripPairingError("More than maximum number of strip hits allowed on one side (" + to_string(TriggeredStripHits[d][side].size()) + ")");
         Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
       }
 
       // Check if one side of the detector has no strip hits
-      if (StripHits[d][side].size() == 0) {
+      if (TriggeredStripHits[d][side].size() == 0) {
         Event->SetStripPairingError("One detector side has no strip hits");
         Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
@@ -300,7 +350,7 @@ bool MModuleStripPairingMultiRoundChiSquare::EventSelection(MReadOutAssembly* Ev
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Find all strip combinations for each detector on LV and HV sides given seed combinations
-void MModuleStripPairingMultiRoundChiSquare::FindAllCombinations(unsigned int d, vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& StripHits, bool RoundTwo)
+void MModuleStripPairingMultiRoundChiSquare::FindAllCombinations(unsigned int d, vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& TriggeredStripHits, bool RoundTwo)
 {
 
   for (unsigned int side = 0; side <= 1; ++side) { // Side loop (LV and HV)
@@ -311,7 +361,7 @@ void MModuleStripPairingMultiRoundChiSquare::FindAllCombinations(unsigned int d,
     while (CombinationsAdded == true) {
       CombinationsAdded = false;
 
-      NewCombinations = FindNewCombinations(Combinations[d][side], StripHits[d][side], RoundTwo);
+      NewCombinations = FindNewCombinations(Combinations[d][side], TriggeredStripHits[d][side], RoundTwo);
       //cout<<"Size: "<<NewCombinations.size()<<endl;
 
       // Remove combinations that are already known from earlier iterations.
@@ -355,7 +405,7 @@ void MModuleStripPairingMultiRoundChiSquare::FindAllCombinations(unsigned int d,
 }
 
 //! Evaluate the reduced chi square for all possible strip pairings
-tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModuleStripPairingMultiRoundChiSquare::EvaluateAllCombinations(unsigned int d, const vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& StripHits)
+tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModuleStripPairingMultiRoundChiSquare::EvaluateAllCombinations(unsigned int d, const vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& TriggeredStripHits)
 {
 
   double BestChiSquare = numeric_limits<double>::max();
@@ -387,11 +437,11 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
 
           // Add up LV energy and energy resolution for grouping of strips
           for (unsigned int entry = 0; entry < LVSideCombo[en].size(); ++entry) { // Entry is on the strip level
-            LVEnergy += StripHits[d][0][LVSideCombo[en][entry]]->GetEnergy();
-            LVResolution += pow(StripHits[d][0][LVSideCombo[en][entry]]->GetEnergyResolution(), 2);
+            LVEnergy += TriggeredStripHits[d][0][LVSideCombo[en][entry]]->GetEnergy();
+            LVResolution += pow(TriggeredStripHits[d][0][LVSideCombo[en][entry]]->GetEnergyResolution(), 2);
 
             // Add strip to current hit pairing
-            CurrentHitPairing[0].push_back(StripHits[d][0][LVSideCombo[en][entry]]);
+            CurrentHitPairing[0].push_back(TriggeredStripHits[d][0][LVSideCombo[en][entry]]);
           }
 
           // Repeats for HV side
@@ -399,11 +449,11 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
           double HVResolution = 0;
 
           for (unsigned int entry = 0; entry < HVSideCombo[ep].size(); ++entry) {
-            HVEnergy += StripHits[d][1][HVSideCombo[ep][entry]]->GetEnergy();
-            HVResolution += pow(StripHits[d][1][HVSideCombo[ep][entry]]->GetEnergyResolution(), 2);
+            HVEnergy += TriggeredStripHits[d][1][HVSideCombo[ep][entry]]->GetEnergy();
+            HVResolution += pow(TriggeredStripHits[d][1][HVSideCombo[ep][entry]]->GetEnergyResolution(), 2);
 
             // Add strip to current hit pairing
-            CurrentHitPairing[1].push_back(StripHits[d][1][HVSideCombo[ep][entry]]);
+            CurrentHitPairing[1].push_back(TriggeredStripHits[d][1][HVSideCombo[ep][entry]]);
           }
 
           // Apply charge trapping correction for each LV/HV pairing
@@ -439,7 +489,7 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Create hits
-bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits, const vector<vector<unsigned int>>& BestLVSideCombo, const vector<vector<unsigned int>>& BestHVSideCombo)
+bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& TriggeredStripHits, const vector<vector<unsigned int>>& BestLVSideCombo, const vector<vector<unsigned int>>& BestHVSideCombo)
 {
 
 
@@ -481,7 +531,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     bool AllAdjacent = true;
 
     for (unsigned int sh = 0; sh < BestLVSideCombo[h].size() - 1; ++sh) {
-      if (StripHits[d][0][BestLVSideCombo[h][sh]]->GetStripID() + 1 != StripHits[d][0][BestLVSideCombo[h][sh + 1]]->GetStripID()) {
+      if (TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]->GetStripID() + 1 != TriggeredStripHits[d][0][BestLVSideCombo[h][sh + 1]]->GetStripID()) {
         AllAdjacentLV = false;
         AllAdjacent = false;
         break;
@@ -489,7 +539,7 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
     }
 
     for (unsigned int sh = 0; sh < BestHVSideCombo[h].size() - 1; ++sh) {
-      if (StripHits[d][1][BestHVSideCombo[h][sh]]->GetStripID() + 1 != StripHits[d][1][BestHVSideCombo[h][sh + 1]]->GetStripID()) {
+      if (TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]->GetStripID() + 1 != TriggeredStripHits[d][1][BestHVSideCombo[h][sh + 1]]->GetStripID()) {
         AllAdjacentHV = false;
         AllAdjacent = false;
         break;
@@ -502,11 +552,11 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
       // Add up energy and energy resolution for each grouping of strips
       for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
         //cout<<"x-pos: "<<StripHits[d][0][BestXSideCombo[h][sh]]->GetNonStripPosition()<<endl;
-        LVEnergy += StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy();
-        LVEnergyRes += StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergyResolution() * StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergyResolution();
+        LVEnergy += TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy();
+        LVEnergyRes += TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergyResolution() * TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergyResolution();
 
         // Add strip to current hit pairing
-        CurrentHitPairing[0].push_back(StripHits[d][0][BestLVSideCombo[h][sh]]);
+        CurrentHitPairing[0].push_back(TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]);
       }
 
       LVEnergyResTotal += LVEnergyRes;
@@ -515,11 +565,11 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
       LVEnergyRes = sqrt(LVEnergyRes);
 
       for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
-        HVEnergy += StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy();
-        HVEnergyRes += StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergyResolution() * StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergyResolution();
+        HVEnergy += TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy();
+        HVEnergyRes += TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergyResolution() * TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergyResolution();
 
         // Add strip to current hit pairing
-        CurrentHitPairing[1].push_back(StripHits[d][1][BestHVSideCombo[h][sh]]);
+        CurrentHitPairing[1].push_back(TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]);
       }
 
       // Apply charge trapping correction for each LV/HV pairing
@@ -560,10 +610,10 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
       // Populate hit with strip hits
       for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
-        Hit->AddStripHit(StripHits[d][0][BestLVSideCombo[h][sh]]);
+        Hit->AddStripHit(TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]);
       }
       for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
-        Hit->AddStripHit(StripHits[d][1][BestHVSideCombo[h][sh]]);
+        Hit->AddStripHit(TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]);
       }
       
       // Check for charge sharing on either side
@@ -587,9 +637,9 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
       // Assign hit energy based on energy measured on HV side
       for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
-        Energy = StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy();
+        Energy = TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy();
         EnergyTotal += Energy;
-        EnergyResolution = StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergyResolution();
+        EnergyResolution = TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergyResolution();
 
         HVEnergy = Energy;
         LVEnergy = Energy;
@@ -615,9 +665,9 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         HVEnergies.push_back(HVEnergy);
 
         // Populate hit with strip hits
-        Hit->AddStripHit(StripHits[d][1][BestHVSideCombo[h][sh]]);
+        Hit->AddStripHit(TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]);
         for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
-          Hit->AddStripHit(StripHits[d][0][BestLVSideCombo[h][sh]]);
+          Hit->AddStripHit(TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]);
         }
         // Check if there's charge sharing on LV side (currently no way to tell if there's charge sharing on side that doesn't have multiple hits on single strip)
         if (BestLVSideCombo[h].size() > 1) {
@@ -634,9 +684,9 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
       // Assign hit energy based on energy measured on LV side
       for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
-        Energy = StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy();
+        Energy = TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy();
         EnergyTotal += Energy;
-        EnergyResolution = StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergyResolution();
+        EnergyResolution = TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergyResolution();
 
         HVEnergy = Energy;
         LVEnergy = Energy;
@@ -660,9 +710,9 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         HVEnergies.push_back(HVEnergy);
 
         // Populate hit with strip hits
-        Hit->AddStripHit(StripHits[d][0][BestLVSideCombo[h][sh]]);
+        Hit->AddStripHit(TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]);
         for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
-          Hit->AddStripHit(StripHits[d][1][BestHVSideCombo[h][sh]]);
+          Hit->AddStripHit(TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]);
         }
         // Check if there's charge sharing on HV side (currently no way to tell if there's charge sharing on side that doesn't have multiple hits on single strip)
         if (BestHVSideCombo[h].size() > 1) {
@@ -711,23 +761,102 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//! Assign nearest neighbor strip hits to their appropriate hit
+void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAssembly* Event) {
+  
+  vector<vector<vector<MStripHit*>>> NNStripHits = CollectNearestNeighborStripHits(Event); // List of detectors, list of sides, list of NN strip hits
+  
+  vector<MStripHit*> AssignedNeighbors; // List of all the assigned NN strip hits, in order to check if NNs are double counted
+  
+  for (unsigned int h = 0; h < Event->GetNHits(); h++) {
+    vector<vector<int>> StripIDs; // list of sides, list of strips
+    StripIDs.push_back(vector<int>()); // LV
+    StripIDs.push_back(vector<int>()); // HV
+    bool AssignedDetector = false;
+    int DetectorID; // Define detector ID where hit took place
+    // Loop over the triggered strip hits assigned to a hit
+    for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
+      // Collect all the triggered strip hits in a hit and split them by side
+      MStripHit* SH = Event->GetHit(h)->GetStripHit(sh);
+      unsigned int Side = (SH->IsLowVoltageStrip() == true) ? 0 : 1;
+      StripIDs[Side].push_back(SH->GetStripID());
+      
+      if (AssignedDetector == false) {
+        DetectorID = SH->GetDetectorID();
+        AssignedDetector = true;
+      }
+    }
+    // For each side, find the edge strip hit. i.e if there's charge sharing between strips 4, 5, and 6, the edges will be 4 and 6
+    int LeftEdgeLV = *min_element(StripIDs[0].begin(), StripIDs[0].end());
+    int RightEdgeLV = *max_element(StripIDs[0].begin(), StripIDs[0].end());
+    int LeftEdgeHV = *min_element(StripIDs[1].begin(), StripIDs[1].end());
+    int RightEdgeHV = *max_element(StripIDs[1].begin(), StripIDs[1].end());
+    
+    // If there are two hits that are one strip hit apart, then the NN strip hit will be added to both hits
+    
+    // Define the LV neighbors
+    for (unsigned int sh = 0; sh < NNStripHits[DetectorID][0].size(); sh++) {
+      MStripHit* NNSH = NNStripHits[DetectorID][0][sh];
+      if ((NNSH->GetStripID() == LeftEdgeLV - 1) or (NNSH->GetStripID() == RightEdgeLV + 1)) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
+        // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
+        if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
+          AssignedNeighbors.push_back(NNSH);
+        }
+        // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
+        else {
+          NNSH->IsAmbiguousNearestNeighbor(true);
+        }
+      }
+    }
+    
+    // Define the HV neighbors
+    for (unsigned int sh = 0; sh < NNStripHits[DetectorID][1].size(); sh++) {
+      MStripHit* NNSH = NNStripHits[DetectorID][1][sh];
+      if ((NNSH->GetStripID() == LeftEdgeHV - 1) or (NNSH->GetStripID() == RightEdgeHV + 1)) {
+        Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
+      }
+      // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
+      if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
+        AssignedNeighbors.push_back(NNSH);
+      }
+      // If it has already been assigned to a hit, then flag that strip hit as an ambiguous nearest neighbor
+      else {
+        NNSH->IsAmbiguousNearestNeighbor(true);
+      }
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 //! Main data analysis routine, which updates the event to a new level
 bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 {
-  // Check if there are actually any strip hits
+  // Check if there are actually any strip hits (triggered or un-triggered)
   if (Event->GetNStripHits() == 0) {
     Event->SetStripPairingError("No strip hits");
     Event->SetAnalysisProgress(MAssembly::c_StripPairing);
     return false;
   }
-
-  // Collect strip hits from input event
-  vector<vector<vector<MStripHit*>>> StripHits = CollectStripHits(Event); // List of detectors, list of sides, list of strip hits
+  
+  // Flag if the event includes any NN strip hits
+  bool IncludingNearestNeighbors = false;
+  for (unsigned int sh = 0; sh < Event->GetNStripHits(); ++sh) { // loop over the strip hits of an event (both triggered and NN)
+    MStripHit* SH = Event->GetStripHit(sh);
+    
+    if (SH->IsNearestNeighbor() == true) {
+      IncludingNearestNeighbors = true;
+      break;
+    }
+  }
+  // Collect triggered strip hits from input event
+  vector<vector<vector<MStripHit*>>> TriggeredStripHits = CollectTriggeredStripHits(Event); // List of detectors, list of sides, list of triggered strip hits
 
   // Perform some event selections
-  bool CheckStripHits = EventSelection(Event, StripHits);
+  bool CheckTriggeredStripHits = EventSelection(Event, TriggeredStripHits);
 
-  if (CheckStripHits == false) {
+  if (CheckTriggeredStripHits == false) {
     return false;
   }
 
@@ -736,7 +865,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
   // Define Combinations as list of: detector IDs, sides, strip combinations, set of grouped strips (ex. charge sharing on adjacent strip), strip
   vector<vector<vector<vector<vector<unsigned int>>>>> Combinations;
 
-  for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
+  for (unsigned int d = 0; d < TriggeredStripHits.size(); ++d) { // Detector loop
     Combinations.push_back(vector<vector<vector<vector<unsigned int>>>>()); // Create 4D vectors for each detector
     Combinations[d].push_back(vector<vector<vector<unsigned int>>>()); // Create 3D vectors within each detector vector for each side
     Combinations[d].push_back(vector<vector<vector<unsigned int>>>());
@@ -744,7 +873,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     // Create the seed combinations that will be added (and expanded upon) for each side of each detector
     for (unsigned int s = 0; s <= 1; ++s) {
       vector<vector<unsigned int>> Combination;
-      for (unsigned int sh = 0; sh < StripHits[d][s].size(); ++sh) {
+      for (unsigned int sh = 0; sh < TriggeredStripHits[d][s].size(); ++sh) {
         vector<unsigned int> CombinedStrips = { sh }; // Use grouping of single strip hit as seed for subsequent groupings
         // sort(CombinedStrips.begin(), CombinedStrips.end());
         Combination.push_back(CombinedStrips);
@@ -753,23 +882,23 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     }
   }
 
-  for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
+  for (unsigned int d = 0; d < TriggeredStripHits.size(); ++d) { // Detector loop
 
     // Begin the first round of strip pairing
     bool RoundTwo = false;
 
     // Find all possible combinations based on the above seed combination
-    FindAllCombinations(d, Combinations, StripHits, RoundTwo);
+    FindAllCombinations(d, Combinations, TriggeredStripHits, RoundTwo);
 
     // Evaluate reduced chi square for all combinations and select best LV/HV combinations
-    auto [BestLVSideCombo, BestHVSideCombo, BestChiSquare] = EvaluateAllCombinations(d, Combinations, StripHits);
+    auto [BestLVSideCombo, BestHVSideCombo, BestChiSquare] = EvaluateAllCombinations(d, Combinations, TriggeredStripHits);
 
     if (BestChiSquare > ChiSquareThreshold) {
       RoundTwo = true;
 
       // Repeat strip pairing, now allowing groupings of non adjacent strips
-      FindAllCombinations(d, Combinations, StripHits, RoundTwo);
-      auto [BestLVSideComboRoundTwo, BestHVSideComboRoundTwo, BestChiSquareRoundTwo] = EvaluateAllCombinations(d, Combinations, StripHits);
+      FindAllCombinations(d, Combinations, TriggeredStripHits, RoundTwo);
+      auto [BestLVSideComboRoundTwo, BestHVSideComboRoundTwo, BestChiSquareRoundTwo] = EvaluateAllCombinations(d, Combinations, TriggeredStripHits);
 
       // Update best LV/HV combos if a better pairing is found
       if (BestChiSquareRoundTwo < BestChiSquare) {
@@ -803,7 +932,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
       int index = BestHVSideCombo.size();
       for (unsigned int h = index; h < BestLVSideCombo.size(); h++) {
         for (unsigned int sh = 0; sh < BestLVSideCombo[h].size(); ++sh) {
-          UnpairedEnergy += StripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
+          UnpairedEnergy += TriggeredStripHits[d][0][BestLVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
         }
       }
       Event->SetStripPairing_QualityFlag("Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: " + to_string(UnpairedEnergy) + ")");
@@ -813,14 +942,14 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
       int index = BestLVSideCombo.size();
       for (unsigned int h = index; h < BestHVSideCombo.size(); h++) {
         for (unsigned int sh = 0; sh < BestHVSideCombo[h].size(); ++sh) {
-          UnpairedEnergy += StripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
+          UnpairedEnergy += TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]->GetEnergy(); // Add all the energy on the unpaired strips
         }
       }
       Event->SetStripPairing_QualityFlag("Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: " + to_string(UnpairedEnergy) + ")");
     }
     
     // Populate hits with best strip paired combination
-    bool PopulateHits = CreateHits(d, Event, StripHits, BestLVSideCombo, BestHVSideCombo);
+    bool PopulateHits = CreateHits(d, Event, TriggeredStripHits, BestLVSideCombo, BestHVSideCombo);
 
     if (PopulateHits == false) {
       return false;
@@ -837,6 +966,11 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
       
   } // End Detector loop
 
+  // If there are NN strips, assign them to their appropriate hits
+  if (IncludingNearestNeighbors == true) {
+    AssignNearestNeighbors(Event);
+  }
+  
   Event->SetAnalysisProgress(MAssembly::c_StripPairing);
 
   return true;

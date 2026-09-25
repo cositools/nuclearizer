@@ -269,18 +269,18 @@ bool MSubModuleShieldTrigger::ParseDeadtimeFile()
 
   MParser Parser;
   if (Parser.Open(m_DeadtimeFileName) == false) {
-    cout << m_Name << ": Unable to open deadtime parameters file: " << m_DeadtimeFileName << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": Unable to open deadtime parameters file: " << m_DeadtimeFileName << endl;
     return false;
   }
 
   if (Parser.GetNLines() < 4) {
-    cout << m_Name << ": Deadtime file does not have enough data" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": Deadtime file does not have enough data" << endl;
     return false;
   }
 
   MTokenizer* ShieldTokenizer = Parser.GetTokenizerAt(3);
   if (ShieldTokenizer->GetNTokens() != 5) {
-    cout << m_Name << ": Shield deadtime row must contain exactly 5 values" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": Shield deadtime row must contain exactly 5 values" << endl;
     return false;
   }
 
@@ -401,11 +401,6 @@ bool MSubModuleShieldTrigger::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
-  MXmlNode* DeadtimeFileNode = Node->GetNode("DeadtimeFileName");
-  if (DeadtimeFileNode != nullptr) {
-    m_DeadtimeFileName = DeadtimeFileNode->GetValue();
-  }
-
   return true;
 }
 
@@ -417,8 +412,6 @@ MXmlNode* MSubModuleShieldTrigger::CreateXmlConfiguration(MXmlNode* Node)
 {
   //! Create an XML node tree from the configuration
   
-  new MXmlNode(Node, "DeadtimeFileName", m_DeadtimeFileName);
-
   return Node;
 }
 
