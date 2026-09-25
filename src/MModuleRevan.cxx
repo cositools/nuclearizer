@@ -168,7 +168,7 @@ bool MModuleRevan::AnalyzeEvent(MReadOutAssembly* Event)
   //  return true;
   //}
 
-  MRERawEvent* RawEvent = new MRERawEvent();
+  MRERawEvent* RawEvent = new MRERawEvent(m_ReconstructionGeometry);
   // --> will be deleted by the RawEventAnalyzer
 
   // The following is ugly, but currently the only way to get data into the raw event:
