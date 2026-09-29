@@ -5127,9 +5127,9 @@ SE
 ET UN
 ID 654
 TI 1771332026.706086711
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
+BD DepthCalibrationError (Out of Range)
 CC NStripHits 3
-PE 77.764
+PE 77.9359
 SE
 ET PH
 ID 655
@@ -7173,12 +7173,13 @@ PE 77.1356
 PP 1.21033 0.162697 -1.74764
 PW 0
 SE
-ET UN
+ET PH
 ID 913
 TI 1771332026.974786216
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 356.881
+PE 356.88
+PP 0.744703 -0.0300875 2.21017
+PW 0
 SE
 ET UN
 ID 914
@@ -9151,12 +9152,13 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 66.577957)
 BD GR Veto
 PQ 1.24163
 SE
-ET UN
+ET PH
 ID 1169
 TI 1771332027.245023804
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 426.983
+PE 424.436
+PP 0.628297 0.0751209 -1.39842
+PW 0
 SE
 ET UN
 ID 1170
@@ -10277,12 +10279,13 @@ QA StripHitBelowThreshold (Strip hit removed with energy 15.955020)
 BD GR Veto
 PQ
 SE
-ET UN
+ET PH
 ID 1314
 TI 1771332027.386720023
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 255.832
+PE 257.146
+PP 0.744703 -0.22651 2.55939
+PW 0
 SE
 ID 1315
 BD DepthCalibrationError (GR Veto)
@@ -12707,9 +12710,9 @@ SE
 ET UN
 ID 1629
 TI 1771332027.714907278
-BD DepthCalibrationError (Out of Range) (Multiple hits on single strip) (Multiple hits on single strip)
+BD DepthCalibrationError (Out of Range)
 CC NStripHits 7
-PE 352.667
+PE 352.666
 SE
 ET CO
 ID 1630
@@ -14668,9 +14671,9 @@ SE
 ET UN
 ID 1871
 TI 1771332028.003106450
-BD StripPairingError (Strips not pairable. Multiple hits per strip on LV and HV sides)
+BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 4
-PE 0
+PE 307.12
 SE
 ID 1872
 BD StripPairingError (No strip hits)
@@ -16791,12 +16794,13 @@ LA 1.59338
 CH 0 -0.419359 -1.08753 -0.117953 38.5141 0 0.0336036 0.0607006 0.0336036 0.957081 0
 CH 1 -0.535766 0.339881 -0.816391 132.645 0 0.0336036 0.0355353 0.0336036 1.59602 0
 SE
-ET UN
+ET PH
 ID 2144
 TI 1771332028.261433821
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 6
-PE 302.392
+PE 305.104
+PP 0.861109 -0.373305 -1.39842
+PW 0
 SE
 ET PH
 ID 2145
@@ -28717,12 +28721,20 @@ CH 0 0.628297 -0.852076 -1.51483 126.188 0 0.0336036 0.0194741 0.0336036 1.11149
 CH 1 0.279078 -1.02636 -0.350766 85.6052 0 0.0336036 0.0281043 0.0336036 1.05354 0
 CH 2 0.162672 -0.397806 -0.583578 141.287 0 0.0336036 0.0212405 0.0336036 1.01463 0
 SE
-ET UN
+ET CO
 ID 3677
 TI 1771332029.865464797
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 6
-PE 353.491
+PQ 1.11682
+SQ 2
+CT 0 1
+TL 1
+TE 103.598
+CE 251.554 1.64049   103.598 1.01596
+CD 2.84002 0.153154 -1.74764   0.0336036 0.0308576 0.0336036   0.628297 -0.916448 -2.09686   0.0336036 0.00989306 0.0336036   0 0 0   0 0 0
+LA 2.48148
+CH 0 2.84002 0.153154 -1.74764 103.598 0 0.0336036 0.0308576 0.0336036 1.01596 0
+CH 1 0.628297 -0.916448 -2.09686 251.554 0 0.0336036 0.00989306 0.0336036 1.64049 0
 SE
 ET PH
 ID 3678
@@ -33356,12 +33368,13 @@ BD StripPairingError (No strip hits)
 CC NStripHits 0
 PE 0
 SE
-ET UN
+ET PH
 ID 4283
 TI 1771332030.495728291
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 101.283
+PE 99.011
+PP 0.628297 -0.475738 0.813297
+PW 0
 SE
 ET PH
 ID 4284
@@ -41101,12 +41114,13 @@ PE 64.7929
 PP -2.16545 -0.660565 -4.54139
 PW 0
 SE
-ET UN
+ET PH
 ID 5295
 TI 1771332031.550024409
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 215.621
+PE 214.006
+PP 0.628297 -0.505293 -2.09686
+PW 0
 SE
 ET PH
 ID 5296
@@ -46910,12 +46924,13 @@ LA 0.913877
 CH 0 3.65486 -0.846087 -3.14452 51.5143 0 0.0336036 0.0467994 0.0336036 0.999937 0
 CH 1 3.77127 -0.268319 -3.84295 125.395 0 0.0336036 0.023534 0.0336036 1.1953 0
 SE
-ET UN
+ET PH
 ID 6059
 TI 1771332032.381289856
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 173.009
+PE 174.544
+PP 0.744703 0.368115 -1.98045
+PW 0
 SE
 ET PH
 ID 6060
@@ -47394,12 +47409,13 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 31.969160)
 BD GR Veto
 PQ 1.19429
 SE
-ET UN
+ET PH
 ID 6124
 TI 1771332032.438524573
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 355.865
+PE 353.903
+PP 0.628297 -0.201612 2.55939
+PW 0
 SE
 ET PH
 ID 6125
@@ -51094,12 +51110,13 @@ BD DepthCalibrationError (Out of Range)
 CC NStripHits 4
 PE 76.8078
 SE
-ET UN
+ET PH
 ID 6601
 TI 1771332032.935477082
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 3
-PE 303.343
+PE 302.073
+PP 0.628297 0.089543 -0.117953
+PW 0
 SE
 ID 6602
 BD DepthCalibrationError (GR Veto)
@@ -67554,9 +67571,9 @@ SE
 ET UN
 ID 8735
 TI 1771332035.168363219
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
+BD DepthCalibrationError (Out of Range)
 CC NStripHits 3
-PE 72.3539
+PE 71.7669
 SE
 ET PH
 ID 8736
