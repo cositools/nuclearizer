@@ -445,9 +445,6 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     // Skip comment lines or lines before the first detector section
     if (currentDetID < 0 || Line.BeginsWith('#')) continue;
 
-    // Skip text column headers 
-    if (Line.BeginsWith("z_depth")) continue;
-
     // Tokenize using only commas as delimiters 
     std::vector<MString> Tokens = Line.Tokenize(",", false);
     DetectorTrappingData& det = m_DetectorParamMap[currentDetID];
