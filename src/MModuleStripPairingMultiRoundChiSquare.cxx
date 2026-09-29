@@ -907,6 +907,20 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
         BestHVSideCombo = BestHVSideComboRoundTwo;
       }
     }
+    
+    // Order BestLVSideCombo and BestHVSideCombo by their StripIDs in order to correctly check for adjacency in CreateHits function
+    for (unsigned int h = 0; h < BestLVSideCombo.size(); ++h) { // Loop over groupings of strips
+      sort(BestLVSideCombo[h].begin(), BestLVSideCombo[h].end(), [&](unsigned int SH_a, unsigned int SH_b) {
+        return TriggeredStripHits[d][0][SH_a]->GetStripID() < TriggeredStripHits[d][0][SH_b]->GetStripID();
+      });
+    }
+    
+    for (unsigned int h = 0; h < BestHVSideCombo.size(); ++h) { // Loop over groupings of strips
+      sort(BestHVSideCombo[h].begin(), BestHVSideCombo[h].end(), [&](unsigned int SH_a, unsigned int SH_b) {
+        return TriggeredStripHits[d][1][SH_a]->GetStripID() < TriggeredStripHits[d][1][SH_b]->GetStripID();
+      });
+    }
+    
     // Check if chi^2 was ever actually updated
     if (BestChiSquare == numeric_limits<double>::max()) {
       Event->SetStripPairingError("Pairing did not find a single match");
