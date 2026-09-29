@@ -94,7 +94,7 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
   m_SideToIndex = {{'l', 0}, {'h', 1}, {'0', 0}, {'1', 1}, {'p', 0}, {'n', 1}};
 
   // Default energy spectra plot in GUI hardcoded to false 
-  // (should only be used with TAC calibration/cut happens after Energy Calibration)
+  // (should only be used when TAC calibration/cut happens after Energy Calibration)
   m_PlotEnergySpectrum = false;
 
 }
@@ -149,7 +149,6 @@ void MModuleTACCalibration::CreateExpos()
   // Only create the energy spectra GUI if requested
   if (m_PlotEnergySpectrum == true) {
     m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
-//    m_ExpoEnergySpectrum->SetEnergyHistogramParameters(200, 0.0, 2000.0);
     m_Expos.push_back(m_ExpoEnergySpectrum);
   } else {
     m_ExpoEnergySpectrum = nullptr; 
@@ -172,7 +171,7 @@ void MModuleTACCalibration::ShowOptionsGUI()
 
 bool MModuleTACCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
-  // Check if GUI is active AND if the event has already been Energy Calibrated
+  // Check if GUI is active and if the event has already been energy calibrated
   if ((HasExpos() == true) && (m_ExpoEnergySpectrum != nullptr)) {
     if (Event->HasAnalysisProgress(MAssembly::c_EnergyCalibration) == true) {
       for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
@@ -215,6 +214,7 @@ bool MModuleTACCalibration::AnalyzeEvent(MReadOutAssembly* Event)
         );
       }
 
+      // Plot the calibrated TAC in ns for strips with valid fast timing
       if ((SH->IsGuardRing() == false) && (SH->HasFastTiming() == true)) {
         m_ExpoTACcut->AddTAC(
           SH->GetDetectorID(),
