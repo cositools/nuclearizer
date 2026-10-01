@@ -196,6 +196,7 @@ class MModuleDepthCalibration : public MModule
   uint64_t m_ErrorSH;
   uint64_t m_ErrorNullSH;
   uint64_t m_ErrorNoE;
+  uint64_t m_ErrorNoFastTiming;
   unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
