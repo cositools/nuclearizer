@@ -700,8 +700,8 @@ bool UTNModuleLoaderMeasurementsTRA::TestCommittedData()
   Passed = EvaluateTrue("Initialize()", "542-1 reference tra file", "Initialize() succeeds for the reference tra file", Loader != nullptr) && Passed;
   if (Passed == false) return Passed;
 
-  // Reference values from the file: 6803 SE blocks, 5206 of them with an ET line (833 CO, 3227 PH, 1146 UN),
-  // 1118 UN events carry nuclearizer error flags; the file IDs begin 1, 2, 4, 5, 6 since ID 3 has no ET line
+  // Reference values from the file: 6803 SE blocks, 5206 of them with an ET line (853 CO, 3252 PH, 1101 UN),
+  // 1073 UN events carry nuclearizer error flags; the file IDs begin 1, 2, 4, 5, 6 since ID 3 has no ET line
   unsigned int NEvents = 0;
   unsigned int NGood = 0;
   unsigned int NCompton = 0;
@@ -743,12 +743,12 @@ bool UTNModuleLoaderMeasurementsTRA::TestCommittedData()
   delete Loader;
 
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "All 5206 events with ET line are loaded", NEvents, 5206u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "4088 events are good", NGood, 4088u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "833 events are Compton events", NCompton, 833u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "3227 events are photo events", NPhoto, 3227u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "Every Compton event has one hit per sequence element", NComptonWithSequence, 833u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "Every photo event has one hit", NPhotoWithOneHit, 3227u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "No other event has hits", NOtherWithoutHits, 1146u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "4133 events are good", NGood, 4133u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "853 events are Compton events", NCompton, 853u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "3252 events are photo events", NPhoto, 3252u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "Every Compton event has one hit per sequence element", NComptonWithSequence, 853u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "Every photo event has one hit", NPhotoWithOneHit, 3252u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "No other event has hits", NOtherWithoutHits, 1101u) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "542-1 reference tra file", "The first IDs skip the event without ET line", FirstIDs == vector<unsigned long>({ 1, 2, 4, 5, 6 })) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "The last ID is 6803", LastID, (unsigned long) 6803) && Passed;
 
