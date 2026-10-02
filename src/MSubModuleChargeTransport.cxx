@@ -96,7 +96,7 @@ bool MSubModuleChargeTransport::Initialize()
           DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
           if (DetID != DetectorName.ToUnsignedInt()) {
             if (g_Verbosity >= c_Error) {
-              cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for detector "<<DetName<<endl;
+              cout << "ERROR in MSubModuleChargeTransport::Initialize: Non-matching DetID="<<DetID<<" for detector "<<DetName<<endl;
             }
             // Return false if this is running with the COSI SMEX payload mass model
             if (m_Geometry->GetName() == "COSI-SMEX-Payload"){
@@ -105,7 +105,7 @@ bool MSubModuleChargeTransport::Initialize()
           }
         } else if (m_Geometry->GetName() == "COSI-SMEX-Payload") {
           if (g_Verbosity >= c_Error) {
-            cout << "ERROR in MModuleDepthCalibration::Initialize: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
+            cout << "ERROR in MSubModuleChargeTransport::Initialize: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
           }
           return false;
         }
@@ -147,16 +147,20 @@ bool MSubModuleChargeTransport::Initialize()
           m_Detectors[DetID] = det;
           DetID += 1;
         } else {
-          cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << DetName << endl;
+          if (g_Verbosity >= c_Error) {
+            cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << DetName << endl;
+          }
         }
       } else {
-        cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
+        if (g_Verbosity >= c_Error) {
+          cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
+        }
       }
     }
   }
 
   if (m_DetectorIDs.size() == 0) {
-    cout<<"No Strip3D detectors were found."<<endl;
+    if (g_Verbosity >= c_Error) cout<<"ERROR in MSubModuleChargeTransport::Initialize: No Strip3D detectors were found in the geometry."<<endl;
     return false; 
   }
 

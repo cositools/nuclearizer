@@ -167,12 +167,12 @@ bool MModuleResponseGenerator::AnalyzeEvent(MReadOutAssembly* Event)
   Event->StreamEvta(Out);
   
   if (m_Response->SetEvent(MString(Out.str()), false, 25) == false) {
-    cout<<"Unable to set event"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to set event"<<endl;
     return true;
   }
   
   if (m_Response->Analyze() == false) {
-    cout<<"Analysis failed"<<endl; 
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag << ": Analysis failed"<<endl; 
   }
 
   return true;

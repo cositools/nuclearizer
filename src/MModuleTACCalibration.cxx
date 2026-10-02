@@ -113,13 +113,13 @@ bool MModuleTACCalibration::Initialize()
   // Initialize the module 
 
   if (LoadTACCalFile(m_TACCalFile) == false) {
-    cout<<m_XmlTag<<": Error: TAC Calibration file could not be loaded."<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: TAC Calibration file could not be loaded."<<endl;
     return false;
   }
 
   // Some sanity checks:
   if (m_TACCal.size() == 0) {
-    cout<<m_XmlTag<<": The TAC calibration data set is empty"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The TAC calibration data set is empty"<<endl;
     return false;
   }
 
@@ -229,7 +229,7 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
       
       // Check that this detector exists in the TAC calibration
       if (m_TACCal.find(DetID) == m_TACCal.end()) {
-        cout<<m_XmlTag
+        if (g_Verbosity >= c_Warning) cout<<m_XmlTag
             <<": Error: DetID "<<DetID
             <<" has no TAC calibration entries - skipping event"
             <<endl;
@@ -238,7 +238,7 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
 
       // Check that this side is understood
       if (m_SideToIndex.find(Side) == m_SideToIndex.end()) {
-        cout<<m_XmlTag
+        if (g_Verbosity >= c_Warning) cout<<m_XmlTag
             <<": Error: Unable to identify Side "<<Side
             <<" - skipping event"
             <<endl;
@@ -429,7 +429,7 @@ bool MModuleTACCalibration::LoadTACCalFile(MString FName)
   // ReadOutID, Detector, Side, Strip, TAC cal, TAC cal error, TAC offset, TAC offset error
   MFile F;
   if (F.Open(FName) == false) {
-    cout<<m_XmlTag<<": Error: failed to open TAC Calibration file."<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: failed to open TAC Calibration file."<<endl;
     return false;
   }
   MString Line;
@@ -442,7 +442,7 @@ bool MModuleTACCalibration::LoadTACCalFile(MString FName)
         MString SideString = Tokens[1+IndexOffset].Trim();
         char Side;
         if (SideString.Length()!=1) {
-          cout<<m_XmlTag<<": Error: Expected 1 character Side, got string \""<<SideString<<"\" in TAC calibration file."<<endl;
+          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Expected 1 character Side, got string \""<<SideString<<"\" in TAC calibration file."<<endl;
           return false;
         }
         else {
@@ -475,7 +475,7 @@ bool MModuleTACCalibration::LoadTACCalFile(MString FName)
         if (m_SideToIndex.find(Side) != m_SideToIndex.end()) {
           m_TACCal[DetID][m_SideToIndex[Side]][StripID] = CalValues;
         } else {
-          cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
+          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
           return false;
         }
       }

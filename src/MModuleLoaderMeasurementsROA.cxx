@@ -121,7 +121,7 @@ bool MModuleLoaderMeasurementsROA::AnalyzeEvent(MReadOutAssembly* Event)
   // Here: Just read it.
     
   if (ReadNextEvent(Event) == false) {
-    cout<<m_Name<<": No more events!"<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events!"<<endl;
     m_IsFinished = true;
     return false;
   }
@@ -141,10 +141,12 @@ void MModuleLoaderMeasurementsROA::Finalize()
   
   MModule::Finalize();
   
-  cout<<"MModuleLoaderMeasurementsROA: "<<endl;
-  cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
-  cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
-
+  if (g_Verbosity >= c_Info) {
+    cout<<"MModuleLoaderMeasurementsROA: "<<endl;
+    cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
+    cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
+  }
+  
   m_ROAFile.Close();  
 }
 
@@ -172,12 +174,12 @@ bool MModuleLoaderMeasurementsROA::Open(MString FileName, unsigned int Way)
 
 bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
 {
-  // Return next single event from file... or 0 if there are no more.
+  // Populate next single event with ROA elements from file... or return false if there are no more.
   
   Event->Clear();
 
   if (m_ROAFile.ReadNext(*Event) == false) {
-    cout<<m_Name<<": No more events available in File"<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events available in File"<<endl;
     return false;
   }
   

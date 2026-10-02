@@ -266,7 +266,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       Config.read(Config.getStrType(), ConfigJSON);
     }
 
-    cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
 
     // Read ASIC polarities from the JSON config string (if existent)
     m_ASICPolarities.clear();
@@ -596,7 +596,7 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
     m_CurrentBatchIndex = 0;
 
   } catch (const H5::Exception& E) {
-    cout<<m_XmlTag<<": HDF5 read error: "<<E.getDetailMsg()<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": HDF5 read error: "<<E.getDetailMsg()<<endl;
     m_CurrentBatchSize = 0;
     m_Buffer_1_0.resize(0);
     m_Buffer_1_2.resize(0);
@@ -632,20 +632,20 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         FileName.ReplaceAllInPlace(".hdf5", NextSuffix);
         if (MFile::Exists(FileName) == true) {
           if (OpenHDF5File(FileName) == false) {
-            cout<<m_XmlTag<<": No more events!"<<endl;
+            if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events!"<<endl;
             m_IsFinished = true;
             return false;
           } else {
-            cout<<m_XmlTag<<": Switched to file: "<<FileName<<endl;
+            if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Switched to file: "<<FileName<<endl;
             m_ContinuationFileID++;
           }
         } else {
-          cout<<m_XmlTag<<": No more events!"<<endl;
+          if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events!"<<endl;
           m_IsFinished = true;
           return false;
         }
       } else {
-        cout<<m_XmlTag<<": No more events!"<<endl;
+        if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events!"<<endl;
         m_IsFinished = true;
         return false;
       }
@@ -905,9 +905,11 @@ void MModuleLoaderMeasurementsHDF::Finalize()
   
   MModule::Finalize();
   
-  cout<<"MModuleLoaderMeasurementsHDF: "<<endl;
-  cout<<"  * all events on file:  "<<m_NEventsInFile<<endl;
-  cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
+  if (g_Verbosity >= c_Info) {
+    cout<<"MModuleLoaderMeasurementsHDF: "<<endl;
+    cout<<"  * all events on file:  "<<m_NEventsInFile<<endl;
+    cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
+  }
 
   m_HDFFile.close();
 }
