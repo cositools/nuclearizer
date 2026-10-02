@@ -158,10 +158,9 @@ bool MCrystalHit::StreamDat(ostream& S, int Version)
 
 void MCrystalHit::StreamRoa(ostream& S, bool WithADC, bool WithEnergy, bool WithFlags, bool WithOrigins)
 {
-  //! Stream the content in MEGAlib's evta format 
+  //! Stream the content in MEGAlib's roa format
 
-  S<<"UH "
-   <<m_ReadOutElement->GetDetectorID()<<" ";
+  S<<"UC "<<m_ReadOutElement->ToParsableString()<<" ";
   if (WithADC == true) {
     S<<m_ADCUnits<<" ";
   }
