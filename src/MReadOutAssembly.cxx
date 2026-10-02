@@ -894,6 +894,9 @@ bool MReadOutAssembly::ParseBDFlags(const MString& Line)
     return true;
   }
 
+  // Both callers check the keyword first, so this only happens if the function is used elsewhere
+  if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Not a BD, QA, or PQ line: "<<Line<<endl;
+
   return false;
 }
 
