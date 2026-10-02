@@ -477,7 +477,7 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
       return false;
     }
   }
-  if (Line.BeginsWith("BD") || Line.BeginsWith("QA") || Line.BeginsWith("PQ")) {
+  if (Line.BeginsWith("BD") == true || Line.BeginsWith("QA") == true || Line.BeginsWith("PQ") == true) {
     return ParseBDFlags(Line);
   }
 
@@ -546,7 +546,7 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
       } else {
         delete sh;
       }
-    } else if (Line.BeginsWith("BD") || Line.BeginsWith("QA") || Line.BeginsWith("PQ")) {
+    } else if (Line.BeginsWith("BD") == true || Line.BeginsWith("QA") == true || Line.BeginsWith("PQ") == true) {
       EventRead = true;
       ParseBDFlags(Line);
     }
@@ -827,7 +827,7 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
 bool MReadOutAssembly::ParseBDFlags(const MString& Line)
 {
   // "PQ <chi square> <chi square> ..."
-  if (Line.BeginsWith("PQ")) {
+  if (Line.BeginsWith("PQ") == true) {
     MTokenizer T;
     T.Analyze(Line);
     for (unsigned int t = 1; t < T.GetNTokens(); ++t) {
@@ -856,7 +856,7 @@ bool MReadOutAssembly::ParseBDFlags(const MString& Line)
   // The setters ignore an empty text
   if (Texts.empty() == true) Texts.push_back("");
 
-  if (Line.BeginsWith("BD")) {
+  if (Line.BeginsWith("BD") == true) {
     if (Flag == "EnergyCalibrationError") {
       for (const MString& T: Texts) SetEnergyCalibrationError(T);
     } else if (Flag == "TACCalibrationError") {
@@ -880,7 +880,7 @@ bool MReadOutAssembly::ParseBDFlags(const MString& Line)
     return true;
   }
 
-  if (Line.BeginsWith("QA")) {
+  if (Line.BeginsWith("QA") == true) {
     if (Flag == "StripHitBelowThreshold") {
       for (const MString& T: Texts) SetStripHitBelowThreshold_QualityFlag(T);
     } else if (Flag == "HighADC") {

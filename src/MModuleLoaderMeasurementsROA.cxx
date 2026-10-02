@@ -176,10 +176,8 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
   
   Event->Clear();
 
-  m_ROAFile.ReadNext(*Event);
-  
-  if (Event->GetNumberOfReadOuts() == 0) {
-    cout<<m_Name<<": No more read-outs available in File"<<endl;
+  if (m_ROAFile.ReadNext(*Event) == false) {
+    cout<<m_Name<<": No more events available in File"<<endl;
     return false;
   }
   

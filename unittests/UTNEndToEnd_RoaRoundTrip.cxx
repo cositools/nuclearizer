@@ -113,7 +113,7 @@ bool UTNEndToEnd_RoaRoundTrip::TestStripAndCrystalHits()
     "UF UH doublesidedstrip adc-tac-energy-timing-flags-origins\n"
     "UF UC voxel3d adc-energy-flags-origins\n"
     "\n";
-  // Strip hits with and without origins, a crystal hit in the same event, and an event with only a crystal hit
+  // Strip hits with and without origins, a crystal hit in the same event, an event with only a crystal hit, and an event without hits
   const MString Input = Header +
     "SE\nID 1\nTI 1.500000000\n"
     "UH 0 41 l 4053 10452 59.5 12.25 4 1;2\n"
@@ -121,6 +121,8 @@ bool UTNEndToEnd_RoaRoundTrip::TestStripAndCrystalHits()
     "UC BGO1 2 0 1 3 812 511.5 0 3\n"
     "SE\nID 2\nTI 2.250000000\n"
     "UC BGO2 0 1 1 1 900 600.25 0 -\n"
+    "SE\nID 3\nTI 4.000000000\n"
+    "BD No hits\n"
     "EN\n";
   // The writer adds a blank line before the header, a PQ line to each event, and a blank line at the end
   const MString Expected = "\n" + Header +
@@ -131,6 +133,9 @@ bool UTNEndToEnd_RoaRoundTrip::TestStripAndCrystalHits()
     "PQ\n"
     "SE\nID 2\nTI 2.250000000\n"
     "UC BGO2 0 1 1 1 900 600.25 0 -\n"
+    "PQ\n"
+    "SE\nID 3\nTI 4.000000000\n"
+    "BD No hits\n"
     "PQ\n"
     "EN\n\n";
 

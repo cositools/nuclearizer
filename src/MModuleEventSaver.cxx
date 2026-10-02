@@ -231,7 +231,14 @@ bool MModuleEventSaver::Initialize()
       return false;
     }
     if (CrystalType != "") {
-      m_RoaFileFormat.AddReadOutUnit("UC", "voxel3d", CrystalType);
+      if (m_RoaFileFormat.AddReadOutUnit("UC", "voxel3d", CrystalType) == false) {
+        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to define the roa read-out unit of the crystal hits"<<endl;
+        return false;
+      }
+    } else {
+      // Crystal hits are always written as UC lines, so they need a declared read-out unit
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The roa options select no read-out data the crystal hits have - enable the ADCs or the energies"<<endl;
+      return false;
     }
     for (unsigned int u = 0; u < m_RoaFileFormat.GetNumberOfReadOutUnits(); ++u) {
       Header<<m_RoaFileFormat.GetUFLine(u)<<endl;

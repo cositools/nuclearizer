@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <fstream>
+#include <string>
+#include <vector>
 #include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
@@ -48,8 +50,14 @@ private:
   bool TestHDF5ToRoa();
   //! Read the reference .roa file with nuclearizer, write it again, and compare it to itself
   bool TestRoaToRoa();
+  //! Read the reference .roa file with nuclearizer while vetoed events are not saved
+  bool TestRoaToRoaWithoutVetoedEvents();
   //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg, whose output is <Name>.<Suffix>, and compare it to ReferenceName
   bool TestConfiguration(const MString& Name, const MString& Suffix, const MString& ReferenceName);
+  //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg and redirect its output <Name>.<Suffix> to OutputFile
+  bool RunConfiguration(const MString& Name, const MString& Suffix, const MString& OutputFile);
+  //! Write a copy of the roa file without the events containing a BD GR Veto line
+  bool RemoveVetoedEvents(const MString& InputFileName, const MString& OutputFileName);
   //! Run nuclearizer with arguments and capture stdout/stderr in a log file
   int RunNuclearizer(const MString& Arguments, const MString& LogFile);
   //! Compare generated output with the reference file
@@ -67,6 +75,7 @@ bool UTNEndToEnd_406_1::Run()
   Passed = TestHDF5ToTra() && Passed;
   Passed = TestHDF5ToRoa() && Passed;
   Passed = TestRoaToRoa() && Passed;
+  Passed = TestRoaToRoaWithoutVetoedEvents() && Passed;
 
   Summarize();
 
@@ -109,31 +118,125 @@ bool UTNEndToEnd_406_1::TestConfiguration(const MString& Name, const MString& Su
 {
   bool Passed = true;
 
-  // Require $NUCLEARIZER to locate the data files
   const char* NuclearizerEnv = getenv("NUCLEARIZER");
   Passed = EvaluateTrue("End-to-end test 406-1", "environment variable",
                         "$NUCLEARIZER environment variable must be set",
                         NuclearizerEnv != nullptr && NuclearizerEnv[0] != '\0') && Passed;
   if (Passed == false) return Passed;
 
-  MString NuclearizerDir(NuclearizerEnv);
-  MString DataDir       = NuclearizerDir + "/resource/unittestdata/406-1";
-  MString ConfigFile    = DataDir + "/" + Name + ".nuclearizer.cfg";
-  MString OutputFile    = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + "." + Suffix;
+  MString DataDir       = MString(NuclearizerEnv) + "/resource/unittestdata/406-1";
   MString ReferenceFile = DataDir + "/" + ReferenceName;
+  MString OutputFile    = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + "." + Suffix;
+
+  Passed = EvaluateTrue("End-to-end test 406-1", Name + " reference file",
+                        "The reference file exists",
+                        MFile::Exists(ReferenceFile)) && Passed;
+  if (Passed == false) return Passed;
+
+  Passed = RunConfiguration(Name, Suffix, OutputFile) && Passed;
+  if (Passed == false) return Passed;
+
+  // Compare output to reference line by line
+  Passed = CompareOutputToReference(OutputFile, ReferenceFile) && Passed;
+
+  MFile::Remove(OutputFile);
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNEndToEnd_406_1::TestRoaToRoaWithoutVetoedEvents()
+{
+  bool Passed = true;
+
+  const char* NuclearizerEnv = getenv("NUCLEARIZER");
+  Passed = EvaluateTrue("End-to-end test 406-1", "environment variable",
+                        "$NUCLEARIZER environment variable must be set",
+                        NuclearizerEnv != nullptr && NuclearizerEnv[0] != '\0') && Passed;
+  if (Passed == false) return Passed;
+
+  MString DataDir       = MString(NuclearizerEnv) + "/resource/unittestdata/406-1";
+  MString ReferenceFile = DataDir + "/hdf5-to-roa.reference.roa";
+  MString OutputFile    = MString("/tmp/UTNEndToEnd_406-1_roa-to-roa-novetoes_") + (unsigned int) getpid() + ".roa";
+  MString ExpectedFile  = MString("/tmp/UTNEndToEnd_406-1_roa-to-roa-novetoes_expected_") + (unsigned int) getpid() + ".roa";
+
+  Passed = RunConfiguration("roa-to-roa-novetoes", "roa", OutputFile) && Passed;
+  if (Passed == false) return Passed;
+
+  // The BD GR Veto lines are read back as the guard ring veto, thus those events are not saved
+  Passed = EvaluateTrue("End-to-end test 406-1", "roa-to-roa-novetoes expected file",
+                        "The events without a guard ring veto can be extracted from the reference",
+                        RemoveVetoedEvents(ReferenceFile, ExpectedFile)) && Passed;
+  Passed = EvaluateFalse("End-to-end test 406-1", "roa-to-roa-novetoes output file",
+                         "The output contains no vetoed event",
+                         ReadTextFile(OutputFile).Contains("BD GR Veto")) && Passed;
+  Passed = EvaluateFilesNumericallyEquivalent("End-to-end test 406-1", "roa-to-roa-novetoes output file",
+                                              "All events without a guard ring veto are saved unchanged",
+                                              OutputFile, ExpectedFile) && Passed;
+
+  MFile::Remove(OutputFile);
+  MFile::Remove(ExpectedFile);
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNEndToEnd_406_1::RemoveVetoedEvents(const MString& InputFileName, const MString& OutputFileName)
+{
+  ifstream In(InputFileName.Data());
+  ofstream Out(OutputFileName.Data());
+  if (In.is_open() == false || Out.is_open() == false) return false;
+
+  // Events are buffered from SE to the next SE, and dropped if they contain a BD GR Veto line
+  vector<string> Event;
+  bool IsInEvent = false;
+  bool IsVetoed = false;
+  string Line;
+  while (getline(In, Line)) {
+    if (Line == "SE" || Line == "EN") {
+      if (IsInEvent == true && IsVetoed == false) {
+        for (const string& E: Event) Out<<E<<endl;
+      }
+      Event.clear();
+      IsVetoed = false;
+      IsInEvent = (Line == "SE");
+    }
+    if (IsInEvent == true) {
+      Event.push_back(Line);
+      if (Line == "BD GR Veto") IsVetoed = true;
+    } else {
+      Out<<Line<<endl;
+    }
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNEndToEnd_406_1::RunConfiguration(const MString& Name, const MString& Suffix, const MString& OutputFile)
+{
+  bool Passed = true;
+
+  MString DataDir        = MString(getenv("NUCLEARIZER")) + "/resource/unittestdata/406-1";
+  MString ConfigFile     = DataDir + "/" + Name + ".nuclearizer.cfg";
   MString TestConfigFile = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + ".cfg";
 
   // The log file name carries the process ID so concurrent end-to-end tests
   // (and repeated runs) never share or clobber the same log.
   MString LogFile = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + ".log";
 
-  // Verify that the config and reference files are present before running anything
   Passed = EvaluateTrue("End-to-end test 406-1", Name + " config file",
                         "The nuclearizer config file exists",
                         MFile::Exists(ConfigFile)) && Passed;
-  Passed = EvaluateTrue("End-to-end test 406-1", Name + " reference file",
-                        "The reference file exists",
-                        MFile::Exists(ReferenceFile)) && Passed;
   if (Passed == false) return Passed;
 
   ifstream ConfigIn(ConfigFile.Data());
@@ -168,25 +271,12 @@ bool UTNEndToEnd_406_1::TestConfiguration(const MString& Name, const MString& Su
   Passed = EvaluateTrue("End-to-end test 406-1", Name + " exit status",
                         "nuclearizer exits with status 0 (log: " + LogFile + ")",
                         Status == 0) && Passed;
-  if (Passed == false) {
-    MFile::Remove(OutputFile);
-    MFile::Remove(TestConfigFile);
-    return Passed;
-  }
 
   // Verify the output file was produced by this run
   Passed = EvaluateTrue("End-to-end test 406-1", Name + " output file",
                         "The output file of " + Name + " was created",
                         MFile::Exists(OutputFile)) && Passed;
-  if (Passed == false) {
-    MFile::Remove(TestConfigFile);
-    return Passed;
-  }
 
-  // Compare output to reference line by line
-  Passed = CompareOutputToReference(OutputFile, ReferenceFile) && Passed;
-
-  MFile::Remove(OutputFile);
   MFile::Remove(TestConfigFile);
 
   return Passed;
