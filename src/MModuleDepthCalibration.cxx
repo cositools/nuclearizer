@@ -327,7 +327,8 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
         } else if ((LVSH->HasFastTiming() == false) || (HVSH->HasFastTiming() == false)) {
-          // A slow-timing TAC still calibrates to a positive time, but it cannot give a depth
+          // A slow-timing TAC still calibrates to a positive time, but should not be used for depth reconstruction
+          // TODO: Handle depth calibration for events with slow timing
           ++m_ErrorNoFastTiming;
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No fast timing");
