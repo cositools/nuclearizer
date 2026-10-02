@@ -294,6 +294,9 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Stream the BD flags
   void StreamBDFlags(ostream& S);
+  //! Parse a BD, QA, or PQ line as written by StreamBDFlags
+  //! Return false if the flag is unknown
+  bool ParseBDFlags(const MString& Line);
 
   //! Build the next MReadOutAssembly from a `.dat` file
   bool GetNextFromDatFile(MFile& F);
