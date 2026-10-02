@@ -49,6 +49,12 @@ class MCrystalHit
 
   //! Set the Crystal ID
   void SetCrystalID(unsigned int CrystalID) { m_ReadOutElement->SetCrystalID(CrystalID); }
+  //! Set the voxel X ID
+  void SetVoxelXID(unsigned int VoxelXID) { m_ReadOutElement->SetVoxelXID(VoxelXID); }
+  //! Set the voxel Y ID
+  void SetVoxelYID(unsigned int VoxelYID) { m_ReadOutElement->SetVoxelYID(VoxelYID); }
+  //! Set the voxel Z ID
+  void SetVoxelZID(unsigned int VoxelZID) { m_ReadOutElement->SetVoxelZID(VoxelZID); }
   //! Return the Crystal ID
   unsigned int GetCrystalID() const { return m_ReadOutElement->GetCrystalID(); }
 
