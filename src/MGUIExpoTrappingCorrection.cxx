@@ -2,7 +2,7 @@
  * MGUIExpoTrappingCorrection.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer
+ * Copyright (C) by Andreas Zoglauer and Sophie Haight. 
  * All rights reserved.
  *
  *
@@ -54,8 +54,10 @@ MGUIExpoTrappingCorrection::MGUIExpoTrappingCorrection(MModule* Module) : MGUIEx
 {
   m_TabTitle = "Trapping Correction";
 
+  // Set eMin and eMax for the minimum and maximum energy in the Expo plot
   double eMin = 0.0;
   double eMax = 2000.0;
+  // Set bin number for the Expo plot
   int nBins = 20000;
 
 

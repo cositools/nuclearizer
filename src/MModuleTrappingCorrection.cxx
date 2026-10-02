@@ -2,8 +2,7 @@
  * MModuleTrappingCorrection.cxx
  *
  *
- * Copyright (C) 2008-2008 by Andreas Zoglauer, Alex Lowell, 
- * 				Sophie Haight, Carolyn Kierans.
+ * Copyright (C) 2008-2008 by Andreas Zoglauer and Sophie Haight.				
  * All rights reserved.
  *
  *
@@ -41,7 +40,6 @@
 #include "MGUIOptionsTrappingCorrection.h"
 #include "MGUIExpoTrappingCorrection.h"
 #include "MGUIExpoPlotSpectrum.h"
-#include "MModuleEnergyCalibration.h"
 #include "MModuleDepthCalibration.h"
 
 
@@ -106,19 +104,12 @@ MModuleTrappingCorrection::~MModuleTrappingCorrection()
 
 bool MModuleTrappingCorrection::Initialize()
 {
-  m_SimCCEFileIsLoaded = LoadSimCCEFile(m_SimCCEFileName);
-  if (m_SimCCEFileIsLoaded == false) {
+  m_TrappingCorrectionFileIsLoaded = LoadTrappingCorrectionFile(m_TrappingCorrectionFileName);
+  if (m_TrappingCorrectionFileIsLoaded == false) {
     return false;
   }
   
   MSupervisor* S = MSupervisor::GetSupervisor();
-  m_EnergyCalibration = (MModuleEnergyCalibration*) S->GetAvailableModuleByXmlTag("XmlTagEnergyCalibration");
-  if (m_EnergyCalibration == nullptr) {
-    if (g_Verbosity >= c_Error) {
-      cout << "ERROR in MModuleTrappingCorrection::Initialize: couldn't resolve pointer to Energy Calibration Module... need access to this module for energy resolution lookup!" << endl;
-    }
-       return false;
-  }
   
   m_DepthCalibration = (MModuleDepthCalibration*) S->GetAvailableModuleByXmlTag("XmlTagDepthCalibration");
   if (m_DepthCalibration == nullptr) {
@@ -159,15 +150,13 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   for (unsigned int i = 0; i < Event->GetNHits(); ++i) {
     MHit* H = Event->GetHit(i);
 
-
-    int Grade = m_DepthCalibration->GetHitGrade(H);
-    if (Grade < 0 || Grade > 4) {
-      H->SetNoDepth();
-      continue; 
-    } 
+    // Skip hits that don't have a depth value
+    if (H->GetNoDepth() == true) {
+      continue;
+    }
 
     // Local Z depth position (in cm) from the hit
-    double depth_val = H->GetLocalPosition().GetZ();
+    double DepthVal = H->GetLocalPosition().GetZ();
 
     // Separate strip hits into LV and HV lists
     vector<MStripHit*> LVStrips;
@@ -198,9 +187,9 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         const DetectorTrappingData& detData = it->second;
 
         // Check depth bounds using this specific detector's CCE grid limits
-        double min_param_depth = std::min(detData.m_Depths.front(), detData.m_Depths.back());
-        double max_param_depth = std::max(detData.m_Depths.front(), detData.m_Depths.back());
-        bool is_depth_out_of_bounds = (depth_val < min_param_depth || depth_val > max_param_depth);
+        double MinParamDepth = std::min(detData.m_Depths.front(), detData.m_Depths.back());
+        double MaxParamDepth = std::max(detData.m_Depths.front(), detData.m_Depths.back());
+        bool IsDepthOutofBounds = (DepthVal < MinParamDepth || DepthVal > MaxParamDepth);
 
         double rawLVEnergy = LVSH->GetEnergy(); 
 
@@ -209,8 +198,14 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         }
 
         double correctedLVEnergy = rawLVEnergy;
-        if (is_depth_out_of_bounds == false) {
-          correctedLVEnergy = GetSimBasedCorrectedEnergy(depth_val, rawLVEnergy, detData.m_Depths, detData.m_CCEs_LV_e, detData.m_CCEs_LV_h, detData.m_ParamB, detData.m_ParamC);
+        if (IsDepthOutofBounds == false) {
+          correctedLVEnergy = GetSimBasedCorrectedEnergy(DepthVal, rawLVEnergy, detData.m_Depths, detData.m_CCEs_LV_e, detData.m_CCEs_LV_h, detData.m_ParamB, detData.m_ParamC);
+        } else {
+          if (DepthVal < MinParamDepth) {
+            correctedLVEnergy = GetSimBasedCorrectedEnergy(MinParamDepth, rawLVEnergy, detData.m_Depths, detData.m_CCEs_LV_e, detData.m_CCEs_LV_h, detData.m_ParamB, detData.m_ParamC);
+          } else if (DepthVal > MaxParamDepth) {
+            correctedLVEnergy = GetSimBasedCorrectedEnergy(MaxParamDepth, rawLVEnergy, detData.m_Depths, detData.m_CCEs_LV_e, detData.m_CCEs_LV_h, detData.m_ParamB, detData.m_ParamC); 
+          }
         }
 
         LVSH->SetEnergy(correctedLVEnergy);    
@@ -238,9 +233,9 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         const DetectorTrappingData& detData = it->second;
 
         // Check depth bounds using this specific detector's CCE grid limits
-        double min_param_depth = std::min(detData.m_Depths.front(), detData.m_Depths.back());
-        double max_param_depth = std::max(detData.m_Depths.front(), detData.m_Depths.back());
-        bool is_depth_out_of_bounds = (depth_val < min_param_depth || depth_val > max_param_depth);
+        double MinParamDepth = std::min(detData.m_Depths.front(), detData.m_Depths.back());
+        double MaxParamDepth = std::max(detData.m_Depths.front(), detData.m_Depths.back());
+        bool IsDepthOutofBounds = (DepthVal < MinParamDepth || DepthVal > MaxParamDepth);
     
 
         double rawHVEnergy = HVSH->GetEnergy(); 
@@ -249,8 +244,14 @@ bool MModuleTrappingCorrection::AnalyzeEvent(MReadOutAssembly* Event)
           m_ExpoSpectrum->AddEnergyInitial(rawHVEnergy, HVSH->IsNearestNeighbor(), HVSH->IsLowVoltageStrip());
         }
         double correctedHVEnergy = rawHVEnergy;
-        if (is_depth_out_of_bounds == false) {
-          correctedHVEnergy = GetSimBasedCorrectedEnergy( depth_val, rawHVEnergy, detData.m_Depths, detData.m_CCEs_HV_e, detData.m_CCEs_HV_h, detData.m_ParamB, detData.m_ParamC);
+        if (IsDepthOutofBounds == false) {
+          correctedHVEnergy = GetSimBasedCorrectedEnergy( DepthVal, rawHVEnergy, detData.m_Depths, detData.m_CCEs_HV_e, detData.m_CCEs_HV_h, detData.m_ParamB, detData.m_ParamC);
+        } else {
+          if (DepthVal < MinParamDepth) {
+            correctedHVEnergy = GetSimBasedCorrectedEnergy(MinParamDepth, rawHVEnergy, detData.m_Depths, detData.m_CCEs_HV_e, detData.m_CCEs_HV_h, detData.m_ParamB, detData.m_ParamC);
+          } else if (DepthVal > MaxParamDepth) {
+            correctedHVEnergy = GetSimBasedCorrectedEnergy(MaxParamDepth, rawHVEnergy, detData.m_Depths, detData.m_CCEs_HV_e, detData.m_CCEs_HV_h, detData.m_ParamB, detData.m_ParamC); 
+          }
         }
 
         HVSH->SetEnergy(correctedHVEnergy);    
@@ -288,127 +289,15 @@ void MModuleTrappingCorrection::Finalize()
     cout << "INFO: Finalizing Trapping Correction Module..." << endl;
   } 
 
-  // Retrieve both uncorrected and corrected histograms
-  TH1D* histLVInit  = m_ExpoSpectrum->GetEnergyHistogramLVInitial();
-  TH1D* histLVFinal = m_ExpoSpectrum->GetEnergyHistogramLVFinal();
-
-  TH1D* histHVInit  = m_ExpoSpectrum->GetEnergyHistogramHVInitial();
-  TH1D* histHVFinal = m_ExpoSpectrum->GetEnergyHistogramHVFinal();
-
-  // Helper lambda to calculate FWHM directly from the full continuous TF1 function curve
-  auto CalculateFunctionFWHM = [](TF1* func, double xMin, double xMax, double step = 0.01) -> double {
-    if (func == nullptr) return 0.0;
-
-    double xPeak = func->GetMaximumX(xMin, xMax);
-    double yPeak = func->Eval(xPeak);
-    double halfMax = yPeak / 2.0;
-
-    // Search left for half-max crossing point
-    double xLeft = xPeak;
-    for (double x = xPeak; x >= xMin; x -= step) {
-      if (func->Eval(x) <= halfMax) {
-        // Refine with linear interpolation between step bounds
-        double x1 = x, y1 = func->Eval(x1);
-        double x2 = x + step, y2 = func->Eval(x2);
-        xLeft = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x1;
-        break;
-      }
-    }
-
-    // Search right for half-max crossing point
-    double xRight = xPeak;
-    for (double x = xPeak; x <= xMax; x += step) {
-      if (func->Eval(x) <= halfMax) {
-        // Refine with linear interpolation between step bounds
-        double x1 = x - step, y1 = func->Eval(x1);
-        double x2 = x, y2 = func->Eval(x2);
-        xRight = (y2 != y1) ? x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1) : x2;
-        break;
-      }
-    }
-
-    return (xRight > xLeft) ? (xRight - xLeft) : 0.0;
-  };
-
-  /// Helper lambda to perform fit, output results
-  // returns : tuple<mu, gauss_fwhm, full_fit_fwhm>
-  auto FitAndPrintSpectrum = [&](TH1D* hist, const string& titleLabel) -> std::tuple<double, double, double> {
-    if (hist == nullptr || hist->GetEntries() <= 0) {
-      cout << "WARNING: " << titleLabel << " histogram is null or has 0 entries." << endl;
-      return std::make_tuple(0.0, 0.0, 0.0);
-    }
-
-    TF1* fitFunc = GeneratePhotopeakFunction();
-    fitFunc->SetParameter("Amplitude", hist->GetBinContent(hist->GetMaximumBin()));
-    hist->Fit(fitFunc, "RQ");
-
-    double mu        = fitFunc->GetParameter("x0 (Mu)");
-    double gaussFWHM = 2.35482 * fitFunc->GetParameter("Sigma Gauss");
-    
-    // Evaluate full function FWHM over the fit window 
-    double xMinFit = GetFitMinEnergy();
-    double xMaxFit = GetFitMaxEnergy();
-    fitFunc->GetRange(xMinFit, xMaxFit);
-    double fullFitFWHM = CalculateFunctionFWHM(fitFunc, xMinFit, xMaxFit);
-
-    cout << "\n --- " << titleLabel << " ---" << endl;
-    cout << "  Centroid (Mu)         : " << mu << " keV" << endl;
-    cout << "  Fitted Gaussian FWHM  : " << gaussFWHM << " keV" << endl;
-    cout << "  Full Fit Function FWHM: " << fullFitFWHM << " keV" << endl;
-
-    delete fitFunc;
-    return std::make_tuple(mu, gaussFWHM, fullFitFWHM);
-  };
-  
-  // --- EXECUTE FITS ---
-  std::tuple<double, double, double> lv_raw  = FitAndPrintSpectrum(histLVInit,  "LV UNCORRECTED (RAW) SPECTRUM");
-  std::tuple<double, double, double> lv_corr = FitAndPrintSpectrum(histLVFinal, "LV CORRECTED SPECTRUM");
-
-  std::tuple<double, double, double> hv_raw  = FitAndPrintSpectrum(histHVInit,  "HV UNCORRECTED (RAW) SPECTRUM");
-  std::tuple<double, double, double> hv_corr = FitAndPrintSpectrum(histHVFinal, "HV CORRECTED SPECTRUM");
-
-  if (g_Verbosity >= c_Info) {
-    // Helper lambda to print formatted delta comparison
-    auto PrintTrappingCorrectionSummary = [](const string& channelLabel, 
-                                            const std::tuple<double, double, double>& raw, 
-                                            const std::tuple<double, double, double>& corr) 
-    {
-      double mu_raw         = std::get<0>(raw);
-      double gauss_fwhm_raw = std::get<1>(raw);
-      double full_fwhm_raw  = std::get<2>(raw);
-
-      double mu_corr         = std::get<0>(corr);
-      double gauss_fwhm_corr = std::get<1>(corr);
-      double full_fwhm_corr  = std::get<2>(corr);
-
-      // Calculate shifts and relative resolution changes
-      double lineShift        = mu_corr - mu_raw;
-      double deltaGaussFWHM   = std::sqrt(std::pow(gauss_fwhm_raw,2) - std::pow(gauss_fwhm_corr,2));
-      double deltaFullFitFWHM = std::sqrt(std::pow(full_fwhm_raw,2) - std::pow(full_fwhm_corr, 2));
-
-      cout << "\n=======================================================" << endl;
-      cout << "   TRAPPING CORRECTION SUMMARY: " << channelLabel << endl;
-      cout << "=======================================================" << endl;
-      cout << " Centroid Shift (Delta Mu)     : " << lineShift << " keV (" << mu_raw << " -> " << mu_corr << ")" << endl;
-      cout << " Gaussian FWHM Change          : " << deltaGaussFWHM << " keV (" << gauss_fwhm_raw << " -> " << gauss_fwhm_corr << ")" << endl;
-      cout << " Full Fit Function FWHM Change : " << deltaFullFitFWHM << " keV (" << full_fwhm_raw << " -> " << full_fwhm_corr << ")" << endl;
-      cout << "=======================================================\n" << endl;
-    };
-
-    // --- OUTPUT DELTA COMPARISONS ---
-    PrintTrappingCorrectionSummary("LOW VOLTAGE (LV) STRIPS", lv_raw, lv_corr);
-    PrintTrappingCorrectionSummary("HIGH VOLTAGE (HV) STRIPS", hv_raw, hv_corr);
-  }
-
   return; 
 }
 /////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
+bool MModuleTrappingCorrection::LoadTrappingCorrectionFile(MString FileName)
 {
-  MFile SimCCEFile;
-  if (SimCCEFile.Open(FileName) == false) {
+  MFile TrappingCorrectionFile;
+  if (TrappingCorrectionFile.Open(FileName) == false) {
     if (g_Verbosity >= c_Error) {
       cout << m_XmlTag << ": ERROR: Could not open CCE file " << FileName << endl;
     }
@@ -420,7 +309,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
   int currentDetID = -1;
   std::set<MString> SeenTokens; // track detector IDs to avoid duplicates
 
-  while (SimCCEFile.ReadLine(Line)) {
+  while (TrappingCorrectionFile.ReadLine(Line)) {
     Line = Line.Strip();
     if (Line.IsEmpty() == true) continue;
 
@@ -433,7 +322,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
         MString TargetToken = Tokens[1]; 
         if (SeenTokens.find(TargetToken) != SeenTokens.end()) {
           if (g_Verbosity >= c_Error) {
-            cout << "ERROR: Duplicate token '" << TargetToken << "'" << endl;
+            cout << m_XmlTag << ": ERROR: Duplicate token '" << TargetToken << "'" << endl;
           }
           return false; 
         } 
@@ -466,7 +355,7 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
     }
   }
 
-  SimCCEFile.Close();
+  TrappingCorrectionFile.Close();
   if (m_DetectorParamMap.empty() == true) {
     if (g_Verbosity >= c_Error) {
       cout << m_XmlTag << ": ERROR: Obtained an empty charge trapping parameter map when reading CCE file " << FileName << endl;
@@ -479,23 +368,23 @@ bool MModuleTrappingCorrection::LoadSimCCEFile(MString FileName)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& depths, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC)
+double MModuleTrappingCorrection::GetSimBasedCorrectedEnergy(double DepthVal, double UncorrectedEnergy, const std::vector<double>& depths, const std::vector<double>& SimCCESortedE, const std::vector<double>& SimCCESortedH, double paramB, double paramC)
 {
-  if (sim_cce_sorted_e.empty() == true || sim_cce_sorted_h.empty() == true) {
-    return uncorrected_energy;
+  if (SimCCESortedE.empty() == true || SimCCESortedH.empty() == true) {
+    return UncorrectedEnergy;
   }
-  double cce_base_e = Interpolate(depth_val, depths, sim_cce_sorted_e);
-  double cce_base_h = Interpolate(depth_val, depths, sim_cce_sorted_h);
+  double CCEBaseE = Interpolate(DepthVal, depths, SimCCESortedE);
+  double CCEBaseH = Interpolate(DepthVal, depths, SimCCESortedH);
   
   // Evaluate the physical trapping function model using class global popt variables
-  double expected_centroid_scaled =  (1.0 - paramB * (1.0 - cce_base_e)) * (1.0 - paramC * (1.0 - cce_base_h));
+  double ExpectedCentroidScaled =  (1.0 - paramB * (1.0 - CCEBaseE)) * (1.0 - paramC * (1.0 - CCEBaseH));
 
   // Prevent division-by-zero or non-physical negative values
-  if (expected_centroid_scaled <= 0.0) {
-      return uncorrected_energy;
+  if (ExpectedCentroidScaled <= 0.0) {
+      return UncorrectedEnergy;
   }
 
-  return uncorrected_energy / expected_centroid_scaled;
+  return UncorrectedEnergy / ExpectedCentroidScaled;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -539,9 +428,9 @@ bool MModuleTrappingCorrection::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
 
-  MXmlNode* SimCCEFileNameNode = Node->GetNode("SimCCEFileName");
-  if (SimCCEFileNameNode != nullptr) {
-    m_SimCCEFileName = SimCCEFileNameNode->GetValue();
+  MXmlNode* TrappingCorrectionFileNameNode = Node->GetNode("TrappingCorrectionFileName");
+  if (TrappingCorrectionFileNameNode != nullptr) {
+    m_TrappingCorrectionFileName = TrappingCorrectionFileNameNode->GetValue();
   }
 
   return true;
@@ -555,71 +444,9 @@ MXmlNode* MModuleTrappingCorrection::CreateXmlConfiguration()
   //! Create an XML node tree from the configuration
 
   MXmlNode* Node = new MXmlNode(0,m_XmlTag);
-  new MXmlNode(Node, "SimCCEFileName", m_SimCCEFileName);
+  new MXmlNode(Node, "TrappingCorrectionFileName", m_TrappingCorrectionFileName);
   
   return Node;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-
-TF1* MModuleTrappingCorrection::GeneratePhotopeakFunction()
-{
-  // Component 1: Core Gaussian
-  // exp(-(x-x0)^2 / (2*sigma^2))
-  MString gaussStr = "exp(-(x-[1])^2 / (2*[2]^2))";
-
-  // Component 2: Exponential Tail + Shelf
-  // BoverA * exp(gamma*(x-x0)) * 0.5 * erfc((x-x0)/(sigma*sigma_ratio*sqrt(2)))
-  MString expTailStr = "[3] * exp([4]*(x-[1])) * 0.5 * erfc((x-[1])/([2]*[5]*sqrt(2)))";
-
-  // Component 3: Linear Tail + Shelf
-  // BoverA * CoverB * (1 + D*(x-x0)) * 0.5 * erfc((x-x0)/(sigma*sigma_ratio*sqrt(2)))
-  MString linTailStr = "[3] * [6] * (1 + [7]*(x-[1])) * 0.5 * erfc((x-[1])/([2]*[5]*sqrt(2)))";
-
-  // Combine components with an overall normalization scaling factor [0]
-  MString fullFormula = "[0] * (" + gaussStr + " + " + expTailStr + " + " + linTailStr + ")";
-
-  // Get dynamic fit range centered on the photopeak
-  double fitMin = GetFitMinEnergy(); // mu - 20.0
-  double fitMax = GetFitMaxEnergy(); // mu + 20.0
-  double muInitial = GetPhotopeakMu();
-
-  // Construct the fit function with dynamic limits
-  TF1* PhotopeakFunction = new TF1("PhotopeakFunction", fullFormula.Data(), fitMin, fitMax);
-
-
-  // Set Parameter Names
-  PhotopeakFunction->SetParName(0, "Amplitude");
-  PhotopeakFunction->SetParName(1, "x0 (Mu)");
-  PhotopeakFunction->SetParName(2, "Sigma Gauss");
-  PhotopeakFunction->SetParName(3, "BoverA");
-  PhotopeakFunction->SetParName(4, "Gamma");
-  PhotopeakFunction->SetParName(5, "Sigma Ratio");
-  PhotopeakFunction->SetParName(6, "CoverB");
-  PhotopeakFunction->SetParName(7, "D (Lin Slope)");
-
-  // Provide initial sensible guesses for a Cs137 photopeak
-  PhotopeakFunction->SetParameter("Amplitude", 1000);
-  PhotopeakFunction->SetParameter("x0 (Mu)", muInitial);
-  PhotopeakFunction->SetParameter("Sigma Gauss", 2.0);
-  PhotopeakFunction->SetParameter("BoverA", 0.05);
-  PhotopeakFunction->SetParameter("Gamma", 0.5);
-  PhotopeakFunction->SetParameter("Sigma Ratio", 0.85);
-  PhotopeakFunction->SetParameter("CoverB", 0.13);
-  PhotopeakFunction->SetParameter("D (Lin Slope)", 0.028);
-
-  // Set boundary limits to stabilize convergence
-  PhotopeakFunction->SetParLimits(0, 1, 1e8);
-  PhotopeakFunction->SetParLimits(1, 645, 675);     // Keeps peak centered around 662 keV
-  PhotopeakFunction->SetParLimits(2, 0.5, 10);      // Prevents sigma from blowing up or hitting zero
-  PhotopeakFunction->SetParLimits(3, 0.0, 1.0);     // Tail shouldn't be larger than the main peak
-  PhotopeakFunction->SetParLimits(4, 0.001, 2.0);   // Standard range for exponential decay factor
-  PhotopeakFunction->SetParLimits(5, 0.1, 5.0);     // Ratio of shelf width to peak width
-  PhotopeakFunction->SetParLimits(6, 0.0, 5.0);     
-  PhotopeakFunction->SetParLimits(7, -1.0, 1.0);
-
-  return PhotopeakFunction;
 }
 
 // MModuleTrappingCorrection.cxx: the end...

@@ -76,17 +76,8 @@ class MGUIExpoTrappingCorrection : public MGUIExpo
   //! Add data to the corrected energy histogram
   void AddEnergyFinal(double Energy, bool IsNearestNeighbor, bool IsLV);
 
-  // //! Add data to the energy histogram
-  // void AddEnergy(double Energy);
-
-  // Callback slot for the Apply button
+  //! Updates bounds and binning of histogram when a mu value is entered in the GUI
   void OnApply();
-
-  // Getters for Finalize analysis
-  TH1D* GetEnergyHistogramLVInitial() const { return m_EnergyLVInitial; }
-  TH1D* GetEnergyHistogramLVFinal()   const { return m_EnergyLVFinal; }
-  TH1D* GetEnergyHistogramHVInitial() const { return m_EnergyHVInitial; }
-  TH1D* GetEnergyHistogramHVFinal()   const { return m_EnergyHVFinal; }
 
 
   // protected methods:
@@ -98,10 +89,6 @@ class MGUIExpoTrappingCorrection : public MGUIExpo
 
   // private members:
  private:
-  // //! Energy canvas
-  // TRootEmbeddedCanvas* m_EnergyCanvas;
-  // //! Energy histogram
-  // TH1D* m_Energy;
 
   //! Energy Histograms
   TH1D* m_EnergyLVInitial;

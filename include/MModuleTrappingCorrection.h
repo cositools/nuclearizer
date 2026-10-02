@@ -58,6 +58,8 @@ class MModuleTrappingCorrection : public MModule
 
   //! Initialize the module
   virtual bool Initialize();
+  //! Finalize the module
+  virtual void Finalize();
 
   //! Create the expos
   virtual void CreateExpos();
@@ -69,40 +71,28 @@ class MModuleTrappingCorrection : public MModule
   virtual void ShowOptionsGUI();
 
   //! Set filename for SimCCE file
-  void SetSimCCEFileName( const MString& FileName) { m_SimCCEFileName = FileName; }
-
+  void SetTrappingCorrectionFileName( const MString& FileName) { m_TrappingCorrectionFileName = FileName; }
   //! Get filename for SimCCE file
-  MString GetSimCCEFileName() const { return m_SimCCEFileName; }
-
-  //! Finalize the module
-  virtual void Finalize();
+  MString GetTrappingCorrectionFileName() const { return m_TrappingCorrectionFileName; }
 
   //! Read the XML configuration
   bool ReadXmlConfiguration(MXmlNode* Node);
-
   //! Create the XML configuration
   MXmlNode* CreateXmlConfiguration();
 
   //! Set the photopeak mu value
   void SetPhotopeakMu(double mu) { m_PhotopeakMu = mu; }
-
   //! Get the photopeak mu value
   double GetPhotopeakMu() const  { return m_PhotopeakMu; }
-  
-  //! Get photopeak fit min 
-  double GetFitMinEnergy() const { return m_PhotopeakMu - 20.0; }
-
-  //! Get photopeak fit max
-  double GetFitMaxEnergy() const { return m_PhotopeakMu + 20.0; }
   
   // protected methods:
  protected:
 
   //! Load in the specified SimCCE file
-  bool LoadSimCCEFile(MString FName);
+  bool LoadTrappingCorrectionFile(MString FName);
 
   //! Get the Sim-based corrected energy given the depth value, uncorrected energy, and the sorted Sim CCE values
-  double GetSimBasedCorrectedEnergy(double depth_val, double uncorrected_energy, const std::vector<double>& depths, const std::vector<double>& sim_cce_sorted_e, const std::vector<double>& sim_cce_sorted_h, double paramB, double paramC);
+  double GetSimBasedCorrectedEnergy(double DepthVal, double UncorrectedEnergy, const std::vector<double>& depths, const std::vector<double>& SimCCESortedE, const std::vector<double>& SimCCESortedH, double paramB, double paramC);
 
   //! Interpolate a value given x, xp, and fp
   double Interpolate(double x, const std::vector<double>& xp, const std::vector<double>& fp);
@@ -117,25 +107,24 @@ class MModuleTrappingCorrection : public MModule
  protected:
 
   double m_SimCCE_Energy;
-  MString m_SimCCEFileName;
+  MString m_TrappingCorrectionFileName;
  
-  // unordered_map<int, MDDetector*> m_Detectors;
   vector<unsigned int> m_DetectorIDs;
   MModuleEnergyCalibration* m_EnergyCalibration;
   MGUIExpoTrappingCorrection* m_ExpoTrappingCorrection;
 
-  bool m_SimCCEFileIsLoaded;
+  bool m_TrappingCorrectionFileIsLoaded;
 
   // private members:
  private:
 
+ //! Pointer to the depth calibration module
   MModuleDepthCalibration* m_DepthCalibration = nullptr;
 
   //! Updated GUI to display the energy histogram
   MGUIExpoTrappingCorrection* m_ExpoSpectrum;
-  
-  TF1* GeneratePhotopeakFunction();
 
+  //! Button for toggling log scale on the energy histogram
   TGCheckButton* m_LogYButton;
 
   //! Default centroid value
