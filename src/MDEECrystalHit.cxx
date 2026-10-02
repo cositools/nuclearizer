@@ -76,8 +76,10 @@ MCrystalHit* MDEECrystalHit::Convert()
   CH->SetVoxelYID((unsigned int) m_VoxelInDetector.Y());
   CH->SetVoxelZID((unsigned int) m_VoxelInDetector.Z());
   CH->HasTriggered(m_HasTriggered);
+  CH->HasVetoed(m_HasVetoed);
   CH->SetADCUnits(m_ADC);
   CH->SetEnergy(m_Energy);
+  CH->AddOrigins(vector<int>(m_SimulatedOrigins.begin(), m_SimulatedOrigins.end()));
 
   return CH;
 }

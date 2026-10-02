@@ -81,6 +81,8 @@ bool UTNDEECrystalHit::TestDefaultConstruction()
   Passed = Evaluate("MDEECrystalHit()", "default ADC", "The ADC value is 0", H.m_ADC, (unsigned int) 0) && Passed;
   Passed = EvaluateNear("MDEECrystalHit()", "default energy", "The energy is 0", H.m_Energy, 0.0, 1e-9) && Passed;
   Passed = EvaluateFalse("MDEECrystalHit()", "default trigger flag", "The hit has not triggered", H.m_HasTriggered) && Passed;
+  Passed = EvaluateFalse("MDEECrystalHit()", "default veto flag", "The hit has not vetoed", H.m_HasVetoed) && Passed;
+  Passed = EvaluateSize("MDEECrystalHit()", "default origins", "The hit has no simulated origins", H.m_SimulatedOrigins.size(), 0) && Passed;
 
   return Passed;
 }
@@ -101,6 +103,8 @@ bool UTNDEECrystalHit::TestConvertRepresentativeValues()
   H.m_ADC = 812;
   H.m_Energy = 511.5;
   H.m_HasTriggered = true;
+  H.m_HasVetoed = true;
+  H.m_SimulatedOrigins = { 3, 1, 3 };
 
   MCrystalHit* Converted = H.Convert();
 
@@ -115,6 +119,12 @@ bool UTNDEECrystalHit::TestConvertRepresentativeValues()
     Passed = EvaluateNear("Convert()", "representative ADC", "Convert() transfers ADC value 812", Converted->GetADCUnits(), 812.0, 1e-9) && Passed;
     Passed = EvaluateNear("Convert()", "representative energy", "Convert() transfers energy 511.5", Converted->GetEnergy(), 511.5, 1e-9) && Passed;
     Passed = EvaluateTrue("Convert()", "representative trigger flag", "Convert() transfers HasTriggered true", Converted->HasTriggered()) && Passed;
+    Passed = EvaluateTrue("Convert()", "representative veto flag", "Convert() transfers HasVetoed true", Converted->HasVetoed()) && Passed;
+    Passed = EvaluateSize("Convert()", "representative origins", "Convert() transfers the simulated origins without duplicates", Converted->GetOrigins().size(), 2) && Passed;
+    if (Converted->GetOrigins().size() == 2) {
+      Passed = Evaluate("Convert()", "representative origins", "The origins are sorted", Converted->GetOrigins()[0], 1) && Passed;
+      Passed = Evaluate("Convert()", "representative origins", "Both origins are kept", Converted->GetOrigins()[1], 3) && Passed;
+    }
   }
 
   delete Converted;
@@ -138,6 +148,7 @@ bool UTNDEECrystalHit::TestConvertFalsePaths()
   H.m_ADC = 0;
   H.m_Energy = 0.0;
   H.m_HasTriggered = false;
+  H.m_HasVetoed = false;
 
   MCrystalHit* Converted = H.Convert();
 
@@ -146,6 +157,8 @@ bool UTNDEECrystalHit::TestConvertFalsePaths()
   if (Converted != nullptr) {
     Passed = Evaluate("Convert()", "false-path detector ID", "Convert() transfers detector ID Y1", Converted->GetDetectorID(), MString("Y1")) && Passed;
     Passed = EvaluateFalse("Convert()", "false-path trigger flag", "Convert() transfers HasTriggered false", Converted->HasTriggered()) && Passed;
+    Passed = EvaluateFalse("Convert()", "false-path veto flag", "Convert() transfers HasVetoed false", Converted->HasVetoed()) && Passed;
+    Passed = EvaluateSize("Convert()", "false-path origins", "A hit without simulated origins has no origins", Converted->GetOrigins().size(), 0) && Passed;
     Passed = Evaluate("Convert()", "false-path crystal ID", "Convert() transfers crystal ID 0 instead of the undefined default", Converted->GetCrystalID(), (unsigned int) 0) && Passed;
     Passed = Evaluate("Convert()", "false-path voxel IDs", "Convert() transfers the voxel IDs 0 instead of the undefined defaults",
                       Converted->GetReadOutElement()->GetVoxelXID() + Converted->GetReadOutElement()->GetVoxelYID() + Converted->GetReadOutElement()->GetVoxelZID(), (unsigned int) 0) && Passed;
@@ -210,6 +223,7 @@ bool UTNDEECrystalHit::TestConvertedRoaLine()
   H.m_ADC = 812;
   H.m_Energy = 511.5;
   H.m_HasTriggered = true;
+  H.m_SimulatedOrigins = { 1, 3 };
 
   MCrystalHit* Converted = H.Convert();
   Passed = EvaluateTrue("Convert()", "roa line allocation", "Convert() returns a non-null pointer", Converted != nullptr) && Passed;
@@ -220,6 +234,11 @@ bool UTNDEECrystalHit::TestConvertedRoaLine()
   Converted->StreamRoa(Out, true, true, false, false);
   Passed = Evaluate("StreamRoa()", "converted crystal hit", "The converted crystal hit is written with all five read-out element values",
                     MString(Out.str()), MString("UC X0 2 0 1 3 812 511.5 \n")) && Passed;
+
+  ostringstream OutWithOrigins;
+  Converted->StreamRoa(OutWithOrigins, true, true, false, true);
+  Passed = Evaluate("StreamRoa()", "converted crystal hit with origins", "The simulated origins are written as the read-out data of the roa line",
+                    MString(OutWithOrigins.str()), MString("UC X0 2 0 1 3 812 511.5 1;3\n")) && Passed;
 
   delete Converted;
 

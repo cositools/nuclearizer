@@ -65,7 +65,7 @@ MStripHit* MDEEStripHit::Convert()
   SH->SetTAC(m_TAC);
   SH->HasFastTiming(m_HasFastTiming);
   SH->IsNearestNeighbor(m_IsNearestNeighbor);
-  //SH->AddOrigins();
+  SH->AddOrigins(vector<int>(m_SimulatedOrigins.begin(), m_SimulatedOrigins.end()));
   SH->IsGuardRing(m_IsGuardRing);
 
   return SH;

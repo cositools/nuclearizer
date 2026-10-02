@@ -116,6 +116,7 @@ bool UTNDEEStripHit::TestConvertRepresentativeValues()
   H.m_ADC = 4053;
   H.m_TAC = 10452;
   H.m_IsGuardRing = true;
+  H.m_SimulatedOrigins = { 5, 2, 5 };
 
   MStripHit* Converted = H.Convert();
 
@@ -130,6 +131,11 @@ bool UTNDEEStripHit::TestConvertRepresentativeValues()
     Passed = EvaluateNear("Convert()", "representative ADC", "Convert() transfers ADC value 4053", Converted->GetADCUnits(), 4053.0, 1e-9) && Passed;
     Passed = EvaluateNear("Convert()", "representative TAC", "Convert() transfers TAC value 10452", Converted->GetTAC(), 10452.0, 1e-9) && Passed;
     Passed = EvaluateTrue("Convert()", "representative guard ring", "Convert() transfers IsGuardRing true", Converted->IsGuardRing()) && Passed;
+    Passed = Evaluate("Convert()", "representative origins", "Convert() transfers the simulated origins without duplicates", (unsigned int) Converted->GetOrigins().size(), (unsigned int) 2) && Passed;
+    if (Converted->GetOrigins().size() == 2) {
+      Passed = Evaluate("Convert()", "representative origins", "The origins are sorted", Converted->GetOrigins()[0], 2) && Passed;
+      Passed = Evaluate("Convert()", "representative origins", "Both origins are kept", Converted->GetOrigins()[1], 5) && Passed;
+    }
   }
 
   delete Converted;

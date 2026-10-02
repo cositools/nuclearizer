@@ -238,9 +238,9 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
       MCrystalHit* CH = new MCrystalHit();
       CH->SetDetectorID(Voxel->GetDetectorID());
       CH->SetCrystalID(Voxel->GetCrystalID());
-      CH->GetReadOutElement()->SetVoxelXID(Voxel->GetVoxelXID());
-      CH->GetReadOutElement()->SetVoxelYID(Voxel->GetVoxelYID());
-      CH->GetReadOutElement()->SetVoxelZID(Voxel->GetVoxelZID());
+      CH->SetVoxelXID(Voxel->GetVoxelXID());
+      CH->SetVoxelYID(Voxel->GetVoxelYID());
+      CH->SetVoxelZID(Voxel->GetVoxelZID());
 
       if (Energy != nullptr) {
         CH->SetEnergy(Energy->GetEnergy());
