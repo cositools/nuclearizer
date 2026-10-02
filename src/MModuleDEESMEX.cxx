@@ -120,6 +120,10 @@ bool MModuleDEESMEX::Initialize()
   m_ChargeTransport.SetDepthCoefficientsFileName(m_DepthCoefficientsFileName);
   m_DepthReadout.SetDepthCoefficientsFileName(m_DepthCoefficientsFileName);
 
+  // Pass the deadtime file to the SubModules using it
+  m_StripTrigger.SetDeadtimeFileName(m_DeadtimeFileName);
+  m_ShieldTrigger.SetDeadtimeFileName(m_DeadtimeFileName);
+
   // Each Initialize() should handle its own error messaging
   if (m_Intake.Initialize() == false) return false;
   if (m_RandomCoincidence.Initialize() == false) return false;
@@ -297,6 +301,12 @@ bool MModuleDEESMEX::ReadXmlConfiguration(MXmlNode* Node)
   m_DepthReadout.ReadXmlConfiguration(Node);
   m_Output.ReadXmlConfiguration(Node);
 
+  // Add deadtime parameters file name (used by several submodules)
+  MXmlNode* DeadtimeFile = Node->GetNode("DeadtimeFileName");
+  if (DeadtimeFile != nullptr) {
+    m_DeadtimeFileName = DeadtimeFile->GetValue();
+  }
+
   // Add depth-calibration-related file names (used by several submodules)
   MXmlNode* DepthSplineFile = Node->GetNode("DepthSplineFileName");
   if (DepthSplineFile != nullptr) {
@@ -350,6 +360,9 @@ MXmlNode* MModuleDEESMEX::CreateXmlConfiguration()
   m_StripTrigger.CreateXmlConfiguration(Node);
   m_DepthReadout.CreateXmlConfiguration(Node);
   m_Output.CreateXmlConfiguration(Node);
+
+  // Add dead time parameters file names (used by several submodules)
+  new MXmlNode(Node, "DeadtimeFileName", m_DeadtimeFileName);
   
   // Add depth-calibration-related file names (used by several submodules)
   new MXmlNode(Node, "DepthSplineFileName", m_DepthSplinesFileName);
