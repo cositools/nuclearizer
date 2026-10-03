@@ -14,7 +14,7 @@ SE
 ET UN
 ID 2
 TI 1760667399.583013296
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.4812
 SE
@@ -288,7 +288,7 @@ SE
 ET UN
 ID 34
 TI 1760667399.583751678
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.0158
 SE
@@ -449,7 +449,7 @@ SE
 ET UN
 ID 50
 TI 1760667399.584224224
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 50.2042
 SE
@@ -471,7 +471,7 @@ SE
 ET UN
 ID 53
 TI 1760667399.584304809
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 290.513
 SE
@@ -584,14 +584,14 @@ SE
 ET UN
 ID 67
 TI 1760667399.602064371
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 43.8943
 SE
 ET UN
 ID 68
 TI 1760667399.602085351
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 50.4083
 SE
@@ -776,13 +776,12 @@ PE 58.9583
 PP 0.628297 0.343041 -3.72655
 PW 0
 SE
-ET PH
+ET UN
 ID 92
 TI 1760667399.602553606
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 25.936
-PP 3.53845 0.0353792 -4.07577
-PW 0
 SE
 ET PH
 ID 93
@@ -819,7 +818,7 @@ SE
 ET UN
 ID 97
 TI 1760667399.602668046
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 267.974
 SE
@@ -852,20 +851,12 @@ PE 252.234
 PP 3.65486 -0.596711 1.04611
 PW 0
 SE
-ET CO
+ET UN
 ID 102
 TI 1760667399.602788925
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 21.5916
-SQ 2
-CT 0 1
-TL 1
-TE 27.553
-CE 163.32 1.43229   27.553 1.2863
-CD 4.12048 -1.13087 0.347672   0.0336036 0.0490653 0.0336036   4.00408 -0.834277 0.231266   0.0336036 0.0113968 0.0336036   0 0 0   0 0 0
-LA 0.339215
-CH 0 4.12048 -1.13087 0.347672 27.553 0 0.0336036 0.0490653 0.0336036 1.2863 0
-CH 1 4.00408 -0.834277 0.231266 163.32 0 0.0336036 0.0113968 0.0336036 1.43229 0
+PE 190.873
 SE
 ET CO
 ID 103
@@ -1069,7 +1060,7 @@ SE
 ET UN
 ID 126
 TI 1760667399.603385925
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 105.023
 SE
@@ -1088,7 +1079,7 @@ SE
 ET UN
 ID 129
 TI 1760667399.625100135
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 86.3857
 SE
@@ -1160,7 +1151,7 @@ SE
 ET UN
 ID 138
 TI 1760667399.625318765
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 337.591
 SE
@@ -1189,7 +1180,7 @@ SE
 ET UN
 ID 142
 TI 1760667399.625399351
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 25.2163
 SE
@@ -1271,13 +1262,12 @@ CH 1 1.09392 -0.386876 1.04611 343.147 0 0.0336036 0.0112941 0.0336036 0.954618 
 CH 2 -1.46702 -0.346878 0.813297 78.8129 0 0.0336036 0.0281062 0.0336036 1.34981 0
 CH 3 0.279078 -0.653345 -0.234359 110.18 0 0.0336036 0.0215021 0.0336036 1.35379 0
 SE
-ET PH
+ET UN
 ID 152
 TI 1760667399.625645637
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.8617
-PP 1.21033 0.214405 0.580484
-PW 0
 SE
 ET CO
 ID 153
@@ -1312,7 +1302,7 @@ SE
 ET UN
 ID 155
 TI 1760667399.625725507
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 10
 PE 588.058
 SE
@@ -1410,7 +1400,7 @@ SE
 ET UN
 ID 165
 TI 1760667399.626015901
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.3143
 SE
@@ -1490,13 +1480,12 @@ PE 45.3678
 PP 4.3533 0.33183 -1.98045
 PW 0
 SE
-ET PH
+ET UN
 ID 175
 TI 1760667399.626243114
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.7246
-PP -2.16545 0.0116565 -2.56248
-PW 0
 SE
 ID 176
 BD DepthCalibrationError (GR Veto)
@@ -1589,7 +1578,7 @@ SE
 ET UN
 ID 188
 TI 1760667399.626543283
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 98.0044
 SE
@@ -1745,7 +1734,7 @@ SE
 ET UN
 ID 207
 TI 1760667399.645812034
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 57.3138
 SE
@@ -1873,18 +1862,17 @@ PE 63.1605
 PP -2.86389 0.0900975 -2.09686
 PW 0
 SE
-ET PH
+ET UN
 ID 220
 TI 1760667399.646445989
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.6519
-PP 1.79236 -1.12999 -3.72655
-PW 0
 SE
 ET UN
 ID 221
 TI 1760667399.646483182
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.6451
 SE
@@ -2014,7 +2002,7 @@ SE
 ET UN
 ID 236
 TI 1760667399.646933794
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 48.2573
 SE
@@ -2184,7 +2172,7 @@ SE
 ET UN
 ID 258
 TI 1760667399.668400287
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 321.04
 SE
@@ -2245,7 +2233,7 @@ SE
 ET UN
 ID 264
 TI 1760667399.668585777
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 470.424
 SE
@@ -2289,7 +2277,7 @@ SE
 ET UN
 ID 269
 TI 1760667399.668725013
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.4112
 SE
@@ -2348,7 +2336,7 @@ SE
 ET UN
 ID 277
 TI 1760667399.668908596
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 247.921
 SE
@@ -2380,13 +2368,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 212.773191)
 BD GR Veto
 PQ 0.918325
 SE
-ET PH
+ET UN
 ID 282
 TI 1760667399.669042587
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.3032
-PP -1.46702 -0.323621 -2.32967
-PW 0
 SE
 ET PH
 ID 283
@@ -2399,7 +2386,7 @@ SE
 ET UN
 ID 284
 TI 1760667399.669080257
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 41.7157
 SE
@@ -2445,21 +2432,21 @@ SE
 ET UN
 ID 289
 TI 1760667399.669289112
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 9
 PE 634.702
 SE
 ET UN
 ID 290
 TI 1760667399.669404268
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 71.2692
 SE
 ET UN
 ID 291
 TI 1760667399.669441223
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 391.706
 SE
@@ -2545,13 +2532,12 @@ PE 68.7158
 PP -2.16545 0.163477 -4.54139
 PW 0
 SE
-ET PH
+ET UN
 ID 302
 TI 1760667399.669901609
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.1844
-PP -0.884984 -0.502816 -0.00154687
-PW 0
 SE
 ET PH
 ID 303
@@ -2796,7 +2782,7 @@ SE
 ET UN
 ID 330
 TI 1760667399.689349412
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 47.3361
 SE
@@ -2908,7 +2894,7 @@ SE
 ET UN
 ID 344
 TI 1760667399.689916610
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.3458
 SE
@@ -2971,13 +2957,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 43.415396)
 BD GR Veto
 PQ 7.82454
 SE
-ET PH
+ET UN
 ID 352
 TI 1760667399.690356492
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.8216
-PP -1.00139 0.359755 -4.42498
-PW 0
 SE
 ET CO
 ID 353
@@ -2997,7 +2982,7 @@ SE
 ET UN
 ID 354
 TI 1760667399.690435647
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 142.462
 SE
@@ -3045,21 +3030,12 @@ PE 245.703
 PP 2.02517 -0.985566 1.04611
 PW 0
 SE
-ET CO
+ET UN
 ID 360
 TI 1760667399.690600633
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 84.3098
-SQ 3
-CT 0.134875 0.645204
-TL 1
-TE 25.9866
-CE 629.26 2.12383   25.9866 1.37992
-CD 0.162672 -1.13773 -1.0492   0.0336036 0.0452618 0.0336036   1.44314 -0.572732 -0.234359   0.0336036 0.0107797 0.0336036   0 0 0   0 0 0
-LA 1.6195
-CH 0 0.162672 -1.13773 -1.0492 25.9866 0 0.0336036 0.0452618 0.0336036 1.37992 0
-CH 1 1.44314 -0.572732 -0.234359 398.808 0 0.0336036 0.0107797 0.0336036 1.53839 0
-CH 2 -0.186547 0.0937856 -1.28202 230.452 0 0.0336036 0.0130327 0.0336036 1.46425 0
+PE 655.247
 SE
 ID 361
 BD DepthCalibrationError (GR Veto)
@@ -3208,7 +3184,7 @@ SE
 ET UN
 ID 377
 TI 1760667399.691061019
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.0613
 SE
@@ -3231,7 +3207,7 @@ SE
 ET UN
 ID 380
 TI 1760667399.691125392
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 150.152
 SE
@@ -3252,7 +3228,7 @@ SE
 ET UN
 ID 383
 TI 1760667399.710926055
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 67.1912
 SE
@@ -3437,7 +3413,7 @@ SE
 ET UN
 ID 405
 TI 1760667399.711791038
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 175.708
 SE
@@ -3457,7 +3433,7 @@ SE
 ET UN
 ID 408
 TI 1760667399.711878299
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 6
 PE 479.392
 SE
@@ -3694,22 +3670,21 @@ SE
 ET UN
 ID 440
 TI 1760667399.712738752
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 282.697
 SE
-ET PH
+ET UN
 ID 441
 TI 1760667399.712767839
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.0412
-PP 3.07283 -0.619598 -2.09686
-PW 0
 SE
 ET UN
 ID 442
 TI 1760667399.712785482
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 289.967
 SE
@@ -3730,7 +3705,7 @@ SE
 ET UN
 ID 445
 TI 1760667399.712873220
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 65.2485
 SE
@@ -4045,7 +4020,7 @@ SE
 ET UN
 ID 484
 TI 1760667399.732816696
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.7527
 SE
@@ -4104,7 +4079,7 @@ SE
 ET UN
 ID 492
 TI 1760667399.733006954
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 9
 PE 348.776
 SE
@@ -4140,21 +4115,12 @@ PE 85.6863
 PP 3.88767 0.258763 -2.21327
 PW 0
 SE
-ET CO
+ET UN
 ID 496
 TI 1760667399.733147859
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 45.5313
-SQ 3
-CT 0.0143164 0.0751326
-TL 1
-TE 208.212
-CE 162.474 1.90273   208.212 1.34037
-CD -1.35061 -0.120151 -3.02811   0.0336036 0.0130618 0.0336036   -0.652172 -0.251676 -2.21327   0.0336036 0.0839444 0.0336036   0 0 0   0 0 0
-LA 0.618886
-CH 0 -1.35061 -0.120151 -3.02811 208.212 0 0.0336036 0.0130618 0.0336036 1.34037 0
-CH 1 -0.652172 -0.251676 -2.21327 29.5276 0 0.0336036 0.0839444 0.0336036 1.33536 0
-CH 2 -0.186547 -0.642399 -2.32967 132.946 0 0.0336036 0.0160056 0.0336036 1.35543 0
+PE 370.686
 SE
 ET PH
 ID 497
@@ -4214,7 +4180,7 @@ SE
 ET UN
 ID 503
 TI 1760667399.733347654
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 479.972
 SE
@@ -4272,7 +4238,7 @@ SE
 ET UN
 ID 510
 TI 1760667399.733514070
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 87.5707
 SE
@@ -4333,7 +4299,7 @@ SE
 ET UN
 ID 516
 TI 1760667399.752936124
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 144.559
 SE
@@ -4344,13 +4310,12 @@ QA StripPairing (Best reduced chi square is not below 25 (697.133494)) (GR Hit: 
 BD GR Veto
 PQ 697.133
 SE
-ET PH
+ET UN
 ID 518
 TI 1760667399.753003120
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.7736
-PP -1.2342 0.322471 -0.699984
-PW 0
 SE
 ET PH
 ID 519
@@ -4371,7 +4336,7 @@ SE
 ET UN
 ID 521
 TI 1760667399.753065824
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.9117
 SE
@@ -4456,20 +4421,12 @@ PE 416.339
 PP -2.86389 0.2086 -2.21327
 PW 0
 SE
-ET CO
+ET UN
 ID 532
 TI 1760667399.753270626
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
-PQ 16.3512
-SQ 2
-CT 0 1
-TL 1
-TE 31.6249
-CE 169.493 1.79614   31.6249 0.931125
-CD 3.07283 -0.772227 -3.49373   0.0336036 0.0730303 0.0336036   2.37439 -0.810665 -4.30858   0.0336036 0.0124199 0.0336036   0 0 0   0 0 0
-LA 1.07391
-CH 0 3.07283 -0.772227 -3.49373 31.6249 0 0.0336036 0.0730303 0.0336036 0.931125 0
-CH 1 2.37439 -0.810665 -4.30858 169.493 0 0.0336036 0.0124199 0.0336036 1.79614 0
+PE 201.118
 SE
 ET PH
 ID 533
@@ -4584,13 +4541,12 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 4
 PE 145.173
 SE
-ET PH
+ET UN
 ID 548
 TI 1760667399.753596782
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.6603
-PP 0.395484 -0.668336 -1.51483
-PW 0
 SE
 ET PH
 ID 549
@@ -4633,24 +4589,16 @@ SE
 ET UN
 ID 553
 TI 1760667399.753692388
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.6674
 SE
-ET CO
+ET UN
 ID 554
 TI 1760667399.753709077
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 24.6595
-SQ 2
-CT 0 1
-TL 1
-TE 33.2518
-CE 160.91 1.34909   33.2518 1.29523
-CD 2.4908 -0.580729 -3.37733   0.0336036 0.0675552 0.0336036   2.84002 0.221045 -3.61014   0.0336036 0.0175454 0.0336036   0 0 0   0 0 0
-LA 0.904984
-CH 0 2.4908 -0.580729 -3.37733 33.2518 0 0.0336036 0.0675552 0.0336036 1.29523 0
-CH 1 2.84002 0.221045 -3.61014 160.91 0 0.0336036 0.0175454 0.0336036 1.34909 0
+PE 194.162
 SE
 ID 555
 BD DepthCalibrationError (GR Veto)
@@ -4675,7 +4623,7 @@ SE
 ET UN
 ID 558
 TI 1760667399.753789424
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 661.8
 SE
@@ -4685,13 +4633,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 116.915250)
 BD GR Veto
 PQ 2.04908e-05
 SE
-ET PH
+ET UN
 ID 560
 TI 1760667399.753837823
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 22.2727
-PP -1.81623 -0.0254713 -1.0492
-PW 0
 SE
 ET CO
 ID 561
@@ -4865,7 +4812,7 @@ SE
 ET UN
 ID 581
 TI 1760667399.774640560
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 667.034
 SE
@@ -4901,20 +4848,12 @@ PE 163.728
 PP -0.768578 -0.928668 -4.54139
 PW 0
 SE
-ET CO
+ET UN
 ID 586
 TI 1760667399.774893045
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
-PQ 7.45686
-SQ 2
-CT 0 1
-TL 1
-TE 24.8394
-CE 104.458 1.82342   24.8394 0.916349
-CD -1.2342 -1.1617 2.09377   0.0336036 0.0286026 0.0336036   0.628297 -0.517006 1.86095   0.0336036 0.0217309 0.0336036   0 0 0   0 0 0
-LA 1.98462
-CH 0 -1.2342 -1.1617 2.09377 24.8394 0 0.0336036 0.0286026 0.0336036 0.916349 0
-CH 1 0.628297 -0.517006 1.86095 104.458 0 0.0336036 0.0217309 0.0336036 1.82342 0
+PE 129.297
 SE
 ET PH
 ID 587
@@ -4927,7 +4866,7 @@ SE
 ET UN
 ID 588
 TI 1760667399.774997472
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 214.438
 SE
@@ -5060,7 +4999,7 @@ SE
 ET UN
 ID 605
 TI 1760667399.775426149
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.0574
 SE
@@ -5212,13 +5151,12 @@ PE 364.152
 PP -1.00139 0.386099 -2.56248
 PW 0
 SE
-ET PH
+ET UN
 ID 623
 TI 1760667399.775745868
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.1431
-PP 1.67595 0.124918 -0.816391
-PW 0
 SE
 ET PH
 ID 624
@@ -5243,7 +5181,7 @@ SE
 ET UN
 ID 627
 TI 1760667399.775793075
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.5904
 SE
@@ -5323,7 +5261,7 @@ SE
 ET UN
 ID 636
 TI 1760667399.775984287
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 57.9026
 SE
@@ -5355,13 +5293,12 @@ QA StripPairing (Best reduced chi square is not below 25 (6503.819737)) (GR Hit:
 BD GR Veto
 PQ 6503.82
 SE
-ET PH
+ET UN
 ID 641
 TI 1760667399.796686649
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.5043
-PP 4.12048 0.0587955 -3.61014
-PW 0
 SE
 ID 642
 BD DepthCalibrationError (GR Veto)
@@ -5460,7 +5397,7 @@ SE
 ET UN
 ID 651
 TI 1760667399.797089576
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 316.764
 SE
@@ -5473,7 +5410,7 @@ SE
 ET UN
 ID 653
 TI 1760667399.797123670
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 189.032
 SE
@@ -5540,7 +5477,7 @@ SE
 ET UN
 ID 661
 TI 1760667399.797306299
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 502.092
 SE
@@ -5571,13 +5508,12 @@ PE 124.021
 PP 0.511891 -0.319317 -0.234359
 PW 0
 SE
-ET PH
+ET UN
 ID 666
 TI 1760667399.797414541
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.2978
-PP 2.25798 -0.655931 2.21017
-PW 0
 SE
 ET CO
 ID 667
@@ -5694,7 +5630,7 @@ SE
 ET UN
 ID 679
 TI 1760667399.797753810
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 10
 PE 658.342
 SE
@@ -5863,7 +5799,7 @@ SE
 ET UN
 ID 701
 TI 1760667399.798171997
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 6
 PE 193.155
 SE
@@ -5885,7 +5821,7 @@ SE
 ET UN
 ID 704
 TI 1760667399.817352771
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 4
 PE 97.8301
 SE
@@ -5947,13 +5883,12 @@ BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
-ET PH
+ET UN
 ID 713
 TI 1760667399.817571640
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.9819
-PP 0.511891 0.282878 -3.26092
-PW 0
 SE
 ET PH
 ID 714
@@ -6198,7 +6133,7 @@ SE
 ET UN
 ID 742
 TI 1760667399.818229913
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip) (Out of Range)
+BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip) (No fast timing)
 CC NStripHits 5
 PE 650.888
 SE
@@ -6296,13 +6231,12 @@ QA StripPairing (Event contains multiple hits on a single strip) (GR Hit: Detect
 BD GR Veto
 PQ 21.4776
 SE
-ET PH
+ET UN
 ID 753
 TI 1760667399.818483829
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8359
-PP -0.419359 0.230187 -1.86405
-PW 0
 SE
 ET CO
 ID 754
@@ -6345,14 +6279,14 @@ SE
 ET UN
 ID 757
 TI 1760667399.818597555
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 43.2432
 SE
 ET UN
 ID 758
 TI 1760667399.818615913
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 256.253
 SE
@@ -6387,7 +6321,7 @@ SE
 ET UN
 ID 763
 TI 1760667399.818723440
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 59.2575
 SE
@@ -6479,14 +6413,14 @@ SE
 ET UN
 ID 773
 TI 1760667399.837998390
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 44.9771
 SE
 ET UN
 ID 774
 TI 1760667399.838019371
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.9615
 SE
@@ -6898,7 +6832,7 @@ SE
 ET UN
 ID 821
 TI 1760667399.839076519
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.4256
 SE
@@ -6982,7 +6916,7 @@ SE
 ET UN
 ID 831
 TI 1760667399.856194734
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 134.939
 SE
@@ -7291,13 +7225,12 @@ PE 118.322
 PP 0.977516 -0.77505 -0.816391
 PW 0
 SE
-ET PH
+ET UN
 ID 868
 TI 1760667399.857079267
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.1615
-PP -0.535766 -1.04988 0.231266
-PW 0
 SE
 ET UN
 ID 869
@@ -7322,20 +7255,12 @@ PE 48.8604
 PP -2.9803 -0.103904 -2.09686
 PW 0
 SE
-ET CO
+ET UN
 ID 872
 TI 1760667399.857162952
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 35.9449
-SQ 2
-CT 0 1
-TL 1
-TE 35.128
-CE 110.928 0.928747   35.128 1.26812
-CD 2.72361 0.101848 2.21017   0.0336036 0.0819027 0.0336036   1.55955 -0.158074 2.09377   0.0336036 0.0239788 0.0336036   0 0 0   0 0 0
-LA 1.19839
-CH 0 2.72361 0.101848 2.21017 35.128 0 0.0336036 0.0819027 0.0336036 1.26812 0
-CH 1 1.55955 -0.158074 2.09377 110.928 0 0.0336036 0.0239788 0.0336036 0.928747 0
+PE 146.056
 SE
 ET PH
 ID 873
@@ -7369,14 +7294,14 @@ SE
 ET UN
 ID 877
 TI 1760667399.857272148
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.411
 SE
 ET UN
 ID 878
 TI 1760667399.857289314
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8275
 SE
@@ -7567,13 +7492,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 220.979216)
 BD GR Veto
 PQ 2.92235
 SE
-ET PH
+ET UN
 ID 901
 TI 1760667399.880774497
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 25.9062
-PP -1.58342 -0.784636 -1.86405
-PW 0
 SE
 ET PH
 ID 902
@@ -7613,21 +7537,12 @@ QA StripPairing (Best reduced chi square is not below 25 (1164.159370)) (GR Hit:
 BD GR Veto
 PQ 1164.16
 SE
-ET CO
+ET UN
 ID 907
 TI 1760667399.880888223
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 3.05294
-SQ 3
-CT 0.139058 0.340755
-TL 1
-TE 104.454
-CE 176.321 1.68242   104.454 0.916449
-CD 1.44314 -0.74939 -3.14452   0.0336036 0.019896 0.0336036   0.977516 -0.599974 -3.26092   0.0336036 0.0943239 0.0336036   0 0 0   0 0 0
-LA 0.351438
-CH 0 1.44314 -0.74939 -3.14452 104.454 0 0.0336036 0.019896 0.0336036 0.916449 0
-CH 1 0.977516 -0.599974 -3.26092 26.0268 0 0.0336036 0.0943239 0.0336036 0.931358 0
-CH 2 0.744703 -0.477066 -3.49373 150.294 0 0.0336036 0.0167403 0.0336036 1.40111 0
+PE 280.775
 SE
 ET UN
 ID 908
@@ -7729,7 +7644,7 @@ SE
 ET UN
 ID 919
 TI 1760667399.881162405
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 42.1675
 SE
@@ -7820,13 +7735,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 180.583885)
 BD GR Veto
 PQ 4.58806
 SE
-ET PH
+ET UN
 ID 930
 TI 1760667399.881419658
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 25.6826
-PP -2.9803 0.307504 -1.0492
-PW 0
 SE
 ET PH
 ID 931
@@ -7997,21 +7911,12 @@ BD DepthCalibrationError (GR Veto)
 BD GR Veto
 PQ
 SE
-ET CO
+ET UN
 ID 952
 TI 1760667399.881863594
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
-PQ 88.8491
-SQ 3
-CT 0.00971256 0.172279
-TL 1
-TE 187.937
-CE 120.538 1.57948   187.937 1.35094
-CD -0.302953 -0.133919 2.32658   0.0336036 0.0142328 0.0336036   0.511891 -1.05224 2.44298   0.0336036 0.0634687 0.0336036   0 0 0   0 0 0
-LA 0.567732
-CH 0 -0.302953 -0.133919 2.32658 187.937 0 0.0336036 0.0142328 0.0336036 1.35094 0
-CH 1 0.511891 -1.05224 2.44298 35.0377 0 0.0336036 0.0634687 0.0336036 0.876127 0
-CH 2 0.395484 -0.547692 2.21017 85.5003 0 0.0336036 0.0277365 0.0336036 1.31422 0
+PE 308.475
 SE
 ET CO
 ID 953
@@ -8126,7 +8031,7 @@ SE
 ET UN
 ID 965
 TI 1760667399.898494243
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.9883
 SE
@@ -8386,13 +8291,12 @@ PE 358.186
 PP 2.72361 0.249002 -3.61014
 PW 0
 SE
-ET PH
+ET UN
 ID 999
 TI 1760667399.899362325
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.2677
-PP -0.768578 -0.891335 -2.44608
-PW 0
 SE
 ET PH
 ID 1000
@@ -8576,7 +8480,7 @@ SE
 ET UN
 ID 1023
 TI 1760667399.920396327
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.6586
 SE
@@ -8757,7 +8661,7 @@ SE
 ET UN
 ID 1045
 TI 1760667399.921013832
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 80.2119
 SE
@@ -8830,7 +8734,7 @@ SE
 ET UN
 ID 1054
 TI 1760667399.921188592
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.8517
 SE
@@ -8902,13 +8806,12 @@ PE 89.9903
 PP 3.65486 -0.550657 -0.583578
 PW 0
 SE
-ET PH
+ET UN
 ID 1064
 TI 1760667399.921427488
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.4957
-PP -1.1178 0.315855 1.39533
-PW 0
 SE
 ID 1065
 BD DepthCalibrationError (GR Veto)
@@ -8920,7 +8823,7 @@ SE
 ET UN
 ID 1066
 TI 1760667399.921466350
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 59.3165
 SE
@@ -8965,7 +8868,7 @@ SE
 ET UN
 ID 1072
 TI 1760667399.921595573
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 497.581
 SE
@@ -9032,7 +8935,7 @@ SE
 ET UN
 ID 1080
 TI 1760667399.921818971
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.8974
 SE
@@ -9047,7 +8950,7 @@ SE
 ET UN
 ID 1082
 TI 1760667399.921854019
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.5679
 SE
@@ -9137,21 +9040,21 @@ SE
 ET UN
 ID 1092
 TI 1760667399.942566394
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.383
 SE
 ET UN
 ID 1093
 TI 1760667399.942586660
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.8833
 SE
 ET UN
 ID 1094
 TI 1760667399.942605733
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 4
 PE 55.7431
 SE
@@ -9313,7 +9216,7 @@ SE
 ET UN
 ID 1114
 TI 1760667399.943060636
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 276.327
 SE
@@ -9443,7 +9346,7 @@ SE
 ET UN
 ID 1130
 TI 1760667399.943440914
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.3196
 SE
@@ -9485,7 +9388,7 @@ SE
 ET UN
 ID 1136
 TI 1760667399.943676471
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 342.965
 SE
@@ -9563,7 +9466,7 @@ SE
 ET UN
 ID 1145
 TI 1760667399.944037199
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 391.132
 SE
@@ -9581,18 +9484,17 @@ QA StripPairing (Event contains multiple hits on a single strip) (Event contains
 BD GR Veto
 PQ 19.8439
 SE
-ET PH
+ET UN
 ID 1148
 TI 1760667399.944152116
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 25.9561
-PP -2.51467 -0.395754 -3.37733
-PW 0
 SE
 ET UN
 ID 1149
 TI 1760667399.944170236
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.7352
 SE
@@ -9635,7 +9537,7 @@ SE
 ET UN
 ID 1155
 TI 1760667399.965412378
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.0934
 SE
@@ -9658,7 +9560,7 @@ SE
 ET UN
 ID 1158
 TI 1760667399.965471506
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.7792
 SE
@@ -9767,7 +9669,7 @@ SE
 ET UN
 ID 1172
 TI 1760667399.965794801
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 125.785
 SE
@@ -9855,7 +9757,7 @@ SE
 ET UN
 ID 1184
 TI 1760667399.966051578
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 44.9713
 SE
@@ -9941,7 +9843,7 @@ SE
 ET UN
 ID 1195
 TI 1760667399.966261148
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 4
 PE 61.4205
 SE
@@ -10016,7 +9918,7 @@ SE
 ET UN
 ID 1204
 TI 1760667399.966499328
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.2835
 SE
@@ -10154,7 +10056,7 @@ SE
 ET UN
 ID 1219
 TI 1760667399.986937046
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 344.386
 SE
@@ -10421,14 +10323,14 @@ SE
 ET UN
 ID 1252
 TI 1760667399.987648963
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 664.05
 SE
 ET UN
 ID 1253
 TI 1760667399.987710952
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.9595
 SE
@@ -10464,13 +10366,12 @@ PE 193.764
 PP 0.861109 -0.208063 -2.9117
 PW 0
 SE
-ET PH
+ET UN
 ID 1258
 TI 1760667399.987818956
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.3818
-PP 3.07283 0.348317 1.97736
-PW 0
 SE
 ET PH
 ID 1259
@@ -10576,7 +10477,7 @@ SE
 ET UN
 ID 1273
 TI 1760667399.988147735
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.643
 SE
@@ -10650,20 +10551,12 @@ PE 177.211
 PP 2.72361 -1.04352 -0.816391
 PW 0
 SE
-ET CO
+ET UN
 ID 1283
 TI 1760667400.008932828
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 0.808518
-SQ 2
-CT 0 1
-TL 1
-TE 31.2623
-CE 323.723 1.21816   31.2623 0.93146
-CD 1.44314 -0.804854 -2.21327   0.0336036 0.0690756 0.0336036   0.162672 0.378691 -2.09686   0.0336036 0.0147578 0.0336036   0 0 0   0 0 0
-LA 1.74755
-CH 0 1.44314 -0.804854 -2.21327 31.2623 0 0.0336036 0.0690756 0.0336036 0.93146 0
-CH 1 0.162672 0.378691 -2.09686 323.723 0 0.0336036 0.0147578 0.0336036 1.21816 0
+PE 354.985
 SE
 ET CO
 ID 1284
@@ -10683,7 +10576,7 @@ SE
 ET UN
 ID 1285
 TI 1760667400.009017944
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.276
 SE
@@ -10695,20 +10588,12 @@ PE 148.746
 PP 2.84002 0.231196 1.51173
 PW 0
 SE
-ET CO
+ET UN
 ID 1287
 TI 1760667400.009054899
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 10.1975
-SQ 2
-CT 0 1
-TL 1
-TE 28.4498
-CE 89.704 0.942339   28.4498 1.29069
-CD -0.186547 -0.662002 -3.72655   0.0336036 0.0837844 0.0336036   0.0462656 -0.454056 -4.54139   0.0336036 0.0288763 0.0336036   0 0 0   0 0 0
-LA 0.872587
-CH 0 -0.186547 -0.662002 -3.72655 28.4498 0 0.0336036 0.0837844 0.0336036 1.29069 0
-CH 1 0.0462656 -0.454056 -4.54139 89.704 0 0.0336036 0.0288763 0.0336036 0.942339 0
+PE 118.154
 SE
 ET PH
 ID 1288
@@ -10821,14 +10706,14 @@ SE
 ET UN
 ID 1301
 TI 1760667400.009405612
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.4442
 SE
 ET UN
 ID 1302
 TI 1760667400.009423255
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 277.054
 SE
@@ -10883,13 +10768,12 @@ PE 457.215
 PP 0.511891 0.147533 -4.19217
 PW 0
 SE
-ET PH
+ET UN
 ID 1310
 TI 1760667400.009638309
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8365
-PP 1.55955 -0.376326 -1.86405
-PW 0
 SE
 ET PH
 ID 1311
@@ -10924,7 +10808,7 @@ SE
 ET UN
 ID 1315
 TI 1760667400.009751081
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 39.4925
 SE
@@ -11099,7 +10983,7 @@ SE
 ET UN
 ID 1336
 TI 1760667400.010232686
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 41.4757
 SE
@@ -11137,14 +11021,14 @@ SE
 ET UN
 ID 1340
 TI 1760667400.010326862
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 170.778
 SE
 ET UN
 ID 1341
 TI 1760667400.010365486
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.377
 SE
@@ -11294,7 +11178,7 @@ SE
 ET UN
 ID 1360
 TI 1760667400.031495332
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.3984
 SE
@@ -11321,20 +11205,12 @@ PE 200.572
 PP 1.67595 -1.14983 -3.49373
 PW 0
 SE
-ET CO
+ET UN
 ID 1364
 TI 1760667400.031649112
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 10.0623
-SQ 2
-CT 0 1
-TL 1
-TE 37.9617
-CE 343.378 1.28639   37.9617 1.26415
-CD -0.419359 -1.11763 -4.19217   0.0336036 0.0514003 0.0336036   -1.58342 -0.529172 -2.44608   0.0336036 0.0108643 0.0336036   0 0 0   0 0 0
-LA 2.17948
-CH 0 -0.419359 -1.11763 -4.19217 37.9617 0 0.0336036 0.0514003 0.0336036 1.26415 0
-CH 1 -1.58342 -0.529172 -2.44608 343.378 0 0.0336036 0.0108643 0.0336036 1.28639 0
+PE 381.34
 SE
 ET UN
 ID 1365
@@ -11457,13 +11333,12 @@ PE 110.711
 PP -1.93264 -0.954606 -3.02811
 PW 0
 SE
-ET PH
+ET UN
 ID 1380
 TI 1760667400.032181024
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.5736
-PP -2.63108 -0.133492 -3.61014
-PW 0
 SE
 ET CO
 ID 1381
@@ -11549,7 +11424,7 @@ SE
 ET UN
 ID 1391
 TI 1760667400.032388925
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 668.38
 SE
@@ -11580,20 +11455,12 @@ PE 501.962
 PP 3.65486 -0.535022 1.16252
 PW 0
 SE
-ET CO
+ET UN
 ID 1396
 TI 1760667400.032510042
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 0.096323
-SQ 2
-CT 0 1
-TL 1
-TE 28.0854
-CE 337.576 1.04961   28.0854 0.879139
-CD 2.37439 -0.500322 1.86095   0.0336036 0.0772881 0.0336036   3.30564 0.203341 1.51173   0.0336036 0.0143105 0.0336036   0 0 0   0 0 0
-LA 1.21833
-CH 0 2.37439 -0.500322 1.86095 28.0854 0 0.0336036 0.0772881 0.0336036 0.879139 0
-CH 1 3.30564 0.203341 1.51173 337.576 0 0.0336036 0.0143105 0.0336036 1.04961 0
+PE 365.661
 SE
 ET UN
 ID 1397
@@ -11685,13 +11552,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 45.020575)
 BD GR Veto
 PQ 15.7647
 SE
-ET PH
+ET UN
 ID 1408
 TI 1760667400.054441690
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.7114
-PP -1.1178 0.350584 0.813297
-PW 0
 SE
 ET PH
 ID 1409
@@ -11741,13 +11607,12 @@ PE 84.8898
 PP -2.74748 -0.827106 1.16252
 PW 0
 SE
-ET PH
+ET UN
 ID 1415
 TI 1760667400.054584264
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.2643
-PP 2.95642 -0.315498 -3.02811
-PW 0
 SE
 ET PH
 ID 1416
@@ -11864,7 +11729,7 @@ SE
 ET UN
 ID 1428
 TI 1760667400.054878950
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 54.8039
 SE
@@ -12037,13 +11902,12 @@ PE 118.828
 PP 1.32673 -1.0865 1.86095
 PW 0
 SE
-ET PH
+ET UN
 ID 1452
 TI 1760667400.055315732
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.3254
-PP 1.67595 -0.529963 2.32658
-PW 0
 SE
 ET PH
 ID 1453
@@ -12199,13 +12063,12 @@ QA StripPairing (Best reduced chi square is not below 25 (491.528242)) (GR Hit: 
 BD GR Veto
 PQ 491.528
 SE
-ET PH
+ET UN
 ID 1472
 TI 1760667400.074095726
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 21.913
-PP 0.0462656 -1.02164 -0.932797
-PW 0
 SE
 ET CO
 ID 1473
@@ -12336,7 +12199,7 @@ SE
 ET UN
 ID 1485
 TI 1760667400.074781417
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.1267
 SE
@@ -12347,13 +12210,12 @@ BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
-ET PH
+ET UN
 ID 1487
 TI 1760667400.074854850
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 24.1884
-PP -2.04905 -0.157472 -0.00154687
-PW 0
 SE
 ID 1488
 BD DepthCalibrationError (GR Veto)
@@ -12500,13 +12362,12 @@ PE 242.209
 PP -2.86389 -0.18112 -2.9117
 PW 0
 SE
-ET PH
+ET UN
 ID 1505
 TI 1760667400.075444221
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.9086
-PP -1.58342 0.25658 0.114859
-PW 0
 SE
 ET UN
 ID 1506
@@ -12680,13 +12541,12 @@ LA 1.43246
 CH 0 0.628297 -0.371138 -2.9117 219.986 0 0.0336036 0.0113121 0.0336036 1.33921 0
 CH 1 -0.768578 -0.0759371 -3.02811 185.855 0 0.0336036 0.0140427 0.0336036 1.76693 0
 SE
-ET PH
+ET UN
 ID 1525
 TI 1760667400.075916528
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.2592
-PP -2.16545 0.314465 -3.61014
-PW 0
 SE
 ET CO
 ID 1526
@@ -12703,13 +12563,12 @@ LA 1.4274
 CH 0 1.44314 -0.451621 -4.30858 382.475 0 0.0336036 0.0110938 0.0336036 0.980875 0
 CH 1 2.84002 -0.272706 -4.07577 278.338 0 0.0336036 0.0116863 0.0336036 0.915221 0
 SE
-ET PH
+ET UN
 ID 1527
 TI 1760667400.075965881
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 24.9818
-PP -0.419359 -1.08532 -3.95936
-PW 0
 SE
 ET PH
 ID 1528
@@ -12758,7 +12617,7 @@ SE
 ET UN
 ID 1534
 TI 1760667400.076072216
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 170.394
 SE
@@ -12802,7 +12661,7 @@ SE
 ET UN
 ID 1539
 TI 1760667400.092549324
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 503.151
 SE
@@ -13086,7 +12945,7 @@ SE
 ET UN
 ID 1574
 TI 1760667400.093357324
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 76.3879
 SE
@@ -13474,28 +13333,19 @@ QA StripPairing (Best reduced chi square is not below 25 (29.792118)) (GR Hit: D
 BD GR Veto
 PQ 29.7921
 SE
-ET PH
+ET UN
 ID 1620
 TI 1760667400.112314701
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 22.1822
-PP 0.861109 -0.579529 -4.42498
-PW 0
 SE
-ET CO
+ET UN
 ID 1621
 TI 1760667400.112333297
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 11.6598
-SQ 2
-CT 0 1
-TL 1
-TE 33.4079
-CE 178.516 1.26317   33.4079 0.910945
-CD -2.74748 -0.210146 -1.39842   0.0336036 0.0748837 0.0336036   -2.63108 -0.452772 -1.16561   0.0336036 0.0134218 0.0336036   0 0 0   0 0 0
-LA 0.355833
-CH 0 -2.74748 -0.210146 -1.39842 33.4079 0 0.0336036 0.0748837 0.0336036 0.910945 0
-CH 1 -2.63108 -0.452772 -1.16561 178.516 0 0.0336036 0.0134218 0.0336036 1.26317 0
+PE 211.924
 SE
 ID 1622
 BD DepthCalibrationError (GR Veto)
@@ -13585,13 +13435,12 @@ PE 115.552
 PP 2.37439 0.221031 1.04611
 PW 0
 SE
-ET PH
+ET UN
 ID 1632
 TI 1760667400.112594366
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.392
-PP -0.0701406 0.322313 -4.19217
-PW 0
 SE
 ET CO
 ID 1633
@@ -13655,20 +13504,12 @@ LA 2.40949
 CH 0 -1.1178 0.0345041 -1.51483 69.0249 0 0.0336036 0.0390514 0.0336036 0.934111 0
 CH 1 -2.86389 -0.28317 -3.14452 110.5 0 0.0336036 0.0212005 0.0336036 1.31852 0
 SE
-ET CO
+ET UN
 ID 1639
 TI 1760667400.112764835
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 1.96279
-SQ 2
-CT 0 1
-TL 1
-TE 29.0218
-CE 93.6652 0.933112   29.0218 0.884825
-CD 0.744703 -1.0767 2.32658   0.0336036 0.0727196 0.0336036   0.628297 0.0245163 2.09377   0.0336036 0.0308987 0.0336036   0 0 0   0 0 0
-LA 1.13156
-CH 0 0.744703 -1.0767 2.32658 29.0218 0 0.0336036 0.0727196 0.0336036 0.884825 0
-CH 1 0.628297 0.0245163 2.09377 93.6652 0 0.0336036 0.0308987 0.0336036 0.933112 0
+PE 122.687
 SE
 ET PH
 ID 1640
@@ -13689,7 +13530,7 @@ SE
 ET UN
 ID 1642
 TI 1760667400.112823963
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 46.7323
 SE
@@ -13820,13 +13661,12 @@ PE 130.788
 PP -0.302953 -0.747692 -0.00154687
 PW 0
 SE
-ET PH
+ET UN
 ID 1657
 TI 1760667400.113273382
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 20.5456
-PP -1.35061 -0.127752 0.929703
-PW 0
 SE
 ET UN
 ID 1658
@@ -13944,7 +13784,7 @@ SE
 ET UN
 ID 1672
 TI 1760667400.133093833
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 63.5532
 SE
@@ -14003,13 +13843,12 @@ PE 374.016
 PP 2.95642 -0.846181 2.21017
 PW 0
 SE
-ET PH
+ET UN
 ID 1680
 TI 1760667400.133301496
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 25.4772
-PP 3.53845 -0.972746 -3.14452
-PW 0
 SE
 ET PH
 ID 1681
@@ -14131,21 +13970,12 @@ LA 0.526547
 CH 0 0.628297 -0.903895 -1.28202 50.0553 0 0.0336036 0.0426998 0.0336036 1.39818 0
 CH 1 0.162672 -1.12045 -1.39842 211.724 0 0.0336036 0.0149766 0.0336036 1.31046 0
 SE
-ET CO
+ET UN
 ID 1695
 TI 1760667400.133609771
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 2.18386
-SQ 3
-CT 0.418159 0.809236
-TL 1
-TE 318.989
-CE 150.699 2.02103   318.989 1.12786
-CD -0.302953 -0.827808 1.74455   0.0336036 0.0100325 0.0336036   -1.81623 0.103774 1.27892   0.0336036 0.109189 0.0336036   0 0 0   0 0 0
-LA 1.17637
-CH 0 -0.302953 -0.827808 1.74455 318.989 0 0.0336036 0.0100325 0.0336036 1.12786 0
-CH 1 -1.81623 0.103774 1.27892 23.5153 0 0.0336036 0.109189 0.0336036 0.910551 0
-CH 2 -2.04905 -1.02558 1.04611 127.184 0 0.0336036 0.0154082 0.0336036 1.80429 0
+PE 469.688
 SE
 ET PH
 ID 1696
@@ -14283,7 +14113,7 @@ SE
 ET UN
 ID 1712
 TI 1760667400.134014129
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 133.41
 SE
@@ -14306,7 +14136,7 @@ SE
 ET UN
 ID 1715
 TI 1760667400.134081840
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 204.509
 SE
@@ -14351,7 +14181,7 @@ SE
 ET UN
 ID 1721
 TI 1760667400.134253740
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 45.4884
 SE
@@ -14420,20 +14250,12 @@ QA StripPairing (Best reduced chi square is not below 25 (42.443767)) (Best stri
 BD GR Veto
 PQ 42.4438
 SE
-ET CO
+ET UN
 ID 1731
 TI 1760667400.159409999
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 8.23738
-SQ 2
-CT 0 1
-TL 1
-TE 39.9018
-CE 488.386 1.46216   39.9018 1.32212
-CD 3.77127 -1.11093 1.27892   0.0336036 0.049896 0.0336036   3.53845 0.0754184 1.62814   0.0336036 0.0130162 0.0336036   0 0 0   0 0 0
-LA 1.2584
-CH 0 3.77127 -1.11093 1.27892 39.9018 0 0.0336036 0.049896 0.0336036 1.32212 0
-CH 1 3.53845 0.0754184 1.62814 488.386 0 0.0336036 0.0130162 0.0336036 1.46216 0
+PE 528.288
 SE
 ET PH
 ID 1732
@@ -14449,13 +14271,12 @@ QA StripPairing (Best reduced chi square is not below 25 (1559.475528)) (GR Hit:
 BD GR Veto
 PQ 1559.48
 SE
-ET PH
+ET UN
 ID 1734
 TI 1760667400.159541130
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.284
-PP -1.2342 -1.14234 -4.54139
-PW 0
 SE
 ID 1735
 BD DepthCalibrationError (GR Veto)
@@ -14481,7 +14302,7 @@ SE
 ET UN
 ID 1738
 TI 1760667400.159681320
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 327.713
 SE
@@ -14938,13 +14759,12 @@ QA StripHitBelowThreshold (Strip hit removed with energy 0.033214)
 BD GR Veto
 PQ
 SE
-ET PH
+ET UN
 ID 1791
 TI 1760667400.183451414
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.8765
-PP 1.44314 -0.124619 1.16252
-PW 0
 SE
 ET UN
 ID 1792
@@ -14998,18 +14818,17 @@ PE 144.725
 PP -2.16545 -0.246517 -1.16561
 PW 0
 SE
-ET PH
+ET UN
 ID 1797
 TI 1760667400.183777093
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.678
-PP 4.12048 -0.258335 -1.86405
-PW 0
 SE
 ET UN
 ID 1798
 TI 1760667400.183809757
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 211.403
 SE
@@ -15032,14 +14851,14 @@ SE
 ET UN
 ID 1801
 TI 1760667400.183970928
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 56.8013
 SE
 ET UN
 ID 1802
 TI 1760667400.184007883
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.8732
 SE
@@ -15222,7 +15041,7 @@ SE
 ET UN
 ID 1825
 TI 1760667400.184743642
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 21.1895
 SE
@@ -15286,21 +15105,12 @@ BD DepthCalibrationError (GR Veto)
 BD GR Veto
 PQ
 SE
-ET CO
+ET UN
 ID 1832
 TI 1760667400.184928655
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 8.63959
-SQ 3
-CT 0.0298925 0.27627
-TL 1
-TE 23.093
-CE 432.297 1.62987   23.093 0.904445
-CD 3.30564 -1.15147 1.62814   0.0336036 0.0366111 0.0336036   3.42205 -0.962282 2.21017   0.0336036 0.00998308 0.0336036   0 0 0   0 0 0
-LA 0.622979
-CH 0 3.30564 -1.15147 1.62814 23.093 0 0.0336036 0.0366111 0.0336036 0.904445 0
-CH 1 3.42205 -0.962282 2.21017 230.967 0 0.0336036 0.00998308 0.0336036 1.26433 0
-CH 2 2.84002 0.179232 0.929703 201.33 0 0.0336036 0.0139357 0.0336036 1.02856 0
+PE 455.39
 SE
 ID 1833
 BD DepthCalibrationError (GR Veto)
@@ -15393,13 +15203,12 @@ PE 408.083
 PP 3.30564 0.19102 0.464078
 PW 0
 SE
-ET PH
+ET UN
 ID 1842
 TI 1760667400.185211658
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 22.7303
-PP -1.46702 -0.0413944 -0.234359
-PW 0
 SE
 ET PH
 ID 1843
@@ -15703,13 +15512,12 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 3
 PE 164.395
 SE
-ET PH
+ET UN
 ID 1878
 TI 1760667400.207208633
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.2878
-PP 0.977516 -0.818854 -1.98045
-PW 0
 SE
 ET PH
 ID 1879
@@ -15736,7 +15544,7 @@ SE
 ET UN
 ID 1882
 TI 1760667400.207432746
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 42.6763
 SE
@@ -15953,22 +15761,12 @@ PE 459.649
 PP 1.79236 -0.632335 0.696891
 PW 0
 SE
-ET CO
+ET UN
 ID 1906
 TI 1760667400.208121776
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 33.8516
-SQ 4
-CT 0.0888241 0.274329
-TL 1
-TE 111.156
-CE 560.793 2.27758   111.156 1.27205
-CD -1.00139 -0.695694 -4.07577   0.0336036 0.0212457 0.0336036   -1.69983 -0.490956 -3.49373   0.0336036 0.0108876 0.0336036   0 0 0   0 0 0
-LA 0.342425
-CH 0 -1.00139 -0.695694 -4.07577 111.156 0 0.0336036 0.0212457 0.0336036 1.27205 0
-CH 1 -1.69983 -0.490956 -3.49373 393.328 0 0.0336036 0.0108876 0.0336036 1.33396 0
-CH 2 -0.884984 -0.849637 -4.42498 32.8781 0 0.0336036 0.0647313 0.0336036 1.20773 0
-CH 3 -0.652172 -0.755548 -4.19217 134.587 0 0.0336036 0.0166714 0.0336036 1.39618 0
+PE 671.949
 SE
 ID 1907
 BD DepthCalibrationError (GR Veto)
@@ -15988,14 +15786,14 @@ SE
 ET UN
 ID 1909
 TI 1760667400.208242654
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 518.361
 SE
 ET UN
 ID 1910
 TI 1760667400.208280563
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 101.673
 SE
@@ -16053,13 +15851,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 180.931817)
 BD GR Veto
 PQ 17.2676
 SE
-ET PH
+ET UN
 ID 1918
 TI 1760667400.208481073
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.4711
-PP -1.81623 0.0757205 -4.07577
-PW 0
 SE
 ET CO
 ID 1919
@@ -16102,7 +15899,7 @@ SE
 ET UN
 ID 1923
 TI 1760667400.226569175
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 157.893
 SE
@@ -16148,7 +15945,7 @@ SE
 ET UN
 ID 1929
 TI 1760667400.226692676
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.479
 SE
@@ -16249,7 +16046,7 @@ SE
 ET UN
 ID 1939
 TI 1760667400.226950407
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.9356
 SE
@@ -16465,13 +16262,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 165.129083)
 BD GR Veto
 PQ 19.9449
 SE
-ET PH
+ET UN
 ID 1966
 TI 1760667400.227545738
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 23.0973
-PP -2.86389 -0.958181 -1.86405
-PW 0
 SE
 ET PH
 ID 1967
@@ -16538,7 +16334,7 @@ SE
 ET UN
 ID 1973
 TI 1760667400.227795600
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 488.757
 SE
@@ -16632,20 +16428,12 @@ LA 0.568794
 CH 0 -2.63108 -0.305188 -0.583578 124.433 0 0.0336036 0.0195637 0.0336036 0.933655 0
 CH 1 -2.9803 -0.689077 -0.350766 272.189 0 0.0336036 0.0105272 0.0336036 1.73518 0
 SE
-ET CO
+ET UN
 ID 1983
 TI 1760667400.252861499
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.742608
-SQ 2
-CT 0 1
-TL 1
-TE 21.8816
-CE 139.341 0.921419   21.8816 0.900074
-CD -1.58342 0.334041 -3.37733   0.0336036 0.0511849 0.0336036   -1.93264 -0.568593 -2.21327   0.0336036 0.0168703 0.0336036   0 0 0   0 0 0
-LA 1.51385
-CH 0 -1.58342 0.334041 -3.37733 21.8816 0 0.0336036 0.0511849 0.0336036 0.900074 0
-CH 1 -1.93264 -0.568593 -2.21327 139.341 0 0.0336036 0.0168703 0.0336036 0.921419 0
+PE 161.223
 SE
 ET CO
 ID 1984
@@ -16696,7 +16484,7 @@ SE
 ET UN
 ID 1988
 TI 1760667400.253204584
-BD ComptelTypeWithIncompatibleKinematics
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 69.4553
 SE
@@ -16748,7 +16536,7 @@ SE
 ET UN
 ID 1994
 TI 1760667400.253453731
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 45.6804
 SE
@@ -16769,7 +16557,7 @@ SE
 ET UN
 ID 1997
 TI 1760667400.253597974
-BD DepthCalibrationError (Out of Range) (Multiple hits on single strip) (Multiple hits on single strip) (Multiple hits on single strip)
+BD DepthCalibrationError (No fast timing) (Multiple hits on single strip) (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 9
 PE 660.57
 SE
@@ -16784,7 +16572,7 @@ SE
 ET UN
 ID 1999
 TI 1760667400.253741979
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 306.762
 SE
@@ -16989,7 +16777,7 @@ SE
 ET UN
 ID 2024
 TI 1760667400.254498481
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 95.7088
 SE
@@ -17069,7 +16857,7 @@ SE
 ET UN
 ID 2035
 TI 1760667400.254762649
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 489.665
 SE
@@ -17207,7 +16995,7 @@ SE
 ET UN
 ID 2050
 TI 1760667400.276518583
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 182.849
 SE
@@ -17233,20 +17021,12 @@ BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
-ET CO
+ET UN
 ID 2053
 TI 1760667400.276606321
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 1.45214
-SQ 2
-CT 0 1
-TL 1
-TE 22.6238
-CE 324.184 0.967837   22.6238 0.89728
-CD -1.2342 -0.958081 -3.37733   0.0336036 0.0983765 0.0336036   -2.04905 0.374037 -2.67889   0.0336036 0.0171694 0.0336036   0 0 0   0 0 0
-LA 1.71065
-CH 0 -1.2342 -0.958081 -3.37733 22.6238 0 0.0336036 0.0983765 0.0336036 0.89728 0
-CH 1 -2.04905 0.374037 -2.67889 324.184 0 0.0336036 0.0171694 0.0336036 0.967837 0
+PE 346.808
 SE
 ET PH
 ID 2054
@@ -17259,7 +17039,7 @@ SE
 ET UN
 ID 2055
 TI 1760667400.276677846
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 430.358
 SE
@@ -17310,7 +17090,7 @@ SE
 ET UN
 ID 2060
 TI 1760667400.276809215
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 138.257
 SE
@@ -17361,7 +17141,7 @@ SE
 ET UN
 ID 2066
 TI 1760667400.276970386
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.0144
 SE
@@ -17383,7 +17163,7 @@ SE
 ET UN
 ID 2069
 TI 1760667400.277013778
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 90.7123
 SE
@@ -17398,7 +17178,7 @@ SE
 ET UN
 ID 2071
 TI 1760667400.277052640
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 55.5705
 SE
@@ -17670,7 +17450,7 @@ SE
 ET UN
 ID 2104
 TI 1760667400.277889490
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 4
 PE 67.4863
 SE
@@ -17784,20 +17564,12 @@ PE 227.496
 PP -2.51467 -0.597068 1.39533
 PW 0
 SE
-ET CO
+ET UN
 ID 2119
 TI 1760667400.295860767
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 5.26916
-SQ 2
-CT 0 1
-TL 1
-TE 46.7047
-CE 213.764 1.27896   46.7047 1.04169
-CD -2.04905 -1.16791 -1.98045   0.0336036 0.0229166 0.0336036   -2.86389 -1.11006 -3.14452   0.0336036 0.0131352 0.0336036   0 0 0   0 0 0
-LA 1.4221
-CH 0 -2.04905 -1.16791 -1.98045 46.7047 0 0.0336036 0.0229166 0.0336036 1.04169 0
-CH 1 -2.86389 -1.11006 -3.14452 213.764 0 0.0336036 0.0131352 0.0336036 1.27896 0
+PE 260.469
 SE
 ET PH
 ID 2120
@@ -17868,13 +17640,12 @@ LA 1.04655
 CH 0 0.162672 0.273082 -2.32967 94.771 0 0.0336036 0.0363377 0.0336036 0.929189 0
 CH 1 0.511891 -0.423695 -3.02811 441.098 0 0.0336036 0.0111681 0.0336036 2.29828 0
 SE
-ET PH
+ET UN
 ID 2127
 TI 1760667400.296218872
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.6275
-PP 2.14158 -0.751571 -2.21327
-PW 0
 SE
 ET PH
 ID 2128
@@ -17964,7 +17735,7 @@ SE
 ET UN
 ID 2139
 TI 1760667400.296473264
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 455.144
 SE
@@ -18016,7 +17787,7 @@ SE
 ET UN
 ID 2145
 TI 1760667400.296610116
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 679.918
 SE
@@ -18043,20 +17814,12 @@ PE 77.6526
 PP 2.14158 0.356089 2.21017
 PW 0
 SE
-ET CO
+ET UN
 ID 2148
 TI 1760667400.296704769
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 20.8033
-SQ 2
-CT 0 1
-TL 1
-TE 31.5934
-CE 345.039 1.27515   31.5934 1.25656
-CD -1.2342 -0.484908 -4.07577   0.0336036 0.0738005 0.0336036   -1.46702 -0.854675 -3.61014   0.0336036 0.00998214 0.0336036   0 0 0   0 0 0
-LA 0.638548
-CH 0 -1.2342 -0.484908 -4.07577 31.5934 0 0.0336036 0.0738005 0.0336036 1.25656 0
-CH 1 -1.46702 -0.854675 -3.61014 345.039 0 0.0336036 0.00998214 0.0336036 1.27515 0
+PE 376.632
 SE
 ID 2149
 BD DepthCalibrationError (GR Veto)
@@ -18065,13 +17828,12 @@ QA StripPairing (Event contains multiple hits on a single strip) (GR Hit: Detect
 BD GR Veto
 PQ 5.30518
 SE
-ET PH
+ET UN
 ID 2150
 TI 1760667400.296773672
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.9768
-PP 3.88767 -0.620729 -1.0492
-PW 0
 SE
 ET PH
 ID 2151
@@ -18197,7 +17959,7 @@ SE
 ET UN
 ID 2165
 TI 1760667400.297051429
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.5108
 SE
@@ -18243,14 +18005,14 @@ SE
 ET UN
 ID 2171
 TI 1760667400.297173976
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 51.829
 SE
 ET UN
 ID 2172
 TI 1760667400.297194004
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.394
 SE
@@ -18327,13 +18089,12 @@ PE 156.536
 PP -0.768578 0.10913 2.09377
 PW 0
 SE
-ET PH
+ET UN
 ID 2183
 TI 1760667400.315771341
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 24.4215
-PP -0.884984 -0.515931 -1.16561
-PW 0
 SE
 ET PH
 ID 2184
@@ -18547,7 +18308,7 @@ SE
 ET UN
 ID 2207
 TI 1760667400.316654443
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.3706
 SE
@@ -18619,7 +18380,7 @@ SE
 ET UN
 ID 2217
 TI 1760667400.316992044
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 127.142
 SE
@@ -18865,7 +18626,7 @@ SE
 ET UN
 ID 2249
 TI 1760667400.337675571
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 409.245
 SE
@@ -19091,14 +18852,14 @@ SE
 ET UN
 ID 2277
 TI 1760667400.338323593
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.6976
 SE
 ET UN
 ID 2278
 TI 1760667400.338349819
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 196.174
 SE
@@ -19172,7 +18933,7 @@ SE
 ET UN
 ID 2286
 TI 1760667400.338543176
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.2984
 SE
@@ -19299,13 +19060,12 @@ LA 1.02235
 CH 0 -1.93264 -0.126452 -2.32967 177.766 0 0.0336036 0.0133489 0.0336036 1.24701 0
 CH 1 -2.74748 -0.531964 -1.86405 488.048 0 0.0336036 0.0108483 0.0336036 1.6089 0
 SE
-ET PH
+ET UN
 ID 2300
 TI 1760667400.338862419
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 21.0345
-PP 3.18923 -0.199771 -0.583578
-PW 0
 SE
 ET PH
 ID 2301
@@ -19332,7 +19092,7 @@ SE
 ET UN
 ID 2304
 TI 1760667400.359308719
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 45.5272
 SE
@@ -19398,13 +19158,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 46.159790)
 BD GR Veto
 PQ 2.80153
 SE
-ET PH
+ET UN
 ID 2313
 TI 1760667400.359539747
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.9463
-PP -1.46702 -0.112718 0.464078
-PW 0
 SE
 ID 2314
 BD StripPairingError (No triggered strip hits)
@@ -19486,20 +19245,12 @@ PE 278.907
 PP 2.25798 0.11296 -4.6578
 PW 0
 SE
-ET CO
+ET UN
 ID 2325
 TI 1760667400.359739542
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 26.9775
-SQ 2
-CT 0 1
-TL 1
-TE 23.7316
-CE 254.878 1.93575   23.7316 0.906586
-CD 0.0462656 -1.13193 -4.42498   0.0336036 0.0502889 0.0336036   0.861109 -0.515759 -3.95936   0.0336036 0.0108681 0.0336036   0 0 0   0 0 0
-LA 1.12269
-CH 0 0.0462656 -1.13193 -4.42498 23.7316 0 0.0336036 0.0502889 0.0336036 0.906586 0
-CH 1 0.861109 -0.515759 -3.95936 254.878 0 0.0336036 0.0108681 0.0336036 1.93575 0
+PE 278.61
 SE
 ET UN
 ID 2326
@@ -19545,7 +19296,7 @@ SE
 ET UN
 ID 2332
 TI 1760667400.359876632
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 58.888
 SE
@@ -19581,7 +19332,7 @@ SE
 ET UN
 ID 2336
 TI 1760667400.359963417
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.658
 SE
@@ -19627,7 +19378,7 @@ SE
 ET UN
 ID 2343
 TI 1760667400.360050678
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.0833
 SE
@@ -19678,7 +19429,7 @@ SE
 ET UN
 ID 2350
 TI 1760667400.360526084
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 404.892
 SE
@@ -19940,7 +19691,7 @@ SE
 ET UN
 ID 2380
 TI 1760667400.384031057
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 46.0148
 SE
@@ -19963,7 +19714,7 @@ SE
 ET UN
 ID 2383
 TI 1760667400.384189844
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.1062
 SE
@@ -20025,18 +19776,17 @@ QA StripPairing (Best reduced chi square is not below 25 (44.576722)) (GR Hit: D
 BD GR Veto
 PQ 44.5767
 SE
-ET PH
+ET UN
 ID 2390
 TI 1760667400.384330272
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.8451
-PP -2.74748 -1.1097 -0.350766
-PW 0
 SE
 ET UN
 ID 2391
 TI 1760667400.384351968
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.9452
 SE
@@ -20116,13 +19866,12 @@ LA 1.30515
 CH 0 -1.2342 -0.0632458 1.97736 141.679 0 0.0336036 0.0189107 0.0336036 1.27439 0
 CH 1 0.0462656 -0.287483 1.86095 212.473 0 0.0336036 0.0119286 0.0336036 0.968828 0
 SE
-ET PH
+ET UN
 ID 2399
 TI 1760667400.384639501
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.3684
-PP -0.884984 0.00703232 -3.37733
-PW 0
 SE
 ET CO
 ID 2400
@@ -20148,7 +19897,7 @@ SE
 ET UN
 ID 2402
 TI 1760667400.384737730
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 44.5589
 SE
@@ -20211,7 +19960,7 @@ SE
 ET UN
 ID 2411
 TI 1760667400.384968280
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.397
 SE
@@ -20517,7 +20266,7 @@ SE
 ET UN
 ID 2446
 TI 1760667400.405115365
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 44.2205
 SE
@@ -20537,13 +20286,12 @@ PE 114.031
 PP 3.65486 -0.684925 1.27892
 PW 0
 SE
-ET PH
+ET UN
 ID 2449
 TI 1760667400.405257701
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.875
-PP -2.9803 -0.717879 -2.32967
-PW 0
 SE
 ID 2450
 BD DepthCalibrationError (GR Veto)
@@ -20714,13 +20462,12 @@ PE 240.557
 PP 4.3533 -1.08685 -3.61014
 PW 0
 SE
-ET PH
+ET UN
 ID 2471
 TI 1760667400.405828714
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.1089
-PP 3.42205 -0.779951 -0.234359
-PW 0
 SE
 ID 2472
 BD StripPairingError (One detector side has no strip hits)
@@ -20750,7 +20497,7 @@ SE
 ET UN
 ID 2476
 TI 1760667400.405893325
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 58.4075
 SE
@@ -20929,7 +20676,7 @@ SE
 ET UN
 ID 2498
 TI 1760667400.426444530
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 200.202
 SE
@@ -20949,7 +20696,7 @@ SE
 ET UN
 ID 2501
 TI 1760667400.426490306
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 42.483
 SE
@@ -21107,14 +20854,14 @@ SE
 ET UN
 ID 2522
 TI 1760667400.427034378
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 43.4856
 SE
 ET UN
 ID 2523
 TI 1760667400.427074909
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 41.0936
 SE
@@ -21319,7 +21066,7 @@ SE
 ET UN
 ID 2548
 TI 1760667400.427683115
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.987
 SE
@@ -21332,14 +21079,14 @@ SE
 ET UN
 ID 2550
 TI 1760667400.427710294
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 189.452
 SE
 ET UN
 ID 2551
 TI 1760667400.427741765
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 44.6446
 SE
@@ -21479,7 +21226,7 @@ SE
 ET UN
 ID 2569
 TI 1760667400.450027942
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 439.235
 SE
@@ -21660,7 +21407,7 @@ SE
 ET UN
 ID 2588
 TI 1760667400.450567245
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.9287
 SE
@@ -21895,13 +21642,12 @@ PE 405.547
 PP 1.67595 0.378563 -3.14452
 PW 0
 SE
-ET PH
+ET UN
 ID 2614
 TI 1760667400.451198816
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.3495
-PP 1.90877 0.0747027 1.27892
-PW 0
 SE
 ET PH
 ID 2615
@@ -21921,7 +21667,7 @@ SE
 ET UN
 ID 2617
 TI 1760667400.451267242
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 147.887
 SE
@@ -21931,25 +21677,24 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 221.700158)
 BD GR Veto
 PQ 2.16493
 SE
-ET PH
+ET UN
 ID 2619
 TI 1760667400.451309919
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.3362
-PP 3.07283 -0.870154 -1.39842
-PW 0
 SE
 ET UN
 ID 2620
 TI 1760667400.451327562
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 192.937
 SE
 ET UN
 ID 2621
 TI 1760667400.451359987
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 658.713
 SE
@@ -21996,7 +21741,7 @@ SE
 ET UN
 ID 2626
 TI 1760667400.470899105
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.3474
 SE
@@ -22048,20 +21793,12 @@ PE 44.9191
 PP -0.535766 -1.15272 -4.6578
 PW 0
 SE
-ET CO
+ET UN
 ID 2633
 TI 1760667400.471188306
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 0.600918
-SQ 2
-CT 0 1
-TL 1
-TE 35.7475
-CE 224.497 1.10723   35.7475 0.903569
-CD -0.535766 -0.161154 0.464078   0.0336036 0.0685453 0.0336036   -0.768578 0.0851374 0.696891   0.0336036 0.0129867 0.0336036   0 0 0   0 0 0
-LA 0.411172
-CH 0 -0.535766 -0.161154 0.464078 35.7475 0 0.0336036 0.0685453 0.0336036 0.903569 0
-CH 1 -0.768578 0.0851374 0.696891 224.497 0 0.0336036 0.0129867 0.0336036 1.10723 0
+PE 260.245
 SE
 ET PH
 ID 2634
@@ -22118,20 +21855,12 @@ BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
-ET CO
+ET UN
 ID 2642
 TI 1760667400.471356630
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.341511
-SQ 2
-CT 0 1
-TL 1
-TE 27.3171
-CE 110.925 0.953574   27.3171 0.932802
-CD 1.09392 -0.436338 -1.74764   0.0336036 0.0819372 0.0336036   0.628297 0.141246 -1.51483   0.0336036 0.0251355 0.0336036   0 0 0   0 0 0
-LA 0.777566
-CH 0 1.09392 -0.436338 -1.74764 27.3171 0 0.0336036 0.0819372 0.0336036 0.932802 0
-CH 1 0.628297 0.141246 -1.51483 110.925 0 0.0336036 0.0251355 0.0336036 0.953574 0
+PE 138.242
 SE
 ID 2643
 BD DepthCalibrationError (GR Veto)
@@ -22172,7 +21901,7 @@ SE
 ET UN
 ID 2648
 TI 1760667400.471463441
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 305.167
 SE
@@ -22338,7 +22067,7 @@ SE
 ET UN
 ID 2664
 TI 1760667400.472010612
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 659.409
 SE
@@ -22426,7 +22155,7 @@ SE
 ET UN
 ID 2676
 TI 1760667400.472360849
-BD DepthCalibrationError (Out of Range) (Multiple hits on single strip) (Multiple hits on single strip)
+BD DepthCalibrationError (No fast timing) (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 5
 PE 229.606
 SE
@@ -22557,7 +22286,7 @@ SE
 ET UN
 ID 2691
 TI 1760667400.495492696
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 220.795
 SE
@@ -22619,7 +22348,7 @@ SE
 ET UN
 ID 2698
 TI 1760667400.495780467
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8849
 SE
@@ -22632,7 +22361,7 @@ SE
 ET UN
 ID 2700
 TI 1760667400.495823144
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip)
+BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip) (No fast timing)
 CC NStripHits 8
 PE 671.021
 SE
@@ -22691,20 +22420,12 @@ PE 662.598
 PP 0.628297 -0.691117 -4.19217
 PW 0
 SE
-ET CO
+ET UN
 ID 2707
 TI 1760667400.496138095
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.178163
-SQ 2
-CT 0 1
-TL 1
-TE 26.1916
-CE 73.016 0.923117   26.1916 0.937907
-CD -1.1178 -0.819928 -1.28202   0.0336036 0.0861187 0.0336036   -0.652172 -0.80594 -1.16561   0.0336036 0.0308468 0.0336036   0 0 0   0 0 0
-LA 0.480163
-CH 0 -1.1178 -0.819928 -1.28202 26.1916 0 0.0336036 0.0861187 0.0336036 0.937907 0
-CH 1 -0.652172 -0.80594 -1.16561 73.016 0 0.0336036 0.0308468 0.0336036 0.923117 0
+PE 99.2076
 SE
 ET UN
 ID 2708
@@ -22868,7 +22589,7 @@ SE
 ET UN
 ID 2727
 TI 1760667400.496586561
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 664.968
 SE
@@ -22927,7 +22648,7 @@ SE
 ET UN
 ID 2735
 TI 1760667400.496761322
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 654.848
 SE
@@ -22956,7 +22677,7 @@ SE
 ET UN
 ID 2738
 TI 1760667400.496896266
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 336.065
 SE
@@ -22997,13 +22718,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 273.220435)
 BD GR Veto
 PQ 2.14843
 SE
-ET PH
+ET UN
 ID 2743
 TI 1760667400.497025012
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.1019
-PP 0.162672 -0.310236 -1.28202
-PW 0
 SE
 ET PH
 ID 2744
@@ -23099,13 +22819,12 @@ LA 1.60192
 CH 0 3.88767 -0.264732 0.114859 43.9986 0 0.0336036 0.054005 0.0336036 0.907703 0
 CH 1 4.3533 -0.5083 1.62814 282.748 0 0.0336036 0.0108263 0.0336036 0.986408 0
 SE
-ET PH
+ET UN
 ID 2754
 TI 1760667400.523691892
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.0006
-PP -0.768578 -0.0868621 -3.14452
-PW 0
 SE
 ID 2755
 BD DepthCalibrationError (GR Veto)
@@ -23258,7 +22977,7 @@ SE
 ET UN
 ID 2774
 TI 1760667400.524137258
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.5952
 SE
@@ -23328,7 +23047,7 @@ SE
 ET UN
 ID 2783
 TI 1760667400.524332284
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.6642
 SE
@@ -23346,20 +23065,12 @@ QA StripPairing (Best reduced chi square is not below 25 (514.288050)) (GR Hit: 
 BD GR Veto
 PQ 514.288
 SE
-ET CO
+ET UN
 ID 2786
 TI 1760667400.524388551
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 4.72332
-SQ 2
-CT 0 1
-TL 1
-TE 29.4143
-CE 159.632 1.30134   29.4143 0.928042
-CD 1.09392 -0.719919 -2.7953   0.0336036 0.0746318 0.0336036   0.861109 -0.283659 -3.61014   0.0336036 0.0142854 0.0336036   0 0 0   0 0 0
-LA 0.953146
-CH 0 1.09392 -0.719919 -2.7953 29.4143 0 0.0336036 0.0746318 0.0336036 0.928042 0
-CH 1 0.861109 -0.283659 -3.61014 159.632 0 0.0336036 0.0142854 0.0336036 1.30134 0
+PE 189.046
 SE
 ET CO
 ID 2787
@@ -23564,7 +23275,7 @@ SE
 ET UN
 ID 2811
 TI 1760667400.525009393
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 6
 PE 196.64
 SE
@@ -23843,7 +23554,7 @@ SE
 ET UN
 ID 2842
 TI 1760667400.547450542
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 182.013
 SE
@@ -23906,7 +23617,7 @@ SE
 ET UN
 ID 2851
 TI 1760667400.547656774
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.4723
 SE
@@ -23929,7 +23640,7 @@ SE
 ET UN
 ID 2854
 TI 1760667400.547713279
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 132.464
 SE
@@ -23982,7 +23693,7 @@ SE
 ET UN
 ID 2860
 TI 1760667400.547894001
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.1717
 SE
@@ -24121,20 +23832,12 @@ PE 235.38
 PP 3.65486 -0.953345 1.86095
 PW 0
 SE
-ET CO
+ET UN
 ID 2877
 TI 1760667400.548324346
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 1.34943
-SQ 2
-CT 0 1
-TL 1
-TE 40.3902
-CE 148.974 1.07579   40.3902 0.930898
-CD 1.32673 -0.710004 -3.84295   0.0336036 0.0602695 0.0336036   0.628297 -0.159237 -4.07577   0.0336036 0.0175955 0.0336036   0 0 0   0 0 0
-LA 0.919434
-CH 0 1.32673 -0.710004 -3.84295 40.3902 0 0.0336036 0.0602695 0.0336036 0.930898 0
-CH 1 0.628297 -0.159237 -4.07577 148.974 0 0.0336036 0.0175955 0.0336036 1.07579 0
+PE 189.364
 SE
 ET UN
 ID 2878
@@ -24143,21 +23846,12 @@ BD StripPairingError (Strips not pairable. Multiple hits per strip on LV and HV 
 CC NStripHits 5
 PE 0
 SE
-ET CO
+ET UN
 ID 2879
 TI 1760667400.569575309
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 0.337046
-SQ 3
-CT 0.020765 0.908756
-TL 1
-TE 30.0442
-CE 416.611 1.37606   30.0442 0.857475
-CD 2.02517 -1.16004 2.44298   0.0336036 0.0292416 0.0336036   2.25798 -0.755217 1.74455   0.0336036 0.031579 0.0336036   0 0 0   0 0 0
-LA 0.840171
-CH 0 2.02517 -1.16004 2.44298 30.0442 0 0.0336036 0.0292416 0.0336036 0.857475 0
-CH 1 2.25798 -0.755217 1.74455 60.4052 0 0.0336036 0.031579 0.0336036 0.9154 0
-CH 2 3.42205 -0.803174 1.04611 356.206 0 0.0336036 0.0100623 0.0336036 1.02742 0
+PE 446.655
 SE
 ID 2880
 BD DepthCalibrationError (GR Veto)
@@ -24226,14 +23920,14 @@ SE
 ET UN
 ID 2887
 TI 1760667400.569848537
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 378.386
 SE
 ET UN
 ID 2888
 TI 1760667400.569877862
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.6177
 SE
@@ -24264,14 +23958,14 @@ SE
 ET UN
 ID 2892
 TI 1760667400.569952964
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.4429
 SE
 ET UN
 ID 2893
 TI 1760667400.569970846
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 395.151
 SE
@@ -24323,7 +24017,7 @@ SE
 ET UN
 ID 2898
 TI 1760667400.570114374
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.9051
 SE
@@ -24445,7 +24139,7 @@ SE
 ET UN
 ID 2913
 TI 1760667400.570463418
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 41.8492
 SE
@@ -24538,7 +24232,7 @@ SE
 ET UN
 ID 2924
 TI 1760667400.570697546
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.3384
 SE
@@ -24573,14 +24267,14 @@ SE
 ET UN
 ID 2929
 TI 1760667400.570787429
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.1033
 SE
 ET UN
 ID 2930
 TI 1760667400.570806026
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.1911
 SE
@@ -24610,7 +24304,7 @@ SE
 ET UN
 ID 2933
 TI 1760667400.570870876
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.5912
 SE
@@ -24642,20 +24336,12 @@ BD DepthCalibrationError (GR Veto)
 BD GR Veto
 PQ
 SE
-ET CO
+ET UN
 ID 2938
 TI 1760667400.570961952
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 2.05385
-SQ 2
-CT 0 1
-TL 1
-TE 23.518
-CE 101.132 0.929527   23.518 0.931666
-CD -0.884984 -0.898048 -1.28202   0.0336036 0.0956493 0.0336036   -0.652172 -0.602424 -1.86405   0.0336036 0.0212601 0.0336036   0 0 0   0 0 0
-LA 0.693076
-CH 0 -0.884984 -0.898048 -1.28202 23.518 0 0.0336036 0.0956493 0.0336036 0.931666 0
-CH 1 -0.652172 -0.602424 -1.86405 101.132 0 0.0336036 0.0212601 0.0336036 0.929527 0
+PE 124.65
 SE
 ET PH
 ID 2939
@@ -24783,13 +24469,12 @@ PE 103.043
 PP 4.12048 0.0570768 -0.234359
 PW 0
 SE
-ET PH
+ET UN
 ID 2956
 TI 1760667400.591349363
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.1062
-PP -0.652172 0.355945 -4.07577
-PW 0
 SE
 ET UN
 ID 2957
@@ -24876,7 +24561,7 @@ SE
 ET UN
 ID 2966
 TI 1760667400.591664075
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.4219
 SE
@@ -24947,20 +24632,12 @@ PE 103.518
 PP 4.23689 0.358588 -2.32967
 PW 0
 SE
-ET CO
+ET UN
 ID 2975
 TI 1760667400.591843843
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 0.172159
-SQ 2
-CT 0 1
-TL 1
-TE 32.1275
-CE 86.9254 1.10599   32.1275 0.883229
-CD 2.14158 -0.340638 -3.02811   0.0336036 0.0735005 0.0336036   3.18923 -0.783097 -1.51483   0.0336036 0.024035 0.0336036   0 0 0   0 0 0
-LA 1.89298
-CH 0 2.14158 -0.340638 -3.02811 32.1275 0 0.0336036 0.0735005 0.0336036 0.883229 0
-CH 1 3.18923 -0.783097 -1.51483 86.9254 0 0.0336036 0.024035 0.0336036 1.10599 0
+PE 119.053
 SE
 ID 2976
 BD DepthCalibrationError (GR Veto)
@@ -25040,14 +24717,14 @@ SE
 ET UN
 ID 2986
 TI 1760667400.592063665
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 45.287
 SE
 ET UN
 ID 2987
 TI 1760667400.592079639
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 161.408
 SE
@@ -25394,7 +25071,7 @@ SE
 ET UN
 ID 3027
 TI 1760667400.614061594
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.8057
 SE
@@ -25465,13 +25142,12 @@ LA 0.658491
 CH 0 1.44314 0.131915 -2.56248 61.9561 0 0.0336036 0.0411228 0.0336036 0.925103 0
 CH 1 0.977516 0.133395 -2.09686 211.645 0 0.0336036 0.0145733 0.0336036 0.976707 0
 SE
-ET PH
+ET UN
 ID 3035
 TI 1760667400.614253044
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.6522
-PP -1.46702 -1.08747 -1.74764
-PW 0
 SE
 ET PH
 ID 3036
@@ -25685,7 +25361,7 @@ SE
 ET UN
 ID 3061
 TI 1760667400.614787101
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 53.5091
 SE
@@ -25704,28 +25380,19 @@ PE 281.028
 PP 1.55955 0.0198912 -1.63123
 PW 0
 SE
-ET PH
+ET UN
 ID 3064
 TI 1760667400.614854335
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.4802
-PP 2.25798 0.363571 -0.350766
-PW 0
 SE
-ET CO
+ET UN
 ID 3065
 TI 1760667400.614871978
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 0.712477
-SQ 2
-CT 0 1
-TL 1
-TE 22.3428
-CE 456.663 1.18861   22.3428 0.892994
-CD -1.46702 -0.873266 -2.7953   0.0336036 0.0935746 0.0336036   4.12048 0.195766 -1.86405   0.0336036 0.014155 0.0336036   0 0 0   0 0 0
-LA 5.76457
-CH 0 -1.46702 -0.873266 -2.7953 22.3428 0 0.0336036 0.0935746 0.0336036 0.892994 0
-CH 1 4.12048 0.195766 -1.86405 456.663 0 0.0336036 0.014155 0.0336036 1.18861 0
+PE 479.006
 SE
 ID 3066
 BD DepthCalibrationError (GR Veto)
@@ -25763,20 +25430,12 @@ LA 0.768026
 CH 0 3.88767 -0.73054 -2.21327 281.957 0 0.0336036 0.01032 0.0336036 1.3274 0
 CH 1 3.65486 -0.0366645 -2.44608 195.076 0 0.0336036 0.0131582 0.0336036 0.957406 0
 SE
-ET CO
+ET UN
 ID 3070
 TI 1760667400.615039587
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.231251
-SQ 2
-CT 0 1
-TL 1
-TE 38.2177
-CE 111.046 0.902734   38.2177 0.884573
-CD -1.58342 -1.16797 -3.14452   0.0336036 0.0231423 0.0336036   -1.35061 -0.83377 -2.9117   0.0336036 0.0193498 0.0336036   0 0 0   0 0 0
-LA 0.469143
-CH 0 -1.58342 -1.16797 -3.14452 38.2177 0 0.0336036 0.0231423 0.0336036 0.884573 0
-CH 1 -1.35061 -0.83377 -2.9117 111.046 0 0.0336036 0.0193498 0.0336036 0.902734 0
+PE 149.264
 SE
 ET CO
 ID 3071
@@ -25800,20 +25459,12 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 3
 PE 398.012
 SE
-ET CO
+ET UN
 ID 3073
 TI 1760667400.635895490
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 1.69947
-SQ 2
-CT 0 1
-TL 1
-TE 23.6905
-CE 71.6932 1.06149   23.6905 0.920735
-CD 1.67595 -0.379394 0.347672   0.0336036 0.0986372 0.0336036   1.32673 0.178009 1.51173   0.0336036 0.045259 0.0336036   0 0 0   0 0 0
-LA 1.33704
-CH 0 1.67595 -0.379394 0.347672 23.6905 0 0.0336036 0.0986372 0.0336036 0.920735 0
-CH 1 1.32673 0.178009 1.51173 71.6932 0 0.0336036 0.045259 0.0336036 1.06149 0
+PE 95.3837
 SE
 ET PH
 ID 3074
@@ -25900,7 +25551,7 @@ SE
 ET UN
 ID 3085
 TI 1760667400.636245727
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.8652
 SE
@@ -25923,7 +25574,7 @@ SE
 ET UN
 ID 3087
 TI 1760667400.636315584
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 47.7805
 SE
@@ -26088,13 +25739,12 @@ PE 402.882
 PP 2.4908 -1.0645 -4.54139
 PW 0
 SE
-ET PH
+ET UN
 ID 3106
 TI 1760667400.636792898
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.9076
-PP -2.39827 0.257071 1.04611
-PW 0
 SE
 ET PH
 ID 3107
@@ -26326,13 +25976,12 @@ PE 289.145
 PP -2.86389 -0.259874 -1.39842
 PW 0
 SE
-ET PH
+ET UN
 ID 3137
 TI 1760667400.656009674
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.0722
-PP 0.0462656 -0.835 -2.9117
-PW 0
 SE
 ET PH
 ID 3138
@@ -26381,7 +26030,7 @@ SE
 ET UN
 ID 3144
 TI 1760667400.656221389
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 42.8574
 SE
@@ -26400,13 +26049,12 @@ LA 0.681641
 CH 0 0.279078 -0.542498 -3.49373 86.3771 0 0.0336036 0.0284483 0.0336036 1.07932 0
 CH 1 -0.0701406 -0.187717 -3.95936 148.881 0 0.0336036 0.0173772 0.0336036 1.4557 0
 SE
-ET PH
+ET UN
 ID 3146
 TI 1760667400.656278848
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.3495
-PP 2.25798 0.0109525 -0.816391
-PW 0
 SE
 ET PH
 ID 3147
@@ -26441,7 +26089,7 @@ SE
 ET UN
 ID 3151
 TI 1760667400.656362295
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 570.184
 SE
@@ -26471,7 +26119,7 @@ SE
 ET UN
 ID 3154
 TI 1760667400.656451940
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.3898
 SE
@@ -26612,13 +26260,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 93.070248)
 BD GR Veto
 PQ 0.648706
 SE
-ET PH
+ET UN
 ID 3172
 TI 1760667400.656816244
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.779
-PP -2.51467 -0.234688 -2.32967
-PW 0
 SE
 ET PH
 ID 3173
@@ -26712,7 +26359,7 @@ SE
 ET UN
 ID 3184
 TI 1760667400.657065629
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 416.287
 SE
@@ -26820,7 +26467,7 @@ SE
 ET UN
 ID 3199
 TI 1760667400.674080610
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 353.088
 SE
@@ -26851,7 +26498,7 @@ SE
 ET UN
 ID 3203
 TI 1760667400.674219369
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 174.597
 SE
@@ -26906,13 +26553,12 @@ LA 0.537882
 CH 0 3.53845 -0.607481 1.51173 484.821 0 0.0336036 0.0107507 0.0336036 1.35635 0
 CH 1 3.65486 -0.136774 1.27892 188.248 0 0.0336036 0.0122632 0.0336036 1.37115 0
 SE
-ET PH
+ET UN
 ID 3208
 TI 1760667400.674397706
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 24.4769
-PP -0.186547 -0.153071 -4.54139
-PW 0
 SE
 ID 3209
 BD DepthCalibrationError (GR Veto)
@@ -27266,21 +26912,12 @@ PE 266.787
 PP 0.395484 -0.359618 -0.234359
 PW 0
 SE
-ET CO
+ET UN
 ID 3255
 TI 1760667400.675384521
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 2.25135
-SQ 3
-CT 0.119113 1.51612
-TL 1
-TE 21.957
-CE 235.854 1.39979   21.957 0.92572
-CD 0.628297 -0.0546583 -1.86405   0.0336036 0.115888 0.0336036   -1.46702 -0.773184 -0.932797   0.0336036 0.0169515 0.0336036   0 0 0   0 0 0
-LA 1.16523
-CH 0 0.628297 -0.0546583 -1.86405 21.957 0 0.0336036 0.115888 0.0336036 0.92572 0
-CH 1 -1.46702 -0.773184 -0.932797 119.638 0 0.0336036 0.0169515 0.0336036 0.913524 0
-CH 2 -0.419359 -0.981395 -1.39842 116.216 0 0.0336036 0.0178931 0.0336036 1.06061 0
+PE 257.811
 SE
 ET PH
 ID 3256
@@ -27321,17 +26958,16 @@ SE
 ET UN
 ID 3261
 TI 1760667400.675551891
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 122.311
 SE
-ET PH
+ET UN
 ID 3262
 TI 1760667400.675587892
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8584
-PP -2.74748 0.153283 -1.74764
-PW 0
 SE
 ET PH
 ID 3263
@@ -27389,7 +27025,7 @@ SE
 ET UN
 ID 3269
 TI 1760667400.698847770
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.099
 SE
@@ -27508,7 +27144,7 @@ SE
 ET UN
 ID 3283
 TI 1760667400.699516534
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.5231
 SE
@@ -27595,13 +27231,12 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 6
 PE 670.135
 SE
-ET PH
+ET UN
 ID 3295
 TI 1760667400.700075149
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.1375
-PP 3.42205 -0.559448 0.347672
-PW 0
 SE
 ET PH
 ID 3296
@@ -27936,7 +27571,7 @@ SE
 ET UN
 ID 3338
 TI 1760667400.719163417
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 634.611
 SE
@@ -28223,25 +27858,17 @@ PE 85.2173
 PP -1.93264 0.339606 -2.09686
 PW 0
 SE
-ET CO
+ET UN
 ID 3368
 TI 1760667400.720350027
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 15.5391
-SQ 2
-CT 0 1
-TL 1
-TE 27.8547
-CE 206.103 1.21619   27.8547 1.36921
-CD 4.3533 0.296147 -0.699984   0.0336036 0.0726206 0.0336036   4.00408 -0.206742 0.114859   0.0336036 0.0116735 0.0336036   0 0 0   0 0 0
-LA 1.01923
-CH 0 4.3533 0.296147 -0.699984 27.8547 0 0.0336036 0.0726206 0.0336036 1.36921 0
-CH 1 4.00408 -0.206742 0.114859 206.103 0 0.0336036 0.0116735 0.0336036 1.21619 0
+PE 233.958
 SE
 ET UN
 ID 3369
 TI 1760667400.720381975
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 58.0143
 SE
@@ -28304,13 +27931,12 @@ PE 200.324
 PP 2.84002 0.284698 -3.84295
 PW 0
 SE
-ET PH
+ET UN
 ID 3378
 TI 1760667400.720604896
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.8505
-PP 3.42205 -0.625529 1.16252
-PW 0
 SE
 ET PH
 ID 3379
@@ -28527,7 +28153,7 @@ SE
 ET UN
 ID 3406
 TI 1760667400.742773532
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.8332
 SE
@@ -28725,14 +28351,14 @@ SE
 ET UN
 ID 3428
 TI 1760667400.743347883
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 458.764
 SE
 ET UN
 ID 3429
 TI 1760667400.743388175
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.4104
 SE
@@ -28806,14 +28432,14 @@ SE
 ET UN
 ID 3438
 TI 1760667400.743571281
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.7447
 SE
 ET UN
 ID 3439
 TI 1760667400.743588924
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 265.15
 SE
@@ -28966,7 +28592,7 @@ SE
 ET UN
 ID 3457
 TI 1760667400.763555288
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 459.393
 SE
@@ -29018,7 +28644,7 @@ SE
 ET UN
 ID 3464
 TI 1760667400.763722896
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 485.27
 SE
@@ -29112,7 +28738,7 @@ SE
 ET UN
 ID 3476
 TI 1760667400.764007091
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 487.538
 SE
@@ -29165,7 +28791,7 @@ SE
 ET UN
 ID 3481
 TI 1760667400.764182090
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 1028.09
 SE
@@ -29223,21 +28849,12 @@ BD StripPairingError (No triggered strip hits)
 CC NStripHits 0
 PE 0
 SE
-ET CO
+ET UN
 ID 3488
 TI 1760667400.764347791
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
-PQ 1.33462
-SQ 3
-CT 1.82653e-05 1.00257
-TL 1
-TE 38.8231
-CE 622.352 2.24912   38.8231 0.937982
-CD 1.79236 -0.920389 0.813297   0.0336036 0.0493118 0.0336036   2.72361 -0.0950209 1.04611   0.0336036 0.0121854 0.0336036   0 0 0   0 0 0
-LA 1.26596
-CH 0 1.79236 -0.920389 0.813297 38.8231 0 0.0336036 0.0493118 0.0336036 0.937982 0
-CH 1 2.72361 -0.0950209 1.04611 414.307 0 0.0336036 0.0121854 0.0336036 1.29497 0
-CH 2 1.55955 0.0926942 0.464078 208.045 0 0.0336036 0.0130204 0.0336036 1.83891 0
+PE 661.175
 SE
 ET UN
 ID 3489
@@ -29249,7 +28866,7 @@ SE
 ET UN
 ID 3490
 TI 1760667400.764414310
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.9509
 SE
@@ -29327,13 +28944,12 @@ PE 109.388
 PP -1.69983 -0.121474 -1.86405
 PW 0
 SE
-ET PH
+ET UN
 ID 3500
 TI 1760667400.764618396
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.5221
-PP 4.12048 -0.302643 -0.932797
-PW 0
 SE
 ET PH
 ID 3501
@@ -29360,7 +28976,7 @@ SE
 ET UN
 ID 3504
 TI 1760667400.764705181
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.7787
 SE
@@ -29370,13 +28986,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 447.416826)
 BD GR Veto
 PQ 19.0578
 SE
-ET PH
+ET UN
 ID 3506
 TI 1760667400.764731407
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.8059
-PP -1.35061 0.334097 -0.816391
-PW 0
 SE
 ET PH
 ID 3507
@@ -29442,20 +29057,12 @@ PE 663.951
 PP -1.69983 -0.897128 -3.02811
 PW 0
 SE
-ET CO
+ET UN
 ID 3516
 TI 1760667400.764979124
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 1.14662
-SQ 2
-CT 0 1
-TL 1
-TE 24.6189
-CE 117.185 0.901362   24.6189 0.902665
-CD 4.12048 -1.03228 -2.67889   0.0336036 0.0808974 0.0336036   4.3533 0.240958 -2.7953   0.0336036 0.0288363 0.0336036   0 0 0   0 0 0
-LA 1.29957
-CH 0 4.12048 -1.03228 -2.67889 24.6189 0 0.0336036 0.0808974 0.0336036 0.902665 0
-CH 1 4.3533 0.240958 -2.7953 117.185 0 0.0336036 0.0288363 0.0336036 0.901362 0
+PE 141.804
 SE
 ET PH
 ID 3517
@@ -29632,7 +29239,7 @@ SE
 ET UN
 ID 3539
 TI 1760667400.787427425
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 60.8887
 SE
@@ -29930,13 +29537,12 @@ PE 210.569
 PP -0.884984 -0.637104 -2.32967
 PW 0
 SE
-ET PH
+ET UN
 ID 3576
 TI 1760667400.788583755
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.0141
-PP 1.32673 -0.454384 -2.67889
-PW 0
 SE
 ID 3577
 BD DepthCalibrationError (GR Veto)
@@ -29947,7 +29553,7 @@ SE
 ET UN
 ID 3578
 TI 1760667400.788612842
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 43.1408
 SE
@@ -30013,13 +29619,12 @@ PE 428.928
 PP -2.9803 -0.367374 -1.74764
 PW 0
 SE
-ET PH
+ET UN
 ID 3587
 TI 1760667400.810271024
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.7884
-PP 4.00408 -0.455864 -1.28202
-PW 0
 SE
 ID 3588
 BD DepthCalibrationError (GR Veto)
@@ -30051,13 +29656,12 @@ PE 420.27
 PP 0.395484 0.000318817 1.27892
 PW 0
 SE
-ET PH
+ET UN
 ID 3592
 TI 1760667400.810353994
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.3228
-PP -1.69983 -0.620244 -4.42498
-PW 0
 SE
 ET PH
 ID 3593
@@ -30285,22 +29889,12 @@ CH 1 -0.884984 0.186201 -1.28202 111.542 0 0.0336036 0.0275426 0.0336036 1.42222
 CH 2 -0.0701406 0.384188 -1.39842 200.788 0 0.0336036 0.0116726 0.0336036 1.26911 0
 CH 3 -0.419359 -0.149545 -1.86405 235.239 0 0.0336036 0.0119544 0.0336036 0.959341 0
 SE
-ET CO
+ET UN
 ID 3617
 TI 1760667400.810968399
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 10.9338
-SQ 4
-CT 0.0116109 0.102329
-TL 1
-TE 93.4744
-CE 352.727 1.81172   93.4744 1.33303
-CD 2.37439 -0.416978 0.464078   0.0336036 0.0235155 0.0336036   2.6072 0.0642728 0.231266   0.0336036 0.013273 0.0336036   0 0 0   0 0 0
-LA 0.583099
-CH 0 2.37439 -0.416978 0.464078 93.4744 0 0.0336036 0.0235155 0.0336036 1.33303 0
-CH 1 2.6072 0.0642728 0.231266 187.366 0 0.0336036 0.013273 0.0336036 0.965614 0
-CH 2 -1.35061 -1.07168 2.21017 23.9656 0 0.0336036 0.080018 0.0336036 0.88317 0
-CH 3 -1.81623 -0.40094 2.32658 141.395 0 0.0336036 0.0181231 0.0336036 1.25297 0
+PE 446.201
 SE
 ID 3618
 BD DepthCalibrationError (GR Veto)
@@ -30492,21 +30086,12 @@ PE 323.031
 PP 0.628297 -1.02136 -3.37733
 PW 0
 SE
-ET CO
+ET UN
 ID 3643
 TI 1760667400.811520576
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
-PQ 10.3133
-SQ 3
-CT 0.388619 0.46332
-TL 1
-TE 336.081
-CE 323.496 1.61155   336.081 1.81852
-CD -0.652172 -0.212212 -2.09686   0.0336036 0.0117153 0.0336036   -1.46702 -0.793306 -1.86405   0.0336036 0.0507013 0.0336036   0 0 0   0 0 0
-LA 1.02754
-CH 0 -0.652172 -0.212212 -2.09686 336.081 0 0.0336036 0.0117153 0.0336036 1.81852 0
-CH 1 -1.46702 -0.793306 -1.86405 38.5616 0 0.0336036 0.0507013 0.0336036 0.902516 0
-CH 2 -2.16545 0.0334345 -1.39842 284.934 0 0.0336036 0.0126539 0.0336036 1.33513 0
+PE 659.577
 SE
 ET UN
 ID 3644
@@ -30540,14 +30125,14 @@ SE
 ET UN
 ID 3648
 TI 1760667400.836256504
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.158
 SE
 ET UN
 ID 3649
 TI 1760667400.836279392
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.7273
 SE
@@ -30587,20 +30172,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 432.779541)
 BD GR Veto
 PQ 1.98839
 SE
-ET CO
+ET UN
 ID 3655
 TI 1760667400.836401700
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 0.194908
-SQ 2
-CT 0 1
-TL 1
-TE 29.6028
-CE 312.049 1.17009   29.6028 0.939271
-CD 4.12048 -0.841874 -1.28202   0.0336036 0.0722891 0.0336036   2.95642 0.242271 -0.816391   0.0336036 0.0151448 0.0336036   0 0 0   0 0 0
-LA 1.65747
-CH 0 4.12048 -0.841874 -1.28202 29.6028 0 0.0336036 0.0722891 0.0336036 0.939271 0
-CH 1 2.95642 0.242271 -0.816391 312.049 0 0.0336036 0.0151448 0.0336036 1.17009 0
+PE 341.652
 SE
 ET UN
 ID 3656
@@ -30623,13 +30200,12 @@ PE 281.33
 PP 2.84002 -0.131083 1.27892
 PW 0
 SE
-ET PH
+ET UN
 ID 3659
 TI 1760667400.836477994
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.1115
-PP -0.302953 -0.955824 2.09377
-PW 0
 SE
 ET PH
 ID 3660
@@ -30642,7 +30218,7 @@ SE
 ET UN
 ID 3661
 TI 1760667400.836514711
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.3567
 SE
@@ -30656,7 +30232,7 @@ SE
 ET UN
 ID 3663
 TI 1760667400.836562871
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.1658
 SE
@@ -30778,7 +30354,7 @@ SE
 ET UN
 ID 3676
 TI 1760667400.836892366
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.85
 SE
@@ -30814,7 +30390,7 @@ SE
 ET UN
 ID 3681
 TI 1760667400.836999177
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 233.438
 SE
@@ -30900,13 +30476,12 @@ LA 1.03582
 CH 0 -1.46702 -0.269832 -0.350766 151.09 0 0.0336036 0.0163625 0.0336036 0.926023 0
 CH 1 -2.16545 -1.02586 -0.467172 230.155 0 0.0336036 0.0100868 0.0336036 1.08475 0
 SE
-ET PH
+ET UN
 ID 3691
 TI 1760667400.837316751
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 23.7045
-PP 3.53845 -0.0856205 -4.42498
-PW 0
 SE
 ET CO
 ID 3692
@@ -30949,7 +30524,7 @@ SE
 ET UN
 ID 3695
 TI 1760667400.837431669
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.3623
 SE
@@ -31123,7 +30698,7 @@ SE
 ET UN
 ID 3714
 TI 1760667400.859165430
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 233.469
 SE
@@ -31146,7 +30721,7 @@ SE
 ET UN
 ID 3716
 TI 1760667400.859256505
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.3719
 SE
@@ -31214,7 +30789,7 @@ SE
 ET UN
 ID 3725
 TI 1760667400.859443902
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.1418
 SE
@@ -31266,14 +30841,14 @@ SE
 ET UN
 ID 3731
 TI 1760667400.859569549
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 10
 PE 652.409
 SE
 ET UN
 ID 3732
 TI 1760667400.859643697
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.4795
 SE
@@ -31340,7 +30915,7 @@ SE
 ET UN
 ID 3739
 TI 1760667400.859792947
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 129.746
 SE
@@ -31406,7 +30981,7 @@ SE
 ET UN
 ID 3747
 TI 1760667400.859974622
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.0212
 SE
@@ -31476,18 +31051,17 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 93.867616)
 BD GR Veto
 PQ 0.109099
 SE
-ET PH
+ET UN
 ID 3755
 TI 1760667400.860196590
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 22.1032
-PP 0.977516 -0.77702 -1.28202
-PW 0
 SE
 ET UN
 ID 3756
 TI 1760667400.860214233
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 140.541
 SE
@@ -31544,20 +31118,12 @@ PE 90.0573
 PP -1.1178 0.361877 0.114859
 PW 0
 SE
-ET CO
+ET UN
 ID 3763
 TI 1760667400.860374689
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 9.89755
-SQ 2
-CT 0 1
-TL 1
-TE 36.3872
-CE 419.978 1.29926   36.3872 1.24223
-CD -1.35061 -0.868946 -0.467172   0.0336036 0.0567255 0.0336036   -1.58342 -0.837972 -0.816391   0.0336036 0.0100036 0.0336036   0 0 0   0 0 0
-LA 0.420849
-CH 0 -1.35061 -0.868946 -0.467172 36.3872 0 0.0336036 0.0567255 0.0336036 1.24223 0
-CH 1 -1.58342 -0.837972 -0.816391 419.978 0 0.0336036 0.0100036 0.0336036 1.29926 0
+PE 456.365
 SE
 ET PH
 ID 3764
@@ -31614,13 +31180,12 @@ PE 87.6927
 PP -2.28186 0.361108 -0.234359
 PW 0
 SE
-ET PH
+ET UN
 ID 3771
 TI 1760667400.860577821
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.4915
-PP -1.1178 -0.298456 -2.7953
-PW 0
 SE
 ET UN
 ID 3772
@@ -31652,7 +31217,7 @@ SE
 ET UN
 ID 3776
 TI 1760667400.883791446
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.8007
 SE
@@ -31676,13 +31241,12 @@ PE 57.317
 PP 2.02517 0.00798714 -0.00154687
 PW 0
 SE
-ET PH
+ET UN
 ID 3780
 TI 1760667400.883893489
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.6192
-PP 3.77127 -0.93414 -0.699984
-PW 0
 SE
 ET UN
 ID 3781
@@ -31700,7 +31264,7 @@ SE
 ET UN
 ID 3783
 TI 1760667400.884000778
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 4
 PE 69.0695
 SE
@@ -31734,20 +31298,12 @@ LA 1.44164
 CH 0 2.6072 -0.773049 -2.7953 424.047 0 0.0336036 0.0101961 0.0336036 1.37473 0
 CH 1 1.90877 -0.28777 -3.95936 237.09 0 0.0336036 0.0116321 0.0336036 0.935302 0
 SE
-ET CO
+ET UN
 ID 3787
 TI 1760667400.884128093
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
-PQ 1.59959
-SQ 2
-CT 0 1
-TL 1
-TE 31.6494
-CE 552.104 1.31601   31.6494 0.90886
-CD -1.35061 0.27672 0.696891   0.0336036 0.0785363 0.0336036   -2.39827 0.371392 0.580484   0.0336036 0.0184043 0.0336036   0 0 0   0 0 0
-LA 1.05835
-CH 0 -1.35061 0.27672 0.696891 31.6494 0 0.0336036 0.0785363 0.0336036 0.90886 0
-CH 1 -2.39827 0.371392 0.580484 552.104 0 0.0336036 0.0184043 0.0336036 1.31601 0
+PE 583.753
 SE
 ET PH
 ID 3788
@@ -31806,7 +31362,7 @@ SE
 ET UN
 ID 3794
 TI 1760667400.884321689
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 511.636
 SE
@@ -32073,7 +31629,7 @@ SE
 ET UN
 ID 3823
 TI 1760667400.885189294
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 129.14
 SE
@@ -32232,14 +31788,14 @@ SE
 ET UN
 ID 3844
 TI 1760667400.906558990
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.6036
 SE
 ET UN
 ID 3845
 TI 1760667400.906593084
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.5736
 SE
@@ -32270,7 +31826,7 @@ SE
 ET UN
 ID 3849
 TI 1760667400.906760692
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 58.1468
 SE
@@ -32300,14 +31856,14 @@ SE
 ET UN
 ID 3852
 TI 1760667400.906876564
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.5212
 SE
 ET UN
 ID 3853
 TI 1760667400.906894445
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.5642
 SE
@@ -32473,20 +32029,12 @@ PE 125.365
 PP 4.23689 0.335145 0.464078
 PW 0
 SE
-ET CO
+ET UN
 ID 3873
 TI 1760667400.907322406
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
-PQ 2.70347
-SQ 2
-CT 0 1
-TL 1
-TE 24.6298
-CE 394.212 1.93296   24.6298 0.950452
-CD 0.977516 -1.14117 2.09377   0.0336036 0.043921 0.0336036   0.744703 0.333271 2.21017   0.0336036 0.0247516 0.0336036   0 0 0   0 0 0
-LA 1.49724
-CH 0 0.977516 -1.14117 2.09377 24.6298 0 0.0336036 0.043921 0.0336036 0.950452 0
-CH 1 0.744703 0.333271 2.21017 394.212 0 0.0336036 0.0247516 0.0336036 1.93296 0
+PE 418.842
 SE
 ID 3874
 BD StripPairingError (No triggered strip hits)
@@ -32605,7 +32153,7 @@ SE
 ET UN
 ID 3886
 TI 1760667400.907723188
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.5904
 SE
@@ -32662,20 +32210,12 @@ PE 58.4233
 PP 0.628297 -0.0767859 -3.95936
 PW 0
 SE
-ET CO
+ET UN
 ID 3893
 TI 1760667400.907901525
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 5.7019
-SQ 2
-CT 0 1
-TL 1
-TE 30.5035
-CE 170.694 0.957377   30.5035 1.21759
-CD 4.3533 -0.564157 -0.00154687   0.0336036 0.0717227 0.0336036   3.07283 0.0891716 0.231266   0.0336036 0.0149981 0.0336036   0 0 0   0 0 0
-LA 1.45624
-CH 0 4.3533 -0.564157 -0.00154687 30.5035 0 0.0336036 0.0717227 0.0336036 1.21759 0
-CH 1 3.07283 0.0891716 0.231266 170.694 0 0.0336036 0.0149981 0.0336036 0.957377 0
+PE 201.197
 SE
 ET CO
 ID 3894
@@ -32929,13 +32469,12 @@ PE 129.05
 PP 0.279078 -0.235022 -3.49373
 PW 0
 SE
-ET PH
+ET UN
 ID 3924
 TI 1760667400.927902221
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.3451
-PP -0.768578 -1.10892 -4.07577
-PW 0
 SE
 ET PH
 ID 3925
@@ -33011,7 +32550,7 @@ SE
 ET UN
 ID 3933
 TI 1760667400.928126096
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 557.411
 SE
@@ -33255,7 +32794,7 @@ SE
 ET UN
 ID 3963
 TI 1760667400.928707122
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.3871
 SE
@@ -33431,7 +32970,7 @@ SE
 ET UN
 ID 3985
 TI 1760667400.951468229
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.7768
 SE
@@ -33521,7 +33060,7 @@ SE
 ET UN
 ID 3995
 TI 1760667400.951780796
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 166.248
 SE
@@ -34255,17 +33794,16 @@ SE
 ET UN
 ID 4081
 TI 1760667400.977950811
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 22.997
 SE
-ET PH
+ET UN
 ID 4082
 TI 1760667400.977968931
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.9206
-PP -1.35061 0.00579645 -1.74764
-PW 0
 SE
 ET PH
 ID 4083
@@ -34275,20 +33813,12 @@ PE 127.41
 PP 0.977516 -1.13356 -0.467172
 PW 0
 SE
-ET CO
+ET UN
 ID 4084
 TI 1760667400.978009700
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 21.3715
-SQ 2
-CT 0 1
-TL 1
-TE 24.7676
-CE 78.556 1.28982   24.7676 0.907558
-CD -0.186547 -0.286006 -4.6578   0.0336036 0.101127 0.0336036   -2.39827 -0.939076 -2.44608   0.0336036 0.0267418 0.0336036   0 0 0   0 0 0
-LA 3.1953
-CH 0 -0.186547 -0.286006 -4.6578 24.7676 0 0.0336036 0.101127 0.0336036 0.907558 0
-CH 1 -2.39827 -0.939076 -2.44608 78.556 0 0.0336036 0.0267418 0.0336036 1.28982 0
+PE 103.324
 SE
 ET PH
 ID 4085
@@ -34425,13 +33955,12 @@ BD StripPairingError (One detector side has no strip hits)
 CC NStripHits 1
 PE 0
 SE
-ET PH
+ET UN
 ID 4099
 TI 1760667400.997410535
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 25.6394
-PP 0.395484 -0.277632 -0.699984
-PW 0
 SE
 ID 4100
 BD DepthCalibrationError (GR Veto)
@@ -34652,13 +34181,12 @@ PE 194.245
 PP 2.37439 -0.0382118 -1.51483
 PW 0
 SE
-ET PH
+ET UN
 ID 4128
 TI 1760667400.998230218
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.7547
-PP 3.18923 -0.473322 -3.02811
-PW 0
 SE
 ET PH
 ID 4129
@@ -34668,20 +34196,12 @@ PE 62.1506
 PP 0.0462656 -1.05052 -0.583578
 PW 0
 SE
-ET CO
+ET UN
 ID 4130
 TI 1760667400.998268842
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.653289
-SQ 2
-CT 0 1
-TL 1
-TE 26.117
-CE 90.6332 0.908516   26.117 0.909484
-CD 3.53845 -0.022052 -1.74764   0.0336036 0.0962869 0.0336036   4.3533 0.358957 -2.21327   0.0336036 0.0283733 0.0336036   0 0 0   0 0 0
-LA 1.0129
-CH 0 3.53845 -0.022052 -1.74764 26.117 0 0.0336036 0.0962869 0.0336036 0.909484 0
-CH 1 4.3533 0.358957 -2.21327 90.6332 0 0.0336036 0.0283733 0.0336036 0.908516 0
+PE 116.75
 SE
 ID 4131
 BD DepthCalibrationError (GR Veto)
@@ -34755,13 +34275,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 172.332083)
 BD GR Veto
 PQ 1.23963
 SE
-ET PH
+ET UN
 ID 4140
 TI 1760667400.998509407
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.6216
-PP -0.884984 0.173751 -4.19217
-PW 0
 SE
 ID 4141
 BD DepthCalibrationError (GR Veto)
@@ -34826,7 +34345,7 @@ SE
 ET UN
 ID 4149
 TI 1760667400.998662948
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 180.432
 SE
@@ -34887,7 +34406,7 @@ SE
 ET UN
 ID 4157
 TI 1760667400.998823642
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.5099
 SE
@@ -34916,7 +34435,7 @@ SE
 ET UN
 ID 4161
 TI 1760667401.016247987
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 537.547
 SE
@@ -34975,7 +34494,7 @@ SE
 ET UN
 ID 4169
 TI 1760667401.016619443
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 50.7453
 SE
@@ -35027,30 +34546,19 @@ PE 46.6611
 PP 4.12048 -0.985986 -2.44608
 PW 0
 SE
-ET PH
+ET UN
 ID 4177
 TI 1760667401.016840457
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.4195
-PP -0.535766 -0.0905031 -4.19217
-PW 0
 SE
-ET CO
+ET UN
 ID 4178
 TI 1760667401.016873121
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 4.10087
-SQ 4
-CT 0.0878162 0.449438
-TL 1
-TE 25.0098
-CE 549.653 1.86015   25.0098 1.29847
-CD 0.395484 -0.0145918 -4.42498   0.0336036 0.114065 0.0336036   0.744703 -0.0110388 -4.54139   0.0336036 0.0282298 0.0336036   0 0 0   0 0 0
-LA 0.368127
-CH 0 0.395484 -0.0145918 -4.42498 25.0098 0 0.0336036 0.114065 0.0336036 1.29847 0
-CH 1 0.744703 -0.0110388 -4.54139 98.1315 0 0.0336036 0.0282298 0.0336036 1.30854 0
-CH 2 2.37439 -0.239865 -3.72655 154.985 0 0.0336036 0.0155937 0.0336036 0.933002 0
-CH 3 2.25798 -0.657586 -3.61014 296.537 0 0.0336036 0.0106705 0.0336036 0.936686 0
+PE 574.663
 SE
 ET UN
 ID 4179
@@ -35404,21 +34912,12 @@ PE 470.313
 PP 2.4908 -0.393818 -2.9117
 PW 0
 SE
-ET CO
+ET UN
 ID 4220
 TI 1760667401.017987489
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 21.7509
-SQ 3
-CT 0.0756 1.75911
-TL 1
-TE 308.921
-CE 128.855 1.63317   308.921 1.07471
-CD 0.511891 -0.704677 1.16252   0.0336036 0.0104754 0.0336036   0.977516 -1.16273 2.44298   0.0336036 0.0269028 0.0336036   0 0 0   0 0 0
-LA 1.43743
-CH 0 0.511891 -0.704677 1.16252 308.921 0 0.0336036 0.0104754 0.0336036 1.07471 0
-CH 1 0.977516 -1.16273 2.44298 36.4508 0 0.0336036 0.0269028 0.0336036 1.34372 0
-CH 2 0.162672 0.317369 1.39533 92.4039 0 0.0336036 0.0416309 0.0336036 0.928265 0
+PE 437.776
 SE
 ET PH
 ID 4221
@@ -35431,7 +34930,7 @@ SE
 ET UN
 ID 4222
 TI 1760667401.018061161
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.4298
 SE
@@ -35539,13 +35038,12 @@ LA 1.96152
 CH 0 -0.884984 -1.0142 1.74455 434.909 0 0.0336036 0.0101259 0.0336036 1.05946 0
 CH 1 0.511891 0.000228434 0.813297 224.622 0 0.0336036 0.0125517 0.0336036 1.10187 0
 SE
-ET PH
+ET UN
 ID 4234
 TI 1760667401.044516801
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 22.9574
-PP -2.04905 0.349848 1.97736
-PW 0
 SE
 ET UN
 ID 4235
@@ -35573,14 +35071,14 @@ SE
 ET UN
 ID 4238
 TI 1760667401.044760942
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 122.357
 SE
 ET UN
 ID 4239
 TI 1760667401.044817924
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 273.756
 SE
@@ -35767,7 +35265,7 @@ SE
 ET UN
 ID 4262
 TI 1760667401.045526504
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.7093
 SE
@@ -35805,7 +35303,7 @@ SE
 ET UN
 ID 4266
 TI 1760667401.045729875
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.0474
 SE
@@ -35846,7 +35344,7 @@ SE
 ET UN
 ID 4272
 TI 1760667401.045829772
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 418.73
 SE
@@ -35982,20 +35480,12 @@ PE 65.0185
 PP -1.69983 -1.06325 -2.56248
 PW 0
 SE
-ET CO
+ET UN
 ID 4289
 TI 1760667401.066459417
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 2.74935
-SQ 2
-CT 0 1
-TL 1
-TE 26.1315
-CE 193.778 1.11967   26.1315 0.91981
-CD 3.88767 -0.454893 0.813297   0.0336036 0.0793791 0.0336036   4.12048 0.0494304 -0.583578   0.0336036 0.0142875 0.0336036   0 0 0   0 0 0
-LA 1.50326
-CH 0 3.88767 -0.454893 0.813297 26.1315 0 0.0336036 0.0793791 0.0336036 0.91981 0
-CH 1 4.12048 0.0494304 -0.583578 193.778 0 0.0336036 0.0142875 0.0336036 1.11967 0
+PE 219.909
 SE
 ET CO
 ID 4290
@@ -36074,7 +35564,7 @@ SE
 ET UN
 ID 4298
 TI 1760667401.066711187
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.9095
 SE
@@ -36191,13 +35681,12 @@ PE 417.114
 PP 0.0462656 -0.288551 2.32658
 PW 0
 SE
-ET PH
+ET UN
 ID 4312
 TI 1760667401.067029714
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.8555
-PP 2.25798 -0.22755 -0.699984
-PW 0
 SE
 ET PH
 ID 4313
@@ -36238,7 +35727,7 @@ SE
 ET UN
 ID 4317
 TI 1760667401.067140102
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.2935
 SE
@@ -36465,13 +35954,12 @@ PE 301.818
 PP 0.861109 -0.850688 -2.67889
 PW 0
 SE
-ET PH
+ET UN
 ID 4343
 TI 1760667401.067754745
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.3381
-PP -0.0701406 -1.14156 -4.19217
-PW 0
 SE
 ET PH
 ID 4344
@@ -36489,13 +35977,12 @@ PE 187.108
 PP 0.162672 -0.144574 -0.350766
 PW 0
 SE
-ET PH
+ET UN
 ID 4346
 TI 1760667401.067818641
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.3094
-PP 4.12048 -1.16694 -1.86405
-PW 0
 SE
 ET CO
 ID 4347
@@ -36621,7 +36108,7 @@ SE
 ET UN
 ID 4359
 TI 1760667401.092839717
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 273.788
 SE
@@ -36658,7 +36145,7 @@ SE
 ET UN
 ID 4364
 TI 1760667401.092984914
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.5506
 SE
@@ -36871,7 +36358,7 @@ SE
 ET UN
 ID 4391
 TI 1760667401.093565702
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 12
 PE 587.657
 SE
@@ -36939,7 +36426,7 @@ SE
 ET UN
 ID 4399
 TI 1760667401.093808889
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 164.67
 SE
@@ -37070,7 +36557,7 @@ SE
 ET UN
 ID 4414
 TI 1760667401.094125986
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.6552
 SE
@@ -37132,18 +36619,17 @@ PE 232.71
 PP -0.0701406 0.0828264 -1.51483
 PW 0
 SE
-ET PH
+ET UN
 ID 4423
 TI 1760667401.112455129
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 23.5539
-PP 1.21033 0.300698 -0.350766
-PW 0
 SE
 ET UN
 ID 4424
 TI 1760667401.112490892
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 421.398
 SE
@@ -37214,13 +36700,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 54.579272)
 BD GR Veto
 PQ 0.406235
 SE
-ET PH
+ET UN
 ID 4433
 TI 1760667401.112679004
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 26.7593
-PP -0.768578 -1.14424 -2.09686
-PW 0
 SE
 ET PH
 ID 4434
@@ -37277,7 +36762,7 @@ SE
 ET UN
 ID 4441
 TI 1760667401.112799882
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 221.864
 SE
@@ -37531,7 +37016,7 @@ SE
 ET UN
 ID 4471
 TI 1760667401.113580465
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 6
 PE 526.73
 SE
@@ -37645,20 +37130,12 @@ PE 71.5808
 PP 1.67595 0.340867 1.97736
 PW 0
 SE
-ET CO
+ET UN
 ID 4487
 TI 1760667401.136485576
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 1.06102
-SQ 2
-CT 0 1
-TL 1
-TE 23.5981
-CE 239.946 1.41563   23.5981 0.914562
-CD -0.0701406 -0.40368 -4.07577   0.0336036 0.104821 0.0336036   1.44314 -0.493045 -0.117953   0.0336036 0.0108829 0.0336036   0 0 0   0 0 0
-LA 4.2382
-CH 0 -0.0701406 -0.40368 -4.07577 23.5981 0 0.0336036 0.104821 0.0336036 0.914562 0
-CH 1 1.44314 -0.493045 -0.117953 239.946 0 0.0336036 0.0108829 0.0336036 1.41563 0
+PE 263.544
 SE
 ET UN
 ID 4488
@@ -37707,7 +37184,7 @@ SE
 ET UN
 ID 4494
 TI 1760667401.136914253
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 46.2246
 SE
@@ -37758,7 +37235,7 @@ SE
 ET UN
 ID 4500
 TI 1760667401.137186288
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 46.9019
 SE
@@ -37826,7 +37303,7 @@ SE
 ET UN
 ID 4508
 TI 1760667401.137470722
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 660.822
 SE
@@ -37878,7 +37355,7 @@ SE
 ET UN
 ID 4513
 TI 1760667401.137641906
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.0317
 SE
@@ -38048,13 +37525,12 @@ PE 68.6356
 PP 0.628297 0.323715 -3.84295
 PW 0
 SE
-ET PH
+ET UN
 ID 4532
 TI 1760667401.138091087
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.4454
-PP 4.23689 -0.483448 0.813297
-PW 0
 SE
 ET PH
 ID 4533
@@ -38076,13 +37552,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 42.621680)
 BD GR Veto
 PQ 15.5261
 SE
-ET PH
+ET UN
 ID 4536
 TI 1760667401.138176679
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 23.6102
-PP 1.44314 -1.16047 2.44298
-PW 0
 SE
 ET PH
 ID 4537
@@ -38103,7 +37578,7 @@ SE
 ET UN
 ID 4539
 TI 1760667401.138233184
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 281.361
 SE
@@ -38116,7 +37591,7 @@ SE
 ET UN
 ID 4541
 TI 1760667401.138283014
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.6551
 SE
@@ -38340,7 +37815,7 @@ SE
 ET UN
 ID 4566
 TI 1760667401.159401178
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 51.901
 SE
@@ -38361,7 +37836,7 @@ SE
 ET UN
 ID 4569
 TI 1760667401.159467458
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 141.961
 SE
@@ -38413,7 +37888,7 @@ SE
 ET UN
 ID 4575
 TI 1760667401.159595489
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 530.073
 SE
@@ -38496,7 +37971,7 @@ SE
 ET UN
 ID 4583
 TI 1760667401.159842014
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.7645
 SE
@@ -38595,7 +38070,7 @@ SE
 ET UN
 ID 4596
 TI 1760667401.160122632
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.7119
 SE
@@ -38685,7 +38160,7 @@ SE
 ET UN
 ID 4606
 TI 1760667401.160407066
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.9435
 SE
@@ -38778,7 +38253,7 @@ SE
 ET UN
 ID 4619
 TI 1760667401.176191091
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.1645
 SE
@@ -38818,13 +38293,12 @@ PE 62.3892
 PP -2.9803 -0.281055 1.39533
 PW 0
 SE
-ET PH
+ET UN
 ID 4625
 TI 1760667401.176385164
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.7257
-PP 1.90877 -0.516356 0.929703
-PW 0
 SE
 ET UN
 ID 4626
@@ -38901,7 +38375,7 @@ SE
 ET UN
 ID 4635
 TI 1760667401.176811695
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 11
 PE 656.154
 SE
@@ -38945,14 +38419,14 @@ SE
 ET UN
 ID 4641
 TI 1760667401.176956415
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 55.7272
 SE
 ET UN
 ID 4642
 TI 1760667401.176977157
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.259
 SE
@@ -38964,13 +38438,12 @@ PE 277.682
 PP -0.302953 0.288856 -3.26092
 PW 0
 SE
-ET PH
+ET UN
 ID 4644
 TI 1760667401.177011966
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 20.2906
-PP 1.32673 -1.15171 -1.0492
-PW 0
 SE
 ET PH
 ID 4645
@@ -39014,7 +38487,7 @@ SE
 ET UN
 ID 4650
 TI 1760667401.177119970
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 211.036
 SE
@@ -39199,7 +38672,7 @@ SE
 ET UN
 ID 4672
 TI 1760667401.199600219
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 244.318
 SE
@@ -39260,7 +38733,7 @@ SE
 ET UN
 ID 4679
 TI 1760667401.199993610
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 72.4863
 SE
@@ -39287,25 +38760,17 @@ PE 124.252
 PP 3.65486 -0.538854 1.27892
 PW 0
 SE
-ET CO
+ET UN
 ID 4682
 TI 1760667401.200170040
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 21.0693
-SQ 2
-CT 0 1
-TL 1
-TE 41.1087
-CE 117.324 1.03403   41.1087 1.29392
-CD 3.30564 -0.593777 1.51173   0.0336036 0.0588196 0.0336036   3.53845 0.00329676 1.04611   0.0336036 0.0211182 0.0336036   0 0 0   0 0 0
-LA 0.792149
-CH 0 3.30564 -0.593777 1.51173 41.1087 0 0.0336036 0.0588196 0.0336036 1.29392 0
-CH 1 3.53845 0.00329676 1.04611 117.324 0 0.0336036 0.0211182 0.0336036 1.03403 0
+PE 158.433
 SE
 ET UN
 ID 4683
 TI 1760667401.200237035
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.0633
 SE
@@ -39610,13 +39075,12 @@ PE 74.8547
 PP 3.18923 -0.46215 -1.39842
 PW 0
 SE
-ET PH
+ET UN
 ID 4721
 TI 1760667401.201433420
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.6998
-PP -1.93264 -0.386694 -0.350766
-PW 0
 SE
 ET UN
 ID 4722
@@ -39628,7 +39092,7 @@ SE
 ET UN
 ID 4723
 TI 1760667401.201469898
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.9429
 SE
@@ -39762,7 +39226,7 @@ SE
 ET UN
 ID 4738
 TI 1760667401.219173669
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.8858
 SE
@@ -39784,14 +39248,14 @@ SE
 ET UN
 ID 4741
 TI 1760667401.219225168
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.7617
 SE
 ET UN
 ID 4742
 TI 1760667401.219240665
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 7
 PE 147.289
 SE
@@ -39883,7 +39347,7 @@ SE
 ET UN
 ID 4754
 TI 1760667401.219549417
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 4
 PE 64.3147
 SE
@@ -40077,7 +39541,7 @@ SE
 ET UN
 ID 4779
 TI 1760667401.220062494
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 666.566
 SE
@@ -40304,7 +39768,7 @@ SE
 ET UN
 ID 4803
 TI 1760667401.241559028
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.802
 SE
@@ -40360,7 +39824,7 @@ SE
 ET UN
 ID 4811
 TI 1760667401.241735458
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 465.702
 SE
@@ -40382,7 +39846,7 @@ SE
 ET UN
 ID 4814
 TI 1760667401.241851568
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 43.1364
 SE
@@ -40567,7 +40031,7 @@ SE
 ET UN
 ID 4836
 TI 1760667401.242727518
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.0791
 SE
@@ -40622,7 +40086,7 @@ SE
 ET UN
 ID 4844
 TI 1760667401.242933273
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 224.826
 SE
@@ -40651,7 +40115,7 @@ SE
 ET UN
 ID 4848
 TI 1760667401.243022680
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.1029
 SE
@@ -40807,7 +40271,7 @@ SE
 ET UN
 ID 4866
 TI 1760667401.266404628
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 341.345
 SE
@@ -40909,20 +40373,12 @@ PE 199.874
 PP -2.9803 -1.05969 -3.72655
 PW 0
 SE
-ET CO
+ET UN
 ID 4878
 TI 1760667401.266710758
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 52.6709
-SQ 2
-CT 0 1
-TL 1
-TE 31.8661
-CE 228.275 2.31156   31.8661 1.31046
-CD 1.79236 -0.0646115 1.86095   0.0336036 0.0775103 0.0336036   1.21033 -0.831848 1.97736   0.0336036 0.0100259 0.0336036   0 0 0   0 0 0
-LA 0.970032
-CH 0 1.79236 -0.0646115 1.86095 31.8661 0 0.0336036 0.0775103 0.0336036 1.31046 0
-CH 1 1.21033 -0.831848 1.97736 228.275 0 0.0336036 0.0100259 0.0336036 2.31156 0
+PE 260.141
 SE
 ID 4879
 BD DepthCalibrationError (GR Veto)
@@ -41232,7 +40688,7 @@ SE
 ET UN
 ID 4918
 TI 1760667401.267528772
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.965
 SE
@@ -41253,7 +40709,7 @@ SE
 ET UN
 ID 4921
 TI 1760667401.267592668
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.3647
 SE
@@ -41268,7 +40724,7 @@ SE
 ET UN
 ID 4923
 TI 1760667401.267630815
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.504
 SE
@@ -41327,7 +40783,7 @@ SE
 ET UN
 ID 4931
 TI 1760667401.289043426
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 6
 PE 176.043
 SE
@@ -41380,7 +40836,7 @@ SE
 ET UN
 ID 4936
 TI 1760667401.289223909
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 60.5686
 SE
@@ -41409,7 +40865,7 @@ SE
 ET UN
 ID 4939
 TI 1760667401.289299726
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 164.245
 SE
@@ -41500,7 +40956,7 @@ SE
 ET UN
 ID 4950
 TI 1760667401.289521455
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 332.103
 SE
@@ -41515,7 +40971,7 @@ SE
 ET UN
 ID 4952
 TI 1760667401.289587020
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 7
 PE 208.096
 SE
@@ -41546,24 +41002,16 @@ SE
 ET UN
 ID 4955
 TI 1760667401.289705276
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 314.459
 SE
-ET CO
+ET UN
 ID 4956
 TI 1760667401.289742946
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 15.9588
-SQ 2
-CT 0 1
-TL 1
-TE 33.8516
-CE 144.623 0.939239   33.8516 1.31361
-CD 1.55955 -0.400781 -2.56248   0.0336036 0.0632893 0.0336036   1.79236 -0.294432 -3.49373   0.0336036 0.0184761 0.0336036   0 0 0   0 0 0
-LA 0.965783
-CH 0 1.55955 -0.400781 -2.56248 33.8516 0 0.0336036 0.0632893 0.0336036 1.31361 0
-CH 1 1.79236 -0.294432 -3.49373 144.623 0 0.0336036 0.0184761 0.0336036 0.939239 0
+PE 178.475
 SE
 ET PH
 ID 4957
@@ -41666,13 +41114,12 @@ PE 223.504
 PP -1.69983 -0.0181172 -3.02811
 PW 0
 SE
-ET PH
+ET UN
 ID 4968
 TI 1760667401.290031671
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.2876
-PP 2.02517 -0.0303297 -0.932797
-PW 0
 SE
 ET PH
 ID 4969
@@ -41685,7 +41132,7 @@ SE
 ET UN
 ID 4970
 TI 1760667401.290068387
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 384.738
 SE
@@ -41712,7 +41159,7 @@ SE
 ET UN
 ID 4974
 TI 1760667401.290191650
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 396.473
 SE
@@ -41801,7 +41248,7 @@ SE
 ET UN
 ID 4986
 TI 1760667401.290466547
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 359.787
 SE
@@ -41821,13 +41268,12 @@ PE 187.115
 PP -2.16545 -0.764319 -0.117953
 PW 0
 SE
-ET PH
+ET UN
 ID 4989
 TI 1760667401.290583372
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.0976
-PP 3.88767 -0.0594763 -2.9117
-PW 0
 SE
 ID 4990
 BD DepthCalibrationError (GR Veto)
@@ -41880,7 +41326,7 @@ SE
 ET UN
 ID 4997
 TI 1760667401.307960510
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 60.8937
 SE
@@ -42015,7 +41461,7 @@ SE
 ET UN
 ID 5013
 TI 1760667401.308722972
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 117.394
 SE
@@ -42088,7 +41534,7 @@ SE
 ET UN
 ID 5023
 TI 1760667401.309053421
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 352.404
 SE
@@ -42356,7 +41802,7 @@ SE
 ET UN
 ID 5056
 TI 1760667401.333151340
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 140.582
 SE
@@ -42473,7 +41919,7 @@ SE
 ET UN
 ID 5072
 TI 1760667401.333556652
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 262.215
 SE
@@ -42557,7 +42003,7 @@ SE
 ET UN
 ID 5081
 TI 1760667401.333827018
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.5092
 SE
@@ -42604,7 +42050,7 @@ SE
 ET UN
 ID 5087
 TI 1760667401.334019660
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.3057
 SE
@@ -42675,20 +42121,12 @@ PE 98.8306
 PP 0.279078 -0.229864 -4.54139
 PW 0
 SE
-ET CO
+ET UN
 ID 5095
 TI 1760667401.334228754
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 7.91995
-SQ 2
-CT 0 1
-TL 1
-TE 27.2651
-CE 161.644 1.08121   27.2651 1.28869
-CD 3.07283 -0.571996 -3.37733   0.0336036 0.0847061 0.0336036   2.4908 -0.487846 -3.61014   0.0336036 0.0126967 0.0336036   0 0 0   0 0 0
-LA 0.632488
-CH 0 3.07283 -0.571996 -3.37733 27.2651 0 0.0336036 0.0847061 0.0336036 1.28869 0
-CH 1 2.4908 -0.487846 -3.61014 161.644 0 0.0336036 0.0126967 0.0336036 1.08121 0
+PE 188.909
 SE
 ID 5096
 BD DepthCalibrationError (GR Veto)
@@ -42700,7 +42138,7 @@ SE
 ET UN
 ID 5097
 TI 1760667401.334287643
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.5043
 SE
@@ -42791,22 +42229,12 @@ BD StripPairingError (One detector side has no strip hits)
 CC NStripHits 1
 PE 0
 SE
-ET CO
+ET UN
 ID 5109
 TI 1760667401.334554433
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 18.6429
-SQ 4
-CT 0.0253838 0.0474362
-TL 1
-TE 365.084
-CE 294.822 2.10054   365.084 1.01286
-CD -1.93264 0.120446 -2.09686   0.0336036 0.0132435 0.0336036   -0.186547 -0.111596 -1.0492   0.0336036 0.0218437 0.0336036   0 0 0   0 0 0
-LA 0.33188
-CH 0 -1.93264 0.120446 -2.09686 365.084 0 0.0336036 0.0132435 0.0336036 1.01286 0
-CH 1 -0.186547 -0.111596 -1.0492 116.309 0 0.0336036 0.0218437 0.0336036 0.944399 0
-CH 2 -0.419359 -0.153347 -0.816391 33.4129 0 0.0336036 0.0768313 0.0336036 1.26385 0
-CH 3 0.395484 0.202569 0.347672 145.1 0 0.0336036 0.0207532 0.0336036 1.38675 0
+PE 659.906
 SE
 ET CO
 ID 5110
@@ -42827,7 +42255,7 @@ SE
 ET UN
 ID 5111
 TI 1760667401.334665775
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.0677
 SE
@@ -42934,14 +42362,14 @@ SE
 ET UN
 ID 5126
 TI 1760667401.355482816
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 43.3569
 SE
 ET UN
 ID 5127
 TI 1760667401.355504035
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 10
 PE 660.576
 SE
@@ -42951,13 +42379,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 187.889935)
 BD GR Veto
 PQ 3.9336
 SE
-ET PH
+ET UN
 ID 5129
 TI 1760667401.355599641
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.2842
-PP 2.14158 -0.128811 -3.26092
-PW 0
 SE
 ET PH
 ID 5130
@@ -43001,7 +42428,7 @@ SE
 ET UN
 ID 5135
 TI 1760667401.355717182
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.8906
 SE
@@ -43054,7 +42481,7 @@ SE
 ET UN
 ID 5141
 TI 1760667401.355881929
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.6149
 SE
@@ -43131,30 +42558,19 @@ PE 57.0787
 PP 0.511891 -1.06988 0.580484
 PW 0
 SE
-ET PH
+ET UN
 ID 5151
 TI 1760667401.356074333
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.412
-PP -2.9803 -0.302543 0.464078
-PW 0
 SE
-ET CO
+ET UN
 ID 5152
 TI 1760667401.356109380
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 10
-PQ 45.9712
-SQ 4
-CT 0.605694 0.903841
-TL 1
-TE 338.763
-CE 172.801 1.87772   338.763 1.79217
-CD 2.14158 -0.847528 -0.117953   0.0336036 0.0100004 0.0336036   3.07283 0.240505 1.62814   0.0336036 0.0503747 0.0336036   0 0 0   0 0 0
-LA 0.53383
-CH 0 2.14158 -0.847528 -0.117953 338.763 0 0.0336036 0.0100004 0.0336036 1.79217 0
-CH 1 3.07283 0.240505 1.62814 70.8549 0 0.0336036 0.0503747 0.0336036 0.916045 0
-CH 2 2.37439 -0.54144 -0.583578 22.052 0 0.0336036 0.103697 0.0336036 0.933896 0
-CH 3 1.90877 -0.659636 -0.816391 79.8945 0 0.0336036 0.0290421 0.0336036 1.34705 0
+PE 511.564
 SE
 ET PH
 ID 5153
@@ -43202,13 +42618,12 @@ PE 105.78
 PP 0.628297 0.0662849 1.86095
 PW 0
 SE
-ET PH
+ET UN
 ID 5159
 TI 1760667401.356282472
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 21.8066
-PP 2.72361 -1.14154 -1.63123
-PW 0
 SE
 ID 5160
 BD DepthCalibrationError (GR Veto)
@@ -43232,13 +42647,12 @@ CH 0 4.00408 -0.290499 -3.95936 92.5195 0 0.0336036 0.0253732 0.0336036 1.07839 
 CH 1 4.3533 0.363971 -3.49373 126.181 0 0.0336036 0.024303 0.0336036 0.908369 0
 CH 2 -1.1178 -0.914429 -4.07577 158.485 0 0.0336036 0.0135959 0.0336036 0.933438 0
 SE
-ET PH
+ET UN
 ID 5162
 TI 1760667401.356381654
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 23.621
-PP 2.25798 -0.161187 -0.350766
-PW 0
 SE
 ET PH
 ID 5163
@@ -43251,7 +42665,7 @@ SE
 ET UN
 ID 5164
 TI 1760667401.356420516
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 111.1
 SE
@@ -43300,7 +42714,7 @@ SE
 ET UN
 ID 5170
 TI 1760667401.356553316
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.3986
 SE
@@ -43315,7 +42729,7 @@ SE
 ET UN
 ID 5172
 TI 1760667401.356591463
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 49.7304
 SE
@@ -43392,7 +42806,7 @@ SE
 ET UN
 ID 5183
 TI 1760667401.375238180
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 276.154
 SE
@@ -43456,7 +42870,7 @@ SE
 ET UN
 ID 5191
 TI 1760667401.375424861
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.2004
 SE
@@ -43571,17 +42985,16 @@ SE
 ET UN
 ID 5203
 TI 1760667401.375747442
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8845
 SE
-ET PH
+ET UN
 ID 5204
 TI 1760667401.375766277
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.9365
-PP -2.9803 -0.811429 -2.67889
-PW 0
 SE
 ET CO
 ID 5205
@@ -43624,7 +43037,7 @@ SE
 ET UN
 ID 5208
 TI 1760667401.375885725
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.1293
 SE
@@ -43827,17 +43240,16 @@ SE
 ET UN
 ID 5233
 TI 1760667401.376579284
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 8
 PE 265.584
 SE
-ET PH
+ET UN
 ID 5234
 TI 1760667401.376665115
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 299.927
-PP 3.30564 -0.695909 -1.86405
-PW 0
 SE
 ET CO
 ID 5235
@@ -43950,21 +43362,19 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 4
 PE 475.235
 SE
-ET PH
+ET UN
 ID 5247
 TI 1760667401.398909330
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.1342
-PP -2.28186 0.0838919 -1.16561
-PW 0
 SE
-ET PH
+ET UN
 ID 5248
 TI 1760667401.398964166
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 20.7854
-PP 3.53845 -1.13305 2.09377
-PW 0
 SE
 ID 5249
 BD DepthCalibrationError (GR Veto)
@@ -43989,7 +43399,7 @@ SE
 ET UN
 ID 5252
 TI 1760667401.399037837
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.9761
 SE
@@ -44297,7 +43707,7 @@ SE
 ET UN
 ID 5287
 TI 1760667401.400072813
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 63.4966
 SE
@@ -44333,20 +43743,12 @@ QA StripPairing (Best reduced chi square is not below 25 (233.629303)) (GR Hit: 
 BD GR Veto
 PQ 233.629
 SE
-ET CO
+ET UN
 ID 5293
 TI 1760667401.400249958
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 15.6947
-SQ 2
-CT 0 1
-TL 1
-TE 35.9707
-CE 223.05 1.42582   35.9707 1.31929
-CD 1.09392 -0.478123 -0.816391   0.0336036 0.0667069 0.0336036   -0.186547 -0.367535 -1.51483   0.0336036 0.0113397 0.0336036   0 0 0   0 0 0
-LA 1.46275
-CH 0 1.09392 -0.478123 -0.816391 35.9707 0 0.0336036 0.0667069 0.0336036 1.31929 0
-CH 1 -0.186547 -0.367535 -1.51483 223.05 0 0.0336036 0.0113397 0.0336036 1.42582 0
+PE 259.021
 SE
 ET PH
 ID 5294
@@ -44479,13 +43881,12 @@ PE 153.429
 PP -2.04905 -0.2921 -2.7953
 PW 0
 SE
-ET PH
+ET UN
 ID 5310
 TI 1760667401.400660037
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.4753
-PP 2.02517 -0.684987 -1.51483
-PW 0
 SE
 ET PH
 ID 5311
@@ -44501,20 +43902,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 320.104125)
 BD GR Veto
 PQ 2.342
 SE
-ET CO
+ET UN
 ID 5313
 TI 1760667401.419367074
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 22.4225
-SQ 2
-CT 0 1
-TL 1
-TE 24.0363
-CE 432.773 1.40995   24.0363 0.891477
-CD -2.28186 -0.771566 -2.32967   0.0336036 0.0815216 0.0336036   -0.652172 -0.992222 -3.26092   0.0336036 0.0100347 0.0336036   0 0 0   0 0 0
-LA 1.88992
-CH 0 -2.28186 -0.771566 -2.32967 24.0363 0 0.0336036 0.0815216 0.0336036 0.891477 0
-CH 1 -0.652172 -0.992222 -3.26092 432.773 0 0.0336036 0.0100347 0.0336036 1.40995 0
+PE 456.809
 SE
 ET PH
 ID 5314
@@ -44527,7 +43920,7 @@ SE
 ET UN
 ID 5315
 TI 1760667401.419427871
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.8246
 SE
@@ -44608,7 +44001,7 @@ SE
 ET UN
 ID 5326
 TI 1760667401.419661283
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 196.19
 SE
@@ -44707,13 +44100,12 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 4
 PE 242.522
 SE
-ET PH
+ET UN
 ID 5339
 TI 1760667401.420028209
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 21.3859
-PP 2.14158 -1.09773 -3.14452
-PW 0
 SE
 ET PH
 ID 5340
@@ -44755,7 +44147,7 @@ SE
 ET UN
 ID 5345
 TI 1760667401.420210599
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 660.934
 SE
@@ -44911,7 +44303,7 @@ SE
 ET UN
 ID 5364
 TI 1760667401.420633792
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 38.6782
 SE
@@ -45041,7 +44433,7 @@ SE
 ET UN
 ID 5381
 TI 1760667401.440743207
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 44.4589
 SE
@@ -45182,13 +44574,12 @@ PE 282.243
 PP 0.861109 -0.32491 -1.16561
 PW 0
 SE
-ET PH
+ET UN
 ID 5398
 TI 1760667401.441110134
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 23.4102
-PP -2.74748 -0.45345 -3.37733
-PW 0
 SE
 ET PH
 ID 5399
@@ -45294,7 +44685,7 @@ SE
 ET UN
 ID 5409
 TI 1760667401.441433668
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.1837
 SE
@@ -45438,7 +44829,7 @@ SE
 ET UN
 ID 5429
 TI 1760667401.441755294
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.3338
 SE
@@ -45476,7 +44867,7 @@ SE
 ET UN
 ID 5434
 TI 1760667401.441893339
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.4871
 SE
@@ -45513,7 +44904,7 @@ SE
 ET UN
 ID 5438
 TI 1760667401.441996097
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.444
 SE
@@ -45564,7 +44955,7 @@ SE
 ET UN
 ID 5444
 TI 1760667401.462553739
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 679.541
 SE
@@ -45592,13 +44983,12 @@ PE 287.076
 PP 1.79236 0.0049919 -0.699984
 PW 0
 SE
-ET PH
+ET UN
 ID 5448
 TI 1760667401.462682962
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.1726
-PP 2.6072 0.355172 1.97736
-PW 0
 SE
 ID 5449
 BD DepthCalibrationError (GR Veto)
@@ -45609,7 +44999,7 @@ SE
 ET UN
 ID 5450
 TI 1760667401.462726593
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.87
 SE
@@ -45706,7 +45096,7 @@ SE
 ET UN
 ID 5461
 TI 1760667401.462989568
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 661.057
 SE
@@ -45720,7 +45110,7 @@ SE
 ET UN
 ID 5463
 TI 1760667401.463104009
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 203.552
 SE
@@ -45732,20 +45122,12 @@ PE 113.287
 PP -2.9803 -0.641979 -3.61014
 PW 0
 SE
-ET CO
+ET UN
 ID 5465
 TI 1760667401.463155269
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 0.790062
-SQ 2
-CT 0 1
-TL 1
-TE 23.2039
-CE 426.36 1.35479   23.2039 0.894594
-CD 3.30564 -1.10618 -3.14452   0.0336036 0.0633179 0.0336036   3.88767 -0.50705 -3.84295   0.0336036 0.010827 0.0336036   0 0 0   0 0 0
-LA 1.08882
-CH 0 3.30564 -1.10618 -3.14452 23.2039 0 0.0336036 0.0633179 0.0336036 0.894594 0
-CH 1 3.88767 -0.50705 -3.84295 426.36 0 0.0336036 0.010827 0.0336036 1.35479 0
+PE 449.564
 SE
 ET PH
 ID 5466
@@ -45779,13 +45161,12 @@ PE 121.455
 PP -2.51467 -0.170928 0.580484
 PW 0
 SE
-ET PH
+ET UN
 ID 5470
 TI 1760667401.463325262
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.7052
-PP 3.65486 -0.800007 -1.74764
-PW 0
 SE
 ET PH
 ID 5471
@@ -45836,7 +45217,7 @@ SE
 ET UN
 ID 5476
 TI 1760667401.463545799
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.4041
 SE
@@ -45886,21 +45267,12 @@ PE 57.2807
 PP 2.02517 -1.14798 -3.14452
 PW 0
 SE
-ET CO
+ET UN
 ID 5483
 TI 1760667401.463671207
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 5.90314
-SQ 3
-CT 0.019981 0.203983
-TL 1
-TE 171.852
-CE 157.898 1.64321   171.852 1.07057
-CD 1.55955 -0.268516 0.231266   0.0336036 0.0130258 0.0336036   2.6072 0.0380115 0.813297   0.0336036 0.0851084 0.0336036   0 0 0   0 0 0
-LA 1.23705
-CH 0 1.55955 -0.268516 0.231266 171.852 0 0.0336036 0.0130258 0.0336036 1.07057 0
-CH 1 2.6072 0.0380115 0.813297 29.6284 0 0.0336036 0.0851084 0.0336036 1.34558 0
-CH 2 4.12048 -0.495763 -1.0492 128.27 0 0.0336036 0.0174069 0.0336036 0.943158 0
+PE 329.75
 SE
 ID 5484
 BD DepthCalibrationError (GR Veto)
@@ -45922,13 +45294,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 415.653844)
 BD GR Veto
 PQ 4.33912
 SE
-ET PH
+ET UN
 ID 5487
 TI 1760667401.463829278
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.5223
-PP 4.12048 -0.168031 -0.234359
-PW 0
 SE
 ID 5488
 BD DepthCalibrationError (GR Veto)
@@ -45942,21 +45313,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 120.942673)
 BD GR Veto
 PQ 1.6427
 SE
-ET CO
+ET UN
 ID 5490
 TI 1760667401.463863134
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 30.8179
-SQ 3
-CT 0.132332 2.61441
-TL 1
-TE 57.9586
-CE 405.092 1.50591   57.9586 1.34333
-CD 0.744703 -0.644752 0.231266   0.0336036 0.0359568 0.0336036   1.21033 -0.671551 -0.117953   0.0336036 0.0838844 0.0336036   0 0 0   0 0 0
-LA 0.58265
-CH 0 0.744703 -0.644752 0.231266 57.9586 0 0.0336036 0.0359568 0.0336036 1.34333 0
-CH 1 1.21033 -0.671551 -0.117953 27.2936 0 0.0336036 0.0838844 0.0336036 0.963708 0
-CH 2 1.79236 0.157487 -0.350766 377.798 0 0.0336036 0.0136051 0.0336036 1.15717 0
+PE 463.05
 SE
 ID 5491
 BD DepthCalibrationError (GR Veto)
@@ -45986,13 +45348,12 @@ QA StripHitBelowThreshold (Strip hit removed with energy -0.374854)
 BD GR Veto
 PQ
 SE
-ET PH
+ET UN
 ID 5495
 TI 1760667401.463958024
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.5372
-PP 2.02517 -1.15771 -2.09686
-PW 0
 SE
 ET PH
 ID 5496
@@ -46005,7 +45366,7 @@ SE
 ET UN
 ID 5497
 TI 1760667401.463995933
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 663.253
 SE
@@ -46099,20 +45460,12 @@ PE 146.247
 PP -2.04905 0.0110477 -0.583578
 PW 0
 SE
-ET CO
+ET UN
 ID 5508
 TI 1760667401.479775190
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 2.24787
-SQ 2
-CT 0 1
-TL 1
-TE 28.5952
-CE 396.845 1.87145   28.5952 0.895109
-CD -1.93264 0.0683001 -3.49373   0.0336036 0.10245 0.0336036   -0.652172 -0.558356 -2.7953   0.0336036 0.0107896 0.0336036   0 0 0   0 0 0
-LA 1.58748
-CH 0 -1.93264 0.0683001 -3.49373 28.5952 0 0.0336036 0.10245 0.0336036 0.895109 0
-CH 1 -0.652172 -0.558356 -2.7953 396.845 0 0.0336036 0.0107896 0.0336036 1.87145 0
+PE 425.44
 SE
 ET CO
 ID 5509
@@ -46202,7 +45555,7 @@ SE
 ET UN
 ID 5517
 TI 1760667401.480239629
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 150.082
 SE
@@ -46244,20 +45597,12 @@ LA 0.666534
 CH 0 3.07283 -0.202872 -2.67889 273.955 0 0.0336036 0.0116583 0.0336036 1.82107 0
 CH 1 2.6072 -0.527683 -3.02811 183.839 0 0.0336036 0.0124354 0.0336036 1.06472 0
 SE
-ET CO
+ET UN
 ID 5521
 TI 1760667401.480440139
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.288202
-SQ 2
-CT 0 1
-TL 1
-TE 27.0727
-CE 354.025 0.969342   27.0727 0.927809
-CD 4.00408 -0.776735 -2.44608   0.0336036 0.0750836 0.0336036   3.07283 0.251372 -2.21327   0.0336036 0.0155345 0.0336036   0 0 0   0 0 0
-LA 1.40657
-CH 0 4.00408 -0.776735 -2.44608 27.0727 0 0.0336036 0.0750836 0.0336036 0.927809 0
-CH 1 3.07283 0.251372 -2.21327 354.025 0 0.0336036 0.0155345 0.0336036 0.969342 0
+PE 381.098
 SE
 ET PH
 ID 5522
@@ -46387,7 +45732,7 @@ SE
 ET UN
 ID 5537
 TI 1760667401.480858087
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.6383
 SE
@@ -46424,7 +45769,7 @@ SE
 ET UN
 ID 5542
 TI 1760667401.480948209
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 39.7175
 SE
@@ -46438,7 +45783,7 @@ SE
 ET UN
 ID 5544
 TI 1760667401.480988502
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.9093
 SE
@@ -46473,7 +45818,7 @@ SE
 ET UN
 ID 5549
 TI 1760667401.481093645
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 46.9856
 SE
@@ -46555,20 +45900,12 @@ PE 434.672
 PP -0.302953 -0.577218 -0.467172
 PW 0
 SE
-ET CO
+ET UN
 ID 5559
 TI 1760667401.481325149
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 0.25839
-SQ 2
-CT 0 1
-TL 1
-TE 59.6839
-CE 183.893 1.06586   59.6839 1.29132
-CD -0.0701406 0.327063 -3.26092   0.0336036 0.047345 0.0336036   1.90877 0.190939 -3.02811   0.0336036 0.0165255 0.0336036   0 0 0   0 0 0
-LA 1.9972
-CH 0 -0.0701406 0.327063 -3.26092 59.6839 0 0.0336036 0.047345 0.0336036 1.29132 0
-CH 1 1.90877 0.190939 -3.02811 183.893 0 0.0336036 0.0165255 0.0336036 1.06586 0
+PE 243.577
 SE
 ID 5560
 BD StripPairingError (One detector side has no strip hits)
@@ -46584,21 +45921,19 @@ PE 169.347
 PP -1.93264 -0.574502 -2.32967
 PW 0
 SE
-ET PH
+ET UN
 ID 5562
 TI 1760667401.481393098
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.7732
-PP -2.74748 -0.108642 1.16252
-PW 0
 SE
-ET PH
+ET UN
 ID 5563
 TI 1760667401.481412172
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 203.101
-PP -1.46702 -0.792572 -1.51483
-PW 0
 SE
 ET PH
 ID 5564
@@ -46721,7 +46056,7 @@ SE
 ET UN
 ID 5577
 TI 1760667401.499950885
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 226.408
 SE
@@ -46751,13 +46086,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 88.136950)
 BD GR Veto
 PQ 0.193966
 SE
-ET PH
+ET UN
 ID 5582
 TI 1760667401.500026941
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8861
-PP 1.32673 -0.175347 2.44298
-PW 0
 SE
 ET PH
 ID 5583
@@ -46799,13 +46133,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 113.559947)
 BD GR Veto
 PQ 0.301736
 SE
-ET PH
+ET UN
 ID 5589
 TI 1760667401.500193834
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.8142
-PP -0.302953 -0.789393 -1.0492
-PW 0
 SE
 ET PH
 ID 5590
@@ -47258,7 +46591,7 @@ SE
 ET UN
 ID 5646
 TI 1760667401.522551298
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 56.8873
 SE
@@ -47281,7 +46614,7 @@ SE
 ET UN
 ID 5649
 TI 1760667401.522636651
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.6039
 SE
@@ -47370,7 +46703,7 @@ SE
 ET UN
 ID 5659
 TI 1760667401.522859811
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 324.13
 SE
@@ -47533,7 +46866,7 @@ SE
 ET UN
 ID 5679
 TI 1760667401.523289442
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 46.6348
 SE
@@ -47552,21 +46885,12 @@ LA 0.16897
 CH 0 -1.00139 0.0693683 0.813297 61.6694 0 0.0336036 0.0408623 0.0336036 0.929607 0
 CH 1 -1.1178 0.107436 0.696891 292.282 0 0.0336036 0.0131741 0.0336036 0.956657 0
 SE
-ET CO
+ET UN
 ID 5681
 TI 1760667401.523332118
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 6
-PQ 0.787403
-SQ 3
-CT 0.206738 1.55237
-TL 1
-TE 29.5553
-CE 163.521 1.32808   29.5553 0.924257
-CD 0.977516 -1.16827 0.464078   0.0336036 0.0231495 0.0336036   1.79236 -1.08656 2.09377   0.0336036 0.0757906 0.0336036   0 0 0   0 0 0
-LA 1.03547
-CH 0 0.977516 -1.16827 0.464078 29.5553 0 0.0336036 0.0231495 0.0336036 0.924257 0
-CH 1 1.79236 -1.08656 2.09377 22.6292 0 0.0336036 0.0757906 0.0336036 0.93898 0
-CH 2 1.55955 -0.0843381 2.21017 140.892 0 0.0336036 0.0185085 0.0336036 0.939203 0
+PE 193.076
 SE
 ET PH
 ID 5682
@@ -47585,14 +46909,14 @@ SE
 ET UN
 ID 5684
 TI 1760667401.523429155
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 11
 PE 659.267
 SE
 ET UN
 ID 5685
 TI 1760667401.523495912
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 475.456
 SE
@@ -47855,13 +47179,12 @@ PE 120.408
 PP 2.14158 -0.0165298 -3.14452
 PW 0
 SE
-ET PH
+ET UN
 ID 5716
 TI 1760667401.549945116
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 20.7074
-PP 1.09392 -1.10468 1.74455
-PW 0
 SE
 ET PH
 ID 5717
@@ -47968,13 +47291,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 80.442455)
 BD GR Veto
 PQ 3.96215
 SE
-ET PH
+ET UN
 ID 5731
 TI 1760667401.550255775
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.847
-PP -1.00139 -0.25981 -2.09686
-PW 0
 SE
 ET CO
 ID 5732
@@ -48015,7 +47337,7 @@ SE
 ET UN
 ID 5735
 TI 1760667401.550358533
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 169.806
 SE
@@ -48034,7 +47356,7 @@ SE
 ET UN
 ID 5738
 TI 1760667401.550425767
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 116.904
 SE
@@ -48054,13 +47376,12 @@ PE 37.0967
 PP 1.09392 -0.900163 -3.72655
 PW 0
 SE
-ET PH
+ET UN
 ID 5741
 TI 1760667401.550532817
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.3835
-PP 0.861109 0.354049 -0.699984
-PW 0
 SE
 ID 5742
 BD DepthCalibrationError (GR Veto)
@@ -48109,7 +47430,7 @@ SE
 ET UN
 ID 5748
 TI 1760667401.550689220
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 66.684
 SE
@@ -48123,7 +47444,7 @@ SE
 ET UN
 ID 5750
 TI 1760667401.550757408
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 23.688
 SE
@@ -48191,13 +47512,12 @@ PE 662.499
 PP 0.279078 0.380149 2.21017
 PW 0
 SE
-ET PH
+ET UN
 ID 5760
 TI 1760667401.571732759
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.9109
-PP -1.35061 0.160042 -0.583578
-PW 0
 SE
 ET PH
 ID 5761
@@ -48291,14 +47611,14 @@ SE
 ET UN
 ID 5772
 TI 1760667401.572070837
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 142.593
 SE
 ET UN
 ID 5773
 TI 1760667401.572136402
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 271.641
 SE
@@ -48438,7 +47758,7 @@ SE
 ET UN
 ID 5792
 TI 1760667401.572502851
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.5957
 SE
@@ -48456,18 +47776,17 @@ PE 453.392
 PP 0.744703 -0.419415 1.62814
 PW 0
 SE
-ET PH
+ET UN
 ID 5795
 TI 1760667401.572550296
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.5051
-PP 2.02517 -0.640707 -2.67889
-PW 0
 SE
 ET UN
 ID 5796
 TI 1760667401.572568655
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.0849
 SE
@@ -48504,20 +47823,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 173.058339)
 BD GR Veto
 PQ 12.1232
 SE
-ET CO
+ET UN
 ID 5802
 TI 1760667401.572671413
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.421219
-SQ 2
-CT 0 1
-TL 1
-TE 27.3856
-CE 160.566 0.929642   27.3856 0.94543
-CD 2.84002 -1.00552 -1.63123   0.0336036 0.0768752 0.0336036   4.00408 0.367284 -2.09686   0.0336036 0.0214062 0.0336036   0 0 0   0 0 0
-LA 1.85915
-CH 0 2.84002 -1.00552 -1.63123 27.3856 0 0.0336036 0.0768752 0.0336036 0.94543 0
-CH 1 4.00408 0.367284 -2.09686 160.566 0 0.0336036 0.0214062 0.0336036 0.929642 0
+PE 187.952
 SE
 ET PH
 ID 5803
@@ -48548,13 +47859,12 @@ BD DepthCalibrationError (GR Veto)
 BD GR Veto
 PQ 0.183323
 SE
-ET PH
+ET UN
 ID 5807
 TI 1760667401.572797536
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.0107
-PP -1.93264 0.302871 2.6758
-PW 0
 SE
 ET PH
 ID 5808
@@ -48623,13 +47933,12 @@ PE 56.3265
 PP -0.419359 -1.09902 0.813297
 PW 0
 SE
-ET PH
+ET UN
 ID 5817
 TI 1760667401.573004007
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.5621
-PP 0.628297 -1.14266 -1.86405
-PW 0
 SE
 ID 5818
 BD StripPairingError (One detector side has no strip hits)
@@ -48646,7 +47955,7 @@ SE
 ET UN
 ID 5820
 TI 1760667401.573054552
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.6073
 SE
@@ -48676,7 +47985,7 @@ SE
 ET UN
 ID 5823
 TI 1760667401.592461109
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 49.5394
 SE
@@ -48705,7 +48014,7 @@ SE
 ET UN
 ID 5826
 TI 1760667401.592615842
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.1531
 SE
@@ -48724,7 +48033,7 @@ SE
 ET UN
 ID 5829
 TI 1760667401.592650175
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 386.211
 SE
@@ -48761,7 +48070,7 @@ SE
 ET UN
 ID 5833
 TI 1760667401.592772960
-BD DepthCalibrationError (Out of Range) (Multiple hits on single strip) (Multiple hits on single strip)
+BD DepthCalibrationError (No fast timing) (Multiple hits on single strip) (Multiple hits on single strip)
 CC NStripHits 10
 PE 660.479
 SE
@@ -48799,7 +48108,7 @@ SE
 ET UN
 ID 5838
 TI 1760667401.592974901
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.9272
 SE
@@ -48931,20 +48240,12 @@ PE 660.793
 PP 2.02517 -0.397836 -1.51483
 PW 0
 SE
-ET CO
+ET UN
 ID 5855
 TI 1760667401.593337059
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
-PQ 0.414755
-SQ 2
-CT 0 1
-TL 1
-TE 29.8247
-CE 188.838 1.30505   29.8247 0.928049
-CD -0.186547 -0.288882 -1.63123   0.0336036 0.0770369 0.0336036   -0.652172 -0.662825 -2.09686   0.0336036 0.0129371 0.0336036   0 0 0   0 0 0
-LA 0.757266
-CH 0 -0.186547 -0.288882 -1.63123 29.8247 0 0.0336036 0.0770369 0.0336036 0.928049 0
-CH 1 -0.652172 -0.662825 -2.09686 188.838 0 0.0336036 0.0129371 0.0336036 1.30505 0
+PE 218.663
 SE
 ET PH
 ID 5856
@@ -49053,20 +48354,12 @@ QA StripHitBelowThreshold (Strip hit removed with energy 0.441162)
 BD GR Veto
 PQ 0.0156772
 SE
-ET CO
+ET UN
 ID 5869
 TI 1760667401.593717813
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 1.38417
-SQ 2
-CT 0 1
-TL 1
-TE 29.5629
-CE 161.499 0.904429   29.5629 0.926046
-CD 3.65486 -0.516049 0.114859   0.0336036 0.0752013 0.0336036   2.25798 -0.0289472 0.580484   0.0336036 0.016582 0.0336036   0 0 0   0 0 0
-LA 1.55092
-CH 0 3.65486 -0.516049 0.114859 29.5629 0 0.0336036 0.0752013 0.0336036 0.926046 0
-CH 1 2.25798 -0.0289472 0.580484 161.499 0 0.0336036 0.016582 0.0336036 0.904429 0
+PE 191.062
 SE
 ID 5870
 BD DepthCalibrationError (GR Veto)
@@ -49078,7 +48371,7 @@ SE
 ET UN
 ID 5871
 TI 1760667401.593783617
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 143.837
 SE
@@ -49139,13 +48432,12 @@ BD DepthCalibrationError (GR Veto)
 BD GR Veto
 PQ
 SE
-ET PH
+ET UN
 ID 5879
 TI 1760667401.593927860
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.5867
-PP -1.58342 -0.0184919 -4.42498
-PW 0
 SE
 ID 5880
 BD DepthCalibrationError (GR Veto)
@@ -49345,7 +48637,7 @@ SE
 ET UN
 ID 5904
 TI 1760667401.617633104
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.0711
 SE
@@ -49459,13 +48751,12 @@ PE 92.8289
 PP -0.768578 -1.12679 -3.14452
 PW 0
 SE
-ET PH
+ET UN
 ID 5919
 TI 1760667401.617956876
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.0419
-PP -2.16545 -0.326571 -2.9117
-PW 0
 SE
 ET PH
 ID 5920
@@ -49509,7 +48800,7 @@ SE
 ET UN
 ID 5924
 TI 1760667401.618058204
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 51.0227
 SE
@@ -49534,13 +48825,12 @@ PE 300.521
 PP 2.02517 -0.585476 -4.19217
 PW 0
 SE
-ET PH
+ET UN
 ID 5928
 TI 1760667401.618115663
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.5793
-PP 0.628297 0.018503 -3.95936
-PW 0
 SE
 ET PH
 ID 5929
@@ -49590,7 +48880,7 @@ SE
 ET UN
 ID 5935
 TI 1760667401.618273019
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.9237
 SE
@@ -49605,7 +48895,7 @@ SE
 ET UN
 ID 5937
 TI 1760667401.618306398
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.1745
 SE
@@ -49686,7 +48976,7 @@ SE
 ET UN
 ID 5947
 TI 1760667401.618540048
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.4084
 SE
@@ -49769,7 +49059,7 @@ SE
 ET UN
 ID 5958
 TI 1760667401.638994216
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 156.241
 SE
@@ -49903,7 +49193,7 @@ SE
 ET UN
 ID 5974
 TI 1760667401.639312267
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 327.432
 SE
@@ -50159,7 +49449,7 @@ SE
 ET UN
 ID 6006
 TI 1760667401.640059232
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 677.975
 SE
@@ -50182,7 +49472,7 @@ SE
 ET UN
 ID 6009
 TI 1760667401.640182256
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 154.237
 SE
@@ -50193,21 +49483,12 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 5
 PE 296.301
 SE
-ET CO
+ET UN
 ID 6011
 TI 1760667401.640245914
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
-PQ 18.2117
-SQ 3
-CT 0.126014 1.23643
-TL 1
-TE 386.195
-CE 150.785 1.58765   386.195 1.12313
-CD 2.37439 -0.462281 -4.19217   0.0336036 0.0110403 0.0336036   3.53845 -1.0987 -3.84295   0.0336036 0.0644919 0.0336036   0 0 0   0 0 0
-LA 1.25213
-CH 0 2.37439 -0.462281 -4.19217 386.195 0 0.0336036 0.0110403 0.0336036 1.12313 0
-CH 1 3.53845 -1.0987 -3.84295 30.3277 0 0.0336036 0.0644919 0.0336036 0.914359 0
-CH 2 3.77127 0.0809882 -3.49373 120.457 0 0.0336036 0.0238295 0.0336036 1.29791 0
+PE 536.98
 SE
 ET PH
 ID 6012
@@ -50244,7 +49525,7 @@ SE
 ET UN
 ID 6016
 TI 1760667401.660590171
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.0612
 SE
@@ -50282,7 +49563,7 @@ SE
 ET UN
 ID 6019
 TI 1760667401.660695552
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 231.716
 SE
@@ -50303,7 +49584,7 @@ SE
 ET UN
 ID 6022
 TI 1760667401.660754680
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 498.973
 SE
@@ -50394,7 +49675,7 @@ SE
 ET UN
 ID 6034
 TI 1760667401.661026239
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 24.6194
 SE
@@ -50409,7 +49690,7 @@ SE
 ET UN
 ID 6036
 TI 1760667401.661077499
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 66.6457
 SE
@@ -50451,13 +49732,12 @@ PE 93.6363
 PP 3.42205 -1.04996 -1.16561
 PW 0
 SE
-ET PH
+ET UN
 ID 6042
 TI 1760667401.661198854
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 24.9338
-PP -2.51467 0.169486 -0.234359
-PW 0
 SE
 ID 6043
 BD DepthCalibrationError (GR Veto)
@@ -50497,7 +49777,7 @@ SE
 ET UN
 ID 6047
 TI 1760667401.661319017
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.0083
 SE
@@ -50574,7 +49854,7 @@ SE
 ET UN
 ID 6056
 TI 1760667401.661509037
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 53.397
 SE
@@ -50600,27 +49880,17 @@ QA StripPairing (Best strip pairing leaves at least one grouping of strips unpai
 BD GR Veto
 PQ 0.401884
 SE
-ET CO
+ET UN
 ID 6060
 TI 1760667401.661609649
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 10
-PQ 0.17489
-SQ 4
-CT 0.193366 0.246653
-TL 1
-TE 274.457
-CE 330.56 1.6687   274.457 1.0358
-CD 1.67595 0.128648 -2.7953   0.0336036 0.0133015 0.0336036   -1.46702 -0.232438 0.114859   0.0336036 0.0711721 0.0336036   0 0 0   0 0 0
-LA 0.359279
-CH 0 1.67595 0.128648 -2.7953 274.457 0 0.0336036 0.0133015 0.0336036 1.0358 0
-CH 1 -1.46702 -0.232438 0.114859 34.4527 0 0.0336036 0.0711721 0.0336036 0.892694 0
-CH 2 -1.58342 0.0152121 0.347672 115.27 0 0.0336036 0.0225739 0.0336036 0.927174 0
-CH 3 2.4908 -0.301153 -2.67889 180.837 0 0.0336036 0.0129961 0.0336036 1.06207 0
+PE 605.017
 SE
 ET UN
 ID 6061
 TI 1760667401.661668539
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing) (No fast timing)
 CC NStripHits 8
 PE 485.196
 SE
@@ -50666,7 +49936,7 @@ SE
 ET UN
 ID 6067
 TI 1760667401.661853075
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.1423
 SE
@@ -50697,7 +49967,7 @@ SE
 ET UN
 ID 6071
 TI 1760667401.661952495
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 207.001
 SE
@@ -50712,7 +49982,7 @@ SE
 ET UN
 ID 6073
 TI 1760667401.662003993
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 216.574
 SE
@@ -50836,7 +50106,7 @@ SE
 ET UN
 ID 6087
 TI 1760667401.681849718
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.6478
 SE
@@ -50870,13 +50140,12 @@ PE 121.309
 PP 2.37439 -0.125945 0.231266
 PW 0
 SE
-ET PH
+ET UN
 ID 6092
 TI 1760667401.682120084
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.7573
-PP -2.28186 -0.660187 -3.84295
-PW 0
 SE
 ET PH
 ID 6093
@@ -50889,7 +50158,7 @@ SE
 ET UN
 ID 6094
 TI 1760667401.682155370
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 239.441
 SE
@@ -51013,13 +50282,12 @@ BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on singl
 CC NStripHits 5
 PE 395.206
 SE
-ET PH
+ET UN
 ID 6110
 TI 1760667401.682543754
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.1218
-PP 2.02517 -0.266754 1.51173
-PW 0
 SE
 ET PH
 ID 6111
@@ -51056,7 +50324,7 @@ SE
 ET UN
 ID 6115
 TI 1760667401.682638645
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
 PE 659.356
 SE
@@ -51109,7 +50377,7 @@ SE
 ET UN
 ID 6121
 TI 1760667401.682836294
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.8372
 SE
@@ -51166,14 +50434,14 @@ SE
 ET UN
 ID 6129
 TI 1760667401.683111429
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 205.921
 SE
 ET UN
 ID 6130
 TI 1760667401.683142423
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.8171
 SE
@@ -51229,7 +50497,7 @@ SE
 ET UN
 ID 6138
 TI 1760667401.683267354
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 45.7473
 SE
@@ -51268,7 +50536,7 @@ SE
 ET UN
 ID 6143
 TI 1760667401.704679727
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.2054
 SE
@@ -51312,7 +50580,7 @@ SE
 ET UN
 ID 6149
 TI 1760667401.704922437
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 227.348
 SE
@@ -51396,7 +50664,7 @@ SE
 ET UN
 ID 6159
 TI 1760667401.705224514
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 460.647
 SE
@@ -51482,7 +50750,7 @@ SE
 ET UN
 ID 6170
 TI 1760667401.705508947
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 33.4404
 SE
@@ -51504,14 +50772,14 @@ SE
 ET UN
 ID 6173
 TI 1760667401.705558776
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 183.682
 SE
 ET UN
 ID 6174
 TI 1760667401.705604314
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 227.135
 SE
@@ -51619,29 +50887,28 @@ SE
 ET UN
 ID 6188
 TI 1760667401.705894708
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
 PE 496.01
 SE
-ET PH
+ET UN
 ID 6189
 TI 1760667401.705946445
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 25.4052
-PP 0.977516 -0.537102 -4.19217
-PW 0
 SE
 ET UN
 ID 6190
 TI 1760667401.705962181
-BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip) (Out of Range)
+BD DepthCalibrationError (Multiple hits on single strip) (Multiple hits on single strip) (No fast timing)
 CC NStripHits 5
 PE 344.665
 SE
 ET UN
 ID 6191
 TI 1760667401.705994129
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.6959
 SE
@@ -51765,7 +51032,7 @@ SE
 ET UN
 ID 6208
 TI 1760667401.727117061
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 9
 PE 557.473
 SE
@@ -51889,7 +51156,7 @@ SE
 ET UN
 ID 6222
 TI 1760667401.727860212
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 70.2051
 SE
@@ -51950,7 +51217,7 @@ SE
 ET UN
 ID 6230
 TI 1760667401.728045940
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 74.2119
 SE
@@ -51988,7 +51255,7 @@ SE
 ET UN
 ID 6235
 TI 1760667401.728170394
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.1942
 SE
@@ -52003,7 +51270,7 @@ SE
 ET UN
 ID 6237
 TI 1760667401.728247404
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.8911
 SE
@@ -52094,7 +51361,7 @@ SE
 ET UN
 ID 6248
 TI 1760667401.728447675
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 297.771
 SE
@@ -52107,7 +51374,7 @@ SE
 ET UN
 ID 6250
 TI 1760667401.728509664
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 447.886
 SE
@@ -52122,7 +51389,7 @@ SE
 ET UN
 ID 6252
 TI 1760667401.728562355
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 214.862
 SE
@@ -52144,7 +51411,7 @@ SE
 ET UN
 ID 6254
 TI 1760667401.728655338
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 300.312
 SE
@@ -52154,13 +51421,12 @@ BD DepthCalibrationError (GR Veto)
 BD GR Veto
 PQ
 SE
-ET PH
+ET UN
 ID 6256
 TI 1760667401.728712558
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.5136
-PP 2.72361 0.0313555 -4.19217
-PW 0
 SE
 ET PH
 ID 6257
@@ -52173,7 +51439,7 @@ SE
 ET UN
 ID 6258
 TI 1760667401.728758096
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 70.5908
 SE
@@ -52200,20 +51466,12 @@ PE 182.006
 PP 2.14158 0.156186 -4.54139
 PW 0
 SE
-ET CO
+ET UN
 ID 6261
 TI 1760667401.728834152
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 6.94203
-SQ 2
-CT 0 1
-TL 1
-TE 21.5849
-CE 248.822 1.36622   21.5849 0.900581
-CD 2.02517 -0.148892 -2.9117   0.0336036 0.108138 0.0336036   1.67595 0.241944 -3.02811   0.0336036 0.0151324 0.0336036   0 0 0   0 0 0
-LA 0.536897
-CH 0 2.02517 -0.148892 -2.9117 21.5849 0 0.0336036 0.108138 0.0336036 0.900581 0
-CH 1 1.67595 0.241944 -3.02811 248.822 0 0.0336036 0.0151324 0.0336036 1.36622 0
+PE 270.407
 SE
 ET PH
 ID 6262
@@ -52234,7 +51492,7 @@ SE
 ET UN
 ID 6264
 TI 1760667401.728914499
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 465.139
 SE
@@ -52270,13 +51528,12 @@ PE 198.617
 PP -0.652172 -0.512288 -1.0492
 PW 0
 SE
-ET PH
+ET UN
 ID 6269
 TI 1760667401.729050159
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 27.2439
-PP -0.419359 -0.30584 -2.67889
-PW 0
 SE
 ET CO
 ID 6270
@@ -52724,7 +51981,7 @@ SE
 ET UN
 ID 6317
 TI 1760667401.751859903
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 267.759
 SE
@@ -52754,7 +52011,7 @@ SE
 ET UN
 ID 6320
 TI 1760667401.751942873
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 7
 PE 482.512
 SE
@@ -52818,20 +52075,12 @@ BD DepthCalibrationError (GR Veto)
 BD GR Veto
 PQ
 SE
-ET CO
+ET UN
 ID 6328
 TI 1760667401.752140045
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 59.7274
-SQ 2
-CT 0 1
-TL 1
-TE 35.421
-CE 141.902 1.38172   35.421 1.30883
-CD 1.79236 -0.964415 0.580484   0.0336036 0.061296 0.0336036   1.55955 0.365732 0.696891   0.0336036 0.0223818 0.0336036   0 0 0   0 0 0
-LA 1.35538
-CH 0 1.79236 -0.964415 0.580484 35.421 0 0.0336036 0.061296 0.0336036 1.30883 0
-CH 1 1.55955 0.365732 0.696891 141.902 0 0.0336036 0.0223818 0.0336036 1.38172 0
+PE 177.323
 SE
 ET PH
 ID 6329
@@ -52900,13 +52149,12 @@ PE 140.305
 PP -2.86389 -1.14586 1.86095
 PW 0
 SE
-ET PH
+ET UN
 ID 6338
 TI 1760667401.771883249
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.4615
-PP 1.90877 -0.463158 2.09377
-PW 0
 SE
 ET PH
 ID 6339
@@ -52947,7 +52195,7 @@ SE
 ET UN
 ID 6344
 TI 1760667401.771998643
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 253.813
 SE
@@ -53062,7 +52310,7 @@ SE
 ET UN
 ID 6359
 TI 1760667401.772416114
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.6674
 SE
@@ -53091,7 +52339,7 @@ SE
 ET UN
 ID 6363
 TI 1760667401.772504329
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 241.927
 SE
@@ -53245,7 +52493,7 @@ SE
 ET UN
 ID 6383
 TI 1760667401.772900104
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 36.2331
 SE
@@ -53282,7 +52530,7 @@ SE
 ET UN
 ID 6388
 TI 1760667401.772984981
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 28.4378
 SE
@@ -53310,7 +52558,7 @@ SE
 ET UN
 ID 6391
 TI 1760667401.773030757
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 193.874
 SE
@@ -53589,14 +52837,14 @@ SE
 ET UN
 ID 6426
 TI 1760667401.796153783
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.4254
 SE
 ET UN
 ID 6427
 TI 1760667401.796172380
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.641
 SE
@@ -53638,21 +52886,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 191.804746)
 BD GR Veto
 PQ 5.79205
 SE
-ET CO
+ET UN
 ID 6432
 TI 1760667401.796283721
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 8
-PQ 9.36959
-SQ 3
-CT 0.321783 0.333055
-TL 1
-TE 315.231
-CE 342.423 1.61352   315.231 1.31313
-CD -1.00139 0.345078 1.62814   0.0336036 0.0248821 0.0336036   -0.535766 -0.690375 0.696891   0.0336036 0.0585835 0.0336036   0 0 0   0 0 0
-LA 1.4684
-CH 0 -1.00139 0.345078 1.62814 315.231 0 0.0336036 0.0248821 0.0336036 1.31313 0
-CH 1 -0.535766 -0.690375 0.696891 36.514 0 0.0336036 0.0585835 0.0336036 1.27836 0
-CH 2 1.09392 0.212898 -0.350766 305.909 0 0.0336036 0.014492 0.0336036 0.984498 0
+PE 657.654
 SE
 ID 6433
 BD DepthCalibrationError (GR Veto)
@@ -53862,14 +53101,14 @@ SE
 ET UN
 ID 6457
 TI 1760667401.796875953
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 47.6228
 SE
 ET UN
 ID 6458
 TI 1760667401.796896219
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 469.668
 SE
@@ -54099,7 +53338,7 @@ SE
 ET UN
 ID 6490
 TI 1760667401.817460536
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 46.8522
 SE
@@ -54185,13 +53424,12 @@ PE 168.843
 PP 2.6072 -0.898505 -1.98045
 PW 0
 SE
-ET PH
+ET UN
 ID 6501
 TI 1760667401.817673921
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.088
-PP -2.04905 -0.0689629 -1.16561
-PW 0
 SE
 ET PH
 ID 6502
@@ -54370,28 +53608,19 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 245.639729)
 BD GR Veto
 PQ 8.57215
 SE
-ET PH
+ET UN
 ID 6525
 TI 1760667401.818249940
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.8495
-PP 3.65486 -0.372847 -1.63123
-PW 0
 SE
-ET CO
+ET UN
 ID 6526
 TI 1760667401.818267345
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
-PQ 0.0685808
-SQ 2
-CT 0 1
-TL 1
-TE 42.5185
-CE 214.047 1.03735   42.5185 0.90637
-CD -1.58342 -0.306354 0.347672   0.0336036 0.0559495 0.0336036   -1.35061 -0.319653 0.114859   0.0336036 0.0119917 0.0336036   0 0 0   0 0 0
-LA 0.329514
-CH 0 -1.58342 -0.306354 0.347672 42.5185 0 0.0336036 0.0559495 0.0336036 0.90637 0
-CH 1 -1.35061 -0.319653 0.114859 214.047 0 0.0336036 0.0119917 0.0336036 1.03735 0
+PE 256.565
 SE
 ET PH
 ID 6527
@@ -54461,20 +53690,12 @@ PE 189.707
 PP 1.79236 -0.411665 2.44298
 PW 0
 SE
-ET CO
+ET UN
 ID 6536
 TI 1760667401.834653615
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 0.298443
-SQ 2
-CT 0 1
-TL 1
-TE 22.9869
-CE 134.668 0.930191   22.9869 0.903282
-CD 2.02517 -0.581886 -1.39842   0.0336036 0.097024 0.0336036   1.67595 0.242323 -2.09686   0.0336036 0.0246612 0.0336036   0 0 0   0 0 0
-LA 1.13538
-CH 0 2.02517 -0.581886 -1.39842 22.9869 0 0.0336036 0.097024 0.0336036 0.903282 0
-CH 1 1.67595 0.242323 -2.09686 134.668 0 0.0336036 0.0246612 0.0336036 0.930191 0
+PE 157.655
 SE
 ET PH
 ID 6537
@@ -54611,25 +53832,23 @@ SE
 ET UN
 ID 6552
 TI 1760667401.834980964
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 5
 PE 384.564
 SE
-ET PH
+ET UN
 ID 6553
 TI 1760667401.835017919
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 24.0161
-PP -1.81623 0.313507 1.86095
-PW 0
 SE
-ET PH
+ET UN
 ID 6554
 TI 1760667401.835035324
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.8188
-PP 3.07283 -0.177042 2.21017
-PW 0
 SE
 ET PH
 ID 6555
@@ -54642,7 +53861,7 @@ SE
 ET UN
 ID 6556
 TI 1760667401.835073709
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.1502
 SE
@@ -54766,7 +53985,7 @@ SE
 ET UN
 ID 6570
 TI 1760667401.835366487
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 45.8805
 SE
@@ -54826,7 +54045,7 @@ SE
 ET UN
 ID 6578
 TI 1760667401.835558176
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 355.526
 SE
@@ -54932,25 +54151,24 @@ QA StripHitBelowThreshold (Strip hit removed with energy 10.175042) (Strip hit r
 BD GR Veto
 PQ 19.2086
 SE
-ET PH
+ET UN
 ID 6591
 TI 1760667401.856833696
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.2297
-PP 3.30564 -0.605471 -1.16561
-PW 0
 SE
 ET UN
 ID 6592
 TI 1760667401.856913089
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 6
 PE 457.502
 SE
 ET UN
 ID 6593
 TI 1760667401.857002973
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 30.2726
 SE
@@ -54990,7 +54208,7 @@ SE
 ET UN
 ID 6599
 TI 1760667401.857128858
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.7066
 SE
@@ -55047,7 +54265,7 @@ SE
 ET UN
 ID 6606
 TI 1760667401.857307434
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 66.278
 SE
@@ -55134,7 +54352,7 @@ SE
 ET UN
 ID 6618
 TI 1760667401.857545375
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 31.6254
 SE
@@ -55157,7 +54375,7 @@ SE
 ET UN
 ID 6621
 TI 1760667401.857601165
-BD DepthCalibrationError (Out of Range) (Out of Range)
+BD DepthCalibrationError (No fast timing) (No fast timing)
 CC NStripHits 4
 PE 83.3682
 SE
@@ -55474,7 +54692,7 @@ SE
 ET UN
 ID 6655
 TI 1760667401.882273197
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 50.6562
 SE
@@ -55607,7 +54825,7 @@ SE
 ET UN
 ID 6671
 TI 1760667401.882684946
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 32.7293
 SE
@@ -55647,20 +54865,12 @@ LA 0.672228
 CH 0 1.79236 -0.584931 1.97736 265.15 0 0.0336036 0.010755 0.0336036 0.935243 0
 CH 1 2.37439 -0.269368 1.86095 185.887 0 0.0336036 0.0124282 0.0336036 1.90671 0
 SE
-ET CO
+ET UN
 ID 6675
 TI 1760667401.882770538
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
-PQ 1.80479
-SQ 2
-CT 0 1
-TL 1
-TE 30.7522
-CE 115.646 0.934763   30.7522 0.915431
-CD 0.628297 -0.339762 0.347672   0.0336036 0.0804263 0.0336036   1.79236 -0.693076 0.696891   0.0336036 0.0181184 0.0336036   0 0 0   0 0 0
-LA 1.26563
-CH 0 0.628297 -0.339762 0.347672 30.7522 0 0.0336036 0.0804263 0.0336036 0.915431 0
-CH 1 1.79236 -0.693076 0.696891 115.646 0 0.0336036 0.0181184 0.0336036 0.934763 0
+PE 146.398
 SE
 ET PH
 ID 6676
@@ -55809,7 +55019,7 @@ SE
 ET UN
 ID 6693
 TI 1760667401.883226156
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 60.0186
 SE
@@ -55845,13 +55055,12 @@ PE 340.497
 PP 0.511891 -0.623065 -2.32967
 PW 0
 SE
-ET PH
+ET UN
 ID 6698
 TI 1760667401.883322715
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 24.5916
-PP 2.84002 -0.377684 1.62814
-PW 0
 SE
 ET PH
 ID 6699
@@ -56006,7 +55215,7 @@ SE
 ET UN
 ID 6717
 TI 1760667401.883728027
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 35.6951
 SE
@@ -56109,20 +55318,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 136.080224)
 BD GR Veto
 PQ 2.82097
 SE
-ET CO
+ET UN
 ID 6730
 TI 1760667401.902858972
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 6
-PQ 1.56476
-SQ 2
-CT 0 1
-TL 1
-TE 22.3572
-CE 152.052 1.31933   22.3572 0.929714
-CD -2.9803 -1.08943 -1.86405   0.0336036 0.0730763 0.0336036   -2.16545 -0.337957 -1.0492   0.0336036 0.0157068 0.0336036   0 0 0   0 0 0
-LA 1.37574
-CH 0 -2.9803 -1.08943 -1.86405 22.3572 0 0.0336036 0.0730763 0.0336036 0.929714 0
-CH 1 -2.16545 -0.337957 -1.0492 152.052 0 0.0336036 0.0157068 0.0336036 1.31933 0
+PE 174.409
 SE
 ET PH
 ID 6731
@@ -56135,7 +55336,7 @@ SE
 ET UN
 ID 6732
 TI 1760667401.902911901
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 4
 PE 102.391
 SE
@@ -56277,7 +55478,7 @@ SE
 ET UN
 ID 6748
 TI 1760667401.903283119
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 37.6812
 SE
@@ -56332,13 +55533,12 @@ QA StripPairing (GR Hit: Detector ID 0 and Energy 89.984043)
 BD GR Veto
 PQ 13.1103
 SE
-ET PH
+ET UN
 ID 6755
 TI 1760667401.903446435
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 21.8349
-PP -2.63108 -1.15398 -1.0492
-PW 0
 SE
 ET PH
 ID 6756
@@ -56375,7 +55575,7 @@ SE
 ET UN
 ID 6760
 TI 1760667401.903545141
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 40.0454
 SE
@@ -56441,7 +55641,7 @@ SE
 ET UN
 ID 6769
 TI 1760667401.903706550
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 3
 PE 81.7931
 SE
@@ -56620,7 +55820,7 @@ SE
 ET UN
 ID 6790
 TI 1760667401.922481298
-BD DepthCalibrationError (Out of Range)
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 34.708
 SE
@@ -56720,12 +55920,11 @@ QA StripPairing (Best reduced chi square is not below 25 (769.024586)) (GR Hit: 
 BD GR Veto
 PQ 769.025
 SE
-ET PH
+ET UN
 ID 6803
 TI 1760667401.922797679
+BD DepthCalibrationError (No fast timing)
 CC NStripHits 2
 PE 29.9305
-PP -2.51467 -0.123068 1.39533
-PW 0
 EN
 
