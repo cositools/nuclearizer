@@ -152,8 +152,9 @@ bool MStripMap::Open(const MString& FileName)
 
       MSingleStripMapping SM;
       SM.m_ReadOutID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0);
-      SM.m_RTB = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1);
-      SM.m_DRM = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2);
+      const unsigned int RTB = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1);
+      const unsigned int DRM = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2);
+      SM.m_DIB = (RTB << 3) + DRM;
       SM.m_IsPrimary = Parser.GetTokenizerAt(i)->GetTokenAtAsBoolean(3);
       SM.m_ASICID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4);
       SM.m_ChannelID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(5);
@@ -214,15 +215,13 @@ bool MStripMap::Open(const MString& FileName)
       // Infer the rest of the information from the ReadOutID
       if (SM.m_ReadOutID < 2048) {
         // Regular strip contacts
-        SM.m_RTB = (SM.m_ReadOutID >> 10) & 0x01;
-        SM.m_DRM = (SM.m_ReadOutID >> 7) & 0x07;
+        SM.m_DIB = (SM.m_ReadOutID >> 7) & 0x0F;
         SM.m_IsPrimary = (SM.m_ReadOutID >> 6) & 0x01;
         SM.m_ASICID = (SM.m_ReadOutID >> 5) & 0x01;
         SM.m_ChannelID = SM.m_ReadOutID & 0x1F;
       } else {
         // Guard ring contacts (always channel 15 on ASIC 2)
-        SM.m_RTB = (SM.m_ReadOutID >> 4) & 0x01;
-        SM.m_DRM = (SM.m_ReadOutID >> 1) & 0x07;
+        SM.m_DIB = (SM.m_ReadOutID >> 1) & 0x0F;
         SM.m_IsPrimary = SM.m_ReadOutID & 0x01;
         SM.m_ASICID = 2;
         SM.m_ChannelID = 15;
@@ -279,12 +278,12 @@ bool MStripMap::Open(const MString& FileName)
 
 
 //! Keep only the mappings belonging to the given detectors
-bool MStripMap::RestrictToEnabledDetectors(const vector<unsigned int>& DetectorIDs)
+bool MStripMap::RestrictToEnabledDIBs(const vector<unsigned int>& DIBs)
 {
   vector<MSingleStripMapping> Kept;
   Kept.reserve(m_StripMappings.size());
   for (const MSingleStripMapping& SM : m_StripMappings) {
-    if (find(DetectorIDs.begin(), DetectorIDs.end(), SM.m_DetectorID) != DetectorIDs.end()) {
+    if (find(DIBs.begin(), DIBs.end(), SM.m_DIB) != DIBs.end()) {
       Kept.push_back(SM);
     }
   }
