@@ -53,7 +53,7 @@ class MStripMap
 
   //! Remove all mappings whose detector is not in the given list, e.g. the detectors which were enabled
   //! during the run - return false and leave the map unchanged if no mapping would remain
-  bool RestrictToEnabledDIBs(const vector<unsigned int>& DetectorIDs);
+  bool RestrictToEnabledDIBs(const vector<unsigned int>& DIBs);
 
   //! Update which ASICs are LV/HV depending on their polarities, indexed by [detector][is-primary][ASIC]
   //! Return false and leave the map unchanged if the data is missing for any ASIC, or if the update
