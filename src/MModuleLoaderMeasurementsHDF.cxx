@@ -129,6 +129,9 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_CurrentBatchIndex = 0;
   m_MinHitIndex = 0;
 
+  // As default, assume that the data was NOT taken through the RTB
+  m_DataTakenThroughRTB = false;
+
   // Clear ASIC polarities and the enabled DIBs
   m_ASICPolarities.clear();
   m_EnabledDIBs.clear();
@@ -267,6 +270,28 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
     }
 
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
+
+    // Determine if the data was taken through the RTB (RTB/rtb) or not (DIB/dib)
+    smatch BoardMatch;
+    regex BoardPattern(R"(\"board\"\s*:\s*\"(RTB|rtb|DIB|dib)\")");
+    if (regex_search(ConfigJSON, BoardMatch, BoardPattern)) {
+        string Board = BoardMatch[1].str();
+        if (Board == "RTB" || Board == "rtb") {
+          m_DataTakenThroughRTB = true;
+        } else if (Board == "DIB" || Board == "dib") {
+          m_DataTakenThroughRTB = false;
+        } else {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: Unknown board type \"" << Board << "\"" << endl;
+          }
+          return false;
+        }
+    } else {
+      if (g_Verbosity >= c_Info) {
+        cout << m_XmlTag << ": No information on if the HDF5 data was taken through the RTB. Assuming that it was not." << endl;
+      }
+      m_DataTakenThroughRTB = false;
+    }
 
     // Read ASIC polarities from the JSON config string (if existent)
     m_ASICPolarities.clear();
@@ -857,14 +882,22 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       return false;
     }
 
-    if (EventID < m_LastEventID) {
-      m_NumberOfEventIDRollOvers++;
+    if (m_DataTakenThroughRTB == true) {
+      // Data taken through the RTB does not have native event IDs,
+      // which is why we assign consecutive event IDs (starting with 1) here
+      Event->SetID(m_NEventsInFile + 1);
+
+    } else {
+      // Data not going through the RTB has event IDs in uint16 format,
+      // which is why we check for event ID rollovers to reconstruct the correct event ID
+      if (EventID < m_LastEventID) {
+        m_NumberOfEventIDRollOvers++;
+      }
+      m_LastEventID = EventID;
+
+      unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
+      Event->SetID(LongEventID);
     }
-    m_LastEventID = EventID;
-
-    unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
-
-    Event->SetID(LongEventID);
 
     // Define event time based on the timecode within the HDF versions
     if (m_HDFStripHitVersion <= MHDFStripHitVersion::V2_0) {
