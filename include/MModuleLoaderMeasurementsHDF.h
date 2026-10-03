@@ -299,9 +299,9 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! The map which ASICs are HV/LV for HDFv2
   vector<map<bool, vector<bool>>> m_ASICPolarities;
 
-  //! The detector IDs which were enabled during the run, read from the config JSON
+  //! The IDs of the DIBS that were enabled during the run, read from the config JSON
   //! Empty if the config JSON does not contain the enabled flags
-  vector<unsigned int> m_EnabledDetectors;
+  vector<unsigned int> m_EnabledDIBs;
 
   //! The strip map
   MStripMap m_StripMap;
