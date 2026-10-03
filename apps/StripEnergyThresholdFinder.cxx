@@ -103,7 +103,7 @@ constexpr double HARDWARE_THRESHOLD_FRACTION = 0.50;
 
 // FAST threshold finder
 constexpr double FAST_MIN_DT1_FRACTION = 0.05;
-constexpr int FAST_FIRST_ADC_OFFSET = 10;
+constexpr int FAST_FIRST_ADC_OFFSET = 20;
 constexpr int FAST_MIN_CROSSOVER_COUNTS = 50;
 constexpr int FAST_CROSSOVER_WINDOW_BINS = 21;
 constexpr int FAST_SEARCH_RANGE_ADC = 800;
@@ -1697,7 +1697,8 @@ void MStripThresholdFinder::FindFastThresholds()
       int n1 = a.second.second;
 
       // Require minimum statistics to avoid noise triggers
-      if (n0 + n1 < FAST_MIN_CROSSOVER_COUNTS) {
+
+      if (n0 + n1 < FAST_MIN_CROSSOVER_COUNTS || ADC_val <= m_SlowThresholdsADC[R] + FAST_FIRST_ADC_OFFSET) {
         continue;
       }
 
@@ -1705,7 +1706,7 @@ void MStripThresholdFinder::FindFastThresholds()
         crossoverADC = ADC_val;
         // Make sure that this is an actual crossover and not just the first bin
         // with more than FAST_MIN_CROSSOVER_COUNTS where n1 was above n0
-        while (n1 > n0 && ADC_val >= first_nonzero) {
+        while (n1 > n0 && ADC_val >= m_SlowThresholdsADC[R] + FAST_FIRST_ADC_OFFSET) {
           crossoverADC = ADC_val;
           ADC_val--;
           if (ADCMap.find(ADC_val) != ADCMap.end()) {
@@ -1720,9 +1721,9 @@ void MStripThresholdFinder::FindFastThresholds()
     const int nbins = FAST_CROSSOVER_WINDOW_BINS;
 
     // Extend search window for stability
-    int searchMax = first_nonzero + FAST_SEARCH_RANGE_ADC;
+    int searchMax = m_SlowThresholdsADC[R] + FAST_SEARCH_RANGE_ADC;
 
-    for (int ADC = first_nonzero; ADC < searchMax; ADC++) {
+    for (int ADC = m_SlowThresholdsADC[R] ; ADC < searchMax; ADC++) {
       int n_dt0 = 0;
       int n_dt1 = 0;
 
