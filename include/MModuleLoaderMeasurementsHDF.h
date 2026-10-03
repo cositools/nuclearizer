@@ -260,6 +260,9 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! The version of the strip hit structure
   MHDFStripHitVersion m_HDFStripHitVersion;
 
+  //! True if the data was taken through the RTB
+  bool m_DataTakenThroughRTB; 
+
   //! The default batch size
   static constexpr unsigned int m_DefaultBatchSize = 10000;
 
