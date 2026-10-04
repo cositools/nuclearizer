@@ -180,6 +180,11 @@ void MGUIOptionsEventSaver::Create()
   m_RoaWithNearestNeighbors->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetRoaWithNearestNeighbors());
   RoaFrame->AddFrame(m_RoaWithNearestNeighbors, TightButtonLayout);
 
+  m_SplitByDetectorSide = new TGCheckButton(RoaFrame, "Split into one file per detector and side (strip hits only, ignores time split)", 3);
+  m_SplitByDetectorSide->Associate(this);
+  m_SplitByDetectorSide->SetOn(dynamic_cast<MModuleEventSaver*>(m_Module)->GetSplitByDetectorSide());
+  RoaFrame->AddFrame(m_SplitByDetectorSide, FirstLabelLayout);
+
 
   PostCreate();
 }
@@ -247,6 +252,7 @@ bool MGUIOptionsEventSaver::OnApply()
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithFlags(m_RoaWithFlags->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithOrigins(m_RoaWithOrigins->IsOn());
   dynamic_cast<MModuleEventSaver*>(m_Module)->SetRoaWithNearestNeighbors(m_RoaWithNearestNeighbors->IsOn());
+  dynamic_cast<MModuleEventSaver*>(m_Module)->SetSplitByDetectorSide(m_SplitByDetectorSide->IsOn());
 
   return true;
 }
