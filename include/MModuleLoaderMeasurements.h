@@ -73,6 +73,8 @@ class MModuleLoaderMeasurements : public MModule, public MFileEvents
   unsigned int m_NEventsInFile;
   //! The number of good events in file
   unsigned int m_NGoodEventsInFile;
+  //! The counter to assign event IDs for data taken through the RTB
+  unsigned int m_RTBEventCounter;
 
   // private members:
  private:

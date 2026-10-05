@@ -173,6 +173,7 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
 
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
+  m_RTBEventCounter = 0;
     
   return MModule::Initialize();
 }
@@ -826,10 +827,11 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       }
 
       MHDFEventIndices_V2& EventIndices = m_EventIndices_2[m_CurrentBatchIndex];
+      ++m_RTBEventCounter;
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
-      if (m_Buffer_2.empty()) {
+      if (m_Buffer_2.empty() == true) {
         if (g_Verbosity >= c_Error) cout << "Buffer is empty or null!" << endl;
         return false;
       }
@@ -884,8 +886,8 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
 
     if (m_DataTakenThroughRTB == true) {
       // Data taken through the RTB does not have native event IDs,
-      // which is why we assign consecutive event IDs (starting with 1) here
-      Event->SetID(m_NEventsInFile + 1);
+      // which is why we assign event IDs here
+      Event->SetID(m_RTBEventCounter);
 
     } else {
       // Data not going through the RTB has event IDs in uint16 format,
