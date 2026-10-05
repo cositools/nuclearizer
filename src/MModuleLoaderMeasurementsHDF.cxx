@@ -279,19 +279,19 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       smatch BoardMatch;
       regex BoardPattern(R"(\"board\"\s*:\s*\"(\w+)\")", regex::icase);
       if (regex_search(ConfigJSON, BoardMatch, BoardPattern) == true) {
-          MString Board = MString(BoardMatch[1].str()).ToLower();
-          if (Board == "rtb") {
-            if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data taken through the RTB" << endl;
-            m_DataTakenThroughRTB = true;
-          } else if (Board == "dib") {
-            if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data not taken through the RTB" << endl;
-            m_DataTakenThroughRTB = false;
-          } else {
-            if (g_Verbosity >= c_Error) {
-              cout << m_XmlTag << ": ERROR: Unknown board type \"" << Board << "\"" << endl;
-            }
-            return false;
+        MString Board = MString(BoardMatch[1].str()).ToLower();
+        if (Board == "rtb") {
+          if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data taken through the RTB" << endl;
+          m_DataTakenThroughRTB = true;
+        } else if (Board == "dib") {
+          if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data not taken through the RTB" << endl;
+          m_DataTakenThroughRTB = false;
+        } else {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: Unknown board type \"" << Board << "\"" << endl;
           }
+          return false;
+        }
       } else {
         if (g_Verbosity >= c_Info) {
           cout << m_XmlTag << ": No information on if the HDF5 data was taken through the RTB. Assuming that it was not." << endl;
@@ -325,7 +325,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
           if (m_ASICPolarities.empty() == true || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
 
             // Check that the previous entry has both primary or secondary before creating a new one
-            if (!m_ASICPolarities.empty() == true && (
+            if (m_ASICPolarities.empty() == false && (
                  m_ASICPolarities.back().find(true) == m_ASICPolarities.back().end() || 
                  m_ASICPolarities.back().find(false) == m_ASICPolarities.back().end())
             ) {
