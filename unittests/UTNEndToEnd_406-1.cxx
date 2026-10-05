@@ -56,6 +56,8 @@ private:
   bool TestConfiguration(const MString& Name, const MString& Suffix, const MString& ReferenceName);
   //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg and redirect its output <Name>.<Suffix> to OutputFile
   bool RunConfiguration(const MString& Name, const MString& Suffix, const MString& OutputFile);
+  //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg and redirect its output <Name>.<Suffix> to OutputFile
+  bool RunRTBConfiguration(const MString& Name, const MString& Suffix, const MString& OutputFile);
   //! Write a copy of the roa file without the events containing a BD GR Veto line
   bool RemoveVetoedEvents(const MString& InputFileName, const MString& OutputFileName);
   //! Run nuclearizer with arguments and capture stdout/stderr in a log file
@@ -135,6 +137,11 @@ bool UTNEndToEnd_406_1::TestConfiguration(const MString& Name, const MString& Su
 
   Passed = RunConfiguration(Name, Suffix, OutputFile) && Passed;
   if (Passed == false) return Passed;
+
+  if (Name.BeginsWith("hdf5") == true) {
+    Passed = RunRTBConfiguration(Name, Suffix, OutputFile) && Passed;
+    if (Passed == false) return Passed;
+  }
 
   // Compare output to reference line by line
   Passed = CompareOutputToReference(OutputFile, ReferenceFile) && Passed;
@@ -274,6 +281,70 @@ bool UTNEndToEnd_406_1::RunConfiguration(const MString& Name, const MString& Suf
 
   // Verify the output file was produced by this run
   Passed = EvaluateTrue("End-to-end test 406-1", Name + " output file",
+                        "The output file of " + Name + " was created",
+                        MFile::Exists(OutputFile)) && Passed;
+
+  MFile::Remove(TestConfigFile);
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNEndToEnd_406_1::RunRTBConfiguration(const MString& Name, const MString& Suffix, const MString& OutputFile)
+{
+  bool Passed = true;
+
+  MString DataDir        = MString(getenv("NUCLEARIZER")) + "/resource/unittestdata/406-1";
+  MString ConfigFile     = DataDir + "/" + Name + ".nuclearizer.rtb.cfg";
+  MString TestConfigFile = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + ".rtb.cfg";
+
+  // The log file name carries the process ID so concurrent end-to-end tests
+  // (and repeated runs) never share or clobber the same log.
+  MString LogFile = MString("/tmp/UTNEndToEnd_406-1_") + Name + "_" + (unsigned int) getpid() + ".log";
+
+  Passed = EvaluateTrue("End-to-end test 406-1 (RTB)", Name + " config file",
+                        "The RTB nuclearizer config file exists",
+                        MFile::Exists(ConfigFile)) && Passed;
+  if (Passed == false) return Passed;
+
+  ifstream ConfigIn(ConfigFile.Data());
+  Passed = EvaluateTrue("End-to-end test 406-1 (RTB)", Name + " temporary config input",
+                        "The RTB nuclearizer config file can be opened for reading",
+                        ConfigIn.is_open()) && Passed;
+  ofstream ConfigOut(TestConfigFile.Data());
+  Passed = EvaluateTrue("End-to-end test 406-1 (RTB)", Name + " temporary config output",
+                        "The temporary RTB nuclearizer config file can be opened for writing",
+                        ConfigOut.is_open()) && Passed;
+  if (Passed == false) return Passed;
+
+  const MString ConfigOutputFile = "$(NUCLEARIZER)/resource/unittestdata/406-1/" + Name + "." + Suffix;
+  string Line;
+  while (getline(ConfigIn, Line)) {
+    MString ConfigLine(Line.c_str());
+    ConfigLine.ReplaceAllInPlace(ConfigOutputFile, OutputFile);
+    ConfigOut << ConfigLine << endl;
+  }
+  ConfigIn.close();
+  ConfigOut.close();
+
+  // Remove any stale output from a previous run so the checks below reflect
+  // strictly what this run produced.
+  if (MFile::Exists(OutputFile) == true) {
+    MFile::Remove(OutputFile);
+  }
+
+  // Run nuclearizer fully automatically; stdout and stderr are captured to LogFile
+  MString NuclearizerArguments = MString("-c ") + TestConfigFile + " -a -n";
+  int Status = RunNuclearizer(NuclearizerArguments, LogFile);
+  Passed = EvaluateTrue("End-to-end test 406-1 (RTB)", Name + " exit status",
+                        "nuclearizer exits with status 0 (log: " + LogFile + ")",
+                        Status == 0) && Passed;
+
+  // Verify the output file was produced by this run
+  Passed = EvaluateTrue("End-to-end test 406-1 (RTB)", Name + " output file",
                         "The output file of " + Name + " was created",
                         MFile::Exists(OutputFile)) && Passed;
 
