@@ -274,12 +274,12 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 
     // Determine if the data was taken through the RTB (RTB/rtb) or not (DIB/dib)
     smatch BoardMatch;
-    regex BoardPattern(R"(\"board\"\s*:\s*\"(RTB|rtb|DIB|dib)\")");
+    regex BoardPattern(R"(\"board\"\s*:\s*\"(\w+)\")", regex::icase);
     if (regex_search(ConfigJSON, BoardMatch, BoardPattern)) {
-        string Board = BoardMatch[1].str();
-        if (Board == "RTB" || Board == "rtb") {
+        MString Board = MString(BoardMatch[1].str()).ToLower();
+        if (Board == "rtb") {
           m_DataTakenThroughRTB = true;
-        } else if (Board == "DIB" || Board == "dib") {
+        } else if (Board == "dib") {
           m_DataTakenThroughRTB = false;
         } else {
           if (g_Verbosity >= c_Error) {
