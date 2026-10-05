@@ -47,7 +47,7 @@ private:
   //! Test the ASIC and primary flags inferred from the read-out ID bits in the four-column format
   bool TestFourColumnReadOutIDInference();
   //! Test dropping the detectors which were not enabled during the run
-  bool TestRestrictToEnabledDetectors();
+  bool TestRestrictToEnabledDIBs();
   //! Test replacing LV/HV assignments from ASIC polarities
   bool TestUpdateASICPolarities();
   //! Test invalid ASIC polarity data and atomic failure behavior
@@ -77,7 +77,7 @@ bool UTNStripMap::Run()
   Passed = TestNineColumnFormat() && Passed;
   Passed = TestFourColumnFormat() && Passed;
   Passed = TestFourColumnReadOutIDInference() && Passed;
-  Passed = TestRestrictToEnabledDetectors() && Passed;
+  Passed = TestRestrictToEnabledDIBs() && Passed;
   Passed = TestUpdateASICPolarities() && Passed;
   Passed = TestInvalidASICPolarities() && Passed;
   Passed = TestBoundariesAndReloads() && Passed;
@@ -277,7 +277,7 @@ bool UTNStripMap::TestFourColumnReadOutIDInference()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNStripMap::TestRestrictToEnabledDetectors()
+bool UTNStripMap::TestRestrictToEnabledDIBs()
 {
   bool Passed = true;
   const MString Fixture = GetFixturePath("_restrict.map");
@@ -287,27 +287,27 @@ bool UTNStripMap::TestRestrictToEnabledDetectors()
   if (Out.is_open()) {
     Out << "0 0 0 1 0 0 0 0 10" << endl;
     Out << "1 0 0 0 0 1 0 1 10" << endl;
-    Out << "2 0 0 1 0 2 1 0 11" << endl;
-    Out << "3 0 0 0 0 3 1 1 11" << endl;
-    Out << "4 0 0 1 0 4 2 0 12" << endl;
+    Out << "2 0 1 1 0 2 1 0 11" << endl;
+    Out << "3 0 1 0 0 3 1 1 11" << endl;
+    Out << "4 0 2 1 0 4 2 0 12" << endl;
     Out.close();
   }
 
-  // A strip map normally covers every detector, while a run may only enable some of them
+  // A strip map normally covers every DIB, while a run may only enable some of them
   MStripMap Map;
   Passed = EvaluateTrue("Open()", "restriction fixture", "The restriction fixture loads", Map.Open(Fixture)) && Passed;
-  Passed = EvaluateTrue("RestrictToEnabledDetectors()", "detectors 0 and 2", "Restricting to a subset of the detectors succeeds", Map.RestrictToEnabledDetectors(vector<unsigned int> { 0, 2 })) && Passed;
+  Passed = EvaluateTrue("RestrictToEnabledDIBs()", "DIBs 0 and 2", "Restricting to a subset of the DIBs succeeds", Map.RestrictToEnabledDIBs(vector<unsigned int> { 0, 2 })) && Passed;
 
-  Passed = EvaluateTrue("HasReadOutID()", "detectors 0 and 2", "A read-out ID of a kept detector is still present", Map.HasReadOutID(0)) && Passed;
-  Passed = EvaluateTrue("HasReadOutID()", "detectors 0 and 2", "The second read-out ID of a kept detector is still present", Map.HasReadOutID(1)) && Passed;
-  Passed = EvaluateTrue("HasReadOutID()", "detectors 0 and 2", "The read-out ID of the other kept detector is still present", Map.HasReadOutID(4)) && Passed;
-  Passed = EvaluateFalse("HasReadOutID()", "detectors 0 and 2", "A read-out ID of a dropped detector is gone", Map.HasReadOutID(2)) && Passed;
-  Passed = EvaluateFalse("HasReadOutID()", "detectors 0 and 2", "The second read-out ID of a dropped detector is gone", Map.HasReadOutID(3)) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "DIBs 0 and 2", "A read-out ID of a kept DIB is still present", Map.HasReadOutID(0)) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "DIBs 0 and 2", "The second read-out ID of a kept DIB is still present", Map.HasReadOutID(1)) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "DIBs 0 and 2", "The read-out ID of the other kept DIB is still present", Map.HasReadOutID(4)) && Passed;
+  Passed = EvaluateFalse("HasReadOutID()", "DIBs 0 and 2", "A read-out ID of a dropped DIB is gone", Map.HasReadOutID(2)) && Passed;
+  Passed = EvaluateFalse("HasReadOutID()", "DIBs 0 and 2", "The second read-out ID of a dropped DIB is gone", Map.HasReadOutID(3)) && Passed;
 
-  Passed = EvaluateTrue("HasROIDetSideStrip()", "detectors 0 and 2", "The reverse lookup of a kept detector survives", Map.HasROIDetSideStrip(0, true, 10)) && Passed;
-  Passed = EvaluateFalse("HasROIDetSideStrip()", "detectors 0 and 2", "The reverse lookup of a dropped detector is gone", Map.HasROIDetSideStrip(1, true, 11)) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "DIBs 0 and 2", "The reverse lookup of a kept DIB survives", Map.HasROIDetSideStrip(0, true, 10)) && Passed;
+  Passed = EvaluateFalse("HasROIDetSideStrip()", "DIBs 0 and 2", "The reverse lookup of a dropped DIB is gone", Map.HasROIDetSideStrip(1, true, 11)) && Passed;
   if (Map.HasROIDetSideStrip(2, true, 12) == true) {
-    Passed = Evaluate("GetReadOutID()", "detectors 0 and 2", "The reverse lookup of a kept detector still returns its read-out ID", Map.GetReadOutID(2, true, 12), 4u) && Passed;
+    Passed = Evaluate("GetReadOutID()", "DIBs 0 and 2", "The reverse lookup of a kept DIB still returns its read-out ID", Map.GetReadOutID(2, true, 12), 4u) && Passed;
   }
 
   // The rejections below report via "if (g_Verbosity >= c_Error)", which DisableDefaultStreams() does
@@ -315,18 +315,18 @@ bool UTNStripMap::TestRestrictToEnabledDetectors()
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
 
-  // Restricting to detectors which are not in the map at all must not silently empty it
-  bool RestrictedToUnknown = Map.RestrictToEnabledDetectors(vector<unsigned int> { 7 });
-  Passed = EvaluateFalse("RestrictToEnabledDetectors()", "detector 7", "Restricting to a detector which is not in the map returns false", RestrictedToUnknown) && Passed;
-  Passed = EvaluateTrue("HasReadOutID()", "detector 7", "A rejected restriction leaves the map unchanged", Map.HasReadOutID(0)) && Passed;
+  // Restricting to DIBs which are not in the map at all must not silently empty it
+  bool RestrictedToUnknown = Map.RestrictToEnabledDIBs(vector<unsigned int> { 7 });
+  Passed = EvaluateFalse("RestrictToEnabledDIBs()", "DIB 7", "Restricting to a DIB which is not in the map returns false", RestrictedToUnknown) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "DIB 7", "A rejected restriction leaves the map unchanged", Map.HasReadOutID(0)) && Passed;
 
-  bool RestrictedToNone = Map.RestrictToEnabledDetectors(vector<unsigned int>());
-  Passed = EvaluateFalse("RestrictToEnabledDetectors()", "empty detector list", "Restricting to an empty detector list returns false", RestrictedToNone) && Passed;
-  Passed = EvaluateTrue("HasReadOutID()", "empty detector list", "A restriction to an empty list leaves the map unchanged", Map.HasReadOutID(0)) && Passed;
+  bool RestrictedToNone = Map.RestrictToEnabledDIBs(vector<unsigned int>());
+  Passed = EvaluateFalse("RestrictToEnabledDIBs()", "empty DIB list", "Restricting to an empty DIB list returns false", RestrictedToNone) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "empty DIB list", "A restriction to an empty list leaves the map unchanged", Map.HasReadOutID(0)) && Passed;
 
   MStripMap EmptyMap;
-  bool RestrictedEmpty = EmptyMap.RestrictToEnabledDetectors(vector<unsigned int> { 0 });
-  Passed = EvaluateFalse("RestrictToEnabledDetectors()", "empty map", "Restricting an empty map returns false", RestrictedEmpty) && Passed;
+  bool RestrictedEmpty = EmptyMap.RestrictToEnabledDIBs(vector<unsigned int> { 0 });
+  Passed = EvaluateFalse("RestrictToEnabledDIBs()", "empty map", "Restricting an empty map returns false", RestrictedEmpty) && Passed;
 
   g_Verbosity = OldVerbosity;
 

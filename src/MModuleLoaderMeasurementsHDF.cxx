@@ -129,9 +129,9 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_CurrentBatchIndex = 0;
   m_MinHitIndex = 0;
 
-  // Clear ASIC polarities and the enabled detectors
+  // Clear ASIC polarities and the enabled DIBs
   m_ASICPolarities.clear();
-  m_EnabledDetectors.clear();
+  m_EnabledDIBs.clear();
 
   if (MFile::Exists(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileName<<" does not exist."<<endl;
@@ -154,11 +154,11 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     return false;
   }
 
-  // Drop the detectors which were not enabled during the run: strip maps normally cover all detectors,
+  // Drop the DIBs from the strip map that were not enabled during the run: strip maps normally cover all detectors,
   // but a detector which was never configured still carries a full set of default ASIC polarities, and
   // applying those would put both of its sides on the same polarity
-  if (m_EnabledDetectors.empty() == false && m_StripMap.RestrictToEnabledDetectors(m_EnabledDetectors) == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The strip map contains none of the detectors enabled during the run."<<endl;
+  if (m_EnabledDIBs.empty() == false && m_StripMap.RestrictToEnabledDIBs(m_EnabledDIBs) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The strip map contains none of the DIBs enabled during the run."<<endl;
     return false;
   }
 
@@ -270,14 +270,14 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 
     // Read ASIC polarities from the JSON config string (if existent)
     m_ASICPolarities.clear();
-    m_EnabledDetectors.clear();
-    if (!ConfigJSON.empty()) {
+    m_EnabledDIBs.clear();
+    if (ConfigJSON.empty() == false) {
       bool ASICIsPrimary;
 
-      // Whether each detector was enabled during the run - a detector counts as enabled if either of
-      // its two ASIC sections is. Detectors which were never configured still carry a full set of
+      // Whether each DIB was enabled during the run - a DIB counts as enabled if either of
+      // its two ASIC sections is. DIBs which were never configured still carry a full set of
       // default polarities, so only the enabled ones may be used.
-      vector<bool> DetectorIsEnabled;
+      vector<bool> DIBIsEnabled;
 
       // Regex to match "primary"/"secondary", the "enabled" flag of the section, or the polarity in "SP"
       regex pattern(R"(\"(primary|secondary)\"|\"enabled\"\s*:\s*(true|false)|\"SP\"\s*:\s*(\d+))");
@@ -286,11 +286,11 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         smatch match = *i;
 
         // Check Group 1: Marker (primary/secondary)
-        if (match[1].matched) {
+        if (match[1].matched == true) {
 
           ASICIsPrimary = match[1].str() == "primary";
 
-          if (m_ASICPolarities.empty() || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
+          if (m_ASICPolarities.empty() == true || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
 
             // Check that the previous entry has both primary or secondary before creating a new one
             if (!m_ASICPolarities.empty() && (
@@ -302,7 +302,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
             }
 
             m_ASICPolarities.push_back(map<bool, vector<bool>>());
-            DetectorIsEnabled.push_back(false);
+            DIBIsEnabled.push_back(false);
           }
 
           // Initialize the vector for this ASIC key if it doesn't exist
@@ -310,18 +310,18 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         }
 
         // Check Group 2: the enabled flag of the current section
-        else if (match[2].matched) {
-          if (DetectorIsEnabled.empty()) {
+        else if (match[2].matched == true) {
+          if (DIBIsEnabled.empty() == true) {
             if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Enabled flag found without active ASIC section"<<endl;
             return false;
           }
 
-          if (match[2].str() == "true") DetectorIsEnabled.back() = true;
+          if (match[2].str() == "true") DIBIsEnabled.back() = true;
         }
 
         // Check Group 3: SP value
-        else if (match[3].matched) {
-          if (m_ASICPolarities.empty()) {
+        else if (match[3].matched == true) {
+          if (m_ASICPolarities.empty() == true) {
             if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": SP found without active ASIC section"<<endl;
             return false;
           }
@@ -337,14 +337,14 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         }
       }
 
-      for (size_t i = 0; i < DetectorIsEnabled.size(); ++i) {
-        if (DetectorIsEnabled[i] == true) m_EnabledDetectors.push_back((unsigned int) i);
+      for (size_t i = 0; i < DIBIsEnabled.size(); ++i) {
+        if (DIBIsEnabled[i] == true) m_EnabledDIBs.push_back((unsigned int) i);
       }
 
       // Output results for verification
       if (g_Verbosity >= c_Info) {
         for (size_t i = 0; i < m_ASICPolarities.size(); ++i) {
-          cout << "Detector ID " << i << (i < DetectorIsEnabled.size() && DetectorIsEnabled[i] ? " (enabled)" : " (disabled)") << ":" << endl;
+          cout << "Detector ID " << i << (i < DIBIsEnabled.size() && DIBIsEnabled[i] ? " (enabled)" : " (disabled)") << ":" << endl;
           for (bool key : {true, false} ) {
             cout << "  " << (key ? "Primary" : "Secondary") << ": ";
             for (bool s : m_ASICPolarities[i][key]) cout << (s ? "LV" : "HV") << " ";
