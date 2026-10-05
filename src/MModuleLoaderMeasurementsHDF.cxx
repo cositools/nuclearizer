@@ -166,7 +166,7 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   }
 
   // Update the ASIC polarities in the strip map (only if existent)
-  if (!m_ASICPolarities.empty() && m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
+  if (m_ASICPolarities.empty() == false && m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to update ASIC polarities based on the config JSON."<<endl;
     return false;
   }
@@ -273,25 +273,31 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
 
     // Determine if the data was taken through the RTB (RTB/rtb) or not (DIB/dib)
-    smatch BoardMatch;
-    regex BoardPattern(R"(\"board\"\s*:\s*\"(\w+)\")", regex::icase);
-    if (regex_search(ConfigJSON, BoardMatch, BoardPattern)) {
-        MString Board = MString(BoardMatch[1].str()).ToLower();
-        if (Board == "rtb") {
-          m_DataTakenThroughRTB = true;
-        } else if (Board == "dib") {
-          m_DataTakenThroughRTB = false;
-        } else {
-          if (g_Verbosity >= c_Error) {
-            cout << m_XmlTag << ": ERROR: Unknown board type \"" << Board << "\"" << endl;
+    
+    // If m_DataTakenThroughRTB was already set to true, do not default back
+    if (m_DataTakenThroughRTB == false) {
+      smatch BoardMatch;
+      regex BoardPattern(R"(\"board\"\s*:\s*\"(\w+)\")", regex::icase);
+      if (regex_search(ConfigJSON, BoardMatch, BoardPattern) == true) {
+          MString Board = MString(BoardMatch[1].str()).ToLower();
+          if (Board == "rtb") {
+            if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data taken through the RTB" << endl;
+            m_DataTakenThroughRTB = true;
+          } else if (Board == "dib") {
+            if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data not taken through the RTB" << endl;
+            m_DataTakenThroughRTB = false;
+          } else {
+            if (g_Verbosity >= c_Error) {
+              cout << m_XmlTag << ": ERROR: Unknown board type \"" << Board << "\"" << endl;
+            }
+            return false;
           }
-          return false;
+      } else {
+        if (g_Verbosity >= c_Info) {
+          cout << m_XmlTag << ": No information on if the HDF5 data was taken through the RTB. Assuming that it was not." << endl;
         }
-    } else {
-      if (g_Verbosity >= c_Info) {
-        cout << m_XmlTag << ": No information on if the HDF5 data was taken through the RTB. Assuming that it was not." << endl;
+        m_DataTakenThroughRTB = false;
       }
-      m_DataTakenThroughRTB = false;
     }
 
     // Read ASIC polarities from the JSON config string (if existent)
@@ -319,7 +325,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
           if (m_ASICPolarities.empty() == true || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
 
             // Check that the previous entry has both primary or secondary before creating a new one
-            if (!m_ASICPolarities.empty() && (
+            if (!m_ASICPolarities.empty() == true && (
                  m_ASICPolarities.back().find(true) == m_ASICPolarities.back().end() || 
                  m_ASICPolarities.back().find(false) == m_ASICPolarities.back().end())
             ) {
@@ -406,7 +412,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         cout<<endl;
       }
     } else {
-      if (g_Verbosity > c_Info) {
+      if (g_Verbosity >= c_Info) {
         cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
       }
     }
