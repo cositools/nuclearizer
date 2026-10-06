@@ -80,7 +80,7 @@ bool MSubModuleShieldReadout::Initialize()
 {
   // Initialize the module
 
-  if (!ParseShieldReadoutFile()) {
+  if (ParseShieldReadoutFile() == false) {
     if (g_Verbosity >= c_Error) cout << "ERROR: Failed to parse shield readout calibration file "
                                     << m_ShieldEnergyCalibrationFileName << endl;
     return false;
