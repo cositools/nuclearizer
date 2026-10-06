@@ -18,6 +18,9 @@
 
 // Standard libs:
 #include <fstream>
+#include <map>
+#include <set>
+#include <utility>
 using namespace std;
 
 // ROOT libs:
@@ -88,6 +91,11 @@ class MModuleEventSaver : public MModule
   MTime GetSplitFileTime() const { return m_SplitFileTime; }
   //! Set the time after which the file should be split
   void SetSplitFileTime(MTime SplitFileTime) { m_SplitFileTime = SplitFileTime; }
+
+  //! Return whether the roa file should be split into one file per detector and side
+  bool GetSplitByDetectorSide() const { return m_SplitByDetectorSide; }
+  //! Set whether the roa file should be split into one file per detector and side
+  void SetSplitByDetectorSide(bool Flag) { m_SplitByDetectorSide = Flag; }
 
   //! Return whether ADCs should be included in the roa file
   bool GetRoaWithADCs() const { return m_RoaWithADCs; }
@@ -162,6 +170,11 @@ class MModuleEventSaver : public MModule
   //! Start a new sub-file
   bool StartSubFile();
    
+  //! Return the file for the given detector side, open it if it does not exist yet - return nullptr on failure
+  MFile* GetDetectorSideFile(unsigned int DetectorID, bool LowVoltageSide);
+  //! Close all detector side files
+  void CloseDetectorSideFiles();
+
   //!
   void WriteHeader();
 
@@ -234,6 +247,8 @@ class MModuleEventSaver : public MModule
   bool m_RoaWithOrigins;
   //! True if we should include next neighbors in the data stream
   bool m_RoaWithNearestNeighbors;
+  //! True if the roa file should be split into one file per detector and side
+  bool m_SplitByDetectorSide;
   //! The read-out units of the roa file
   MReadOutFileFormat m_RoaFileFormat;
   
@@ -243,6 +258,8 @@ class MModuleEventSaver : public MModule
   MFile m_SubFileOut;
   //! Start time in case we split the file in mutliples
   MTime m_SubFileStart;
+  //! The output files if we split by detector (first) and side (second, true = low voltage)
+  map<pair<unsigned int, bool>, MFile> m_DetectorSideFiles;
 
   //! The start area of far field simulations
   double m_StartAreaFarField;

@@ -291,6 +291,9 @@ class MReadOutAssembly : public MReadOutSequence
   void StreamTra(ostream& S);
   //! Stream the read-out assembly in MEGAlib's ROA format
   void StreamRoa(ostream& S, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithTemperatures = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
+  //! Stream the read-out assembly in MEGAlib's ROA format, but only with the strip hits of the given detector side - crystal hits are omitted
+  //! Nothing is streamed and false is returned if the event has no such strip hits
+  bool StreamRoaDetectorSide(ostream& S, unsigned int DetectorID, bool LowVoltageSide, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
 
   //! Stream the BD flags
   void StreamBDFlags(ostream& S);
@@ -317,6 +320,11 @@ class MReadOutAssembly : public MReadOutSequence
 
   // protected methods:
  protected:
+  //! Shared implementation of StreamRoa and StreamRoaDetectorSide
+  //! If OnlyDetectorSide is true, only the strip hits of the given detector side are streamed, crystal hits are omitted,
+  //! and nothing is streamed and false is returned if there are no such strip hits
+  bool StreamRoaSelection(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors,
+                          bool OnlyDetectorSide, unsigned int DetectorID, bool LowVoltageSide);
 
   // private methods:
  private:

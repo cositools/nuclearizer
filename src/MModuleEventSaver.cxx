@@ -87,6 +87,7 @@ MModuleEventSaver::MModuleEventSaver() : MModule()
   m_RoaWithFlags = false;
   m_RoaWithOrigins = false;
   m_RoaWithNearestNeighbors = true;
+  m_SplitByDetectorSide = false;
 
   m_SplitFile = true;
   m_SplitFileTime.Set(60*10); // seconds
@@ -108,6 +109,7 @@ MModuleEventSaver::~MModuleEventSaver()
 {
   // Destructor
   
+  CloseDetectorSideFiles();
   m_Out.Close();
 }
 
@@ -120,6 +122,12 @@ bool MModuleEventSaver::Initialize()
   // Initialize the module
   
   m_SubFileStart.Set(0);  
+  CloseDetectorSideFiles();
+
+  if (m_SplitByDetectorSide == true && m_Mode != c_RoaFile) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Splitting by detector and side is only supported for roa files"<<endl;
+    return false;
+  }
 
   m_InternalFileName = m_FileName;
   
@@ -162,10 +170,15 @@ bool MModuleEventSaver::Initialize()
   }
   
   
-  m_Out.Open(m_InternalFileName, MFile::c_Write);
-  if (m_Out.IsOpen() == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_InternalFileName<<endl;
-    return false;
+  // When splitting by detector and side, the files are opened on demand and there is no main file
+  if (m_SplitByDetectorSide == false) {
+    m_Out.Open(m_InternalFileName, MFile::c_Write);
+    if (m_Out.IsOpen() == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_InternalFileName<<endl;
+      return false;
+    }
+  } else if (m_SplitFile == true) {
+    if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Splitting by detector and side is enabled - ignoring the time-based file splitting"<<endl;
   }
  
   ostringstream Header;
@@ -230,15 +243,18 @@ bool MModuleEventSaver::Initialize()
       if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to define the roa read-out unit of the strip hits"<<endl;
       return false;
     }
-    if (CrystalType != "") {
-      if (m_RoaFileFormat.AddReadOutUnit("UC", "voxel3d", CrystalType) == false) {
-        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to define the roa read-out unit of the crystal hits"<<endl;
+    // The detector side files only contain strip hits, thus they have no crystal read-out unit
+    if (m_SplitByDetectorSide == false) {
+      if (CrystalType != "") {
+        if (m_RoaFileFormat.AddReadOutUnit("UC", "voxel3d", CrystalType) == false) {
+          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to define the roa read-out unit of the crystal hits"<<endl;
+          return false;
+        }
+      } else {
+        // Crystal hits are always written as UC lines, so they need a declared read-out unit
+        if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The roa options select no read-out data the crystal hits have - enable the ADCs or the energies"<<endl;
         return false;
       }
-    } else {
-      // Crystal hits are always written as UC lines, so they need a declared read-out unit
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The roa options select no read-out data the crystal hits have - enable the ADCs or the energies"<<endl;
-      return false;
     }
     for (unsigned int u = 0; u < m_RoaFileFormat.GetNumberOfReadOutUnits(); ++u) {
       Header<<m_RoaFileFormat.GetUFLine(u)<<endl;
@@ -257,7 +273,9 @@ bool MModuleEventSaver::Initialize()
   
   m_Header = Header.str();
 
-  m_Out.Write(m_Header);
+  if (m_Out.IsOpen() == true) {
+    m_Out.Write(m_Header);
+  }
   
   return MModule::Initialize();
 }
@@ -341,16 +359,81 @@ void MModuleEventSaver::Finalize()
     m_SubFileOut.Close();
   }
 
-  m_Out.WriteLine("EN");
-  m_Out.WriteLine();
-  if (m_NumberOfSimulatedEvents > 0) {
-    m_Out.WriteLine(MString("TS ") + m_NumberOfSimulatedEvents);
-    m_Out.WriteLine();
+  for (auto& F: m_DetectorSideFiles) {
+    F.second.WriteLine("EN");
+    F.second.WriteLine();
+    if (m_NumberOfSimulatedEvents > 0) {
+      F.second.WriteLine(MString("TS ") + m_NumberOfSimulatedEvents);
+      F.second.WriteLine();
+    }
   }
-  m_Out.Close();
-  
+  CloseDetectorSideFiles();
+
+  if (m_Out.IsOpen() == true) {
+    m_Out.WriteLine("EN");
+    m_Out.WriteLine();
+    if (m_NumberOfSimulatedEvents > 0) {
+      m_Out.WriteLine(MString("TS ") + m_NumberOfSimulatedEvents);
+      m_Out.WriteLine();
+    }
+    m_Out.Close();
+  }
   
   return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MFile* MModuleEventSaver::GetDetectorSideFile(unsigned int DetectorID, bool LowVoltageSide)
+{
+  //! Return the file for the given detector side, open it if it does not exist yet
+
+  auto Iter = m_DetectorSideFiles.find(make_pair(DetectorID, LowVoltageSide));
+  if (Iter != m_DetectorSideFiles.end()) {
+    return &(Iter->second);
+  }
+
+  // Name: <base>.det<ID>.<lv|hv>.roa[.gz]
+  MString Name = m_InternalFileName;
+  if (Name.EndsWith(".gz") == true) {
+    Name.RemoveInPlace(Name.Length() - 3);
+  }
+  if (Name.EndsWith(".roa") == true) {
+    Name.RemoveInPlace(Name.Length() - 4);
+  }
+  Name += ".det";
+  Name += DetectorID;
+  Name += (LowVoltageSide == true) ? ".lv" : ".hv";
+  Name += ".roa";
+  if (m_Zip == true) {
+    Name += ".gz";
+  }
+
+  // Construct the file in place, since MFile cannot be copied
+  MFile& File = m_DetectorSideFiles[make_pair(DetectorID, LowVoltageSide)];
+  File.Open(Name, MFile::c_Write);
+  if (File.IsOpen() == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<Name<<endl;
+    m_DetectorSideFiles.erase(make_pair(DetectorID, LowVoltageSide));
+    return nullptr;
+  }
+  File.Write(m_Header);
+
+  return &File;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleEventSaver::CloseDetectorSideFiles()
+{
+  //! Close all detector side files
+
+  // The MFile destructor closes the files
+  m_DetectorSideFiles.clear();
 }
 
 
@@ -373,6 +456,30 @@ bool MModuleEventSaver::AnalyzeEvent(MReadOutAssembly* Event)
     if (Event->IsVeto() == true) return true;
   }
 
+
+  if (m_SplitByDetectorSide == true) {
+    // Find all detector sides with hits in this event (set keeps the files in a deterministic order)
+    set<pair<unsigned int, bool>> DetectorSides;
+    for (unsigned int h = 0; h < Event->GetNStripHits(); ++h) {
+      MStripHit* SH = Event->GetStripHit(h);
+      if (m_RoaWithNearestNeighbors == false && SH->IsNearestNeighbor() == true) continue;
+      DetectorSides.insert(make_pair(SH->GetDetectorID(), SH->IsLowVoltageStrip()));
+    }
+    for (const pair<unsigned int, bool>& DS: DetectorSides) {
+      MFile* File = GetDetectorSideFile(DS.first, DS.second);
+      if (File == nullptr) {
+        m_IsOK = false;
+        return false;
+      }
+      ostringstream Out;
+      Event->StreamRoaDetectorSide(Out, DS.first, DS.second, m_RoaWithADCs, m_RoaWithTACs, m_RoaWithEnergies, m_RoaWithTimings, m_RoaWithFlags, m_RoaWithOrigins, m_RoaWithNearestNeighbors);
+      File->Write(Out);
+    }
+
+    Event->SetAnalysisProgress(MAssembly::c_EventSaver);
+
+    return true;
+  }
 
   MFile* Choosen = 0; // Wish C++ would allow unassigned references...
   if (m_SplitFile == true) {
@@ -460,6 +567,11 @@ bool MModuleEventSaver::ReadXmlConfiguration(MXmlNode* Node)
     m_SplitFileTime.Set(SplitFileTimeNode->GetValueAsInt());
   }
 
+  MXmlNode* SplitByDetectorSideNode = Node->GetNode("SplitByDetectorSide");
+  if (SplitByDetectorSideNode != nullptr) {
+    m_SplitByDetectorSide = SplitByDetectorSideNode->GetValueAsBoolean();
+  }
+
   MXmlNode* RoaWithADCsNode = Node->GetNode("RoaWithADCs");
   if (RoaWithADCsNode != nullptr) {
     m_RoaWithADCs = RoaWithADCsNode->GetValueAsBoolean();
@@ -513,6 +625,7 @@ MXmlNode* MModuleEventSaver::CreateXmlConfiguration()
   new MXmlNode(Node, "AddTimeTag", m_AddTimeTag);
   new MXmlNode(Node, "SplitFile", m_SplitFile);
   new MXmlNode(Node, "SplitFileTime", m_SplitFileTime.GetAsSystemSeconds());
+  new MXmlNode(Node, "SplitByDetectorSide", m_SplitByDetectorSide);
   new MXmlNode(Node, "RoaWithADCs", m_RoaWithADCs);
   new MXmlNode(Node, "RoaWithTACs", m_RoaWithTACs);
   new MXmlNode(Node, "RoaWithEnergies", m_RoaWithEnergies);

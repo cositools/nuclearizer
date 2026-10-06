@@ -661,6 +661,39 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
   //
   // WithTemperatures is currently not used, since we don't have that housekeeping info at the moment
 
+  StreamRoaSelection(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins, WithNearestNeighbors, false, 0, false);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::StreamRoaDetectorSide(ostream& S, unsigned int DetectorID, bool LowVoltageSide, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
+{
+  // Stream the read-out assembly in MEGAlib's ROA format, but only with the strip hits of the given detector side
+
+  return StreamRoaSelection(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins, WithNearestNeighbors, true, DetectorID, LowVoltageSide);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::StreamRoaSelection(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors,
+                                          bool OnlyDetectorSide, unsigned int DetectorID, bool LowVoltageSide)
+{
+  // Shared implementation of StreamRoa and StreamRoaDetectorSide
+
+  vector<MStripHit*> SelectedStripHits;
+  for (MStripHit* SH: m_StripHits) {
+    if (WithNearestNeighbors == false && SH->IsNearestNeighbor() == true) continue;
+    if (OnlyDetectorSide == true && (SH->GetDetectorID() != DetectorID || SH->IsLowVoltageStrip() != LowVoltageSide)) continue;
+    SelectedStripHits.push_back(SH);
+  }
+  if (OnlyDetectorSide == true && SelectedStripHits.size() == 0) {
+    return false;
+  }
+
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
 
@@ -675,22 +708,23 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
   }
 
   unsigned int Counter = 0;
-  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
-      continue;
-    }
-    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
+  for (MStripHit* SH: SelectedStripHits) {
+    SH->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
     ++Counter;
   }
-  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
-    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithFlags, WithOrigins);
-    ++Counter;
+  if (OnlyDetectorSide == false) {
+    for (MCrystalHit* CH: m_CrystalHits) {
+      CH->StreamRoa(S, WithADCs, WithEnergies, WithFlags, WithOrigins);
+      ++Counter;
+    }
   }
   if (Counter == 0) {
     S<<"BD No hits"<<endl;
   }
 
   StreamBDFlags(S);
+
+  return true;
 }
 
 
