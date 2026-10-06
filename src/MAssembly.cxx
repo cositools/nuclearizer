@@ -82,6 +82,7 @@ using namespace std;
 #include "MModuleDiagnostics.h"
 #include "MModuleDiagnosticsEnergyPerStrip.h"
 #include "MModuleDEESMEX.h"
+#include "MCOSIPayloadLollipopCut.h"
 
 
 
@@ -137,6 +138,8 @@ MAssembly::MAssembly()
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsHDF());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsFITS());
   m_Supervisor->AddAvailableModule(new MModuleLoaderMeasurementsL0());
+  
+  m_Supervisor->AddAvailableModule(new MCOSIPayloadLollipopCut());
 
   m_Supervisor->AddAvailableModule(new MModuleDEESMEX());
 
@@ -160,7 +163,7 @@ MAssembly::MAssembly()
 
   m_Supervisor->AddAvailableModule(new MModuleDiagnostics());
   m_Supervisor->AddAvailableModule(new MModuleDiagnosticsEnergyPerStrip());
-
+  
   m_Supervisor->Load();
   
   m_Supervisor->SetUIProgramName("Nuclearizer");
