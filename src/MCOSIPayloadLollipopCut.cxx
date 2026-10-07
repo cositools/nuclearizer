@@ -87,6 +87,8 @@ MCOSIPayloadLollipopCut::MCOSIPayloadLollipopCut()
   m_Source1Position = 0;
   m_Source2Position = 0;
   
+  m_ExpoEnergySpectrum = nullptr;
+  
   // Clear keep list so it starts cutting 100% of events
   m_DetectorsToKeep.clear();
   
@@ -106,7 +108,9 @@ bool MCOSIPayloadLollipopCut::Initialize()
   // Initialize the module
   
   // Refresh m_DetectorsToKeep based on current m_Source1Position and m_Source2Position
-    UpdateKeptDetectors();
+  UpdateKeptDetectors();
+  
+  std::cout<<"Lollipop cut: Apply="<<m_ApplyKeepSidesIlluminatedByLollipops<<" Source1="<<m_Source1Position<<" Source2="<<m_Source2Position<<" NKeptSides="<<m_DetectorsToKeep.size()<<std::endl;
   
   return MModule::Initialize();
 }
@@ -425,15 +429,18 @@ bool MCOSIPayloadLollipopCut::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
-  // Apply lollipop side cut
-  // If TAC calibration failed or the cut fails, mark the event as filtered out
   if (m_ApplyKeepSidesIlluminatedByLollipops == true) {
-    if (Event->HasTACCalibrationError() == true || ApplyKeepSidesIlluminatedByLollipops(Event) == false) {
-      Event->SetFilteredOut(true);  // Flag the event so downstream modules/savers drop it
-      return true;                  // The module itself ran fine, the event is just cut
+    bool TACError = Event->HasTACCalibrationError();
+    bool Keep = ApplyKeepSidesIlluminatedByLollipops(Event);
+    
+    std::cout<<"Lollipop cut: event "<<Event->GetID()<<" TACError="<<TACError<<" Keep="<<Keep<<std::endl;
+    
+    if (TACError == true || Keep == false) {
+      Event->SetFilteredOut(true);
+      return true;
     }
   }
-
+  
   // Log post-cut spectrum exposure for surviving events
   if (HasExpos()) {
     for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
