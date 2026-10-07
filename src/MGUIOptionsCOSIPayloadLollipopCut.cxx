@@ -73,6 +73,10 @@ MGUIOptionsCOSIPayloadLollipopCut::~MGUIOptionsCOSIPayloadLollipopCut()
 
 void MGUIOptionsCOSIPayloadLollipopCut::Create()
 {
+  
+  // TODO: Sources are always placed as a pair in practice, so replace the
+  //       two columns of 6 radio buttons with a single column of 6 paired positions.
+  
   PreCreate();
   
   MCOSIPayloadLollipopCut* Module = dynamic_cast<MCOSIPayloadLollipopCut*>(m_Module);
