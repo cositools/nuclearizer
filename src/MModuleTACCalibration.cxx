@@ -29,6 +29,7 @@
 #include "MGUIExpoTACcut.h"
 #include "MGUIExpoPlotSpectrum.h"
 #include "MGUIOptionsTACCalibration.h"
+#include "MSupervisor.h"
 
 // Standard libs:
 #include <algorithm>
@@ -93,8 +94,7 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
 
   m_SideToIndex = {{'l', 0}, {'h', 1}, {'0', 0}, {'1', 1}, {'p', 0}, {'n', 1}};
 
-  // Default energy spectra plot in GUI hardcoded to false 
-  // (should only be used when TAC calibration/cut happens after Energy Calibration)
+  // Determined in Initalize function, only true when TAC calibration/cut happens after Energy Calibration
   m_PlotEnergySpectrum = false;
 
 }
@@ -126,6 +126,21 @@ bool MModuleTACCalibration::Initialize()
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The TAC calibration data set is empty"<<endl;
     return false;
   }
+
+  // Only show the before/after energy spectrum if the energies are already
+  // calibrated when they reach this module. Default to false
+  m_PlotEnergySpectrum = false;
+  MSupervisor* Supervisor = MSupervisor::GetSupervisor();
+  //Interate through all modules in MSupervisor
+  for (unsigned int m = 0; m < Supervisor->GetNModules(); ++m) {
+    MModule* M = Supervisor->GetModule(m);
+    if (M == this) break; // reaches current module
+    if (M->ProvidesModuleType(MAssembly::c_EnergyCalibration) == true) {
+      m_PlotEnergySpectrum = true;
+      break;
+    }
+  }
+
 
   return MModule::Initialize();
 }

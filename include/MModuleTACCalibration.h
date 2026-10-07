@@ -91,9 +91,6 @@ class MModuleTACCalibration : public MModule
   //! Get TAC coincidence window in ns
   double GetCoincidenceWindow() const { return m_CoincidenceWindow; }
 
-  //! Set option to plot energy spectra in GUI
-  void SetPlotEnergySpectrum(bool plot) { m_PlotEnergySpectrum = plot; }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
