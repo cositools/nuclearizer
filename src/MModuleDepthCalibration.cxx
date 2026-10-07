@@ -660,12 +660,17 @@ bool MModuleDepthCalibration::LoadCoeffsFile(MString FileName)
 
   MString Line;
   while (CoeffsFile.ReadLine(Line) == true) {
-    if (Line.BeginsWith('#') == true) {
+    if (Line.BeginsWith("###") == true) {
+      // Comments starting with three ### carry information for the depth calibration
       std::vector<MString> Tokens = Line.Tokenize(" ");
       m_Coeffs_Energy = Tokens[5].ToDouble();
       if (g_Verbosity >= c_Info) {
         cout << m_XmlTag << ": The stretch and offset were calculated for " << m_Coeffs_Energy << " keV." << endl;
       }
+    } if (Line.BeginsWith("#") == true) {
+      // Comments started with a single # should be ignored
+      continue;
+
     } else {
       std::vector<MString> Tokens = Line.Tokenize(",");
       if (Tokens.size() == 5) {
@@ -751,16 +756,20 @@ bool MModuleDepthCalibration::LoadSplinesFile(MString FileName)
   int DetID = 0;
   while (SplineFile.ReadLine(Line)) {
     if (Line.Length() != 0) {
-      if (Line.BeginsWith("#") == true) {
+      if (Line.BeginsWith("###") == true) {
+        // Comments starting with three ### carry information for the depth calibration
         // If we've reached a new CTD spline then record the previous one in the m_SplineMaps and start a new one.
         vector<MString> tokens = Line.Tokenize(" ");
-
         if (DepthVec.size() > 0) {
           Result &= AddDepthCTD(DepthVec, CTDArr, DetID, m_DepthGrid, m_CTDMap, m_SplineMap, 1000);
         }
 
         DepthVec.clear(); CTDArr.clear(); 
         DetID = tokens[1].ToInt();
+
+      } else if (Line.BeginsWith("#") == true) {
+        // Comments starting with a single # should be ignored
+        continue;
 
       } else {
         vector<MString> tokens = Line.Tokenize(",");
