@@ -96,6 +96,7 @@ MModuleDepthCalibration::MModuleDepthCalibration() : MModule()
   m_ErrorSH = 0;
   m_ErrorNullSH=0;
   m_ErrorNoE=0;
+  m_ErrorNoFastTiming = 0;
 }
 
 
@@ -325,6 +326,12 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Empty Depth vector" << endl;
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
+        } else if ((LVSH->HasFastTiming() == false) || (HVSH->HasFastTiming() == false)) {
+          // A slow-timing TAC still calibrates to a positive time, but should not be used for depth reconstruction
+          // TODO: Handle depth calibration for events with slow timing
+          ++m_ErrorNoFastTiming;
+          H->SetNoDepth();
+          Event->SetDepthCalibrationError("No fast timing");
         } else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
           ++m_Error3;
           H->SetNoDepth();
@@ -1280,6 +1287,7 @@ void MModuleDepthCalibration::Finalize()
     cout << "Number of hits missing calibration coefficients: " << m_Error1 << endl;
     cout << "Number of hits too far outside of detector: " << m_Error2 << endl;
     cout << "Number of hits missing timing information: " << m_Error3 << endl;
+    cout << "Number of hits without fast timing on at least one side: " << m_ErrorNoFastTiming << endl;
     cout << "Number of hits with strips hit multiple times: " << m_Error5 << endl;
     cout << "Number of hits with non-adjacent strip hits: " << m_Error6 << endl;
     cout << "Number of hits with too many strip hits: " << m_Error4 << endl;
