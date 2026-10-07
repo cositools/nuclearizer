@@ -86,6 +86,9 @@ class MCOSIPayloadLollipopCut : public MModule
   }
   
   void UpdateKeptDetectors();
+  
+  virtual bool ReadXmlConfiguration(MXmlNode* Node);
+  virtual MXmlNode* CreateXmlConfiguration();
 
   // private methods:
  private:
