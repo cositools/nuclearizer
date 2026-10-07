@@ -419,34 +419,27 @@ bool MCOSIPayloadLollipopCut::AnalyzeEvent(MReadOutAssembly* Event)
   // Log pre-cut spectrum exposure
   if (HasExpos()) {
     for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
-      MStripHit* stripHit = Event->GetStripHit(i);
-
-      m_ExpoEnergySpectrum->AddEnergyInitial(
-        stripHit->GetEnergy(),
-        stripHit->IsNearestNeighbor(),
-        stripHit->IsLowVoltageStrip()
-      );
+      MStripHit* SH = Event->GetStripHit(i);
+      if (SH == nullptr) continue;
+      m_ExpoEnergySpectrum->AddEnergyInitial(SH->GetEnergy(), SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
     }
   }
 
   // Apply lollipop side cut
-  // If TAC calibration failed or the cut fails, reject the event
+  // If TAC calibration failed or the cut fails, mark the event as filtered out
   if (m_ApplyKeepSidesIlluminatedByLollipops == true) {
     if (Event->HasTACCalibrationError() == true || ApplyKeepSidesIlluminatedByLollipops(Event) == false) {
-      return false; // Cut event
+      Event->SetFilteredOut(true);  // Flag the event so downstream modules/savers drop it
+      return true;                  // The module itself ran fine, the event is just cut
     }
   }
 
   // Log post-cut spectrum exposure for surviving events
   if (HasExpos()) {
     for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
-      MStripHit* stripHit = Event->GetStripHit(i);
-
-      m_ExpoEnergySpectrum->AddEnergyFinal(
-        stripHit->GetEnergy(),
-        stripHit->IsNearestNeighbor(),
-        stripHit->IsLowVoltageStrip()
-      );
+      MStripHit* SH = Event->GetStripHit(i);
+      if (SH == nullptr) continue;
+      m_ExpoEnergySpectrum->AddEnergyFinal(SH->GetEnergy(), SH->IsNearestNeighbor(), SH->IsLowVoltageStrip());
     }
   }
 
