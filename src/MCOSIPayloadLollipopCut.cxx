@@ -62,7 +62,6 @@ MCOSIPayloadLollipopCut::MCOSIPayloadLollipopCut()
   m_XmlTag = "XmlTagCOSIPayloadLollipopCut";
   
   // Set all modules, which have to be done before this module
-  // TODO: Is there a way to make it so that this module can come after only the taccal 
   AddPreceedingModuleType(MAssembly::c_TACCalibration);
   
   // Set all types this modules handles
@@ -85,8 +84,11 @@ MCOSIPayloadLollipopCut::MCOSIPayloadLollipopCut()
   m_ApplyKeepSidesIlluminatedByLollipops = true;
   
   // Set default source positions
-  m_Source1Position = 1;
-  m_Source2Position = 1;
+  m_Source1Position = 0;
+  m_Source2Position = 0;
+  
+  // Clear keep list so it starts cutting 100% of events
+  m_DetectorsToKeep.clear();
   
 }
 
@@ -407,6 +409,7 @@ bool MCOSIPayloadLollipopCut::ApplyKeepSidesIlluminatedByLollipops(MReadOutAssem
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -452,6 +455,9 @@ bool MCOSIPayloadLollipopCut::AnalyzeEvent(MReadOutAssembly* Event)
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 bool MCOSIPayloadLollipopCut::ReadXmlConfiguration(MXmlNode* Node)
@@ -489,11 +495,26 @@ MXmlNode* MCOSIPayloadLollipopCut::CreateXmlConfiguration()
 
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 MModule* MCOSIPayloadLollipopCut::Clone()
 {
-  return new MCOSIPayloadLollipopCut();
-}
+  MCOSIPayloadLollipopCut* Module = new MCOSIPayloadLollipopCut();
 
+  // Copy parameters from master instance to clone
+  Module->m_ApplyKeepSidesIlluminatedByLollipops = m_ApplyKeepSidesIlluminatedByLollipops;
+  Module->m_Source1Position = m_Source1Position;
+  Module->m_Source2Position = m_Source2Position;
+
+  // Populate m_DetectorsToKeep on the clone
+  Module->UpdateKeptDetectors();
+
+  return Module;
+}
 
 
 
