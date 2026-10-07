@@ -82,7 +82,7 @@ MCOSIPayloadLollipopCut::MCOSIPayloadLollipopCut()
   m_AllowMultipleInstances = true;
 
   // Applying lollipo cuts by default
-  m_ApplyKeepSidesIlluminatedByLollipops = false;
+  m_ApplyKeepSidesIlluminatedByLollipops = true;
   
   // Set default source positions
   m_Source1Position = 1;
@@ -103,33 +103,8 @@ bool MCOSIPayloadLollipopCut::Initialize()
 {
   // Initialize the module
   
-  //TODO: adding this now if I need a file loaded, but I think I will just hardcode everything so I'm going to say no file needed for now
-  //if (LoadTACCalFile(m_TACCalFile) == false) {
-  //  if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: TAC Calibration file could not be loaded."<<endl;
-  //  return false;
-  //}
-  
-  // Some sanity checks:
-  //if (m_TACCal.size() == 0) {
-  //  if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The TAC calibration data set is empty"<<endl;
-  //  return false;
-  //}
-  
-  // Set default states for the Source 1 GUI button variables
-  m_Source1_Q0Q1_L0L1 = false;
-  m_Source1_Q1Q2_L0L1 = false;
-  m_Source1_Q0Q1_L1L2 = false;
-  m_Source1_Q1Q2_L1L2 = false;
-  m_Source1_Q0Q1_L2L3 = false;
-  m_Source1_Q1Q2_L2L3 = false;
-
-  // Set default states for the Source 2 GUI button variables
-  m_Source2_Q2Q3_L0L1 = false;
-  m_Source2_Q3Q0_L0L1 = false;
-  m_Source2_Q2Q3_L1L2 = false;
-  m_Source2_Q3Q0_L1L2 = false;
-  m_Source2_Q2Q3_L2L3 = false;
-  m_Source2_Q3Q0_L2L3 = false;
+  // Refresh m_DetectorsToKeep based on current m_Source1Position and m_Source2Position
+    UpdateKeptDetectors();
   
   return MModule::Initialize();
 }
@@ -475,10 +450,51 @@ bool MCOSIPayloadLollipopCut::AnalyzeEvent(MReadOutAssembly* Event)
   return true;
 }
 
+
+
+
+
+bool MCOSIPayloadLollipopCut::ReadXmlConfiguration(MXmlNode* Node)
+{
+  MXmlNode* ApplyNode = Node->GetNode("ApplyKeepSidesIlluminatedByLollipops");
+  if (ApplyNode != nullptr) {
+    m_ApplyKeepSidesIlluminatedByLollipops = ApplyNode->GetValueAsBoolean();
+  }
+
+  MXmlNode* Source1Node = Node->GetNode("Source1Position");
+  if (Source1Node != nullptr) {
+    m_Source1Position = Source1Node->GetValueAsInt();
+  }
+
+  MXmlNode* Source2Node = Node->GetNode("Source2Position");
+  if (Source2Node != nullptr) {
+    m_Source2Position = Source2Node->GetValueAsInt();
+  }
+
+  return true;
+}
+
+MXmlNode* MCOSIPayloadLollipopCut::CreateXmlConfiguration()
+{
+  MXmlNode* Node = new MXmlNode(nullptr, m_XmlTag);
+
+  new MXmlNode(Node, "ApplyKeepSidesIlluminatedByLollipops", m_ApplyKeepSidesIlluminatedByLollipops);
+  new MXmlNode(Node, "Source1Position", m_Source1Position);
+  new MXmlNode(Node, "Source2Position", m_Source2Position);
+
+  return Node;
+}
+
+
+
 MModule* MCOSIPayloadLollipopCut::Clone()
 {
   return new MCOSIPayloadLollipopCut();
 }
+
+
+
+
 
 
 // MCutCalibrationBackScatterBump.cxx: the end...
