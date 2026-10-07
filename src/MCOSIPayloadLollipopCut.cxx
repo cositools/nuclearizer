@@ -59,7 +59,7 @@ MCOSIPayloadLollipopCut::MCOSIPayloadLollipopCut()
   m_Name = "COSI Payload Lollipop Cut";
   
   // Set the XML tag --- has to be unique --- no spaces allowed
-  m_XmlTag = "XmlTagCutBackscatterBump";
+  m_XmlTag = "XmlTagCOSIPayloadLollipopCut";
   
   // Set all modules, which have to be done before this module
   // TODO: Is there a way to make it so that this module can come after only the taccal 
@@ -317,7 +317,7 @@ bool MCOSIPayloadLollipopCut::ApplyKeepSidesIlluminatedByLollipops(MReadOutAssem
 {
   // If the event is empty, pass it through
   if (Event->GetNStripHits() == 0) {
-    return true;
+    return false;
   }
 
   // Make sure all hits belong to the exact same detector
@@ -470,6 +470,8 @@ bool MCOSIPayloadLollipopCut::ReadXmlConfiguration(MXmlNode* Node)
   if (Source2Node != nullptr) {
     m_Source2Position = Source2Node->GetValueAsInt();
   }
+  
+  UpdateKeptDetectors(); // Refresh detector array from newly read positions!
 
   return true;
 }
@@ -497,5 +499,5 @@ MModule* MCOSIPayloadLollipopCut::Clone()
 
 
 
-// MCutCalibrationBackScatterBump.cxx: the end...
+// MCOSIPayloadLollipopCut.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
