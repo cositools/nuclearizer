@@ -56,7 +56,7 @@ private:
   bool TestConfiguration(const MString& Name, const MString& Suffix, const MString& ReferenceName);
   //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg and redirect its output <Name>.<Suffix> to OutputFile
   bool RunConfiguration(const MString& Name, const MString& Suffix, const MString& OutputFile);
-  //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg and redirect its output <Name>.<Suffix> to OutputFile
+  //! Run nuclearizer with the configuration <Name>.nuclearizer.rtb.cfg and redirect its output <Name>.<Suffix> to OutputFile
   bool RunRTBConfiguration(const MString& Name, const MString& Suffix, const MString& OutputFile);
   //! Write a copy of the roa file without the events containing a BD GR Veto line
   bool RemoveVetoedEvents(const MString& InputFileName, const MString& OutputFileName);
