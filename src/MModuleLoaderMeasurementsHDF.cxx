@@ -129,6 +129,9 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_CurrentBatchIndex = 0;
   m_MinHitIndex = 0;
 
+  // As default, assume that the data was NOT taken through the RTB
+  m_DataTakenThroughRTB = false;
+
   // Clear ASIC polarities and the enabled DIBs
   m_ASICPolarities.clear();
   m_EnabledDIBs.clear();
@@ -163,13 +166,14 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   }
 
   // Update the ASIC polarities in the strip map (only if existent)
-  if (!m_ASICPolarities.empty() && m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
+  if (m_ASICPolarities.empty() == false && m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to update ASIC polarities based on the config JSON."<<endl;
     return false;
   }
 
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
+  m_RTBEventCounter = 0;
     
   return MModule::Initialize();
 }
@@ -268,6 +272,34 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
 
+    // Determine if the data was taken through the RTB (RTB/rtb) or not (DIB/dib)
+    
+    // If m_DataTakenThroughRTB was already set to true, do not default back
+    if (m_DataTakenThroughRTB == false) {
+      smatch BoardMatch;
+      regex BoardPattern(R"(\"board\"\s*:\s*\"(\w+)\")", regex::icase);
+      if (regex_search(ConfigJSON, BoardMatch, BoardPattern) == true) {
+        MString Board = MString(BoardMatch[1].str()).ToLower();
+        if (Board == "rtb") {
+          if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data taken through the RTB" << endl;
+          m_DataTakenThroughRTB = true;
+        } else if (Board == "dib") {
+          if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data not taken through the RTB" << endl;
+          m_DataTakenThroughRTB = false;
+        } else {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: Unknown board type \"" << Board << "\"" << endl;
+          }
+          return false;
+        }
+      } else {
+        if (g_Verbosity >= c_Info) {
+          cout << m_XmlTag << ": No information on if the HDF5 data was taken through the RTB. Assuming that it was not." << endl;
+        }
+        m_DataTakenThroughRTB = false;
+      }
+    }
+
     // Read ASIC polarities from the JSON config string (if existent)
     m_ASICPolarities.clear();
     m_EnabledDIBs.clear();
@@ -293,7 +325,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
           if (m_ASICPolarities.empty() == true || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
 
             // Check that the previous entry has both primary or secondary before creating a new one
-            if (!m_ASICPolarities.empty() && (
+            if (m_ASICPolarities.empty() == false && (
                  m_ASICPolarities.back().find(true) == m_ASICPolarities.back().end() || 
                  m_ASICPolarities.back().find(false) == m_ASICPolarities.back().end())
             ) {
@@ -380,7 +412,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         cout<<endl;
       }
     } else {
-      if (g_Verbosity > c_Info) {
+      if (g_Verbosity >= c_Info) {
         cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
       }
     }
@@ -801,10 +833,11 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       }
 
       MHDFEventIndices_V2& EventIndices = m_EventIndices_2[m_CurrentBatchIndex];
+      ++m_RTBEventCounter;
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
-      if (m_Buffer_2.empty()) {
+      if (m_Buffer_2.empty() == true) {
         if (g_Verbosity >= c_Error) cout << "Buffer is empty or null!" << endl;
         return false;
       }
@@ -857,14 +890,22 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       return false;
     }
 
-    if (EventID < m_LastEventID) {
-      m_NumberOfEventIDRollOvers++;
+    if (m_DataTakenThroughRTB == true) {
+      // Data taken through the RTB does not have native event IDs,
+      // which is why we assign event IDs here
+      Event->SetID(m_RTBEventCounter);
+
+    } else {
+      // Data not going through the RTB has event IDs in uint16 format,
+      // which is why we check for event ID rollovers to reconstruct the correct event ID
+      if (EventID < m_LastEventID) {
+        m_NumberOfEventIDRollOvers++;
+      }
+      m_LastEventID = EventID;
+
+      unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
+      Event->SetID(LongEventID);
     }
-    m_LastEventID = EventID;
-
-    unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
-
-    Event->SetID(LongEventID);
 
     // Define event time based on the timecode within the HDF versions
     if (m_HDFStripHitVersion <= MHDFStripHitVersion::V2_0) {
