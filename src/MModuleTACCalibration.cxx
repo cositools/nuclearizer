@@ -29,6 +29,7 @@
 #include "MGUIExpoTACcut.h"
 #include "MGUIExpoPlotSpectrum.h"
 #include "MGUIOptionsTACCalibration.h"
+#include "MSupervisor.h"
 
 // Standard libs:
 #include <algorithm>
@@ -93,6 +94,9 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
 
   m_SideToIndex = {{'l', 0}, {'h', 1}, {'0', 0}, {'1', 1}, {'p', 0}, {'n', 1}};
 
+  // Determined in Initalize function, only true when TAC calibration/cut happens after Energy Calibration
+  m_PlotEnergySpectrum = false;
+
 }
 
 
@@ -123,10 +127,26 @@ bool MModuleTACCalibration::Initialize()
     return false;
   }
 
+  // Only show the before/after energy spectrum if the energies are already
+  // calibrated when they reach this module. Default to false
+  m_PlotEnergySpectrum = false;
+  MSupervisor* Supervisor = MSupervisor::GetSupervisor();
+  //Interate through all modules in MSupervisor
+  for (unsigned int m = 0; m < Supervisor->GetNModules(); ++m) {
+    MModule* M = Supervisor->GetModule(m);
+    if (M == this) break; // reaches current module
+    if (M->ProvidesModuleType(MAssembly::c_EnergyCalibration) == true) {
+      m_PlotEnergySpectrum = true;
+      break;
+    }
+  }
+
+
   return MModule::Initialize();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void MModuleTACCalibration::CreateExpos()
 {
   if (HasExpos() == true) return;
@@ -139,11 +159,16 @@ void MModuleTACCalibration::CreateExpos()
     unsigned int DetID = m_DetectorIDs[i];
     m_ExpoTACcut->SetTACHistogramParameters(DetID, 200, 0, 6000);
   }
-
   m_Expos.push_back(m_ExpoTACcut);
 
-  m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
-  m_Expos.push_back(m_ExpoEnergySpectrum);
+  // Only create the energy spectra GUI if requested
+  if (m_PlotEnergySpectrum == true) {
+    m_ExpoEnergySpectrum = new MGUIExpoPlotSpectrum(this);
+    m_Expos.push_back(m_ExpoEnergySpectrum);
+  } else {
+    m_ExpoEnergySpectrum = nullptr; 
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -161,18 +186,22 @@ void MModuleTACCalibration::ShowOptionsGUI()
 
 bool MModuleTACCalibration::AnalyzeEvent(MReadOutAssembly* Event) 
 {
-  if (HasExpos()) {
-    for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
+  // Check if GUI is active and if the event has already been energy calibrated
+  if ((HasExpos() == true) && (m_ExpoEnergySpectrum != nullptr)) {
+    if (Event->HasAnalysisProgress(MAssembly::c_EnergyCalibration) == true) {
+      for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
 
-      MStripHit* SH = Event->GetStripHit(i);
+        MStripHit* SH = Event->GetStripHit(i);
 
-      m_ExpoEnergySpectrum->AddEnergyInitial(
-        SH->GetEnergy(),
-        SH->IsNearestNeighbor(),
-        SH->IsLowVoltageStrip()
-      );
+        m_ExpoEnergySpectrum->AddEnergyInitial(
+          SH->GetEnergy(),
+          SH->IsNearestNeighbor(),
+          SH->IsLowVoltageStrip()
+        );
+      }
     }
   }
+  
 
   // Always apply TAC calibration
   if (ApplyTACCal(Event) == false){
@@ -186,20 +215,22 @@ bool MModuleTACCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
-  if (HasExpos()) {
+  if (HasExpos() == true) {
     for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
 
       MStripHit* SH = Event->GetStripHit(i);
 
-      m_ExpoEnergySpectrum->AddEnergyFinal(
-        SH->GetEnergy(),
-        SH->IsNearestNeighbor(),
-        SH->IsLowVoltageStrip()
-      );
+      // Only plot final energies if they are calibrated
+      if (m_ExpoEnergySpectrum != nullptr && Event->HasAnalysisProgress(MAssembly::c_EnergyCalibration) == true) {
+        m_ExpoEnergySpectrum->AddEnergyFinal(
+          SH->GetEnergy(),
+          SH->IsNearestNeighbor(),
+          SH->IsLowVoltageStrip()
+        );
+      }
 
-      if ((SH->IsGuardRing() == false) &&
-          (SH->HasFastTiming() == true)) {
-
+      // Plot the calibrated TAC in ns for strips with valid fast timing
+      if ((SH->IsGuardRing() == false) && (SH->HasFastTiming() == true)) {
         m_ExpoTACcut->AddTAC(
           SH->GetDetectorID(),
           SH->GetTiming()

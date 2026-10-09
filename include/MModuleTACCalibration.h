@@ -91,6 +91,7 @@ class MModuleTACCalibration : public MModule
   //! Get TAC coincidence window in ns
   double GetCoincidenceWindow() const { return m_CoincidenceWindow; }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  
 
@@ -138,6 +139,8 @@ class MModuleTACCalibration : public MModule
   MGUIExpoTACcut* m_ExpoTACcut;
   MGUIExpoPlotSpectrum* m_ExpoEnergySpectrum;
 
+  //! Option to plot energy spectra in GUI
+  bool m_PlotEnergySpectrum;
 
 #ifdef ___CLING___
  public:
