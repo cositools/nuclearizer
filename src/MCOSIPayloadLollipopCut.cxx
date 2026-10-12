@@ -84,8 +84,7 @@ MCOSIPayloadLollipopCut::MCOSIPayloadLollipopCut()
   m_ApplyKeepSidesIlluminatedByLollipops = true;
   
   // Set default source positions
-  m_Source1Position = 0;
-  m_Source2Position = 0;
+  m_SourcePosition = 0;
   
   m_ExpoEnergySpectrum = nullptr;
   
@@ -107,10 +106,8 @@ bool MCOSIPayloadLollipopCut::Initialize()
 {
   // Initialize the module
   
-  // Refresh m_DetectorsToKeep based on current m_Source1Position and m_Source2Position
+  // Refresh m_DetectorsToKeep based on current m_SourcePosition
   UpdateKeptDetectors();
-  
-  std::cout<<"Lollipop cut: Apply="<<m_ApplyKeepSidesIlluminatedByLollipops<<" Source1="<<m_Source1Position<<" Source2="<<m_Source2Position<<" NKeptSides="<<m_DetectorsToKeep.size()<<std::endl;
   
   return MModule::Initialize();
 }
@@ -131,7 +128,6 @@ void MCOSIPayloadLollipopCut::CreateExpos()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 void MCOSIPayloadLollipopCut::ShowOptionsGUI()
 {
   MGUIOptionsCOSIPayloadLollipopCut* Options = new MGUIOptionsCOSIPayloadLollipopCut(this);
@@ -143,21 +139,10 @@ void MCOSIPayloadLollipopCut::ShowOptionsGUI()
 
 void MCOSIPayloadLollipopCut::UpdateKeptDetectors()
 {
-  // Map integer selection (1-6) to Source 1 boolean flags
-  m_Source1_Q0Q1_L0L1 = (m_Source1Position == 1);
-  m_Source1_Q1Q2_L0L1 = (m_Source1Position == 2);
-  m_Source1_Q0Q1_L1L2 = (m_Source1Position == 3);
-  m_Source1_Q1Q2_L1L2 = (m_Source1Position == 4);
-  m_Source1_Q0Q1_L2L3 = (m_Source1Position == 5);
-  m_Source1_Q1Q2_L2L3 = (m_Source1Position == 6);
-
-  // Map integer selection (1-6) to Source 2 boolean flags
-  m_Source2_Q2Q3_L0L1 = (m_Source2Position == 1);
-  m_Source2_Q3Q0_L0L1 = (m_Source2Position == 2);
-  m_Source2_Q2Q3_L1L2 = (m_Source2Position == 3);
-  m_Source2_Q3Q0_L1L2 = (m_Source2Position == 4);
-  m_Source2_Q2Q3_L2L3 = (m_Source2Position == 5);
-  m_Source2_Q3Q0_L2L3 = (m_Source2Position == 6);
+  // Map integer selection (1-3) to Source 1 boolean flags
+  m_Source_L0L1 = (m_SourcePosition == 1);
+  m_Source_L1L2 = (m_SourcePosition == 2);
+  m_Source_L2L3 = (m_SourcePosition == 3);
 
   // Re-run mapping setup to refresh m_DetectorsToKeep
   SetupLollipopMapping();
@@ -205,80 +190,36 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
   DetectorSideIlluminated["Q3L3LVIlluminated"] = false;
   
   // Set the specific faces to true based on the active GUI button
-  if (m_Source1_Q0Q1_L0L1 == true) {
+  if (m_Source_L0L1 == true) {
     DetectorSideIlluminated["Q0L0HVIlluminated"] = true;
-    DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q1L0LVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L1HVIlluminated"] = true;
-  }
-  
-  if (m_Source1_Q1Q2_L0L1 == true) {
-    DetectorSideIlluminated["Q1L0LVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
-  }
-  
-  if (m_Source1_Q0Q1_L1L2 == true) {
-    DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
-    DetectorSideIlluminated["Q0L2LVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L1LVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L2HVIlluminated"] = true;
-  }
-  
-  if (m_Source1_Q1Q2_L1L2 == true) {
-    DetectorSideIlluminated["Q1L1LVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L2HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L2LVIlluminated"] = true;
-  }
-  
-  if (m_Source1_Q0Q1_L2L3 == true) {
-    DetectorSideIlluminated["Q0L2HVIlluminated"] = true;
-    DetectorSideIlluminated["Q0L3LVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L2LVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L3HVIlluminated"] = true;
-  }
-  
-  if (m_Source2_Q2Q3_L0L1 == true) {
-    DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L0LVIlluminated"] = true;
-    DetectorSideIlluminated["Q3L1HVIlluminated"] = true;
-  }
-  
-  if (m_Source2_Q3Q0_L0L1 == true) {
-    DetectorSideIlluminated["Q0L0HVIlluminated"] = true;
     DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
-    DetectorSideIlluminated["Q3L0LVIlluminated"] = true;
+    DetectorSideIlluminated["Q1L1HVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L1HVIlluminated"] = true;
   }
   
-  if (m_Source2_Q2Q3_L1L2 == true) {
-    DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L2LVIlluminated"] = true;
-    DetectorSideIlluminated["Q3L1LVIlluminated"] = true;
-    DetectorSideIlluminated["Q3L2HVIlluminated"] = true;
-  }
-  
-  if (m_Source2_Q3Q0_L1L2 == true) {
+  if (m_Source_L1L2 == true) {
     DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
-    DetectorSideIlluminated["Q0L2LVIlluminated"] = true;
+    DetectorSideIlluminated["Q1L1LVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q3L1LVIlluminated"] = true;
+    DetectorSideIlluminated["Q0L2LVIlluminated"] = true;
+    DetectorSideIlluminated["Q1L2HVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L2LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L2HVIlluminated"] = true;
   }
   
-  if (m_Source2_Q2Q3_L2L3 == true) {
-    DetectorSideIlluminated["Q2L2HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L3LVIlluminated"] = true;
-    DetectorSideIlluminated["Q3L2LVIlluminated"] = true;
-    DetectorSideIlluminated["Q3L3HVIlluminated"] = true;
-  }
-  
-  if (m_Source2_Q3Q0_L2L3 == true) {
+  if (m_Source_L2L3 == true) {
     DetectorSideIlluminated["Q0L2HVIlluminated"] = true;
-    DetectorSideIlluminated["Q0L3LVIlluminated"] = true;
+    DetectorSideIlluminated["Q1L2LVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L2HVIlluminated"] = true;
     DetectorSideIlluminated["Q3L2LVIlluminated"] = true;
+    DetectorSideIlluminated["Q0L3LVIlluminated"] = true;
+    DetectorSideIlluminated["Q1L3HVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L3LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L3HVIlluminated"] = true;
   }
   
@@ -295,7 +236,7 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
     // if a side is illuminated we want to keep it
     if (isIlluminated == true) {
       
-      // Extract Q and L numbers
+      // Extract Q and L numbers to get a list of detector IDs to keep
       int Q = key[1] - '0';
       int L = key[3] - '0';
       
@@ -305,7 +246,7 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
       // Check if this is LV or HV (index 4 is 'L' or 'H')
       bool isLV = (key[4] == 'L');
       
-      // Create a kept side object and it sides to keep to this list :)
+      // Create a kept side object and add the sides to keep to this list :)
       KeptDetectorSide sideToKeep;
       sideToKeep.DetectorIlluminatedID = DetectorIlluminatedID;
       sideToKeep.isLV = isLV;
@@ -331,13 +272,14 @@ bool MCOSIPayloadLollipopCut::ApplyKeepSidesIlluminatedByLollipops(MReadOutAssem
 
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     MStripHit* stripHit = Event->GetStripHit(i);
-
+    
+    // Skip GRs hits
     if (stripHit == nullptr || stripHit->IsGuardRing() == true) {
       continue;
     }
 
     if (stripHit->GetDetectorID() != eventDetectorID) {
-      return false; // Multi-detector event --> cut
+      return false; // Multi-detector event --> cut for now
     }
   }
 
@@ -359,28 +301,36 @@ bool MCOSIPayloadLollipopCut::ApplyKeepSidesIlluminatedByLollipops(MReadOutAssem
   }
 
   // Find the highest energy hit on each face
+  // TODO: Replace this with more sophisticated cuts based on charztiation in python
+  
   MStripHit* maxLVHit = nullptr;
   MStripHit* maxHVHit = nullptr;
-  double maxEnergyLV = -1.0;
-  double maxEnergyHV = -1.0;
+  double maxEnergyADCLV = -1.0;
+  double maxEnergyADCHV = -1.0;
 
+  
+  // Loop through the stip hits and find the one with the highest energy
   for (unsigned int i = 0; i < Event->GetNStripHits(); ++i) {
     MStripHit* stripHit = Event->GetStripHit(i);
 
+    // If the strip hit doesn't exist or if it's a GR, then we skip
     if (stripHit == nullptr || stripHit->IsGuardRing() == true) {
       continue;
     }
+    
+    // For the list of hits, find the hit with the most energy (in ADC)
+    // So that we don't have to apply the ecal before this module, get the enegry in terms of ADC
+    double energyADC = stripHit->GetADCUnits();
 
-    double energy = stripHit->GetEnergy();
-
+    // By the end of this, we should have the largest HV and largest LV strip hits
     if (stripHit->IsLowVoltageStrip() == true) {
-      if (energy > maxEnergyLV) {
-        maxEnergyLV = energy;
+      if (energyADC > maxEnergyADCLV) {
+        maxEnergyADCLV = energyADC;
         maxLVHit = stripHit;
       }
     } else {
-      if (energy > maxEnergyHV) {
-        maxEnergyHV = energy;
+      if (energyADC > maxEnergyADCHV) {
+        maxEnergyADCHV = energyADC;
         maxHVHit = stripHit;
       }
     }
@@ -388,13 +338,20 @@ bool MCOSIPayloadLollipopCut::ApplyKeepSidesIlluminatedByLollipops(MReadOutAssem
 
   // Must have a hit on both sides to measure timing
   if (maxLVHit == nullptr || maxHVHit == nullptr) {
+    // Check, does returning false here cut the event??
+    // Yes, because in AnalyzeEvent(), it calls this function and if this function returns false, it cuts the event
     return false;
   }
 
-  // Determine which side the event ACTUALLY occurred on
+  // Determine which side the event occurred on
   double lvTiming = maxLVHit->GetTiming();
   double hvTiming = maxHVHit->GetTiming();
 
+  // Chose the below timing values from the depth calibation module:
+  // else if ((LVTiming < 1.0E-6) || (HVTiming < 1.0E-6)) {
+  // ++m_Error3;
+  // H->SetNoDepth();
+  // Event->SetDepthCalibrationError("No timing");
   if (lvTiming < 1.0E-6 || hvTiming < 1.0E-6) {
     return false; // Invalid timing calibration
   }
@@ -467,16 +424,11 @@ bool MCOSIPayloadLollipopCut::ReadXmlConfiguration(MXmlNode* Node)
     m_ApplyKeepSidesIlluminatedByLollipops = ApplyNode->GetValueAsBoolean();
   }
 
-  MXmlNode* Source1Node = Node->GetNode("Source1Position");
-  if (Source1Node != nullptr) {
-    m_Source1Position = Source1Node->GetValueAsInt();
+  MXmlNode* SourceNode = Node->GetNode("SourcePosition");
+  if (SourceNode != nullptr) {
+    m_SourcePosition = SourceNode->GetValueAsInt();
   }
 
-  MXmlNode* Source2Node = Node->GetNode("Source2Position");
-  if (Source2Node != nullptr) {
-    m_Source2Position = Source2Node->GetValueAsInt();
-  }
-  
   UpdateKeptDetectors(); // Refresh detector array from newly read positions!
 
   return true;
@@ -487,8 +439,7 @@ MXmlNode* MCOSIPayloadLollipopCut::CreateXmlConfiguration()
   MXmlNode* Node = new MXmlNode(nullptr, m_XmlTag);
 
   new MXmlNode(Node, "ApplyKeepSidesIlluminatedByLollipops", m_ApplyKeepSidesIlluminatedByLollipops);
-  new MXmlNode(Node, "Source1Position", m_Source1Position);
-  new MXmlNode(Node, "Source2Position", m_Source2Position);
+  new MXmlNode(Node, "SourcePosition", m_SourcePosition);
 
   return Node;
 }
@@ -507,8 +458,7 @@ MModule* MCOSIPayloadLollipopCut::Clone()
 
   // Copy parameters from master instance to clone
   Module->m_ApplyKeepSidesIlluminatedByLollipops = m_ApplyKeepSidesIlluminatedByLollipops;
-  Module->m_Source1Position = m_Source1Position;
-  Module->m_Source2Position = m_Source2Position;
+  Module->m_SourcePosition = m_SourcePosition;
 
   // Populate m_DetectorsToKeep on the clone
   Module->UpdateKeptDetectors();

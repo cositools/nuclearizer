@@ -74,9 +74,6 @@ MGUIOptionsCOSIPayloadLollipopCut::~MGUIOptionsCOSIPayloadLollipopCut()
 void MGUIOptionsCOSIPayloadLollipopCut::Create()
 {
   
-  // TODO: Sources are always placed as a pair in practice, so replace the
-  //       two columns of 6 radio buttons with a single column of 6 paired positions.
-  
   PreCreate();
   
   MCOSIPayloadLollipopCut* Module = dynamic_cast<MCOSIPayloadLollipopCut*>(m_Module);
@@ -92,73 +89,28 @@ void MGUIOptionsCOSIPayloadLollipopCut::Create()
   //Column 1 for source 1
   TGVerticalFrame* Column1 = new TGVerticalFrame(ColumnsFrame);
   
-  TGLabel* Source1Label = new TGLabel(Column1, "Please choose the position of source 1:");
-  Column1->AddFrame(Source1Label, LabelLayout);
+  TGLabel* SourceLabel = new TGLabel(Column1, "Please choose the position of the lollipops:");
+  Column1->AddFrame(SourceLabel, LabelLayout);
   
-  m_RBSource1Position1 = new TGRadioButton(Column1, "Q0Q1 L0L1 Side Illuminated", c_Source1Position1);
-  m_RBSource1Position1->Associate(this);
-  Column1->AddFrame(m_RBSource1Position1, RBLayout);
+  m_RBSourcePosition1 = new TGRadioButton(Column1, "L0L1 Lollipops", c_SourcePosition1);
+  m_RBSourcePosition1->Associate(this);
+  Column1->AddFrame(m_RBSourcePosition1, RBLayout);
   
-  m_RBSource1Position2 = new TGRadioButton(Column1, "Q1Q2 L0L1 Side Illuminated", c_Source1Position2);
-  m_RBSource1Position2->Associate(this);
-  Column1->AddFrame(m_RBSource1Position2, RBLayout);
+  m_RBSourcePosition2 = new TGRadioButton(Column1, "L1L2 Lollipops", c_SourcePosition2);
+  m_RBSourcePosition2->Associate(this);
+  Column1->AddFrame(m_RBSourcePosition2, RBLayout);
   
-  m_RBSource1Position3 = new TGRadioButton(Column1, "Q0Q1 L1L2 Side Illuminated", c_Source1Position3);
-  m_RBSource1Position3->Associate(this);
-  Column1->AddFrame(m_RBSource1Position3, RBLayout);
-  
-  m_RBSource1Position4 = new TGRadioButton(Column1, "Q1Q2 L1L2 Side Illuminated", c_Source1Position4);
-  m_RBSource1Position4->Associate(this);
-  Column1->AddFrame(m_RBSource1Position4, RBLayout);
-  
-  m_RBSource1Position5 = new TGRadioButton(Column1, "Q0Q1 L2L3 Side Illuminated", c_Source1Position5);
-  m_RBSource1Position5->Associate(this);
-  Column1->AddFrame(m_RBSource1Position5, RBLayout);
-
-  m_RBSource1Position6 = new TGRadioButton(Column1, "Q1Q2 L2L3 Side Illuminated", c_Source1Position6);
-  m_RBSource1Position6->Associate(this);
-  Column1->AddFrame(m_RBSource1Position6, RBLayout);
+  m_RBSourcePosition3 = new TGRadioButton(Column1, "L2L3 Lollipops", c_SourcePosition3);
+  m_RBSourcePosition3->Associate(this);
+  Column1->AddFrame(m_RBSourcePosition3, RBLayout);
   
   ColumnsFrame->AddFrame(Column1, ColumnLayout);
   
-  // Column 2 for source 2
-  TGVerticalFrame* Column2 = new TGVerticalFrame(ColumnsFrame);
-  
-  TGLabel* Source2Label = new TGLabel(Column2, "Please choose the position of source 2:");
-  Column2->AddFrame(Source2Label, LabelLayout);
-  
-  m_RBSource2Position1 = new TGRadioButton(Column2, "Q2Q3 L0L1 Side Illuminated", c_Source2Position1);
-  m_RBSource2Position1->Associate(this);
-  Column2->AddFrame(m_RBSource2Position1, RBLayout);
-  
-  m_RBSource2Position2 = new TGRadioButton(Column2, "Q3Q0 L0L1 Side Illuminated", c_Source2Position2);
-  m_RBSource2Position2->Associate(this);
-  Column2->AddFrame(m_RBSource2Position2, RBLayout);
-  
-  m_RBSource2Position3 = new TGRadioButton(Column2, "Q2Q3 L1L2 Side Illuminated", c_Source2Position3);
-  m_RBSource2Position3->Associate(this);
-  Column2->AddFrame(m_RBSource2Position3, RBLayout);
-  
-  m_RBSource2Position4 = new TGRadioButton(Column2, "Q3Q0 L1L2 Side Illuminated", c_Source2Position4);
-  m_RBSource2Position4->Associate(this);
-  Column2->AddFrame(m_RBSource2Position4, RBLayout);
-  
-  m_RBSource2Position5 = new TGRadioButton(Column2, "Q2Q3 L2L3 Side Illuminated", c_Source2Position5);
-  m_RBSource2Position5->Associate(this);
-  Column2->AddFrame(m_RBSource2Position5, RBLayout);
-  
-  m_RBSource2Position6 = new TGRadioButton(Column2, "Q3Q0 L2L3 Side Illuminated", c_Source2Position6);
-  m_RBSource2Position6->Associate(this);
-  Column2->AddFrame(m_RBSource2Position6, RBLayout);
-  
-  ColumnsFrame->AddFrame(Column2, ColumnLayout);
-
   m_OptionsFrame->AddFrame(ColumnsFrame, MainLayout);
 
   // Set initial toggles from module saved positions
   if (Module != nullptr) {
-    ToggleRadioButtons(c_Source1Position1 + Module->GetSource1Position() - 1);
-    ToggleRadioButtons(c_Source2Position1 + Module->GetSource2Position() - 1);
+    ToggleRadioButtons(c_SourcePosition1 + Module->GetSourcePosition() - 1);
   }
   PostCreate();
 }
@@ -169,7 +121,7 @@ void MGUIOptionsCOSIPayloadLollipopCut::Create()
 
 bool MGUIOptionsCOSIPayloadLollipopCut::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
-  // Modify here if you have more buttons
+  // Modify here if there are more buttons
   
   bool Status = true;
   
@@ -213,20 +165,9 @@ bool MGUIOptionsCOSIPayloadLollipopCut::OnApply()
   if (Module == nullptr) return false;
 
   // Store Source 1 Choice
-  if (m_RBSource1Position1->GetState() == kButtonDown) Module->SetSource1Position(1);
-  else if (m_RBSource1Position2->GetState() == kButtonDown) Module->SetSource1Position(2);
-  else if (m_RBSource1Position3->GetState() == kButtonDown) Module->SetSource1Position(3);
-  else if (m_RBSource1Position4->GetState() == kButtonDown) Module->SetSource1Position(4);
-  else if (m_RBSource1Position5->GetState() == kButtonDown) Module->SetSource1Position(5);
-  else if (m_RBSource1Position6->GetState() == kButtonDown) Module->SetSource1Position(6);
-
-  // Store Source 2 Choice
-  if (m_RBSource2Position1->GetState() == kButtonDown) Module->SetSource2Position(1);
-  else if (m_RBSource2Position2->GetState() == kButtonDown) Module->SetSource2Position(2);
-  else if (m_RBSource2Position3->GetState() == kButtonDown) Module->SetSource2Position(3);
-  else if (m_RBSource2Position4->GetState() == kButtonDown) Module->SetSource2Position(4);
-  else if (m_RBSource2Position5->GetState() == kButtonDown) Module->SetSource2Position(5);
-  else if (m_RBSource2Position6->GetState() == kButtonDown) Module->SetSource2Position(6);
+  if (m_RBSourcePosition1->GetState() == kButtonDown) Module->SetSourcePosition(1);
+  else if (m_RBSourcePosition2->GetState() == kButtonDown) Module->SetSourcePosition(2);
+  else if (m_RBSourcePosition3->GetState() == kButtonDown) Module->SetSourcePosition(3);
 
   Module->UpdateKeptDetectors();
 
@@ -238,22 +179,10 @@ bool MGUIOptionsCOSIPayloadLollipopCut::OnApply()
 void MGUIOptionsCOSIPayloadLollipopCut::ToggleRadioButtons(int WidgetID)
 {
   // Column 1 source 1
-  if (WidgetID >= c_Source1Position1 && WidgetID <= c_Source1Position6) {
-    m_RBSource1Position1->SetState(WidgetID == c_Source1Position1 ? kButtonDown : kButtonUp);
-    m_RBSource1Position2->SetState(WidgetID == c_Source1Position2 ? kButtonDown : kButtonUp);
-    m_RBSource1Position3->SetState(WidgetID == c_Source1Position3 ? kButtonDown : kButtonUp);
-    m_RBSource1Position4->SetState(WidgetID == c_Source1Position4 ? kButtonDown : kButtonUp);
-    m_RBSource1Position5->SetState(WidgetID == c_Source1Position5 ? kButtonDown : kButtonUp);
-    m_RBSource1Position6->SetState(WidgetID == c_Source1Position6 ? kButtonDown : kButtonUp);
-  }
-  // Column 2 source 2
-  else if (WidgetID >= c_Source2Position1 && WidgetID <= c_Source2Position6) {
-    m_RBSource2Position1->SetState(WidgetID == c_Source2Position1 ? kButtonDown : kButtonUp);
-    m_RBSource2Position2->SetState(WidgetID == c_Source2Position2 ? kButtonDown : kButtonUp);
-    m_RBSource2Position3->SetState(WidgetID == c_Source2Position3 ? kButtonDown : kButtonUp);
-    m_RBSource2Position4->SetState(WidgetID == c_Source2Position4 ? kButtonDown : kButtonUp);
-    m_RBSource2Position5->SetState(WidgetID == c_Source2Position5 ? kButtonDown : kButtonUp);
-    m_RBSource2Position6->SetState(WidgetID == c_Source2Position6 ? kButtonDown : kButtonUp);
+  if (WidgetID >= c_SourcePosition1 && WidgetID <= c_SourcePosition3) {
+    m_RBSourcePosition1->SetState(WidgetID == c_SourcePosition1 ? kButtonDown : kButtonUp);
+    m_RBSourcePosition2->SetState(WidgetID == c_SourcePosition2 ? kButtonDown : kButtonUp);
+    m_RBSourcePosition3->SetState(WidgetID == c_SourcePosition3 ? kButtonDown : kButtonUp);
   }
 }
 

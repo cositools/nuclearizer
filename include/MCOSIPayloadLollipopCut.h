@@ -69,20 +69,12 @@ class MCOSIPayloadLollipopCut : public MModule
   virtual void CreateExpos() override;
   
   
-  int GetSource1Position() const {
-    return m_Source1Position;
+  int GetSourcePosition() const {
+    return m_SourcePosition;
   }
   
-  int GetSource2Position() const {
-    return m_Source2Position;
-  }
-  
-  void SetSource1Position(int pos) {
-    m_Source1Position = pos;
-  }
-  
-  void SetSource2Position(int pos) {
-    m_Source2Position = pos;
+  void SetSourcePosition(int pos) {
+    m_SourcePosition = pos;
   }
   
   void UpdateKeptDetectors();
@@ -98,27 +90,15 @@ class MCOSIPayloadLollipopCut : public MModule
  private:
   
   //! Source location 
-  int m_Source1Position;
-  int m_Source2Position;
+  int m_SourcePosition;
   
   //! Master toggle for the lollipop cut
   bool m_ApplyKeepSidesIlluminatedByLollipops;
   
-  ///! GUI toggle flags for Source 1 positions
-  bool m_Source1_Q0Q1_L0L1;
-  bool m_Source1_Q1Q2_L0L1;
-  bool m_Source1_Q0Q1_L1L2;
-  bool m_Source1_Q1Q2_L1L2;
-  bool m_Source1_Q0Q1_L2L3;
-  bool m_Source1_Q1Q2_L2L3;
-
-  ///! GUI toggle flags for Source 2 positions
-  bool m_Source2_Q2Q3_L0L1;
-  bool m_Source2_Q3Q0_L0L1;
-  bool m_Source2_Q2Q3_L1L2;
-  bool m_Source2_Q3Q0_L1L2;
-  bool m_Source2_Q2Q3_L2L3;
-  bool m_Source2_Q3Q0_L2L3;
+  ///! GUI toggle flags for source positions
+  bool m_Source_L0L1;
+  bool m_Source_L1L2;
+  bool m_Source_L2L3;
   
   //! Vector storing detector positions in QxLy positions and sides to keep
   std::map<std::string, bool> DetectorSideIlluminated;
