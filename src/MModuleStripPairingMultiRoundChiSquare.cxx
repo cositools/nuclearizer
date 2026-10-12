@@ -957,22 +957,27 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
       Event->SetStripPairing_QualityFlag("Best strip pairing leaves at least one grouping of strips unpaired (unpaired energy: " + to_string(UnpairedEnergy) + ")");
     }
     
+    // Remember where the hits of this detector start, since earlier detectors already added theirs
+    unsigned int FirstNewHit = Event->GetNHits();
+
     // Populate hits with best strip paired combination
     bool PopulateHits = CreateHits(d, Event, TriggeredStripHits, BestLVSideCombo, BestHVSideCombo);
 
     if (PopulateHits == false) {
       return false;
     }
-      
-    // Check for any hits containing guard ring strips
-    for (unsigned int h = 0; h < Event->GetNHits(); h++) {
+
+    // Check for any hits of this detector containing guard ring strips
+    for (unsigned int h = FirstNewHit; h < Event->GetNHits(); h++) {
+      unsigned int GuardRingDetectorID = 0;
       for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
         if (Event->GetHit(h)->GetStripHit(sh)->GetStripID() == 64) {
           Event->GetHit(h)->SetGuardRingHitFlag(true);
+          GuardRingDetectorID = Event->GetHit(h)->GetStripHit(sh)->GetDetectorID();
         }
       }
       if (Event->GetHit(h)->GetGuardRingHitFlag() == true) {
-        Event->SetStripPairing_QualityFlag("GR Hit: Detector ID " + to_string(d) + " and Energy " + to_string(Event->GetHit(h)->GetEnergy()));
+        Event->SetStripPairing_QualityFlag("GR Hit: Detector ID " + to_string(GuardRingDetectorID) + " and Energy " + to_string(Event->GetHit(h)->GetEnergy()));
       }
     }
       

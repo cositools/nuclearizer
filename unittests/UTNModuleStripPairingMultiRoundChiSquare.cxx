@@ -11,6 +11,8 @@
 
 // Standard libs:
 #include <cstdlib>
+#include <sstream>
+#include <string>
 using namespace std;
 
 // MEGAlib:
@@ -47,6 +49,8 @@ private:
   bool TestMultiDetectorNearestNeighbors();
   //! Test that only nearest neighbors adjacent to two hits are flagged as ambiguous
   bool TestAmbiguousNearestNeighbors();
+  //! Test that a guard ring hit is reported once with its own detector ID
+  bool TestGuardRingQualityFlag();
 
   //! Run the two-detector nearest-neighbor event with the given order of detectors in the strip-hit list
   bool RunTwoDetectorNearestNeighborCase(bool DetectorFiveFirst);
@@ -59,6 +63,8 @@ private:
   unsigned int CountNearestNeighbors(MHit* Hit) const;
   //! Return true if the nearest neighbor strip hit is assigned to the hit
   bool HasNearestNeighbor(MHit* Hit, MStripHit* StripHit) const;
+  //! Return how often Pattern occurs in Text
+  unsigned int CountOccurrences(const string& Text, const string& Pattern) const;
 };
 
 
@@ -132,6 +138,21 @@ bool UTNModuleStripPairingMultiRoundChiSquare::HasNearestNeighbor(MHit* Hit, MSt
 ////////////////////////////////////////////////////////////////////////////////
 
 
+unsigned int UTNModuleStripPairingMultiRoundChiSquare::CountOccurrences(const string& Text, const string& Pattern) const
+{
+  unsigned int N = 0;
+  size_t Pos = Text.find(Pattern);
+  while (Pos != string::npos) {
+    ++N;
+    Pos = Text.find(Pattern, Pos + Pattern.size());
+  }
+  return N;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool UTNModuleStripPairingMultiRoundChiSquare::Run()
 {
   bool Passed = true;
@@ -142,6 +163,7 @@ bool UTNModuleStripPairingMultiRoundChiSquare::Run()
   Passed = TestSingleDetectorPairing() && Passed;
   Passed = TestMultiDetectorNearestNeighbors() && Passed;
   Passed = TestAmbiguousNearestNeighbors() && Passed;
+  Passed = TestGuardRingQualityFlag() && Passed;
 
   // ShowOptionsGUI() and CreateExpos() need an interactive ROOT GUI; they cannot be exercised in a
   // headless unit test and are intentionally left uncovered.
@@ -391,6 +413,52 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestAmbiguousNearestNeighbors()
   Passed = EvaluateFalse("AnalyzeEvent()", "LV 11", "LV strip 11, adjacent to one hit only, is not flagged as ambiguous", LV11->IsAmbiguousNearestNeighbor()) && Passed;
   Passed = EvaluateFalse("AnalyzeEvent()", "LV 12", "LV strip 12, adjacent to no hit, is not flagged as ambiguous", LV12->IsAmbiguousNearestNeighbor()) && Passed;
   Passed = EvaluateFalse("AnalyzeEvent()", "LV 13", "LV strip 13, adjacent to one hit only, is not flagged as ambiguous", LV13->IsAmbiguousNearestNeighbor()) && Passed;
+
+  delete Event;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNModuleStripPairingMultiRoundChiSquare::TestGuardRingQualityFlag()
+{
+  bool Passed = true;
+
+  MModuleStripPairingMultiRoundChiSquare Module;
+  Module.Initialize();
+
+  // Guard ring hit in detector 7 (its strips come first, thus it is at position 0 in the detector loop)
+  // and a regular hit in detector 2 (position 1)
+  // Before the fix, the QA text used the loop position as detector ID, and the guard ring hit was reported
+  // again during every later detector iteration
+  MReadOutAssembly* Event = new MReadOutAssembly();
+  MStripHit* GuardRing = AddStripHit(Event, 7, 64, true, 200.0, false);
+  GuardRing->IsGuardRing(true);
+  AddStripHit(Event, 7, 40, false, 200.0, false);
+  AddStripHit(Event, 2, 10, true, 300.0, false);
+  AddStripHit(Event, 2, 30, false, 300.0, false);
+
+  Passed = EvaluateTrue("AnalyzeEvent()", "guard ring hit in detector 7", "AnalyzeEvent() succeeds for a guard ring hit in detector 7 and a regular hit in detector 2", Module.AnalyzeEvent(Event)) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "guard ring hit in detector 7", "AnalyzeEvent() creates one hit per detector", Event->GetNHits(), 2u) && Passed;
+
+  MHit* HitSeven = FindHitWithStrip(Event, 7, 64, true);
+  MHit* HitTwo = FindHitWithStrip(Event, 2, 10, true);
+  Passed = EvaluateTrue("AnalyzeEvent()", "guard ring hit in detector 7", "A hit containing detector 7 LV strip 64 exists", HitSeven != nullptr) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "guard ring hit in detector 7", "A hit containing detector 2 LV strip 10 exists", HitTwo != nullptr) && Passed;
+
+  if (HitSeven != nullptr && HitTwo != nullptr) {
+    Passed = EvaluateTrue("AnalyzeEvent()", "guard ring hit in detector 7", "The detector 7 hit containing strip 64 has the guard ring hit flag", HitSeven->GetGuardRingHitFlag()) && Passed;
+    Passed = EvaluateFalse("AnalyzeEvent()", "guard ring hit in detector 7", "The detector 2 hit without guard ring strips has no guard ring hit flag", HitTwo->GetGuardRingHitFlag()) && Passed;
+  }
+
+  // The QA text is only accessible through the evta stream
+  ostringstream Out;
+  Event->StreamEvta(Out);
+  Passed = Evaluate("AnalyzeEvent()", "guard ring QA text", "The guard ring hit is reported with its own detector ID 7 exactly once", CountOccurrences(Out.str(), "GR Hit: Detector ID 7 "), 1u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "guard ring QA text", "Exactly one guard ring hit is reported in total", CountOccurrences(Out.str(), "GR Hit: Detector ID"), 1u) && Passed;
 
   delete Event;
 
