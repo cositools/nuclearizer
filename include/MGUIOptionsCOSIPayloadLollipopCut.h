@@ -68,38 +68,17 @@ protected:
 
   //! Widget IDs
   enum {
-    c_Source1Position1 = 101,
-    c_Source1Position2,
-    c_Source1Position3,
-    c_Source1Position4,
-    c_Source1Position5,
-    c_Source1Position6,
-
-    c_Source2Position1 = 201,
-    c_Source2Position2,
-    c_Source2Position3,
-    c_Source2Position4,
-    c_Source2Position5,
-    c_Source2Position6
+    c_SourcePosition1 = 101,
+    c_SourcePosition2,
+    c_SourcePosition3,
   };
 
   // protected members:
 protected:
   //! Radio buttons for Source 1 positions
-  TGRadioButton* m_RBSource1Position1;
-  TGRadioButton* m_RBSource1Position2;
-  TGRadioButton* m_RBSource1Position3;
-  TGRadioButton* m_RBSource1Position4;
-  TGRadioButton* m_RBSource1Position5;
-  TGRadioButton* m_RBSource1Position6;
-
-  //! Radio buttons for Source 2 positions
-  TGRadioButton* m_RBSource2Position1;
-  TGRadioButton* m_RBSource2Position2;
-  TGRadioButton* m_RBSource2Position3;
-  TGRadioButton* m_RBSource2Position4;
-  TGRadioButton* m_RBSource2Position5;
-  TGRadioButton* m_RBSource2Position6;
+  TGRadioButton* m_RBSourcePosition1;
+  TGRadioButton* m_RBSourcePosition2;
+  TGRadioButton* m_RBSourcePosition3;
 
   // private members:
 private:
