@@ -74,6 +74,8 @@ void MHit::Clear()
   m_Position = g_VectorNotDefined;
   m_Energy = g_DoubleNotDefined;
 
+  m_LocalPosition = g_VectorNotDefined;
+
   m_LVEnergy = g_DoubleNotDefined;
   m_HVEnergy = g_DoubleNotDefined;
 
