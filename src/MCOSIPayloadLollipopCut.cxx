@@ -368,7 +368,7 @@ bool MCOSIPayloadLollipopCut::ApplyKeepSidesIlluminatedByLollipops(MReadOutAssem
   double ctd = hvTiming - lvTiming;
   
   // Make sure both timing types match with this cut from Field
-  if (ctd > 1000 || ctd < -1000) {
+  if (ctd < 1000 and ctd > -1000) {
     
     // Negative CTD means the hit physically occurred on the LV side
     bool lvSideIlluminated = (ctd < 0.0);
