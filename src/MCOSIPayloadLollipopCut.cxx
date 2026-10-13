@@ -193,15 +193,16 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
   if (m_Source_L0L1 == true) {
     DetectorSideIlluminated["Q0L0HVIlluminated"] = true;
     DetectorSideIlluminated["Q1L0LVIlluminated"] = true;
-    //DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
-    // apple sauced!!
+    DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
     DetectorSideIlluminated["Q2L0LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L0LVIlluminated"] = true;
     //DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
     // apple sauced!!
     DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q1L1HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
+    // DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
+    // apple sauced!!
+    DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q3L1HVIlluminated"] = true;
   }
   
