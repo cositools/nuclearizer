@@ -193,18 +193,26 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
   if (m_Source_L0L1 == true) {
     DetectorSideIlluminated["Q0L0HVIlluminated"] = true;
     DetectorSideIlluminated["Q1L0LVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
+    //DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
+    // apple sauced!!
+    DetectorSideIlluminated["Q2L0LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L0LVIlluminated"] = true;
-    DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
+    //DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
+    // apple sauced!!
+    DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q1L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L1HVIlluminated"] = true;
   }
   
   if (m_Source_L1L2 == true) {
-    DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
+    //DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
+    //appled sauced!! change once felix's fix is merged
+    DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q1L1LVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
+    // apple sauced!!
+    //DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q0L2LVIlluminated"] = true;
     DetectorSideIlluminated["Q1L2HVIlluminated"] = true;
@@ -357,15 +365,21 @@ bool MCOSIPayloadLollipopCut::ApplyKeepSidesIlluminatedByLollipops(MReadOutAssem
   }
 
   double ctd = hvTiming - lvTiming;
-
-  // Negative CTD means the hit physically occurred on the LV side
-  bool lvSideIlluminated = (ctd < 0.0);
-
-  // Keep the event ONLY if actual side matches expected side
-  if (lvSideIlluminated == expectedIsLV) {
-    return true;  // Keep event!
+  
+  // Make sure both timing types match with this cut from Field
+  if (ctd > 1000 || ctd < -1000) {
+    
+    // Negative CTD means the hit physically occurred on the LV side
+    bool lvSideIlluminated = (ctd < 0.0);
+    
+    // Keep the event ONLY if actual side matches expected side
+    if (lvSideIlluminated == expectedIsLV) {
+      return true;  // Keep event!
+    } else {
+      return false; // Cut event
+    }
   } else {
-    return false; // Cut event
+    return false; // ctd doesn't fall within the allowed range (mix of fast and slow timing)
   }
 }
 
@@ -389,8 +403,6 @@ bool MCOSIPayloadLollipopCut::AnalyzeEvent(MReadOutAssembly* Event)
   if (m_ApplyKeepSidesIlluminatedByLollipops == true) {
     bool TACError = Event->HasTACCalibrationError();
     bool Keep = ApplyKeepSidesIlluminatedByLollipops(Event);
-    
-    std::cout<<"Lollipop cut: event "<<Event->GetID()<<" TACError="<<TACError<<" Keep="<<Keep<<std::endl;
     
     if (TACError == true || Keep == false) {
       Event->SetFilteredOut(true);
