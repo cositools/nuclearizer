@@ -194,7 +194,6 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
     DetectorSideIlluminated["Q0L0HVIlluminated"] = true;
     DetectorSideIlluminated["Q1L0LVIlluminated"] = true;
     DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L0LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L0LVIlluminated"] = true;
     //DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
     // apple sauced!!
@@ -251,6 +250,8 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
       
       // Calculate detector ID
       int DetectorIlluminatedID = (Q * 4) + L;
+      
+      std::cout << "Det ID being let through" << age << DetectorIlluminatedID;
       
       // Check if this is LV or HV (index 4 is 'L' or 'H')
       bool isLV = (key[4] == 'L');
