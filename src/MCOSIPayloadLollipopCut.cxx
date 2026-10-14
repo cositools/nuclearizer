@@ -251,7 +251,7 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
       // Calculate detector ID
       int DetectorIlluminatedID = (Q * 4) + L;
       
-      std::cout << "Det ID being let through" << age << DetectorIlluminatedID;
+      std::cout << "Det ID being let through" << DetectorIlluminatedID << '\n';
       
       // Check if this is LV or HV (index 4 is 'L' or 'H')
       bool isLV = (key[4] == 'L');
