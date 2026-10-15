@@ -275,7 +275,7 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
             <<": Error: Unable to identify Side "<<Side
             <<" - skipping event"
             <<endl;
-        Event->SetTACCalibrationError("No TAC calibration for DetID " + to_string(DetID) + to_string(Side));         
+        Event->SetTACCalibrationError("No TAC calibration for " + to_string(Side) + " side for DetID " + to_string(DetID));         
         Event->SetAnalysisProgress(MAssembly::c_TACCalibration);
         return true;
       }
