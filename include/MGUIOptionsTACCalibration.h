@@ -82,6 +82,9 @@ class MGUIOptionsTACCalibration : public MGUIOptions
   //! Select TAC Calibration file to load, converts readout timing to nanoseconds
   MGUIEFileSelector* m_TACCalFileSelector;
 
+  //! Select the strip map file - only shown (otherwise nullptr) if no preceding HDF or L0 loader provides a strip map
+  MGUIEFileSelector* m_FileSelectorStripMap;
+
   //! Do not apply TAC cuts
   TGRadioButton* m_TACCutRBIgnore;
 

@@ -22,6 +22,9 @@
 #include "MGlobal.h"
 #include "MModule.h"
 
+// Nuclearizer libs:
+#include "MStripMap.h"
+
 
 // Forward declarations:
 class MGUIExpoTACcut;
@@ -70,8 +73,22 @@ class MModuleTACCalibration : public MModule
   //! Get filename for TAC calibration
   MString GetTACCalFileName() const {return m_TACCalFile;}
 
+  //! Set the strip map file name - only used if no preceding HDF or L0 loader provides a strip map
+  void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
+
+  //! Get the strip map file name
+  MString GetFileNameStripMap() const { return m_FileNameStripMap; }
+
+  //! Return the closest preceding module in the module sequence which provides a strip map (HDF or L0 loader),
+  //! or nullptr if there is none
+  MModule* FindStripMapProvider();
+
   //! Load the TAC calibration file
-  bool LoadTACCalFile(MString FName);
+  //! With a strip map, detector, side, and strip of each entry are taken from the strip map via the
+  //! read-out ID in the first column, entries whose read-out ID is not in the strip map are skipped,
+  //! and the detector, side, and strip columns of the file are only cross-checked
+  //! Without a strip map, the detector, side, and strip columns of the file are used
+  bool LoadTACCalFile(MString FName, const MStripMap* StripMap = nullptr);
 
   //! Set the TAC calibration parameters
   void SetTACCalParameters(unordered_map<int, vector<unordered_map<int, vector<double>>>> TACCal) { m_TACCal = TACCal; }
@@ -103,6 +120,9 @@ class MModuleTACCalibration : public MModule
   // private methods:
  private:
 
+  //! Return the strip map of the closest preceding HDF or L0 loader, or nullptr if there is none
+  const MStripMap* FindUpstreamStripMap();
+
   //! Apply TAC calibration to strip hits
   bool ApplyTACCal(MReadOutAssembly* Event);
 
@@ -120,7 +140,14 @@ class MModuleTACCalibration : public MModule
   //! TAC calibration parameter file name
   MString m_TACCalFile;
 
+  //! Strip map file name - only used if no preceding HDF or L0 loader provides a strip map
+  MString m_FileNameStripMap;
+
+  //! The strip map loaded from m_FileNameStripMap if no preceding HDF or L0 loader provides one
+  MStripMap m_StripMap;
+
   //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration parameters
+  //! DetID, Side, and Strip ID are taken from the strip map via the read-out ID of each entry
   unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCal;
 
   //! Map characters representing detector sides to LV/HV indices
