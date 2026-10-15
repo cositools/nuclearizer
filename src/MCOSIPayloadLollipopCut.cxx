@@ -225,10 +225,10 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
     DetectorSideIlluminated["Q1L2LVIlluminated"] = true;
     DetectorSideIlluminated["Q2L2HVIlluminated"] = true;
     DetectorSideIlluminated["Q3L2LVIlluminated"] = true;
-    DetectorSideIlluminated["Q0L3HVIlluminated"] = true;
-    DetectorSideIlluminated["Q1L3LVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L3HVIlluminated"] = true;
-    DetectorSideIlluminated["Q3L3LVIlluminated"] = true;
+    DetectorSideIlluminated["Q0L3LVIlluminated"] = true;
+    DetectorSideIlluminated["Q1L3HVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L3LVIlluminated"] = true;
+    DetectorSideIlluminated["Q3L3HVIlluminated"] = true;
   }
   
   // Clear the list first
