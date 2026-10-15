@@ -376,7 +376,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
       // Output results for verification
       if (g_Verbosity >= c_Info) {
         for (size_t i = 0; i < m_ASICPolarities.size(); ++i) {
-          cout << "Detector ID " << i << (i < DIBIsEnabled.size() && DIBIsEnabled[i] ? " (enabled)" : " (disabled)") << ":" << endl;
+          cout << "DIB ID " << i << (i < DIBIsEnabled.size() && DIBIsEnabled[i] ? " (enabled)" : " (disabled)") << ":" << endl;
           for (bool key : {true, false} ) {
             cout << "  " << (key ? "Primary" : "Secondary") << ": ";
             for (bool s : m_ASICPolarities[i][key]) cout << (s ? "LV" : "HV") << " ";
