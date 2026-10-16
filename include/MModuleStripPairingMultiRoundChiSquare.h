@@ -83,9 +83,6 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   //! Find a new set of combinations giving the existing gone
     vector<vector<vector<unsigned int>>> FindNewCombinations(const vector<vector<vector<unsigned int>>>& OldOnes, const vector<MStripHit*>& StripHits, bool RoundTwo);
     
-  //! Function to apply charge trapping correction
-    float ChargeTrappingCorrection(unsigned int d, const vector<vector<MStripHit*>>& StripHits);
-    
   //! Divide an event's triggered strip hits by detector and LV/HV side
     vector<vector<vector<MStripHit*>>> CollectTriggeredStripHits(MReadOutAssembly* Event);
   

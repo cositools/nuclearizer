@@ -212,26 +212,6 @@ vector<vector<vector<unsigned int>>> MModuleStripPairingMultiRoundChiSquare::Fin
   return NewOnes;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-//! Apply a charge trapping correction to each potential pair of LV/HV strips
-float MModuleStripPairingMultiRoundChiSquare::ChargeTrappingCorrection(unsigned int d, const vector<vector<MStripHit*>>& StripHits)
-{
-
-  // Dummy Function
-  // Idea: Read in detector number and set of LV/HV strips to be paired
-  // Will also need to read in actual charge trapping parameters from text file
-  // The LV/HVStripSet will only be multiple strips if there is charge sharing going on. Otherwise it'll just be a vector with a single number. That number will have to be converted to the actual stripID
-  // In the case of charge sharing, will have to find "dominant" LV/HV strip to get correct CTD
-  // I'm going to make another function "FindDominantStrip" to just get out the strip on LV or HV side that has the highest energy
-  // Return a corrected energy after applying charge trapping correction. Does there need to be two values or is correcting one side enough?
-
-  float EnergyCorrection = 0;
-
-  return EnergyCorrection;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Divide an event's strip hits by detector and LV/HV side
@@ -440,11 +420,6 @@ tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> MModul
             CurrentHitPairing[1].push_back(TriggeredStripHits[d][1][HVSideCombo[ep][entry]]);
           }
 
-          // Apply charge trapping correction for each LV/HV pairing
-          // !!! TODO: Fill ChargeTrappingCorrection function with actual trapping parameters
-          // Is it sufficient to only correct one side's energy or should a correction be applied to LV as well?
-          HVEnergy += ChargeTrappingCorrection(d, CurrentHitPairing);
-
           // Sum chi square over entire LV/HV combination
           ChiSquare += (LVEnergy - HVEnergy) * (LVEnergy - HVEnergy) / (LVResolution + HVResolution);
         }
@@ -555,11 +530,6 @@ bool MModuleStripPairingMultiRoundChiSquare::CreateHits(unsigned int d, MReadOut
         // Add strip to current hit pairing
         CurrentHitPairing[1].push_back(TriggeredStripHits[d][1][BestHVSideCombo[h][sh]]);
       }
-
-      // Apply charge trapping correction for each LV/HV pairing
-      // !!! TODO: Fill ChargeTrappingCorrection function with actual trapping parameters
-      // Is it sufficient to only correct one side's energy or should a correction be applied to LV as well?
-      HVEnergy += ChargeTrappingCorrection(d, CurrentHitPairing);
 
       HVEnergyResTotal += HVEnergyRes;
       HVEnergyTotal += HVEnergy;
