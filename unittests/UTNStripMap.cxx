@@ -227,24 +227,25 @@ bool UTNStripMap::TestFourColumnReadOutIDInference()
   ofstream Out(Fixture.Data());
   Passed = EvaluateTrue("Open()", "create inference fixture", "The read-out ID inference fixture can be created", Out.is_open()) && Passed;
   if (Out.is_open()) {
-    Out << "0 3 0 10" << endl;   // is-primary 0, ASIC 0
-    Out << "32 3 0 11" << endl;  // is-primary 0, ASIC 1
-    Out << "64 3 0 12" << endl;  // is-primary 1, ASIC 0
-    Out << "96 3 0 13" << endl;  // is-primary 1, ASIC 1
+    // Assign STRIP_IDs on DIB ID 3 (STRIP_ID >> 7 == 3) and Detector ID 0
+    Out << "384 0 0 10" << endl;   // is-primary 0, ASIC 0
+    Out << "416 0 0 11" << endl;  // is-primary 0, ASIC 1
+    Out << "448 0 0 12" << endl;  // is-primary 1, ASIC 0
+    Out << "480 0 0 13" << endl;  // is-primary 1, ASIC 1
     Out.close();
   }
 
   MStripMap Map;
   Passed = EvaluateTrue("Open()", "four-column inference fixture", "The read-out ID inference fixture loads", Map.Open(Fixture)) && Passed;
   // IsLowVoltage() throws for an absent read-out ID, so confirm all four are present before using them
-  const bool AllPresent = Map.HasReadOutID(0) && Map.HasReadOutID(32) && Map.HasReadOutID(64) && Map.HasReadOutID(96);
+  const bool AllPresent = Map.HasReadOutID(384) && Map.HasReadOutID(416) && Map.HasReadOutID(448) && Map.HasReadOutID(480);
   Passed = EvaluateTrue("HasReadOutID()", "four-column inference fixture", "All four inference records are present", AllPresent) && Passed;
   if (AllPresent == false) {
     MFile::Remove(Fixture);
     return false;
   }
 
-  Passed = EvaluateTrue("IsLowVoltage()", "before polarity update", "All four records start on the LV side", Map.IsLowVoltage(0) && Map.IsLowVoltage(32) && Map.IsLowVoltage(64) && Map.IsLowVoltage(96)) && Passed;
+  Passed = EvaluateTrue("IsLowVoltage()", "before polarity update", "All four records start on the LV side", Map.IsLowVoltage(384) && Map.IsLowVoltage(416) && Map.IsLowVoltage(448) && Map.IsLowVoltage(480)) && Passed;
 
   // Give each (is-primary, ASIC) combination a distinct polarity, so that a wrongly inferred
   // bit necessarily produces a different LV/HV pattern
@@ -253,20 +254,20 @@ bool UTNStripMap::TestFourColumnReadOutIDInference()
   ASICPolarities[3][true] = vector<bool> { false, true };
   Passed = EvaluateTrue("UpdateASICPolarities()", "four-column map", "ASIC polarities can be applied to a map loaded from the four-column format", Map.UpdateASICPolarities(ASICPolarities)) && Passed;
 
-  Passed = EvaluateTrue("IsLowVoltage()", "ROI 0", "ROI 0 infers is-primary 0 and ASIC 0, which is LV", Map.IsLowVoltage(0)) && Passed;
-  Passed = EvaluateFalse("IsLowVoltage()", "ROI 32", "ROI 32 infers is-primary 0 and ASIC 1, which is HV", Map.IsLowVoltage(32)) && Passed;
-  Passed = EvaluateFalse("IsLowVoltage()", "ROI 64", "ROI 64 infers is-primary 1 and ASIC 0, which is HV", Map.IsLowVoltage(64)) && Passed;
-  Passed = EvaluateTrue("IsLowVoltage()", "ROI 96", "ROI 96 infers is-primary 1 and ASIC 1, which is LV", Map.IsLowVoltage(96)) && Passed;
+  Passed = EvaluateTrue("IsLowVoltage()", "ROI 384", "ROI 384 infers is-primary 0 and ASIC 0, which is LV", Map.IsLowVoltage(384)) && Passed;
+  Passed = EvaluateFalse("IsLowVoltage()", "ROI 416", "ROI 416 infers is-primary 0 and ASIC 1, which is HV", Map.IsLowVoltage(416)) && Passed;
+  Passed = EvaluateFalse("IsLowVoltage()", "ROI 448", "ROI 448 infers is-primary 1 and ASIC 0, which is HV", Map.IsLowVoltage(448)) && Passed;
+  Passed = EvaluateTrue("IsLowVoltage()", "ROI 480", "ROI 480 infers is-primary 1 and ASIC 1, which is LV", Map.IsLowVoltage(480)) && Passed;
 
   // Guard the reverse lookups with their presence check: GetReadOutID() throws for an absent tuple,
   // which would abort the whole executable before Summarize() instead of reporting a failed test
-  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 3, LV, strip 10", "The updated LV tuple is present", Map.HasROIDetSideStrip(3, true, 10)) && Passed;
-  if (Map.HasROIDetSideStrip(3, true, 10) == true) {
-    Passed = Evaluate("GetReadOutID()", "detector 3, LV, strip 10", "The reverse lookup follows the updated LV side", Map.GetReadOutID(3, true, 10), 0u) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, LV, strip 10", "The updated LV tuple is present", Map.HasROIDetSideStrip(0, true, 10)) && Passed;
+  if (Map.HasROIDetSideStrip(0, true, 10) == true) {
+    Passed = Evaluate("GetReadOutID()", "detector 0, LV, strip 10", "The reverse lookup follows the updated LV side", Map.GetReadOutID(0, true, 10), 384u) && Passed;
   }
-  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 3, HV, strip 11", "The updated HV tuple is present", Map.HasROIDetSideStrip(3, false, 11)) && Passed;
-  if (Map.HasROIDetSideStrip(3, false, 11) == true) {
-    Passed = Evaluate("GetReadOutID()", "detector 3, HV, strip 11", "The reverse lookup follows the updated HV side", Map.GetReadOutID(3, false, 11), 32u) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, HV, strip 11", "The updated HV tuple is present", Map.HasROIDetSideStrip(0, false, 11)) && Passed;
+  if (Map.HasROIDetSideStrip(0, false, 11) == true) {
+    Passed = Evaluate("GetReadOutID()", "detector 0, HV, strip 11", "The reverse lookup follows the updated HV side", Map.GetReadOutID(0, false, 11), 416u) && Passed;
   }
 
   MFile::Remove(Fixture);
@@ -346,8 +347,8 @@ bool UTNStripMap::TestUpdateASICPolarities()
   ofstream Out(Fixture.Data());
   Passed = EvaluateTrue("Open()", "create polarity fixture", "The polarity fixture can be created", Out.is_open()) && Passed;
   if (Out.is_open()) {
-    Out << "20 0 0 0 0 0 2 1 40" << endl;
-    Out << "21 0 0 1 0 0 2 1 41" << endl;
+    Out << "20 0 2 0 0 0 0 1 40" << endl;
+    Out << "21 0 2 1 0 0 0 1 41" << endl;
     Out.close();
   }
 
@@ -366,15 +367,15 @@ bool UTNStripMap::TestUpdateASICPolarities()
   vector<map<bool, vector<bool>>> ASICPolarities(3);
   ASICPolarities[2][false] = vector<bool> { true };
   ASICPolarities[2][true] = vector<bool> { true };
-  Passed = EvaluateTrue("UpdateASICPolarities()", "detector 2 primary ASIC 0", "ASIC polarity update succeeds", Map.UpdateASICPolarities(ASICPolarities)) && Passed;
+  Passed = EvaluateTrue("UpdateASICPolarities()", "DIB 2 primary ASIC 0", "ASIC polarity update succeeds", Map.UpdateASICPolarities(ASICPolarities)) && Passed;
   Passed = EvaluateTrue("IsLowVoltage()", "after polarity update", "ASIC polarity update changes ROI 20 to LV", Map.IsLowVoltage(20)) && Passed;
   Passed = EvaluateTrue("IsLowVoltage()", "after primary polarity update", "ASIC polarity update changes ROI 21 to LV", Map.IsLowVoltage(21)) && Passed;
-  Passed = EvaluateFalse("HasROIDetSideStrip()", "old HV tuple", "The old HV tuple is no longer present", Map.HasROIDetSideStrip(2, false, 40)) && Passed;
-  if (Map.HasROIDetSideStrip(2, true, 40) == true) {
-    Passed = Evaluate("GetReadOutID()", "new LV tuple", "The new LV tuple still maps to ROI 20", Map.GetReadOutID(2, true, 40), 20u) && Passed;
+  Passed = EvaluateFalse("HasROIDetSideStrip()", "old HV tuple", "The old HV tuple is no longer present", Map.HasROIDetSideStrip(0, false, 40)) && Passed;
+  if (Map.HasROIDetSideStrip(0, true, 40) == true) {
+    Passed = Evaluate("GetReadOutID()", "new LV tuple", "The new LV tuple still maps to ROI 20", Map.GetReadOutID(0, true, 40), 20u) && Passed;
   }
-  if (Map.HasROIDetSideStrip(2, true, 41) == true) {
-    Passed = Evaluate("GetReadOutID()", "new LV tuple", "The new LV tuple still maps to ROI 21", Map.GetReadOutID(2, true, 41), 21u) && Passed;
+  if (Map.HasROIDetSideStrip(0, true, 41) == true) {
+    Passed = Evaluate("GetReadOutID()", "new LV tuple", "The new LV tuple still maps to ROI 21", Map.GetReadOutID(0, true, 41), 21u) && Passed;
   }
 
   MFile::Remove(Fixture);

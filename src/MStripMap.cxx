@@ -235,7 +235,7 @@ bool MStripMap::Open(const MString& FileName)
     }
   }
 
-  if (m_StripMappings.empty()) {
+  if (m_StripMappings.empty() == true) {
     if (g_Verbosity >= c_Error) cout << "MStripMap: No mapping entries found in " << FileName << endl;
     return false;
   }
@@ -316,10 +316,10 @@ bool MStripMap::RestrictToEnabledDIBs(const vector<unsigned int>& DIBs)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Update which ASICs are LV/HV depending on their polarities
+//! Update which ASICs are LV/HV depending on their polarities, sorted by DIB ID!! (not Detector ID)
 bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASICPolarities)
 {
-  if (m_StripMappings.empty()) return true;
+  if (m_StripMappings.empty() == true) return true;
 
   vector<bool> IsLowVoltageSide(m_StripMappings.size());
   unordered_map<unsigned int, unsigned int> UpdatedDetSideStripToROI;
@@ -328,19 +328,21 @@ bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASIC
   for (unsigned int i = 0; i < m_StripMappings.size(); ++i) {
     const MSingleStripMapping& S = m_StripMappings[i];
 
-    if (S.m_DetectorID >= ASICPolarities.size()) {
+    if (S.m_DIB >= ASICPolarities.size()) {
       if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for detector " << S.m_DetectorID << endl;
       return false;
     }
 
-    map<bool, vector<bool>>::const_iterator Primary = ASICPolarities[S.m_DetectorID].find(S.m_IsPrimary);
-    if (Primary == ASICPolarities[S.m_DetectorID].end()) {
-      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for detector " << S.m_DetectorID << " primary " << S.m_IsPrimary << endl;
+    // The ASIC polarities in the JSON config are saved in order of DIB IDs, not Detector IDs
+    // Therefore, access the ASICPolarities with the DIB ID as index, NOT the DetectorID
+    map<bool, vector<bool>>::const_iterator Primary = ASICPolarities[S.m_DIB].find(S.m_IsPrimary);
+    if (Primary == ASICPolarities[S.m_DIB].end()) {
+      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for DIB " << S.m_DIB << " primary " << S.m_IsPrimary << endl;
       return false;
     }
 
     if (S.m_ASICID >= Primary->second.size()) {
-      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for detector " << S.m_DetectorID << " primary " << S.m_IsPrimary << " ASIC " << S.m_ASICID << endl;
+      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for DIB " << S.m_DIB << " primary " << S.m_IsPrimary << " ASIC " << S.m_ASICID << endl;
       return false;
     }
 
