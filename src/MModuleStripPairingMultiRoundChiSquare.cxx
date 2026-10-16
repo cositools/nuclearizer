@@ -755,7 +755,7 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
     // Define the LV neighbors
     for (unsigned int sh = 0; sh < NNStripHits[DetectorID][0].size(); sh++) {
       MStripHit* NNSH = NNStripHits[DetectorID][0][sh];
-      if ((NNSH->GetStripID() == LeftEdgeLV - 1) or (NNSH->GetStripID() == RightEdgeLV + 1)) {
+      if ((NNSH->GetStripID() == LeftEdgeLV - 1) || (NNSH->GetStripID() == RightEdgeLV + 1)) {
         Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
         // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
         if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
@@ -771,7 +771,7 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
     // Define the HV neighbors
     for (unsigned int sh = 0; sh < NNStripHits[DetectorID][1].size(); sh++) {
       MStripHit* NNSH = NNStripHits[DetectorID][1][sh];
-      if ((NNSH->GetStripID() == LeftEdgeHV - 1) or (NNSH->GetStripID() == RightEdgeHV + 1)) {
+      if ((NNSH->GetStripID() == LeftEdgeHV - 1) || (NNSH->GetStripID() == RightEdgeHV + 1)) {
         Event->GetHit(h)->AddNearestNeighborStripHit(NNSH);
         // If NN strip hit is not yet assigned to a hit, then add it to the list of assigned neighbors
         if (find(AssignedNeighbors.begin(), AssignedNeighbors.end(), NNSH) == AssignedNeighbors.end()) {
@@ -940,7 +940,7 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     // Check for any hits of this detector containing guard ring strips
     for (unsigned int h = FirstNewHit; h < Event->GetNHits(); h++) {
       for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
-        // Loop through strip hits of a given hit, skip once
+        // Loop through strip hits of a given hit, end loop once a guard ring strip has been found
         if (Event->GetHit(h)->GetStripHit(sh)->GetStripID() == 64) {
           Event->GetHit(h)->SetGuardRingHitFlag(true);
           unsigned int GuardRingDetectorID = Event->GetHit(h)->GetStripHit(sh)->GetDetectorID();
