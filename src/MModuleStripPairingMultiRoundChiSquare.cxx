@@ -727,7 +727,7 @@ void MModuleStripPairingMultiRoundChiSquare::AssignNearestNeighbors(MReadOutAsse
     StripIDs.push_back(vector<int>()); // LV
     StripIDs.push_back(vector<int>()); // HV
     bool AssignedDetector = false;
-    unsigned int DetectorID = 0; // Define detector ID where hit took place
+    unsigned int DetectorID; // Define detector ID where hit took place
     // Loop over the triggered strip hits assigned to a hit
     for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
       // Collect all the triggered strip hits in a hit and split them by side
