@@ -30,15 +30,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! The read-out element of a BGO voxel. It reads the detector name and the voxel x, y, z, ID
+//! Read-out element identified by detector/crystal ID and optionally by 3D voxel IDs
 class MReadOutElementVoxel3D : public MReadOutElement
 {
   // public interface:
  public:
-  //! default constructor - Read out element of a voxel 3D
+  //! Default constructor
   MReadOutElementVoxel3D();
 
-  //! full constructor - Read out element of a voxel 3D
+  //! Constructor for a crystal-only read-out element
+  MReadOutElementVoxel3D(const MString& DetectorID, unsigned int CrystalID);
+
+  //! Constructor for a fully specified 3D voxel read-out element
   MReadOutElementVoxel3D(const MString& DetectorID, unsigned int CrystalID, unsigned int VoxelXID, unsigned int VoxelYID, unsigned int VoxelZID);
 
   //! Simple default destructor
@@ -52,6 +55,9 @@ class MReadOutElementVoxel3D : public MReadOutElement
 
   //! Compare two read-out elements
   virtual bool operator==(const MReadOutElement& R) const;
+
+  //! Compare two voxel read-out elements for ordered containers
+  bool operator<(const MReadOutElementVoxel3D& R) const;
 
   //! Return true if this read-out element is of the given type
   virtual bool IsOfType(const MString& String) const;
@@ -80,6 +86,18 @@ class MReadOutElementVoxel3D : public MReadOutElement
     return m_CrystalID;
   }
 
+  //! Return true if all voxel IDs are defined
+  bool HasVoxelIDs() const;
+
+  //! Return true if only detector and crystal IDs are defined
+  bool IsCrystalOnly() const;
+
+  //! Clear voxel IDs and keep only detector and crystal identification
+  void ClearVoxelIDs();
+
+  //! Set all voxel IDs
+  void SetVoxelIDs(unsigned int VoxelXID, unsigned int VoxelYID, unsigned int VoxelZID);
+
   //! Set Voxel X ID as int
   void SetVoxelXID(unsigned int VoxelXID)
   {
@@ -96,7 +114,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
   {
     m_VoxelYID = VoxelYID;
   }
-  //! Set Voxel Y ID as int
+  //! Get Voxel Y ID as int
   unsigned int GetVoxelYID() const
   {
     return m_VoxelYID;
@@ -157,3 +175,4 @@ ostream& operator<<(ostream& os, const MReadOutElementVoxel3D& R);
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
