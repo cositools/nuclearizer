@@ -941,13 +941,13 @@ bool MModuleStripPairingMultiRoundChiSquare::AnalyzeEvent(MReadOutAssembly* Even
     for (unsigned int h = FirstNewHit; h < Event->GetNHits(); h++) {
       unsigned int GuardRingDetectorID = 0;
       for (unsigned int sh = 0; sh < Event->GetHit(h)->GetNStripHits(); sh++) {
+        // Loop through strip hits of a given hit, skip once
         if (Event->GetHit(h)->GetStripHit(sh)->GetStripID() == 64) {
           Event->GetHit(h)->SetGuardRingHitFlag(true);
           GuardRingDetectorID = Event->GetHit(h)->GetStripHit(sh)->GetDetectorID();
+          Event->SetStripPairing_QualityFlag("GR Hit: Detector ID " + to_string(GuardRingDetectorID) + " and Energy " + to_string(Event->GetHit(h)->GetEnergy()));
+          break;
         }
-      }
-      if (Event->GetHit(h)->GetGuardRingHitFlag() == true) {
-        Event->SetStripPairing_QualityFlag("GR Hit: Detector ID " + to_string(GuardRingDetectorID) + " and Energy " + to_string(Event->GetHit(h)->GetEnergy()));
       }
     }
       
