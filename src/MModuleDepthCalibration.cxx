@@ -482,45 +482,37 @@ double MModuleDepthCalibration::GetTimingNoiseFWHM(int PixelCode, double Energy)
 bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
 {
 
-  // The detectors need to be in the same order as DetIDs.
-  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
+  // The DetID is taken from the detector name GeD_X, so detectors can be missing (e.g. no GeD_0).
+  // Detectors not following this naming scheme get their DetID in the order of the detectors.
   vector<MDDetector*> DetList = Geometry->GetDetectorList();
 
   // Look through the Geometry and get the names and thicknesses of all Strip3D detectors.
   vector<string> DetectorNames;
-  unsigned int DetID = 0;
+  unsigned int NextDetID = 0;
 
   for (unsigned int i = 0; i < DetList.size(); ++i) {
-    // For now, DetID is in order of detectors, which puts contraints on how the geometry file should be written.
-    // If using the card cage at UCSD, default to DetID=11.
-    if (m_UCSDOverride == true) {
-      DetID = 11;
-    }
-
     MDDetector* det = DetList[i];
     if (det->GetTypeName() == "Strip3D") {
       if (det->GetNSensitiveVolumes() == 1) {
         // MDVolume* vol = det->GetSensitiveVolume(0);
         MString DetectorName = det->GetName();
         string DetName = DetectorName.GetString();
-        
-        // Check that the DetID agrees with the naming scheme GeD_X
+        unsigned int DetID = NextDetID;
+
+        // Get the DetID from the naming scheme GeD_X
         if (DetectorName.BeginsWith("GeD_") == true) {
           DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
-          if (DetID != DetectorName.ToUnsignedInt()) {
-            if (g_Verbosity >= c_Error) {
-              cout << m_XmlTag << ": ERROR: Non-matching DetID="<<DetID<<" for detector "<<DetName<<endl;
-            }
-            // Return false if this is running with the COSI SMEX payload mass model
-            if (Geometry->GetName() == "COSI-SMEX-Payload"){
-              return false;
-            }
-          }
+          DetID = DetectorName.ToUnsignedInt();
         } else if (Geometry->GetName() == "COSI-SMEX-Payload") {
           if (g_Verbosity >= c_Error) {
             cout << m_XmlTag << ": ERROR: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
           }
           return false;
+        }
+
+        // If using the card cage at UCSD, default to DetID=11.
+        if (m_UCSDOverride == true) {
+          DetID = 11;
         }
 
         if (find(DetectorNames.begin(), DetectorNames.end(), DetName) == DetectorNames.end()) {
@@ -542,7 +534,7 @@ bool MModuleDepthCalibration::LoadDetectorDimensions(MDGeometryQuest* Geometry)
           }
           m_DetectorIDs.push_back(DetID);
           m_Detectors[DetID] = det;
-          DetID += 1;
+          NextDetID = DetID + 1;
         } else {
           if (g_Verbosity >= c_Error) {
             cout<<m_XmlTag<<": ERROR: Found a duplicate detector: "<<DetName<<endl;
@@ -1034,6 +1026,14 @@ bool MModuleDepthCalibration::AddDepthCTD(vector<double> Depth, vector<vector<do
   // NPoints: number of points in the depth/CTD grid to be produced
 
   // TODO: Possible energy dependence of CTD?
+
+  // Skip detectors which are in the depth-CTD file but not in the geometry (e.g. no GeD_0)
+  if (m_Detectors.count(DetID) == 0) {
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": Detector " << DetID << " is in the depth-CTD file but not in the geometry; skipping it." << endl;
+    }
+    return true;
+  }
 
   // Check to make sure things look right.
   // First check that the CTDs all have the right length.
