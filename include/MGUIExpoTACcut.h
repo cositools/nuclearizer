@@ -63,7 +63,7 @@ class MGUIExpoTACcut : public MGUIExpo
   //! Export the data in the UI
   virtual void Export(const MString& FileName);
 
-  //! Set the arrangment of the TAC histogram by detector ID, four detectors per column
+  //! Set the arrangement of the TAC histogram by detector ID, four detectors per column
   //!  0    4    8   12
   //!  1    5    9   13
   //!  2    6   10   14
