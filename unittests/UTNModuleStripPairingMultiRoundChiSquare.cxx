@@ -218,17 +218,23 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestXmlConfiguration()
 {
   bool Passed = true;
 
-  // The module currently serializes no options (the option code in Read/CreateXmlConfiguration is commented out),
-  // thus MaximumStrips does not survive a round trip and only the node itself is checked here
+  // The module saves MaximumStrips to the XML config and should survive a round trip
+  // Testing this with a representative value of 10, which is different from the default 6
   MModuleStripPairingMultiRoundChiSquare Writer;
+  Writer.SetMaximumStrips(10);
+
   MXmlNode* Node = Writer.CreateXmlConfiguration();
-  Passed = EvaluateTrue("CreateXmlConfiguration()", "default", "CreateXmlConfiguration() returns a non-null node", Node != nullptr) && Passed;
+  Passed = EvaluateTrue("CreateXmlConfiguration()", "representative values", "CreateXmlConfiguration() returns a non-null node", Node != nullptr) && Passed;
   if (Node == nullptr) return false;
 
-  Passed = Evaluate("CreateXmlConfiguration()", "node name", "CreateXmlConfiguration() names the node after the module XML tag", Node->GetName(), MString("XmlTagStripPairingMultiRoundChiSquare")) && Passed;
+  Passed = Evaluate("CreateXmlConfiguration()", "node name", "CreateXmlConfiguration() names the node after the module XML tag", 
+                    Node->GetName(), MString("XmlTagStripPairingMultiRoundChiSquare")) && Passed;
 
   MModuleStripPairingMultiRoundChiSquare Reader;
-  Passed = EvaluateTrue("ReadXmlConfiguration()", "default", "ReadXmlConfiguration() returns true for the node created by CreateXmlConfiguration()", Reader.ReadXmlConfiguration(Node)) && Passed;
+  Passed = EvaluateTrue("ReadXmlConfiguration()", "representative values", "ReadXmlConfiguration() returns true for the node created by CreateXmlConfiguration()", 
+                    Reader.ReadXmlConfiguration(Node)) && Passed;
+  Passed = Evaluate("ReadXmlConfiguration()", "MaximumStrips", "ReadXmlConfiguration() restores the representative MaximumStrips",
+                    Reader.GetMaximumStrips(), 10.0) && Passed;
 
   delete Node;
 

@@ -1022,13 +1022,10 @@ void MModuleStripPairingMultiRoundChiSquare::ShowOptionsGUI()
 bool MModuleStripPairingMultiRoundChiSquare::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
-
-  /*
-  MXmlNode* SomeTagNode = Node->GetNode("SomeTag");
-  if (SomeTagNode != 0) {
-    m_SomeTagValue = SomeTagNode->GetValue();
+  MXmlNode* MaximumStripsNode = Node->GetNode("MaximumStrips");
+  if (MaximumStripsNode != nullptr) {
+    m_MaximumStrips = MaximumStripsNode->GetValueAsUnsignedInt();
   }
-  */
 
   return true;
 }
@@ -1040,12 +1037,8 @@ bool MModuleStripPairingMultiRoundChiSquare::ReadXmlConfiguration(MXmlNode* Node
 MXmlNode* MModuleStripPairingMultiRoundChiSquare::CreateXmlConfiguration()
 {
   //! Create an XML node tree from the configuration
-
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);
-
-  /*
-  MXmlNode* SomeTagNode = new MXmlNode(Node, "SomeTag", "SomeValue");
-  */
+  new MXmlNode(Node, "MaximumStrips", m_MaximumStrips);
 
   return Node;
 }
