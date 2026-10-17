@@ -125,6 +125,22 @@ class MModuleDEESMEX : public MModule
     return m_DepthReadout.GetTACCalFileName();
   }
 
+  //! Set strip map file name
+  void SetFileNameStripMap(const MString& FileName)
+  {
+    m_DepthReadout.SetFileNameStripMap(FileName);
+  }
+  //! Get strip map file name
+  MString GetFileNameStripMap() const
+  {
+    return m_DepthReadout.GetFileNameStripMap();
+  }
+  //! Get the strip map, or nullptr if it has not been loaded - only valid after Initialize()
+  const MStripMap* GetStripMap() const
+  {
+    return m_DepthReadout.GetStripMap();
+  }
+
 
   //! Set shield energy correction file name
   void SetShieldEnergyCorrectionFileName(const MString& FileName)

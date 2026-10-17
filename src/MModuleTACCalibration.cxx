@@ -29,6 +29,9 @@
 #include "MGUIExpoTACcut.h"
 #include "MGUIExpoPlotSpectrum.h"
 #include "MGUIOptionsTACCalibration.h"
+#include "MModuleLoaderMeasurementsHDF.h"
+#include "MModuleLoaderMeasurementsL0.h"
+#include "MModuleDEESMEX.h"
 #include "MSupervisor.h"
 
 // Standard libs:
@@ -92,6 +95,9 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
   // Default coincidence window in ns
   m_CoincidenceWindow = 600.0;
 
+  // Only used if no preceding HDF or L0 loader or DEE provides a strip map
+  m_FileNameStripMap = "";
+
   m_SideToIndex = {{'l', 0}, {'h', 1}, {'0', 0}, {'1', 1}, {'p', 0}, {'n', 1}};
 
   // Determined in Initalize function, only true when TAC calibration/cut happens after Energy Calibration
@@ -116,7 +122,33 @@ bool MModuleTACCalibration::Initialize()
 {
   // Initialize the module 
 
-  if (LoadTACCalFile(m_TACCalFile) == false) {
+  // The detector, side, and strip of each TAC calibration entry are taken from a strip map:
+  // Reuse the one of a preceding HDF or L0 loader or DEE, and only load our own if there is no such module
+  const MStripMap* StripMap = nullptr;
+  MModule* StripMapProvider = FindStripMapProvider();
+  if (StripMapProvider != nullptr) {
+    // Never fall back to our own strip map file here: the option is hidden in the GUI and might be a stale value
+    StripMap = FindUpstreamStripMap();
+    if (StripMap == nullptr) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: The preceding module \""<<StripMapProvider->GetName()<<"\" did not provide a strip map"<<endl;
+      return false;
+    }
+    if (m_FileNameStripMap != "") {
+      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Using the strip map of the module \""<<StripMapProvider->GetName()<<"\" - ignoring the strip map file "<<m_FileNameStripMap<<endl;
+    }
+  } else {
+    if (m_FileNameStripMap == "") {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: No strip map available - without a preceding HDF or L0 loader or DEE, a strip map file has to be given in the TAC calibration options"<<endl;
+      return false;
+    }
+    if (m_StripMap.Open(m_FileNameStripMap) == false) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to read strip map "<<m_FileNameStripMap<<endl;
+      return false;
+    }
+    StripMap = &m_StripMap;
+  }
+
+  if (LoadTACCalFile(m_TACCalFile, StripMap) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: TAC Calibration file could not be loaded."<<endl;
     return false;
   }
@@ -143,6 +175,53 @@ bool MModuleTACCalibration::Initialize()
 
 
   return MModule::Initialize();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MModule* MModuleTACCalibration::FindStripMapProvider()
+{
+  // Return the closest preceding module which provides a strip map (HDF or L0 loader, or DEE)
+
+  MModule* Provider = nullptr;
+
+  MSupervisor* Supervisor = MSupervisor::GetSupervisor();
+  for (unsigned int m = 0; m < Supervisor->GetNModules(); ++m) {
+    MModule* M = Supervisor->GetModule(m);
+    // Spawned instances of this module are not in the module list, thus also stop at the TAC calibration module type
+    if (M == this || M->ProvidesModuleType(MAssembly::c_TACCalibration) == true) break;
+
+    if (dynamic_cast<MModuleLoaderMeasurementsHDF*>(M) != nullptr ||
+        dynamic_cast<MModuleLoaderMeasurementsL0*>(M) != nullptr ||
+        dynamic_cast<MModuleDEESMEX*>(M) != nullptr) {
+      Provider = M;
+    }
+  }
+
+  return Provider;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+const MStripMap* MModuleTACCalibration::FindUpstreamStripMap()
+{
+  // Return the strip map of the closest preceding HDF or L0 loader or DEE.
+  // Preceding modules are already initialized, and their strip maps are not modified afterwards
+
+  MModule* Provider = FindStripMapProvider();
+
+  if (MModuleLoaderMeasurementsHDF* HDF = dynamic_cast<MModuleLoaderMeasurementsHDF*>(Provider)) {
+    return &HDF->GetStripMap();
+  }
+  if (MModuleLoaderMeasurementsL0* L0 = dynamic_cast<MModuleLoaderMeasurementsL0*>(Provider)) {
+    return &L0->GetStripMap();
+  }
+  if (MModuleDEESMEX* DEE = dynamic_cast<MModuleDEESMEX*>(Provider)) {
+    // nullptr if the DEE has not loaded a strip map
+    return DEE->GetStripMap();
+  }
+
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -405,6 +484,11 @@ bool MModuleTACCalibration::ReadXmlConfiguration(MXmlNode* Node)
     SetTACCalFileName(TACCalFileNameNode->GetValue());
   }
 
+  MXmlNode* FileNameStripMapNode = Node->GetNode("FileNameStripMap");
+  if (FileNameStripMapNode != nullptr) {
+    SetFileNameStripMap(FileNameStripMapNode->GetValue());
+  }
+
   MXmlNode* ApplyTACCutsNode = Node->GetNode("ApplyTACCuts");
   if (ApplyTACCutsNode != nullptr) {
     SetApplyTACCuts(ApplyTACCutsNode->GetValueAsBoolean());
@@ -438,6 +522,8 @@ MXmlNode* MModuleTACCalibration::CreateXmlConfiguration()
   
   new MXmlNode(Node, "TACCalFileName", m_TACCalFile);
 
+  new MXmlNode(Node, "FileNameStripMap", m_FileNameStripMap);
+
   new MXmlNode(Node, "ApplyTACCuts", m_ApplyTACCuts);
   
   MXmlNode* TACCutNode =
@@ -456,20 +542,34 @@ MXmlNode* MModuleTACCalibration::CreateXmlConfiguration()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModuleTACCalibration::LoadTACCalFile(MString FName)
+bool MModuleTACCalibration::LoadTACCalFile(MString FName, const MStripMap* StripMap)
 {
   // Read in the TAC Calibration file, which should contain for each strip:
   //  DetID, Side (h or l for high or low voltage), TAC cal, TAC cal error, TAC cal offset, TAC offset error
   // OR:
   // ReadOutID, Detector, Side, Strip, TAC cal, TAC cal error, TAC offset, TAC offset error
+  // With a strip map, detector, side, and strip are taken from the strip map via the read-out ID,
+  // and the detector, side, and strip columns of the file are only cross-checked
   MFile F;
   if (F.Open(FName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: failed to open TAC Calibration file."<<endl;
     return false;
   }
+
+  if (StripMap == nullptr) {
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No strip map given - using the detector, side, and strip columns of the TAC calibration file "<<FName<<endl;
+  }
+
+  // Counters for the cross-check of the TAC calibration file against the strip map
+  unsigned int NEntries = 0;
+  unsigned int NSkippedEntries = 0;
+  unsigned int NDetectorMismatches = 0;
+  unsigned int NSideMismatches = 0;
+  unsigned int NStripMismatches = 0;
+
   MString Line;
   while (F.ReadLine(Line)) {
-    if (!Line.BeginsWith("#")) {
+    if (Line.BeginsWith("#") == false && Line.BeginsWith("STRIP_ID") == false) {
       std::vector<MString> Tokens = Line.Tokenize(",");
       if ((Tokens.size() == 7) || (Tokens.size() == 8)) {
         int IndexOffset = Tokens.size() % 7;
@@ -490,7 +590,41 @@ bool MModuleTACCalibration::LoadTACCalFile(MString FName)
         double OffsetError = Tokens[6+IndexOffset].ToDouble();
         vector<double> CalValues;
         CalValues.push_back(TACCal); CalValues.push_back(Offset); CalValues.push_back(TACCalError); CalValues.push_back(OffsetError);
-        
+
+        if (m_SideToIndex.find(Side) == m_SideToIndex.end()) {
+          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
+          return false;
+        }
+        int SideIndex = m_SideToIndex[Side];
+
+        // Take detector, side, and strip from the strip map via the read-out ID
+        if (StripMap != nullptr) {
+          if (Tokens.size() == 7) {
+            if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: The TAC calibration file "<<FName<<" has no read-out ID column, which is required to look up detector, side, and strip in the strip map."<<endl;
+            return false;
+          }
+          ++NEntries;
+
+          // Read-out IDs of detectors which are not part of the strip map, e.g. not enabled during the run, are skipped
+          int ReadOutID = Tokens[0].ToInt();
+          if (ReadOutID < 0 || StripMap->HasReadOutID(ReadOutID) == false) {
+            ++NSkippedEntries;
+            continue;
+          }
+
+          int MapDetID = StripMap->GetDetectorID(ReadOutID);
+          int MapSideIndex = (StripMap->IsLowVoltage(ReadOutID) == true) ? 0 : 1;
+          int MapStripID = StripMap->GetStripNumber(ReadOutID);
+
+          if (MapDetID != DetID) ++NDetectorMismatches;
+          if (MapSideIndex != SideIndex) ++NSideMismatches;
+          if (MapStripID != StripID) ++NStripMismatches;
+
+          DetID = MapDetID;
+          SideIndex = MapSideIndex;
+          StripID = MapStripID;
+        }
+
         // If this detector has not been encountered yet, create LV and HV calibration maps for it
         if (m_TACCal.find(DetID) == m_TACCal.end()) {
           vector<unordered_map<int, vector<double>>> TempVector;
@@ -507,17 +641,21 @@ bool MModuleTACCalibration::LoadTACCalFile(MString FName)
         }
         
         // Store the calibration parameters
-        if (m_SideToIndex.find(Side) != m_SideToIndex.end()) {
-          m_TACCal[DetID][m_SideToIndex[Side]][StripID] = CalValues;
-        } else {
-          if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: Unable to identify Side \""<<Side<<"\" in TAC calibration file."<<endl;
-          return false;
-        }
+        m_TACCal[DetID][SideIndex][StripID] = CalValues;
       }
     }
   }
   F.Close();
   sort(m_DetectorIDs.begin(), m_DetectorIDs.end());
+
+  if (NDetectorMismatches > 0 || NSideMismatches > 0 || NStripMismatches > 0) {
+    if (g_Verbosity >= c_Warning) cout<<m_XmlTag<<": Warning: The TAC calibration file "<<FName<<" disagrees with the strip map for "
+                                      <<NDetectorMismatches<<" detector, "<<NSideMismatches<<" side, and "<<NStripMismatches<<" strip values out of "
+                                      <<NEntries - NSkippedEntries<<" entries - using the strip map values"<<endl;
+  }
+  if (NSkippedEntries > 0) {
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Skipped "<<NSkippedEntries<<" of "<<NEntries<<" entries of the TAC calibration file "<<FName<<" whose read-out ID is not in the strip map"<<endl;
+  }
 
   return true;
 }

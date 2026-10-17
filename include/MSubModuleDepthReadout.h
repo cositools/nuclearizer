@@ -24,6 +24,9 @@
 #include "MGlobal.h"
 #include "MSubModule.h"
 
+// Nuclearizer libs:
+#include "MStripMap.h"
+
 // Forward declarations:
 
 
@@ -68,6 +71,13 @@ class MSubModuleDepthReadout : public MSubModule
   //! Get filename for TAC calibration
   MString GetTACCalFileName() const {return m_TACCalFileName; }
 
+  //! Set the strip map file name, which assigns detector, side, and strip to the TAC calibration entries
+  void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
+  //! Get the strip map file name
+  MString GetFileNameStripMap() const { return m_FileNameStripMap; }
+  //! Get the strip map, or nullptr if it has not been loaded - only valid after Initialize()
+  const MStripMap* GetStripMap() const { return m_StripMapLoaded == true ? &m_StripMap : nullptr; }
+
   //! Set if timing values should be smeared based on FWHM
   void SetApplyTimingResolutionCalibration(bool ApplyTimingResolutionCalibration) { m_ApplyTimingResolutionCalibration = ApplyTimingResolutionCalibration; }
   //! Get if timing values should be smeared based on FWHM
@@ -103,6 +113,13 @@ class MSubModuleDepthReadout : public MSubModule
 
   //! Filename of the TAC calibration file
   MString m_TACCalFileName;
+
+  //! Filename of the strip map
+  MString m_FileNameStripMap;
+  //! The strip map
+  MStripMap m_StripMap;
+  //! True if the strip map has been loaded
+  bool m_StripMapLoaded;
 
   //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration parameters
   unordered_map<int, vector<unordered_map<int, vector<double>>>> m_TACCal;
