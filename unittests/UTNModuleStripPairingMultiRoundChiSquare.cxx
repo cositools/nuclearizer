@@ -183,7 +183,7 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestDefaultConstruction()
 
   MModuleStripPairingMultiRoundChiSquare Module;
 
-  Passed = Evaluate("GetMaximumStrips()", "default", "GetMaximumStrips() returns 6 after construction", Module.GetMaximumStrips(), 6.0) && Passed;
+  Passed = Evaluate("GetMaximumStrips()", "default", "GetMaximumStrips() returns 6 after construction", Module.GetMaximumStrips(), 6u) && Passed;
 
   return Passed;
 }
@@ -199,7 +199,7 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestGettersSetters()
   MModuleStripPairingMultiRoundChiSquare Module;
 
   Module.SetMaximumStrips(8);
-  Passed = Evaluate("SetMaximumStrips/GetMaximumStrips", "representative value", "GetMaximumStrips returns the value passed to SetMaximumStrips", Module.GetMaximumStrips(), 8.0) && Passed;
+  Passed = Evaluate("SetMaximumStrips/GetMaximumStrips", "representative value", "GetMaximumStrips returns the value passed to SetMaximumStrips", Module.GetMaximumStrips(), 8u) && Passed;
 
   // Clone() returns a new, distinct instance
   MModuleStripPairingMultiRoundChiSquare* Cloned = Module.Clone();
@@ -234,7 +234,7 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestXmlConfiguration()
   Passed = EvaluateTrue("ReadXmlConfiguration()", "representative values", "ReadXmlConfiguration() returns true for the node created by CreateXmlConfiguration()", 
                     Reader.ReadXmlConfiguration(Node)) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "MaximumStrips", "ReadXmlConfiguration() restores the representative MaximumStrips",
-                    Reader.GetMaximumStrips(), 10.0) && Passed;
+                    Reader.GetMaximumStrips(), 10u) && Passed;
 
   delete Node;
 

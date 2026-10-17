@@ -46,7 +46,7 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   // public interface:
  public:
   //! Default constructor
-    MModuleStripPairingMultiRoundChiSquare();
+  MModuleStripPairingMultiRoundChiSquare();
   //! Default destructor
   virtual ~MModuleStripPairingMultiRoundChiSquare();
   
@@ -74,9 +74,9 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   virtual MXmlNode* CreateXmlConfiguration();
     
   //! Set the maximum number of strips
-  void SetMaximumStrips(double MaximumStrips) { m_MaximumStrips = MaximumStrips; }
+  void SetMaximumStrips(unsigned int MaximumStrips) { m_MaximumStrips = MaximumStrips; }
   //! Get the maximum number of strips
-  double GetMaximumStrips() const { return m_MaximumStrips; }
+  unsigned int GetMaximumStrips() const { return m_MaximumStrips; }
 
   // protected methods:
  protected:

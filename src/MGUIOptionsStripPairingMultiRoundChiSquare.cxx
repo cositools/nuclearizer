@@ -82,7 +82,7 @@ void MGUIOptionsStripPairingMultiRoundChiSquare::Create()
 
   m_MaximumStrips = new MGUIEEntry(m_OptionsFrame,
                                            "Choose the maximum number of strips on either side:",
-                                           false, dynamic_cast<MModuleStripPairingMultiRoundChiSquare*>(m_Module)->GetMaximumStrips());
+                                           false, static_cast<int>(dynamic_cast<MModuleStripPairingMultiRoundChiSquare*>(m_Module)->GetMaximumStrips()));
       m_OptionsFrame->AddFrame(m_MaximumStrips, FirstLayout);
   
   PostCreate();
