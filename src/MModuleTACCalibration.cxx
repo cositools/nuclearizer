@@ -31,6 +31,7 @@
 #include "MGUIOptionsTACCalibration.h"
 #include "MModuleLoaderMeasurementsHDF.h"
 #include "MModuleLoaderMeasurementsL0.h"
+#include "MModuleDEESMEX.h"
 #include "MSupervisor.h"
 
 // Standard libs:
@@ -94,7 +95,7 @@ MModuleTACCalibration::MModuleTACCalibration() : MModule()
   // Default coincidence window in ns
   m_CoincidenceWindow = 600.0;
 
-  // Only used if no preceding HDF or L0 loader provides a strip map
+  // Only used if no preceding HDF or L0 loader or DEE provides a strip map
   m_FileNameStripMap = "";
 
   m_SideToIndex = {{'l', 0}, {'h', 1}, {'0', 0}, {'1', 1}, {'p', 0}, {'n', 1}};
@@ -122,15 +123,22 @@ bool MModuleTACCalibration::Initialize()
   // Initialize the module 
 
   // The detector, side, and strip of each TAC calibration entry are taken from a strip map:
-  // Reuse the one of a preceding HDF or L0 loader, and only load our own if there is none
-  const MStripMap* StripMap = FindUpstreamStripMap();
-  if (StripMap != nullptr) {
+  // Reuse the one of a preceding HDF or L0 loader or DEE, and only load our own if there is no such module
+  const MStripMap* StripMap = nullptr;
+  MModule* StripMapProvider = FindStripMapProvider();
+  if (StripMapProvider != nullptr) {
+    // Never fall back to our own strip map file here: the option is hidden in the GUI and might be a stale value
+    StripMap = FindUpstreamStripMap();
+    if (StripMap == nullptr) {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: The preceding module \""<<StripMapProvider->GetName()<<"\" did not provide a strip map"<<endl;
+      return false;
+    }
     if (m_FileNameStripMap != "") {
-      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Using the strip map of a preceding loader - ignoring the strip map file "<<m_FileNameStripMap<<endl;
+      if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Using the strip map of the module \""<<StripMapProvider->GetName()<<"\" - ignoring the strip map file "<<m_FileNameStripMap<<endl;
     }
   } else {
     if (m_FileNameStripMap == "") {
-      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: No strip map available - without a preceding HDF or L0 loader, a strip map file has to be given in the TAC calibration options"<<endl;
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: No strip map available - without a preceding HDF or L0 loader or DEE, a strip map file has to be given in the TAC calibration options"<<endl;
       return false;
     }
     if (m_StripMap.Open(m_FileNameStripMap) == false) {
@@ -173,7 +181,7 @@ bool MModuleTACCalibration::Initialize()
 
 MModule* MModuleTACCalibration::FindStripMapProvider()
 {
-  // Return the closest preceding module which provides a strip map (HDF or L0 loader)
+  // Return the closest preceding module which provides a strip map (HDF or L0 loader, or DEE)
 
   MModule* Provider = nullptr;
 
@@ -183,7 +191,9 @@ MModule* MModuleTACCalibration::FindStripMapProvider()
     // Spawned instances of this module are not in the module list, thus also stop at the TAC calibration module type
     if (M == this || M->ProvidesModuleType(MAssembly::c_TACCalibration) == true) break;
 
-    if (dynamic_cast<MModuleLoaderMeasurementsHDF*>(M) != nullptr || dynamic_cast<MModuleLoaderMeasurementsL0*>(M) != nullptr) {
+    if (dynamic_cast<MModuleLoaderMeasurementsHDF*>(M) != nullptr ||
+        dynamic_cast<MModuleLoaderMeasurementsL0*>(M) != nullptr ||
+        dynamic_cast<MModuleDEESMEX*>(M) != nullptr) {
       Provider = M;
     }
   }
@@ -195,7 +205,7 @@ MModule* MModuleTACCalibration::FindStripMapProvider()
 
 const MStripMap* MModuleTACCalibration::FindUpstreamStripMap()
 {
-  // Return the strip map of the closest preceding HDF or L0 loader.
+  // Return the strip map of the closest preceding HDF or L0 loader or DEE.
   // Preceding modules are already initialized, and their strip maps are not modified afterwards
 
   MModule* Provider = FindStripMapProvider();
@@ -205,6 +215,10 @@ const MStripMap* MModuleTACCalibration::FindUpstreamStripMap()
   }
   if (MModuleLoaderMeasurementsL0* L0 = dynamic_cast<MModuleLoaderMeasurementsL0*>(Provider)) {
     return &L0->GetStripMap();
+  }
+  if (MModuleDEESMEX* DEE = dynamic_cast<MModuleDEESMEX*>(Provider)) {
+    // nullptr if the DEE has not loaded a strip map
+    return DEE->GetStripMap();
   }
 
   return nullptr;

@@ -91,7 +91,7 @@ void MGUIOptionsTACCalibration::Create()
 
   m_OptionsFrame->AddFrame(m_TACCalFileSelector, TACCalLayout);
 
-  // A preceding HDF or L0 loader already provides the strip map - only ask for one if there is none
+  // A preceding HDF or L0 loader or DEE already provides the strip map - only ask for one if there is none
   m_FileSelectorStripMap = nullptr;
   if (dynamic_cast<MModuleTACCalibration*>(m_Module)->FindStripMapProvider() == nullptr) {
     m_FileSelectorStripMap = new MGUIEFileSelector(

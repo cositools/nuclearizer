@@ -73,13 +73,13 @@ class MModuleTACCalibration : public MModule
   //! Get filename for TAC calibration
   MString GetTACCalFileName() const {return m_TACCalFile;}
 
-  //! Set the strip map file name - only used if no preceding HDF or L0 loader provides a strip map
+  //! Set the strip map file name - only used if no preceding HDF or L0 loader or DEE provides a strip map
   void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
 
   //! Get the strip map file name
   MString GetFileNameStripMap() const { return m_FileNameStripMap; }
 
-  //! Return the closest preceding module in the module sequence which provides a strip map (HDF or L0 loader),
+  //! Return the closest preceding module in the module sequence which provides a strip map (HDF or L0 loader, or DEE),
   //! or nullptr if there is none
   MModule* FindStripMapProvider();
 
@@ -120,7 +120,7 @@ class MModuleTACCalibration : public MModule
   // private methods:
  private:
 
-  //! Return the strip map of the closest preceding HDF or L0 loader, or nullptr if there is none
+  //! Return the strip map of the closest preceding HDF or L0 loader or DEE, or nullptr if there is none
   const MStripMap* FindUpstreamStripMap();
 
   //! Apply TAC calibration to strip hits
@@ -140,10 +140,10 @@ class MModuleTACCalibration : public MModule
   //! TAC calibration parameter file name
   MString m_TACCalFile;
 
-  //! Strip map file name - only used if no preceding HDF or L0 loader provides a strip map
+  //! Strip map file name - only used if no preceding HDF or L0 loader or DEE provides a strip map
   MString m_FileNameStripMap;
 
-  //! The strip map loaded from m_FileNameStripMap if no preceding HDF or L0 loader provides one
+  //! The strip map loaded from m_FileNameStripMap if no preceding HDF or L0 loader or DEE provides one
   MStripMap m_StripMap;
 
   //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration parameters
