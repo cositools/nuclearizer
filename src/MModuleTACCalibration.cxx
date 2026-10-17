@@ -551,7 +551,7 @@ bool MModuleTACCalibration::LoadTACCalFile(MString FName, const MStripMap* Strip
 
   MString Line;
   while (F.ReadLine(Line)) {
-    if (!Line.BeginsWith("#")) {
+    if (Line.BeginsWith("#") == false && Line.BeginsWith("STRIP_ID") == false) {
       std::vector<MString> Tokens = Line.Tokenize(",");
       if ((Tokens.size() == 7) || (Tokens.size() == 8)) {
         int IndexOffset = Tokens.size() % 7;
