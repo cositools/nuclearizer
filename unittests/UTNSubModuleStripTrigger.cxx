@@ -350,6 +350,8 @@ bool UTNSubModuleStripTrigger::TestWithoutDeadtimeFile()
 {
   bool Passed = true;
 
+  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
+#if !defined(__GNUC__) || defined(__clang__)
   // MModuleDEESMEX passes an empty dead time file name by default: all timing parameters must have defined defaults
   alignas(MSubModuleStripTrigger) unsigned char Zero[sizeof(MSubModuleStripTrigger)];
   alignas(MSubModuleStripTrigger) unsigned char Ones[sizeof(MSubModuleStripTrigger)];
@@ -382,6 +384,7 @@ bool UTNSubModuleStripTrigger::TestWithoutDeadtimeFile()
   Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "no dead time file, 0xFF memory, event at 100 s", "The dead time ends after the event and within 1 ms", EndB, 100.0005, 0.0005)) && Passed;
   A->~MSubModuleStripTrigger();
   B->~MSubModuleStripTrigger();
+#endif
 
   return Passed;
 }

@@ -109,6 +109,8 @@ bool UTNDEEStripHit::TestUninitializedMembers()
 {
   bool Passed = true;
 
+  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
+#if !defined(__GNUC__) || defined(__clang__)
   // Construct into memory filled with 0x00 and with 0xFF: a member without default differs between both
   // MSubModuleDepthReadout builds the pixel code of every hit from m_OppositeStripID, also for added nearest neighbors
   alignas(MDEEStripHit) unsigned char Zero[sizeof(MDEEStripHit)];
@@ -125,6 +127,7 @@ bool UTNDEEStripHit::TestUninitializedMembers()
   Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_FastPeakTime has a defined default", A->m_FastPeakTime == B->m_FastPeakTime)) && Passed;
   A->~MDEEStripHit();
   B->~MDEEStripHit();
+#endif
 
   return Passed;
 }

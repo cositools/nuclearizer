@@ -200,6 +200,8 @@ bool UTNSubModuleStripReadout::TestDefaults()
   M.SetApplyResolutionCalibration(false);
   Passed = EvaluateFalse("SetApplyResolutionCalibration/GetApplyResolutionCalibration", "false", "Returns false", M.GetApplyResolutionCalibration()) && Passed;
 
+  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
+#if !defined(__GNUC__) || defined(__clang__)
   // The resolution flag must be initialized by the constructor: construct into memory filled with 0x00 and with 0xFF
   alignas(MSubModuleStripReadout) unsigned char Zero[sizeof(MSubModuleStripReadout)];
   alignas(MSubModuleStripReadout) unsigned char Ones[sizeof(MSubModuleStripReadout)];
@@ -212,6 +214,7 @@ bool UTNSubModuleStripReadout::TestDefaults()
   Passed = ExpectedToFail(EvaluateTrue("MSubModuleStripReadout()", "uninitialized memory", "The resolution flag has a defined default independent of the memory content", ValueA == ValueB)) && Passed;
   A->~MSubModuleStripReadout();
   B->~MSubModuleStripReadout();
+#endif
 
   return Passed;
 }

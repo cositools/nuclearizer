@@ -216,6 +216,8 @@ bool UTNSubModuleDepthReadout::TestConfiguration()
   Passed = Evaluate("ReadXmlConfiguration()", "TACCalFileName", "The TAC calibration file name survives", Reader.GetTACCalFileName(), MString("/data/t.csv")) && Passed;
   delete Node;
 
+  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
+#if !defined(__GNUC__) || defined(__clang__)
   // The timing resolution flag must be initialized by the constructor
   alignas(MSubModuleDepthReadout) unsigned char Zero[sizeof(MSubModuleDepthReadout)];
   alignas(MSubModuleDepthReadout) unsigned char Ones[sizeof(MSubModuleDepthReadout)];
@@ -228,6 +230,7 @@ bool UTNSubModuleDepthReadout::TestConfiguration()
   Passed = ExpectedToFail(EvaluateTrue("MSubModuleDepthReadout()", "uninitialized memory", "The timing resolution flag has a defined default independent of the memory content", ValueA == ValueB)) && Passed;
   A->~MSubModuleDepthReadout();
   B->~MSubModuleDepthReadout();
+#endif
 
   return Passed;
 }

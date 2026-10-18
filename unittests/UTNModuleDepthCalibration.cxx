@@ -460,6 +460,8 @@ bool UTNModuleDepthCalibration::TestDefaultConstruction()
 
   // The boolean options must be initialized by the constructor; construct into memory filled with 0xFF to make uninitialized members visible
   // The raw byte is compared, since reading an uninitialized bool as bool is undefined behavior and differs between compilers
+  // GCC removes the fill before the constructor as a dead store (-flifetime-dse), which leaves random bytes: not checked with GCC
+#if !defined(__GNUC__) || defined(__clang__)
   alignas(UTNModuleDepthCalibrationAccess) unsigned char Buffer[sizeof(UTNModuleDepthCalibrationAccess)];
   memset(Buffer, 0xFF, sizeof(Buffer));
   // Default-initialization (no parentheses): value-initialization would zero the memory first
@@ -471,6 +473,7 @@ bool UTNModuleDepthCalibration::TestDefaultConstruction()
   Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "The splines file is initially not loaded", D->GetRawSplinesFileIsLoaded(), 0u)) && Passed;
   Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "The mask metrology file is initially not loaded", D->GetRawMaskMetrologyFileIsLoaded(), 0u)) && Passed;
   D->~UTNModuleDepthCalibrationAccess();
+#endif
 
   return Passed;
 }
