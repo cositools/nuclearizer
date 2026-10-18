@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: zoglauer/megalib
-          ref: develop-cosi
+          ref: ffeec632f60f750d6b22d6693c373528f4a41c0f # develop-cosi with root@6.32 support
           path: megalib
 
       - name: Setup Conda Environment
