@@ -195,24 +195,16 @@ void MCOSIPayloadLollipopCut::SetupLollipopMapping()
     DetectorSideIlluminated["Q1L0LVIlluminated"] = true;
     DetectorSideIlluminated["Q2L0HVIlluminated"] = true;
     DetectorSideIlluminated["Q3L0LVIlluminated"] = true;
-    //DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
-    // apple sauced!!
-    DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
+    DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q1L1HVIlluminated"] = true;
-    // DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
-    // apple sauced!!
-    DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q3L1HVIlluminated"] = true;
   }
   
   if (m_Source_L1L2 == true) {
-    //DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
-    //appled sauced!! change once felix's fix is merged
-    DetectorSideIlluminated["Q0L1LVIlluminated"] = true;
+    DetectorSideIlluminated["Q0L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q1L1LVIlluminated"] = true;
-    // apple sauced!!
-    //DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
-    DetectorSideIlluminated["Q2L1LVIlluminated"] = true;
+    DetectorSideIlluminated["Q2L1HVIlluminated"] = true;
     DetectorSideIlluminated["Q3L1LVIlluminated"] = true;
     DetectorSideIlluminated["Q0L2LVIlluminated"] = true;
     DetectorSideIlluminated["Q1L2HVIlluminated"] = true;
