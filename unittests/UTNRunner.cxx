@@ -12,9 +12,7 @@
 // Standard libs:
 #include <algorithm>
 #include <cerrno>
-#include <cctype>
 #include <cstdlib>
-#include <cstring>
 #include <fcntl.h>
 #include <dirent.h>
 #include <chrono>
@@ -36,59 +34,249 @@ using namespace std;
 #include "MString.h"
 
 
+//! Parse the output of one unit test executable: the summary of the last Summarize() and the reports of MUnitTest
+class UTNRunnerTestParser
+{
+ public:
+  //! Default constructor
+  UTNRunnerTestParser() : m_HasSummary(false), m_NumberOfPassedChecks(0), m_NumberOfFailedChecks(0), m_NumberOfKnownFailures(0), m_NumberOfUnexpectedPasses(0), m_IsAborted(false) {}
+  //! Default destructor
+  virtual ~UTNRunnerTestParser() {}
+
+  //! Parse the output of the test
+  void Parse(const MString& Output);
+
+  //! Return true if the "Passed tests:" and "Failed tests:" summary lines were found
+  bool HasSummary() const { return m_HasSummary; }
+  //! Return the number of passed checks
+  long GetNumberOfPassedChecks() const { return m_NumberOfPassedChecks; }
+  //! Return the number of failed checks, including unexpected passes
+  long GetNumberOfFailedChecks() const { return m_NumberOfFailedChecks; }
+  //! Return the number of failed checks marked with ExpectedToFail()
+  long GetNumberOfKnownFailures() const { return m_NumberOfKnownFailures; }
+  //! Return the number of checks marked with ExpectedToFail() which passed
+  long GetNumberOfUnexpectedPasses() const { return m_NumberOfUnexpectedPasses; }
+  //! Return true if MUnitTest aborted before any check since the test could not be isolated from the user environment
+  bool IsAborted() const { return m_IsAborted; }
+
+ private:
+  //! Return the number after the first line starting with Prefix at or after Start; -1 if not found
+  long ParseSummaryValue(const vector<MString>& Lines, size_t Start, const MString& Prefix) const;
+  //! Count the lines starting with Prefix
+  long CountLinesStartingWith(const vector<MString>& Lines, const MString& Prefix) const;
+
+  //! True if the "Passed tests:" and "Failed tests:" summary lines were found
+  bool m_HasSummary;
+  //! Passed checks
+  long m_NumberOfPassedChecks;
+  //! Failed checks, including unexpected passes
+  long m_NumberOfFailedChecks;
+  //! Failed checks marked with ExpectedToFail()
+  long m_NumberOfKnownFailures;
+  //! Checks marked with ExpectedToFail() which passed
+  long m_NumberOfUnexpectedPasses;
+  //! True if MUnitTest aborted before any check
+  bool m_IsAborted;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! The run of a single unit test executable: launch, capture of its output, and classification of the result
+class UTNRunnerSingleRun
+{
+ public:
+  //! Run lifecycle states
+  enum EStatus {
+    c_StatusPending = 0,  //!< not yet launched
+    c_StatusRunning,      //!< child process is running
+    c_StatusFailed,       //!< failed checks or unexpected passes, an exit code inconsistent with the summary, or aborted before any check
+    c_StatusCrashed,      //!< killed by a signal, failed to launch, or no summary
+    c_StatusKnown,        //!< exited with status 0, but with known failures
+    c_StatusPassed        //!< exited with status 0 without any failure
+  };
+
+  //! Default constructor
+  UTNRunnerSingleRun(const MString& Name, const MString& Executable) : m_Name(Name), m_Executable(Executable), m_Status(c_StatusPending), m_Pid(-1), m_Runtime(0.0) {}
+  //! Default destructor
+  virtual ~UTNRunnerSingleRun() {}
+
+  //! Start the test in a child process with stdout and stderr captured in a temporary file; on failure the run is marked as crashed
+  bool Launch();
+  //! Evaluate the finished child process from its wait status
+  void Finish(int WaitStatus);
+  //! Mark the run as crashed, e.g. if it never finished
+  void MarkCrashed(const MString& Detail);
+
+  //! Return the name of the test
+  const MString& GetName() const { return m_Name; }
+  //! Return the status of the run
+  EStatus GetStatus() const { return m_Status; }
+  //! Return the process ID of the running test
+  pid_t GetPid() const { return m_Pid; }
+  //! Return the runtime in seconds of a finished run
+  double GetRuntime() const { return m_Runtime; }
+  //! Return the parsed output of a finished run
+  const UTNRunnerTestParser& GetParser() const { return m_Parser; }
+  //! Return true if the run is neither pending nor running
+  bool IsDone() const { return m_Status != c_StatusPending && m_Status != c_StatusRunning; }
+  //! Return the fixed-width label of the status: "PASS ", "KNOWN", "FAIL ", "CRASH", or blanks if not done
+  MString GetStatusLabel() const;
+  //! Return the name with counts and details, e.g. "UTNFoo (146 passed, 2 known failures)"
+  MString GetDescription() const;
+
+ private:
+  //! Set the status and the detail from the wait status and the parsed output
+  void Classify(int WaitStatus);
+  //! Format the counts as e.g. "146 passed, 1 failed, 2 known failures"
+  MString FormatCounts() const;
+  //! Read the captured output
+  MString ReadOutput() const;
+
+  //! Exit code of the child process if the test executable cannot be started, as in the shell
+  static constexpr int c_ExitCodeExecFailed = 127;
+
+  //! Name of the test
+  MString m_Name;
+  //! Full path of the test executable
+  MString m_Executable;
+  //! Status of the run
+  EStatus m_Status;
+  //! Process ID of the running test
+  pid_t m_Pid;
+  //! Temporary file capturing stdout and stderr
+  MString m_OutputFile;
+  //! Description of crashes and inconsistencies
+  MString m_Detail;
+  //! Start time of the run
+  chrono::steady_clock::time_point m_StartTime;
+  //! Runtime in seconds
+  double m_Runtime;
+  //! Parsed output
+  UTNRunnerTestParser m_Parser;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! One line of a dashboard pane, either a section heading (drawn in bold) or a normal line
+class UTNRunnerDashboardLine
+{
+ public:
+  //! Default constructor
+  UTNRunnerDashboardLine(const MString& Text, bool IsHeading = false) : m_Text(Text), m_IsHeading(IsHeading) {}
+  //! Default destructor
+  virtual ~UTNRunnerDashboardLine() {}
+
+  //! Return the text
+  const MString& GetText() const { return m_Text; }
+  //! Return true if the line is a section heading
+  bool IsHeading() const { return m_IsHeading; }
+
+ private:
+  //! The text
+  MString m_Text;
+  //! True if the line is a section heading
+  bool m_IsHeading;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! The live terminal dashboard of UTNRunner: running tests, failed runs, runs with known failures, and the progress
+class UTNRunnerDashboard
+{
+ public:
+  //! Enable the dashboard only if stdout is a terminal; the cursor is hidden while it is enabled
+  UTNRunnerDashboard(unsigned int MaxParallel);
+  //! Show the cursor again
+  virtual ~UTNRunnerDashboard();
+
+  //! Return true if stdout is a terminal and the dashboard is drawn
+  bool IsEnabled() const { return m_IsEnabled; }
+  //! Advance the spinner shown next to the running tests
+  void AdvanceSpinner() { ++m_SpinnerIndex; }
+  //! Redraw the dashboard; does nothing if it is not enabled
+  void Render(const vector<UTNRunnerSingleRun>& Runs) const;
+
+ private:
+  //! Cut Text to Width characters, ending in "..." if it is cut
+  MString Clip(const MString& Text, size_t Width) const;
+  //! Center Text in Width characters
+  MString Center(const MString& Text, size_t Width) const;
+  //! Pad Text with blanks to Width characters, in bold if requested; the escape codes are added after the padding
+  MString Pad(const MString& Text, size_t Width, bool Bold) const;
+  //! Format a duration as "N.Ns"
+  MString FormatRuntime(double Seconds) const;
+
+  //! Terminal width if it cannot be determined
+  static constexpr size_t c_DefaultTerminalWidth = 100;
+  //! Minimum terminal width the dashboard is drawn for
+  static constexpr size_t c_MinimumTerminalWidth = 80;
+  //! Minimum width of each of the two panes
+  static constexpr size_t c_MinimumPaneWidth = 24;
+  //! Characters of the outer border of a row: "|" left and right
+  static constexpr size_t c_OuterBorderWidth = 2;
+  //! Characters between the outer borders of a row besides the two panes: " ", " | ", " "
+  static constexpr size_t c_InnerFrameWidth = 5;
+  //! Width of the progress bar between "[" and "]"
+  static constexpr size_t c_ProgressBarWidth = 32;
+
+  //! True if stdout is a terminal
+  bool m_IsEnabled;
+  //! Width of the terminal, at least c_MinimumTerminalWidth
+  size_t m_TerminalWidth;
+  //! Maximum number of tests running in parallel, which sets the height of the running-tests pane
+  unsigned int m_MaxParallel;
+  //! Position of the spinner
+  unsigned int m_SpinnerIndex;
+  //! Start of the test suite
+  chrono::steady_clock::time_point m_StartTime;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Discover, schedule, and run UTN* unit test executables in parallel,
 //! report live progress on a terminal dashboard, and persist per-test
 //! runtimes so the slowest tests are always started first.
 class UTNRunner
 {
-public:
+ public:
   //! Default constructor
-  UTNRunner() {}
+  UTNRunner() : m_Strict(false) {}
   //! Default destructor
   virtual ~UTNRunner() {}
 
-  //! Run the requested tests; returns 0 if all pass, 1 if any fail or no tests are found
+  //! Run the requested tests; returns 1 if any test fails or crashes, if no tests are found, or with --strict if any test has known failures; 0 otherwise
   int Execute(int argc, char** argv);
 
-private:
-  //! Test lifecycle states
-  enum EStatus {
-    c_StatusPending = 0,  //!< not yet launched
-    c_StatusRunning,      //!< child process is running
-    c_StatusFailed,       //!< exited non-zero or failed to launch
-    c_StatusPassed        //!< exited with status 0
-  };
-
-  //! Remove a known source-file extension (.cxx) so users can pass either "UTNFoo" or "UTNFoo.cxx"
-  MString StripExtension(const MString& Name) const;
+ private:
   //! Return the directory that contains argv[0], or working-directory/bin as fallback
   MString GetBinDirectory(const char* Argv0) const;
   //! Return the path to the timing cache file in the platform config directory
   MString GetTimingFile() const;
-  //! Normalize a command-line test request to a bare test name (strips directory and .cxx extension)
-  MString NormalizeRequest(const MString& Input) const;
-  //! Resolve a normalized request to a discovered test name, prepending "UTN" or stripping the class prefix as needed
+  //! Resolve a command-line test request (e.g. "Hit", "MHit", "unittests/UTNHit.cxx") to a discovered test name
   MString ResolveRequest(const MString& Input) const;
   //! Scan the bin directory for UTN* executables and populate m_AllTests
   bool DiscoverTests();
-  //! Load prior runtimes from the timing cache; returns true even when the file is absent (cache is optional)
-  bool LoadTimings(map<MString, double>& Timings) const;
-  //! Persist runtimes to the timing cache; returns true even when writing fails (cache is optional)
-  bool SaveTimings(const map<MString, double>& Timings) const;
-  //! Build the ordered list of tests to run from command-line arguments, or all tests if none given
-  bool BuildRequestedTests(int argc, char** argv, vector<MString>& RequestedTests) const;
+  //! Load prior runtimes from the timing cache; an absent or unreadable cache leaves Timings empty
+  void LoadTimings(map<MString, double>& Timings) const;
+  //! Save the runtimes to the timing cache; failures are ignored since the cache is optional
+  void SaveTimings(const map<MString, double>& Timings) const;
+  //! Separate the options (--strict) from the test requests; returns false for an unknown option
+  bool ParseArguments(int argc, char** argv, vector<MString>& Requests);
+  //! Build the ordered list of tests to run from the test requests, or all tests if none given
+  bool BuildRequestedTests(const vector<MString>& Requests, vector<MString>& RequestedTests) const;
   //! Reorder tests so the slowest prior runs come first, maximising CPU utilisation
   void SortRequestedTests(vector<MString>& RequestedTests, const map<MString, double>& Timings) const;
-  //! Fork and exec the test executable; on success sets ChildPid and OutputFile (temp file capturing stdout+stderr)
-  bool LaunchTest(const MString& TestName, pid_t& ChildPid, MString& OutputFile) const;
-  //! Read and return the full contents of the captured output temp file
-  MString ReadOutput(const MString& OutputFile) const;
-  //! Extract the "Passed tests: N, Failed tests: M" summary line from captured output
-  MString ExtractMetric(const MString& Output) const;
-  //! Format a concise "X/Y failed" label from the raw metric string for the dashboard
-  MString FormatFailureMetric(const MString& Metric) const;
-  //! Format a duration as "N.Ns" for the dashboard
-  MString FormatRuntime(double Seconds) const;
+
+  //! Time between two checks for finished tests in microseconds
+  static constexpr unsigned int c_PollingInterval = 200000;
 
   //! The bin directory containing the test executables
   MString m_BinDirectory;
@@ -96,20 +284,9 @@ private:
   map<MString, MString> m_AllTests;
   //! Full path to the timing cache file
   MString m_TimingFile;
+  //! If true (--strict), known failures make the run fail
+  bool m_Strict;
 };
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString UTNRunner::StripExtension(const MString& Name) const
-{
-  if (Name.EndsWith(".cxx") == true) {
-    return Name.GetSubString(0, Name.Length() - 4);
-  }
-
-  return Name;
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -174,18 +351,15 @@ MString UTNRunner::GetTimingFile() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString UTNRunner::NormalizeRequest(const MString& Input) const
-{
-  return StripExtension(MFile::GetBaseName(Input));
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString UTNRunner::ResolveRequest(const MString& Input) const
 {
-  MString Name = NormalizeRequest(Input);
+  // Accept paths and source file names, e.g. "unittests/UTNHit.cxx"
+  const MString Extension = ".cxx";
+  MString Name = MFile::GetBaseName(Input);
+  if (Name.EndsWith(Extension) == true) {
+    Name.RemoveLast(Extension.Length());
+  }
+
   vector<MString> Candidates;
 
   if (Name.BeginsWith("UTN") == true) {
@@ -249,52 +423,49 @@ bool UTNRunner::DiscoverTests()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNRunner::LoadTimings(map<MString, double>& Timings) const
+void UTNRunner::LoadTimings(map<MString, double>& Timings) const
 {
   Timings.clear();
 
   if (m_TimingFile == "") {
-    return true;
+    return;
   }
 
   ifstream Input(m_TimingFile.Data());
   if (Input.is_open() == false) {
-    return true;
+    return;
   }
 
-  string Line;
-  while (getline(Input, Line)) {
-    if (Line.empty() == true || Line[0] == '#') {
+  MString Line;
+  while (Line.ReadLine(Input).fail() == false) {
+    if (Line.IsEmpty() == true || Line.BeginsWith("#") == true) {
       continue;
     }
-    stringstream Stream(Line);
-    string Name;
-    double Time = 0.0;
-    if ((Stream >> Name >> Time).fail()) {
+    vector<MString> Tokens = Line.Tokenize(" ");
+    if (Tokens.size() < 2 || Tokens[1].IsNumber() == false) {
       continue;
     }
+    double Time = Tokens[1].ToDouble();
     if (Time < 0.0) {
       continue;
     }
-    Timings[MString(Name.c_str())] = Time;
+    Timings[Tokens[0]] = Time;
   }
-
-  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNRunner::SaveTimings(const map<MString, double>& Timings) const
+void UTNRunner::SaveTimings(const map<MString, double>& Timings) const
 {
   if (m_TimingFile == "") {
-    return true;
+    return;
   }
 
   ofstream Output(m_TimingFile.Data(), ios::trunc);
   if (Output.is_open() == false) {
-    return true;
+    return;
   }
 
   Output << "# UTNRunner timing cache" << '\n';
@@ -302,6 +473,28 @@ bool UTNRunner::SaveTimings(const map<MString, double>& Timings) const
   for (const auto& Entry : Timings) {
     Output << Entry.first.Data() << ' ' << Entry.second << '\n';
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNRunner::ParseArguments(int argc, char** argv, vector<MString>& Requests)
+{
+  Requests.clear();
+  m_Strict = false;
+
+  for (int i = 1; i < argc; ++i) {
+    MString Argument = argv[i];
+    if (Argument == "--strict") {
+      m_Strict = true;
+    } else if (Argument.BeginsWith("--") == true) {
+      merr<<"Unknown option: "<<Argument<<" (known options: --strict)"<<show;
+      return false;
+    } else {
+      Requests.push_back(Argument);
+    }
+  }
 
   return true;
 }
@@ -310,11 +503,11 @@ bool UTNRunner::SaveTimings(const map<MString, double>& Timings) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNRunner::BuildRequestedTests(int argc, char** argv, vector<MString>& RequestedTests) const
+bool UTNRunner::BuildRequestedTests(const vector<MString>& Requests, vector<MString>& RequestedTests) const
 {
   RequestedTests.clear();
 
-  if (argc == 1) {
+  if (Requests.empty() == true) {
     for (const auto& Entry : m_AllTests) {
       RequestedTests.push_back(Entry.first);
     }
@@ -322,14 +515,14 @@ bool UTNRunner::BuildRequestedTests(int argc, char** argv, vector<MString>& Requ
   }
 
   set<MString> Seen;
-  for (int a = 1; a < argc; ++a) {
-    MString Requested = ResolveRequest(argv[a]);
+  for (const MString& Request : Requests) {
+    MString Requested = ResolveRequest(Request);
     if (Seen.insert(Requested).second == false) {
       continue;
     }
 
     if (m_AllTests.find(Requested) == m_AllTests.end()) {
-      merr<<"Unknown unit test request: "<<argv[a]<<" -> "<<Requested<<show;
+      merr<<"Unknown unit test request: "<<Request<<" -> "<<Requested<<show;
       return false;
     }
 
@@ -361,45 +554,44 @@ void UTNRunner::SortRequestedTests(vector<MString>& RequestedTests, const map<MS
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNRunner::LaunchTest(const MString& TestName, pid_t& ChildPid, MString& OutputFile) const
+bool UTNRunnerSingleRun::Launch()
 {
-  ChildPid = -1;
-  OutputFile = "";
-
-  map<MString, MString>::const_iterator Test = m_AllTests.find(TestName);
-  if (Test == m_AllTests.end()) {
-    return false;
-  }
-
-  char Template[] = "/tmp/UTNRunner_XXXXXX";
-  int FD = mkstemp(Template);
+  // mkstemp() replaces the X in a writable buffer
+  const char* TmpDir = getenv("TMPDIR");
+  const MString TemplateName = MString((TmpDir != nullptr && TmpDir[0] != '\0') ? TmpDir : "/tmp") + "/UTNRunner_XXXXXX";
+  vector<char> Template(TemplateName.Data(), TemplateName.Data() + TemplateName.Length() + 1);
+  int FD = mkstemp(Template.data());
   if (FD < 0) {
+    MarkCrashed("failed to launch test process");
     return false;
   }
   close(FD);
-  OutputFile = Template;
+  m_OutputFile = Template.data();
 
   pid_t Pid = fork();
   if (Pid < 0) {
-    unlink(OutputFile.Data());
-    OutputFile = "";
+    unlink(m_OutputFile.Data());
+    m_OutputFile = "";
+    MarkCrashed("failed to launch test process");
     return false;
   }
 
   if (Pid == 0) {
-    int Out = open(OutputFile.Data(), O_WRONLY | O_TRUNC);
+    int Out = open(m_OutputFile.Data(), O_WRONLY | O_TRUNC);
     if (Out < 0) {
-      _exit(127);
+      _exit(c_ExitCodeExecFailed);
     }
     dup2(Out, STDOUT_FILENO);
     dup2(Out, STDERR_FILENO);
     close(Out);
 
-    execl(Test->second.Data(), Test->second.Data(), (char*) nullptr);
-    _exit(127);
+    execl(m_Executable.Data(), m_Executable.Data(), (char*) nullptr);
+    _exit(c_ExitCodeExecFailed);
   }
 
-  ChildPid = Pid;
+  m_Pid = Pid;
+  m_Status = c_StatusRunning;
+  m_StartTime = chrono::steady_clock::now();
   return true;
 }
 
@@ -407,82 +599,413 @@ bool UTNRunner::LaunchTest(const MString& TestName, pid_t& ChildPid, MString& Ou
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString UTNRunner::ReadOutput(const MString& OutputFile) const
+void UTNRunnerSingleRun::Finish(int WaitStatus)
 {
-  ifstream Input(OutputFile.Data());
+  m_Runtime = chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - m_StartTime).count();
+
+  m_Parser.Parse(ReadOutput());
+  unlink(m_OutputFile.Data());
+  m_OutputFile = "";
+
+  Classify(WaitStatus);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTNRunnerSingleRun::MarkCrashed(const MString& Detail)
+{
+  m_Status = c_StatusCrashed;
+  m_Detail = Detail;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerSingleRun::ReadOutput() const
+{
+  ifstream Input(m_OutputFile.Data());
   if (Input.is_open() == false) {
     return "";
   }
 
-  stringstream Buffer;
-  Buffer << Input.rdbuf();
-  return Buffer.str().c_str();
+  MString Output;
+  Output.Read(Input);
+  return Output;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString UTNRunner::ExtractMetric(const MString& Output) const
+void UTNRunnerTestParser::Parse(const MString& Output)
 {
-  string Text = Output.Data();
-  size_t PassedPos = Text.rfind("Passed tests:");
-  size_t FailedPos = Text.rfind("Failed tests:");
-  if (PassedPos != string::npos && FailedPos != string::npos && FailedPos > PassedPos) {
-    size_t PassedEnd = Text.find('\n', PassedPos);
-    size_t FailedEnd = Text.find('\n', FailedPos);
-    MString PassedLine = Text.substr(PassedPos, PassedEnd == string::npos ? string::npos : PassedEnd - PassedPos).c_str();
-    MString FailedLine = Text.substr(FailedPos, FailedEnd == string::npos ? string::npos : FailedEnd - FailedPos).c_str();
-    return PassedLine + ", " + FailedLine;
+  m_HasSummary = false;
+  m_NumberOfPassedChecks = 0;
+  m_NumberOfFailedChecks = 0;
+  m_NumberOfKnownFailures = 0;
+  m_NumberOfUnexpectedPasses = 0;
+  m_IsAborted = false;
+
+  vector<MString> Lines = Output.Tokenize("\n", false);
+
+  // Only the block printed by the last Summarize() counts, i.e. from the last line starting with "Unit test: "
+  size_t Block = Lines.size();
+  for (size_t i = 0; i < Lines.size(); ++i) {
+    if (Lines[i].BeginsWith("Unit test: ") == true) {
+      Block = i;
+    }
   }
 
-  return "done";
+  long Passed = -1;
+  long Failed = -1;
+  long Known = -1;
+  if (Block < Lines.size()) {
+    Passed = ParseSummaryValue(Lines, Block, "Passed tests:");
+    Failed = ParseSummaryValue(Lines, Block, "Failed tests:");
+    // Summarize() prints the known failures only if there are any
+    Known = ParseSummaryValue(Lines, Block, "Known failures:");
+  }
+  if (Passed >= 0 && Failed >= 0) {
+    m_HasSummary = true;
+    m_NumberOfPassedChecks = Passed;
+    m_NumberOfFailedChecks = Failed;
+  }
+  m_NumberOfKnownFailures = Known > 0 ? Known : 0;
+
+  m_NumberOfUnexpectedPasses = CountLinesStartingWith(Lines, "UNEXPECTED PASS:");
+
+  // MUnitTest aborts before any check, thus a run with a summary was not aborted
+  m_IsAborted = (m_HasSummary == false && CountLinesStartingWith(Lines, "ABORTED: HOME and the working directory") > 0);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString UTNRunner::FormatFailureMetric(const MString& Metric) const
+long UTNRunnerTestParser::ParseSummaryValue(const vector<MString>& Lines, size_t Start, const MString& Prefix) const
 {
-  string Text = Metric.Data();
-  size_t PassedPos = Text.find("Passed tests:");
-  size_t FailedPos = Text.find("Failed tests:");
-  if (PassedPos == string::npos || FailedPos == string::npos || FailedPos < PassedPos) {
-    return Metric;
+  for (size_t i = Start; i < Lines.size(); ++i) {
+    if (Lines[i].BeginsWith(Prefix) == true) {
+      MString Value = Lines[i].GetSubString(Prefix.Length());
+      return Value.IsNumber() == true ? Value.ToLong() : -1;
+    }
   }
-
-  auto ParseValue = [&](size_t Pos, const char* Prefix) -> long {
-    size_t Start = Text.find(Prefix, Pos);
-    if (Start == string::npos) {
-      return -1;
-    }
-    Start += strlen(Prefix);
-    while (Start < Text.size() && isspace(static_cast<unsigned char>(Text[Start])) != 0) {
-      ++Start;
-    }
-    char* End = nullptr;
-    long Value = strtol(Text.c_str() + Start, &End, 10);
-    if (End == Text.c_str() + Start) {
-      return -1;
-    }
-    return Value;
-  };
-
-  long Passed = ParseValue(PassedPos, "Passed tests:");
-  long Failed = ParseValue(FailedPos, "Failed tests:");
-  if (Passed < 0 || Failed < 0) {
-    return Metric;
-  }
-
-  return MString(Failed) + "/" + Passed + " failed";
+  return -1;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString UTNRunner::FormatRuntime(double Seconds) const
+long UTNRunnerTestParser::CountLinesStartingWith(const vector<MString>& Lines, const MString& Prefix) const
+{
+  long Count = 0;
+  for (const MString& Line : Lines) {
+    if (Line.BeginsWith(Prefix) == true) {
+      ++Count;
+    }
+  }
+  return Count;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTNRunnerSingleRun::Classify(int WaitStatus)
+{
+  m_Detail = "";
+
+  if (WIFSIGNALED(WaitStatus) != 0) {
+    m_Status = c_StatusCrashed;
+    m_Detail = MString("signal ") + WTERMSIG(WaitStatus);
+    if (m_Parser.HasSummary() == false) m_Detail += ", no summary";
+    return;
+  }
+  if (WIFEXITED(WaitStatus) == 0) {
+    m_Status = c_StatusCrashed;
+    m_Detail = "abnormal termination";
+    return;
+  }
+
+  int ExitCode = WEXITSTATUS(WaitStatus);
+  if (m_Parser.IsAborted() == true) {
+    m_Status = c_StatusFailed;
+    m_Detail = "aborted: HOME and the working directory could not be isolated, no check was run";
+    return;
+  }
+  if (m_Parser.HasSummary() == false) {
+    m_Status = c_StatusCrashed;
+    m_Detail = MString("exit code ") + ExitCode + ", no summary";
+    return;
+  }
+
+  if (ExitCode == 0) {
+    if (m_Parser.GetNumberOfFailedChecks() > 0) {
+      // Usually a missing "&& Passed" in the test
+      m_Status = c_StatusFailed;
+      m_Detail = "exit code 0 although checks failed";
+      return;
+    }
+    m_Status = m_Parser.GetNumberOfKnownFailures() > 0 ? c_StatusKnown : c_StatusPassed;
+    return;
+  }
+
+  m_Status = c_StatusFailed;
+  if (m_Parser.GetNumberOfFailedChecks() == 0) {
+    m_Detail = MString("exit code ") + ExitCode + " although no check failed";
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerSingleRun::FormatCounts() const
+{
+  if (m_Parser.HasSummary() == false) {
+    return "";
+  }
+
+  long Unexpected = m_Parser.GetNumberOfUnexpectedPasses();
+  long Known = m_Parser.GetNumberOfKnownFailures();
+
+  MString Text = MString(m_Parser.GetNumberOfPassedChecks()) + " passed";
+  if (m_Parser.GetNumberOfFailedChecks() > 0) {
+    Text += MString(", ") + m_Parser.GetNumberOfFailedChecks() + " failed";
+    if (Unexpected > 0) {
+      Text += MString(": ") + Unexpected + (Unexpected == 1 ? " unexpected pass" : " unexpected passes") + " - remove ExpectedToFail()";
+    }
+  }
+  if (Known > 0) {
+    Text += MString(", ") + Known + (Known == 1 ? " known failure" : " known failures");
+  }
+
+  return Text;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerSingleRun::GetStatusLabel() const
+{
+  if (m_Status == c_StatusPassed) return "PASS ";
+  if (m_Status == c_StatusKnown) return "KNOWN";
+  if (m_Status == c_StatusFailed) return "FAIL ";
+  if (m_Status == c_StatusCrashed) return "CRASH";
+  return "     ";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerSingleRun::GetDescription() const
+{
+  MString Text = FormatCounts();
+  if (m_Detail.Length() > 0) {
+    Text += (Text.Length() > 0 ? MString("; ") : MString("")) + m_Detail;
+  }
+  return Text.Length() > 0 ? m_Name + " (" + Text + ")" : m_Name;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+UTNRunnerDashboard::UTNRunnerDashboard(unsigned int MaxParallel)
+{
+  m_IsEnabled = (isatty(STDOUT_FILENO) != 0);
+  m_MaxParallel = MaxParallel;
+  m_SpinnerIndex = 0;
+  m_StartTime = chrono::steady_clock::now();
+
+  m_TerminalWidth = c_DefaultTerminalWidth;
+  if (m_IsEnabled == true) {
+    winsize WinSize = {};
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &WinSize) == 0 && WinSize.ws_col > 0) {
+      m_TerminalWidth = WinSize.ws_col;
+    }
+    cout << "\x1b[?25l" << flush;
+  }
+  if (m_TerminalWidth < c_MinimumTerminalWidth) {
+    m_TerminalWidth = c_MinimumTerminalWidth;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+UTNRunnerDashboard::~UTNRunnerDashboard()
+{
+  if (m_IsEnabled == true) {
+    cout << "\x1b[?25h" << flush;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTNRunnerDashboard::Render(const vector<UTNRunnerSingleRun>& Runs) const
+{
+  if (m_IsEnabled == false) {
+    return;
+  }
+
+  size_t NumberOfTests = Runs.size();
+  size_t NumberOfDoneTests = 0;
+  size_t NumberOfPassedTests = 0;
+  vector<MString> RunningTests;
+  vector<MString> FailedRuns;
+  vector<MString> KnownRuns;
+  for (const UTNRunnerSingleRun& Run : Runs) {
+    if (Run.IsDone() == true) {
+      ++NumberOfDoneTests;
+    }
+    if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusPassed) {
+      ++NumberOfPassedTests;
+    } else if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusRunning) {
+      RunningTests.push_back(Run.GetName());
+    } else if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusFailed || Run.GetStatus() == UTNRunnerSingleRun::c_StatusCrashed) {
+      FailedRuns.push_back(Run.GetStatusLabel() + " " + Run.GetDescription());
+    } else if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusKnown) {
+      KnownRuns.push_back(Run.GetDescription());
+    }
+  }
+  double ElapsedSeconds = chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - m_StartTime).count();
+
+  const MString SpinnerChars = "|/-\\";
+
+  vector<UTNRunnerDashboardLine> LeftLines;
+  LeftLines.emplace_back("Status:", true);
+  LeftLines.push_back(MString("Done: ") + NumberOfDoneTests + "/" + NumberOfTests);
+  LeftLines.push_back(MString("Running: ") + RunningTests.size());
+  LeftLines.push_back(MString("Passed: ") + NumberOfPassedTests);
+  LeftLines.push_back(MString("Failed: ") + FailedRuns.size());
+  LeftLines.push_back(MString("Only known failures: ") + KnownRuns.size());
+  LeftLines.emplace_back("");
+  LeftLines.emplace_back("Runs with failures:", true);
+  if (FailedRuns.empty() == true) {
+    LeftLines.emplace_back("none");
+  }
+  LeftLines.insert(LeftLines.end(), FailedRuns.begin(), FailedRuns.end());
+  LeftLines.emplace_back("");
+  LeftLines.emplace_back("Runs with known failures only:", true);
+  if (KnownRuns.empty() == true) {
+    LeftLines.emplace_back("none");
+  }
+  LeftLines.insert(LeftLines.end(), KnownRuns.begin(), KnownRuns.end());
+
+  vector<UTNRunnerDashboardLine> RightLines;
+  RightLines.emplace_back("Running tests:", true);
+  for (const MString& Test : RunningTests) {
+    RightLines.push_back(SpinnerChars.GetSubString(m_SpinnerIndex % SpinnerChars.Length(), 1) + " " + Test);
+  }
+  if (RunningTests.empty() == true) {
+    RightLines.emplace_back("none");
+  }
+  while (RightLines.size() < m_MaxParallel + 1) {
+    RightLines.emplace_back("");
+  }
+
+  size_t Filled = NumberOfTests == 0 ? c_ProgressBarWidth : (NumberOfDoneTests * c_ProgressBarWidth) / NumberOfTests;
+  MString Bar = "[";
+  for (size_t i = 0; i < c_ProgressBarWidth; ++i) {
+    Bar += (i < Filled ? "#" : ".");
+  }
+  Bar += "]";
+  MString Progress = MString("Progress: ") + Bar + MString("  ") + NumberOfDoneTests + "/" + NumberOfTests + MString("  ") + FormatRuntime(ElapsedSeconds);
+
+  // Both panes have the same width: wide enough for the longest line, but not wider than the terminal
+  size_t PaneWidth = c_MinimumPaneWidth;
+  for (const UTNRunnerDashboardLine& Line : LeftLines) {
+    PaneWidth = max(PaneWidth, (size_t) Line.GetText().Length());
+  }
+  for (const UTNRunnerDashboardLine& Line : RightLines) {
+    PaneWidth = max(PaneWidth, (size_t) Line.GetText().Length());
+  }
+  size_t MaxInnerWidth = m_TerminalWidth - c_OuterBorderWidth;
+  if (PaneWidth * 2 + c_InnerFrameWidth > MaxInnerWidth) {
+    PaneWidth = (MaxInnerWidth - c_InnerFrameWidth) / 2;
+  }
+  if (Progress.Length() / 2 > PaneWidth) {
+    PaneWidth = Progress.Length() / 2;
+  }
+  size_t InnerWidth = PaneWidth * 2 + c_InnerFrameWidth;
+
+  MString Border = MString("+") + MString(string(InnerWidth, '-')) + "+";
+  size_t MaxLines = max(LeftLines.size(), RightLines.size());
+
+  cout << "\x1b[2J\x1b[H";
+  cout << Border << '\n';
+  cout << "|" << "\x1b[1m" << Center("Nuclearizer unit & end-to-end testing dashboard", InnerWidth) << "\x1b[0m" << "|" << '\n';
+  cout << Border << '\n';
+  for (size_t i = 0; i < MaxLines; ++i) {
+    UTNRunnerDashboardLine Left = i < LeftLines.size() ? LeftLines[i] : UTNRunnerDashboardLine("");
+    UTNRunnerDashboardLine Right = i < RightLines.size() ? RightLines[i] : UTNRunnerDashboardLine("");
+    cout << "| " << Pad(Clip(Left.GetText(), PaneWidth), PaneWidth, Left.IsHeading()) << " | " << Pad(Clip(Right.GetText(), PaneWidth), PaneWidth, Right.IsHeading()) << " |" << '\n';
+  }
+  cout << Border << '\n';
+  cout << "|" << Center(Progress, InnerWidth) << "|" << '\n';
+  cout << Border << '\n';
+  cout.flush();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerDashboard::Clip(const MString& Text, size_t Width) const
+{
+  if (Text.Length() <= Width) {
+    return Text;
+  }
+  const MString Ellipsis = "...";
+  if (Width <= Ellipsis.Length()) {
+    return Text.GetSubString(0, Width);
+  }
+  return Text.GetSubString(0, Width - Ellipsis.Length()) + Ellipsis;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerDashboard::Center(const MString& Text, size_t Width) const
+{
+  MString Clipped = Clip(Text, Width);
+  if (Clipped.Length() >= Width) {
+    return Clipped;
+  }
+  size_t PadLeft = (Width - Clipped.Length()) / 2;
+  size_t PadRight = Width - Clipped.Length() - PadLeft;
+  return MString(string(PadLeft, ' ')) + Clipped + MString(string(PadRight, ' '));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerDashboard::Pad(const MString& Text, size_t Width, bool Bold) const
+{
+  MString Padded = Text;
+  if (Text.Length() < Width) {
+    Padded += MString(string(Width - Text.Length(), ' '));
+  }
+  return Bold == true ? MString("\x1b[1m") + Padded + "\x1b[0m" : Padded;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNRunnerDashboard::FormatRuntime(double Seconds) const
 {
   ostringstream Out;
   Out.setf(ios::fixed);
@@ -497,6 +1020,11 @@ MString UTNRunner::FormatRuntime(double Seconds) const
 
 int UTNRunner::Execute(int argc, char** argv)
 {
+  vector<MString> Requests;
+  if (ParseArguments(argc, argv, Requests) == false) {
+    return 1;
+  }
+
   m_BinDirectory = GetBinDirectory(argc > 0 ? argv[0] : nullptr);
   m_TimingFile = GetTimingFile();
   if (DiscoverTests() == false || m_AllTests.empty() == true) {
@@ -508,240 +1036,37 @@ int UTNRunner::Execute(int argc, char** argv)
   LoadTimings(Timings);
 
   vector<MString> RequestedTests;
-  if (BuildRequestedTests(argc, argv, RequestedTests) == false) {
+  if (BuildRequestedTests(Requests, RequestedTests) == false) {
     return 1;
   }
   SortRequestedTests(RequestedTests, Timings);
 
-  vector<EStatus> Statuses(RequestedTests.size(), c_StatusPending);
-  vector<MString> Outputs(RequestedTests.size(), "");
-  vector<MString> OutputFiles(RequestedTests.size(), "");
-  map<pid_t, size_t> PidToIndex;
-  vector<MString> Metrics(RequestedTests.size(), "");
-  vector<chrono::steady_clock::time_point> StartTimes(RequestedTests.size());
-  vector<double> Durations(RequestedTests.size(), 0.0);
-  chrono::steady_clock::time_point SuiteStart = chrono::steady_clock::now();
-  // Detect CPU count before the first Render() so the dashboard panel height is correct from the start
+  // One run per requested test
+  vector<UTNRunnerSingleRun> Runs;
+  for (const MString& Test : RequestedTests) {
+    Runs.push_back(UTNRunnerSingleRun(Test, m_AllTests[Test]));
+  }
+
+  // Detect the CPU count before the dashboard is created, so its panel height is correct from the start
   unsigned int MaxParallel = std::thread::hardware_concurrency();
   if (MaxParallel == 0) MaxParallel = 1;
 
-  bool UseTTY = isatty(STDOUT_FILENO) != 0;
-  struct TerminalSession
-  {
-    bool Enabled = false;
-    TerminalSession(bool IsEnabled) : Enabled(IsEnabled)
-    {
-      if (Enabled == true) {
-        cout << "\x1b[?25l" << flush;
-      }
-    }
-    ~TerminalSession()
-    {
-      if (Enabled == true) {
-        cout << "\x1b[?25h" << flush;
-      }
-    }
-  } TtySession(UseTTY);
-  unsigned int SpinnerIndex = 0;
-  const char SpinnerChars[] = {'|', '/', '-', '\\'};
+  UTNRunnerDashboard Dashboard(MaxParallel);
+  Dashboard.Render(Runs);
 
-  size_t TerminalWidth = 100;
-  if (UseTTY == true) {
-    winsize WinSize;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &WinSize) == 0 && WinSize.ws_col > 0) {
-      TerminalWidth = WinSize.ws_col;
-    }
-  }
-  if (TerminalWidth < 80) {
-    TerminalWidth = 80;
-  }
-
-  auto Render = [&]() {
-    if (UseTTY == false) {
-      return;
-    }
-
-    vector<MString> LeftLines;
-    vector<MString> RightLines;
-    unsigned int Done = 0;
-    unsigned int RunningCount = 0;
-    unsigned int FailedCount = 0;
-    const size_t ProgressBarWidth = 32;
-
-    for (size_t i = 0; i < RequestedTests.size(); ++i) {
-      if (Statuses[i] != c_StatusPending && Statuses[i] != c_StatusRunning) {
-        ++Done;
-      }
-      if (Statuses[i] == c_StatusRunning) {
-        ++RunningCount;
-      } else if (Statuses[i] == c_StatusFailed) {
-        ++FailedCount;
-      }
-    }
-
-    LeftLines.push_back(MString("Done: ") + Done + "/" + RequestedTests.size());
-    LeftLines.push_back(MString("Running: ") + RunningCount);
-    LeftLines.push_back(MString("Failed: ") + FailedCount);
-    LeftLines.push_back("");
-    LeftLines.push_back("Failed runs:");
-    for (size_t i = 0; i < RequestedTests.size(); ++i) {
-      if (Statuses[i] == c_StatusFailed) {
-        MString Line = RequestedTests[i];
-        if (Metrics[i].Length() > 0) {
-          Line += MString(" (") + FormatFailureMetric(Metrics[i]) + ")";
-        }
-        LeftLines.push_back(Line);
-      }
-    }
-    if (LeftLines.size() == 5) {
-      LeftLines.push_back("none");
-    }
-
-    RightLines.push_back("Running tests:");
-    bool AnyRunning = false;
-    for (size_t i = 0; i < RequestedTests.size(); ++i) {
-      if (Statuses[i] == c_StatusRunning) {
-        AnyRunning = true;
-        MString Line = MString(SpinnerChars[SpinnerIndex % 4]) + " " + RequestedTests[i];
-        if (Metrics[i].Length() > 0) {
-          Line += MString(" (") + Metrics[i] + ")";
-        }
-        RightLines.push_back(Line);
-      }
-    }
-    if (AnyRunning == false) {
-      RightLines.push_back("none");
-    }
-    while (RightLines.size() < MaxParallel + 1) {
-      RightLines.push_back("");
-    }
-
-    size_t Filled = RequestedTests.empty() == true ? ProgressBarWidth : (Done * ProgressBarWidth) / RequestedTests.size();
-    MString Bar = "[";
-    for (size_t i = 0; i < ProgressBarWidth; ++i) {
-      Bar += (i < Filled ? "#" : ".");
-    }
-    Bar += "]";
-    chrono::steady_clock::time_point Now = chrono::steady_clock::now();
-    double Elapsed = chrono::duration_cast<chrono::duration<double>>(Now - SuiteStart).count();
-    MString Progress = MString("Progress: ") + Bar + MString("  ") + Done + "/" + RequestedTests.size()
-                     + MString("  ") + FormatRuntime(Elapsed);
-
-    size_t LeftRequiredWidth = 0;
-    for (size_t i = 0; i < LeftLines.size(); ++i) {
-      if (LeftLines[i].Length() > LeftRequiredWidth) {
-        LeftRequiredWidth = LeftLines[i].Length();
-      }
-    }
-
-    size_t RightRequiredWidth = 0;
-    for (size_t i = 0; i < RightLines.size(); ++i) {
-      if (RightLines[i].Length() > RightRequiredWidth) {
-        RightRequiredWidth = RightLines[i].Length();
-      }
-    }
-
-    size_t MaxInnerWidth = TerminalWidth > 2 ? TerminalWidth - 2 : TerminalWidth;
-    size_t PaneWidth = max(LeftRequiredWidth, RightRequiredWidth);
-    if (PaneWidth < 24) {
-      PaneWidth = 24;
-    }
-    if (PaneWidth * 2 + 5 > MaxInnerWidth) {
-      if (MaxInnerWidth > 3) {
-        PaneWidth = (MaxInnerWidth > 5) ? (MaxInnerWidth - 5) / 2 : 1;
-      } else {
-        PaneWidth = 1;
-      }
-    }
-    size_t MinPaneForProgress = Progress.Length() / 2;
-    if (MinPaneForProgress > PaneWidth) {
-      PaneWidth = MinPaneForProgress;
-    }
-    size_t LeftWidth = PaneWidth;
-    size_t RightWidth = PaneWidth;
-    size_t InnerWidth = LeftWidth + RightWidth + 5;
-
-    auto Clip = [&](const MString& Text, size_t Width) -> MString {
-      if (Text.Length() <= Width) {
-        return Text;
-      }
-      if (Width <= 3) {
-        return Text.GetSubString(0, Width);
-      }
-      return Text.GetSubString(0, Width - 3) + "...";
-    };
-
-    auto Center = [&](const MString& Text, size_t Width) -> MString {
-      MString Clipped = Clip(Text, Width);
-      if (Clipped.Length() >= Width) {
-        return Clipped;
-      }
-      size_t PadLeft = (Width - Clipped.Length()) / 2;
-      size_t PadRight = Width - Clipped.Length() - PadLeft;
-      return MString(string(PadLeft, ' ')) + Clipped + MString(string(PadRight, ' '));
-    };
-
-    auto Border = [&]() -> MString {
-      return MString("+") + MString(string(InnerWidth, '-')) + "+";
-    };
-
-    auto MakeRow = [&](const MString& Left, const MString& Right) -> MString {
-      MString LeftClipped = Clip(Left, LeftWidth);
-      MString RightClipped = Clip(Right, RightWidth);
-      return MString("| ") + LeftClipped + MString(string(LeftWidth - LeftClipped.Length(), ' '))
-           + MString(" | ") + RightClipped + MString(string(RightWidth - RightClipped.Length(), ' '))
-           + MString(" |");
-    };
-
-    auto MakeCenteredRow = [&](const MString& Text) -> MString {
-      if (InnerWidth <= 2) {
-        return MString("|") + Text + MString("|");
-      }
-      return MString("|") + Center(Text, InnerWidth) + MString("|");
-    };
-
-    size_t MaxLines = max(LeftLines.size(), RightLines.size());
-    cout << "\x1b[2J\x1b[H";
-    cout << Border() << '\n';
-    cout << MakeCenteredRow("MEGAlib unit testing dashboard") << '\n';
-    cout << Border() << '\n';
-    for (size_t i = 0; i < MaxLines; ++i) {
-      MString Left = i < LeftLines.size() ? LeftLines[i] : "";
-      MString Right = i < RightLines.size() ? RightLines[i] : "";
-      cout << MakeRow(Left, Right) << '\n';
-    }
-    cout << Border() << '\n';
-    cout << MakeCenteredRow(Progress) << '\n';
-    cout << Border() << '\n';
-    cout.flush();
-  };
-
-  Render();
-
-  size_t NextParallel = 0;
+  size_t Next = 0;
   size_t Running = 0;
-  while (NextParallel < RequestedTests.size() || Running > 0) {
-    while (NextParallel < RequestedTests.size() && Running < MaxParallel) {
-      pid_t ChildPid = -1;
-      MString OutputFile;
-      if (LaunchTest(RequestedTests[NextParallel], ChildPid, OutputFile) == false) {
-        Statuses[NextParallel] = c_StatusFailed;
-        Metrics[NextParallel] = "Failed to launch test process";
-        ++NextParallel;
-        Render();
-        continue;
+  while (Next < Runs.size() || Running > 0) {
+    while (Next < Runs.size() && Running < MaxParallel) {
+      if (Runs[Next].Launch() == true) {
+        ++Running;
       }
-      PidToIndex[ChildPid] = NextParallel;
-      OutputFiles[NextParallel] = OutputFile;
-      StartTimes[NextParallel] = chrono::steady_clock::now();
-      ++NextParallel;
-      ++Running;
-      Statuses[NextParallel - 1] = c_StatusRunning;
-      Render();
+      ++Next;
+      Dashboard.Render(Runs);
     }
 
-    int ChildStatus = 0;
-    pid_t Child = waitpid(-1, &ChildStatus, WNOHANG);
+    int WaitStatus = 0;
+    pid_t Child = waitpid(-1, &WaitStatus, WNOHANG);
     if (Child < 0) {
       if (errno == EINTR) {
         continue;
@@ -749,68 +1074,73 @@ int UTNRunner::Execute(int argc, char** argv)
       break;
     }
     if (Child == 0) {
-      ++SpinnerIndex;
-      Render();
-      usleep(1000000);
+      Dashboard.AdvanceSpinner();
+      Dashboard.Render(Runs);
+      usleep(c_PollingInterval);
       continue;
     }
 
-    map<pid_t, size_t>::iterator It = PidToIndex.find(Child);
-    if (It != PidToIndex.end()) {
-      size_t Index = It->second;
-      PidToIndex.erase(It);
-      Outputs[Index] = ReadOutput(OutputFiles[Index]);
-      unlink(OutputFiles[Index].Data());
-      Metrics[Index] = ExtractMetric(Outputs[Index]);
-      chrono::steady_clock::time_point EndTime = chrono::steady_clock::now();
-      double Seconds = chrono::duration_cast<chrono::duration<double>>(EndTime - StartTimes[Index]).count();
-      if (Seconds >= 0.0) {
-        Durations[Index] = Seconds;
-        Timings[RequestedTests[Index]] = Seconds;
+    for (UTNRunnerSingleRun& Run : Runs) {
+      if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusRunning && Run.GetPid() == Child) {
+        Run.Finish(WaitStatus);
+        Timings[Run.GetName()] = Run.GetRuntime();
+        --Running;
+        Dashboard.Render(Runs);
+        break;
       }
-      if (WIFEXITED(ChildStatus) != 0 && WEXITSTATUS(ChildStatus) == 0) {
-        Statuses[Index] = c_StatusPassed;
-      } else {
-        Statuses[Index] = c_StatusFailed;
-      }
-      --Running;
-      Render();
     }
   }
 
-  int Failed = 0;
-  int Total = 0;
-  for (size_t i = 0; i < RequestedTests.size(); ++i) {
-    ++Total;
-    if (Statuses[i] != c_StatusPassed) {
-      ++Failed;
+  // A test which never finished (waitpid error) counts as crashed
+  for (UTNRunnerSingleRun& Run : Runs) {
+    if (Run.IsDone() == false) {
+      Run.MarkCrashed("did not finish");
     }
   }
 
-  if (UseTTY == false) {
-    for (size_t i = 0; i < RequestedTests.size(); ++i) {
-      if (Statuses[i] == c_StatusPassed) {
-        cout << "PASS " << RequestedTests[i];
-      } else {
-        cout << RequestedTests[i];
-      }
-      if (Metrics[i].Length() > 0) {
-        if (Statuses[i] == c_StatusPassed) {
-          cout << " (" << Metrics[i] << ")";
-        } else {
-          cout << " (" << FormatFailureMetric(Metrics[i]) << ")";
-        }
-      }
-      cout << '\n';
+  unsigned int NPassed = 0;
+  unsigned int NKnown = 0;
+  unsigned int NFailed = 0;
+  unsigned int NCrashed = 0;
+  long ChecksPassed = 0;
+  long ChecksKnown = 0;
+  long ChecksFailed = 0;
+  long ChecksUnexpected = 0;
+  for (const UTNRunnerSingleRun& Run : Runs) {
+    if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusPassed) ++NPassed;
+    else if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusKnown) ++NKnown;
+    else if (Run.GetStatus() == UTNRunnerSingleRun::c_StatusFailed) ++NFailed;
+    else ++NCrashed;
+    ChecksPassed += Run.GetParser().GetNumberOfPassedChecks();
+    ChecksKnown += Run.GetParser().GetNumberOfKnownFailures();
+    ChecksFailed += Run.GetParser().GetNumberOfFailedChecks();
+    ChecksUnexpected += Run.GetParser().GetNumberOfUnexpectedPasses();
+  }
+
+  if (Dashboard.IsEnabled() == false) {
+    for (const UTNRunnerSingleRun& Run : Runs) {
+      cout << Run.GetStatusLabel() << " " << Run.GetDescription() << '\n';
     }
-  } else {
-    Render();
     cout << '\n';
+  } else {
+    Dashboard.Render(Runs);
+    cout << '\n';
+  }
+
+  cout << "Executables: " << NPassed << " passed, " << NKnown << " with known failures, " << NFailed << " failed, " << NCrashed << " crashed" << '\n';
+  cout << "Checks: " << ChecksPassed << " passed, " << ChecksKnown << " known failures, " << ChecksFailed << " failed";
+  if (ChecksUnexpected > 0) {
+    cout << " (" << ChecksUnexpected << (ChecksUnexpected == 1 ? " unexpected pass" : " unexpected passes") << ")";
+  }
+  cout << '\n';
+  if (m_Strict == true && NKnown > 0) {
+    cout << "Strict mode: known failures fail the run" << '\n';
   }
 
   SaveTimings(Timings);
 
-  return Failed == 0 ? 0 : 1;
+  bool Success = (NFailed == 0 && NCrashed == 0) && (m_Strict == false || NKnown == 0);
+  return Success == true ? 0 : 1;
 }
 
 
@@ -822,3 +1152,7 @@ int main(int argc, char** argv)
   UTNRunner Execute;
   return Execute.Execute(argc, argv);
 }
+
+
+// UTNRunner.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

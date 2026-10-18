@@ -10,6 +10,8 @@
 
 
 // Standard libs:
+#include <cstring>
+#include <new>
 #include <vector>
 using namespace std;
 
@@ -24,19 +26,19 @@ using namespace std;
 class UTNDEEStripHit : public MUnitTest
 {
  public:
-  UTNDEEStripHit()
-      : MUnitTest("UTNDEEStripHit")
-  {
-  }
-  virtual ~UTNDEEStripHit()
-  {
-  }
+  //! Default constructor
+  UTNDEEStripHit() : MUnitTest("UTNDEEStripHit") {}
+  //! Default destructor
+  virtual ~UTNDEEStripHit() {}
 
+  //! Run all tests
   virtual bool Run();
 
  private:
   //! Test default-construction state for reliably defaulted fields
   bool TestDefaultConstruction();
+  //! Test that the constructor defines all identifiers and timing fields independent of the memory content
+  bool TestUninitializedMembers();
   //! Test Convert() with representative values
   bool TestConvertRepresentativeValues();
   //! Test Convert() false-path booleans
@@ -54,6 +56,7 @@ bool UTNDEEStripHit::Run()
   bool Passed = true;
 
   Passed = TestDefaultConstruction() && Passed;
+  Passed = TestUninitializedMembers() && Passed;
   Passed = TestConvertRepresentativeValues() && Passed;
   Passed = TestConvertFalsePaths() && Passed;
   Passed = TestConvertLifecycleIndependence() && Passed;
@@ -94,6 +97,34 @@ bool UTNDEEStripHit::TestDefaultConstruction()
   Passed = Evaluate("MDEEStripHit()", "default TAC", "Default TAC value is 0", H.m_TAC, (unsigned int) 0) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default sub strip hits", "Default sub strip hit list is empty", (unsigned int) H.m_SubStripHits.size(), (unsigned int) 0) && Passed;
   Passed = Evaluate("MDEEStripHit()", "default shared origin", "Default shared origin list is empty", (unsigned int) H.m_SharedOrigin.size(), (unsigned int) 0) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNDEEStripHit::TestUninitializedMembers()
+{
+  bool Passed = true;
+
+  // Construct into memory filled with 0x00 and with 0xFF: a member without default differs between both
+  // MSubModuleDepthReadout builds the pixel code of every hit from m_OppositeStripID, also for added nearest neighbors
+  alignas(MDEEStripHit) unsigned char Zero[sizeof(MDEEStripHit)];
+  alignas(MDEEStripHit) unsigned char Ones[sizeof(MDEEStripHit)];
+  memset(Zero, 0x00, sizeof(Zero));
+  memset(Ones, 0xFF, sizeof(Ones));
+  MDEEStripHit* A = new (Zero) MDEEStripHit;
+  MDEEStripHit* B = new (Ones) MDEEStripHit;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_OppositeStripID has a defined default", A->m_OppositeStripID == B->m_OppositeStripID)) && Passed;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_ID has a defined default", A->m_ID == B->m_ID)) && Passed;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_OppositeSideID has a defined default", A->m_OppositeSideID == B->m_OppositeSideID)) && Passed;
+  // With 0xFF memory an undefined double is NaN, so the comparison fails
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_Timing has a defined default", A->m_Timing == B->m_Timing)) && Passed;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_FastPeakTime has a defined default", A->m_FastPeakTime == B->m_FastPeakTime)) && Passed;
+  A->~MDEEStripHit();
+  B->~MDEEStripHit();
 
   return Passed;
 }
@@ -227,3 +258,7 @@ int main()
   UTNDEEStripHit Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNDEEStripHit.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
