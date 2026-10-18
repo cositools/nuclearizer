@@ -23,6 +23,9 @@
 #include <unistd.h>
 using namespace std;
 
+// ROOT:
+#include "TSystem.h"
+
 // MEGAlib:
 #include "MGlobal.h"
 #include "MUnitTest.h"
@@ -66,6 +69,20 @@ class UTNModuleDepthCalibrationAccess : public MModuleDepthCalibration
   unsigned int GetNShortedStrips() const { return m_ShortedStrips.size(); }
   //! Return the number of known detectors
   unsigned int GetNDetectorIDs() const { return m_DetectorIDs.size(); }
+  //! Return the raw byte of a bool member; reading an uninitialized bool as bool is undefined behavior, its byte is not
+  unsigned int GetRawByte(const bool& Member) const { unsigned char Byte = 0; memcpy(&Byte, &Member, 1); return Byte; }
+  //! Return the raw byte of m_AccountForDisabledStrips
+  unsigned int GetRawAccountForDisabledStrips() const { return GetRawByte(m_AccountForDisabledStrips); }
+  //! Return the raw byte of m_MaskMetrologyEnabled
+  unsigned int GetRawMaskMetrologyEnabled() const { return GetRawByte(m_MaskMetrologyEnabled); }
+  //! Return the raw byte of m_UCSDOverride
+  unsigned int GetRawUCSDOverride() const { return GetRawByte(m_UCSDOverride); }
+  //! Return the raw byte of m_CoeffsFileIsLoaded
+  unsigned int GetRawCoeffsFileIsLoaded() const { return GetRawByte(m_CoeffsFileIsLoaded); }
+  //! Return the raw byte of m_SplinesFileIsLoaded
+  unsigned int GetRawSplinesFileIsLoaded() const { return GetRawByte(m_SplinesFileIsLoaded); }
+  //! Return the raw byte of m_MaskMetrologyFileIsLoaded
+  unsigned int GetRawMaskMetrologyFileIsLoaded() const { return GetRawByte(m_MaskMetrologyFileIsLoaded); }
   //! Return the thickness of a detector
   double GetThickness(int DetID) { return m_Thicknesses[DetID]; }
   //! Return the X pitch of a detector
@@ -393,6 +410,8 @@ bool UTNModuleDepthCalibration::RunInChild(function<bool()> Function)
   if (Pid < 0) return false;
 
   if (Pid == 0) {
+    // A crash is the expected outcome here: without ROOT's handlers it ends the child without a stack trace
+    gSystem->ResetSignals();
     // Seconds after which a hanging child is killed
     const unsigned int ChildTimeout = 60;
     alarm(ChildTimeout);
@@ -440,17 +459,17 @@ bool UTNModuleDepthCalibration::TestDefaultConstruction()
   delete C;
 
   // The boolean options must be initialized by the constructor; construct into memory filled with 0xFF to make uninitialized members visible
-  // Reading such a bool is undefined behavior, but it reliably reads as not false
+  // The raw byte is compared, since reading an uninitialized bool as bool is undefined behavior and differs between compilers
   alignas(UTNModuleDepthCalibrationAccess) unsigned char Buffer[sizeof(UTNModuleDepthCalibrationAccess)];
   memset(Buffer, 0xFF, sizeof(Buffer));
   // Default-initialization (no parentheses): value-initialization would zero the memory first
   UTNModuleDepthCalibrationAccess* D = new (Buffer) UTNModuleDepthCalibrationAccess;
-  Passed = ExpectedToFail(EvaluateTrue("MModuleDepthCalibration()", "dirty memory", "AccountForDisabledStrips is initialized to false", D->GetAccountForDisabledStrips() == false)) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("MModuleDepthCalibration()", "dirty memory", "MaskMetrologyCorrectionEnable is initialized to false", D->GetMaskMetrologyCorrectionEnable() == false)) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("MModuleDepthCalibration()", "dirty memory", "UCSDOverride is initialized to false", D->GetUCSDOverride() == false)) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("MModuleDepthCalibration()", "dirty memory", "The coefficients file is initially not loaded", D->IsCoeffsFileLoaded() == false)) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("MModuleDepthCalibration()", "dirty memory", "The splines file is initially not loaded", D->IsSplinesFileLoaded() == false)) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("MModuleDepthCalibration()", "dirty memory", "The mask metrology file is initially not loaded", D->IsMaskMetrologyFileLoaded() == false)) && Passed;
+  Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "AccountForDisabledStrips is initialized to false", D->GetRawAccountForDisabledStrips(), 0u)) && Passed;
+  Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "MaskMetrologyCorrectionEnable is initialized to false", D->GetRawMaskMetrologyEnabled(), 0u)) && Passed;
+  Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "UCSDOverride is initialized to false", D->GetRawUCSDOverride(), 0u)) && Passed;
+  Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "The coefficients file is initially not loaded", D->GetRawCoeffsFileIsLoaded(), 0u)) && Passed;
+  Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "The splines file is initially not loaded", D->GetRawSplinesFileIsLoaded(), 0u)) && Passed;
+  Passed = ExpectedToFail(Evaluate("MModuleDepthCalibration()", "dirty memory", "The mask metrology file is initially not loaded", D->GetRawMaskMetrologyFileIsLoaded(), 0u)) && Passed;
   D->~UTNModuleDepthCalibrationAccess();
 
   return Passed;
@@ -823,12 +842,16 @@ bool UTNModuleDepthCalibration::TestLoadSplinesFile()
   }
 
   // Error paths
+  // UCSDOverride is set explicitly: the constructor leaves it uninitialized (see TestDefaultConstruction), and a garbage
+  // value maps all detectors to ID 11, which makes LoadSplinesFile() skip detector 0
   g_Verbosity = c_Quiet;
   UTNModuleDepthCalibrationAccess Thick;
+  Thick.SetUCSDOverride(false);
   Thick.LoadDetectorDimensions(G);
   bool ThickResult = Thick.LoadSplinesFile(WriteSplines(1.2));
 
   UTNModuleDepthCalibrationAccess Dup;
+  Dup.SetUCSDOverride(false);
   Dup.LoadDetectorDimensions(G);
   MString DupFile = GetTemporaryFileName("dup.splines.csv");
   MString Twice = ReadTextFile(WriteSplines());
@@ -836,6 +859,7 @@ bool UTNModuleDepthCalibration::TestLoadSplinesFile()
   bool DupResult = Dup.LoadSplinesFile(DupFile);
 
   UTNModuleDepthCalibrationAccess Columns;
+  Columns.SetUCSDOverride(false);
   Columns.LoadDetectorDimensions(G);
   MString ColFile = GetTemporaryFileName("columns.splines.csv");
   Passed = EvaluateTrue("WriteTextFile()", "ColFile", "The fixture file can be written", WriteTextFile(ColFile, "### 0\n-0.75,-150,1\n0.0,0\n0.75,150,1\n")) && Passed;
@@ -1350,15 +1374,10 @@ bool UTNModuleDepthCalibration::TestCrashCandidates()
   Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "hit in unknown detector 3", "A hit in an unknown detector is flagged without crashing", UnknownDetector)) && Passed;
 
   // A ### header line with fewer than six tokens must not crash the coefficients reader
-  // The reader reads Tokens[5] out of bounds, which so far does not crash; the energy check below covers it
+  // The reader reads Tokens[5] out of bounds: whether that crashes is platform dependent (it does on Linux, not on macOS),
+  // thus there is no separate "does not crash" check; the energy check below fails on all platforms until the fix
   MString ShortHeader = GetTemporaryFileName("shortheader.coeffs.csv");
   Passed = EvaluateTrue("WriteTextFile()", "ShortHeader", "The fixture file can be written", WriteTextFile(ShortHeader, "### 800 V\n503,1.0,0.0,1.0,1.0\n")) && Passed;
-  bool HeaderOK = RunInChild([&]() -> bool {
-    UTNModuleDepthCalibrationAccess M;
-    M.LoadCoeffsFile(ShortHeader);
-    return M.GetCoeffs().size() == 1;
-  });
-  Passed = EvaluateTrue("LoadCoeffsFile()", "short ### header", "A short ### header does not crash the reader", HeaderOK) && Passed;
 
   // The energy is the sixth token of the header: a short header must not read past the tokens
   bool EnergyKept = RunInChild([&]() -> bool {

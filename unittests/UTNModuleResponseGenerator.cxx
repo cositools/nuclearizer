@@ -101,6 +101,8 @@ bool UTNModuleResponseGenerator::RunInChild(function<bool()> Function)
   if (Pid < 0) return false;
 
   if (Pid == 0) {
+    // A crash is a possible outcome here: without ROOT's handlers it ends the child without a stack trace
+    gSystem->ResetSignals();
     // Time-out of the child process in seconds
     const unsigned int ChildTimeout = 60;
     alarm(ChildTimeout);

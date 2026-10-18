@@ -18,6 +18,9 @@
 #include <unistd.h>
 using namespace std;
 
+// ROOT:
+#include "TSystem.h"
+
 // MEGAlib:
 #include "MGlobal.h"
 #include "MUnitTest.h"
@@ -152,6 +155,8 @@ bool UTNSubModuleStripTrigger::RunInChild(function<bool()> Function)
   if (Pid < 0) return false;
 
   if (Pid == 0) {
+    // A crash is a possible outcome here: without ROOT's handlers it ends the child without a stack trace
+    gSystem->ResetSignals();
     // Seconds after which a hanging child is killed
     const unsigned int ChildTimeout = 60;
     alarm(ChildTimeout);

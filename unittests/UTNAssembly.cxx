@@ -21,6 +21,9 @@
 #include <unistd.h>
 using namespace std;
 
+// ROOT:
+#include "TSystem.h"
+
 // MEGAlib:
 #include "MGlobal.h"
 #include "MUnitTest.h"
@@ -127,6 +130,8 @@ bool UTNAssembly::CallParseCommandLineInChild(MAssembly& A, const vector<MString
   if (Pid < 0) return false;
 
   if (Pid == 0) {
+    // A crash is a possible outcome here: without ROOT's handlers it ends the child without a stack trace
+    gSystem->ResetSignals();
     // Child: never return into the test
     // Time-out of the child process in seconds
     const unsigned int ChildTimeout = 30;
@@ -265,8 +270,15 @@ bool UTNAssembly::TestParseCommandLineMissingArguments(MAssembly& A)
   // These options take an argument too, but are not part of the argument check
   Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "-v", "ParseCommandLine rejects -v without argument without crashing", CallParseCommandLineInChild(A, { "-v" }))) && Passed;
   Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "--verbosity", "ParseCommandLine rejects --verbosity without argument without crashing", CallParseCommandLineInChild(A, { "--verbosity" }))) && Passed;
+#ifdef _LIBCPP_VERSION
+  // The parser does not check for the missing argument and streams the null argv[argc] into cout, which crashes with libc++
   Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "-C", "ParseCommandLine rejects -C without argument without crashing", CallParseCommandLineInChild(A, { "-C" }))) && Passed;
   Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "--change-configuration", "ParseCommandLine rejects --change-configuration without argument without crashing", CallParseCommandLineInChild(A, { "--change-configuration" }))) && Passed;
+#else
+  // Other standard libraries (e.g. libstdc++) ignore a null char pointer in a stream, which hides the missing argument check
+  Passed = EvaluateTrue("ParseCommandLine()", "-C", "ParseCommandLine rejects -C without argument without crashing", CallParseCommandLineInChild(A, { "-C" })) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "--change-configuration", "ParseCommandLine rejects --change-configuration without argument without crashing", CallParseCommandLineInChild(A, { "--change-configuration" })) && Passed;
+#endif
 
   return Passed;
 }

@@ -20,6 +20,9 @@ using namespace std;
 // CCfits:
 #include <CCfits/CCfits>
 
+// ROOT:
+#include "TSystem.h"
+
 // MEGAlib:
 #include "MGlobal.h"
 #include "MUnitTest.h"
@@ -226,6 +229,8 @@ bool UTNFITSWriterL1a::RunInChild(function<bool()> Function)
   if (Pid < 0) return false;
 
   if (Pid == 0) {
+    // A crash is a possible outcome here: without ROOT's handlers it ends the child without a stack trace
+    gSystem->ResetSignals();
     // Timeout in seconds after which a hanging child is killed
     const unsigned int ChildTimeout = 60;
     alarm(ChildTimeout);
