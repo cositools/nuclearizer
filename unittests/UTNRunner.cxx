@@ -58,6 +58,10 @@ class UTNRunnerTestParser
   long GetNumberOfUnexpectedPasses() const { return m_NumberOfUnexpectedPasses; }
   //! Return true if MUnitTest aborted before any check since the test could not be isolated from the user environment
   bool IsAborted() const { return m_IsAborted; }
+  //! Return the FAILED, UNEXPECTED PASS, and ABORTED reports of MUnitTest, each with its indented detail lines
+  const vector<MString>& GetFailureReports() const { return m_FailureReports; }
+  //! Return the last lines of the output, e.g. to show the cause of a crash
+  const vector<MString>& GetLastLines() const { return m_LastLines; }
 
  private:
   //! Return the number after the first line starting with Prefix at or after Start; -1 if not found
@@ -77,6 +81,13 @@ class UTNRunnerTestParser
   long m_NumberOfUnexpectedPasses;
   //! True if MUnitTest aborted before any check
   bool m_IsAborted;
+  //! The FAILED, UNEXPECTED PASS, and ABORTED reports with their detail lines
+  vector<MString> m_FailureReports;
+  //! The last lines of the output
+  vector<MString> m_LastLines;
+
+  //! Number of output lines kept in m_LastLines
+  static constexpr size_t c_NumberOfLastLines = 20;
 };
 
 
@@ -648,8 +659,24 @@ void UTNRunnerTestParser::Parse(const MString& Output)
   m_NumberOfKnownFailures = 0;
   m_NumberOfUnexpectedPasses = 0;
   m_IsAborted = false;
+  m_FailureReports.clear();
+  m_LastLines.clear();
 
   vector<MString> Lines = Output.Tokenize("\n", false);
+
+  // A report is its first line plus the following detail lines, which MUnitTest indents by three blanks
+  for (size_t i = 0; i < Lines.size(); ++i) {
+    if (Lines[i].BeginsWith("FAILED:") == true || Lines[i].BeginsWith("UNEXPECTED PASS:") == true || Lines[i].BeginsWith("ABORTED:") == true) {
+      MString Report = Lines[i];
+      while (i + 1 < Lines.size() && Lines[i + 1].BeginsWith("   ") == true) {
+        Report += MString("\n") + Lines[++i];
+      }
+      m_FailureReports.push_back(Report);
+    }
+  }
+
+  size_t First = Lines.size() > c_NumberOfLastLines ? Lines.size() - c_NumberOfLastLines : 0;
+  m_LastLines.assign(Lines.begin() + First, Lines.end());
 
   // Only the block printed by the last Summarize() counts, i.e. from the last line starting with "Unit test: "
   size_t Block = Lines.size();
@@ -1124,6 +1151,20 @@ int UTNRunner::Execute(int argc, char** argv)
     cout << '\n';
   } else {
     Dashboard.Render(Runs);
+    cout << '\n';
+  }
+
+  // Show why runs failed, e.g. in a CI log: the reports of failed checks, or the last lines of the output if there are none
+  for (const UTNRunnerSingleRun& Run : Runs) {
+    if (Run.GetStatus() != UTNRunnerSingleRun::c_StatusFailed && Run.GetStatus() != UTNRunnerSingleRun::c_StatusCrashed) {
+      continue;
+    }
+    cout << "===== " << Run.GetStatusLabel() << " " << Run.GetDescription() << '\n';
+    const vector<MString>& Reports = Run.GetParser().GetFailureReports();
+    const vector<MString>& Details = Reports.empty() == false ? Reports : Run.GetParser().GetLastLines();
+    for (const MString& Detail : Details) {
+      cout << Detail << '\n';
+    }
     cout << '\n';
   }
 
