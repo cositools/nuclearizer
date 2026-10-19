@@ -201,7 +201,10 @@ bool UTNModuleTACCalibration::TestGettersSetters()
   TACCalTable Read = Module.GetTACCalParameters();
   Passed = EvaluateTrue("SetTACCalParameters/GetTACCalParameters", "representative table", "GetTACCalParameters returns the entry for detector 5, HV, strip 17", Read.count(5) == 1 && Read[5].size() == 2 && Read[5][1].count(17) == 1) && Passed;
   if (Read.count(5) == 1 && Read[5].size() == 2 && Read[5][1].count(17) == 1) {
+    Passed = EvaluateNear("SetTACCalParameters/GetTACCalParameters", "representative table", "GetTACCalParameters returns the representative slope", Read[5][1][17][0], 0.4, 1e-9) && Passed;
     Passed = EvaluateNear("SetTACCalParameters/GetTACCalParameters", "representative table", "GetTACCalParameters returns the representative offset", Read[5][1][17][1], -500.0, 1e-9) && Passed;
+    Passed = EvaluateNear("SetTACCalParameters/GetTACCalParameters", "representative table", "GetTACCalParameters returns the representative slope error", Read[5][1][17][2], 0.01, 1e-9) && Passed;
+    Passed = EvaluateNear("SetTACCalParameters/GetTACCalParameters", "representative table", "GetTACCalParameters returns the representative offset error", Read[5][1][17][3], 2.0, 1e-9) && Passed;
   }
 
   return Passed;
