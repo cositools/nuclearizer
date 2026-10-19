@@ -75,14 +75,14 @@ MSubModuleChargeTransport::~MSubModuleChargeTransport()
 bool MSubModuleChargeTransport::Initialize()
 {
 
-  // The detectors need to be in the same order as DetIDs.
-  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
+  // The DetID is taken from the detector name GeD_X, so detectors can be missing (e.g. no GeD_0).
+  // Detectors not following this naming scheme get their DetID in the order of the detectors.
   vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
 
   // Look through the Geometry and get the names and thicknesses of all Strip3D detectors.
   vector<string> DetectorNames;
-  unsigned int DetID = 0;
-  
+  unsigned int NextDetID = 0;
+
   for(unsigned int i = 0; i < DetList.size(); ++i){
     MDDetector* det = DetList[i];
     if (det->GetTypeName() == "Strip3D") {
@@ -90,19 +90,12 @@ bool MSubModuleChargeTransport::Initialize()
         MDVolume* vol = det->GetSensitiveVolume(0);
         MString DetectorName = det->GetName();
         string DetName = DetectorName.GetString();
-        
-        // Check that the DetID agrees with the naming scheme GeD_X
+        unsigned int DetID = NextDetID;
+
+        // Get the DetID from the naming scheme GeD_X
         if (DetectorName.BeginsWith("GeD_") == true) {
           DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
-          if (DetID != DetectorName.ToUnsignedInt()) {
-            if (g_Verbosity >= c_Error) {
-              cout << "ERROR in MSubModuleChargeTransport::Initialize: Non-matching DetID="<<DetID<<" for detector "<<DetName<<endl;
-            }
-            // Return false if this is running with the COSI SMEX payload mass model
-            if (m_Geometry->GetName() == "COSI-SMEX-Payload"){
-              return false;
-            }
-          }
+          DetID = DetectorName.ToUnsignedInt();
         } else if (m_Geometry->GetName() == "COSI-SMEX-Payload") {
           if (g_Verbosity >= c_Error) {
             cout << "ERROR in MSubModuleChargeTransport::Initialize: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
@@ -145,7 +138,7 @@ bool MSubModuleChargeTransport::Initialize()
           }
           m_DetectorIDs.push_back(DetID);
           m_Detectors[DetID] = det;
-          DetID += 1;
+          NextDetID = DetID + 1;
         } else {
           if (g_Verbosity >= c_Error) {
             cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << DetName << endl;

@@ -343,7 +343,9 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
             <<": Error: DetID "<<DetID
             <<" has no TAC calibration entries - skipping event"
             <<endl;
-        return false;
+        Event->SetTACCalibrationError("No TAC calibration for DetID " + to_string(DetID));
+        Event->SetAnalysisProgress(MAssembly::c_TACCalibration); 
+        return true;
       }
 
       // Check that this side is understood
@@ -352,7 +354,9 @@ bool MModuleTACCalibration::ApplyTACCal(MReadOutAssembly* Event)
             <<": Error: Unable to identify Side "<<Side
             <<" - skipping event"
             <<endl;
-        return false;
+        Event->SetTACCalibrationError("No TAC calibration for " + to_string(Side) + " side for DetID " + to_string(DetID));         
+        Event->SetAnalysisProgress(MAssembly::c_TACCalibration);
+        return true;
       }
 
       int SideIndex = m_SideToIndex[Side];
