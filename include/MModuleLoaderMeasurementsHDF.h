@@ -175,6 +175,8 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   MString GetFileNameStripMap() const { return m_FileNameStripMap; }
   //! Set the file name of the strip map
   void SetFileNameStripMap(const MString& Name) { m_FileNameStripMap = Name; }
+  //! Get the strip map, restricted to the enabled DIBs and updated with the ASIC polarities - only valid after Initialize()
+  const MStripMap& GetStripMap() const { return m_StripMap; }
 
 
   //! Enable/Disable loading continuation files
