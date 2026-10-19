@@ -56,7 +56,7 @@ MSubModuleDepthReadout::MSubModuleDepthReadout() : MSubModule()
 
   m_Name = "DEE depth readout module";
 
-  m_FileNameStripMap = "";
+  m_StripMapFileName = "";
   m_StripMapLoaded = false;
 }
 
@@ -102,12 +102,12 @@ bool MSubModuleDepthReadout::Initialize()
 
   // Load the strip map, which assigns detector, side, and strip to the TAC calibration entries
   m_StripMapLoaded = false;
-  if (m_FileNameStripMap == "") {
+  if (m_StripMapFileName == "") {
     if (g_Verbosity >= c_Error) cout<<m_Name<<": Error: No strip map file given - it is required to assign detector, side, and strip to the TAC calibration entries"<<endl;
     return false;
   }
-  if (m_StripMap.Open(m_FileNameStripMap) == false) {
-    if (g_Verbosity >= c_Error) cout<<m_Name<<": Error: Unable to read strip map "<<m_FileNameStripMap<<endl;
+  if (m_StripMap.Open(m_StripMapFileName) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_Name<<": Error: Unable to read strip map "<<m_StripMapFileName<<endl;
     return false;
   }
   m_StripMapLoaded = true;
@@ -294,9 +294,9 @@ bool MSubModuleDepthReadout::ReadXmlConfiguration(MXmlNode* Node)
     m_TACCalFileName = TACCalFileName->GetValue();
   }
 
-  MXmlNode* FileNameStripMap = Node->GetNode("FileNameStripMap");
-  if (FileNameStripMap != nullptr) {
-    m_FileNameStripMap = FileNameStripMap->GetValue();
+  MXmlNode* StripMapFileName = Node->GetNode("StripMapFileName");
+  if (StripMapFileName != nullptr) {
+    m_StripMapFileName = StripMapFileName->GetValue();
   }
 
   return true;
@@ -310,7 +310,7 @@ MXmlNode* MSubModuleDepthReadout::CreateXmlConfiguration(MXmlNode* Node)
 {
   //! Create an XML node tree from the configuration
   new MXmlNode(Node, "TACCalFileName", m_TACCalFileName);
-  new MXmlNode(Node, "FileNameStripMap", m_FileNameStripMap);
+  new MXmlNode(Node, "StripMapFileName", m_StripMapFileName);
 
   return Node;
 }

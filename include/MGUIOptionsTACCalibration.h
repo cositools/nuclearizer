@@ -83,7 +83,7 @@ class MGUIOptionsTACCalibration : public MGUIOptions
   MGUIEFileSelector* m_TACCalFileSelector;
 
   //! Select the strip map file - only shown (otherwise nullptr) if no preceding HDF or L0 loader or DEE provides a strip map
-  MGUIEFileSelector* m_FileSelectorStripMap;
+  MGUIEFileSelector* m_StripMapFileSelector;
 
   //! Do not apply TAC cuts
   TGRadioButton* m_TACCutRBIgnore;

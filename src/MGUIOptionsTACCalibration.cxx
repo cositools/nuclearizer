@@ -92,17 +92,17 @@ void MGUIOptionsTACCalibration::Create()
   m_OptionsFrame->AddFrame(m_TACCalFileSelector, TACCalLayout);
 
   // A preceding HDF or L0 loader or DEE already provides the strip map - only ask for one if there is none
-  m_FileSelectorStripMap = nullptr;
+  m_StripMapFileSelector = nullptr;
   if (dynamic_cast<MModuleTACCalibration*>(m_Module)->FindStripMapProvider() == nullptr) {
-    m_FileSelectorStripMap = new MGUIEFileSelector(
+    m_StripMapFileSelector = new MGUIEFileSelector(
       m_OptionsFrame,
       "Select a strip map file:",
-      dynamic_cast<MModuleTACCalibration*>(m_Module)->GetFileNameStripMap()
+      dynamic_cast<MModuleTACCalibration*>(m_Module)->GetStripMapFileName()
     );
 
-    m_FileSelectorStripMap->SetFileType("Strip map file", "*.map");
+    m_StripMapFileSelector->SetFileType("Strip map file", "*.map");
 
-    m_OptionsFrame->AddFrame(m_FileSelectorStripMap, TACCalLayout);
+    m_OptionsFrame->AddFrame(m_StripMapFileSelector, TACCalLayout);
   }
 
   TGLayoutHints* LabelLayout =
@@ -222,8 +222,8 @@ bool MGUIOptionsTACCalibration::OnApply()
 {
   // Store the data in the module
   dynamic_cast<MModuleTACCalibration*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
-  if (m_FileSelectorStripMap != nullptr) {
-    dynamic_cast<MModuleTACCalibration*>(m_Module)->SetFileNameStripMap(m_FileSelectorStripMap->GetFileName());
+  if (m_StripMapFileSelector != nullptr) {
+    dynamic_cast<MModuleTACCalibration*>(m_Module)->SetStripMapFileName(m_StripMapFileSelector->GetFileName());
   }
 
   // Apply TAC cuts or not

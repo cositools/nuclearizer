@@ -152,10 +152,10 @@ void MGUIOptionsDEESMEX::Create()
   m_TACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
   m_OptionsFrame->AddFrame(m_TACCalFileSelector, LabelLayout);
 
-  m_FileSelectorStripMap = new MGUIEFileSelector(m_OptionsFrame, "Please select a strip map file:",
-    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetFileNameStripMap());
-  m_FileSelectorStripMap->SetFileType("Strip map file", "*.map");
-  m_OptionsFrame->AddFrame(m_FileSelectorStripMap, LabelLayout);
+  m_StripMapFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a strip map file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetStripMapFileName());
+  m_StripMapFileSelector->SetFileType("Strip map file", "*.map");
+  m_OptionsFrame->AddFrame(m_StripMapFileSelector, LabelLayout);
 
   // shield energy correction file
   m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
@@ -222,7 +222,7 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthCoefficientsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
-  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetFileNameStripMap(m_FileSelectorStripMap->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetStripMapFileName(m_StripMapFileSelector->GetFileName());
 
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   

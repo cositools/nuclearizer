@@ -72,9 +72,9 @@ class MSubModuleDepthReadout : public MSubModule
   MString GetTACCalFileName() const {return m_TACCalFileName; }
 
   //! Set the strip map file name, which assigns detector, side, and strip to the TAC calibration entries
-  void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
+  void SetStripMapFileName(const MString& FileName) { m_StripMapFileName = FileName; }
   //! Get the strip map file name
-  MString GetFileNameStripMap() const { return m_FileNameStripMap; }
+  MString GetStripMapFileName() const { return m_StripMapFileName; }
   //! Get the strip map, or nullptr if it has not been loaded - only valid after Initialize()
   const MStripMap* GetStripMap() const { return m_StripMapLoaded == true ? &m_StripMap : nullptr; }
 
@@ -115,7 +115,7 @@ class MSubModuleDepthReadout : public MSubModule
   MString m_TACCalFileName;
 
   //! Filename of the strip map
-  MString m_FileNameStripMap;
+  MString m_StripMapFileName;
   //! The strip map
   MStripMap m_StripMap;
   //! True if the strip map has been loaded

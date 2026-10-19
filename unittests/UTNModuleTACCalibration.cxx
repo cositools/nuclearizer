@@ -60,8 +60,8 @@ private:
   bool TestLoadWithStripMap();
   //! Test that entries whose read-out ID is not in the strip map are skipped
   bool TestLoadSkipsUnmappedReadOutIDs();
-  //! Test that the detector, side, and strip columns are used without a strip map
-  bool TestLoadWithoutStripMap();
+  //! Test that LoadTACCalFile() fails without a strip map
+  bool TestLoadRequiresStripMap();
   //! Test the error paths of LoadTACCalFile()
   bool TestLoadErrors();
   //! Test Initialize() with and without a strip map
@@ -110,19 +110,21 @@ bool UTNModuleTACCalibration::WriteFixture(const MString& FileName, const vector
 bool UTNModuleTACCalibration::WriteStandardFixtures(const MString& StripMapFile, const MString& TACCalFile) const
 {
   // The strip map moves read-out IDs 10 and 11 to detector 3 and swaps their sides,
-  // while read-out ID 12 agrees with the TAC calibration file
+  // read-out ID 12 agrees with the TAC calibration file, and read-out ID 13 disagrees in the strip
   vector<MString> StripMapLines = {
     "# Columns are strip_id, detector, side (0=LV, 1=HV), strip",
     "10 3 0 32",
     "11 3 1 5",
-    "12 7 0 40"
+    "12 7 0 40",
+    "13 7 1 41"
   };
 
   vector<MString> TACCalLines = {
     "#STRIP_ID,Detector,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error",
     "10,0,1,32,0.45,0.001,-600.0,7.5",
     "11,0,0,5,0.43,0.002,-550.0,6.0",
-    "12,7,0,40,0.47,0.003,-500.0,5.0"
+    "12,7,0,40,0.47,0.003,-500.0,5.0",
+    "13,7,1,99,0.48,0.004,-450.0,4.5"
   };
 
   return WriteFixture(StripMapFile, StripMapLines) && WriteFixture(TACCalFile, TACCalLines);
@@ -141,7 +143,7 @@ bool UTNModuleTACCalibration::Run()
   Passed = TestXmlRoundTrip() && Passed;
   Passed = TestLoadWithStripMap() && Passed;
   Passed = TestLoadSkipsUnmappedReadOutIDs() && Passed;
-  Passed = TestLoadWithoutStripMap() && Passed;
+  Passed = TestLoadRequiresStripMap() && Passed;
   Passed = TestLoadErrors() && Passed;
   Passed = TestInitialize() && Passed;
   Passed = TestFindStripMapProvider() && Passed;
@@ -162,7 +164,7 @@ bool UTNModuleTACCalibration::TestDefaultConstruction()
   MModuleTACCalibration Module;
 
   Passed = Evaluate("GetTACCalFileName()", "default", "The default TAC calibration file name is empty", Module.GetTACCalFileName(), MString("")) && Passed;
-  Passed = Evaluate("GetFileNameStripMap()", "default", "The default strip map file name is empty", Module.GetFileNameStripMap(), MString("")) && Passed;
+  Passed = Evaluate("GetStripMapFileName()", "default", "The default strip map file name is empty", Module.GetStripMapFileName(), MString("")) && Passed;
   Passed = EvaluateTrue("GetApplyTACCuts()", "default", "TAC cuts are applied by default", Module.GetApplyTACCuts()) && Passed;
   Passed = EvaluateNear("GetCoincidenceWindow()", "default", "The default coincidence window is 600 ns", Module.GetCoincidenceWindow(), 600.0, 1e-9) && Passed;
   Passed = Evaluate("GetTACCalParameters()", "default", "The default TAC calibration table is empty", (unsigned int) Module.GetTACCalParameters().size(), 0U) && Passed;
@@ -183,8 +185,8 @@ bool UTNModuleTACCalibration::TestGettersSetters()
   Module.SetTACCalFileName("/path/to/taccal.csv");
   Passed = Evaluate("SetTACCalFileName/GetTACCalFileName", "representative value", "GetTACCalFileName returns the representative file name", Module.GetTACCalFileName(), MString("/path/to/taccal.csv")) && Passed;
 
-  Module.SetFileNameStripMap("/path/to/strip.map");
-  Passed = Evaluate("SetFileNameStripMap/GetFileNameStripMap", "representative value", "GetFileNameStripMap returns the representative file name", Module.GetFileNameStripMap(), MString("/path/to/strip.map")) && Passed;
+  Module.SetStripMapFileName("/path/to/strip.map");
+  Passed = Evaluate("SetStripMapFileName/GetStripMapFileName", "representative value", "GetStripMapFileName returns the representative file name", Module.GetStripMapFileName(), MString("/path/to/strip.map")) && Passed;
 
   Module.SetApplyTACCuts(false);
   Passed = EvaluateFalse("SetApplyTACCuts/GetApplyTACCuts", "false", "GetApplyTACCuts returns false after SetApplyTACCuts(false)", Module.GetApplyTACCuts()) && Passed;
@@ -215,7 +217,7 @@ bool UTNModuleTACCalibration::TestXmlRoundTrip()
 
   MModuleTACCalibration Writer;
   Writer.SetTACCalFileName("/path/to/taccal.csv");
-  Writer.SetFileNameStripMap("/path/to/strip.map");
+  Writer.SetStripMapFileName("/path/to/strip.map");
   Writer.SetApplyTACCuts(false);
   Writer.SetCoincidenceWindow(450.0);
 
@@ -226,7 +228,7 @@ bool UTNModuleTACCalibration::TestXmlRoundTrip()
   MModuleTACCalibration Reader;
   Passed = EvaluateTrue("ReadXmlConfiguration()", "representative values", "ReadXmlConfiguration() returns true for a valid configuration node", Reader.ReadXmlConfiguration(Node)) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "TACCalFileName", "ReadXmlConfiguration() restores the representative TAC calibration file name", Reader.GetTACCalFileName(), MString("/path/to/taccal.csv")) && Passed;
-  Passed = Evaluate("ReadXmlConfiguration()", "FileNameStripMap", "ReadXmlConfiguration() restores the representative strip map file name", Reader.GetFileNameStripMap(), MString("/path/to/strip.map")) && Passed;
+  Passed = Evaluate("ReadXmlConfiguration()", "StripMapFileName", "ReadXmlConfiguration() restores the representative strip map file name", Reader.GetStripMapFileName(), MString("/path/to/strip.map")) && Passed;
   Passed = EvaluateFalse("ReadXmlConfiguration()", "ApplyTACCuts", "ReadXmlConfiguration() restores the representative ApplyTACCuts flag", Reader.GetApplyTACCuts()) && Passed;
   Passed = EvaluateNear("ReadXmlConfiguration()", "CoincidenceWindow", "ReadXmlConfiguration() restores the representative coincidence window", Reader.GetCoincidenceWindow(), 450.0, 1e-9) && Passed;
 
@@ -250,7 +252,7 @@ bool UTNModuleTACCalibration::TestLoadWithStripMap()
   MStripMap StripMap;
   Passed = EvaluateTrue("LoadTACCalFile()", "open strip map", "The strip map fixture can be opened", StripMap.Open(StripMapFile)) && Passed;
 
-  // The disagreement with the strip map prints a warning
+  // The strip disagreement of read-out ID 13 prints a warning
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
   MModuleTACCalibration Module;
@@ -285,6 +287,11 @@ bool UTNModuleTACCalibration::TestLoadWithStripMap()
   Passed = EvaluateTrue("LoadTACCalFile()", "read-out ID 12", "Read-out ID 12, which agrees with the file, is stored under detector 7, LV, strip 40", HasDet7 && Table[7][0].count(40) == 1) && Passed;
   if (HasDet7 && Table[7][0].count(40) == 1 && Table[7][0][40].size() == 4) {
     Passed = EvaluateNear("LoadTACCalFile()", "read-out ID 12", "The TAC calibration slope of read-out ID 12 is 0.47", Table[7][0][40][0], 0.47, 1e-9) && Passed;
+  }
+  Passed = EvaluateTrue("LoadTACCalFile()", "read-out ID 13", "Read-out ID 13 is stored under the strip-map strip 41 of detector 7, HV", HasDet7 && Table[7][1].count(41) == 1) && Passed;
+  Passed = EvaluateTrue("LoadTACCalFile()", "read-out ID 13", "Read-out ID 13 is not stored under the file's strip 99", HasDet7 && Table[7][1].count(99) == 0) && Passed;
+  if (HasDet7 && Table[7][1].count(41) == 1 && Table[7][1][41].size() == 4) {
+    Passed = EvaluateNear("LoadTACCalFile()", "read-out ID 13", "The TAC calibration slope of read-out ID 13 is 0.48", Table[7][1][41][0], 0.48, 1e-9) && Passed;
   }
 
   MFile::Remove(StripMapFile);
@@ -342,45 +349,26 @@ bool UTNModuleTACCalibration::TestLoadSkipsUnmappedReadOutIDs()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNModuleTACCalibration::TestLoadWithoutStripMap()
+bool UTNModuleTACCalibration::TestLoadRequiresStripMap()
 {
   bool Passed = true;
 
   const MString StripMapFile = GetFixturePath("_nomap.map");
   const MString TACCalFile = GetFixturePath("_nomap.csv");
-  const MString SevenColumnFile = GetFixturePath("_nomap_seven.csv");
+  Passed = EvaluateTrue("LoadTACCalFile()", "write fixtures", "The fixtures can be created", WriteStandardFixtures(StripMapFile, TACCalFile)) && Passed;
 
-  vector<MString> SevenColumnLines = {
-    "# DetID,Strip voltage, StripID,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error",
-    "2,h,31,0.42,0.001,-520.0,5.5"
-  };
-  Passed = EvaluateTrue("LoadTACCalFile()", "write fixtures", "The fixtures can be created", WriteStandardFixtures(StripMapFile, TACCalFile) && WriteFixture(SevenColumnFile, SevenColumnLines)) && Passed;
-
-  // Without a strip map the detector, side, and strip columns of the file are used - this prints a notice
+  // The detector column natively holds the DIB ID, thus the file alone cannot assign the detector - this prints an error
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
   MModuleTACCalibration Module;
-  bool Result = Module.LoadTACCalFile(TACCalFile);
-  MModuleTACCalibration SevenColumns;
-  bool SevenColumnResult = SevenColumns.LoadTACCalFile(SevenColumnFile);
+  bool Result = Module.LoadTACCalFile(TACCalFile, nullptr);
   g_Verbosity = OldVerbosity;
 
-  Passed = EvaluateTrue("LoadTACCalFile()", "no strip map", "LoadTACCalFile() succeeds without a strip map", Result) && Passed;
-  TACCalTable Table = Module.GetTACCalParameters();
-  Passed = Evaluate("LoadTACCalFile()", "no strip map", "The table contains the file's detectors 0 and 7", (unsigned int) Table.size(), 2U) && Passed;
-  bool HasDet0 = Table.count(0) == 1 && Table[0].size() == 2;
-  Passed = EvaluateTrue("LoadTACCalFile()", "no strip map", "Read-out ID 10 is stored under the file's detector 0, HV, strip 32", HasDet0 && Table[0][1].count(32) == 1) && Passed;
-  Passed = EvaluateTrue("LoadTACCalFile()", "no strip map", "Read-out ID 11 is stored under the file's detector 0, LV, strip 5", HasDet0 && Table[0][0].count(5) == 1) && Passed;
-  Passed = EvaluateTrue("LoadTACCalFile()", "no strip map", "No entry is stored under the strip-map detector 3", Table.count(3) == 0) && Passed;
-
-  // The seven-column format has no read-out ID and can only be used without a strip map
-  Passed = EvaluateTrue("LoadTACCalFile()", "seven columns, no strip map", "LoadTACCalFile() accepts the seven-column format without a strip map", SevenColumnResult) && Passed;
-  TACCalTable SevenTable = SevenColumns.GetTACCalParameters();
-  Passed = EvaluateTrue("LoadTACCalFile()", "seven columns, no strip map", "The seven-column entry is stored under detector 2, HV, strip 31", SevenTable.count(2) == 1 && SevenTable[2].size() == 2 && SevenTable[2][1].count(31) == 1) && Passed;
+  Passed = EvaluateFalse("LoadTACCalFile()", "no strip map", "LoadTACCalFile() fails without a strip map", Result) && Passed;
+  Passed = Evaluate("LoadTACCalFile()", "no strip map", "The table stays empty without a strip map", (unsigned int) Module.GetTACCalParameters().size(), 0U) && Passed;
 
   MFile::Remove(StripMapFile);
   MFile::Remove(TACCalFile);
-  MFile::Remove(SevenColumnFile);
 
   return Passed;
 }
@@ -457,7 +445,7 @@ bool UTNModuleTACCalibration::TestInitialize()
 
   MModuleTACCalibration MissingStripMap;
   MissingStripMap.SetTACCalFileName(TACCalFile);
-  MissingStripMap.SetFileNameStripMap(GetFixturePath("_does_not_exist.map"));
+  MissingStripMap.SetStripMapFileName(GetFixturePath("_does_not_exist.map"));
   DisableDefaultStreams();
   bool MissingStripMapResult = MissingStripMap.Initialize();
   EnableDefaultStreams();
@@ -465,13 +453,13 @@ bool UTNModuleTACCalibration::TestInitialize()
 
   MModuleTACCalibration Unmapped;
   Unmapped.SetTACCalFileName(UnmappedFile);
-  Unmapped.SetFileNameStripMap(StripMapFile);
+  Unmapped.SetStripMapFileName(StripMapFile);
   Passed = EvaluateFalse("Initialize()", "no mapped read-out ID", "Initialize() fails when no TAC calibration entry is in the strip map", Unmapped.Initialize()) && Passed;
 
   // Initialize twice to check that Finalize() leaves no stale state behind
   MModuleTACCalibration Module;
   Module.SetTACCalFileName(TACCalFile);
-  Module.SetFileNameStripMap(StripMapFile);
+  Module.SetStripMapFileName(StripMapFile);
   for (unsigned int Round = 1; Round <= 2; ++Round) {
     MString Input = MString("own strip map option, round ") + Round;
     bool Result = Module.Initialize();
@@ -551,7 +539,7 @@ bool UTNModuleTACCalibration::TestFindStripMapProvider()
 
   MModuleTACCalibration StaleOption;
   StaleOption.SetTACCalFileName(TACCalFile);
-  StaleOption.SetFileNameStripMap(StripMapFile);
+  StaleOption.SetStripMapFileName(StripMapFile);
   DisableDefaultStreams();
   Supervisor->SetModule(&StaleOption, 2);
   EnableDefaultStreams();
@@ -586,7 +574,7 @@ bool UTNModuleTACCalibration::TestAnalyzeEvent()
 
   MModuleTACCalibration Module;
   Module.SetTACCalFileName(TACCalFile);
-  Module.SetFileNameStripMap(StripMapFile);
+  Module.SetStripMapFileName(StripMapFile);
   Module.SetApplyTACCuts(false);
   bool Initialized = Module.Initialize();
   Passed = EvaluateTrue("AnalyzeEvent()", "initialize", "Initialize() succeeds with the module's own strip map option", Initialized) && Passed;
@@ -605,7 +593,8 @@ bool UTNModuleTACCalibration::TestAnalyzeEvent()
     Passed = EvaluateFalse("AnalyzeEvent()", "hit on strip-map channel", "No TAC calibration error is flagged for a hit on detector 3, LV, strip 32", Mapped.HasTACCalibrationError()) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "hit on strip-map channel", "The timing is 2000 * 0.45 - 600 = 300 ns", Mapped.GetStripHit(0)->GetTiming(), 300.0, 1e-9) && Passed;
 
-    // A hit on the detector named in the file's detector column has no calibration
+    // A hit on the detector named in the file's detector column has no calibration:
+    // the event is kept, but flagged with a TAC calibration error and the hit is not calibrated
     MReadOutAssembly FileColumn;
     MStripHit* FileColumnSH = new MStripHit();
     FileColumnSH->SetDetectorID(0);
@@ -614,7 +603,9 @@ bool UTNModuleTACCalibration::TestAnalyzeEvent()
     FileColumnSH->SetTAC(2000.0);
     FileColumn.AddStripHit(FileColumnSH);
 
-    Passed = EvaluateFalse("AnalyzeEvent()", "hit on file-column detector", "AnalyzeEvent() fails for a hit on detector 0, which only the file's detector column names", Module.AnalyzeEvent(&FileColumn)) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "hit on file-column detector", "AnalyzeEvent() keeps the event for a hit on detector 0, which only the file's detector column names", Module.AnalyzeEvent(&FileColumn)) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "hit on file-column detector", "A TAC calibration error is flagged for a hit on detector 0", FileColumn.HasTACCalibrationError()) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "hit on file-column detector", "The hit on detector 0 is not calibrated, its timing stays 0", FileColumn.GetStripHit(0)->GetTiming(), 0.0, 1e-9) && Passed;
 
     Module.Finalize();
   }

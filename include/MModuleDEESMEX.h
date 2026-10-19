@@ -126,14 +126,14 @@ class MModuleDEESMEX : public MModule
   }
 
   //! Set strip map file name
-  void SetFileNameStripMap(const MString& FileName)
+  void SetStripMapFileName(const MString& FileName)
   {
-    m_DepthReadout.SetFileNameStripMap(FileName);
+    m_DepthReadout.SetStripMapFileName(FileName);
   }
   //! Get strip map file name
-  MString GetFileNameStripMap() const
+  MString GetStripMapFileName() const
   {
-    return m_DepthReadout.GetFileNameStripMap();
+    return m_DepthReadout.GetStripMapFileName();
   }
   //! Get the strip map, or nullptr if it has not been loaded - only valid after Initialize()
   const MStripMap* GetStripMap() const

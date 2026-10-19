@@ -74,21 +74,21 @@ class MModuleTACCalibration : public MModule
   MString GetTACCalFileName() const {return m_TACCalFile;}
 
   //! Set the strip map file name - only used if no preceding HDF or L0 loader or DEE provides a strip map
-  void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
+  void SetStripMapFileName(const MString& FileName) { m_StripMapFileName = FileName; }
 
   //! Get the strip map file name
-  MString GetFileNameStripMap() const { return m_FileNameStripMap; }
+  MString GetStripMapFileName() const { return m_StripMapFileName; }
 
   //! Return the closest preceding module in the module sequence which provides a strip map (HDF or L0 loader, or DEE),
   //! or nullptr if there is none
   MModule* FindStripMapProvider();
 
-  //! Load the TAC calibration file
-  //! With a strip map, detector, side, and strip of each entry are taken from the strip map via the
-  //! read-out ID in the first column, entries whose read-out ID is not in the strip map are skipped,
-  //! and the detector, side, and strip columns of the file are only cross-checked
-  //! Without a strip map, the detector, side, and strip columns of the file are used
-  bool LoadTACCalFile(MString FName, const MStripMap* StripMap = nullptr);
+  //! Load the TAC calibration file - the strip map is required, the loading fails without one
+  //! Detector, side, and strip of each entry are taken from the strip map via the read-out ID in the first column,
+  //! and entries whose read-out ID is not in the strip map are skipped.
+  //! The detector column of the file natively holds the DIB ID, not the detector ID, and the side column
+  //! does not account for the ASIC polarities, thus both are ignored - only the strip column is cross-checked
+  bool LoadTACCalFile(MString FName, const MStripMap* StripMap);
 
   //! Set the TAC calibration parameters
   void SetTACCalParameters(unordered_map<int, vector<unordered_map<int, vector<double>>>> TACCal) { m_TACCal = TACCal; }
@@ -141,9 +141,9 @@ class MModuleTACCalibration : public MModule
   MString m_TACCalFile;
 
   //! Strip map file name - only used if no preceding HDF or L0 loader or DEE provides a strip map
-  MString m_FileNameStripMap;
+  MString m_StripMapFileName;
 
-  //! The strip map loaded from m_FileNameStripMap if no preceding HDF or L0 loader or DEE provides one
+  //! The strip map loaded from m_StripMapFileName if no preceding HDF or L0 loader or DEE provides one
   MStripMap m_StripMap;
 
   //! Map DetID -> Side (LV=0, HV=1) -> Strip ID -> TAC calibration parameters
