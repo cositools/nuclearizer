@@ -53,6 +53,8 @@ using namespace std;
 #include <TFitResult.h>
 #include <TStopwatch.h>
 #include <TProfile.h>
+#include <TMultiGraph.h>
+#include <TLegend.h>
 
 // ROOT Fitting Engines
 #include "Fit/Fitter.h"
@@ -147,6 +149,12 @@ public:
                              std::vector<double>& TrappingParams,
                              int DetID = 0);
 
+  // Plot the experimental CCEs against the simulated and fitted CCE curves and save them as png in the products directory
+  void PlotCCEFit(const std::vector<ExperimentalPoint>& ExpData,
+                  const SimulatedCCE& Sim,
+                  const std::vector<double>& TrappingParams,
+                  int DetID);
+
   // Output trapping parameters and simulated CCE into csv file
   void SaveTrappingParamFile(const std::string& OutputFilePath,
                              const std::string& TrappingParamFilePath,
@@ -161,6 +169,13 @@ public:
                                int DetID);
 
 private:
+  // True if a CCE error passes the error cut of the joint fit: err < 6 keV
+  bool IsValidCCEErr(double CCEErr) const { return CCEErr > 0.0 && CCEErr <= 6.0 / g_CsPhotopeak; }
+  // True if the depth bin is excluded from the joint fit by the trim at the detector edges
+  bool IsTrimmedBin(int DepthBin) const { return DepthBin < g_TrimBins || DepthBin >= m_NDepthBins - g_TrimBins; }
+  // CCE model: simulated electron and hole CCEs scaled by the trapping parameters A, B and C
+  static double TrappedCCE(double A, double B, double C, double ElectronCCE, double HoleCCE) { return A * (1.0 - B * (1.0 - ElectronCCE)) * (1.0 - C * (1.0 - HoleCCE)); }
+
   // Set up evenly spaced depth bins per detector from the depth calibration's depth grid
   void InitializeDepthBins(MModuleDepthCalibration* DepthCalibrator);
 
@@ -1044,13 +1059,11 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const std::vector<Experiment
   /////////////// Data Filters /////////////////////
 
   // Reject data points with high error or zero error
-  const double MaxAllowedCCEErr = 6.0 / g_CsPhotopeak; // err < 6 keV
-
   auto IsHVValid = [&](const ExperimentalPoint& P) {
-    return P.HVCCEErr > 0.0 && P.HVCCEErr <= MaxAllowedCCEErr;
+    return IsValidCCEErr(P.HVCCEErr);
   };
   auto IsLVValid = [&](const ExperimentalPoint& P) {
-    return P.LVCCEErr > 0.0 && P.LVCCEErr <= MaxAllowedCCEErr;
+    return IsValidCCEErr(P.LVCCEErr);
   };
 
   std::vector<ExperimentalPoint> DetExpData;
@@ -1061,7 +1074,7 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const std::vector<Experiment
     if (Point.DetID != DetID && DetID != -1) continue;
     // Exclude the depth bins at the detector edges according toward inputted trim
     // This is to avoid fitting the trapping parameters in regions where the simulated CCE is not well characterized
-    if (Point.DepthBin < g_TrimBins || Point.DepthBin >= m_NDepthBins - g_TrimBins) { NTrimmed++; continue; }
+    if (IsTrimmedBin(Point.DepthBin) == true) { NTrimmed++; continue; }
     const bool HVValid = IsHVValid(Point), LVValid = IsLVValid(Point);
     if (!HVValid && !LVValid) { NRejected++; continue; }   // neither side usable
     DetExpData.push_back(Point);
@@ -1112,8 +1125,8 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const std::vector<Experiment
       double LVElectron = LVElectronGraph.Eval(Z);
       double LVHole     = LVHoleGraph.Eval(Z);
 
-      double PredHV = AHV * (1.0 - B * (1.0 - HVElectron)) * (1.0 - C * (1.0 - HVHole));
-      double PredLV = ALV * (1.0 - B * (1.0 - LVElectron)) * (1.0 - C * (1.0 - LVHole));
+      double PredHV = TrappedCCE(AHV, B, C, HVElectron, HVHole);
+      double PredLV = TrappedCCE(ALV, B, C, LVElectron, LVHole);
 
       // For valid data points, find chi2
       if (IsHVValid(Point)) {
@@ -1195,8 +1208,97 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const std::vector<Experiment
   std::cout << "====================================================\n" << std::endl;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  PlotCCEFit(ExpData, Sim, TrappingParams, DetID);
   SaveTrappingParamFile(OutputCSVPath, TrappingParamPath, TrappingParams, Sim, DetID);
   return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void TrappingCorrectionCs137::PlotCCEFit(const std::vector<ExperimentalPoint>& ExpData,
+                                         const SimulatedCCE& Sim,
+                                         const std::vector<double>& TrappingParams,
+                                         int DetID)
+{
+  // One pad per side: HV on the left, LV on the right
+  TCanvas* Canvas = new TCanvas(Form("CCEFitCanvas_Det%d", DetID), Form("CCE fit Detector %d", DetID), 1400, 600);
+  Canvas->Divide(2, 1);
+
+  const double B = TrappingParams[2];
+  const double C = TrappingParams[3];
+
+  for (int s = 0; s < 2; ++s) {
+    const bool IsHV = (s == 0);
+    const double A = TrappingParams[s];
+    const vector<double>& ElectronCCE = IsHV ? Sim.HVElectronCCE : Sim.LVElectronCCE;
+    const vector<double>& HoleCCE = IsHV ? Sim.HVHoleCCE : Sim.LVHoleCCE;
+
+    // Simulated CCE (A = B = C = 1) and the simulated CCE scaled by the fitted trapping parameters
+    TGraph* SimGraph = new TGraph();
+    TGraph* FitGraph = new TGraph();
+    for (size_t i = 0; i < Sim.DepthMM.size(); ++i) {
+      SimGraph->SetPoint(i, Sim.DepthMM[i], TrappedCCE(1.0, 1.0, 1.0, ElectronCCE[i], HoleCCE[i]));
+      FitGraph->SetPoint(i, Sim.DepthMM[i], TrappedCCE(A, B, C, ElectronCCE[i], HoleCCE[i]));
+    }
+    SimGraph->Sort();
+    FitGraph->Sort();
+    SimGraph->SetLineColor(kGray + 2);
+    SimGraph->SetLineStyle(2);
+    SimGraph->SetLineWidth(2);
+    FitGraph->SetLineColor(kRed + 1);
+    FitGraph->SetLineWidth(2);
+
+    // Experimental CCEs, split into the points used in the fit and the ones excluded by the trim or the error cut
+    TGraphErrors* UsedGraph = new TGraphErrors();
+    TGraphErrors* ExcludedGraph = new TGraphErrors();
+    for (const auto& Point : ExpData) {
+      if (Point.DetID != DetID && DetID != -1) continue;
+      double CCE = IsHV ? Point.HVCCE : Point.LVCCE;
+      double CCEErr = IsHV ? Point.HVCCEErr : Point.LVCCEErr;
+      TGraphErrors* Graph = (IsTrimmedBin(Point.DepthBin) == false && IsValidCCEErr(CCEErr) == true) ? UsedGraph : ExcludedGraph;
+      int N = Graph->GetN();
+      Graph->SetPoint(N, Point.DepthMM, CCE);
+      Graph->SetPointError(N, 0.0, CCEErr);
+    }
+    UsedGraph->SetMarkerStyle(20);
+    UsedGraph->SetMarkerColor(kBlack);
+    UsedGraph->SetLineColor(kBlack);
+    ExcludedGraph->SetMarkerStyle(24);
+    ExcludedGraph->SetMarkerColor(kGray + 1);
+    ExcludedGraph->SetLineColor(kGray + 1);
+
+    // The multigraph sets the axis ranges for all curves and points, and the canvas deletes it, which deletes the graphs
+    TMultiGraph* MultiGraph = new TMultiGraph(Form("CCEFit_Det%d_%s", DetID, IsHV ? "HV" : "LV"),
+                                              Form("Detector %d %s side;Depth (mm);CCE", DetID, IsHV ? "HV" : "LV"));
+    MultiGraph->SetBit(kCanDelete);
+    MultiGraph->Add(SimGraph, "L");
+    MultiGraph->Add(FitGraph, "L");
+
+    TLegend* Legend = new TLegend(0.15, 0.15, 0.6, 0.38);
+    Legend->SetBit(kCanDelete);
+    Legend->AddEntry(SimGraph, "Simulated CCE", "l");
+    Legend->AddEntry(FitGraph, Form("Fit: A=%.4f, B=%.3f, C=%.3f", A, B, C), "l");
+    if (UsedGraph->GetN() > 0) {
+      MultiGraph->Add(UsedGraph, "P");
+      Legend->AddEntry(UsedGraph, "Measured (used in fit)", "pe");
+    } else {
+      delete UsedGraph;
+    }
+    if (ExcludedGraph->GetN() > 0) {
+      MultiGraph->Add(ExcludedGraph, "P");
+      Legend->AddEntry(ExcludedGraph, "Measured (excluded)", "pe");
+    } else {
+      delete ExcludedGraph;
+    }
+
+    Canvas->cd(s + 1);
+    MultiGraph->Draw("A");
+    Legend->Draw();
+  }
+
+  MString PlotFile = m_ProductsPrefix + MString("_Det_") + DetID + MString("_CCE_fit.png");
+  Canvas->SaveAs(PlotFile.Data());
+  delete Canvas;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
