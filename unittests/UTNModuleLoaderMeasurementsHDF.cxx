@@ -11,6 +11,8 @@
 
 // Standard libs:
 #include <cstdlib>
+#include <fstream>
+#include <sstream>
 #include <vector>
 using namespace std;
 
@@ -19,6 +21,7 @@ using namespace std;
 #include "MFile.h"
 #include "MUnitTest.h"
 #include "MXmlNode.h"
+#include "MDGeometryQuest.h"
 
 // Nuclearizer:
 #include "MModuleLoaderMeasurementsHDF.h"
@@ -51,6 +54,15 @@ class UTNModuleLoaderMeasurementsHDF : public MUnitTest
   bool TestEndToEnd();
   //! Test HDF v2 event boundaries using committed data
   bool TestV2EventBoundaries();
+  //! Test the removal of strip hits from detectors which are not in the geometry
+  bool TestUnknownDetectors();
+
+  //! Load a geometry with one Strip3D detector per name, or return nullptr on failure - the caller owns it
+  MDGeometryQuest* LoadGeometry(const vector<MString>& DetectorNames);
+  //! Write a copy of the 542-1 strip map with event 1's HV strips 49 and 50 moved to detector 1, or return "" on failure
+  MString WriteStripMapWithMovedHits(const MString& StripMapFile);
+  //! Initialize a loader for the 542-1 data with the given geometry and strip map
+  bool InitializeLoader(MModuleLoaderMeasurementsHDF& Loader, const MString& HDF5File, const MString& StripMapFile, MDGeometryQuest* Geometry);
 
   //! Return the path to a nuclearizer test data directory, or "" if NUCLEARIZER is not set
   MString GetTestDataDirectory(const MString& DataSet) const;
@@ -81,6 +93,7 @@ bool UTNModuleLoaderMeasurementsHDF::Run()
   Passed = TestXmlRoundTrip() && Passed;
   Passed = TestEndToEnd() && Passed;
   Passed = TestV2EventBoundaries() && Passed;
+  Passed = TestUnknownDetectors() && Passed;
 
   // ShowOptionsGUI() opens an interactive ROOT GUI; it cannot be exercised in a
   // headless unit test and is intentionally left uncovered.
@@ -480,6 +493,208 @@ bool UTNModuleLoaderMeasurementsHDF::TestV2EventBoundaries()
   }
 
   NoNearestNeighbors.Finalize();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDGeometryQuest* UTNModuleLoaderMeasurementsHDF::LoadGeometry(const vector<MString>& DetectorNames)
+{
+  MString G;
+  G += "Name UTNLoaderMeasurementsHDFGeometry\n";
+  G += "SurroundingSphere 20 0.0 0.0 0.0 20\nShowSurroundingSphere False\n\n";
+  G += "Material Vacuum\nVacuum.Density 1E-12\nVacuum.Component H 1\n\n";
+  G += "Material Germanium\nGermanium.Density 5.323\nGermanium.ComponentByMass Ge 1\n\n";
+  G += "Volume WorldVolume\nWorldVolume.Material Vacuum\nWorldVolume.Visibility 0\nWorldVolume.Shape Sphere 0.0 100\nWorldVolume.Mother 0\n\n";
+  for (unsigned int d = 0; d < DetectorNames.size(); ++d) {
+    MString V = MString("Wafer") + d;
+    MString N = DetectorNames[d];
+    G += MString("Volume ") + V + "\n" + V + ".Material Germanium\n" + V + ".Shape BRIK 4.0 4.0 0.75\n" + V + ".Position 0.0 0.0 " + (5.0*d) + "\n" + V + ".Mother WorldVolume\n\n";
+    G += MString("MDStrip3D ") + N + "\n" + N + ".DetectorVolume " + V + "\n" + N + ".SensitiveVolume " + V + "\n" + N + ".Offset 0.0 0.0\n" + N + ".StripNumber 64 64\n";
+    G += N + ".NoiseThreshold 15\n" + N + ".TriggerThreshold 30\n" + N + ".DepthResolution 100 0.02\n" + N + ".DepthResolution 1000 0.02\n";
+    G += N + ".EnergyResolution Gaus 100 100 1\n" + N + ".EnergyResolution Gaus 1000 1000 2\n" + N + ".FailureRate 0.0\n\n";
+    G += MString("Trigger T") + d + "\nT" + d + ".Veto false\nT" + d + ".TriggerByChannel true\nT" + d + ".Detector " + N + " 1\n\n";
+  }
+
+  MString FileName = GetTemporaryFileName("hdf.geo.setup");
+  if (WriteTextFile(FileName, G) == false) return nullptr;
+
+  MDGeometryQuest* Geometry = new MDGeometryQuest();
+  DisableDefaultStreams();
+  bool Loaded = Geometry->ScanSetupFile(FileName, false, false, false);
+  EnableDefaultStreams();
+  if (Loaded == false) {
+    delete Geometry;
+    return nullptr;
+  }
+  return Geometry;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNModuleLoaderMeasurementsHDF::WriteStripMapWithMovedHits(const MString& StripMapFile)
+{
+  // Swap the detector of read-out IDs 17/18 (detector 0, HV strips 49/50) and 145/146 (detector 1, HV strips 49/50),
+  // which keeps the detector/side/strip tuples unique
+  // ReadTextFile() only reads temporary files
+  ifstream In(StripMapFile.Data());
+  if (In.is_open() == false) return "";
+  ostringstream Buffer;
+  Buffer<<In.rdbuf();
+  MString Map = Buffer.str().c_str();
+  const vector<MString> Original = { "17 0 0 0 0 17 0 1 49\n", "18 0 0 0 0 18 0 1 50\n", "145 0 1 0 0 17 1 1 49\n", "146 0 1 0 0 18 1 1 50\n" };
+  const vector<MString> Moved =    { "17 0 0 0 0 17 1 1 49\n", "18 0 0 0 0 18 1 1 50\n", "145 0 1 0 0 17 0 1 49\n", "146 0 1 0 0 18 0 1 50\n" };
+  for (unsigned int i = 0; i < Original.size(); ++i) {
+    if (Map.Contains(Original[i]) == false) return "";
+    Map.ReplaceAllInPlace(Original[i], Moved[i]);
+  }
+
+  MString FileName = GetTemporaryFileName("hdf.moved.stripmap.map");
+  if (WriteTextFile(FileName, Map) == false) return "";
+  return FileName;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNModuleLoaderMeasurementsHDF::InitializeLoader(MModuleLoaderMeasurementsHDF& Loader, const MString& HDF5File, const MString& StripMapFile, MDGeometryQuest* Geometry)
+{
+  Loader.SetFileName(HDF5File);
+  Loader.SetFileNameStripMap(StripMapFile);
+  Loader.SetLoadContinuationFiles(false);
+  Loader.SetIncludeNearestNeighbor(false);
+  Loader.SetGeometry(Geometry);
+
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+  bool Result = Loader.Initialize();
+  g_Verbosity = OldVerbosity;
+  return Result;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNModuleLoaderMeasurementsHDF::TestUnknownDetectors()
+{
+  bool Passed = true;
+
+  const MString TestDataDir = GetTestDataDirectory("542-1");
+  if (TestDataDir.IsEmpty() == true) {
+    mout<<"UTNModuleLoaderMeasurementsHDF::TestUnknownDetectors: NUCLEARIZER environment variable is not set - skipping test"<<endl;
+    return Passed;
+  }
+
+  // Event 1 of the 542-1 data: detector 0, LV strips 41/42, HV strips 49/50
+  const MString HDF5File = TestDataDir + "/hp52542-1.gse_20251016T191639.hdf5";
+  const MString StripMapFile = TestDataDir + "/hp52542-1.stripmap.map";
+  if (MFile::Exists(HDF5File) == false || MFile::Exists(StripMapFile) == false) {
+    return EvaluateTrue("MFile::Exists()", "542-1 fixtures", "The HDF5 file and the strip map exist on disk", false);
+  }
+
+  int OldVerbosity = g_Verbosity;
+
+  // The detector is in the geometry: all strip hits are kept
+  MDGeometryQuest* Known = LoadGeometry({ "GeD_0" });
+  Passed = EvaluateTrue("LoadGeometry()", "GeD_0", "The geometry fixture is loaded", Known != nullptr) && Passed;
+  if (Known != nullptr) {
+    MModuleLoaderMeasurementsHDF Loader;
+    bool Initialized = InitializeLoader(Loader, HDF5File, StripMapFile, Known);
+    Passed = EvaluateTrue("Initialize()", "geometry with GeD_0", "Initialize() succeeds", Initialized) && Passed;
+    if (Initialized == true) {
+      MReadOutAssembly Event;
+      g_Verbosity = c_Quiet;
+      bool Result = Loader.AnalyzeEvent(&Event);
+      g_Verbosity = OldVerbosity;
+      Passed = EvaluateTrue("AnalyzeEvent()", "geometry with GeD_0, event 1", "AnalyzeEvent() returns true", Result) && Passed;
+      Passed = Evaluate("AnalyzeEvent()", "geometry with GeD_0, event 1", "All 4 strip hits of detector 0 are kept", Event.GetNStripHits(), 4u) && Passed;
+      Passed = EvaluateFalse("AnalyzeEvent()", "geometry with GeD_0, event 1", "The unknown detector quality flag is not set", Event.HasUnknownDetector_QualityFlag()) && Passed;
+      Loader.Finalize();
+    }
+    delete Known;
+  }
+
+  // The detector is not in the geometry: all strip hits are removed and the event is skipped
+  MDGeometryQuest* Other = LoadGeometry({ "GeD_1", "GeD_12" });
+  Passed = EvaluateTrue("LoadGeometry()", "GeD_1, GeD_12", "The geometry fixture is loaded", Other != nullptr) && Passed;
+  if (Other != nullptr) {
+    MModuleLoaderMeasurementsHDF Loader;
+    bool Initialized = InitializeLoader(Loader, HDF5File, StripMapFile, Other);
+    Passed = EvaluateTrue("Initialize()", "geometry with GeD_1 and GeD_12", "Initialize() succeeds", Initialized) && Passed;
+    if (Initialized == true) {
+      MReadOutAssembly Event;
+      g_Verbosity = c_Quiet;
+      bool Result = Loader.AnalyzeEvent(&Event);
+      g_Verbosity = OldVerbosity;
+      Passed = EvaluateFalse("AnalyzeEvent()", "geometry with GeD_1 and GeD_12, event 1", "AnalyzeEvent() returns false for an event with only unknown detectors", Result) && Passed;
+      Passed = Evaluate("AnalyzeEvent()", "geometry with GeD_1 and GeD_12, event 1", "All strip hits of detector 0 are removed", Event.GetNStripHits(), 0u) && Passed;
+      Passed = EvaluateTrue("AnalyzeEvent()", "geometry with GeD_1 and GeD_12, event 1", "The unknown detector quality flag is set", Event.HasUnknownDetector_QualityFlag()) && Passed;
+      Passed = EvaluateFalse("AnalyzeEvent()", "geometry with GeD_1 and GeD_12, event 1", "The loader is not finished", Loader.IsFinished()) && Passed;
+
+      ostringstream Flags;
+      Event.StreamBDFlags(Flags);
+      Passed = EvaluateTrue("AnalyzeEvent()", "geometry with GeD_1 and GeD_12, event 1", "The quality flag names detector 0", MString(Flags.str()).Contains("QA UnknownDetector (Strip hits removed from unknown detector ID 0)")) && Passed;
+      Loader.Finalize();
+    }
+    delete Other;
+  }
+
+  // No GeD_X detector in the geometry: all strip hits are kept
+  MDGeometryQuest* Unnamed = LoadGeometry({ "Detector0" });
+  Passed = EvaluateTrue("LoadGeometry()", "Detector0", "The geometry fixture is loaded", Unnamed != nullptr) && Passed;
+  if (Unnamed != nullptr) {
+    MModuleLoaderMeasurementsHDF Loader;
+    bool Initialized = InitializeLoader(Loader, HDF5File, StripMapFile, Unnamed);
+    Passed = EvaluateTrue("Initialize()", "geometry without GeD_X detectors", "Initialize() succeeds", Initialized) && Passed;
+    if (Initialized == true) {
+      MReadOutAssembly Event;
+      g_Verbosity = c_Quiet;
+      bool Result = Loader.AnalyzeEvent(&Event);
+      g_Verbosity = OldVerbosity;
+      Passed = EvaluateTrue("AnalyzeEvent()", "geometry without GeD_X detectors, event 1", "AnalyzeEvent() returns true", Result) && Passed;
+      Passed = Evaluate("AnalyzeEvent()", "geometry without GeD_X detectors, event 1", "All 4 strip hits are kept", Event.GetNStripHits(), 4u) && Passed;
+      Passed = EvaluateFalse("AnalyzeEvent()", "geometry without GeD_X detectors, event 1", "The unknown detector quality flag is not set", Event.HasUnknownDetector_QualityFlag()) && Passed;
+      Loader.Finalize();
+    }
+    delete Unnamed;
+  }
+
+  // Only some strip hits are on an unknown detector: only those are removed
+  MString MovedStripMapFile = WriteStripMapWithMovedHits(StripMapFile);
+  Passed = EvaluateFalse("WriteStripMapWithMovedHits()", "542-1 strip map", "The modified strip map is written", MovedStripMapFile.IsEmpty()) && Passed;
+  MDGeometryQuest* Partial = LoadGeometry({ "GeD_0" });
+  if (MovedStripMapFile.IsEmpty() == false && Partial != nullptr) {
+    MModuleLoaderMeasurementsHDF Loader;
+    bool Initialized = InitializeLoader(Loader, HDF5File, MovedStripMapFile, Partial);
+    Passed = EvaluateTrue("Initialize()", "HV strips 49/50 moved to detector 1", "Initialize() succeeds", Initialized) && Passed;
+    if (Initialized == true) {
+      MReadOutAssembly Event;
+      g_Verbosity = c_Quiet;
+      bool Result = Loader.AnalyzeEvent(&Event);
+      g_Verbosity = OldVerbosity;
+      Passed = EvaluateTrue("AnalyzeEvent()", "HV strips 49/50 moved to detector 1, event 1", "AnalyzeEvent() returns true", Result) && Passed;
+      Passed = Evaluate("AnalyzeEvent()", "HV strips 49/50 moved to detector 1, event 1", "The 2 strip hits of detector 0 are kept", Event.GetNStripHits(), 2u) && Passed;
+      for (unsigned int h = 0; h < Event.GetNStripHits(); ++h) {
+        Passed = Evaluate("AnalyzeEvent()", "HV strips 49/50 moved to detector 1, event 1", "Every kept strip hit is on detector 0", Event.GetStripHit(h)->GetDetectorID(), 0u) && Passed;
+        Passed = EvaluateTrue("AnalyzeEvent()", "HV strips 49/50 moved to detector 1, event 1", "Every kept strip hit is an LV strip", Event.GetStripHit(h)->IsLowVoltageStrip()) && Passed;
+      }
+      Passed = EvaluateTrue("AnalyzeEvent()", "HV strips 49/50 moved to detector 1, event 1", "The unknown detector quality flag is set", Event.HasUnknownDetector_QualityFlag()) && Passed;
+      Passed = EvaluateTrue("AnalyzeEvent()", "HV strips 49/50 moved to detector 1, event 1", "The event stays good", Event.IsGood()) && Passed;
+
+      ostringstream Flags;
+      Event.StreamBDFlags(Flags);
+      Passed = EvaluateTrue("AnalyzeEvent()", "HV strips 49/50 moved to detector 1, event 1", "The quality flag names detector 1", MString(Flags.str()).Contains("QA UnknownDetector (Strip hits removed from unknown detector ID 1)")) && Passed;
+      Loader.Finalize();
+    }
+  }
+  delete Partial;
 
   return Passed;
 }

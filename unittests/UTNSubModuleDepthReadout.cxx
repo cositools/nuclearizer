@@ -61,6 +61,10 @@ class UTNSubModuleDepthReadout : public MUnitTest
   //! Test the timing smearing
   bool TestTimingResolution();
 
+  //! Write the strip map file and return its name, or an empty string on failure
+  MString WriteStripMap();
+  //! Return the read-out ID of a strip in the strip map fixture
+  unsigned int GetReadOutID(unsigned int DetID, bool IsLowVoltage, unsigned int StripID) const;
   //! Write the TAC calibration file and return its name, or an empty string on failure
   MString WriteTACCalibration();
   //! Write the depth coefficients file and return its name, or an empty string on failure
@@ -97,6 +101,34 @@ bool UTNSubModuleDepthReadout::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+unsigned int UTNSubModuleDepthReadout::GetReadOutID(unsigned int DetID, bool IsLowVoltage, unsigned int StripID) const
+{
+  return 1000*DetID + (IsLowVoltage == true ? 0 : 100) + StripID;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNSubModuleDepthReadout::WriteStripMap()
+{
+  // Detectors 0-2, LV and HV strips 0-63
+  MString C = "# Columns are strip_id, detector, side (0=LV, 1=HV), strip\n";
+  for (unsigned int d = 0; d < 3; ++d) {
+    for (unsigned int s = 0; s < 64; ++s) {
+      C += MString("") + GetReadOutID(d, true, s) + " " + d + " 0 " + s + "\n";
+      C += MString("") + GetReadOutID(d, false, s) + " " + d + " 1 " + s + "\n";
+    }
+  }
+  MString FileName = GetTemporaryFileName("dr.stripmap.map");
+  if (WriteTextFile(FileName, C) == false) return "";
+  return FileName;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString UTNSubModuleDepthReadout::WriteTACCalibration()
 {
   // Detector 0, all strips: Timing = 0.5 * TAC - 500
@@ -107,8 +139,8 @@ MString UTNSubModuleDepthReadout::WriteTACCalibration()
     MString Slope = (d == 1) ? "0.2" : "0.5";
     MString Offset = (d == 0) ? "-500.0" : ((d == 1) ? "0.0" : "5000.0");
     for (unsigned int s = 0; s < 64; ++s) {
-      C += MString("1,") + d + ",0," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
-      C += MString("1,") + d + ",1," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
+      C += MString("") + GetReadOutID(d, true, s) + "," + d + ",0," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
+      C += MString("") + GetReadOutID(d, false, s) + "," + d + ",1," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
     }
   }
   MString FileName = GetTemporaryFileName("dr.taccal.csv");
@@ -137,6 +169,7 @@ bool UTNSubModuleDepthReadout::InitializeStandard(MSubModuleDepthReadout& M, boo
 {
   M.SetDepthCoefficientsFileName(WriteCoeffs());
   M.SetTACCalFileName(TACFile == "" ? WriteTACCalibration() : TACFile);
+  M.SetStripMapFileName(WriteStripMap());
   M.SetApplyTimingResolutionCalibration(ApplyTimingResolution);
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
@@ -199,10 +232,14 @@ bool UTNSubModuleDepthReadout::TestConfiguration()
   bool Passed = true;
 
   MSubModuleDepthReadout M;
+  Passed = Evaluate("GetStripMapFileName()", "default", "The default strip map file name is empty", M.GetStripMapFileName(), MString("")) && Passed;
+  Passed = EvaluateTrue("GetStripMap()", "default", "No strip map is available before Initialize()", M.GetStripMap() == nullptr) && Passed;
   M.SetDepthCoefficientsFileName("c.csv");
   M.SetTACCalFileName("t.csv");
+  M.SetStripMapFileName("m.map");
   Passed = Evaluate("SetDepthCoefficientsFileName/GetDepthCoefficientsFileName", "c.csv", "Returns the set name", M.GetDepthCoefficientsFileName(), MString("c.csv")) && Passed;
   Passed = Evaluate("SetTACCalFileName/GetTACCalFileName", "t.csv", "Returns the set name", M.GetTACCalFileName(), MString("t.csv")) && Passed;
+  Passed = Evaluate("SetStripMapFileName/GetStripMapFileName", "m.map", "Returns the set name", M.GetStripMapFileName(), MString("m.map")) && Passed;
   M.SetApplyTimingResolutionCalibration(true);
   Passed = EvaluateTrue("SetApplyTimingResolutionCalibration/GetApplyTimingResolutionCalibration", "true", "Returns true", M.GetApplyTimingResolutionCalibration()) && Passed;
   M.SetApplyTimingResolutionCalibration(false);
@@ -210,10 +247,12 @@ bool UTNSubModuleDepthReadout::TestConfiguration()
 
   MXmlNode* Node = new MXmlNode(nullptr, "DEE");
   M.SetTACCalFileName("/data/t.csv");
+  M.SetStripMapFileName("/data/m.map");
   M.CreateXmlConfiguration(Node);
   MSubModuleDepthReadout Reader;
   Passed = EvaluateTrue("ReadXmlConfiguration()", "TAC file name", "ReadXmlConfiguration returns true", Reader.ReadXmlConfiguration(Node)) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "TACCalFileName", "The TAC calibration file name survives", Reader.GetTACCalFileName(), MString("/data/t.csv")) && Passed;
+  Passed = Evaluate("ReadXmlConfiguration()", "StripMapFileName", "The strip map file name survives", Reader.GetStripMapFileName(), MString("/data/m.map")) && Passed;
   delete Node;
 
   // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
@@ -247,27 +286,51 @@ bool UTNSubModuleDepthReadout::TestInitialize()
   Passed = EvaluateFalse("WriteTACCalibration()", "TAC calibration file", "The fixture file is written", TACFile.IsEmpty()) && Passed;
   MString CoeffsFile = WriteCoeffs();
   Passed = EvaluateFalse("WriteCoeffs()", "coefficients file", "The fixture file is written", CoeffsFile.IsEmpty()) && Passed;
+  MString StripMapFile = WriteStripMap();
+  Passed = EvaluateFalse("WriteStripMap()", "strip map file", "The fixture file is written", StripMapFile.IsEmpty()) && Passed;
 
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
   MSubModuleDepthReadout MissingCoeffs;
   MissingCoeffs.SetDepthCoefficientsFileName(GetTemporaryFileName("missing.csv"));
   MissingCoeffs.SetTACCalFileName(TACFile);
+  MissingCoeffs.SetStripMapFileName(StripMapFile);
   MissingCoeffs.SetApplyTimingResolutionCalibration(false);
   bool MissingCoeffsResult = MissingCoeffs.Initialize();
   MSubModuleDepthReadout MissingTAC;
   MissingTAC.SetDepthCoefficientsFileName(CoeffsFile);
   MissingTAC.SetTACCalFileName(GetTemporaryFileName("missing.taccal.csv"));
+  MissingTAC.SetStripMapFileName(StripMapFile);
   MissingTAC.SetApplyTimingResolutionCalibration(false);
   bool MissingTACResult = MissingTAC.Initialize();
+  MSubModuleDepthReadout NoStripMap;
+  NoStripMap.SetDepthCoefficientsFileName(CoeffsFile);
+  NoStripMap.SetTACCalFileName(TACFile);
+  NoStripMap.SetApplyTimingResolutionCalibration(false);
+  bool NoStripMapResult = NoStripMap.Initialize();
+  MSubModuleDepthReadout MissingStripMap;
+  MissingStripMap.SetDepthCoefficientsFileName(CoeffsFile);
+  MissingStripMap.SetTACCalFileName(TACFile);
+  MissingStripMap.SetStripMapFileName(GetTemporaryFileName("missing.map"));
+  MissingStripMap.SetApplyTimingResolutionCalibration(false);
+  bool MissingStripMapResult = MissingStripMap.Initialize();
   g_Verbosity = OldVerbosity;
 
   Passed = EvaluateFalse("Initialize()", "missing coefficients file", "Initialize returns false", MissingCoeffsResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing TAC calibration file", "Initialize returns false", MissingTACResult) && Passed;
+  Passed = EvaluateFalse("Initialize()", "no strip map file name", "Initialize returns false", NoStripMapResult) && Passed;
+  Passed = EvaluateTrue("GetStripMap()", "no strip map file name", "No strip map is available", NoStripMap.GetStripMap() == nullptr) && Passed;
+  Passed = EvaluateFalse("Initialize()", "missing strip map file", "Initialize returns false", MissingStripMapResult) && Passed;
+  Passed = EvaluateTrue("GetStripMap()", "missing strip map file", "No strip map is available", MissingStripMap.GetStripMap() == nullptr) && Passed;
 
   MSubModuleDepthReadout Good;
   Passed = EvaluateTrue("Initialize()", "standard files", "Initialize succeeds", InitializeStandard(Good, false)) && Passed;
+  Passed = EvaluateTrue("GetStripMap()", "after Initialize()", "The strip map is available", Good.GetStripMap() != nullptr) && Passed;
+  if (Good.GetStripMap() != nullptr) {
+    Passed = EvaluateTrue("GetStripMap()", "after Initialize()", "The strip map contains the read-out ID of HV strip 5 of detector 2", Good.GetStripMap()->HasReadOutID(GetReadOutID(2, false, 5))) && Passed;
+  }
   Good.Finalize();
+  Passed = EvaluateTrue("GetStripMap()", "after Finalize()", "No strip map is available", Good.GetStripMap() == nullptr) && Passed;
 
   return Passed;
 }
@@ -404,7 +467,7 @@ bool UTNSubModuleDepthReadout::TestPartialTACCalibration()
   // The TAC calibration only covers LV strips 32-63 of detector 0, as in the committed unit-level calibrations
   MString C = "#STRIP_ID,Detector,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
   for (unsigned int s = 32; s < 64; ++s) {
-    C += MString("1,0,0,") + s + ",0.5,0.001,-500.0,1.0\n";
+    C += MString("") + GetReadOutID(0, true, s) + ",0,0," + s + ",0.5,0.001,-500.0,1.0\n";
   }
   MString TACFile = GetTemporaryFileName("dr.partial.taccal.csv");
   Passed = EvaluateTrue("WriteTextFile()", "dr.partial.taccal.csv", "The fixture file is written", WriteTextFile(TACFile, C)) && Passed;

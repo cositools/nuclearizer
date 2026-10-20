@@ -135,6 +135,7 @@ bool UTNReadOutAssembly::TestDefaultConstruction()
   Passed = EvaluateFalse("HasEventReconstructionError()", "default false", "HasEventReconstructionError() returns false after construction", R.HasEventReconstructionError()) && Passed;
   Passed = EvaluateFalse("HasStripHitBelowThreshold_QualityFlag()", "default false", "HasStripHitBelowThreshold_QualityFlag() returns false after construction", R.HasStripHitBelowThreshold_QualityFlag()) && Passed;
   Passed = EvaluateFalse("HasStripPairing_QualityFlag()", "default false", "HasStripPairing_QualityFlag() returns false after construction", R.HasStripPairing_QualityFlag()) && Passed;
+  Passed = EvaluateFalse("HasUnknownDetector_QualityFlag()", "default false", "HasUnknownDetector_QualityFlag() returns false after construction", R.HasUnknownDetector_QualityFlag()) && Passed;
   Passed = EvaluateFalse("IsFilteredOut()", "default false", "IsFilteredOut() returns false after construction", R.IsFilteredOut()) && Passed;
 
   // IsGood / IsBad / IsVeto
@@ -539,6 +540,12 @@ bool UTNReadOutAssembly::TestEventFlags()
   Passed = EvaluateTrue("IsGood()", "StripPairing quality flag does not affect IsGood", "IsGood() returns true when only StripPairing quality flag is set", R.IsGood()) && Passed;
   R.Clear();
 
+  R.SetUnknownDetector_QualityFlag();
+  Passed = EvaluateTrue("HasUnknownDetector_QualityFlag()", "after set", "HasUnknownDetector_QualityFlag() returns true after setting it", R.HasUnknownDetector_QualityFlag()) && Passed;
+  Passed = EvaluateTrue("IsGood()", "UnknownDetector quality flag does not affect IsGood", "IsGood() returns true when only UnknownDetector quality flag is set", R.IsGood()) && Passed;
+  Passed = EvaluateFalse("IsBad()", "UnknownDetector quality flag does not affect IsBad", "IsBad() returns false when only UnknownDetector quality flag is set", R.IsBad()) && Passed;
+  R.Clear();
+
   // All flags cleared after Clear()
   Passed = EvaluateFalse("HasEnergyCalibrationError()", "cleared by Clear", "HasEnergyCalibrationError() returns false after Clear()", R.HasEnergyCalibrationError()) && Passed;
   Passed = EvaluateTrue("IsGood()", "restored by Clear", "IsGood() returns true after Clear()", R.IsGood()) && Passed;
@@ -598,6 +605,7 @@ bool UTNReadOutAssembly::TestClearOwnership()
   R.SetEventReconstructionError("reconstruction");
   R.SetStripHitBelowThreshold_QualityFlag("threshold");
   R.SetStripPairing_QualityFlag("quality");
+  R.SetUnknownDetector_QualityFlag("unknown");
   R.SetStripPairingReducedChiSquare(1.5);
   R.SetFilteredOut(true);
   R.SetAnalysisProgress(0x10ULL);
@@ -644,6 +652,7 @@ bool UTNReadOutAssembly::TestClearOwnership()
   Passed = EvaluateFalse("HasEventReconstructionError()", "after Clear", "HasEventReconstructionError() returns false after Clear()", R.HasEventReconstructionError()) && Passed;
   Passed = EvaluateFalse("HasStripHitBelowThreshold_QualityFlag()", "after Clear", "HasStripHitBelowThreshold_QualityFlag() returns false after Clear()", R.HasStripHitBelowThreshold_QualityFlag()) && Passed;
   Passed = EvaluateFalse("HasStripPairing_QualityFlag()", "after Clear", "HasStripPairing_QualityFlag() returns false after Clear()", R.HasStripPairing_QualityFlag()) && Passed;
+  Passed = EvaluateFalse("HasUnknownDetector_QualityFlag()", "after Clear", "HasUnknownDetector_QualityFlag() returns false after Clear()", R.HasUnknownDetector_QualityFlag()) && Passed;
   Passed = EvaluateTrue("GetStripPairingReducedChiSquare()", "after Clear", "GetStripPairingReducedChiSquare() returns an empty vector after Clear()", R.GetStripPairingReducedChiSquare().empty()) && Passed;
   Passed = EvaluateFalse("IsFilteredOut()", "after Clear", "IsFilteredOut() returns false after Clear()", R.IsFilteredOut()) && Passed;
   Passed = EvaluateTrue("GetAnalysisProgress()", "after Clear", "GetAnalysisProgress() returns 0 after Clear()", R.GetAnalysisProgress() == 0) && Passed;
@@ -1240,6 +1249,7 @@ bool UTNReadOutAssembly::TestStreamRoa()
     R.SetShieldVeto(true);
     R.SetStripHitBelowThreshold_QualityFlag();
     R.SetStripPairing_QualityFlag();
+    R.SetUnknownDetector_QualityFlag("Strip hits removed from unknown detector ID 5");
 
     ostringstream SS;
     R.StreamBDFlags(SS);
@@ -1254,6 +1264,7 @@ bool UTNReadOutAssembly::TestStreamRoa()
     Passed = EvaluateTrue("StreamBDFlags()", "BD Shield Veto line", "StreamBDFlags() emits 'BD Shield Veto' when ShieldVeto is set", S.Contains("BD Shield Veto")) && Passed;
     Passed = EvaluateTrue("StreamBDFlags()", "QA StripHitBelowThreshold line", "StreamBDFlags() emits 'QA StripHitBelowThreshold' when that flag is set", S.Contains("QA StripHitBelowThreshold")) && Passed;
     Passed = EvaluateTrue("StreamBDFlags()", "QA StripPairing line", "StreamBDFlags() emits 'QA StripPairing' when that flag is set", S.Contains("QA StripPairing")) && Passed;
+    Passed = EvaluateTrue("StreamBDFlags()", "QA UnknownDetector line", "StreamBDFlags() emits 'QA UnknownDetector' with its text when that flag is set", S.Contains("QA UnknownDetector (Strip hits removed from unknown detector ID 5)")) && Passed;
     Passed = EvaluateTrue("StreamBDFlags()", "PQ terminator always present", "StreamBDFlags() always ends with a 'PQ' line", S.Contains("PQ")) && Passed;
   }
 
@@ -1309,6 +1320,8 @@ bool UTNReadOutAssembly::TestParseBDFlags()
   Written.SetStripHitBelowThreshold_QualityFlag("Strip 3");
   Written.SetHighADC_QualityFlag();
   Written.SetStripPairing_QualityFlag("Chi square");
+  Written.SetUnknownDetector_QualityFlag("Strip hits removed from unknown detector ID 5");
+  Written.SetUnknownDetector_QualityFlag("Strip hits removed from unknown detector ID 9");
   Written.SetGuardRingVeto();
   Written.SetShieldVeto();
   Written.SetStripPairingReducedChiSquare(1.5);
@@ -1346,6 +1359,11 @@ bool UTNReadOutAssembly::TestParseBDFlags()
   Passed = EvaluateTrue("ParseBDFlags()", "BD No hits", "The line written for events without hits is recognized", NoHits.ParseBDFlags("BD No hits")) && Passed;
   Passed = EvaluateTrue("ParseBDFlags()", "BD No hits", "The event stays good", NoHits.IsGood()) && Passed;
   Passed = EvaluateFalse("ParseBDFlags()", "BD No hits", "No veto is set", NoHits.IsVeto()) && Passed;
+
+  MReadOutAssembly UnknownDetector;
+  Passed = EvaluateTrue("ParseBDFlags()", "QA UnknownDetector", "The unknown detector line without text is recognized", UnknownDetector.ParseBDFlags("QA UnknownDetector")) && Passed;
+  Passed = EvaluateTrue("ParseBDFlags()", "QA UnknownDetector", "The unknown detector quality flag is set", UnknownDetector.HasUnknownDetector_QualityFlag()) && Passed;
+  Passed = EvaluateTrue("ParseBDFlags()", "QA UnknownDetector", "The event stays good", UnknownDetector.IsGood()) && Passed;
 
   MReadOutAssembly Unknown;
   const int PreviousVerbosity = g_Verbosity;

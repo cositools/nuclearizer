@@ -85,6 +85,8 @@ class UTNModuleDEESMEX : public MUnitTest
   MString m_CoeffsFileName;
   //! The TAC calibration file name
   MString m_TACCalFileName;
+  //! The strip map file name
+  MString m_StripMapFileName;
   //! The shield energy correction file name
   MString m_ShieldCorrectionFileName;
   //! The dead time file name
@@ -210,11 +212,20 @@ bool UTNModuleDEESMEX::WriteFiles()
   m_CoeffsFileName = GetTemporaryFileName("deesmex.coeffs.csv");
   Written = WriteTextFile(m_CoeffsFileName, C) && Written;
 
+  // Strip map of detector 0 with the read-out IDs of the threshold file: LV strip s = s, HV strip s = 100 + s
+  MString Map = "# Columns are strip_id, detector, side (0=LV, 1=HV), strip\n";
+  for (unsigned int s = 0; s < 64; ++s) {
+    Map += MString("") + s + " 0 0 " + s + "\n";
+    Map += MString("") + (100 + s) + " 0 1 " + s + "\n";
+  }
+  m_StripMapFileName = GetTemporaryFileName("deesmex.stripmap.map");
+  Written = WriteTextFile(m_StripMapFileName, Map) && Written;
+
   // TAC calibration: Timing = 0.5 * TAC - 500
   MString TAC = "#STRIP_ID,Detector,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
   for (unsigned int s = 0; s < 64; ++s) {
-    TAC += MString("1,0,0,") + s + ",0.5,0.001,-500.0,1.0\n";
-    TAC += MString("1,0,1,") + s + ",0.5,0.001,-500.0,1.0\n";
+    TAC += MString("") + s + ",0,0," + s + ",0.5,0.001,-500.0,1.0\n";
+    TAC += MString("") + (100 + s) + ",0,1," + s + ",0.5,0.001,-500.0,1.0\n";
   }
   m_TACCalFileName = GetTemporaryFileName("deesmex.taccal.csv");
   Written = WriteTextFile(m_TACCalFileName, TAC) && Written;
@@ -242,6 +253,7 @@ void UTNModuleDEESMEX::Configure(MModuleDEESMEX& M)
   M.SetDepthSplinesFileName(m_SplinesFileName);
   M.SetDepthCoefficientsFileName(m_CoeffsFileName);
   M.SetTACCalFileName(m_TACCalFileName);
+  M.SetStripMapFileName(m_StripMapFileName);
   M.SetShieldEnergyCorrectionFileName(m_ShieldCorrectionFileName);
   M.SetDeadtimeFileName(m_DeadtimeFileName);
   M.SetApplyResolutionCalibration(false);
@@ -333,6 +345,7 @@ bool UTNModuleDEESMEX::TestGettersSetters()
   M.SetDepthSplinesFileName("s.csv");
   M.SetDepthCoefficientsFileName("c.csv");
   M.SetTACCalFileName("tac.csv");
+  M.SetStripMapFileName("m.map");
   M.SetShieldEnergyCorrectionFileName("sh.txt");
   M.SetDeadtimeFileName("dt.txt");
   Passed = Evaluate("SetEnergyCalibrationFileName/GetEnergyCalibrationFileName", "e.ecal", "Returns the set name", M.GetEnergyCalibrationFileName(), MString("e.ecal")) && Passed;
@@ -340,6 +353,8 @@ bool UTNModuleDEESMEX::TestGettersSetters()
   Passed = Evaluate("SetDepthSplinesFileName/GetDepthSplinesFileName", "s.csv", "Returns the set name", M.GetDepthSplinesFileName(), MString("s.csv")) && Passed;
   Passed = Evaluate("SetDepthCoefficientsFileName/GetDepthCoefficientsFileName", "c.csv", "Returns the set name", M.GetDepthCoefficientsFileName(), MString("c.csv")) && Passed;
   Passed = Evaluate("SetTACCalFileName/GetTACCalFileName", "tac.csv", "Returns the set name", M.GetTACCalFileName(), MString("tac.csv")) && Passed;
+  Passed = Evaluate("SetStripMapFileName/GetStripMapFileName", "m.map", "Returns the set name", M.GetStripMapFileName(), MString("m.map")) && Passed;
+  Passed = EvaluateTrue("GetStripMap()", "before Initialize()", "No strip map is available", M.GetStripMap() == nullptr) && Passed;
   Passed = Evaluate("SetShieldEnergyCorrectionFileName/GetShieldEnergyCorrectionFileName", "sh.txt", "Returns the set name", M.GetShieldEnergyCorrectionFileName(), MString("sh.txt")) && Passed;
   Passed = Evaluate("SetDeadtimeFileName/GetDeadtimeFileName", "dt.txt", "Returns the set name", M.GetDeadtimeFileName(), MString("dt.txt")) && Passed;
   M.SetApplyResolutionCalibration(false);
@@ -368,6 +383,7 @@ bool UTNModuleDEESMEX::TestXmlRoundTrip()
   Writer.SetDepthSplinesFileName("/d/s.csv");
   Writer.SetDepthCoefficientsFileName("/d/c.csv");
   Writer.SetTACCalFileName("/d/tac.csv");
+  Writer.SetStripMapFileName("/d/m.map");
   Writer.SetShieldEnergyCorrectionFileName("/d/sh.txt");
   Writer.SetDeadtimeFileName("/d/dt.txt");
   Writer.SetApplyResolutionCalibration(false);
@@ -383,6 +399,7 @@ bool UTNModuleDEESMEX::TestXmlRoundTrip()
   Passed = Evaluate("ReadXmlConfiguration()", "DepthSplinesFileName", "Survives", Reader.GetDepthSplinesFileName(), MString("/d/s.csv")) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "DepthCoefficientsFileName", "Survives", Reader.GetDepthCoefficientsFileName(), MString("/d/c.csv")) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "TACCalFileName", "Survives", Reader.GetTACCalFileName(), MString("/d/tac.csv")) && Passed;
+  Passed = Evaluate("ReadXmlConfiguration()", "StripMapFileName", "Survives", Reader.GetStripMapFileName(), MString("/d/m.map")) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "ShieldEnergyCorrectionFileName", "Survives", Reader.GetShieldEnergyCorrectionFileName(), MString("/d/sh.txt")) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "DeadtimeFileName", "Survives", Reader.GetDeadtimeFileName(), MString("/d/dt.txt")) && Passed;
   Passed = EvaluateFalse("ReadXmlConfiguration()", "ApplyResolutionCalibration", "Survives", Reader.GetApplyResolutionCalibration()) && Passed;
@@ -421,9 +438,15 @@ bool UTNModuleDEESMEX::TestInitialize()
   NoShield.SetShieldEnergyCorrectionFileName(GetTemporaryFileName("missing.shield.txt"));
   bool NoShieldResult = NoShield.Initialize();
 
+  MModuleDEESMEX NoStripMap;
+  Configure(NoStripMap);
+  NoStripMap.SetStripMapFileName("");
+  bool NoStripMapResult = NoStripMap.Initialize();
+
   MModuleDEESMEX Good;
   Configure(Good);
   bool GoodResult = Good.Initialize();
+  bool GoodHasStripMap = (Good.GetStripMap() != nullptr);
   if (GoodResult == true) Good.Finalize();
 
   EnableDefaultStreams();
@@ -432,7 +455,9 @@ bool UTNModuleDEESMEX::TestInitialize()
   Passed = EvaluateFalse("Initialize()", "no geometry", "Initialize returns false", NoGeometryResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing energy calibration", "Initialize returns false", NoCalibrationResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing shield correction", "Initialize returns false", NoShieldResult) && Passed;
+  Passed = EvaluateFalse("Initialize()", "no strip map", "Initialize returns false", NoStripMapResult) && Passed;
   Passed = EvaluateTrue("Initialize()", "all files", "Initialize succeeds", GoodResult) && Passed;
+  Passed = EvaluateTrue("GetStripMap()", "after Initialize()", "The strip map of the depth readout is available", GoodHasStripMap) && Passed;
 
   return Passed;
 }
