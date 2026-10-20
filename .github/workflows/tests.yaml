@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - develop/em
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,9 +18,26 @@ concurrency:
 
 jobs:
   build:
-    name: Ubuntu
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu
+            os: ubuntu-24.04
+            cxx: g++
+            cc: gcc
+            coverage: 1
+            timeout: 30
+          - name: macOS
+            os: macos-26
+            cxx: clang++
+            cc: clang
+            coverage: 0
+            timeout: 60
 
     env:
       MEGALIB: ${{ github.workspace }}/megalib
@@ -72,7 +90,7 @@ jobs:
           pkg-config --print-errors --exists hdf5
           pkg-config --print-errors --exists CCfits
           pkg-config --libs --cflags hdf5 CCfits
-          echo 'int main(){return 0;}' | g++ -x c++ - $(pkg-config --cflags --libs hdf5 CCfits) -o /tmp/pkgconfig-link-test
+          echo 'int main(){return 0;}' | ${{ matrix.cxx }} -x c++ - $(pkg-config --cflags --libs hdf5 CCfits) -o /tmp/pkgconfig-link-test
 
       - name: Restore ccache
         uses: actions/cache@v4
@@ -100,10 +118,11 @@ jobs:
           set -euo pipefail
           {
             echo "PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+            # Only used on Linux: on macOS the libraries are found via their absolute install names and the rpath from root-config
             echo "LD_LIBRARY_PATH=${{ github.workspace }}/lib:$MEGALIB/lib:$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
             echo "LDFLAGS=-L$CONDA_PREFIX/lib -Wl,-rpath,$CONDA_PREFIX/lib ${LDFLAGS:-}"
-            echo "CXX=ccache g++"
-            echo "CC=ccache gcc"
+            echo "CXX=ccache ${{ matrix.cxx }}"
+            echo "CC=ccache ${{ matrix.cc }}"
           } >> "$GITHUB_ENV"
 
       - name: Build MEGAlib
@@ -113,7 +132,7 @@ jobs:
           set -euo pipefail
           cd $MEGALIB
           ./configure
-          make -j$(nproc)
+          make -j$(getconf _NPROCESSORS_ONLN)
 
       - name: Build Nuclearizer
         shell: micromamba-shell {0}
@@ -122,7 +141,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/lib ${{ github.workspace }}/bin
           ln -sf $MEGALIB/bin/generatelinkdef ${{ github.workspace }}/bin/generatelinkdef
           cd ${{ github.workspace }}
-          make COVERAGE=1 CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
+          make COVERAGE=${{ matrix.coverage }} CXX="ccache ${{ matrix.cxx }}" CC="ccache ${{ matrix.cc }}" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(getconf _NPROCESSORS_ONLN)
 
       - name: Copy Nuclearizer outputs into MEGAlib tree
         shell: micromamba-shell {0}
@@ -140,7 +159,7 @@ jobs:
           cd $NUCLEARIZER
           export PATH=$MEGALIB/bin:$PATH
           find $MEGALIB/bin -name "*.gcda" -delete
-          make unittests COVERAGE=1 CXX="ccache g++" CC="ccache gcc" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(nproc)
+          make unittests COVERAGE=${{ matrix.coverage }} CXX="ccache ${{ matrix.cxx }}" CC="ccache ${{ matrix.cc }}" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(getconf _NPROCESSORS_ONLN)
           ${{ github.workspace }}/bin/UTNRunner
 
       - name: ccache stats
@@ -152,10 +171,11 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: failure-logs
+          name: failure-logs-${{ matrix.name }}
           path: /tmp/*.log
 
       - name: Generate Coverage Report
+        if: matrix.coverage == 1
         shell: micromamba-shell {0}
         run: |
           set -euo pipefail
@@ -166,9 +186,10 @@ jobs:
             --exclude-throw-branches --exclude-unreachable-branches \
             --decisions \
             --gcov-delete \
-            -j $(nproc)
+            -j $(getconf _NPROCESSORS_ONLN)
 
       - name: Upload Report to Codecov
+        if: matrix.coverage == 1
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
