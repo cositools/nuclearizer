@@ -152,7 +152,10 @@ public:
                              vector<double>& TrappingParams,
                              int DetID = 0);
 
-  // Plot the experimental CCEs against the simulated and fitted CCE curves and save them as png in the products directory
+  // Plot the fitted HV and LV photopeaks of one depth bin and save them as png in the plots directory
+  void PlotPhotopeakFits(TH1D* HVHist, TF1* HVFunction, TH1D* LVHist, TF1* LVFunction, int DetID, int DepthBin);
+
+  // Plot the experimental CCEs against the simulated and fitted CCE curves and save them as png in the plots directory
   void PlotCCEFit(const vector<ExperimentalPoint>& ExpData,
                   const SimulatedCCE& Sim,
                   const vector<double>& TrappingParams,
@@ -172,6 +175,9 @@ public:
                                int DetID);
 
 private:
+  // Create the directory DirName next to the output file and set Prefix to the directory + output file name
+  bool CreateOutputDirectory(const string& DirName, MString& Prefix);
+
   // For CCE plotting
   // True if a CCE error passes the error cut of the joint fit: err < 6 keV
   bool IsValidCCEErr(double CCEErr) const { return CCEErr > 0.0 && CCEErr <= 6.0 / g_CsPhotopeak; }
@@ -196,6 +202,8 @@ private:
   MString m_OutFile;
   bool m_SaveProducts; // True, if the intermediate products (everything but the final trapping parameter file) are saved
   MString m_ProductsPrefix; // Prefix (directory + file name) for all intermediate products
+  bool m_SavePlots; // True, if the photopeak and CCE fit plots are saved
+  MString m_PlotsPrefix; // Prefix (directory + file name) for all plots
   MString m_GeometryFile;
   MString m_DepthCoeffsFile;
   MString m_DepthSplinesFile;
@@ -208,7 +216,7 @@ private:
   double m_MinEnergy;
   double m_MaxEnergy;
 
-  // Verbosity of this app's own output, independent of the globabl verbosity used by the nuclearizer modules
+  // Verbosity of this app's own output, independent of the global verbosity used by the nuclearizer modules
   int m_Verbosity;
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -252,7 +260,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"         --trim :   number of depth bins at each face excluded from the trapping fit (default 1)"<<endl;
   Usage<<"         --bins :   number of depth bins (default 20)"<<endl;
   Usage<<"         -v --verbosity:   app output 0: Quiet, 1: Errors, 2: Warnings, 3: Info incl. depth bin fits and module setup (default 1)"<<endl;
-  Usage<<"         --products:   save the intermediate products (fit logs, histograms, CCE tables, plots) in the directory trapping_param_products"<<endl;
+  Usage<<"         --products:   save the intermediate products (fit logs, CCE tables, per detector csv files) in the directory trapping_param_products"<<endl;
+  Usage<<"         --plots:   save the photopeak fit and CCE fit plots (png) in the directory trapping_param_plots"<<endl;
   Usage<<"         -o:   outfile (default YYYYMMDDHHMMSS)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -260,6 +269,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   string Option;
 
   // Check for help and read the verbosity first
+  m_Verbosity = c_Error;
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "-h" || Option == "--help" || Option == "?" || Option == "-?") {
@@ -278,6 +288,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   m_MaxEnergy = 700;
   m_NDepthBins = 20;
   m_SaveProducts = false;
+  m_SavePlots = false;
 
   // Progress tracking
   time_t rawtime;
@@ -389,6 +400,9 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
     if (Option == "--products") {
       m_SaveProducts = true;
     }
+    if (Option == "--plots") {
+      m_SavePlots = true;
+    }
     if (Option == "--nocontinue") {
       m_ContinueHDF5 = false;
     }
@@ -403,7 +417,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  // Check that you ond't trim too mnay depth bins
+  // Check that you don't trim too many depth bins
   if (m_NDepthBins <= 2*g_TrimBins) {
     if (m_Verbosity >= c_Error) {
       cout<<"[Error] The number of depth bins (--bins) must be larger than twice the number of trimmed bins per face (--trim)!"<<endl;
@@ -415,7 +429,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   // Set global verbosity to 0 s.t to supressed output from the nuclearizer modules 
   g_Verbosity = 0;
 
-  // Relate the local verbosity setting to the global verbosity levels
+  // Relate the local verbosity to ROOTs verbosity settings
   if (m_Verbosity >= c_Info) {
     gErrorIgnoreLevel = kInfo;
   } else if (m_Verbosity >= c_Warning) {
@@ -447,18 +461,12 @@ bool TrappingCorrectionCs137::Analyze()
 
   if (m_Interrupt == true) return false;
 
-  // All intermediate products go into a "trapping_param_products" directory 
+  // All intermediate products go into a "trapping_param_products" directory and all plots into a "trapping_param_plots" directory
   if (m_SaveProducts == true) {
-    filesystem::path OutPath(m_OutFile.Data());
-    filesystem::path ProductsDir = OutPath.parent_path() / "trapping_param_products";
-    error_code DirError;
-    filesystem::create_directories(ProductsDir, DirError);
-    if (filesystem::is_directory(ProductsDir) == false) {
-      if (m_Verbosity >= c_Error) cout << "[Error] Unable to create directory " << ProductsDir.string() << endl;
-      return false;
-    }
-    m_ProductsPrefix = MString((ProductsDir / OutPath.filename()).string());
-    if (m_Verbosity >= c_Info) cout << "Intermediate products will be stored in " << ProductsDir.string() << endl;
+    if (CreateOutputDirectory("trapping_param_products", m_ProductsPrefix) == false) return false;
+  }
+  if (m_SavePlots == true) {
+    if (CreateOutputDirectory("trapping_param_plots", m_PlotsPrefix) == false) return false;
   }
 
   // [DepthBin][DetID] -> [HV CCE, HV CCE Err, LV CCE, LV CCE Err, Mean Depth (mm)] for all detectors
@@ -759,7 +767,7 @@ bool TrappingCorrectionCs137::Analyze()
 
           ExpPoints.push_back({DetID, c, MeanDepthMM, HVCCE, HVCCEErr, LVCCE, LVCCEErr});
 
-          // Fit log and histograms of this depth bin
+          // Fit log of this depth bin
           if (m_SaveProducts == true) {
             MasterFitFile << "------------------------------------------------------------" << endl;
             MasterFitFile << " DETECTOR ID: " << DetID << "  |  DEPTH BIN INDEX: " << c << "  |  MEAN DEPTH (mm): " << MeanDepthMM << endl;
@@ -778,22 +786,11 @@ bool TrappingCorrectionCs137::Analyze()
             cout.rdbuf(CoutBuf);
 
             MasterFitFile << endl << endl; // Add spacing between different bin entries
+          }
 
-            TFile HVHistFile(m_ProductsPrefix + MString("_Det") + DetID + MString("_Depthbin_") + c + MString("_HVEnergyHist_Illum.root"), "recreate");
-            TCanvas* HVHistCanvas = new TCanvas();
-            HVHistCanvas->cd();
-            HVHist->Draw("Hist");
-            PhotopeakFunctionHV->Draw("same");
-            HVHistCanvas->Write();
-            HVHistFile.Close();
-
-            TFile LVHistFile(m_ProductsPrefix + MString("_Det") + DetID + MString("_Depthbin_") + c + MString("_LVEnergyHist_Illum.root"), "recreate");
-            TCanvas* LVHistCanvas = new TCanvas();
-            LVHistCanvas->cd();
-            LVHist->Draw("Hist");
-            PhotopeakFunctionLV->Draw("same");
-            LVHistCanvas->Write();
-            LVHistFile.Close();
+          // Photopeak fit plots of this depth bin
+          if (m_SavePlots == true) {
+            PlotPhotopeakFits(HVHist, PhotopeakFunctionHV, LVHist, PhotopeakFunctionLV, DetID, c);
           }
 
         } else {
@@ -1262,8 +1259,10 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  if (m_SaveProducts == true) {
+  if (m_SavePlots == true) {
     PlotCCEFit(ExpData, Sim, TrappingParams, DetID);
+  }
+  if (m_SaveProducts == true) {
     SaveTrappingParamFile(OutputCSVPath, TrappingParamPath, TrappingParams, Sim, DetID);
   }
   return true;
@@ -1276,6 +1275,10 @@ void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpDat
                                          const vector<double>& TrappingParams,
                                          int DetID)
 {
+  // Only draw into the png file, without opening a window
+  bool WasBatch = gROOT->IsBatch();
+  gROOT->SetBatch(true);
+
   // One pad per side: HV on the left, LV on the right
   TCanvas* Canvas = new TCanvas(Form("CCEFitCanvas_Det%d", DetID), Form("CCE fit Detector %d", DetID), 1400, 600);
   Canvas->Divide(2, 1);
@@ -1351,9 +1354,57 @@ void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpDat
     Legend->Draw();
   }
 
-  MString PlotFile = m_ProductsPrefix + MString("_Det_") + DetID + MString("_CCE_fit.png");
+  MString PlotFile = m_PlotsPrefix + MString("_Det_") + DetID + MString("_CCE_fit.png");
   Canvas->SaveAs(PlotFile.Data());
   delete Canvas;
+
+  gROOT->SetBatch(WasBatch);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void TrappingCorrectionCs137::PlotPhotopeakFits(TH1D* HVHist, TF1* HVFunction, TH1D* LVHist, TF1* LVFunction, int DetID, int DepthBin)
+{
+  // Only draw into the png file, without opening a window
+  bool WasBatch = gROOT->IsBatch();
+  gROOT->SetBatch(true);
+
+  // One pad per side: HV on the left, LV on the right
+  TCanvas* Canvas = new TCanvas(Form("PhotopeakCanvas_Det%d_Bin%d", DetID, DepthBin), Form("Photopeak fits Detector %d depth bin %d", DetID, DepthBin), 1400, 600);
+  Canvas->Divide(2, 1);
+
+  TH1D* Hists[2] = {HVHist, LVHist};
+  TF1* Functions[2] = {HVFunction, LVFunction};
+  for (int s = 0; s < 2; ++s) {
+    Canvas->cd(s + 1);
+    Hists[s]->SetTitle(Form("Detector %d depth bin %d %s side;Energy (keV);Counts", DetID, DepthBin, (s == 0) ? "HV" : "LV"));
+    Hists[s]->Draw("Hist");
+    Functions[s]->Draw("same");
+  }
+
+  MString PlotFile = m_PlotsPrefix + MString("_Det_") + DetID + MString("_Depthbin_") + DepthBin + MString("_photopeak_fits.png");
+  Canvas->SaveAs(PlotFile.Data());
+  delete Canvas;
+
+  gROOT->SetBatch(WasBatch);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool TrappingCorrectionCs137::CreateOutputDirectory(const string& DirName, MString& Prefix)
+{
+  // The directory is created next to the output file, and the files in it start with the output file name
+  filesystem::path OutPath(m_OutFile.Data());
+  filesystem::path Dir = OutPath.parent_path() / DirName;
+  error_code DirError;
+  filesystem::create_directories(Dir, DirError);
+  if (filesystem::is_directory(Dir) == false) {
+    if (m_Verbosity >= c_Error) cout << "[Error] Unable to create directory " << Dir.string() << endl;
+    return false;
+  }
+  Prefix = MString((Dir / OutPath.filename()).string());
+  if (m_Verbosity >= c_Info) cout << "Files will be stored in " << Dir.string() << endl;
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
