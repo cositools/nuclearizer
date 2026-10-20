@@ -149,7 +149,10 @@ jobs:
           set -euo pipefail
           cd $MEGALIB
           ./configure
-          make -j$(getconf _NPROCESSORS_ONLN)
+          # config/Makefile.macosx hardcodes CXX/LD := c++ (Apple's clang from Xcode), which rejects the VecCore headers
+          # bundled in conda's ROOT. Command-line variables override it in all sub-makes, so MEGAlib is built with the
+          # same conda compiler as ROOT, Geant4, CCfits and Nuclearizer.
+          make CXX="ccache ${{ matrix.cxx }}" CC="ccache ${{ matrix.cc }}" LD="${{ matrix.cxx }}" -j$(getconf _NPROCESSORS_ONLN)
 
       - name: Build Nuclearizer
         shell: micromamba-shell {0}
@@ -158,7 +161,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/lib ${{ github.workspace }}/bin
           ln -sf $MEGALIB/bin/generatelinkdef ${{ github.workspace }}/bin/generatelinkdef
           cd ${{ github.workspace }}
-          make COVERAGE=${{ matrix.coverage }} CXX="ccache ${{ matrix.cxx }}" CC="ccache ${{ matrix.cc }}" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(getconf _NPROCESSORS_ONLN)
+          make COVERAGE=${{ matrix.coverage }} CXX="ccache ${{ matrix.cxx }}" CC="ccache ${{ matrix.cc }}" LD="${{ matrix.cxx }}" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(getconf _NPROCESSORS_ONLN)
 
       - name: Copy Nuclearizer outputs into MEGAlib tree
         shell: micromamba-shell {0}
@@ -176,7 +179,7 @@ jobs:
           cd $NUCLEARIZER
           export PATH=$MEGALIB/bin:$PATH
           find $MEGALIB/bin -name "*.gcda" -delete
-          make unittests COVERAGE=${{ matrix.coverage }} CXX="ccache ${{ matrix.cxx }}" CC="ccache ${{ matrix.cc }}" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(getconf _NPROCESSORS_ONLN)
+          make unittests COVERAGE=${{ matrix.coverage }} CXX="ccache ${{ matrix.cxx }}" CC="ccache ${{ matrix.cc }}" LD="${{ matrix.cxx }}" LB=${{ github.workspace }}/lib BN=${{ github.workspace }}/bin -j$(getconf _NPROCESSORS_ONLN)
           ${{ github.workspace }}/bin/UTNRunner
 
       - name: ccache stats
