@@ -175,6 +175,8 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   MString GetFileNameStripMap() const { return m_FileNameStripMap; }
   //! Set the file name of the strip map
   void SetFileNameStripMap(const MString& Name) { m_FileNameStripMap = Name; }
+  //! Get the strip map, restricted to the enabled DIBs and updated with the ASIC polarities - only valid after Initialize()
+  const MStripMap& GetStripMap() const { return m_StripMap; }
 
 
   //! Enable/Disable loading continuation files
@@ -207,10 +209,16 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   // protected methods:
  protected:
+
   //! Convert more data from raw to intermediate format - return false if no more data can be converted
   bool OpenHDF5File(MString FileName);
   //! Read a batch of hits using a hyperslab
   bool ReadBatchHits();
+
+  //! Collect the detector IDs from the geometry
+  void LoadDetectorIDsFromGeometry();
+  //! Remove strip hits from detectors that are not in the geometry, and flag the event
+  void RemoveStripHitsFromUnknownDetectors(MReadOutAssembly* Event);
 
   // private methods:
  private:
@@ -308,7 +316,13 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   //! The strip map
   MStripMap m_StripMap;
+
+  //! Detector IDs of the GeD_X detectors in the geometry
+  set<unsigned int> m_DetectorIDsInGeometry;
   
+  //! Number of events removed because all strip hits were on detectors not in the geometry
+  unsigned int m_NEventsOnlyUnknownDetectors;
+
   //! Variable that deteremines if the user wants to include Nearest Neighbors
   bool m_IncludeNearestNeighbor;
 

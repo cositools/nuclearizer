@@ -248,6 +248,15 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
         //now try and get z position
         int DetID = LVSH->GetDetectorID();
+
+        // Skip hits on detectors that are in the data but not in the geometry
+//        if (m_Detectors.count(DetID) == 0) {
+//          if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Detector " << DetID << " is not in the geometry" << endl;
+//          H->SetNoDepth();
+//          Event->SetDepthCalibrationError("Detector not in geometry");
+//          continue;
+//        }
+
         int LVStripID = LVSH->GetStripID();
         int HVStripID = HVSH->GetStripID();
         int PixelCode = 10000*DetID + 100*LVStripID + HVStripID;

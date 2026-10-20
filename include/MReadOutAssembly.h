@@ -250,6 +250,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return all the reduced chi^2 values (one for each detector)
   vector<double> GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
+  //! Set the Unknown Detector quality flag for strip hits from a detector not in the geometry
+  void SetUnknownDetector_QualityFlag(const MString& Text = "") { m_UnknownDetector_QualityFlag = true; if (Text != "") m_UnknownDetectorString_QualityFlag.push_back(Text); }
+  //! Get the Unknown Detector quality flag
+  bool HasUnknownDetector_QualityFlag() const { return m_UnknownDetector_QualityFlag; }
+
 
   // Track vetoes
 
@@ -447,6 +452,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_StripPairing_QualityFlag;
   //! Strip pairing quality string
   vector<MString> m_StripPairingString_QualityFlag;
+
+  //! Unknown detector quality flag
+  bool m_UnknownDetector_QualityFlag;
+  //! Unknown detector quality string
+  vector<MString> m_UnknownDetectorString_QualityFlag;
 
   //! The reduced chi^2 values of the strip-paired event
   vector<double> m_StripPairingReducedChiSquare;

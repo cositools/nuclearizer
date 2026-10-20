@@ -42,6 +42,8 @@ using namespace std;
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
+#include "MDGeometryQuest.h"
+#include "MDDetector.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -171,7 +173,10 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     return false;
   }
 
+  LoadDetectorIDsFromGeometry();
+
   m_NEventsInFile = 0;
+  m_NEventsOnlyUnknownDetectors = 0;
   m_NGoodEventsInFile = 0;
   m_RTBEventCounter = 0;
     
@@ -644,6 +649,67 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MModuleLoaderMeasurementsHDF::LoadDetectorIDsFromGeometry()
+{
+  // Collect the detector IDs of all GeDs in the geometry
+
+  m_DetectorIDsInGeometry.clear();
+
+  if (m_Geometry == nullptr) return;
+
+  for (MDDetector* Detector : m_Geometry->GetDetectorList()) {
+    MString Name = Detector->GetName();
+    if (Detector->GetTypeName() == "Strip3D" && Name.BeginsWith("GeD_") == true) {
+      Name.RemoveAllInPlace("GeD_");
+      m_DetectorIDsInGeometry.insert(Name.ToUnsignedInt());
+    }
+  }
+
+  // Keep all strip hits if the detector names don't follow convention
+  if (m_DetectorIDsInGeometry.empty() == true && g_Verbosity >= c_Warning) {
+    cout<<m_XmlTag<<": No GeD_X detectors found in the geometry - keeping strip hits from all detectors"<<endl;
+  }
+
+  if (g_Verbosity >= c_Info) {
+    cout<<m_XmlTag<<": Detector IDs in the geometry:";
+    for (unsigned int DetID : m_DetectorIDsInGeometry) cout<<" "<<DetID;
+    cout<<endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleLoaderMeasurementsHDF::RemoveStripHitsFromUnknownDetectors(MReadOutAssembly* Event)
+{
+  // If there are not GeD_X detectors in the geometry, don't remove strip hits
+  if (m_DetectorIDsInGeometry.empty() == true) return;
+
+  set<unsigned int> RemovedDetectorIDs;
+
+  // Remove strip hits
+  // and go backwards, so removing a strip hit does not shift the ones we still have to check
+  for (int i = (int) Event->GetNStripHits() - 1; i >= 0; --i) {
+    MStripHit* SH = Event->GetStripHit(i);
+    unsigned int DetID = SH->GetDetectorID();
+    if (m_DetectorIDsInGeometry.count(DetID) == 0) {
+      RemovedDetectorIDs.insert(DetID);
+      delete SH;
+      Event->RemoveStripHit(i);
+    }
+  }
+
+  // Add a quality-flag for events with striphits from detector not in the mass model
+  for (unsigned int DetID : RemovedDetectorIDs) {
+    Event->SetUnknownDetector_QualityFlag("Strip hits removed from unknown detector ID " + to_string(DetID));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level:
@@ -920,9 +986,17 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
+
+  // Drop strip hits from detectors that are not in the geometry
+  RemoveStripHitsFromUnknownDetectors(Event);
+
+
   // Remove all Events with no (valid) strip hits
   if (Event->GetNStripHits() == 0){
-    if (g_Verbosity >= c_Error) {
+    if (Event->HasUnknownDetector_QualityFlag() == true) {
+      // Expected: all strip hits were on detectors that are not in the geometry
+      m_NEventsOnlyUnknownDetectors++;
+    } else if (g_Verbosity >= c_Error) {
       cout<<m_XmlTag<<": Event had no (valid) strip hits"<< endl;
     }
     return false;
@@ -949,6 +1023,7 @@ void MModuleLoaderMeasurementsHDF::Finalize()
   if (g_Verbosity >= c_Info) {
     cout<<"MModuleLoaderMeasurementsHDF: "<<endl;
     cout<<"  * all events on file:  "<<m_NEventsInFile<<endl;
+    cout<<"  * events with only unknown detectors: "<<m_NEventsOnlyUnknownDetectors<<endl;
     cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
   }
 

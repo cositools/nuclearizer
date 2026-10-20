@@ -148,6 +148,9 @@ void MReadOutAssembly::Clear()
   m_StripPairing_QualityFlag = false;
   m_StripPairingString_QualityFlag.clear();
 
+  m_UnknownDetector_QualityFlag = false;
+  m_UnknownDetectorString_QualityFlag.clear();
+
   m_FilteredOut = false;
   m_AnalysisProgress = 0;
 
@@ -837,6 +840,18 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     S<<endl;
   }
 
+  if (m_UnknownDetector_QualityFlag == true) {
+    S<<"QA UnknownDetector";
+    if (m_UnknownDetectorString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_UnknownDetectorString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+
   if (m_GuardRingVeto == true) {
     S<<"BD GR Veto"<<endl;
   }
@@ -921,6 +936,8 @@ bool MReadOutAssembly::ParseBDFlags(const MString& Line)
       for (const MString& T: Texts) SetHighADC_QualityFlag(T);
     } else if (Flag == "StripPairing") {
       for (const MString& T: Texts) SetStripPairing_QualityFlag(T);
+    } else if (Flag == "UnknownDetector") {
+      for (const MString& T: Texts) SetUnknownDetector_QualityFlag(T);
     } else {
       if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Unknown QA flag: "<<Line<<endl;
       return false;
