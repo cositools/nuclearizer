@@ -30,12 +30,15 @@ jobs:
             os: ubuntu-24.04
             cxx: g++
             cc: gcc
+            ccfits: ccfits=2.6
             coverage: 1
             timeout: 30
           - name: macOS
             os: macos-26
             cxx: clang++
             cc: clang
+            # conda-forge has no CCfits for osx-arm64, it is built from source below
+            ccfits: ""
             coverage: 0
             timeout: 60
 
@@ -75,9 +78,21 @@ jobs:
           create-args: >-
             root=6.32 geant4=11.2 healpix_cxx
             pkg-config make cmake cxx-compiler ccache
-            ccfits=2.6 cfitsio=4.3 hdf5=1.14 gcovr
+            ${{ matrix.ccfits }} cfitsio=4.3 hdf5=1.14 gcovr
           cache-environment: true
           cache-environment-key: micromamba-${{ runner.os }}-root6.32-geant4.11.2-ccfits2.6-cfitsio4.3-hdf5.1.14
+
+      - name: Build CCfits
+        if: runner.os == 'macOS'
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+          if [ ! -f "$CONDA_PREFIX/lib/libCCfits.dylib" ]; then
+            curl -fsSL https://heasarc.gsfc.nasa.gov/FTP/software/fitsio/ccfits/v2.6/CCfits-2.6.tar.gz | tar xz -C "$RUNNER_TEMP"
+            cd "$RUNNER_TEMP/CCfits-2.6"
+            ./configure --prefix="$CONDA_PREFIX" --with-cfitsio="$CONDA_PREFIX" --disable-static CXX=${{ matrix.cxx }}
+            make -j$(getconf _NPROCESSORS_ONLN) install
+          fi
 
       - name: Write pkg-config files & sanity-check
         shell: micromamba-shell {0}
