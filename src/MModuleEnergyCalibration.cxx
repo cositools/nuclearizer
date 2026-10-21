@@ -524,9 +524,7 @@ bool MModuleEnergyCalibration::ReadEnergyCalibrationFile(MString FileName) {
       resolutionfit->FixParameter(2, f2);
       resolutionfit->FixParameter(3, f3);
       m_ResolutionCalibration[CR.first] = resolutionfit;
-    }
-    
-    else {
+    } else {
       if (g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Line parser: Unknown resolution calibrator type (" << CalibratorType << ") for strip" << CR.first << endl;
       }
