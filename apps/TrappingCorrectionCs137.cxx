@@ -336,7 +336,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
     if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m") || (Option == "--geo") || (Option == "--coeffs") || (Option == "--splines") || (Option == "--sim") || (Option == "--trim") || (Option == "--bins") || (Option == "-v") || (Option == "--verbosity") || (Option == "--save-hits") || (Option == "--load-hits")) {
       if (((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) == false) {
         if (m_Verbosity >= c_Error) {
-          cout<<"[Error] Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+          cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
           cout<<Usage.str()<<endl;
         }
         return false;
@@ -448,7 +448,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   // The depth calibration files are only needed if the data is calibrated
   if (m_LoadHitsFile.IsEmpty() == true && (m_GeometryFile.IsEmpty() == true || m_DepthCoeffsFile.IsEmpty() == true || m_DepthSplinesFile.IsEmpty() == true)) {
     if (m_Verbosity >= c_Error) {
-      cout<<"[Error] The depth calibration needs a geometry (--geo), coefficients (--coeffs) and splines (--splines) file!"<<endl;
+      cout<<"Error: The depth calibration needs a geometry (--geo), coefficients (--coeffs) and splines (--splines) file!"<<endl;
       cout<<Usage.str()<<endl;
     }
     return false;
@@ -457,7 +457,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   // Check that you don't trim too many depth bins
   if (m_NDepthBins <= 2*g_TrimBins) {
     if (m_Verbosity >= c_Error) {
-      cout<<"[Error] The number of depth bins (--bins) must be larger than twice the number of trimmed bins per face (--trim)!"<<endl;
+      cout<<"Error: The number of depth bins (--bins) must be larger than twice the number of trimmed bins per face (--trim)!"<<endl;
       cout<<Usage.str()<<endl;
     }
     return false;
@@ -644,10 +644,10 @@ bool TrappingCorrectionCs137::Analyze()
           }
 
         } else {
-          if (m_Verbosity >= c_Warning) cout << "[Warning] Fits failed for depth bin " << c << " Detector " << DetID << endl;
+          if (m_Verbosity >= c_Warning) cout << "Warning: Fits failed for depth bin " << c << " Detector " << DetID << endl;
         }
       } else {
-        if (m_Verbosity >= c_Warning) cout << "[Warning] Fewer than " << g_MinCounts << " counts in depth bin " << c << " Detector " << DetID << endl;
+        if (m_Verbosity >= c_Warning) cout << "Warning: Fewer than " << g_MinCounts << " counts in depth bin " << c << " Detector " << DetID << endl;
       }
     }
   }
@@ -716,7 +716,7 @@ bool TrappingCorrectionCs137::Analyze()
   bool HasDetectorHeaders = false;
   map<int, SimulatedCCE> SimCCEs = LoadSimulatedCCE(g_SimulatedCCEPath.Data(), HasDetectorHeaders);
   if (SimCCEs.empty() == true) {
-    if (m_Verbosity >= c_Error) cerr << "[Error] Simulated CCE file is empty or file not found at: " << g_SimulatedCCEPath << endl;
+    if (m_Verbosity >= c_Error) cerr << "Error: Simulated CCE file is empty or file not found at: " << g_SimulatedCCEPath << endl;
     return false;
   }
   if (HasDetectorHeaders == false) {
@@ -733,7 +733,7 @@ bool TrappingCorrectionCs137::Analyze()
   string CombinedCSV = string(m_OutFile.Data()) + "_trapping_params_" + to_string(m_NDepthBins) + "bins.csv";
   ofstream CombinedFile(CombinedCSV, ios::out | ios::trunc);
   if (CombinedFile.is_open() == false) {
-    if (m_Verbosity >= c_Error) cerr << "[Error] Cannot create output file: " << CombinedCSV << endl;
+    if (m_Verbosity >= c_Error) cerr << "Error: Cannot create output file: " << CombinedCSV << endl;
     return false;
   }
   int NFittedDetectors = 0;
@@ -745,7 +745,7 @@ bool TrappingCorrectionCs137::Analyze()
     // Find this detector's simulated CCE curves by iterating through the map
     auto SimIter = (HasDetectorHeaders == true) ? SimCCEs.find(DetID) : SimCCEs.find(0);
     if (SimIter == SimCCEs.end() || SimIter->second.DepthMM.empty() == true) {
-      if (m_Verbosity >= c_Error) cerr << "[Error] No simulated CCE file for Detector " << DetID << " in " << g_SimulatedCCEPath << ". Skipping joint fit." << endl;
+      if (m_Verbosity >= c_Error) cerr << "Error: No simulated CCE file for Detector " << DetID << " in " << g_SimulatedCCEPath << ". Skipping joint fit." << endl;
       continue;
     }
 
@@ -793,7 +793,7 @@ bool TrappingCorrectionCs137::CalibrateHits()
   if (Geometry->ScanSetupFile(m_GeometryFile) == true) {
     if (m_Verbosity >= c_Info) cout << "Geometry " << Geometry->GetName() << " loaded!" << endl;
   } else {
-    if (m_Verbosity >= c_Error) cout << "[Error] Unable to load geometry " << m_GeometryFile << endl;
+    if (m_Verbosity >= c_Error) cout << "Error: Unable to load geometry " << m_GeometryFile << endl;
     return false;
   }
 
@@ -806,10 +806,10 @@ bool TrappingCorrectionCs137::CalibrateHits()
     if (m_Verbosity >= c_Info) cout << "hdf names loaded correctly" << endl;
   } else if ((InputFile.GetSubString(InputFile.Length() - 3)) == "txt") {
     if (m_Verbosity >= c_Info) cout << "Reading input file " << InputFile << endl;
-    if (m_Verbosity >= c_Warning) cout << "[Warning] When passing a list of files, ensure that you have chosen the correct HDF5 continuous reading mode. Use the --nocontinue option to suppress continuous file reading." << endl;
+    if (m_Verbosity >= c_Warning) cout << "Warning: When passing a list of files, ensure that you have chosen the correct HDF5 continuous reading mode. Use the --nocontinue option to suppress continuous file reading." << endl;
     MFile F;
     if (F.Open(InputFile) == false) {
-      if (m_Verbosity >= c_Error) cout << "[Error] Failed to open input file." << endl;
+      if (m_Verbosity >= c_Error) cout << "Error: Failed to open input file." << endl;
       return false;
     } else {
       MString Line;
@@ -819,14 +819,14 @@ bool TrappingCorrectionCs137::CalibrateHits()
           if (F.Exists(Trimmed) == true) {
             HDFNames.push_back(Trimmed);
           } else {
-            if (m_Verbosity >= c_Error) cout << "[Error] Could not find file " << Trimmed << endl;
+            if (m_Verbosity >= c_Error) cout << "Error: Could not find file " << Trimmed << endl;
             return false;
           }
         }
       }
     }
   } else {
-    if (m_Verbosity >= c_Error) cout << "[Error] Unrecognized file format: " << InputFile << endl;
+    if (m_Verbosity >= c_Error) cout << "Error: Unrecognized file format: " << InputFile << endl;
     return false;
   }
 
@@ -998,7 +998,7 @@ bool TrappingCorrectionCs137::SaveCalibratedHits(const MString& FileName)
   // Write a ROOT file to store the calibrated hits
   TFile HitsFile(FileName.Data(), "recreate");
   if (HitsFile.IsZombie() == true) {
-    if (m_Verbosity >= c_Error) cout << "[Error] Unable to create the hits file " << FileName << endl;
+    if (m_Verbosity >= c_Error) cout << "Error: Unable to create the hits file " << FileName << endl;
     return false;
   }
 
@@ -1053,14 +1053,14 @@ bool TrappingCorrectionCs137::LoadHits(const MString& FileName)
 {
   TFile HitsFile(FileName.Data(), "read");
   if (HitsFile.IsZombie() == true) {
-    if (m_Verbosity >= c_Error) cout << "[Error] Unable to open the hits file " << FileName << endl;
+    if (m_Verbosity >= c_Error) cout << "Error: Unable to open the hits file " << FileName << endl;
     return false;
   }
 
   TTree* HitsTree = dynamic_cast<TTree*>(HitsFile.Get("Hits"));
   TTree* RangesTree = dynamic_cast<TTree*>(HitsFile.Get("DepthRanges"));
   if (HitsTree == nullptr || RangesTree == nullptr) {
-    if (m_Verbosity >= c_Error) cout << "[Error] The file " << FileName << " does not contain calibrated hits written by --save-hits" << endl;
+    if (m_Verbosity >= c_Error) cout << "Error: The file " << FileName << " does not contain calibrated hits written by --save-hits" << endl;
     return false;
   }
 
@@ -1092,7 +1092,7 @@ bool TrappingCorrectionCs137::LoadHits(const MString& FileName)
   TParameter<double>* MaxEnergy = dynamic_cast<TParameter<double>*>(HitsFile.Get("MaxEnergy"));
   if (MinEnergy != nullptr && MaxEnergy != nullptr) {
     if (m_MinEnergy < MinEnergy->GetVal() || m_MaxEnergy > MaxEnergy->GetVal()) {
-      if (m_Verbosity >= c_Warning) cout << "[Warning] The hits in " << FileName << " were calibrated with the energy window " << MinEnergy->GetVal() << "-" << MaxEnergy->GetVal()
+      if (m_Verbosity >= c_Warning) cout << "Warning: The hits in " << FileName << " were calibrated with the energy window " << MinEnergy->GetVal() << "-" << MaxEnergy->GetVal()
                                          << " keV, which is narrower than the requested " << m_MinEnergy << "-" << m_MaxEnergy << " keV" << endl;
     }
   }
@@ -1207,7 +1207,7 @@ map<int, TrappingCorrectionCs137::SimulatedCCE> TrappingCorrectionCs137::LoadSim
   ifstream File(SimCSVPath);
 
   if (File.is_open() == false) {
-    if (m_Verbosity >= c_Error) cerr << "[Error] Could not open simulation CSV at: " << SimCSVPath << endl;
+    if (m_Verbosity >= c_Error) cerr << "Error: Could not open simulation CSV at: " << SimCSVPath << endl;
     return Sims;
   }
 
@@ -1224,10 +1224,10 @@ map<int, TrappingCorrectionCs137::SimulatedCCE> TrappingCorrectionCs137::LoadSim
         DetID = NewID;
         HasDetectorHeaders = true;
         if (Sims.count(DetID) > 0 && Sims[DetID].DepthMM.empty() == false) {
-          if (m_Verbosity >= c_Warning) cerr << "[Warning] Detector " << DetID << " appears more than once in " << SimCSVPath << "; appending rows" << endl;
+          if (m_Verbosity >= c_Warning) cerr << "Warning: Detector " << DetID << " appears more than once in " << SimCSVPath << "; appending rows" << endl;
         }
       } else {
-        if (m_Verbosity >= c_Warning) cerr << "[Warning] Could not read a detector_ID from header line: " << Line << endl;
+        if (m_Verbosity >= c_Warning) cerr << "Warning: Could not read a detector_ID from header line: " << Line << endl;
       }
       continue;
     }
@@ -1278,7 +1278,7 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
                                                     int DetID)
 {
   if (Sim.DepthMM.empty() == true) {
-    if (m_Verbosity >= c_Error) cerr << "[Error] Simulated CCE file for Detector " << DetID << " is empty" << endl;
+    if (m_Verbosity >= c_Error) cerr << "Error: Simulated CCE file for Detector " << DetID << " is empty" << endl;
     return false;
   }
 
@@ -1309,7 +1309,7 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
   }
 
   if (DetExpData.empty() == true) {
-    if (m_Verbosity >= c_Warning) cout << "[Warning] No valid data points left after error filtering for Detector "
+    if (m_Verbosity >= c_Warning) cout << "Warning: No valid data points left after error filtering for Detector "
               << DetID << endl;
     return false;
   }
@@ -1403,7 +1403,7 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
   bool FitSucceeded = Fitter.FitFCN();
   // If the fitter didn't run
   if (FitSucceeded == false) {
-    if (m_Verbosity >= c_Error) cerr << "[Error] Joint trapping fit failed for Detector " << DetID << endl;
+    if (m_Verbosity >= c_Error) cerr << "Error: Joint trapping fit failed for Detector " << DetID << endl;
     return false;
   }
 
@@ -1412,7 +1412,7 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
   const ROOT::Fit::FitResult& Result = Fitter.Result();
 
   if (Result.IsValid() == false) {
-    if (m_Verbosity >= c_Warning) cerr << "[Warning] Fit result not valid (status " << Result.Status() << ") for Detector " << DetID << endl;
+    if (m_Verbosity >= c_Warning) cerr << "Warning: Fit result not valid (status " << Result.Status() << ") for Detector " << DetID << endl;
   }
 
   // Write the fitted trapping parameters
@@ -1577,7 +1577,7 @@ bool TrappingCorrectionCs137::CreateOutputDirectory(const string& DirName, MStri
   error_code DirError;
   filesystem::create_directories(Dir, DirError);
   if (filesystem::is_directory(Dir) == false) {
-    if (m_Verbosity >= c_Error) cout << "[Error] Unable to create directory " << Dir.string() << endl;
+    if (m_Verbosity >= c_Error) cout << "Error: Unable to create directory " << Dir.string() << endl;
     return false;
   }
   Prefix = MString((Dir / OutPath.filename()).string());
@@ -1597,7 +1597,7 @@ void TrappingCorrectionCs137::SaveTrappingParamFile(const string& OutputFilePath
   auto WriteFileContent = [&](const string& FilePath) {
     ofstream CSVFile(FilePath, ios::out | ios::trunc);
     if (CSVFile.is_open() == false) {
-      if (m_Verbosity >= c_Error) cerr << "[Error] Cannot create output file: " << FilePath << endl;
+      if (m_Verbosity >= c_Error) cerr << "Error: Cannot create output file: " << FilePath << endl;
       return;
     }
     WriteTrappingParamBlock(CSVFile, TrappingParams, Sim, DetID);
