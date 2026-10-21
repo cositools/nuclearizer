@@ -56,6 +56,9 @@ using namespace std;
 #include <TMultiGraph.h>
 #include <TLegend.h>
 #include <TError.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TParameter.h>
 
 // ROOT Fitting Engines
 #include "Fit/Fitter.h"
@@ -175,6 +178,21 @@ public:
                                int DetID);
 
 private:
+  // One calibrated hit: everything the depth binning and the fits need, so they can be redone without recalibrating
+  struct CalibratedHit {
+    int DetID;
+    float DepthCM;
+    float HVEnergy;
+    float LVEnergy;
+  };
+
+  // Run the calibration chain over the input files and store the calibrated hits and depth ranges
+  bool CalibrateHits();
+  // Save the calibrated hits, the depth ranges and the energy window to a ROOT file
+  bool SaveCalibratedHits(const MString& FileName);
+  // Load the calibrated hits, the depth ranges and the energy window from a ROOT file written by SaveCalibratedHits
+  bool LoadHits(const MString& FileName);
+
   // Create the directory DirName next to the output file and set Prefix to the directory + output file name
   bool CreateOutputDirectory(const string& DirName, MString& Prefix);
 
@@ -186,12 +204,18 @@ private:
   // CCE model: simulated electron and hole CCEs scaled by the trapping parameters A, B and C
   static double TrappedCCE(double A, double B, double C, double ElectronCCE, double HoleCCE) { return A * (1.0 - B * (1.0 - ElectronCCE)) * (1.0 - C * (1.0 - HoleCCE)); }
 
-  // Set up evenly spaced depth bins per detector from the depth calibration's depth grid
-  void InitializeDepthBins(MModuleDepthCalibration* DepthCalibrator);
+  // Set up evenly spaced depth bins per detector from the depth ranges of the depth calibration
+  void InitializeDepthBins();
 
   // Depth bins
   int m_NDepthBins;
   map<int, vector<double>> m_DepthBinEdges; // m_NDepthBins + 1 edges in cm stored for each detectorID
+
+  // Calibrated hits and the depth range (cm) of the depth calibration's depth grid of each detector
+  vector<CalibratedHit> m_Hits;
+  map<int, pair<double, double>> m_DepthRanges; // [DetID] -> (min depth, max depth)
+  MString m_SaveCalibratedHitsFile; // If set, the calibrated hits are saved to this file
+  MString m_LoadHitsFile; // If set, the calibrated hits are loaded from this file instead of calibrating the data
 
   // Calibration files
   bool m_Interrupt;
@@ -262,6 +286,9 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"         -v --verbosity:   app output 0: Quiet, 1: Errors, 2: Warnings, 3: Info incl. depth bin fits and module setup (default 1)"<<endl;
   Usage<<"         --products:   save the intermediate products (fit logs, CCE tables, per detector csv files) in the directory trapping_param_products"<<endl;
   Usage<<"         --plots:   save the photopeak fit and CCE fit plots (png) in the directory trapping_param_plots"<<endl;
+  Usage<<"         --save-hits:   save the calibrated hits to this ROOT file, to redo the binning and fits later without recalibrating"<<endl;
+  Usage<<"         --load-hits:   load the calibrated hits from this ROOT file instead of calibrating the data"<<endl;
+  Usage<<"                        (-i, -e, --tcal, -m, --geo, --coeffs and --splines are then not needed)"<<endl;
   Usage<<"         -o:   outfile (default YYYYMMDDHHMMSS)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -307,7 +334,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m") || (Option == "--geo") || (Option == "--coeffs") || (Option == "--splines") || (Option == "--sim") || (Option == "--trim") || (Option == "--bins") || (Option == "-v") || (Option == "--verbosity")) {
+    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m") || (Option == "--geo") || (Option == "--coeffs") || (Option == "--splines") || (Option == "--sim") || (Option == "--trim") || (Option == "--bins") || (Option == "-v") || (Option == "--verbosity") || (Option == "--save-hits") || (Option == "--load-hits")) {
       if (((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) == false) {
         if (m_Verbosity >= c_Error) {
           cout<<"[Error] Option "<<argv[i][1]<<" needs a second argument!"<<endl;
@@ -381,6 +408,16 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
       if (m_Verbosity >= c_Info) cout<<"Accepting verbosity: "<<m_Verbosity<<endl;
     }
 
+    if (Option == "--save-hits") {
+      m_SaveCalibratedHitsFile = argv[++i];
+      if (m_Verbosity >= c_Info) cout<<"Accepting file to save the calibrated hits: "<<m_SaveCalibratedHitsFile<<endl;
+    }
+
+    if (Option == "--load-hits") {
+      m_LoadHitsFile = argv[++i];
+      if (m_Verbosity >= c_Info) cout<<"Accepting file to load the calibrated hits: "<<m_LoadHitsFile<<endl;
+    }
+
     if (Option == "--sim") {
       g_SimulatedCCEPath = argv[++i];
       if (m_Verbosity >= c_Info) cout<<"Accepting sim CCE file: "<<g_SimulatedCCEPath<<endl;
@@ -409,7 +446,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
 
   }
 
-  if (m_GeometryFile.IsEmpty() == true || m_DepthCoeffsFile.IsEmpty() == true || m_DepthSplinesFile.IsEmpty() == true) {
+  // The depth calibration files are only needed if the data is calibrated
+  if (m_LoadHitsFile.IsEmpty() == true && (m_GeometryFile.IsEmpty() == true || m_DepthCoeffsFile.IsEmpty() == true || m_DepthSplinesFile.IsEmpty() == true)) {
     if (m_Verbosity >= c_Error) {
       cout<<"[Error] The depth calibration needs a geometry (--geo), coefficients (--coeffs) and splines (--splines) file!"<<endl;
       cout<<Usage.str()<<endl;
@@ -472,14 +510,15 @@ bool TrappingCorrectionCs137::Analyze()
   // [DepthBin][DetID] -> [HV CCE, HV CCE Err, LV CCE, LV CCE Err, Mean Depth (mm)] for all detectors
   map<int, map<int, vector<double>>> FullDetEndpoints;
 
-  // Store the input files
-  vector<MString> FileNames;
-  FileNames.push_back(m_FileName);
-  if (m_Verbosity >= c_Info) cout << "file name stored" << endl;
-
-  MString InputFile = FileNames[0];
-  if (m_Verbosity >= c_Info) cout << " input file stored as: " << InputFile << endl;
-  vector<MString> HDFNames;
+  // Calibrate the data, or load the calibrated hits of an earlier run
+  if (m_LoadHitsFile.IsEmpty() == true) {
+    if (CalibrateHits() == false) return false;
+  } else {
+    if (LoadHits(m_LoadHitsFile) == false) return false;
+  }
+  if (m_SaveCalibratedHitsFile.IsEmpty() == false) {
+    if (SaveCalibratedHits(m_SaveCalibratedHitsFile) == false) return false;
+  }
 
   // Enable sum of weights squared for TH1 by default
   TH1::SetDefaultSumw2();
@@ -492,220 +531,32 @@ bool TrappingCorrectionCs137::Analyze()
   map<int, map<int, double>> DepthSums;
   map<int, map<int, long>> DepthCounts;
 
-  // Load the geometry which the depth calibration needs for the detector dimensions
-  MDGeometryQuest* Geometry = new MDGeometryQuest();
-  if (Geometry->ScanSetupFile(m_GeometryFile) == true) {
-    if (m_Verbosity >= c_Info) cout << "Geometry " << Geometry->GetName() << " loaded!" << endl;
-  } else {
-    if (m_Verbosity >= c_Error) cout << "[Error] Unable to load geometry " << m_GeometryFile << endl;
-    return false;
+  // Sort the calibrated hits into the depth bins
+  InitializeDepthBins();
+  for (const CalibratedHit& Hit : m_Hits) {
+    int DetID = Hit.DetID;
+    int DepthBin = GetDepthBin(DetID, Hit.DepthCM);
+    if (DepthBin < 0) continue;
+
+    TH1D* FullHVHist  = FullDetHVEnergyHistograms[DepthBin][DetID];
+    TH1D* FullLVHist  = FullDetLVEnergyHistograms[DepthBin][DetID];
+
+    if (FullHVHist == nullptr) {
+      char Name[128]; sprintf(Name, "HV_Detector%d_bin%d", DetID, DepthBin);
+      FullHVHist = new TH1D(Name, Name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
+      FullDetHVEnergyHistograms[DepthBin][DetID] = FullHVHist;
+    }
+    if (FullLVHist == nullptr) {
+      char Name[128]; sprintf(Name, "LV_Detector%d_bin%d", DetID, DepthBin);
+      FullLVHist = new TH1D(Name, Name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
+      FullDetLVEnergyHistograms[DepthBin][DetID] = FullLVHist;
+    }
+
+    FullHVHist->Fill(Hit.HVEnergy);
+    FullLVHist->Fill(Hit.LVEnergy);
+    DepthSums[DepthBin][DetID] += Hit.DepthCM;
+    DepthCounts[DepthBin][DetID] += 1;
   }
-
-  // Add the Energy Calibration here as an avialable module s.t the Depth Cal can use it in its Initialize() function
-  MSupervisor::GetSupervisor()->AddAvailableModule(new MModuleEnergyCalibration());
-
-  // Read in the input files and make a list of hdf5 files to calibrate
-  if ((InputFile.GetSubString(InputFile.Length() - 4)) == "hdf5") {
-    HDFNames.push_back(InputFile);
-    if (m_Verbosity >= c_Info) cout << "hdf names loaded correctly" << endl;
-  } else if ((InputFile.GetSubString(InputFile.Length() - 3)) == "txt") {
-    if (m_Verbosity >= c_Info) cout << "Reading input file " << InputFile << endl;
-    if (m_Verbosity >= c_Warning) cout << "[Warning] When passing a list of files, ensure that you have chosen the correct HDF5 continuous reading mode. Use the --nocontinue option to suppress continuous file reading." << endl;
-    MFile F;
-    if (F.Open(InputFile) == false) {
-      if (m_Verbosity >= c_Error) cout << "[Error] Failed to open input file." << endl;
-      return false;
-    } else {
-      MString Line;
-      while (F.ReadLine(Line) == true) {
-        MString Trimmed = Line.Trim();
-        if ((Trimmed != "")) {
-          if (F.Exists(Trimmed) == true) {
-            HDFNames.push_back(Trimmed);
-          } else {
-            if (m_Verbosity >= c_Error) cout << "[Error] Could not find file " << Trimmed << endl;
-            return false;
-          }
-        }
-      }
-    }
-  } else {
-    if (m_Verbosity >= c_Error) cout << "[Error] Unrecognized file format: " << InputFile << endl;
-    return false;
-  }
-
-  // Analyze all the data and fill in the histograms
-  for (unsigned int f = 0; f < HDFNames.size(); ++f) {
-
-    MString File = HDFNames[f];
-    if (m_Verbosity >= c_Info) cout << "Beginning analysis of file " << File << endl;
-
-    // Create and initialize nuclearizer modules
-    MSupervisor* S = MSupervisor::GetSupervisor();
-
-    MModuleLoaderMeasurementsHDF* Loader;
-    MModuleTACCalibration* TACCalibrator;
-    MModuleEnergyCalibration* EnergyCalibrator;
-    MModuleEventFilter* EventFilter;
-    MModuleDepthCalibration* DepthCalibrator;
-
-    unsigned int MNumber = 0;
-    if (m_Verbosity >= c_Info) cout << "Creating HDF5 loader" << endl;
-    Loader = new MModuleLoaderMeasurementsHDF();
-    Loader->SetFileNameStripMap(m_StripMapFile);
-    Loader->SetFileName(File);
-    Loader->SetLoadContinuationFiles(m_ContinueHDF5);
-    S->SetModule(Loader, MNumber);
-    ++MNumber;
-
-    if (m_Verbosity >= c_Info) cout << "Creating TAC calibrator" << endl;
-    TACCalibrator = new MModuleTACCalibration();
-    TACCalibrator->SetTACCalFileName(m_TACCalFile);
-    S->SetModule(TACCalibrator, MNumber);
-    ++MNumber;
-
-    if (m_Verbosity >= c_Info) cout << "Creating energy calibrator" << endl;
-    EnergyCalibrator = new MModuleEnergyCalibration();
-    EnergyCalibrator->SetFileName(m_EcalFile);
-    EnergyCalibrator->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Fixed);
-    EnergyCalibrator->SetSlowThresholdCutFixedValue(30.0);
-    S->SetModule(EnergyCalibrator, MNumber);
-    ++MNumber;
-
-    if (m_Verbosity >= c_Info) cout << "Creating Event filter" << endl;
-    EventFilter = new MModuleEventFilter();
-    EventFilter->SetMinimumLVStrips(1);
-    EventFilter->SetMaximumLVStrips(3);
-    EventFilter->SetMinimumHVStrips(1);
-    EventFilter->SetMaximumHVStrips(3);
-    EventFilter->SetMinimumHits(0);
-    EventFilter->SetMaximumHits(100);
-    EventFilter->SetMinimumTotalEnergy(m_MinEnergy);
-    EventFilter->SetMaximumTotalEnergy(m_MaxEnergy ); // Multiply by 2 because this is the event-level energy, i.e. sum over both sides
-    S->SetModule(EventFilter, MNumber);
-    ++MNumber;
-
-    if (m_Verbosity >= c_Info) cout << "Creating strip pairing" << endl;
-    MModule* Pairing;
-    if (m_MultiRoundStripPairing == true) {
-      Pairing = new MModuleStripPairingMultiRoundChiSquare();
-    } else {
-      Pairing = new MModuleStripPairingChiSquare();
-    }
-    S->SetModule(Pairing, MNumber);
-    ++MNumber;
-
-    if (m_Verbosity >= c_Info) cout << "Creating depth calibrator" << endl;
-    DepthCalibrator = new MModuleDepthCalibration();
-    DepthCalibrator->SetGeometry(Geometry);
-    DepthCalibrator->SetCoeffsFileName(m_DepthCoeffsFile);
-    DepthCalibrator->SetSplinesFileName(m_DepthSplinesFile);
-    DepthCalibrator->SetUCSDOverride(false);
-    DepthCalibrator->SetMaskMetrologyCorrectionEnable(false);
-    DepthCalibrator->SetAccountForDisabledStrips(false);
-    S->SetModule(DepthCalibrator, MNumber);
-    ++MNumber;
-
-    if (m_Verbosity >= c_Info) cout<<"Initializing Loader"<<endl;
-    if (Loader->Initialize() == false) return false;
-    if (m_Verbosity >= c_Info) cout<<"Initializing TAC calibrator"<<endl;
-    if (TACCalibrator->Initialize() == false) return false;
-    if (m_Verbosity >= c_Info) cout<<"Initializing Energy calibrator"<<endl;
-    if (EnergyCalibrator->Initialize() == false) return false;
-    if (m_Verbosity >= c_Info) cout<<"Initializing Event filter"<<endl;
-    if (EventFilter->Initialize() == false) return false;
-    if (m_Verbosity >= c_Info) cout<<"Initializing Pairing"<<endl;
-    if (Pairing->Initialize() == false) return false;
-    if (m_Verbosity >= c_Info) cout<<"Initializing Depth calibrator"<<endl;
-    if (DepthCalibrator->Initialize() == false) return false;
-
-    // Depth bins follow the detector thicknesses known to the depth calibration
-    InitializeDepthBins(DepthCalibrator);
-
-    bool IsFinished = false;
-    MReadOutAssembly* Event = new MReadOutAssembly();
-    if (m_Verbosity >= c_Info) cout<<"Modules initialized, starting event loop"<<endl;
-
-    if (m_Verbosity >= c_Info) cout << "Analyzing..." << endl;
-
-    while ((IsFinished == false) && (m_Interrupt == false)) {
-      Event->Clear();
-      if (Loader->IsReady() == true) {
-
-        Loader->AnalyzeEvent(Event);
-        TACCalibrator->AnalyzeEvent(Event);
-        EnergyCalibrator->AnalyzeEvent(Event);
-        bool Unfiltered = EventFilter->AnalyzeEvent(Event);
-
-        if (Unfiltered == true) {
-
-          Pairing->AnalyzeEvent(Event);
-
-          // Returns false for guard ring vetoed events
-          bool DepthCalibrated = DepthCalibrator->AnalyzeEvent(Event);
-
-          if ((DepthCalibrated == true) && (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true)) {
-
-            for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
-
-              MHit* H = Event->GetHit(h);
-
-              // Skip hits without a calibrated depth 
-              if (H->GetNoDepth() == true) continue;
-
-              double HVEnergy = 0.0;
-              double LVEnergy = 0.0;
-              unsigned int NHVStrips = 0;
-              unsigned int NLVStrips = 0;
-              int DetID = H->GetStripHit(0)->GetDetectorID();
-
-              for (unsigned int sh = 0; sh < H->GetNStripHits(); ++sh) {
-                MStripHit* SH = H->GetStripHit(sh);
-
-                if ((m_ExcludeNN == false) || ((m_ExcludeNN == true) && (SH->IsNearestNeighbor() == false))) {
-                  if (SH->IsLowVoltageStrip() == true) {
-                    LVEnergy += SH->GetEnergy();
-                    ++NLVStrips;
-                  } else {
-                    HVEnergy += SH->GetEnergy();
-                    ++NHVStrips;
-                  }
-                }
-              }
-
-              if ((NHVStrips == 0) || (NLVStrips == 0)) continue;
-
-              // Local depth in cm -- the same quantity MModuleTrappingCorrection uses to apply the correction
-              double DepthCM = H->GetLocalPosition().GetZ();
-              int DepthBin = GetDepthBin(DetID, DepthCM);
-              if (DepthBin < 0) continue;
-
-              TH1D* FullHVHist  = FullDetHVEnergyHistograms[DepthBin][DetID];
-              TH1D* FullLVHist  = FullDetLVEnergyHistograms[DepthBin][DetID];
-
-              if (FullHVHist == nullptr) {
-                char Name[128]; sprintf(Name, "HV_Detector%d_bin%d", DetID, DepthBin);
-                FullHVHist = new TH1D(Name, Name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
-                FullDetHVEnergyHistograms[DepthBin][DetID] = FullHVHist;
-              }
-              if (FullLVHist == nullptr) {
-                char Name[128]; sprintf(Name, "LV_Detector%d_bin%d", DetID, DepthBin);
-                FullLVHist = new TH1D(Name, Name, (m_MaxEnergy - m_MinEnergy) * 2, m_MinEnergy, m_MaxEnergy);
-                FullDetLVEnergyHistograms[DepthBin][DetID] = FullLVHist;
-              }
-
-              FullHVHist->Fill(HVEnergy);
-              FullLVHist->Fill(LVEnergy);
-              DepthSums[DepthBin][DetID] += DepthCM;
-              DepthCounts[DepthBin][DetID] += 1;
-            }
-          }
-        }
-      }
-
-      IsFinished = Loader->IsFinished();
-    }
-  } // end of loop over input files
 
 
   // Store depth binned fit results in an output file
@@ -925,16 +776,340 @@ bool TrappingCorrectionCs137::Analyze()
   return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-void TrappingCorrectionCs137::InitializeDepthBins(MModuleDepthCalibration* DepthCalibrator)
+bool TrappingCorrectionCs137::CalibrateHits()
+{
+  // Store the input files
+  vector<MString> FileNames;
+  FileNames.push_back(m_FileName);
+  if (m_Verbosity >= c_Info) cout << "file name stored" << endl;
+
+  MString InputFile = FileNames[0];
+  if (m_Verbosity >= c_Info) cout << " input file stored as: " << InputFile << endl;
+  vector<MString> HDFNames;
+
+  // Load the geometry which the depth calibration needs for the detector dimensions
+  MDGeometryQuest* Geometry = new MDGeometryQuest();
+  if (Geometry->ScanSetupFile(m_GeometryFile) == true) {
+    if (m_Verbosity >= c_Info) cout << "Geometry " << Geometry->GetName() << " loaded!" << endl;
+  } else {
+    if (m_Verbosity >= c_Error) cout << "[Error] Unable to load geometry " << m_GeometryFile << endl;
+    return false;
+  }
+
+  // Add the Energy Calibration here as an avialable module s.t the Depth Cal can use it in its Initialize() function
+  MSupervisor::GetSupervisor()->AddAvailableModule(new MModuleEnergyCalibration());
+
+  // Read in the input files and make a list of hdf5 files to calibrate
+  if ((InputFile.GetSubString(InputFile.Length() - 4)) == "hdf5") {
+    HDFNames.push_back(InputFile);
+    if (m_Verbosity >= c_Info) cout << "hdf names loaded correctly" << endl;
+  } else if ((InputFile.GetSubString(InputFile.Length() - 3)) == "txt") {
+    if (m_Verbosity >= c_Info) cout << "Reading input file " << InputFile << endl;
+    if (m_Verbosity >= c_Warning) cout << "[Warning] When passing a list of files, ensure that you have chosen the correct HDF5 continuous reading mode. Use the --nocontinue option to suppress continuous file reading." << endl;
+    MFile F;
+    if (F.Open(InputFile) == false) {
+      if (m_Verbosity >= c_Error) cout << "[Error] Failed to open input file." << endl;
+      return false;
+    } else {
+      MString Line;
+      while (F.ReadLine(Line) == true) {
+        MString Trimmed = Line.Trim();
+        if ((Trimmed != "")) {
+          if (F.Exists(Trimmed) == true) {
+            HDFNames.push_back(Trimmed);
+          } else {
+            if (m_Verbosity >= c_Error) cout << "[Error] Could not find file " << Trimmed << endl;
+            return false;
+          }
+        }
+      }
+    }
+  } else {
+    if (m_Verbosity >= c_Error) cout << "[Error] Unrecognized file format: " << InputFile << endl;
+    return false;
+  }
+
+  // Analyze all the data and fill in the histograms
+  for (unsigned int f = 0; f < HDFNames.size(); ++f) {
+
+    MString File = HDFNames[f];
+    if (m_Verbosity >= c_Info) cout << "Beginning analysis of file " << File << endl;
+
+    // Create and initialize nuclearizer modules
+    MSupervisor* S = MSupervisor::GetSupervisor();
+
+    MModuleLoaderMeasurementsHDF* Loader;
+    MModuleTACCalibration* TACCalibrator;
+    MModuleEnergyCalibration* EnergyCalibrator;
+    MModuleEventFilter* EventFilter;
+    MModuleDepthCalibration* DepthCalibrator;
+
+    unsigned int MNumber = 0;
+    if (m_Verbosity >= c_Info) cout << "Creating HDF5 loader" << endl;
+    Loader = new MModuleLoaderMeasurementsHDF();
+    Loader->SetFileNameStripMap(m_StripMapFile);
+    Loader->SetFileName(File);
+    Loader->SetLoadContinuationFiles(m_ContinueHDF5);
+    S->SetModule(Loader, MNumber);
+    ++MNumber;
+
+    if (m_Verbosity >= c_Info) cout << "Creating TAC calibrator" << endl;
+    TACCalibrator = new MModuleTACCalibration();
+    TACCalibrator->SetTACCalFileName(m_TACCalFile);
+    S->SetModule(TACCalibrator, MNumber);
+    ++MNumber;
+
+    if (m_Verbosity >= c_Info) cout << "Creating energy calibrator" << endl;
+    EnergyCalibrator = new MModuleEnergyCalibration();
+    EnergyCalibrator->SetFileName(m_EcalFile);
+    EnergyCalibrator->SetSlowThresholdCutMode(MSlowThresholdCutModes::e_Fixed);
+    EnergyCalibrator->SetSlowThresholdCutFixedValue(30.0);
+    S->SetModule(EnergyCalibrator, MNumber);
+    ++MNumber;
+
+    if (m_Verbosity >= c_Info) cout << "Creating Event filter" << endl;
+    EventFilter = new MModuleEventFilter();
+    EventFilter->SetMinimumLVStrips(1);
+    EventFilter->SetMaximumLVStrips(3);
+    EventFilter->SetMinimumHVStrips(1);
+    EventFilter->SetMaximumHVStrips(3);
+    EventFilter->SetMinimumHits(0);
+    EventFilter->SetMaximumHits(100);
+    EventFilter->SetMinimumTotalEnergy(m_MinEnergy);
+    EventFilter->SetMaximumTotalEnergy(m_MaxEnergy ); // Multiply by 2 because this is the event-level energy, i.e. sum over both sides
+    S->SetModule(EventFilter, MNumber);
+    ++MNumber;
+
+    if (m_Verbosity >= c_Info) cout << "Creating strip pairing" << endl;
+    MModule* Pairing;
+    if (m_MultiRoundStripPairing == true) {
+      Pairing = new MModuleStripPairingMultiRoundChiSquare();
+    } else {
+      Pairing = new MModuleStripPairingChiSquare();
+    }
+    S->SetModule(Pairing, MNumber);
+    ++MNumber;
+
+    if (m_Verbosity >= c_Info) cout << "Creating depth calibrator" << endl;
+    DepthCalibrator = new MModuleDepthCalibration();
+    DepthCalibrator->SetGeometry(Geometry);
+    DepthCalibrator->SetCoeffsFileName(m_DepthCoeffsFile);
+    DepthCalibrator->SetSplinesFileName(m_DepthSplinesFile);
+    DepthCalibrator->SetUCSDOverride(false);
+    DepthCalibrator->SetMaskMetrologyCorrectionEnable(false);
+    DepthCalibrator->SetAccountForDisabledStrips(false);
+    S->SetModule(DepthCalibrator, MNumber);
+    ++MNumber;
+
+    if (m_Verbosity >= c_Info) cout<<"Initializing Loader"<<endl;
+    if (Loader->Initialize() == false) return false;
+    if (m_Verbosity >= c_Info) cout<<"Initializing TAC calibrator"<<endl;
+    if (TACCalibrator->Initialize() == false) return false;
+    if (m_Verbosity >= c_Info) cout<<"Initializing Energy calibrator"<<endl;
+    if (EnergyCalibrator->Initialize() == false) return false;
+    if (m_Verbosity >= c_Info) cout<<"Initializing Event filter"<<endl;
+    if (EventFilter->Initialize() == false) return false;
+    if (m_Verbosity >= c_Info) cout<<"Initializing Pairing"<<endl;
+    if (Pairing->Initialize() == false) return false;
+    if (m_Verbosity >= c_Info) cout<<"Initializing Depth calibrator"<<endl;
+    if (DepthCalibrator->Initialize() == false) return false;
+
+    // Depth bins follow the detector thicknesses known to the depth calibration
+    for (auto const& [DetID, Grid] : DepthCalibrator->GetDepthGrid()) {
+      if (Grid.size() < 2) continue;
+      m_DepthRanges[DetID] = make_pair(Grid.front(), Grid.back());
+    }
+
+    bool IsFinished = false;
+    MReadOutAssembly* Event = new MReadOutAssembly();
+    if (m_Verbosity >= c_Info) cout<<"Modules initialized, starting event loop"<<endl;
+
+    if (m_Verbosity >= c_Info) cout << "Analyzing..." << endl;
+
+    while ((IsFinished == false) && (m_Interrupt == false)) {
+      Event->Clear();
+      if (Loader->IsReady() == true) {
+
+        Loader->AnalyzeEvent(Event);
+        TACCalibrator->AnalyzeEvent(Event);
+        EnergyCalibrator->AnalyzeEvent(Event);
+        bool Unfiltered = EventFilter->AnalyzeEvent(Event);
+
+        if (Unfiltered == true) {
+
+          Pairing->AnalyzeEvent(Event);
+
+          // Returns false for guard ring vetoed events
+          bool DepthCalibrated = DepthCalibrator->AnalyzeEvent(Event);
+
+          if ((DepthCalibrated == true) && (Event->HasAnalysisProgress(MAssembly::c_StripPairing) == true)) {
+
+            for (unsigned int h = 0; h < Event->GetNHits(); ++h) {
+
+              MHit* H = Event->GetHit(h);
+
+              // Skip hits without a calibrated depth 
+              if (H->GetNoDepth() == true) continue;
+
+              double HVEnergy = 0.0;
+              double LVEnergy = 0.0;
+              unsigned int NHVStrips = 0;
+              unsigned int NLVStrips = 0;
+              int DetID = H->GetStripHit(0)->GetDetectorID();
+
+              for (unsigned int sh = 0; sh < H->GetNStripHits(); ++sh) {
+                MStripHit* SH = H->GetStripHit(sh);
+
+                if ((m_ExcludeNN == false) || ((m_ExcludeNN == true) && (SH->IsNearestNeighbor() == false))) {
+                  if (SH->IsLowVoltageStrip() == true) {
+                    LVEnergy += SH->GetEnergy();
+                    ++NLVStrips;
+                  } else {
+                    HVEnergy += SH->GetEnergy();
+                    ++NHVStrips;
+                  }
+                }
+              }
+
+              if ((NHVStrips == 0) || (NLVStrips == 0)) continue;
+
+              // Local depth in cm -- the same quantity MModuleTrappingCorrection uses to apply the correction
+              double DepthCM = H->GetLocalPosition().GetZ();
+              m_Hits.push_back({DetID, float(DepthCM), float(HVEnergy), float(LVEnergy)});
+            }
+          }
+        }
+      }
+
+      IsFinished = Loader->IsFinished();
+    }
+  } // end of loop over input files
+
+  if (m_Verbosity >= c_Info) cout << "Calibrated " << m_Hits.size() << " hits" << endl;
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool TrappingCorrectionCs137::SaveCalibratedHits(const MString& FileName)
+{
+  TFile HitsFile(FileName.Data(), "recreate");
+  if (HitsFile.IsZombie() == true) {
+    if (m_Verbosity >= c_Error) cout << "[Error] Unable to create the hits file " << FileName << endl;
+    return false;
+  }
+
+  // The file owns and deletes the trees
+  int DetID;
+  float DepthCM, HVEnergy, LVEnergy;
+  TTree* HitsTree = new TTree("Hits", "Calibrated Cs-137 hits");
+  HitsTree->Branch("DetID", &DetID, "DetID/I");
+  HitsTree->Branch("DepthCM", &DepthCM, "DepthCM/F");
+  HitsTree->Branch("HVEnergy", &HVEnergy, "HVEnergy/F");
+  HitsTree->Branch("LVEnergy", &LVEnergy, "LVEnergy/F");
+  for (const CalibratedHit& Hit : m_Hits) {
+    DetID = Hit.DetID;
+    DepthCM = Hit.DepthCM;
+    HVEnergy = Hit.HVEnergy;
+    LVEnergy = Hit.LVEnergy;
+    HitsTree->Fill();
+  }
+
+  double MinDepthCM, MaxDepthCM;
+  TTree* RangesTree = new TTree("DepthRanges", "Depth range (cm) of the depth calibration of each detector");
+  RangesTree->Branch("DetID", &DetID, "DetID/I");
+  RangesTree->Branch("MinDepthCM", &MinDepthCM, "MinDepthCM/D");
+  RangesTree->Branch("MaxDepthCM", &MaxDepthCM, "MaxDepthCM/D");
+  for (auto const& [ID, Range] : m_DepthRanges) {
+    DetID = ID;
+    MinDepthCM = Range.first;
+    MaxDepthCM = Range.second;
+    RangesTree->Fill();
+  }
+
+  // The event filter's energy window, since hits outside of it are not in the file
+  TParameter<double> MinEnergy("MinEnergy", m_MinEnergy);
+  TParameter<double> MaxEnergy("MaxEnergy", m_MaxEnergy);
+  MinEnergy.Write();
+  MaxEnergy.Write();
+
+  HitsFile.Write();
+  HitsFile.Close();
+
+  if (m_Verbosity >= c_Info) cout << "Saved " << m_Hits.size() << " calibrated hits to " << FileName << endl;
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool TrappingCorrectionCs137::LoadHits(const MString& FileName)
+{
+  TFile HitsFile(FileName.Data(), "read");
+  if (HitsFile.IsZombie() == true) {
+    if (m_Verbosity >= c_Error) cout << "[Error] Unable to open the hits file " << FileName << endl;
+    return false;
+  }
+
+  TTree* HitsTree = dynamic_cast<TTree*>(HitsFile.Get("Hits"));
+  TTree* RangesTree = dynamic_cast<TTree*>(HitsFile.Get("DepthRanges"));
+  if (HitsTree == nullptr || RangesTree == nullptr) {
+    if (m_Verbosity >= c_Error) cout << "[Error] The file " << FileName << " does not contain calibrated hits written by --save-hits" << endl;
+    return false;
+  }
+
+  int DetID;
+  float DepthCM, HVEnergy, LVEnergy;
+  HitsTree->SetBranchAddress("DetID", &DetID);
+  HitsTree->SetBranchAddress("DepthCM", &DepthCM);
+  HitsTree->SetBranchAddress("HVEnergy", &HVEnergy);
+  HitsTree->SetBranchAddress("LVEnergy", &LVEnergy);
+  m_Hits.clear();
+  m_Hits.reserve(HitsTree->GetEntries());
+  for (Long64_t e = 0; e < HitsTree->GetEntries(); ++e) {
+    HitsTree->GetEntry(e);
+    m_Hits.push_back({DetID, DepthCM, HVEnergy, LVEnergy});
+  }
+
+  double MinDepthCM, MaxDepthCM;
+  RangesTree->SetBranchAddress("DetID", &DetID);
+  RangesTree->SetBranchAddress("MinDepthCM", &MinDepthCM);
+  RangesTree->SetBranchAddress("MaxDepthCM", &MaxDepthCM);
+  m_DepthRanges.clear();
+  for (Long64_t e = 0; e < RangesTree->GetEntries(); ++e) {
+    RangesTree->GetEntry(e);
+    m_DepthRanges[DetID] = make_pair(MinDepthCM, MaxDepthCM);
+  }
+
+  // Hits outside of the energy window of the calibration run are not in the file
+  TParameter<double>* MinEnergy = dynamic_cast<TParameter<double>*>(HitsFile.Get("MinEnergy"));
+  TParameter<double>* MaxEnergy = dynamic_cast<TParameter<double>*>(HitsFile.Get("MaxEnergy"));
+  if (MinEnergy != nullptr && MaxEnergy != nullptr) {
+    if (m_MinEnergy < MinEnergy->GetVal() || m_MaxEnergy > MaxEnergy->GetVal()) {
+      if (m_Verbosity >= c_Warning) cout << "[Warning] The hits in " << FileName << " were calibrated with the energy window " << MinEnergy->GetVal() << "-" << MaxEnergy->GetVal()
+                                         << " keV, which is narrower than the requested " << m_MinEnergy << "-" << m_MaxEnergy << " keV" << endl;
+    }
+  }
+
+  HitsFile.Close();
+
+  if (m_Verbosity >= c_Info) cout << "Loaded " << m_Hits.size() << " calibrated hits for " << m_DepthRanges.size() << " detector(s) from " << FileName << endl;
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+void TrappingCorrectionCs137::InitializeDepthBins()
 {
   // Evenly spaced depth bins spanning each detector's depth grid (in cm)
   m_DepthBinEdges.clear();
-  for (auto const& [DetID, Grid] : DepthCalibrator->GetDepthGrid()) {
-    if (Grid.size() < 2) continue;
-    double MinDepth = Grid.front();
-    double MaxDepth = Grid.back();
+  for (auto const& [DetID, Range] : m_DepthRanges) {
+    double MinDepth = Range.first;
+    double MaxDepth = Range.second;
     vector<double> Edges;
     for (int i = 0; i <= m_NDepthBins; ++i) {
       Edges.push_back(MinDepth + (MaxDepth - MinDepth) * double(i) / double(m_NDepthBins));
