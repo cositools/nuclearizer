@@ -214,9 +214,8 @@ private:
   // Calibrated hits and the depth range (cm) of the depth calibration's depth grid of each detector
   vector<CalibratedHit> m_Hits;
   map<int, pair<double, double>> m_DepthRanges; // [DetID] -> (min depth, max depth)
-  MString m_SaveCalibratedHitsFile; // If set, the calibrated hits are saved to this file
-  MString m_LoadHitsFile; // If set, the calibrated hits are loaded from this file instead of calibrating the data
-
+  MString m_SaveCalibratedHitsFile; // ROOT file to save calibrated hits to
+  MString m_LoadHitsFile; // ROOT file for loading calibrated hits 
   // Calibration files
   bool m_Interrupt;
   MString m_FileName;
@@ -224,9 +223,9 @@ private:
   MString m_TACCalFile;
   MString m_StripMapFile;
   MString m_OutFile;
-  bool m_SaveProducts; // True, if the intermediate products (everything but the final trapping parameter file) are saved
+  bool m_SaveProducts; // True if the intermediate products (everything but the final trapping parameter file) are saved
   MString m_ProductsPrefix; // Prefix (directory + file name) for all intermediate products
-  bool m_SavePlots; // True, if the photopeak and CCE fit plots are saved
+  bool m_SavePlots; // True if the photopeak and CCE fit plots are saved
   MString m_PlotsPrefix; // Prefix (directory + file name) for all plots
   MString m_GeometryFile;
   MString m_DepthCoeffsFile;
@@ -286,9 +285,9 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"         -v --verbosity:   app output 0: Quiet, 1: Errors, 2: Warnings, 3: Info incl. depth bin fits and module setup (default 1)"<<endl;
   Usage<<"         --products:   save the intermediate products (fit logs, CCE tables, per detector csv files) in the directory trapping_param_products"<<endl;
   Usage<<"         --plots:   save the photopeak fit and CCE fit plots (png) in the directory trapping_param_plots"<<endl;
-  Usage<<"         --save-hits:   save the calibrated hits to this ROOT file, to redo the binning and fits later without recalibrating"<<endl;
+  Usage<<"         --save-hits:   save the calibrated hits to this ROOT file to redo the binning and fits later without recalibrating"<<endl;
   Usage<<"         --load-hits:   load the calibrated hits from this ROOT file instead of calibrating the data"<<endl;
-  Usage<<"                        (-i, -e, --tcal, -m, --geo, --coeffs and --splines are then not needed)"<<endl;
+  Usage<<"                        (Note: -i, -e, --tcal, -m, --geo, --coeffs and --splines are then not needed)"<<endl;
   Usage<<"         -o:   outfile (default YYYYMMDDHHMMSS)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -467,7 +466,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   // Set global verbosity to 0 s.t to supressed output from the nuclearizer modules 
   g_Verbosity = 0;
 
-  // Relate the local verbosity to ROOTs verbosity settings
+  // Wrap ROOT error output for canvases and plots in local/inputted verbosity settings
   if (m_Verbosity >= c_Info) {
     gErrorIgnoreLevel = kInfo;
   } else if (m_Verbosity >= c_Warning) {
@@ -510,7 +509,7 @@ bool TrappingCorrectionCs137::Analyze()
   // [DepthBin][DetID] -> [HV CCE, HV CCE Err, LV CCE, LV CCE Err, Mean Depth (mm)] for all detectors
   map<int, map<int, vector<double>>> FullDetEndpoints;
 
-  // Calibrate the data, or load the calibrated hits of an earlier run
+  // Either call CalibrateHits to calibrate the data or read in calibrated hits file, depending on user inputs
   if (m_LoadHitsFile.IsEmpty() == true) {
     if (CalibrateHits() == false) return false;
   } else {
@@ -717,7 +716,7 @@ bool TrappingCorrectionCs137::Analyze()
   bool HasDetectorHeaders = false;
   map<int, SimulatedCCE> SimCCEs = LoadSimulatedCCE(g_SimulatedCCEPath.Data(), HasDetectorHeaders);
   if (SimCCEs.empty() == true) {
-    if (m_Verbosity >= c_Error) cerr << "[FATAL] Simulated CCE file is empty or file not found at: " << g_SimulatedCCEPath << endl;
+    if (m_Verbosity >= c_Error) cerr << "[Error] Simulated CCE file is empty or file not found at: " << g_SimulatedCCEPath << endl;
     return false;
   }
   if (HasDetectorHeaders == false) {
@@ -996,13 +995,17 @@ bool TrappingCorrectionCs137::CalibrateHits()
 
 bool TrappingCorrectionCs137::SaveCalibratedHits(const MString& FileName)
 {
+  // Write a ROOT file to store the calibrated hits
   TFile HitsFile(FileName.Data(), "recreate");
   if (HitsFile.IsZombie() == true) {
     if (m_Verbosity >= c_Error) cout << "[Error] Unable to create the hits file " << FileName << endl;
     return false;
   }
 
-  // The file owns and deletes the trees
+  // In a ROOT file, store:
+  // the information from each calibrated hit (detector_ID, depth, HV energy, LV energy)
+  // the depth bin ranges calculated by GetDepthBin
+
   int DetID;
   float DepthCM, HVEnergy, LVEnergy;
   TTree* HitsTree = new TTree("Hits", "Calibrated Cs-137 hits");
@@ -1030,7 +1033,7 @@ bool TrappingCorrectionCs137::SaveCalibratedHits(const MString& FileName)
     RangesTree->Fill();
   }
 
-  // The event filter's energy window, since hits outside of it are not in the file
+  // We only need hits that are within the filtered energy window
   TParameter<double> MinEnergy("MinEnergy", m_MinEnergy);
   TParameter<double> MaxEnergy("MaxEnergy", m_MaxEnergy);
   MinEnergy.Write();
