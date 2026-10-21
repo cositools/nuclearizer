@@ -512,6 +512,18 @@ bool MModuleEnergyCalibration::ReadEnergyCalibrationFile(MString FileName) {
       resolutionfit->FixParameter(1, f1);
       resolutionfit->FixParameter(2, f2);
       m_ResolutionCalibration[CR.first] = resolutionfit;
+      
+    } else if (CalibratorType == "p3" || CalibratorType == "poly3") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f2 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f3 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P3", "([0]+[1]*x+[2]*x*x+[3]*x*x*x) / 2.355", 0., 2000.);
+      resolutionfit->FixParameter(0, f0);
+      resolutionfit->FixParameter(1, f1);
+      resolutionfit->FixParameter(2, f2);
+      resolutionfit->FixParameter(3, f3);
+      m_ResolutionCalibration[CR.first] = resolutionfit;
     } else {
       if (g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Line parser: Unknown resolution calibrator type (" << CalibratorType << ") for strip" << CR.first << endl;
