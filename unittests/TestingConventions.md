@@ -117,8 +117,7 @@ Include `<sstream>` whenever any stream test is needed.  Group includes in
 three blocks — standard, MEGAlib, Nuclearizer — in that order.
 
 Add other standard headers explicitly when they are used.  Common examples:
-`<cstdlib>` for `getenv`, `<fstream>` for fixture files, and `<unistd.h>` for
-`getpid()` when building process-ID-suffixed file names.
+`<cstdlib>` for `getenv` and `<fstream>` for fixture files.
 
 Tests emit any diagnostic output — a skip notice, a progress line — through the
 MEGAlib streams `mout`/`merr`, never `cout`/`cerr`.
@@ -128,20 +127,27 @@ MEGAlib streams `mout`/`merr`, never `cout`/`cerr`.
 ```cpp
 class UTFoo : public MUnitTest
 {
-public:
+ public:
+  //! Default constructor
   UTFoo() : MUnitTest("UTFoo") {}
+  //! Default destructor
   virtual ~UTFoo() {}
 
+  //! Run all tests
   virtual bool Run();
 
-private:
+ private:
+  //! Test the default construction
   bool TestDefaultConstruction();
+  //! Test the getters and setters
   bool TestGettersSetters();
   // ... one method per logical concern
 };
 ```
 
-The constructor passes the class name as a string to `MUnitTest`.
+The constructor passes the class name as a string to `MUnitTest`.  As in all
+MEGAlib code, every member function and member variable gets a `//!` comment,
+and the access specifiers are indented by one space (`.clang-format`).
 
 ### `Run()`
 
@@ -185,6 +191,17 @@ int main()
 }
 ```
 
+As every MEGAlib source file, the file ends after `main()` with two blank
+lines and the closing block:
+
+```cpp
+}
+
+
+// UTFoo.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
+```
+
 ---
 
 ## 2. Evaluate Calls
@@ -192,6 +209,35 @@ int main()
 All assertions use the four `MUnitTest` helpers.
 
 All four helpers share the same argument prefix: **Function**, **Input**, **Description**, then the value(s).
+
+### One check at a time
+
+Call every `Evaluate*()` individually at the place in the sub-test where the
+value is checked.  Never put several checks into a helper function or lambda
+which is then called as a whole: each check must be wrappable on its own
+with `ExpectedToFail()` (see below) when it hits a known bug.
+
+- Helpers compute values; the check happens at the call site.  Example: a
+  helper returns the shape of a FITS column as `"2 1 3 1"`, and the
+  sub-test checks it with one `Evaluate()`:
+
+  ```cpp
+  Passed = Evaluate("AnalyzeEvent()", "L1b", "ENERGY has one element per hit",
+                    ColumnShape(Energy), MString("2 1 3 1")) && Passed;
+  ```
+
+- Repeated checks over a table of inputs are written as a loop inside the
+  sub-test, not as a helper.
+- Guard dependent code with the condition itself, never with the return
+  value of a check: a check wrapped in `ExpectedToFail()` returns true when it
+  fails as expected.
+
+  ```cpp
+  Passed = Evaluate(..., ColumnShape(Energy), MString("2 1 3 1")) && Passed;
+  if (ColumnShape(Energy) == "2 1 3 1") {
+    // index Energy[0][1] safely
+  }
+  ```
 
 ### `Evaluate` — equality
 
@@ -246,6 +292,30 @@ required — omitting `Description` causes a compile error.
 
 Prefer `EvaluateTrue`/`EvaluateFalse` over `Evaluate(..., true)` /
 `Evaluate(..., false)` for boolean results.
+
+### `ExpectedToFail` — known production bugs
+
+```cpp
+Passed = ExpectedToFail(Evaluate("LoadTACCalFile()", "two files",
+                                 "Loading a second file replaces the first",
+                                 N, 1u)) && Passed;
+```
+
+Marks a check which fails because of a known, not yet fixed production bug.
+`ExpectedToFail()` is a macro; the check is identified by its `Function`
+and `Input` in the report.
+
+- A failing check is reported as `KNOWN FAILURE`, counted under
+  `Known failures:` in the summary, and does not fail the executable.
+- A passing check is reported as `UNEXPECTED PASS` and fails the executable:
+  remove the `ExpectedToFail()` in the same change that fixes the bug.
+- Wrap exactly one `Evaluate*()` call, never a helper: this is why every
+  check is written individually (see "One check at a time").
+- Wrapping no or more than one `Evaluate*()` call is reported as a failure.
+  A nested `ExpectedToFail()` is ignored.  It only works inside member
+  functions of `MUnitTest`-derived classes.
+- Never weaken an expectation instead: the check keeps encoding the correct
+  behavior.
 
 ### `Summarize()`
 
@@ -474,15 +544,20 @@ Passed = EvaluateTrue(..., H.GetStripHit(1) == &SH2) && Passed;
 ### Out-of-bounds access
 
 Wrap any call that is expected to produce a `merr` (error message) with
-`DisableDefaultStreams()` / `EnableDefaultStreams()` and assert the return value:
+`DisableDefaultStreams()` / `EnableDefaultStreams()`, store the result, and
+assert it after the streams are enabled again:
 
 ```cpp
 DisableDefaultStreams();
+MStripHit* OutOfBounds = H.GetStripHit(99);
+EnableDefaultStreams();
 Passed = EvaluateTrue("GetStripHit()", "out of bounds returns null",
                       "GetStripHit(99) returns nullptr",
-                      H.GetStripHit(99) == nullptr) && Passed;
-EnableDefaultStreams();
+                      OutOfBounds == nullptr) && Passed;
 ```
+
+Never call an `Evaluate*()` while the streams are disabled: `MUnitTest`
+reports failures through `mout`, so the failure report would be lost.
 
 ---
 
@@ -508,7 +583,8 @@ Passed = EvaluateFalse("Initialize()", "missing HDF5 file",
                        Result) && Passed;
 ```
 
-Always re-enable streams immediately after the call under test.  Never leave
+Always re-enable streams immediately after the call under test, and evaluate
+the stored result only afterwards.  Never leave
 streams disabled across a sub-test boundary — the sub-test that called
 `DisableDefaultStreams()` must call `EnableDefaultStreams()` before it returns,
 on every path.
@@ -534,6 +610,9 @@ Passed = EvaluateFalse("Parse()", "non-SH line",
 
 g_Verbosity = OldVerbosity;
 ```
+
+Lowering `g_Verbosity` does not affect `MUnitTest`'s failure reports, so
+checks may run while it is lowered.
 
 `g_Verbosity` is process-wide global state: always save the old value and
 restore it before the sub-test returns, on every path (see section "Test
@@ -564,26 +643,54 @@ the test must fail.
 ### Test-generated fixture files
 
 When a test builds a small input file itself (rather than using committed
-data), write it under `/tmp/`, assert the stream opened, and remove it
-afterwards:
+data), write it into the test's private temporary directory and assert that
+the write succeeded:
 
 ```cpp
-MString DatFile("/tmp/UTNFoo_valid.dat");
-ofstream Out(DatFile.Data());
+MString DatFile = GetTemporaryFileName("valid.dat");
 Passed = EvaluateTrue("Foo()", "write fixture", "The fixture file can be created",
-                      Out.is_open()) && Passed;
-Out << "..." << endl;
-Out.close();
+                      WriteTextFile(DatFile, "...")) && Passed;
 
 // ... use the file ...
-
-MFile::Remove(DatFile);
 ```
 
-Always assert `is_open()` so a write failure is reported directly instead of
-surfacing later as a confusing read error.  Give each fixture a name unique to
-the test (process-ID-suffixed if it may run concurrently with itself — see
-section "End-to-End Tests").
+Always assert the write so a failure is reported directly instead of
+surfacing later as a confusing read error.  The temporary root is randomized
+per process and removed by the `MUnitTest` destructor, so names need no
+process-ID suffix and no explicit cleanup.  Never write fixtures to `/tmp/`
+or another fixed path.
+
+### Isolation from the user environment
+
+A test must never read or write the user's files.  The `MUnitTest`
+constructor therefore creates a private temporary directory with a
+randomized name (e.g. `MEGAlib_aB3xYz9Qp1_home`) inside its temporary root,
+points `HOME` to it, and changes the working directory into it.  Neither is
+switched back: the process ends with the test.
+
+- Settings written by `MSettings*` destructors (`~/.revan.cfg`,
+  `~/.mimrec.cfg`, ...) and by `MAssembly` (`~/.nuclearizer.cfg`), as well as
+  files the tested code writes into the working directory (e.g. the response
+  generator), land in that directory.  Child processes started with `fork()`
+  or as executables inherit both.
+- If the redirect fails, the `MUnitTest` constructor prints
+  `ABORTED: HOME and the working directory are not a private temporary
+  directory`, removes its temporary directory, and exits with 1 before any
+  check runs.  `UTNRunner` reports this as `FAIL (aborted: ...)`.
+- Do not set `HOME` or change the working directory yourself, and do not call
+  `PrepareTemporaryDirectory()` or `RemoveTemporaryDirectory()` without a
+  name: both act on the whole temporary root and delete the working directory
+  of the test.  To locate files the tested code writes into the working
+  directory, use `gSystem->WorkingDirectory()`.
+- Locate test data only via `$NUCLEARIZER` (or `$MEGALIB`), never relative to
+  the working directory or the home directory.
+- Never depend on the user's settings: write every configuration file the
+  tested code needs explicitly into the temporary directory.  Example: a
+  revan reconstruction test that only passes with the
+  `ClassicUndecidedHandling` of the user's `~/.revan.cfg` is wrong; with
+  MEGAlib's defaults it must use an event whose result is unambiguous.
+- Write all output only into `GetTemporaryFileName()` /
+  `GetTemporaryDirectoryName()`, never into `$NUCLEARIZER` or `$MEGALIB`.
 
 ---
 
@@ -669,35 +776,23 @@ int Status = MSystem::RunChildProcess("nuclearizer", Arguments, LogFile);
 
 `MSystem::RunChildProcess` invokes `/bin/sh -c "nuclearizer <arguments>"`, so the shell
 splits the string into separate argv entries.  Stdout and stderr are captured to
-`LogFile` (in `/tmp/`) for post-failure inspection.
+`LogFile` (in the temporary directory) for post-failure inspection.
 
 ### Parallel safety and reproducibility
 
-End-to-end tests are separate executables and may run concurrently, so every
-path a test *writes* must be unique to it:
+End-to-end tests are separate executables and may run concurrently.  Every
+path a test *writes* — log file, output file, temporary configuration — comes
+from `GetTemporaryFileName()`, whose root is randomized per process:
 
-- **Log file** — name it `/tmp/UTNEndToEnd_<dataset>_<pid>.log`, building the
-  process-ID suffix with `getpid()` (`#include <unistd.h>`).  A fixed log name
-  would be clobbered if the same test is run twice at once:
+```cpp
+MString LogFile    = GetTemporaryFileName("hdf5-to-tra.log");
+MString OutputFile = GetTemporaryFileName("hdf5-to-tra.tra");
+```
 
-  ```cpp
-  MString LogFile = MString("/tmp/UTNEndToEnd_542-1_") + (unsigned int) getpid() + ".log";
-  ```
-
-- **Output file** — generated output must live under `/tmp/`, not in the source
-  tree.  Give it a dataset-and-process-ID-specific name.  If the committed
-  nuclearizer configuration hard-codes the output file path, copy the
-  configuration to `/tmp/` for the test run and rewrite only the output path in
-  that temporary copy.  Delete any pre-existing output *before* running
-  nuclearizer, so the "output file was created" check and the comparison reflect
-  strictly the current run, not a stale artifact:
-
-  ```cpp
-  MString OutputFile = MString("/tmp/UTNEndToEnd_542-1_") + (unsigned int) getpid() + ".tra";
-  if (MFile::Exists(OutputFile) == true) {
-    MFile::Remove(OutputFile);
-  }
-  ```
+If the committed nuclearizer configuration hard-codes the output file path,
+copy the configuration into the temporary directory and rewrite only the
+output path in that copy.  Each run of nuclearizer gets its own output file,
+so a later run never overwrites an output that is still to be compared.
 
 The test is fully automatic: it takes no command-line arguments and needs no
 interactive input — the data is located via `$NUCLEARIZER` and nuclearizer is
@@ -833,12 +928,13 @@ others.
 
 - A test must not depend on another test's side effects, files, or global state.
 - Restore any global, `static`, singleton, or environment-variable state the
-  test mutates.  In particular, do not assert the *absolute* value of a
+  test mutates (except `HOME` and the working directory, which `MUnitTest`
+  owns).  In particular, do not assert the *absolute* value of a
   process-wide counter (e.g. `MReadOutAssembly`'s static assembly-ID counter) —
   assert only relative properties such as uniqueness and strict increase.
-- Do all filesystem work under `/tmp/` (see section "Tests That Need External
-  Data Files"), never in the source tree or the real user filesystem, and
-  remove what you create.
+- Do all filesystem work in the test's private temporary directory (see
+  section "Tests That Need External Data Files"), never in `/tmp/`, the source
+  tree, or the real user filesystem.
 - No network access in a unit test.
 - A flaky test is a bug — fix the cause, never paper over it with retries.
 - Use real objects and small real inputs; do not mock the class under test, and

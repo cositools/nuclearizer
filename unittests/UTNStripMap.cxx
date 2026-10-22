@@ -13,7 +13,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
-#include <unistd.h>
 #include <utility>
 #include <vector>
 using namespace std;
@@ -31,13 +30,16 @@ using namespace std;
 //! Unit test class for MStripMap
 class UTNStripMap : public MUnitTest
 {
-public:
+ public:
+  //! Default constructor
   UTNStripMap() : MUnitTest("UTNStripMap") {}
+  //! Default destructor
   virtual ~UTNStripMap() {}
 
+  //! Run all tests
   virtual bool Run();
 
-private:
+ private:
   //! Test the empty map and its missing-value behavior
   bool TestDefaultConstruction();
   //! Test loading the nine-column format and forward/reverse lookups
@@ -61,7 +63,7 @@ private:
   //! Test representative committed detector data when available
   bool TestCommittedMap();
 
-  //! Create a process-unique temporary fixture path
+  //! Return the temporary fixture path for the given suffix
   MString GetFixturePath(const MString& Suffix) const;
 };
 
@@ -96,7 +98,7 @@ bool UTNStripMap::Run()
 
 MString UTNStripMap::GetFixturePath(const MString& Suffix) const
 {
-  return MString("/tmp/UTNStripMap_") + (unsigned int) getpid() + Suffix;
+  return GetTemporaryFileName(MString("UTNStripMap") + Suffix);
 }
 
 
@@ -154,13 +156,14 @@ bool UTNStripMap::TestNineColumnFormat()
   if (Map.HasROIDetSideStrip(3, false, 9) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 3, HV, strip 9", "The reverse lookup returns ROI 2", Map.GetReadOutID(3, false, 9), 2u) && Passed;
   }
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 4, LV, strip 12", "The tuple detector 4, LV, strip 12 is present", Map.HasROIDetSideStrip(4, true, 12)) && Passed;
   if (Map.HasROIDetSideStrip(4, true, 12) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 4, LV, strip 12", "The reverse lookup returns ROI 7", Map.GetReadOutID(4, true, 12), 7u) && Passed;
   }
   Passed = EvaluateException<MExceptionValueNotFound>("GetDetectorID()", "unknown ROI after load", "An unknown loaded-map ROI throws MExceptionValueNotFound", [&Map]() { Map.GetDetectorID(99); }) && Passed;
   Passed = EvaluateException<MExceptionValueNotFound>("GetReadOutID()", "unknown tuple after load", "An unknown loaded-map tuple throws MExceptionValueNotFound", [&Map]() { Map.GetReadOutID(99, true, 99); }) && Passed;
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -190,6 +193,7 @@ bool UTNStripMap::TestFourColumnFormat()
     Passed = EvaluateFalse("IsLowVoltage()", "ROI 4", "ROI 4 is HV when the side column is 1", Map.IsLowVoltage(4)) && Passed;
     Passed = Evaluate("GetStripNumber()", "ROI 4", "ROI 4 maps to strip 8", Map.GetStripNumber(4), 8u) && Passed;
   }
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 2, LV, strip 25", "The tuple detector 2, LV, strip 25 is present", Map.HasROIDetSideStrip(2, true, 25)) && Passed;
   if (Map.HasROIDetSideStrip(2, true, 25) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 2, LV, strip 25", "The reverse lookup returns ROI 11", Map.GetReadOutID(2, true, 25), 11u) && Passed;
   }
@@ -206,7 +210,7 @@ bool UTNStripMap::TestFourColumnFormat()
   Passed = EvaluateFalse("Open()", "missing file after successful load", "Open() returns false for a missing file", OpenedMissing) && Passed;
   Passed = EvaluateFalse("HasReadOutID()", "after failed Open()", "A failed Open() clears the previously loaded map", Map.HasReadOutID(4)) && Passed;
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -238,14 +242,19 @@ bool UTNStripMap::TestFourColumnReadOutIDInference()
   MStripMap Map;
   Passed = EvaluateTrue("Open()", "four-column inference fixture", "The read-out ID inference fixture loads", Map.Open(Fixture)) && Passed;
   // IsLowVoltage() throws for an absent read-out ID, so confirm all four are present before using them
+  const vector<unsigned int> ROIs = { 384, 416, 448, 480 };
+  for (unsigned int ROI : ROIs) {
+    Passed = EvaluateTrue("HasReadOutID()", MString("ROI ") + ROI, "The inference record is present", Map.HasReadOutID(ROI)) && Passed;
+  }
   const bool AllPresent = Map.HasReadOutID(384) && Map.HasReadOutID(416) && Map.HasReadOutID(448) && Map.HasReadOutID(480);
-  Passed = EvaluateTrue("HasReadOutID()", "four-column inference fixture", "All four inference records are present", AllPresent) && Passed;
   if (AllPresent == false) {
-    MFile::Remove(Fixture);
-    return false;
+    RemoveTemporaryFile(Fixture);
+    return Passed;
   }
 
-  Passed = EvaluateTrue("IsLowVoltage()", "before polarity update", "All four records start on the LV side", Map.IsLowVoltage(384) && Map.IsLowVoltage(416) && Map.IsLowVoltage(448) && Map.IsLowVoltage(480)) && Passed;
+  for (unsigned int ROI : ROIs) {
+    Passed = EvaluateTrue("IsLowVoltage()", MString("ROI ") + ROI + " before polarity update", "The record starts on the LV side", Map.IsLowVoltage(ROI)) && Passed;
+  }
 
   // Give each (is-primary, ASIC) combination a distinct polarity, so that a wrongly inferred
   // bit necessarily produces a different LV/HV pattern
@@ -270,7 +279,7 @@ bool UTNStripMap::TestFourColumnReadOutIDInference()
     Passed = Evaluate("GetReadOutID()", "detector 0, HV, strip 11", "The reverse lookup follows the updated HV side", Map.GetReadOutID(0, false, 11), 416u) && Passed;
   }
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -307,6 +316,7 @@ bool UTNStripMap::TestRestrictToEnabledDIBs()
 
   Passed = EvaluateTrue("HasROIDetSideStrip()", "DIBs 0 and 2", "The reverse lookup of a kept DIB survives", Map.HasROIDetSideStrip(0, true, 10)) && Passed;
   Passed = EvaluateFalse("HasROIDetSideStrip()", "DIBs 0 and 2", "The reverse lookup of a dropped DIB is gone", Map.HasROIDetSideStrip(1, true, 11)) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 2, LV, strip 12", "The tuple detector 2, LV, strip 12 is present", Map.HasROIDetSideStrip(2, true, 12)) && Passed;
   if (Map.HasROIDetSideStrip(2, true, 12) == true) {
     Passed = Evaluate("GetReadOutID()", "DIBs 0 and 2", "The reverse lookup of a kept DIB still returns its read-out ID", Map.GetReadOutID(2, true, 12), 4u) && Passed;
   }
@@ -331,7 +341,7 @@ bool UTNStripMap::TestRestrictToEnabledDIBs()
 
   g_Verbosity = OldVerbosity;
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -356,10 +366,11 @@ bool UTNStripMap::TestUpdateASICPolarities()
   Passed = EvaluateTrue("Open()", "polarity fixture", "The polarity fixture loads", Map.Open(Fixture)) && Passed;
 
   // The accessors below throw for an absent read-out ID - stop early rather than abort the executable
+  Passed = EvaluateTrue("HasReadOutID()", "polarity fixture", "The polarity fixture contains ROI 20", Map.HasReadOutID(20)) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "polarity fixture", "The polarity fixture contains ROI 21", Map.HasReadOutID(21)) && Passed;
   if (Map.HasReadOutID(20) == false || Map.HasReadOutID(21) == false) {
-    Passed = EvaluateTrue("HasReadOutID()", "polarity fixture", "The polarity fixture contains ROI 20 and ROI 21", false) && Passed;
-    MFile::Remove(Fixture);
-    return false;
+    RemoveTemporaryFile(Fixture);
+    return Passed;
   }
 
   Passed = EvaluateFalse("IsLowVoltage()", "before polarity update", "The fixture initially identifies ROI 20 as HV", Map.IsLowVoltage(20)) && Passed;
@@ -371,14 +382,16 @@ bool UTNStripMap::TestUpdateASICPolarities()
   Passed = EvaluateTrue("IsLowVoltage()", "after polarity update", "ASIC polarity update changes ROI 20 to LV", Map.IsLowVoltage(20)) && Passed;
   Passed = EvaluateTrue("IsLowVoltage()", "after primary polarity update", "ASIC polarity update changes ROI 21 to LV", Map.IsLowVoltage(21)) && Passed;
   Passed = EvaluateFalse("HasROIDetSideStrip()", "old HV tuple", "The old HV tuple is no longer present", Map.HasROIDetSideStrip(0, false, 40)) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, LV, strip 40", "The tuple detector 0, LV, strip 40 is present", Map.HasROIDetSideStrip(0, true, 40)) && Passed;
   if (Map.HasROIDetSideStrip(0, true, 40) == true) {
     Passed = Evaluate("GetReadOutID()", "new LV tuple", "The new LV tuple still maps to ROI 20", Map.GetReadOutID(0, true, 40), 20u) && Passed;
   }
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, LV, strip 41", "The tuple detector 0, LV, strip 41 is present", Map.HasROIDetSideStrip(0, true, 41)) && Passed;
   if (Map.HasROIDetSideStrip(0, true, 41) == true) {
     Passed = Evaluate("GetReadOutID()", "new LV tuple", "The new LV tuple still maps to ROI 21", Map.GetReadOutID(0, true, 41), 21u) && Passed;
   }
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -403,10 +416,11 @@ bool UTNStripMap::TestInvalidASICPolarities()
   Passed = EvaluateTrue("Open()", "invalid polarity fixture", "The invalid polarity fixture loads", Map.Open(Fixture)) && Passed;
 
   // IsLowVoltage() below throws for an absent read-out ID - stop early rather than abort the executable
+  Passed = EvaluateTrue("HasReadOutID()", "invalid polarity fixture", "The invalid polarity fixture contains ROI 20", Map.HasReadOutID(20)) && Passed;
+  Passed = EvaluateTrue("HasReadOutID()", "invalid polarity fixture", "The invalid polarity fixture contains ROI 21", Map.HasReadOutID(21)) && Passed;
   if (Map.HasReadOutID(20) == false || Map.HasReadOutID(21) == false) {
-    Passed = EvaluateTrue("HasReadOutID()", "invalid polarity fixture", "The invalid polarity fixture contains ROI 20 and ROI 21", false) && Passed;
-    MFile::Remove(Fixture);
-    return false;
+    RemoveTemporaryFile(Fixture);
+    return Passed;
   }
 
   // The failing updates below report via "if (g_Verbosity >= c_Error)", which
@@ -460,7 +474,7 @@ bool UTNStripMap::TestInvalidASICPolarities()
 
   g_Verbosity = OldVerbosity;
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -501,9 +515,11 @@ bool UTNStripMap::TestBoundariesAndReloads()
   }
   Passed = EvaluateTrue("Open()", "reuse map with four-column format", "A map object can load the four-column format after the nine-column format", Map.Open(Fixture)) && Passed;
   Passed = EvaluateFalse("HasReadOutID()", "after repeated Open()", "The previous ROI 100 mapping is cleared by a successful reload", Map.HasReadOutID(100)) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 2, LV, strip 25", "The tuple detector 2, LV, strip 25 is present", Map.HasROIDetSideStrip(2, true, 25)) && Passed;
   if (Map.HasROIDetSideStrip(2, true, 25) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 2, LV, strip 25", "The reloaded map contains the new ROI 11 mapping", Map.GetReadOutID(2, true, 25), 11u) && Passed;
   }
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 15, HV, strip 64", "The tuple detector 15, HV, strip 64 is present", Map.HasROIDetSideStrip(15, false, 64)) && Passed;
   if (Map.HasROIDetSideStrip(15, false, 64) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 15, HV, strip 64", "The four-column format accepts detector 15 and guard-ring strip 64", Map.GetReadOutID(15, false, 64), 12u) && Passed;
   }
@@ -528,7 +544,7 @@ bool UTNStripMap::TestBoundariesAndReloads()
   Passed = EvaluateFalse("HasROIDetSideStrip()", "after comment-only reload", "A failed comment-only reload clears the reverse lookup", Map.HasROIDetSideStrip(2, true, 25)) && Passed;
   Passed = EvaluateException<MExceptionValueNotFound>("GetReadOutID()", "after comment-only reload", "A failed comment-only reload removes the old reverse mapping", [&Map]() { Map.GetReadOutID(2, true, 25); }) && Passed;
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -552,12 +568,15 @@ bool UTNStripMap::TestOutOfRangeLookups()
 
   MStripMap Map;
   Passed = EvaluateTrue("Open()", "out-of-range fixture", "The out-of-range fixture loads", Map.Open(Fixture)) && Passed;
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, HV, strip 9", "The tuple detector 0, HV, strip 9 is present", Map.HasROIDetSideStrip(0, false, 9)) && Passed;
   if (Map.HasROIDetSideStrip(0, false, 9) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 0, HV, strip 9", "The in-range tuple maps to ROI 42", Map.GetReadOutID(0, false, 9), 42u) && Passed;
   }
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, HV, strip 64", "The tuple detector 0, HV, strip 64 is present", Map.HasROIDetSideStrip(0, false, 64)) && Passed;
   if (Map.HasROIDetSideStrip(0, false, 64) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 0, HV, strip 64", "The guard-ring strip 64 remains reachable", Map.GetReadOutID(0, false, 64), 43u) && Passed;
   }
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, HV, strip 0", "The tuple detector 0, HV, strip 0 is present", Map.HasROIDetSideStrip(0, false, 0)) && Passed;
   if (Map.HasROIDetSideStrip(0, false, 0) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 0, HV, strip 0", "The in-range tuple maps to ROI 44", Map.GetReadOutID(0, false, 0), 44u) && Passed;
   }
@@ -574,7 +593,7 @@ bool UTNStripMap::TestOutOfRangeLookups()
   Passed = EvaluateFalse("HasROIDetSideStrip()", "detector 16, HV, strip 9", "A detector ID above the maximum is rejected", Map.HasROIDetSideStrip(16, false, 9)) && Passed;
   Passed = EvaluateException<MExceptionValueNotFound>("GetReadOutID()", "detector 16, HV, strip 9", "A detector ID above the maximum throws MExceptionValueNotFound", [&Map]() { Map.GetReadOutID(16, false, 9); }) && Passed;
 
-  MFile::Remove(Fixture);
+  RemoveTemporaryFile(Fixture);
   return Passed;
 }
 
@@ -624,7 +643,7 @@ bool UTNStripMap::TestCorruptFiles()
     EnableDefaultStreams();
     Passed = EvaluateFalse("Open()", CorruptLines[i].first, "Open() rejects a malformed or out-of-range record", Opened) && Passed;
     Passed = EvaluateFalse("HasReadOutID()", CorruptLines[i].first, "A rejected corrupt file does not create a mapping", Map.HasReadOutID(CorruptLines[i].second)) && Passed;
-    MFile::Remove(Fixture);
+    RemoveTemporaryFile(Fixture);
   }
 
   const vector<pair<MString, unsigned int>> CorruptFourColumnLines = {
@@ -649,7 +668,7 @@ bool UTNStripMap::TestCorruptFiles()
     EnableDefaultStreams();
     Passed = EvaluateFalse("Open()", CorruptFourColumnLines[i].first, "Open() rejects a malformed four-column record", Opened) && Passed;
     Passed = EvaluateFalse("HasReadOutID()", CorruptFourColumnLines[i].first, "A rejected four-column file does not create a mapping", Map.HasReadOutID(CorruptFourColumnLines[i].second)) && Passed;
-    MFile::Remove(Fixture);
+    RemoveTemporaryFile(Fixture);
   }
 
   const MString DuplicateFixture = GetFixturePath("_corrupt_duplicates.map");
@@ -665,7 +684,7 @@ bool UTNStripMap::TestCorruptFiles()
   bool DuplicateOpened = DuplicateMap.Open(DuplicateFixture);
   EnableDefaultStreams();
   Passed = EvaluateFalse("Open()", "duplicate ROI", "Open() rejects duplicate read-out IDs", DuplicateOpened) && Passed;
-  MFile::Remove(DuplicateFixture);
+  RemoveTemporaryFile(DuplicateFixture);
 
   const MString DuplicateTupleFixture = GetFixturePath("_corrupt_duplicate_tuples.map");
   ofstream DuplicateTupleOut(DuplicateTupleFixture.Data());
@@ -680,7 +699,7 @@ bool UTNStripMap::TestCorruptFiles()
   bool DuplicateTupleOpened = DuplicateTupleMap.Open(DuplicateTupleFixture);
   EnableDefaultStreams();
   Passed = EvaluateFalse("Open()", "duplicate detector/side/strip tuple", "Open() rejects duplicate detector/side/strip tuples", DuplicateTupleOpened) && Passed;
-  MFile::Remove(DuplicateTupleFixture);
+  RemoveTemporaryFile(DuplicateTupleFixture);
 
   const MString MixedFixture = GetFixturePath("_corrupt_mixed.map");
   ofstream MixedOut(MixedFixture.Data());
@@ -696,7 +715,7 @@ bool UTNStripMap::TestCorruptFiles()
   EnableDefaultStreams();
   Passed = EvaluateFalse("Open()", "valid record followed by corrupt record", "Open() rejects a file containing any corrupt record", MixedOpened) && Passed;
   Passed = EvaluateFalse("HasReadOutID()", "valid record followed by corrupt record", "A rejected mixed file does not retain its valid record", MixedMap.HasReadOutID(8)) && Passed;
-  MFile::Remove(MixedFixture);
+  RemoveTemporaryFile(MixedFixture);
 
   // A file must not mix the four- and nine-column formats, in either order
   const vector<pair<MString, MString>> MixedFormatFixtures = {
@@ -718,8 +737,9 @@ bool UTNStripMap::TestCorruptFiles()
     bool MixedFormatOpened = MixedFormatMap.Open(Fixture);
     EnableDefaultStreams();
     Passed = EvaluateFalse("Open()", MixedFormatFixtures[i].first + " then " + MixedFormatFixtures[i].second, "Open() rejects a file mixing the four- and nine-column formats", MixedFormatOpened) && Passed;
-    Passed = EvaluateFalse("HasReadOutID()", "mixed formats", "A rejected mixed-format file does not retain its first record", MixedFormatMap.HasReadOutID(7) || MixedFormatMap.HasReadOutID(11)) && Passed;
-    MFile::Remove(Fixture);
+    Passed = EvaluateFalse("HasReadOutID()", "mixed formats, ROI 7", "A rejected mixed-format file does not retain ROI 7", MixedFormatMap.HasReadOutID(7)) && Passed;
+    Passed = EvaluateFalse("HasReadOutID()", "mixed formats, ROI 11", "A rejected mixed-format file does not retain ROI 11", MixedFormatMap.HasReadOutID(11)) && Passed;
+    RemoveTemporaryFile(Fixture);
   }
 
   const MString EmptyFixture = GetFixturePath("_corrupt_empty.map");
@@ -731,7 +751,7 @@ bool UTNStripMap::TestCorruptFiles()
   bool EmptyOpened = EmptyMap.Open(EmptyFixture);
   EnableDefaultStreams();
   Passed = EvaluateFalse("Open()", "empty file", "Open() rejects an empty strip map", EmptyOpened) && Passed;
-  MFile::Remove(EmptyFixture);
+  RemoveTemporaryFile(EmptyFixture);
 
   g_Verbosity = OldVerbosity;
 
@@ -765,6 +785,7 @@ bool UTNStripMap::TestCommittedMap()
     Passed = EvaluateFalse("IsLowVoltage()", "ROI 0", "ROI 0 is HV in the committed map", Map.IsLowVoltage(0)) && Passed;
     Passed = Evaluate("GetStripNumber()", "ROI 0", "ROI 0 maps to strip 32", Map.GetStripNumber(0), 32u) && Passed;
   }
+  Passed = EvaluateTrue("HasROIDetSideStrip()", "detector 0, HV, strip 32", "The tuple detector 0, HV, strip 32 is present", Map.HasROIDetSideStrip(0, false, 32)) && Passed;
   if (Map.HasROIDetSideStrip(0, false, 32) == true) {
     Passed = Evaluate("GetReadOutID()", "detector 0, HV, strip 32", "The committed reverse mapping returns ROI 0", Map.GetReadOutID(0, false, 32), 0u) && Passed;
   }
@@ -781,9 +802,13 @@ int main(int argc, char** argv)
   if (MGlobal::Initialize("UTNStripMap", "Unit tests for MStripMap") == false) return 1;
 
   // Depending on debug or not debug mode - the exceptions either abort or are real exceptions
-  // To make it alwasys the same here, we have to force the exceptions to not use abort
+  // To make it always the same here, we have to force the exceptions to not use abort
   MException::UseAbort(false);
 
   UTNStripMap Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNStripMap.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
