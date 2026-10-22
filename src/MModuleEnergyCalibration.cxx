@@ -249,7 +249,9 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           if (g_Verbosity >= c_Error) {
             cout << m_XmlTag << ": Error: Energy Resolution fit not found for read-out element " << R << endl;
           }
-	  // There is not expected to be a time in which the energy resolution calibration is not defined when the energy calibration itself is. Therefore, don't need a seperate BD flag for this.
+          Event->SetEnergyCalibrationError("Energy resolution calibration not found for " + R.ToString());
+          continue;
+
         } else {
           double EnergyResolution = FitRes->Eval(Energy);
           SH->SetEnergyResolution(EnergyResolution);
