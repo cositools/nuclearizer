@@ -97,8 +97,32 @@ bool MModuleLoaderMeasurementsFITS::Initialize()
 {
   // Initialize the module
 
-  // Clean:
+  // Reset file and batch state so a second Initialize() will start fresh
   m_FileType = "Unknown";
+  if (m_FITSFile != nullptr) {
+    delete m_FITSFile;
+    m_FITSFile = nullptr;
+  }
+  m_PrimaryHDU = nullptr;
+  m_ComptonTable = nullptr;
+  m_CurrentRow = 1;
+  m_TotalRows = 0;
+  m_BatchStartRow = 1;
+  m_CurrentEventInBatch = 0;
+  m_BatchEventCount = 0;
+  m_NEventsInFile = 0;
+  m_NGoodEventsInFile = 0;
+  m_BatchTIME.clear();
+  m_BatchEVENTID.clear();
+  m_BatchEVENTTYPE.clear();
+  m_BatchNUMSTRIPHIT.clear();
+  m_BatchHITTYPE.clear();
+  m_BatchDETID.clear();
+  m_BatchSTRIPID.clear();
+  m_BatchSIDEID.clear();
+  m_BatchFASTTIME.clear();
+  m_BatchPHA.clear();
+  m_BatchTAC.clear();
 
   if (MFile::Exists(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileName<<" does not exist."<<endl;
@@ -326,14 +350,14 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   // Extract event-level data
   double eventTime = m_BatchTIME[idx];
   // uint8_t eventType = m_BatchEVENTTYPE[idx]; //unused variable
-  uint8_t numStripHit = m_BatchNUMSTRIPHIT[idx];
+  uint16_t numStripHit = m_BatchNUMSTRIPHIT[idx];
 
   // Set event-level properties
   Event->SetID(static_cast<unsigned long>(m_BatchEVENTID[idx]));
   Event->SetTimeRTS(eventTime);     // Mission time in seconds since Jan 1, 2025
 
   // Loop through strip hits and create MStripHit objects
-  for (uint8_t hitIdx = 0; hitIdx < numStripHit; ++hitIdx) {
+  for (uint16_t hitIdx = 0; hitIdx < numStripHit; ++hitIdx) {
     // Extract hit data from arrays
     uint8_t typeHit = m_BatchHITTYPE[idx][hitIdx];
     int detID = m_BatchDETID[idx][hitIdx];
