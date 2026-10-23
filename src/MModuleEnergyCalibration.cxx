@@ -180,7 +180,7 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       }
       // only assign a BD flag if it's an actual triggered strip, otherwise, the event is still able to be calibrated
       if (SH->IsNearestNeighbor() == false) {
-        Event->SetEnergyCalibrationError("calibration not found for " + R.ToString());
+        Event->SetEnergyCalibrationError("calibration not found for triggered " + R.ToString());
       }
       ++i; // iterate to next SH
       continue;
@@ -254,7 +254,7 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           }
           // only assign a BD flag if it's an actual triggered strip, otherwise, the event is still able to be calibrated
           if (SH->IsNearestNeighbor() == false) {
-            Event->SetEnergyCalibrationError("Energy resolution calibration not found for " + R.ToString());
+            Event->SetEnergyCalibrationError("Energy resolution calibration not found for triggered " + R.ToString());
           }
           continue;
 
