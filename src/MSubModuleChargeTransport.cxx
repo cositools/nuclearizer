@@ -268,8 +268,9 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     auto IterLV2 = std::next(IterLV1);
     while (IterLV2 != LVHits.end()) {
       if (IterLV1->m_ROE == IterLV2->m_ROE) {
-        IterLV1->m_Energy += IterLV2->m_Energy;
         IterLV1->m_FastPeakTime = IterLV1->m_Energy > IterLV2->m_Energy ? IterLV1->m_FastPeakTime : IterLV2->m_FastPeakTime;
+        IterLV1->m_Energy += IterLV2->m_Energy;
+        IterLV1->m_SimulatedOrigins.merge(IterLV2->m_SimulatedOrigins);
         IterLV2 = LVHits.erase(IterLV2);
       } else {
         ++IterLV2;
@@ -280,8 +281,9 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     auto IterHV2 = std::next(IterHV1);
     while (IterHV2 != HVHits.end()) {
       if (IterHV1->m_ROE == IterHV2->m_ROE) {
-        IterHV1->m_Energy += IterHV2->m_Energy;
         IterHV1->m_FastPeakTime = IterHV1->m_Energy > IterHV2->m_Energy ? IterHV1->m_FastPeakTime : IterHV2->m_FastPeakTime;
+        IterHV1->m_Energy += IterHV2->m_Energy;
+        IterHV1->m_SimulatedOrigins.merge(IterHV2->m_SimulatedOrigins);
         IterHV2 = HVHits.erase(IterHV2);
       } else {
         ++IterHV2;
