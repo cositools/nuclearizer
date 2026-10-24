@@ -316,7 +316,7 @@ bool UTNSubModuleStripReadout::TestADCAndThresholds()
   } else {
     Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 10", "The strip hit exists", false) && Passed;
   }
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "LV strip 30, 9000 keV", "The saturated strip hit exists", S30 != nullptr)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 30, 9000 keV", "The saturated strip hit exists", S30 != nullptr) && Passed;
   if (S30 != nullptr) {
     Passed = Evaluate("AnalyzeEvent()", "LV strip 30, 9000 keV", "The ADC value saturates at 16383", S30->m_ADC, 16383u) && Passed;
   }
@@ -440,7 +440,7 @@ bool UTNSubModuleStripReadout::TestNearestNeighbors()
   if (S11 != nullptr) {
     Passed = EvaluateTrue("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor strip is flagged as nearest neighbor", S11->m_IsNearestNeighbor) && Passed;
     // TF1::GetX() returns 199.99999 and the cast truncates it (MSubModuleStripReadout.cxx:176); depends on the root finder precision
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor ADC is 200", S11->m_ADC, 200u)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor ADC is 200", S11->m_ADC, 200u) && Passed;
   }
   Passed = EvaluateTrue("AnalyzeEvent()", "isolated sub-threshold strip 40", "An isolated sub-threshold strip is removed", FindStrip(LV, 40) == nullptr) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "strip 9 next to 10", "An empty neighbor hit is added for strip 9", S9 != nullptr) && Passed;

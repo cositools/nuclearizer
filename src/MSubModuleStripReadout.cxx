@@ -166,14 +166,23 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       TF1* Fit = m_Calibration[SH->m_ROE];
 
       if (Fit != nullptr) {
-        // Apply the inverse energy calibration using ROOT's poly inverter (keV -> ADC) in the allowed ADC range
-        double calculatedADC = Fit->GetX(SH->m_Energy, 0., m_MaxADCRange);
-        
-        // Apply hardware limits
-        if (calculatedADC > m_MaxADCRange) calculatedADC = m_MaxADCRange;
-        if (calculatedADC < 0) calculatedADC = 0;
-        
-        SH->m_ADC = static_cast<unsigned int>(calculatedADC);
+
+        // Find the range of allowed energies
+        double ADCMin = Fit->GetMinimumX(0.0, m_MaxADCRange);
+        double ADCMax = Fit->GetMaximumX(0.0, m_MaxADCRange);
+        double MinimumEnergy = Fit->Eval(ADCMin);
+        double MaximumEnergy = Fit->Eval(ADCMax);
+
+        // Handle saturated energies, outside of the ADC range
+        if (SH->m_Energy < MinimumEnergy){
+          SH->m_ADC = 0;
+        } else if (SH->m_Energy >= MaximumEnergy) {
+          SH->m_ADC = m_MaxADCRange;
+        } else {
+          // Search in the monotonically increasing range only
+          double calculatedADC = Fit->GetX(SH->m_Energy, min(ADCMin, ADCMax), max(ADCMin, ADCMax));
+          SH->m_ADC = lround(clamp(calculatedADC, 0.0, m_MaxADCRange));
+        }
 
         // Apply the hardware threshold to determine if a strip hit is a nearest-neighbor strip or not
         SH->m_IsNearestNeighbor = SH->m_ADC < m_HardwareThresholdMap[SH->m_ROE];
