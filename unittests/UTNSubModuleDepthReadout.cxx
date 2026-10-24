@@ -281,7 +281,7 @@ bool UTNSubModuleDepthReadout::TestConfiguration()
   MSubModuleDepthReadout* B = new (Ones) MSubModuleDepthReadout;
   bool ValueA = A->GetApplyTimingResolutionCalibration();
   bool ValueB = B->GetApplyTimingResolutionCalibration();
-  Passed = ExpectedToFail(EvaluateTrue("MSubModuleDepthReadout()", "uninitialized memory", "The timing resolution flag has a defined default independent of the memory content", ValueA == ValueB)) && Passed;
+  Passed = EvaluateTrue("MSubModuleDepthReadout()", "uninitialized memory", "The timing resolution flag has a defined default independent of the memory content", ValueA == ValueB) && Passed;
   A->~MSubModuleDepthReadout();
   B->~MSubModuleDepthReadout();
 #endif

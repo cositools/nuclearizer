@@ -54,6 +54,7 @@ MSubModuleDepthReadout::MSubModuleDepthReadout() : MSubModule()
 {
   // Construct an instance of MSubModuleDepthReadout
 
+  m_ApplyTimingResolutionCalibration = true;
   m_Name = "DEE depth readout module";
 
   m_StripMapFileName = "";
