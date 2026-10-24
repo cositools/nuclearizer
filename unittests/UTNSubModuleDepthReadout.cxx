@@ -502,7 +502,7 @@ bool UTNSubModuleDepthReadout::TestPartialTACCalibration()
   g_Verbosity = OldVerbosity;
   Passed = EvaluateSize("AnalyzeEvent()", "LV strip 40 with TAC calibration", "The LV hit is kept", E.GetDEEStripHitLVListReference().size(), 1) && Passed;
   if (E.GetDEEStripHitLVListReference().size() == 1) {
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "LV strip 40 with TAC calibration", "The calibrated strip 40 gets the TAC (3000 + 500) / 0.5 = 7000", E.GetDEEStripHitLVListReference().front().m_TAC, 7000u)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "LV strip 40 with TAC calibration", "The calibrated strip 40 gets the TAC (3000 + 500) / 0.5 = 7000", E.GetDEEStripHitLVListReference().front().m_TAC, 7000u) && Passed;
   }
   M.Finalize();
 
@@ -516,7 +516,7 @@ bool UTNSubModuleDepthReadout::TestPartialTACCalibration()
     if (F.GetDEEStripHitLVListReference().size() != 1) return false;
     return F.GetDEEStripHitLVListReference().front().m_TAC == 0;
   });
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "LV strip 5 without TAC calibration", "An uncalibrated strip gets TAC 0 without crashing", NoCrash)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 5 without TAC calibration", "An uncalibrated strip gets TAC 0 without crashing", NoCrash) && Passed;
 
   return Passed;
 }

@@ -177,7 +177,7 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
         }
 
         // Apply the inverse TAC cal to obtain TAC in ADC units
-        if (m_TACCal.count(DetID) == 1 && m_TACCal[DetID].size() >= 1 && StripID < m_TACCal[DetID][0].size()) {
+        if (m_TACCal.count(DetID) == 1 && m_TACCal[DetID].size() >= 1 && m_TACCal[DetID][0].find(StripID) != m_TACCal[DetID][0].end()) {
           vector<double> TACCal = m_TACCal[DetID][0][StripID];
           double TACCalSlope = TACCal[0];
           double TACCalOffset = TACCal[1];
