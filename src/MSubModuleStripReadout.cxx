@@ -56,6 +56,7 @@ MSubModuleStripReadout::MSubModuleStripReadout() : MSubModule()
   m_Name = "DEE strip readout module";
 
   m_EnergyCalibrationFileName = "";
+  m_ApplyResolutionCalibration = true;
 
 }
 

@@ -211,7 +211,7 @@ bool UTNSubModuleStripReadout::TestDefaults()
   MSubModuleStripReadout* B = new (Ones) MSubModuleStripReadout;
   bool ValueA = A->GetApplyResolutionCalibration();
   bool ValueB = B->GetApplyResolutionCalibration();
-  Passed = ExpectedToFail(EvaluateTrue("MSubModuleStripReadout()", "uninitialized memory", "The resolution flag has a defined default independent of the memory content", ValueA == ValueB)) && Passed;
+  Passed = EvaluateTrue("MSubModuleStripReadout()", "uninitialized memory", "The resolution flag has a defined default independent of the memory content", ValueA == ValueB) && Passed;
   A->~MSubModuleStripReadout();
   B->~MSubModuleStripReadout();
 #endif
