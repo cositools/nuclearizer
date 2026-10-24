@@ -94,6 +94,12 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
 
+  if (Event->GetSimulatedEvent() == nullptr) {
+    if (g_Verbosity >= c_Error)
+      cout << "ERROR in MSubModuleDEEIntake: No simulated event found in event." << endl;
+    return false;
+  }
+
   Event->SetID(Event->GetSimulatedEvent()->GetID());
   Event->SetTimeUTC(Event->GetSimulatedEvent()->GetTime());
 

@@ -378,7 +378,7 @@ bool UTNSubModuleDEEIntake::TestNoSimulatedEvent()
     M.AnalyzeEvent(&E);
     return true;
   });
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "no simulated event", "An event without simulated event does not crash the intake", Graceful)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "no simulated event", "An event without simulated event does not crash the intake", Graceful) && Passed;
 
   return Passed;
 }
