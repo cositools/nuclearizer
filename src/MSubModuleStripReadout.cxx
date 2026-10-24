@@ -132,7 +132,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
   for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
 
     set<MReadOutElementDoubleStrip> TriggeredStripHits;
-    set<MReadOutElementDoubleStrip> NeighborCandidateStripHits;
+    map<MReadOutElementDoubleStrip, int> NeighborCandidateStripHits;
     set<MReadOutElementDoubleStrip> NeighborStripHits;
     set<MReadOutElementDoubleStrip> DeadStrips;
     
@@ -208,12 +208,12 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
             if (SH->m_ROE.GetStripID() > 0) {
               MReadOutElementDoubleStrip Left = SH->m_ROE;
               Left.SetStripID(Left.GetStripID() - 1);
-              NeighborCandidateStripHits.insert(Left);
+              NeighborCandidateStripHits[Left] = SH->m_OppositeStripID;
             }
             if (SH->m_ROE.GetStripID() < 63) {
               MReadOutElementDoubleStrip Right = SH->m_ROE;
               Right.SetStripID(Right.GetStripID() + 1);
-              NeighborCandidateStripHits.insert(Right);
+              NeighborCandidateStripHits[Right] = SH->m_OppositeStripID;
             }
           }
         }
@@ -266,7 +266,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 
     // Add "empty" strip hits for neighbors that did not trigger
     // Assume an empty baseline (Energy == 0) and no timing (Timing == 0)
-    for (const auto& NSH : NeighborCandidateStripHits) {
+    for (const auto& [NSH, OppositeStripID] : NeighborCandidateStripHits) {
 
       // Skip dead strips and triggered strips
       if (DeadStrips.count(NSH) > 0) continue;
@@ -294,6 +294,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       SH.m_HasFastTiming = false;
       SH.m_IsNearestNeighbor = true;
       SH.m_IsGuardRing = false;
+      SH.m_OppositeStripID = OppositeStripID;
 
       // Note, if no resolution calibration is found then the energy remains unsmeared
       if (m_ApplyResolutionCalibration == true) {

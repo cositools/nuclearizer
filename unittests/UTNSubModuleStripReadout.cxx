@@ -368,10 +368,10 @@ bool UTNSubModuleStripReadout::TestNearestNeighborIdentifiers()
   Passed = EvaluateTrue("AnalyzeEvent()", "triggered LV strip 10", "An empty neighbor hit is added for strip 9", S9 != nullptr) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "triggered LV strip 10", "An empty neighbor hit is added for strip 11", S11 != nullptr) && Passed;
   if (S9 != nullptr) {
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "added neighbor strip 9", "The added hit has the opposite strip of its triggering strip 10", S9->m_OppositeStripID, 33)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "added neighbor strip 9", "The added hit has the opposite strip of its triggering strip 10", S9->m_OppositeStripID, 33) && Passed;
   }
   if (S11 != nullptr) {
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "added neighbor strip 11", "The added hit has the opposite strip of its triggering strip 10", S11->m_OppositeStripID, 33)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "added neighbor strip 11", "The added hit has the opposite strip of its triggering strip 10", S11->m_OppositeStripID, 33) && Passed;
   }
 
   M.Finalize();
