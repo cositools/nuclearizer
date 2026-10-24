@@ -55,7 +55,7 @@ ClassImp(MSubModuleChargeTransport)
 MSubModuleChargeTransport::MSubModuleChargeTransport() : MSubModule()
 {
   // Construct an instance of MSubModuleChargeTransport
-
+  m_Geometry = nullptr;
 
 }
 
@@ -74,6 +74,12 @@ MSubModuleChargeTransport::~MSubModuleChargeTransport()
 
 bool MSubModuleChargeTransport::Initialize()
 {
+  if (m_Geometry == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MSubModuleChargeTransport::Initialize: m_Geometry is a nullptr" << endl;
+    }
+    return false;
+  }
 
   // The DetID is taken from the detector name GeD_X, so detectors can be missing (e.g. no GeD_0).
   // Detectors not following this naming scheme get their DetID in the order of the detectors.

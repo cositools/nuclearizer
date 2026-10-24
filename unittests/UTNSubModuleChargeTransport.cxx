@@ -383,7 +383,7 @@ bool UTNSubModuleChargeTransport::TestInitializeErrors()
     M.SetDepthCoefficientsFileName(WriteCoeffs());
     return M.Initialize() == false;
   });
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "no geometry", "Initialize returns false without a geometry and without crashing", NoGeometry)) && Passed;
+  Passed = EvaluateTrue("Initialize()", "no geometry", "Initialize returns false without a geometry and without crashing", NoGeometry) && Passed;
 
   // Two detectors with depth coefficients, but drift splines only for detector 0
   MDGeometryQuest* TwoDetectors = GetTwoDetectorGeometry();
