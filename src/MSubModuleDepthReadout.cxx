@@ -245,7 +245,14 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
           vector<double> TACCal = m_TACCal[DetID][1][StripID];
           double TACCalSlope = TACCal[0];
           double TACCalOffset = TACCal[1];
-          SH.m_TAC = (SH.m_Timing - TACCalOffset) / TACCalSlope;
+          if ((SH.m_Timing - TACCalOffset) / TACCalSlope >= 0) {
+            SH.m_TAC = (SH.m_Timing - TACCalOffset) / TACCalSlope;
+          } else {
+            if (g_Verbosity >= c_Info) {
+              cout<<"MSubModuleDepthReadout::AnalyzeEvent: Simulated TAC value would be negative, setting it to zero."<<endl;
+            }
+            SH.m_TAC = 0;
+          }
         } else {
           if (g_Verbosity >= c_Error) {
             cout<<"ERROR in MSubModuleDepthReadout::AnalyzeEvent: No TAC calibration found for HV strip "<<SH.m_ROE.GetStripID()<<endl;

@@ -461,7 +461,7 @@ bool UTNSubModuleDepthReadout::TestTACLimits()
     Passed = Evaluate("AnalyzeEvent()", "HV TAC above range", "The HV TAC saturates at 16383", HV.front().m_TAC, 16383u) && Passed;
 #if defined(__x86_64__) || defined(__i386__)
     // The HV side does not clamp negative TACs (MSubModuleDepthReadout::AnalyzeEvent()): the undefined double to unsigned conversion wraps on x86
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "HV TAC below zero", "A negative HV TAC is set to 0", HV.back().m_TAC, 0u)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "HV TAC below zero", "A negative HV TAC is set to 0", HV.back().m_TAC, 0u) && Passed;
 #else
     // On other architectures (e.g. arm64) the undefined conversion happens to saturate to 0, which hides the missing clamp
     Passed = Evaluate("AnalyzeEvent()", "HV TAC below zero", "A negative HV TAC is set to 0", HV.back().m_TAC, 0u) && Passed;
