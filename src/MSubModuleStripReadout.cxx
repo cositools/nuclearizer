@@ -184,8 +184,19 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
           SH->m_ADC = lround(clamp(calculatedADC, 0.0, m_MaxADCRange));
         }
 
-        // Apply the hardware threshold to determine if a strip hit is a nearest-neighbor strip or not
-        SH->m_IsNearestNeighbor = SH->m_ADC < m_HardwareThresholdMap[SH->m_ROE];
+        // Apply the hardware threshold to determine if a strip hit is below the trigger threshold
+        if (SH->m_ADC < m_HardwareThresholdMap[SH->m_ROE]) {
+          if (SH->m_IsGuardRing == true) {
+            // Sub-threshold guard-ring hits are removed
+            SH = Hits->erase(SH);
+            continue;
+          } else {
+            // Sub-threshold strip hits are marked as "nearest neighbor"
+            SH->m_IsNearestNeighbor = true;
+          }
+        } else {
+          SH->m_IsNearestNeighbor = false;
+        }
 
         // Keep track of all triggered strips and their nearest neighbors
         if (SH->m_IsNearestNeighbor == false) {

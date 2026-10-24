@@ -407,7 +407,7 @@ bool UTNSubModuleStripReadout::TestGuardRingNeighbor()
   M.AnalyzeEvent(&E);
   list<MDEEStripHit>& LV = E.GetDEEStripHitLVListReference();
   Passed = EvaluateTrue("AnalyzeEvent()", "triggered LV strip 63", "The triggered strip 63 is kept", FindStrip(LV, 63) != nullptr) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "sub-threshold guard ring next to strip 63", "A sub-threshold guard ring hit is removed (a kept strip-64 hit raises the guard ring veto)", FindStrip(LV, 64) == nullptr)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "sub-threshold guard ring next to strip 63", "A sub-threshold guard ring hit is removed (a kept strip-64 hit raises the guard ring veto)", FindStrip(LV, 64) == nullptr) && Passed;
 
   M.Finalize();
 
