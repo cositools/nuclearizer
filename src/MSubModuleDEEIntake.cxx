@@ -138,7 +138,8 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
         cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
       continue;
     }
-    double DetectorDepth = Shape->GetSizeZ();
+    // MDShapeBRIK::GetSizeZ() returns the half-size, multiply by 2 to get the full detector depth
+    double DetectorDepth = 2*Shape->GetSizeZ();
 
     MString DetectorName = Detector->GetName();
     if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing") == true) {

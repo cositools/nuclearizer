@@ -272,7 +272,7 @@ bool UTNSubModuleDEEIntake::TestGermaniumHit()
     Passed = EvaluateVectorNear("AnalyzeEvent()", "LV hit", "The simulated position is the HT position", LV.m_SimulatedPosition, MVector(0.1, 0.2, 0.5), 1e-9) && Passed;
     Passed = EvaluateVectorNear("AnalyzeEvent()", "LV hit", "The position in the detector is the local position", LV.m_SimulatedPositionInDetector, MVector(0.1, 0.2, 0.5), 1e-9) && Passed;
     // The wafer is 1.5 cm thick: z = 0.5 cm is at (0.5 + 0.75) / 1.5 of the thickness
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "LV hit at z = 0.5 cm", "The relative depth is 0.8333 (within [0, 1])", LV.m_SimulatedRelativeDepth, 1.25/1.5, 1e-6)) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "LV hit at z = 0.5 cm", "The relative depth is 0.8333 (within [0, 1])", LV.m_SimulatedRelativeDepth, 1.25/1.5, 1e-6) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "HV hit at z = 0.5 cm", "The relative depth is identical on both sides", HV.m_SimulatedRelativeDepth, LV.m_SimulatedRelativeDepth, 1e-12) && Passed;
     Passed = EvaluateFalse("AnalyzeEvent()", "LV hit", "The hit is not a simulated guard ring hit", LV.m_SimulatedIsGuardRing) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "LV hit", "The LV ID is 1000", LV.m_ID, 1000u) && Passed;
@@ -314,7 +314,7 @@ bool UTNSubModuleDEEIntake::TestShieldHit()
   Passed = Evaluate("AnalyzeEvent()", "GeD and shield hit", "One DEE crystal hit is created", E.GetNDEECrystalHits(), 1u) && Passed;
   if (E.GetNDEEStripHitsLV() == 1) {
     MDEEStripHit& LV = E.GetDEEStripHitLVListReference().front();
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "LV hit at z = -0.5 cm", "The relative depth is 0.1667 (within [0, 1])", LV.m_SimulatedRelativeDepth, 0.25/1.5, 1e-6)) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "LV hit at z = -0.5 cm", "The relative depth is 0.1667 (within [0, 1])", LV.m_SimulatedRelativeDepth, 0.25/1.5, 1e-6) && Passed;
   }
   if (E.GetNDEECrystalHits() == 1) {
     MDEECrystalHit& C = E.GetDEECrystalHitListReference().front();
