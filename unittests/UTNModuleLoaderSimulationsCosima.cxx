@@ -206,8 +206,8 @@ bool UTNModuleLoaderSimulationsCosima::TestConfiguration()
   Passed = EvaluateTrue("ReadXmlConfiguration()", "configured", "ReadXmlConfiguration returns true", Reader.ReadXmlConfiguration(Node)) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "SimulationFileName", "The file name survives", Reader.GetSimulationFileName(), MString("/data/in.sim")) && Passed;
   // The stop-after options are set in the options GUI and must be part of the configuration
-  Passed = ExpectedToFail(EvaluateTrue("ReadXmlConfiguration()", "UseStopAfter", "The stop-after flag survives", Reader.UseStopAfter())) && Passed;
-  Passed = ExpectedToFail(Evaluate("ReadXmlConfiguration()", "MaximumAcceptedEvents", "The maximum number of accepted events survives", Reader.GetMaximumAcceptedEvents(), 1234ul)) && Passed;
+  Passed = EvaluateTrue("ReadXmlConfiguration()", "UseStopAfter", "The stop-after flag survives", Reader.UseStopAfter()) && Passed;
+  Passed = Evaluate("ReadXmlConfiguration()", "MaximumAcceptedEvents", "The maximum number of accepted events survives", Reader.GetMaximumAcceptedEvents(), 1234ul) && Passed;
   delete Node;
 
   return Passed;
