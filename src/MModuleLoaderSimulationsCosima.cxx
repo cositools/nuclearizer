@@ -159,8 +159,7 @@ void MModuleLoaderSimulationsCosima::Finalize()
   MSupervisor* S = MSupervisor::GetSupervisor();
   MModuleEventSaver* Saver = dynamic_cast<MModuleEventSaver*>(S->GetAvailableModuleByXmlTag("XmlTagEventSaver"));
   if (Saver != nullptr) {
-    // Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
-    Saver->SetSimulatedEvents(m_NumberOfSimulatedEvents);
+    Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
   }    
   
 }

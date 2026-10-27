@@ -387,7 +387,7 @@ bool UTNModuleLoaderSimulationsCosima::TestSaverHandOver()
     if (L.BeginsWith("TS ") == true) TSLine = L;
   }
   Passed = EvaluateTrue("Initialize()", "hand-over", "The far-field start area of the sim file is written by the saver", HasStartArea) && Passed;
-  Passed = ExpectedToFail(Evaluate("Finalize()", "hand-over", "The number of simulated events of the sim file (TS 1000) is written by the saver", TSLine, MString("TS 1000"))) && Passed;
+  Passed = Evaluate("Finalize()", "hand-over", "The number of simulated events of the sim file (TS 1000) is written by the saver", TSLine, MString("TS 1000")) && Passed;
 
   return Passed;
 }
