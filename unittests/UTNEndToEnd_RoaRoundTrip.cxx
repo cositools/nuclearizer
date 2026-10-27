@@ -28,13 +28,16 @@ using namespace std;
 //! End-to-end test: read a roa file with strip and crystal hits with nuclearizer and write it again
 class UTNEndToEnd_RoaRoundTrip : public MUnitTest
 {
-public:
+ public:
+  //! Default constructor
   UTNEndToEnd_RoaRoundTrip() : MUnitTest("UTNEndToEnd_RoaRoundTrip") {}
+  //! Default destructor
   virtual ~UTNEndToEnd_RoaRoundTrip() {}
 
+  //! Run all tests
   virtual bool Run();
 
-private:
+ private:
   //! Read and write a roa file with strip and crystal hits and all read-out data
   bool TestStripAndCrystalHits();
   //! Split a roa file into one file per detector and side
@@ -51,7 +54,9 @@ private:
   MString XmlBoolean(bool Value) const { return (Value == true) ? "true" : "false"; }
   //! Decompress a gzip'ed text file into a plain one
   bool UnzipTextFile(const MString& ZippedFileName, const MString& FileName) const;
-  //! Run nuclearizer with arguments and capture stdout/stderr in a log file
+  //! Return true if $NUCLEARIZER is set, which the configuration needs for the geometry
+  bool HasNuclearizerEnvironment() const;
+  //! Run nuclearizer with arguments and capture stdout/stderr in a log file; returns the wait status
   int RunNuclearizer(const MString& Arguments, const MString& LogFile);
 };
 
@@ -62,6 +67,13 @@ private:
 bool UTNEndToEnd_RoaRoundTrip::Run()
 {
   bool Passed = true;
+
+  bool HasNuclearizer = HasNuclearizerEnvironment();
+  Passed = EvaluateTrue("End-to-end roa round trip", "environment variable", "$NUCLEARIZER environment variable must be set", HasNuclearizer) && Passed;
+  if (HasNuclearizer == false) {
+    Summarize();
+    return Passed;
+  }
 
   Passed = TestStripAndCrystalHits() && Passed;
   Passed = TestSplitByDetectorSide() && Passed;
@@ -170,17 +182,20 @@ bool UTNEndToEnd_RoaRoundTrip::TestStripAndCrystalHits()
   const MString ExpectedRoa = GetTemporaryFileName("strips-and-crystals.expected.roa");
   const MString Config = GetTemporaryFileName("strips-and-crystals.cfg");
   const MString Log = GetTemporaryFileName("strips-and-crystals.log");
-  WriteTextFile(InputRoa, Input);
-  WriteTextFile(ExpectedRoa, Expected);
-  WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputRoa, CreateRoaOptions(true, true, true, true, false)));
+  bool Written = true;
+  Written = WriteTextFile(InputRoa, Input) && Written;
+  Written = WriteTextFile(ExpectedRoa, Expected) && Written;
+  Written = WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputRoa, CreateRoaOptions(true, true, true, true, false))) && Written;
+  Passed = EvaluateTrue("End-to-end roa round trip", "strip and crystal hits", "The input, expected, and configuration files can be written", Written) && Passed;
+  if (Written == false) return Passed;
 
   int Status = RunNuclearizer(MString("-c ") + Config + " -a -n", Log);
-  Passed = EvaluateTrue("End-to-end roa round trip", "strip and crystal hits", "nuclearizer reads and writes the roa file (log: " + Log + ")", Status == 0 && MFile::Exists(OutputRoa)) && Passed;
-  if (Passed == false) return Passed;
+  Passed = Evaluate("End-to-end roa round trip", "strip and crystal hits", "nuclearizer exits with status 0 (log: " + Log + ")", Status, 0) && Passed;
+  bool OutputExists = MFile::Exists(OutputRoa);
+  Passed = EvaluateTrue("End-to-end roa round trip", "strip and crystal hits", "The output roa file is written", OutputExists) && Passed;
+  if (OutputExists == false) return Passed;
 
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa round trip", "strip and crystal hits",
-                                              "Strip and crystal hits with all read-out data come back unchanged",
-                                              OutputRoa, ExpectedRoa) && Passed;
+  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa round trip", "strip and crystal hits", "Strip and crystal hits with all read-out data come back unchanged", OutputRoa, ExpectedRoa) && Passed;
 
   return Passed;
 }
@@ -236,28 +251,24 @@ bool UTNEndToEnd_RoaRoundTrip::TestSplitByDetectorSide()
   const MString ExpectedDet0LVFile = GetTemporaryFileName("split.expected.det0.lv.roa");
   const MString ExpectedDet0HVFile = GetTemporaryFileName("split.expected.det0.hv.roa");
   const MString ExpectedDet1LVFile = GetTemporaryFileName("split.expected.det1.lv.roa");
-  WriteTextFile(InputRoa, Input);
-  WriteTextFile(ExpectedDet0LVFile, ExpectedDet0LV);
-  WriteTextFile(ExpectedDet0HVFile, ExpectedDet0HV);
-  WriteTextFile(ExpectedDet1LVFile, ExpectedDet1LV);
-  WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputRoa, CreateRoaOptions(true, false, true, true, true)));
+  bool Written = true;
+  Written = WriteTextFile(InputRoa, Input) && Written;
+  Written = WriteTextFile(ExpectedDet0LVFile, ExpectedDet0LV) && Written;
+  Written = WriteTextFile(ExpectedDet0HVFile, ExpectedDet0HV) && Written;
+  Written = WriteTextFile(ExpectedDet1LVFile, ExpectedDet1LV) && Written;
+  Written = WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputRoa, CreateRoaOptions(true, false, true, true, true))) && Written;
+  Passed = EvaluateTrue("End-to-end roa split by detector side", "3 detector sides with hits", "The input, expected, and configuration files can be written", Written) && Passed;
+  if (Written == false) return Passed;
 
   int Status = RunNuclearizer(MString("-c ") + Config + " -a -n", Log);
-  Passed = EvaluateTrue("End-to-end roa split by detector side", "3 detector sides with hits", "nuclearizer runs successfully (log: " + Log + ")", Status == 0) && Passed;
-  if (Passed == false) return Passed;
+  Passed = Evaluate("End-to-end roa split by detector side", "3 detector sides with hits", "nuclearizer exits with status 0 (log: " + Log + ")", Status, 0) && Passed;
 
   Passed = EvaluateFalse("End-to-end roa split by detector side", "3 detector sides with hits", "No main file is written", MFile::Exists(OutputRoa)) && Passed;
   Passed = EvaluateFalse("End-to-end roa split by detector side", "3 detector sides with hits", "No file for the detector side without hits", MFile::Exists(OutputBase + ".det1.hv.roa")) && Passed;
 
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "detector 0, low-voltage side",
-                                              "Contains only the low-voltage strip hits of detector 0 and no crystal hits",
-                                              OutputBase + ".det0.lv.roa", ExpectedDet0LVFile) && Passed;
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "detector 0, high-voltage side",
-                                              "Contains only the high-voltage strip hits of detector 0",
-                                              OutputBase + ".det0.hv.roa", ExpectedDet0HVFile) && Passed;
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "detector 1, low-voltage side",
-                                              "Contains only the low-voltage strip hits of detector 1",
-                                              OutputBase + ".det1.lv.roa", ExpectedDet1LVFile) && Passed;
+  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "detector 0, low-voltage side", "Contains only the low-voltage strip hits of detector 0 and no crystal hits", OutputBase + ".det0.lv.roa", ExpectedDet0LVFile) && Passed;
+  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "detector 0, high-voltage side", "Contains only the high-voltage strip hits of detector 0", OutputBase + ".det0.hv.roa", ExpectedDet0HVFile) && Passed;
+  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "detector 1, low-voltage side", "Contains only the low-voltage strip hits of detector 1", OutputBase + ".det1.lv.roa", ExpectedDet1LVFile) && Passed;
 
   return Passed;
 }
@@ -293,19 +304,18 @@ bool UTNEndToEnd_RoaRoundTrip::TestSplitByDetectorSideWithoutNearestNeighbors()
   const MString Config = GetTemporaryFileName("split-nn.cfg");
   const MString Log = GetTemporaryFileName("split-nn.log");
   const MString ExpectedDet0LVFile = GetTemporaryFileName("split-nn.expected.det0.lv.roa");
-  WriteTextFile(InputRoa, Input);
-  WriteTextFile(ExpectedDet0LVFile, ExpectedDet0LV);
-  WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputBase + ".roa", CreateRoaOptions(true, false, true, false, true)));
+  bool Written = true;
+  Written = WriteTextFile(InputRoa, Input) && Written;
+  Written = WriteTextFile(ExpectedDet0LVFile, ExpectedDet0LV) && Written;
+  Written = WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputBase + ".roa", CreateRoaOptions(true, false, true, false, true))) && Written;
+  Passed = EvaluateTrue("End-to-end roa split by detector side", "nearest neighbors excluded", "The input, expected, and configuration files can be written", Written) && Passed;
+  if (Written == false) return Passed;
 
   int Status = RunNuclearizer(MString("-c ") + Config + " -a -n", Log);
-  Passed = EvaluateTrue("End-to-end roa split by detector side", "nearest neighbors excluded", "nuclearizer runs successfully (log: " + Log + ")", Status == 0) && Passed;
-  if (Passed == false) return Passed;
+  Passed = Evaluate("End-to-end roa split by detector side", "nearest neighbors excluded", "nuclearizer exits with status 0 (log: " + Log + ")", Status, 0) && Passed;
 
-  Passed = EvaluateFalse("End-to-end roa split by detector side", "nearest neighbors excluded",
-                         "No file for a detector side with only nearest-neighbor hits", MFile::Exists(OutputBase + ".det0.hv.roa")) && Passed;
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "nearest neighbors excluded",
-                                              "The low-voltage file contains only the regular strip hit",
-                                              OutputBase + ".det0.lv.roa", ExpectedDet0LVFile) && Passed;
+  Passed = EvaluateFalse("End-to-end roa split by detector side", "nearest neighbors excluded", "No file for a detector side with only nearest-neighbor hits", MFile::Exists(OutputBase + ".det0.hv.roa")) && Passed;
+  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "nearest neighbors excluded", "The low-voltage file contains only the regular strip hit", OutputBase + ".det0.lv.roa", ExpectedDet0LVFile) && Passed;
 
   return Passed;
 }
@@ -349,27 +359,28 @@ bool UTNEndToEnd_RoaRoundTrip::TestSplitByDetectorSideTACOnlyGzip()
   const MString UnzippedDet0HVFile = GetTemporaryFileName("split-tac.out.det0.hv.unzipped.roa");
   const MString ExpectedDet0LVFile = GetTemporaryFileName("split-tac.expected.det0.lv.roa");
   const MString ExpectedDet0HVFile = GetTemporaryFileName("split-tac.expected.det0.hv.roa");
-  WriteTextFile(InputRoa, Input);
-  WriteTextFile(ExpectedDet0LVFile, ExpectedDet0LV);
-  WriteTextFile(ExpectedDet0HVFile, ExpectedDet0HV);
-  WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputBase + ".roa.gz", CreateRoaOptions(false, false, false, true, true)));
+  bool Written = true;
+  Written = WriteTextFile(InputRoa, Input) && Written;
+  Written = WriteTextFile(ExpectedDet0LVFile, ExpectedDet0LV) && Written;
+  Written = WriteTextFile(ExpectedDet0HVFile, ExpectedDet0HV) && Written;
+  Written = WriteTextFile(Config, CreateRoaToRoaConfig(InputRoa, OutputBase + ".roa.gz", CreateRoaOptions(false, false, false, true, true))) && Written;
+  Passed = EvaluateTrue("End-to-end roa split by detector side", "TAC only, gzip", "The input, expected, and configuration files can be written", Written) && Passed;
+  if (Written == false) return Passed;
 
   int Status = RunNuclearizer(MString("-c ") + Config + " -a -n", Log);
-  Passed = EvaluateTrue("End-to-end roa split by detector side", "TAC only, gzip", "nuclearizer accepts the strip-only configuration and runs successfully (log: " + Log + ")", Status == 0) && Passed;
-  if (Passed == false) return Passed;
+  Passed = Evaluate("End-to-end roa split by detector side", "TAC only, gzip", "nuclearizer accepts the strip-only configuration and exits with status 0 (log: " + Log + ")", Status, 0) && Passed;
 
-  Passed = EvaluateTrue("End-to-end roa split by detector side", "TAC only, gzip", "The low-voltage file is gzip'ed and can be decompressed",
-                        UnzipTextFile(OutputBase + ".det0.lv.roa.gz", UnzippedDet0LVFile)) && Passed;
-  Passed = EvaluateTrue("End-to-end roa split by detector side", "TAC only, gzip", "The high-voltage file is gzip'ed and can be decompressed",
-                        UnzipTextFile(OutputBase + ".det0.hv.roa.gz", UnzippedDet0HVFile)) && Passed;
-  if (Passed == false) return Passed;
+  bool UnzippedLV = UnzipTextFile(OutputBase + ".det0.lv.roa.gz", UnzippedDet0LVFile);
+  bool UnzippedHV = UnzipTextFile(OutputBase + ".det0.hv.roa.gz", UnzippedDet0HVFile);
+  Passed = EvaluateTrue("End-to-end roa split by detector side", "TAC only, gzip", "The low-voltage file is gzip'ed and can be decompressed", UnzippedLV) && Passed;
+  Passed = EvaluateTrue("End-to-end roa split by detector side", "TAC only, gzip", "The high-voltage file is gzip'ed and can be decompressed", UnzippedHV) && Passed;
 
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "TAC only, gzip, low-voltage side",
-                                              "Contains only the TAC of the low-voltage strip hit",
-                                              UnzippedDet0LVFile, ExpectedDet0LVFile) && Passed;
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "TAC only, gzip, high-voltage side",
-                                              "Contains only the TAC of the high-voltage strip hit",
-                                              UnzippedDet0HVFile, ExpectedDet0HVFile) && Passed;
+  if (UnzippedLV == true) {
+    Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "TAC only, gzip, low-voltage side", "Contains only the TAC of the low-voltage strip hit", UnzippedDet0LVFile, ExpectedDet0LVFile) && Passed;
+  }
+  if (UnzippedHV == true) {
+    Passed = EvaluateFilesNumericallyEquivalent("End-to-end roa split by detector side", "TAC only, gzip, high-voltage side", "Contains only the TAC of the high-voltage strip hit", UnzippedDet0HVFile, ExpectedDet0HVFile) && Passed;
+  }
 
   return Passed;
 }
@@ -400,20 +411,38 @@ bool UTNEndToEnd_RoaRoundTrip::UnzipTextFile(const MString& ZippedFileName, cons
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool UTNEndToEnd_RoaRoundTrip::HasNuclearizerEnvironment() const
+{
+  const char* NuclearizerEnv = getenv("NUCLEARIZER");
+  return NuclearizerEnv != nullptr && NuclearizerEnv[0] != '\0';
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 int UTNEndToEnd_RoaRoundTrip::RunNuclearizer(const MString& Arguments, const MString& LogFile)
 {
+  // Use the nuclearizer of the MEGAlib installation under test
+  const char* MEGAlibEnv = getenv("MEGALIB");
+  MString Program = (MEGAlibEnv != nullptr && MEGAlibEnv[0] != '\0') ? MString(MEGAlibEnv) + "/bin/nuclearizer" : MString("nuclearizer");
+  MString Command = Program + " " + Arguments;
+
   pid_t Child = fork();
   if (Child == 0) {
-    int Log = open(LogFile.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    // Read and write permissions for all, reduced by the umask
+    const mode_t LogFileMode = 0666;
+    int Log = open(LogFile.Data(), O_WRONLY | O_CREAT | O_TRUNC, LogFileMode);
     if (Log >= 0) {
       dup2(Log, STDOUT_FILENO);
       dup2(Log, STDERR_FILENO);
       close(Log);
     }
 
-    MString Command = MString("nuclearizer ") + Arguments;
-    execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
-    _exit(127);
+    execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(nullptr));
+    // Exit code of the shell for a command which cannot be executed
+    const int ExecFailedExitCode = 127;
+    _exit(ExecFailedExitCode);
   }
 
   if (Child < 0) return -1;
@@ -433,3 +462,7 @@ int main()
   UTNEndToEnd_RoaRoundTrip Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNEndToEnd_RoaRoundTrip.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
