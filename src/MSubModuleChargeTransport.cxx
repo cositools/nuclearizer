@@ -205,6 +205,19 @@ bool MSubModuleChargeTransport::Initialize()
     return false;
   }
 
+  // Warn about detectors without splines and remove them from DetIDs
+  for (auto Iter = m_DetectorIDs.begin(); Iter != m_DetectorIDs.end(); ) {
+    unsigned int DetID = *Iter;
+    if (m_ElectronDriftTimes.find(DetID) == m_ElectronDriftTimes.end() || m_HoleDriftTimes.find(DetID) == m_HoleDriftTimes.end()) {
+      if (g_Verbosity >= c_Warning){
+        cout << "WARNING in MSubModuleChargeTransport: Detector " << DetID << " does not have a depth spline - skipping" << endl;
+      }
+      Iter = m_DetectorIDs.erase(Iter);
+    } else {
+      ++Iter;
+    }
+  }
+
   // Load depth calibration coefficients
   DepthCalibration.SetCoeffsFileName(m_DepthCoefficientsFileName);
   if (DepthCalibration.LoadCoeffsFile(m_DepthCoefficientsFileName) == true) {
@@ -375,14 +388,20 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     // Apply stretch based on Eq. (3) in https://doi.org/10.1016/j.nima.2026.171332
     // Apply no offset to the electron drift time --> add it fully to the hole (LV) signal
     auto it = m_Coeffs.find(PixelCode);
-    if (it != m_Coeffs.end()) {
-      const vector<double>& Coeffs = it->second;
-      double Stretch = Coeffs[0];
-      double Offset = isLV ? Coeffs[1] : 0.0;
-      FastPeakTime = (DriftTimeSpline->Eval(Z) + Offset) * Stretch;
+    if (find(m_DetectorIDs.begin(), m_DetectorIDs.end(), DetID) != m_DetectorIDs.end()) {
+      if (it != m_Coeffs.end()) {
+        const vector<double>& Coeffs = it->second;
+        double Stretch = Coeffs[0];
+        double Offset = isLV ? Coeffs[1] : 0.0;
+        FastPeakTime = (DriftTimeSpline->Eval(Z) + Offset) * Stretch;
+      } else {
+        if (g_Verbosity >= c_Warning) {
+          cout << "No depth calibration coefficients for pixel in DetID " << DetID << " HV " << (isLV ? OppositeStripID : ID) << " LV " << (isLV ? ID : OppositeStripID) << endl;
+        }
+      }
     } else {
-      if (g_Verbosity >= c_Warning) {
-        cout << "No depth calibration coefficients for pixel in DetID " << DetID << " HV " << (isLV ? OppositeStripID : ID) << " LV " << (isLV ? ID : OppositeStripID) << endl;
+      if (g_Verbosity >= c_Info) {
+        cout << "No depth spline for pixel in DetID " << DetID << endl;
       }
     }
 

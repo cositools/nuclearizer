@@ -414,7 +414,7 @@ bool UTNSubModuleChargeTransport::TestInitializeErrors()
       M.AnalyzeEvent(&E);
       return true;
     });
-    Passed = ExpectedToFail(EvaluateTrue("Initialize()/AnalyzeEvent()", "hit in detector 1 without drift splines", "A detector without drift splines is rejected or skipped, without crashing", MissingSpline)) && Passed;
+    Passed = EvaluateTrue("Initialize()/AnalyzeEvent()", "hit in detector 1 without drift splines", "A detector without drift splines is rejected or skipped, without crashing", MissingSpline) && Passed;
     delete TwoDetectors;
   }
 
