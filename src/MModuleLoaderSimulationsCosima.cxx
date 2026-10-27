@@ -159,8 +159,7 @@ void MModuleLoaderSimulationsCosima::Finalize()
   MSupervisor* S = MSupervisor::GetSupervisor();
   MModuleEventSaver* Saver = dynamic_cast<MModuleEventSaver*>(S->GetAvailableModuleByXmlTag("XmlTagEventSaver"));
   if (Saver != nullptr) {
-    // Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
-    Saver->SetSimulatedEvents(m_NumberOfSimulatedEvents);
+    Saver->SetSimulatedEvents(m_Reader->GetSimulatedEvents());
   }    
   
 }
@@ -191,6 +190,16 @@ bool MModuleLoaderSimulationsCosima::ReadXmlConfiguration(MXmlNode* Node)
     SetSimulationFileName(SimulationFileNameNode->GetValue());
   }
 
+  MXmlNode* UseStopAfterNode = Node->GetNode("UseStopAfter");
+  if (UseStopAfterNode != 0) {
+    SetUseStopAfter(UseStopAfterNode->GetValueAsBoolean());
+  }
+
+  MXmlNode* MaximumAcceptedEventsNode = Node->GetNode("MaximumAcceptedEvents");
+  if (MaximumAcceptedEventsNode != 0) {
+    SetMaximumAcceptedEvents(MaximumAcceptedEventsNode->GetValueAsUnsignedLong());
+  }
+
   return true;
 }
 
@@ -204,6 +213,8 @@ MXmlNode* MModuleLoaderSimulationsCosima::CreateXmlConfiguration()
   
   MXmlNode* Node = new MXmlNode(0, m_XmlTag);  
   new MXmlNode(Node, "SimulationFileName", m_SimulationFileName);
+  new MXmlNode(Node, "UseStopAfter", m_UseStopAfter);
+  new MXmlNode(Node, "MaximumAcceptedEvents", m_MaximumAcceptedEvents);
   
   return Node;
 }
