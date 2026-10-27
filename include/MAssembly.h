@@ -40,10 +40,14 @@ class MAssembly
   //! Default destructor
   virtual ~MAssembly();
 
-  //! Each interface must be able to parse a command line - 
+  //! Each interface must be able to parse a command line -
   //! this function is called by main()
-  bool ParseCommandLine(int argc, char** argv);
-  
+  //! Returns -1 if the UI has been launched and main() has to run the application,
+  //! otherwise the exit code of the program:
+  //!  0: done, e.g. after --help or a successful --auto or --test
+  //!  1: error, e.g. an invalid command line, or a failed analysis or UI start
+  int ParseCommandLine(int argc, char** argv);
+
   //! Called when hit Control-C: Set the interrupt which will end the analysis in the supervisor
   void SetInterrupt(bool Flag = true) { m_Supervisor->SetHardInterrupt(Flag); }
 
@@ -100,9 +104,6 @@ class MAssembly
   //! The store for all user data of the GUI:
   MSupervisor* m_Supervisor;
   
-  //! The interrupt flag - the analysis will stop when this flag is set
-  bool m_Interrupt;
-
   
 #ifdef ___CLING___
  public:
