@@ -631,10 +631,8 @@ bool UTNSubModuleChargeTransport::TestMerging()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNSubModuleChargeTransport", "Unit tests for MSubModuleChargeTransport") == false) return 1;
-
   UTNSubModuleChargeTransport Test;
   return Test.Run() == true ? 0 : 1;
 }

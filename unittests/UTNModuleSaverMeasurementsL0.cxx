@@ -129,14 +129,14 @@ MString UTNModuleSaverMeasurementsL0::WriteStripMap()
 {
   // Detector 0: LV strips 0-9 = ROI 100-109, HV strips 0-9 = ROI 200-209, LV guard ring strip 64 = ROI 300
   // Detector 1: LV strips 0-9 = ROI 400-409, HV strips 0-9 = ROI 500-509
-  MString C = "# Columns are strip_id, rtb, drm, is_primary, asic, channel, detector, side (0=LV, 1=HV), strip\n";
+  MString C = "# Columns are strip_id, detector, side (0=LV, 1=HV), strip\n";
   for (unsigned int s = 0; s < 10; ++s) {
-    C += MString("") + (100 + s) + " 0 0 0 0 " + s + " 0 0 " + s + "\n";
-    C += MString("") + (200 + s) + " 0 0 0 1 " + s + " 0 1 " + s + "\n";
-    C += MString("") + (400 + s) + " 0 1 0 0 " + s + " 1 0 " + s + "\n";
-    C += MString("") + (500 + s) + " 0 1 0 1 " + s + " 1 1 " + s + "\n";
+    C += MString("") + (100 + s) + " 0 0 " + s + "\n";
+    C += MString("") + (200 + s) + " 0 1 " + s + "\n";
+    C += MString("") + (400 + s) + " 1 0 " + s + "\n";
+    C += MString("") + (500 + s) + " 1 1 " + s + "\n";
   }
-  C += "300 0 0 0 2 0 0 0 64\n";
+  C += "300 0 0 64\n";
 
   MString FileName = GetTemporaryFileName("l0.stripmap.map");
   // An empty name makes Initialize() fail, which the callers check

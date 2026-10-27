@@ -65,6 +65,8 @@ class UTNSubModuleDepthReadout : public MUnitTest
   MString WriteStripMap();
   //! Return the read-out ID of a strip in the strip map fixture
   unsigned int GetReadOutID(unsigned int DetID, bool IsLowVoltage, unsigned int StripID) const;
+  //! Return the DIB a detector of the strip map fixture sits on (not the detector ID)
+  unsigned int GetDIB(unsigned int DetID) const;
   //! Write the TAC calibration file and return its name, or an empty string on failure
   MString WriteTACCalibration();
   //! Write the depth coefficients file and return its name, or an empty string on failure
@@ -72,7 +74,7 @@ class UTNSubModuleDepthReadout : public MUnitTest
   //! Initialize a module with the standard files
   bool InitializeStandard(MSubModuleDepthReadout& M, bool ApplyTimingResolution, MString TACFile = "");
   //! Create a DEE strip hit
-  MDEEStripHit CreateHit(unsigned int DetID, unsigned int StripID, bool IsLowVoltage, double Energy, double FastPeakTime, int OppositeStripID = 0);
+  MDEEStripHit CreateHit(unsigned int DetID, unsigned int StripID, bool IsLowVoltage, double Energy, double FastPeakTime, unsigned int OppositeStripID = 0);
   //! Run a function in a child process; returns true if the child exited normally with the function returning true
   bool RunInChild(function<bool()> Function);
 };
@@ -103,7 +105,18 @@ bool UTNSubModuleDepthReadout::Run()
 
 unsigned int UTNSubModuleDepthReadout::GetReadOutID(unsigned int DetID, bool IsLowVoltage, unsigned int StripID) const
 {
-  return 1000*DetID + (IsLowVoltage == true ? 0 : 100) + StripID;
+  // MStripMap encoding: DIB << 7 | primary << 6 | ASIC << 5 | channel, with the HV side as the primary ASIC section
+  return (GetDIB(DetID) << 7) + (IsLowVoltage == true ? 0 : 64) + StripID;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int UTNSubModuleDepthReadout::GetDIB(unsigned int DetID) const
+{
+  // Deliberately different from the detector ID: the DIB column of the TAC calibration file must not be used as detector ID
+  return DetID + 4;
 }
 
 
@@ -134,13 +147,15 @@ MString UTNSubModuleDepthReadout::WriteTACCalibration()
   // Detector 0, all strips: Timing = 0.5 * TAC - 500
   // Detector 1, all strips: Timing = 0.2 * TAC + 0 (saturates quickly)
   // Detector 2, all strips: Timing = 0.5 * TAC + 5000 (negative TACs for short timings)
-  MString C = "#STRIP_ID,Detector,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
+  // The second column holds the DIB ID (detector + 4), not the detector ID: detector, side, and strip are
+  // taken from the strip map via the read-out ID (see #239)
+  MString C = "#STRIP_ID,DIB,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
   for (unsigned int d = 0; d < 3; ++d) {
     MString Slope = (d == 1) ? "0.2" : "0.5";
     MString Offset = (d == 0) ? "-500.0" : ((d == 1) ? "0.0" : "5000.0");
     for (unsigned int s = 0; s < 64; ++s) {
-      C += MString("") + GetReadOutID(d, true, s) + "," + d + ",0," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
-      C += MString("") + GetReadOutID(d, false, s) + "," + d + ",1," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
+      C += MString("") + GetReadOutID(d, true, s) + "," + GetDIB(d) + ",0," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
+      C += MString("") + GetReadOutID(d, false, s) + "," + GetDIB(d) + ",1," + s + "," + Slope + ",0.001," + Offset + ",1.0\n";
     }
   }
   MString FileName = GetTemporaryFileName("dr.taccal.csv");
@@ -182,7 +197,7 @@ bool UTNSubModuleDepthReadout::InitializeStandard(MSubModuleDepthReadout& M, boo
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDEEStripHit UTNSubModuleDepthReadout::CreateHit(unsigned int DetID, unsigned int StripID, bool IsLowVoltage, double Energy, double FastPeakTime, int OppositeStripID)
+MDEEStripHit UTNSubModuleDepthReadout::CreateHit(unsigned int DetID, unsigned int StripID, bool IsLowVoltage, double Energy, double FastPeakTime, unsigned int OppositeStripID)
 {
   MDEEStripHit H;
   H.m_ROE.SetDetectorID(DetID);
@@ -351,14 +366,16 @@ bool UTNSubModuleDepthReadout::TestTimingAndTAC()
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
   MReadOutAssembly E;
-  E.AddDEEStripHitLV(CreateHit(0, 10, true, 100.0, 1200.0));    // Timing 3000 ns, TAC (3000 + 500) / 0.5 = 7000
+  // The timing is derived from the drift time via the hard-coded conversion 4200 - drift time of MSubModuleDepthReadout:
+  // if the timing checks below fail, first check whether this conversion has changed
+  E.AddDEEStripHitLV(CreateHit(0, 10, true, 100.0, 1200.0));    // Timing 4200 - 1200 = 3000 ns, TAC (3000 + 500) / 0.5 = 7000
   E.AddDEEStripHitLV(CreateHit(0, 11, true, 5.0, 1200.0));      // low energy: no fast timing on the LV side
   E.AddDEEStripHitLV(CreateHit(0, 12, true, 100.0, 20000.0));   // unphysical drift time
   MDEEStripHit GR = CreateHit(0, 64, true, 100.0, 1200.0);
   GR.m_IsGuardRing = true;
   GR.m_TAC = 123;
   E.AddDEEStripHitLV(GR);
-  E.AddDEEStripHitHV(CreateHit(0, 20, false, 100.0, 1000.0));   // Timing 3200 ns, TAC 7400
+  E.AddDEEStripHitHV(CreateHit(0, 20, false, 100.0, 1000.0));   // Timing 4200 - 1000 = 3200 ns, TAC 7400
   Passed = EvaluateTrue("AnalyzeEvent()", "standard hits", "AnalyzeEvent returns true", M.AnalyzeEvent(&E)) && Passed;
   g_Verbosity = OldVerbosity;
 
@@ -372,7 +389,7 @@ bool UTNSubModuleDepthReadout::TestTimingAndTAC()
     MDEEStripHit& L11 = *It++;
     MDEEStripHit& L12 = *It++;
     MDEEStripHit& LGR = *It++;
-    Passed = EvaluateNear("AnalyzeEvent()", "LV strip 10", "The timing is 4200 - 1200 = 3000 ns", L10.m_Timing, 3000.0, 1e-9) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "LV strip 10", "The timing is 4200 - 1200 = 3000 ns (hard-coded conversion 4200 - drift time)", L10.m_Timing, 3000.0, 1e-9) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "LV strip 10", "The TAC is (3000 + 500) / 0.5 = 7000", L10.m_TAC, 7000u) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 10, 100 keV", "The LV strip has fast timing", L10.m_HasFastTiming) && Passed;
     Passed = EvaluateFalse("AnalyzeEvent()", "LV strip 11, 5 keV", "A 5 keV LV strip has no fast timing", L11.m_HasFastTiming) && Passed;
@@ -382,7 +399,7 @@ bool UTNSubModuleDepthReadout::TestTimingAndTAC()
   }
   if (HV.size() == 1) {
     MDEEStripHit& H20 = HV.front();
-    Passed = EvaluateNear("AnalyzeEvent()", "HV strip 20", "The timing is 4200 - 1000 = 3200 ns", H20.m_Timing, 3200.0, 1e-9) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "HV strip 20", "The timing is 4200 - 1000 = 3200 ns (hard-coded conversion 4200 - drift time)", H20.m_Timing, 3200.0, 1e-9) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "HV strip 20", "The TAC is (3200 + 500) / 0.5 = 7400", H20.m_TAC, 7400u) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "HV strip 20", "The HV strip has fast timing", H20.m_HasFastTiming) && Passed;
   }
@@ -464,10 +481,11 @@ bool UTNSubModuleDepthReadout::TestPartialTACCalibration()
 {
   bool Passed = true;
 
-  // The TAC calibration only covers LV strips 32-63 of detector 0, as in the committed unit-level calibrations
-  MString C = "#STRIP_ID,Detector,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
+  // Real TAC calibrations cover all strips; this is an incomplete file, which only covers LV strips 32-63 of
+  // detector 0 (on DIB 4), to test the look-up by strip ID and the handling of strips without calibration
+  MString C = "#STRIP_ID,DIB,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
   for (unsigned int s = 32; s < 64; ++s) {
-    C += MString("") + GetReadOutID(0, true, s) + ",0,0," + s + ",0.5,0.001,-500.0,1.0\n";
+    C += MString("") + GetReadOutID(0, true, s) + "," + GetDIB(0) + ",0," + s + ",0.5,0.001,-500.0,1.0\n";
   }
   MString TACFile = GetTemporaryFileName("dr.partial.taccal.csv");
   Passed = EvaluateTrue("WriteTextFile()", "dr.partial.taccal.csv", "The fixture file is written", WriteTextFile(TACFile, C)) && Passed;

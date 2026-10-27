@@ -869,10 +869,8 @@ bool UTNModuleLoaderMeasurementsTRA::TestRoundTripTra()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleLoaderMeasurementsTRA", "Unit tests for MModuleLoaderMeasurementsTRA") == false) return 1;
-
   UTNModuleLoaderMeasurementsTRA Test;
   return Test.Run() == true ? 0 : 1;
 }

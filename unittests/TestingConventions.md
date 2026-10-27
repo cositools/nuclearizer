@@ -91,8 +91,7 @@ lines so they stay readable in a narrow column.  That is a formatting choice of
 this document only — it does not reflect the rule above.  Write them on one
 physical line in the actual test files.**
 
-For the test executable entry point, see section "`main()`" below, which also
-covers the variant for classes that do not need `MGlobal::Initialize`.
+For the test executable entry point, see section "`main()`" below.
 
 The generic `clang-format` instructions in `CodingConventions.md` remain
 applicable, but if they introduce line wrapping that conflicts with these
@@ -171,25 +170,16 @@ fails, but the overall result is false if any failed.
 ### `main()`
 
 ```cpp
-int main(int argc, char** argv)
-{
-  if (MGlobal::Initialize("UTFoo", "Unit tests for MFoo") == false) return 1;
-
-  UTFoo Test;
-  return Test.Run() == true ? 0 : 1;
-}
-```
-
-If the class under test does not need `MGlobal::Initialize` (e.g., pure data
-classes like `MStripHit` or `MHit`), call only `Test.Run()`:
-
-```cpp
 int main()
 {
   UTFoo Test;
   return Test.Run() == true ? 0 : 1;
 }
 ```
+
+Do not call `MGlobal::Initialize()`: the tests do not need it, it prints the
+program intro, and in debug builds it makes every `MException` abort instead of
+being thrown, which breaks `EvaluateException()`.
 
 As every MEGAlib source file, the file ends after `main()` with two blank
 lines and the closing block:

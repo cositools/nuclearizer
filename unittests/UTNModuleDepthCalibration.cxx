@@ -1438,10 +1438,8 @@ bool UTNModuleDepthCalibration::TestCrashCandidates()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleDepthCalibration", "Unit tests for MModuleDepthCalibration") == false) return 1;
-
   UTNModuleDepthCalibration Test;
   return Test.Run() == true ? 0 : 1;
 }

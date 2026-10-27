@@ -109,7 +109,8 @@ bool UTNModuleTACCalibration::WriteFixture(const MString& FileName, const vector
 
 bool UTNModuleTACCalibration::WriteStandardFixtures(const MString& StripMapFile, const MString& TACCalFile) const
 {
-  // The strip map moves read-out IDs 10 and 11 to detector 3 and swaps their sides,
+  // The second column of the TAC calibration file holds the DIB ID, not the detector ID:
+  // the strip map puts read-out IDs 10 and 11 (DIB 0) into detector 3 and swaps their sides,
   // read-out ID 12 agrees with the TAC calibration file, and read-out ID 13 disagrees in the strip
   vector<MString> StripMapLines = {
     "# Columns are strip_id, detector, side (0=LV, 1=HV), strip",
@@ -120,7 +121,7 @@ bool UTNModuleTACCalibration::WriteStandardFixtures(const MString& StripMapFile,
   };
 
   vector<MString> TACCalLines = {
-    "#STRIP_ID,Detector,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error",
+    "#STRIP_ID,DIB,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error",
     "10,0,1,32,0.45,0.001,-600.0,7.5",
     "11,0,0,5,0.43,0.002,-550.0,6.0",
     "12,7,0,40,0.47,0.003,-500.0,5.0",
@@ -625,10 +626,8 @@ bool UTNModuleTACCalibration::TestAnalyzeEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleTACCalibration", "Unit tests for MModuleTACCalibration") == false) return 1;
-
   UTNModuleTACCalibration Test;
   return Test.Run() == true ? 0 : 1;
 }

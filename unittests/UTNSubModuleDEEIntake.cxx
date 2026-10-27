@@ -387,10 +387,8 @@ bool UTNSubModuleDEEIntake::TestNoSimulatedEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNSubModuleDEEIntake", "Unit tests for MSubModuleDEEIntake") == false) return 1;
-
   UTNSubModuleDEEIntake Test;
   return Test.Run() == true ? 0 : 1;
 }

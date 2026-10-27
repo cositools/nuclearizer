@@ -209,10 +209,8 @@ bool UTNModuleResponseGenerator::TestLifecycleErrors()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleResponseGenerator", "Unit tests for MModuleResponseGenerator") == false) return 1;
-
   UTNModuleResponseGenerator Test;
   return Test.Run() == true ? 0 : 1;
 }

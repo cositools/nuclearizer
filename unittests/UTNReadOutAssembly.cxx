@@ -1411,10 +1411,8 @@ bool UTNReadOutAssembly::TestParseBDFlags()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNReadOutAssembly", "Unit tests for MReadOutAssembly") == false) return 1;
-
   UTNReadOutAssembly Test;
   return Test.Run() == true ? 0 : 1;
 }

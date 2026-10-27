@@ -396,10 +396,8 @@ bool UTNModuleLoaderSimulationsCosima::TestSaverHandOver()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleLoaderSimulationsCosima", "Unit tests for MModuleLoaderSimulationsCosima") == false) return 1;
-
   UTNModuleLoaderSimulationsCosima Test;
   return Test.Run() == true ? 0 : 1;
 }

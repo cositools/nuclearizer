@@ -45,6 +45,8 @@ class UTNModuleDEESMEX : public MUnitTest
  private:
   //! Test the module meta data and the defaults
   bool TestDefaultConstruction();
+  //! Test that Clone() creates a distinct module carrying the geometry
+  bool TestClone();
   //! Test the setters/getters including the pass-through to the sub modules
   bool TestGettersSetters();
   //! Test the XML round trip of all options
@@ -64,12 +66,19 @@ class UTNModuleDEESMEX : public MUnitTest
   MDGeometryQuest* GetGeometry();
   //! Write all calibration files, return false if a file cannot be written
   bool WriteFiles();
-  //! Configure a module with all files
+  //! Configure a module with the geometry and all files
   void Configure(MModuleDEESMEX& M);
+  //! Configure a module with all files, but not with the geometry
+  void ConfigureFiles(MModuleDEESMEX& M);
   //! Read simulated events from a sim body (the lines after the header); the events have to be deleted by the caller
   vector<MSimEvent*> ReadSimEvents(const MString& Body);
   //! Return the strip hit with the given side and strip ID or nullptr
   MStripHit* FindStripHit(MReadOutAssembly& Event, bool IsLowVoltage, unsigned int StripID);
+  //! Return the read-out ID of a strip of the test detector; strip 64 is the guard ring
+  unsigned int GetReadOutID(bool IsLowVoltage, unsigned int StripID) const;
+
+  //! The DIB the test detector (detector 0) sits on - deliberately different from the detector ID
+  static constexpr unsigned int c_DIB = 5;
 
   //! The geometry file name
   MString m_GeometryFileName;
@@ -105,6 +114,7 @@ bool UTNModuleDEESMEX::Run()
   Passed = EvaluateTrue("WriteTextFile()", "calibration files", "All calibration files are written", Written) && Passed;
 
   Passed = TestDefaultConstruction() && Passed;
+  Passed = TestClone() && Passed;
   Passed = TestGettersSetters() && Passed;
   Passed = TestXmlRoundTrip() && Passed;
   Passed = TestInitialize() && Passed;
@@ -184,10 +194,13 @@ bool UTNModuleDEESMEX::WriteFiles()
   Written = WriteTextFile(m_EnergyCalibrationFileName, E) && Written;
 
   // Hardware threshold 40 ADC (20 keV)
+  // The real files hold the DIB ID in the second column, but MModuleEnergyCalibration::ReadSlowThresholdCutFile(),
+  // which also parses the hardware thresholds of the DEE, uses it as detector ID and ignores the read-out ID.
+  // Thus the detector ID (0) is written here, unlike in the TAC calibration file below
   MString T = "STRIP_ID,Detector,side,strip,threshold_adc,threshold_keV\n";
   for (unsigned int s = 0; s <= 64; ++s) {
-    T += MString("") + s + ",0,l," + s + ",40,20.0\n";
-    T += MString("") + (100 + s) + ",0,h," + s + ",40,20.0\n";
+    T += MString("") + GetReadOutID(true, s) + ",0,l," + s + ",40,20.0\n";
+    T += MString("") + GetReadOutID(false, s) + ",0,h," + s + ",40,20.0\n";
   }
   m_ThresholdFileName = GetTemporaryFileName("deesmex.thresholds.csv");
   Written = WriteTextFile(m_ThresholdFileName, T) && Written;
@@ -212,20 +225,22 @@ bool UTNModuleDEESMEX::WriteFiles()
   m_CoeffsFileName = GetTemporaryFileName("deesmex.coeffs.csv");
   Written = WriteTextFile(m_CoeffsFileName, C) && Written;
 
-  // Strip map of detector 0 with the read-out IDs of the threshold file: LV strip s = s, HV strip s = 100 + s
+  // Strip map of detector 0, which sits on DIB 5 - the read-out IDs encode the DIB, see GetReadOutID()
   MString Map = "# Columns are strip_id, detector, side (0=LV, 1=HV), strip\n";
   for (unsigned int s = 0; s < 64; ++s) {
-    Map += MString("") + s + " 0 0 " + s + "\n";
-    Map += MString("") + (100 + s) + " 0 1 " + s + "\n";
+    Map += MString("") + GetReadOutID(true, s) + " 0 0 " + s + "\n";
+    Map += MString("") + GetReadOutID(false, s) + " 0 1 " + s + "\n";
   }
   m_StripMapFileName = GetTemporaryFileName("deesmex.stripmap.map");
   Written = WriteTextFile(m_StripMapFileName, Map) && Written;
 
   // TAC calibration: Timing = 0.5 * TAC - 500
-  MString TAC = "#STRIP_ID,Detector,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
+  // The second column holds the DIB ID (5), not the detector ID (0): detector, side, and strip are taken from
+  // the strip map via the read-out ID (see #239), which TestGermaniumHit() verifies through the detector ID of the hits
+  MString TAC = "#STRIP_ID,DIB,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
   for (unsigned int s = 0; s < 64; ++s) {
-    TAC += MString("") + s + ",0,0," + s + ",0.5,0.001,-500.0,1.0\n";
-    TAC += MString("") + (100 + s) + ",0,1," + s + ",0.5,0.001,-500.0,1.0\n";
+    TAC += MString("") + GetReadOutID(true, s) + "," + c_DIB + ",0," + s + ",0.5,0.001,-500.0,1.0\n";
+    TAC += MString("") + GetReadOutID(false, s) + "," + c_DIB + ",1," + s + ",0.5,0.001,-500.0,1.0\n";
   }
   m_TACCalFileName = GetTemporaryFileName("deesmex.taccal.csv");
   Written = WriteTextFile(m_TACCalFileName, TAC) && Written;
@@ -248,6 +263,15 @@ bool UTNModuleDEESMEX::WriteFiles()
 void UTNModuleDEESMEX::Configure(MModuleDEESMEX& M)
 {
   M.SetGeometry(GetGeometry());
+  ConfigureFiles(M);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTNModuleDEESMEX::ConfigureFiles(MModuleDEESMEX& M)
+{
   M.SetEnergyCalibrationFileName(m_EnergyCalibrationFileName);
   M.SetHardwareThresholdFileName(m_ThresholdFileName);
   M.SetDepthSplinesFileName(m_SplinesFileName);
@@ -302,6 +326,18 @@ MStripHit* UTNModuleDEESMEX::FindStripHit(MReadOutAssembly& Event, bool IsLowVol
 ////////////////////////////////////////////////////////////////////////////////
 
 
+unsigned int UTNModuleDEESMEX::GetReadOutID(bool IsLowVoltage, unsigned int StripID) const
+{
+  // Encoding of MStripMap: strips are DIB << 7 | primary << 6 | ASIC << 5 | channel,
+  // guard rings are 2048 + (DIB << 1 | primary), with the HV side as the primary ASIC section
+  if (StripID == 64) return 2048 + (c_DIB << 1) + (IsLowVoltage == true ? 0 : 1);
+  return (c_DIB << 7) + (IsLowVoltage == true ? 0 : 64) + StripID;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool UTNModuleDEESMEX::TestDefaultConstruction()
 {
   bool Passed = true;
@@ -318,15 +354,58 @@ bool UTNModuleDEESMEX::TestDefaultConstruction()
   Passed = EvaluateTrue("GetEnableShieldVeto()", "default", "The shield veto is enabled by default", M.GetEnableShieldVeto()) && Passed;
   Passed = EvaluateTrue("GetEnableGuardRingVeto()", "default", "The guard ring veto is enabled by default", M.GetEnableGuardRingVeto()) && Passed;
 
-  MDGeometryQuest* G = GetGeometry();
-  M.SetGeometry(G);
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNModuleDEESMEX::TestClone()
+{
+  bool Passed = true;
+
+  // MModule has no geometry getter, thus the hand-over of the geometry is verified through
+  // Initialize(), which fails without a geometry: the clones get all files, but no geometry
+
+  int OldVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+  DisableDefaultStreams();
+
+  MModuleDEESMEX M;
+  M.SetGeometry(GetGeometry());
   MModuleDEESMEX* C = M.Clone();
+  bool CloneInitialized = false;
+  if (C != nullptr) {
+    ConfigureFiles(*C);
+    CloneInitialized = C->Initialize();
+    if (CloneInitialized == true) C->Finalize();
+  }
+
+  MModuleDEESMEX N;
+  N.SetGeometry(nullptr);
+  MModuleDEESMEX* CN = N.Clone();
+  bool CloneWithoutGeometryInitialized = false;
+  if (CN != nullptr) {
+    ConfigureFiles(*CN);
+    CloneWithoutGeometryInitialized = CN->Initialize();
+    if (CloneWithoutGeometryInitialized == true) CN->Finalize();
+  }
+
+  EnableDefaultStreams();
+  g_Verbosity = OldVerbosity;
+
   Passed = EvaluateTrue("Clone()", "with geometry", "Clone() returns a non-null object", C != nullptr) && Passed;
   Passed = EvaluateTrue("Clone()", "with geometry", "Clone() returns a distinct object", C != &M) && Passed;
   if (C != nullptr) {
     Passed = Evaluate("Clone()", "with geometry", "The clone has the same XML tag", C->GetXmlTag(), M.GetXmlTag()) && Passed;
   }
+  Passed = EvaluateTrue("Clone()", "with geometry", "The clone carries the geometry: Initialize() succeeds without setting it again", CloneInitialized) && Passed;
+  Passed = EvaluateTrue("Clone()", "without geometry", "Clone() returns a non-null object", CN != nullptr) && Passed;
+  Passed = EvaluateFalse("Clone()", "without geometry", "The clone has no geometry either: Initialize() fails", CloneWithoutGeometryInitialized) && Passed;
+
   delete C;
+  delete CN;
 
   return Passed;
 }
@@ -509,7 +588,7 @@ bool UTNModuleDEESMEX::TestGermaniumHit()
   Passed = EvaluateTrue("AnalyzeEvent()", "one GeD hit", "The LV strip 32 is hit", LV != nullptr) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "one GeD hit", "The HV strip 33 is hit", HV != nullptr) && Passed;
   if (LV != nullptr) {
-    Passed = Evaluate("AnalyzeEvent()", "LV strip 32", "The strip is in detector 0", LV->GetDetectorID(), 0u) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "LV strip 32", "The strip is in detector 0 from the strip map, not in DIB 5 of the TAC calibration file", LV->GetDetectorID(), 0u) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "LV strip 32", "The ADC value is 500 keV / 0.5 = 1000", LV->GetADCUnits(), 1000.0, 1.5) && Passed;
     Passed = EvaluateFalse("AnalyzeEvent()", "LV strip 32", "The strip is a triggered strip", LV->IsNearestNeighbor()) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 32", "The strip has fast timing", LV->HasFastTiming()) && Passed;
@@ -518,7 +597,9 @@ bool UTNModuleDEESMEX::TestGermaniumHit()
     Passed = Evaluate("AnalyzeEvent()", "LV strip 32", "The simulated origin is kept", (unsigned int) LV->GetOrigins().size(), 1u) && Passed;
   }
   if (HV != nullptr) {
+    Passed = Evaluate("AnalyzeEvent()", "HV strip 33", "The strip is in detector 0 from the strip map, not in DIB 5 of the TAC calibration file", HV->GetDetectorID(), 0u) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "HV strip 33", "The ADC value is 1000", HV->GetADCUnits(), 1000.0, 1.5) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "HV strip 33", "The strip has fast timing", HV->HasFastTiming()) && Passed;
   }
 
   M.Finalize();
@@ -664,10 +745,8 @@ bool UTNModuleDEESMEX::TestDeadTime()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleDEESMEX", "Unit tests for MModuleDEESMEX") == false) return 1;
-
   UTNModuleDEESMEX Test;
   return Test.Run() == true ? 0 : 1;
 }

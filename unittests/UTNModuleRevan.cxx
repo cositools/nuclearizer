@@ -373,10 +373,8 @@ bool UTNModuleRevan::TestReconstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleRevan", "Unit tests for MModuleRevan") == false) return 1;
-
   UTNModuleRevan Test;
   return Test.Run() == true ? 0 : 1;
 }

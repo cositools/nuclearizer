@@ -150,10 +150,17 @@ MString UTNModuleEnergyCalibration::WriteStandardCalibration()
 
 MString UTNModuleEnergyCalibration::WriteStandardThresholds()
 {
+  // The header line is the one of the real files. Its "Detector" column natively holds the DIB ID, not the
+  // detector ID - the two differ for most detectors of the payload (see the TAC calibration file handling
+  // of #239). ReadSlowThresholdCutFile() currently uses the column directly as detector ID, thus the
+  // read-out elements the checks below look up carry the DIB ID
   MString C;
   C += "STRIP_ID,Detector,detector_side,Strip,threshold_ADC,threshold_keV\n";
+  // DIB 0, LV strip 1: 1600 ADC / 30 keV
   C += "1,0,l,1,1600,30.0\n";
+  // DIB 0, HV strip 2: 1500 ADC / 0 keV
   C += "2,0,h,2,1500,0.0\n";
+  // DIB 1, HV strip 10: 1700 ADC / 12.5 keV
   C += "10,1,h,10,1700,12.5\n";
 
   MString FileName = GetTemporaryFileName("thresholds.csv");
@@ -403,9 +410,9 @@ bool UTNModuleEnergyCalibration::TestReadSlowThresholdCutFile()
     Passed = EvaluateTrue("ReadSlowThresholdCutFile()", "strip 1 l", "Strip 1 LV has a hardware threshold", false) && Passed;
   }
   if (H.find(CreateROE(1, 10, false)) != H.end()) {
-    Passed = EvaluateNear("ReadSlowThresholdCutFile()", "detector 1 strip 10 h", "The hardware threshold is 1700 ADC", H[CreateROE(1, 10, false)], 1700.0, 1e-12) && Passed;
+    Passed = EvaluateNear("ReadSlowThresholdCutFile()", "DIB 1 strip 10 h", "The hardware threshold is 1700 ADC", H[CreateROE(1, 10, false)], 1700.0, 1e-12) && Passed;
   } else {
-    Passed = EvaluateTrue("ReadSlowThresholdCutFile()", "detector 1 strip 10 h", "Detector 1 strip 10 HV has a hardware threshold", false) && Passed;
+    Passed = EvaluateTrue("ReadSlowThresholdCutFile()", "DIB 1 strip 10 h", "DIB 1 strip 10 HV has a hardware threshold", false) && Passed;
   }
 
   int OldVerbosity = g_Verbosity;
@@ -653,7 +660,7 @@ bool UTNModuleEnergyCalibration::TestAnalyzeEventThresholds()
     MReadOutAssembly E;
     E.AddStripHit(CreateStripHit(0, 1, true, 50));    // 25 keV, threshold 30 keV
     E.AddStripHit(CreateStripHit(0, 3, true, 80));    // 20 keV, no threshold in file: default 15 keV
-    E.AddStripHit(CreateStripHit(1, 10, false, 20));  // 10 keV, threshold 12.5 keV
+    E.AddStripHit(CreateStripHit(1, 10, false, 20));  // 10 keV, threshold 12.5 keV of DIB 1 (used as detector ID by the module)
     E.AddStripHit(CreateStripHit(0, 2, false, 10));   // 1 + 5 + 0.01 = 6.01 keV, threshold 0 keV means not found: default 15 keV
     M.AnalyzeEvent(&E);
     MReadOutAssembly K;
@@ -664,7 +671,7 @@ bool UTNModuleEnergyCalibration::TestAnalyzeEventThresholds()
     Passed = EvaluateTrue("AnalyzeEvent()", "file, 25 keV < 30 keV", "A strip below its file threshold is removed", FindStripHit(E, 1, true) == nullptr) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "file, 35 keV > 30 keV", "A strip above its file threshold is kept", FindStripHit(K, 1, true) != nullptr) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "file, 20 keV, no entry", "A strip without file entry uses the default 15 keV threshold", FindStripHit(E, 3, true) != nullptr) && Passed;
-    Passed = EvaluateTrue("AnalyzeEvent()", "file, 10 keV < 12.5 keV", "The threshold of detector 1 is applied", FindStripHit(E, 10, false) == nullptr) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "file, 10 keV < 12.5 keV", "The threshold of DIB 1 is applied to the strip with detector ID 1", FindStripHit(E, 10, false) == nullptr) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "file, 6 keV, threshold 0 keV", "A file threshold of 0 keV means not found, thus the default 15 keV threshold removes the strip", FindStripHit(E, 2, false) == nullptr) && Passed;
     M.Finalize();
   }

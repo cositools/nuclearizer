@@ -1,9 +1,0 @@
-
-WARNING: version mismatch between CFITSIO header (v40603) and linked library (v40700).
-
-
-FAILED: AnalyzeEvent()  <-- L1b event 1 with guard ring veto
-   Description: VETO is 3 for a guard ring veto
-   Expected:    3 +/- 9.9999999999999998e-13
-   Output:      1
-

@@ -478,10 +478,8 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestGuardRingQualityFlag()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleStripPairingMultiRoundChiSquare", "Unit tests for MModuleStripPairingMultiRoundChiSquare") == false) return 1;
-
   UTNModuleStripPairingMultiRoundChiSquare Test;
   return Test.Run() == true ? 0 : 1;
 }

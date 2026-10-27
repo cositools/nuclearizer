@@ -703,10 +703,8 @@ bool UTNModuleLoaderMeasurementsHDF::TestUnknownDetectors()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleLoaderMeasurementsHDF", "Unit tests for MModuleLoaderMeasurementsHDF") == false) return 1;
-
   UTNModuleLoaderMeasurementsHDF Test;
   return Test.Run() == true ? 0 : 1;
 }
