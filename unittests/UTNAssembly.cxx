@@ -264,6 +264,7 @@ bool UTNAssembly::TestConstruction(MAssembly& A)
 
   MSupervisor* S = MSupervisor::GetSupervisor();
   Passed = EvaluateSize("MAssembly()", "available modules", "The constructor registers exactly the listed modules", S->GetNAvailableModules(), XmlTags.size()) && Passed;
+  Passed = EvaluateTrue("MAssembly()", "default", "Multithreading is enabled by default", S->IsUsingMultiThreading()) && Passed;
 
   set<MString> Tags;
   set<MString> Names;
