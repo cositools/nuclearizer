@@ -24,6 +24,8 @@
     <MinEntries>5</MinEntries>
     <FallbackThresholdKeV>18</FallbackThresholdKeV>
     <NoiseSearchMaxKeV>40</NoiseSearchMaxKeV>
+    <NoiseStartMinCounts>50</NoiseStartMinCounts>
     <FastFallbackKeV>34</FastFallbackKeV>
+    <FastSearchRangeADC>800</FastSearchRangeADC>
   </Analysis>
 </StripEnergyThresholdFinder>

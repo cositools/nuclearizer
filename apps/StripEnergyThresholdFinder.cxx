@@ -58,6 +58,7 @@ using namespace std;
 #include "TStyle.h"
 #include <iomanip>
 #include <chrono>
+#include <TLatex.h>
 
 /* MEGAlib XML */
 #include "MXmlDocument.h"
@@ -227,7 +228,8 @@ int main(int Argc, char** Argv)
 
   cout << endl;
   cout << "Slow threshold vs Strip:" << endl;
-  cout << "  cSlowThresh->Draw()" << endl;
+  cout << "  cSlowThresh_all->Draw()     // all detectors" << endl;
+  cout << "  cSlowThresh_Det1->Draw()    // example individual detector" << endl;
   cout << endl;
 
   cout << "Example energy spectrum with software and hardware thresholds:" << endl;
@@ -269,7 +271,8 @@ int main(int Argc, char** Argv)
   cout << endl;
 
   cout << "HV and LV FAST thresholds:" << endl;
-  cout << "  cFastThresh->Draw()" << endl;
+  cout << "  cFastThresh_all->Draw()     // all detectors" << endl;
+  cout << "  cFastThresh_Det1->Draw()    // example individual detector" << endl;
   cout << endl;
 
   cout << "dt0 vs dt1 with fast threshold:" << endl;
@@ -1934,6 +1937,28 @@ void MStripThresholdFinder::WriteDiagnostics()
     cout << "Warning: No thresholds available for diagnostics." << endl;
   }
 
+  // Detector ID Map
+  
+  const map<unsigned int, pair<string, string>> DetectorInfo = {
+    {0,  {"Q0L0", "HP52366-2"}},
+    {1,  {"Q0L1", "HP52358-2"}},
+    {2,  {"Q0L2", "HP52432-1"}},
+    {3,  {"Q0L3", "M61617 (FM2)"}},
+    {4,  {"Q1L0", "HP52542-1"}},
+    {5,  {"Q1L1", "HP52358-3"}},
+    {6,  {"Q1L2", "HP52434-1"}},
+    {7,  {"Q1L3", "HP52406-1"}},
+    {8,  {"Q2L0", "HP52542-2"}},
+    {9,  {"Q2L1", "HP52407-3"}},
+    {10, {"Q2L2", "HP52379-1"}},
+    {11, {"Q2L3", "HP52358-1"}},
+    {12, {"Q3L0", "HP52434-2"}},
+    {13, {"Q3L1", "HP52361-1"}},
+    {14, {"Q3L2", "M61618 (FM-3)"}},
+    {15, {"Q3L3", "HP52406-3"}}
+  };
+  
+  
   // -------------------------------------------------------------
   // ROOT output
   // -------------------------------------------------------------
@@ -1942,86 +1967,270 @@ void MStripThresholdFinder::WriteDiagnostics()
 
   // -------------------------------------------------------------
   // SLOW threshold per Strip (HV vs LV scatter)
+  // One canvas per detector
   // -------------------------------------------------------------
-  TGraph* gSlowThresh_LV = new TGraph();
-  TGraph* gSlowThresh_HV = new TGraph();
 
-  gSlowThresh_LV->SetName("SlowThresh_LV");
-  gSlowThresh_HV->SetName("SlowThresh_HV");
+  map<unsigned int, TGraph*> gSlowThresh_LV;
+  map<unsigned int, TGraph*> gSlowThresh_HV;
 
-  // Axis titles
-  gSlowThresh_LV->SetTitle("Slow Threshold per Strip;Strip;Threshold (keV)");
-
-  // Styling
-  gSlowThresh_LV->SetMarkerStyle(20); // circle
-  gSlowThresh_LV->SetMarkerSize(1.0);
-  gSlowThresh_LV->SetMarkerColor(kBlue);
-
-  gSlowThresh_HV->SetMarkerStyle(20);
-  gSlowThresh_HV->SetMarkerSize(1.0);
-  gSlowThresh_HV->SetMarkerColor(kRed);
-
-  // Fill graphs
+  // Create and fill detector-specific graphs
   for (const auto& kv : m_SlowThresholds) {
-    MReadOutElementDoubleStrip R = kv.first;
+
+    const MReadOutElementDoubleStrip& R = kv.first;
+    unsigned int Detector = R.GetDetectorID();
     int Strip = R.GetStripID();
     double Threshold = kv.second;
 
+    // Create graphs the first time this detector is encountered
+    if (gSlowThresh_LV.find(Detector) == gSlowThresh_LV.end()) {
 
+      gSlowThresh_LV[Detector] = new TGraph();
+      gSlowThresh_HV[Detector] = new TGraph();
+
+      string lvName = "SlowThresh_LV_Det" + to_string(Detector);
+      string hvName = "SlowThresh_HV_Det" + to_string(Detector);
+
+      gSlowThresh_LV[Detector]->SetName(lvName.c_str());
+      gSlowThresh_HV[Detector]->SetName(hvName.c_str());
+
+      string detectorLabel;
+
+      auto info = DetectorInfo.find(Detector);
+
+      if (info != DetectorInfo.end()) {
+        detectorLabel =
+          info->second.first +
+          " - Det " + to_string(Detector) +
+          ": " + info->second.second;
+      } else {
+        detectorLabel =
+          "Detector " + to_string(Detector);
+      }
+
+      string canvasTitle =
+          "Slow Threshold per Strip - " + detectorLabel;
+
+      gSlowThresh_LV[Detector]->SetTitle(canvasTitle.c_str());
+
+      // Styling
+      gSlowThresh_LV[Detector]->SetMarkerStyle(20);
+      gSlowThresh_LV[Detector]->SetMarkerSize(1.0);
+      gSlowThresh_LV[Detector]->SetMarkerColor(kBlue);
+
+      gSlowThresh_HV[Detector]->SetMarkerStyle(20);
+      gSlowThresh_HV[Detector]->SetMarkerSize(1.0);
+      gSlowThresh_HV[Detector]->SetMarkerColor(kRed);
+    }
+
+    // Fill detector-specific graph
     if (R.IsLowVoltageStrip() == true) {
-      gSlowThresh_LV->SetPoint(gSlowThresh_LV->GetN(), Strip, Threshold);
+      gSlowThresh_LV[Detector]->SetPoint(
+        gSlowThresh_LV[Detector]->GetN(),
+        Strip,
+        Threshold);
     } else {
-      gSlowThresh_HV->SetPoint(gSlowThresh_HV->GetN(), Strip, Threshold);
+      gSlowThresh_HV[Detector]->SetPoint(
+        gSlowThresh_HV[Detector]->GetN(),
+        Strip,
+        Threshold);
     }
   }
 
-  // -------------------------------------------------------------
-  // Canvas with legend
-  // -------------------------------------------------------------
-  TCanvas* cSlowThresh = new TCanvas("cSlowThresh", "Slow Threshold per Strip", 800, 600);
-  cSlowThresh->cd();
 
-  // Draw LV first (sets axes)
-  gSlowThresh_LV->Draw("AP");
+  // -------------------------------------------------------------
+  // Create one slow-threshold canvas per detector
+  // -------------------------------------------------------------
 
-  // Optional: auto-scale Y axis
-  double ymin = 1e9, ymax = -1e9;
-  for (const auto& kv : m_SlowThresholds) {
-    //if (kv.first.GetStripID() == 64) continue;
-    double v = kv.second;
-    if (v < ymin) {
-      ymin = v;
+  for (const auto& entry : gSlowThresh_LV) {
+
+    unsigned int Detector = entry.first;
+
+    TGraph* gLV = gSlowThresh_LV[Detector];
+    TGraph* gHV = gSlowThresh_HV[Detector];
+
+    string canvasName =
+      "cSlowThresh_Det" + to_string(Detector);
+
+    string canvasTitle =
+      "Slow Threshold per Strip - Detector " +
+      to_string(Detector);
+
+    TCanvas* cSlowThresh =
+      new TCanvas(
+        canvasName.c_str(),
+        canvasTitle.c_str(),
+        800,
+        600);
+
+    cSlowThresh->cd();
+
+    // Draw LV first to establish axes
+    gLV->Draw("AP");
+
+    // Determine Y-axis range using only this detector
+    double ymin = 1e9;
+    double ymax = -1e9;
+
+    for (const auto& kv : m_SlowThresholds) {
+
+      if (kv.first.GetDetectorID() != Detector) {
+        continue;
+      }
+
+      double v = kv.second;
+
+      if (v < ymin) {
+        ymin = v;
+      }
+
+      if (v > ymax) {
+        ymax = v;
+      }
     }
-    if (v > ymax) {
-      ymax = v;
+
+    // Add 10% padding. Protect against a zero-width range.
+    double range = ymax - ymin;
+    double pad = 0.1 * range;
+
+    if (range <= 0.0) {
+      pad = 1.0;
     }
+
+    gLV->GetYaxis()->SetRangeUser(
+      ymin - pad,
+      ymax + pad);
+
+    // Overlay HV
+    gHV->Draw("P SAME");
+
+    // Legend
+    TLegend* legSlowScatter =
+      new TLegend(0.7, 0.72, 0.8, 0.8);
+
+    legSlowScatter->AddEntry(gLV, "LV", "p");
+    legSlowScatter->AddEntry(gHV, "HV", "p");
+
+    legSlowScatter->SetTextSize(0.02);
+    legSlowScatter->SetBorderSize(1);
+    legSlowScatter->SetFillStyle(0);
+
+    legSlowScatter->Draw();
+
+    cSlowThresh->Modified();
+    cSlowThresh->Update();
+
+    // Write detector-specific objects
+    cSlowThresh->Write();
+    gLV->Write();
+    gHV->Write();
   }
-  double pad = 0.1 * (ymax - ymin);
-  gSlowThresh_LV->GetYaxis()->SetRangeUser(ymin - pad, ymax + pad);
+  
+  
+  // -------------------------------------------------------------
+  // Create summary slow-threshold canvas containing all detectors
+  // -------------------------------------------------------------
 
-  // Overlay HV
-  gSlowThresh_HV->Draw("P SAME");
+  TCanvas* cSlowThresh_all =
+    new TCanvas(
+      "cSlowThresh_all",
+      "Slow Threshold per Strip - All Detectors",
+      1600,
+      1200);
 
-  // Legend
-  TLegend* legSlowScatter = new TLegend(0.7, 0.72, 0.8, 0.8);
-  legSlowScatter->AddEntry(gSlowThresh_LV, "LV", "p");
-  legSlowScatter->AddEntry(gSlowThresh_HV, "HV", "p");
+  cSlowThresh_all->Divide(4, 4);
 
-  legSlowScatter->SetTextSize(0.02);
-  legSlowScatter->SetBorderSize(1);
-  legSlowScatter->SetFillStyle(0);
+  int slowPad = 1;
 
-  legSlowScatter->Draw();
+  for (const auto& entry : gSlowThresh_LV) {
 
-  // Finalize
-  cSlowThresh->Modified();
-  cSlowThresh->Update();
+    unsigned int Detector = entry.first;
 
-  // Save
-  cSlowThresh->Write();
-  gSlowThresh_LV->Write();
-  gSlowThresh_HV->Write();
+    TGraph* gLV = gSlowThresh_LV[Detector];
+    TGraph* gHV = gSlowThresh_HV[Detector];
 
+    cSlowThresh_all->cd(slowPad);
+
+    // Draw LV first to establish axes
+    gLV->Draw("AP");
+
+    string detectorTitle;
+
+    auto info = DetectorInfo.find(Detector);
+
+    if (info != DetectorInfo.end()) {
+      detectorTitle =
+        info->second.first +
+        " - Det " + to_string(Detector) +
+        ": " + info->second.second;
+    } else {
+      detectorTitle =
+        "Detector " + to_string(Detector);
+    }
+
+    gLV->SetTitle(
+      (detectorTitle +
+       ";Strip;Threshold [keV]").c_str());
+
+    // Determine Y-axis range for this detector
+    double ymin = 1e9;
+    double ymax = -1e9;
+
+    for (const auto& kv : m_SlowThresholds) {
+
+      if (kv.first.GetDetectorID() != Detector) {
+        continue;
+      }
+
+      double v = kv.second;
+
+      if (v < ymin) {
+        ymin = v;
+      }
+
+      if (v > ymax) {
+        ymax = v;
+      }
+    }
+
+    // Add 10% padding
+    double range = ymax - ymin;
+    double pad = 0.1 * range;
+
+    if (range <= 0.0) {
+      pad = 1.0;
+    }
+
+    gLV->GetYaxis()->SetRangeUser(
+      ymin - pad,
+      ymax + pad);
+
+    // Overlay HV
+    gHV->Draw("P SAME");
+
+    // Compact text-only LV/HV labels
+    TLatex* labelLV = new TLatex();
+    labelLV->SetNDC();
+    labelLV->SetTextColor(kBlue);
+    labelLV->SetTextSize(0.04);
+    labelLV->SetTextAlign(12);
+    labelLV->DrawLatex(0.80, 0.54, "LV");
+
+    TLatex* labelHV = new TLatex();
+    labelHV->SetNDC();
+    labelHV->SetTextColor(kRed);
+    labelHV->SetTextSize(0.04);
+    labelHV->SetTextAlign(12);
+    labelHV->DrawLatex(0.80, 0.46, "HV");
+
+    ++slowPad;
+  }
+
+  cSlowThresh_all->Modified();
+  cSlowThresh_all->Update();
+  cSlowThresh_all->Write();
+  
+  
+  
   // -------------------------------------------------------------
   // SLOW threshold distribution (HV vs LV separated)
   // -------------------------------------------------------------
@@ -2772,82 +2981,217 @@ void MStripThresholdFinder::WriteDiagnostics()
 
 
   // -------------------------------------------------------------
-  // FAST threshold per Strip (use TGraph for proper axes)
+  // FAST threshold per Strip
+  // One canvas per detector
   // -------------------------------------------------------------
-  TGraph* gFastThresh_LV = new TGraph();
-  TGraph* gFastThresh_HV = new TGraph();
 
-  gFastThresh_LV->SetName("FastThresh_LV");
-  gFastThresh_HV->SetName("FastThresh_HV");
+  map<unsigned int, TGraph*> gFastThresh_LV;
+  map<unsigned int, TGraph*> gFastThresh_HV;
 
-  // Axis titles
-  gFastThresh_LV->SetTitle("Fast Threshold per Strip;Strip;Threshold (keV)");
-
-  // Styling
-  gFastThresh_LV->SetMarkerStyle(20); // circle
-  gFastThresh_LV->SetMarkerSize(1.0);
-  gFastThresh_LV->SetMarkerColor(kBlue);
-
-  gFastThresh_HV->SetMarkerStyle(20);
-  gFastThresh_HV->SetMarkerSize(1.0);
-  gFastThresh_HV->SetMarkerColor(kRed);
-
-  // Fill graphs
+  // Create and fill detector-specific graphs
   for (const auto& kv : m_FastThresholds) {
-    MReadOutElementDoubleStrip R = kv.first;
+
+    const MReadOutElementDoubleStrip& R = kv.first;
+    unsigned int Detector = R.GetDetectorID();
+    int Strip = R.GetStripID();
     double Threshold = kv.second;
 
-    if (R.GetStripID() == GUARD_RING_STRIP_ID) {
-      continue; // No fast GR threshold
+    // No fast guard-ring threshold
+    if (Strip == GUARD_RING_STRIP_ID) {
+      continue;
     }
 
+    // Create graphs the first time this detector is encountered
+    if (gFastThresh_LV.find(Detector) == gFastThresh_LV.end()) {
+
+      gFastThresh_LV[Detector] = new TGraph();
+      gFastThresh_HV[Detector] = new TGraph();
+
+      string lvName = "FastThresh_LV_Det" + to_string(Detector);
+      string hvName = "FastThresh_HV_Det" + to_string(Detector);
+
+      gFastThresh_LV[Detector]->SetName(lvName.c_str());
+      gFastThresh_HV[Detector]->SetName(hvName.c_str());
+
+      string detectorLabel;
+
+      auto info = DetectorInfo.find(Detector);
+
+      if (info != DetectorInfo.end()) {
+        detectorLabel =
+          info->second.first +
+          " - Det " + to_string(Detector) +
+          ": " + info->second.second;
+      } else {
+        detectorLabel =
+          "Detector " + to_string(Detector);
+      }
+
+      string graphTitle =
+        "Fast Threshold per Strip - " +
+        detectorLabel +
+        ";Strip;Threshold (keV)";
+
+      gFastThresh_LV[Detector]->SetTitle(graphTitle.c_str());
+
+      // Styling
+      gFastThresh_LV[Detector]->SetMarkerStyle(20);
+      gFastThresh_LV[Detector]->SetMarkerSize(1.0);
+      gFastThresh_LV[Detector]->SetMarkerColor(kBlue);
+
+      gFastThresh_HV[Detector]->SetMarkerStyle(20);
+      gFastThresh_HV[Detector]->SetMarkerSize(1.0);
+      gFastThresh_HV[Detector]->SetMarkerColor(kRed);
+    }
+
+    // Fill detector-specific graph
     if (R.IsLowVoltageStrip() == true) {
-      gFastThresh_LV->SetPoint(gFastThresh_LV->GetN(), R.GetStripID(), Threshold);
+      gFastThresh_LV[Detector]->SetPoint(
+        gFastThresh_LV[Detector]->GetN(),
+        Strip,
+        Threshold);
     } else {
-      gFastThresh_HV->SetPoint(gFastThresh_HV->GetN(), R.GetStripID(), Threshold);
+      gFastThresh_HV[Detector]->SetPoint(
+        gFastThresh_HV[Detector]->GetN(),
+        Strip,
+        Threshold);
     }
   }
+
 
   // Make sure ROOT file is the active directory
   f.cd();
 
+
   // -------------------------------------------------------------
-  // Canvas with legend (FIXED VERSION)
+  // Create one fast-threshold canvas per detector
   // -------------------------------------------------------------
-  TCanvas* cFast = new TCanvas("cFastThresh", "Fast Threshold per Strip", 800, 600);
-  cFast->cd();
 
-  // Draw LV first
-  gFastThresh_LV->Draw("AP");
+  for (const auto& entry : gFastThresh_LV) {
 
-  // Force axis AFTER draw
-  gFastThresh_LV->GetYaxis()->SetRangeUser(0, 60);
+    unsigned int Detector = entry.first;
 
-  // Draw HV
-  gFastThresh_HV->Draw("P SAME");
+    TGraph* gLV = gFastThresh_LV[Detector];
+    TGraph* gHV = gFastThresh_HV[Detector];
 
-  // Create legend AFTER graphs are drawn
-  TLegend* leg = new TLegend(0.7, 0.72, 0.8, 0.8);
-  leg->AddEntry(gFastThresh_LV, "LV", "p");
-  leg->AddEntry(gFastThresh_HV, "HV", "p");
+    string canvasName =
+      "cFastThresh_Det" + to_string(Detector);
 
-  // Make legend clearly visible
-  leg->SetBorderSize(1);
-  leg->SetFillColor(0);
-  leg->SetTextSize(0.025);
+    string canvasTitle =
+      "Fast Threshold per Strip - Detector " +
+      to_string(Detector);
 
-  leg->Draw();
-  cFast->GetListOfPrimitives()->Add(leg);
+    TCanvas* cFast =
+      new TCanvas(
+        canvasName.c_str(),
+        canvasTitle.c_str(),
+        800,
+        600);
 
-  // force rendering
-  cFast->Modified();
-  cFast->Update();
+    cFast->cd();
 
-  // Write AFTER everything is finalized
-  cFast->Write();
+    // Draw LV first to establish axes
+    gLV->Draw("AP");
 
-  gFastThresh_LV->Write();
-  gFastThresh_HV->Write();
+    // Keep existing fast-threshold display range
+    gLV->GetYaxis()->SetRangeUser(0, 60);
+
+    // Overlay HV
+    gHV->Draw("P SAME");
+
+    // Legend
+    TLegend* leg =
+      new TLegend(0.7, 0.72, 0.8, 0.8);
+
+    leg->AddEntry(gLV, "LV", "p");
+    leg->AddEntry(gHV, "HV", "p");
+
+    leg->SetBorderSize(1);
+    leg->SetFillColor(0);
+    leg->SetTextSize(0.025);
+
+    leg->Draw();
+
+    cFast->Modified();
+    cFast->Update();
+
+    // Write detector-specific objects
+    cFast->Write();
+    gLV->Write();
+    gHV->Write();
+  }
+  
+  // -------------------------------------------------------------
+  // Create summary fast-threshold canvas containing all detectors
+  // -------------------------------------------------------------
+
+  TCanvas* cFastThresh_all =
+    new TCanvas(
+      "cFastThresh_all",
+      "Fast Threshold per Strip - All Detectors",
+      1600,
+      1200);
+
+  cFastThresh_all->Divide(4, 4);
+
+  int fastPad = 1;
+
+  for (const auto& entry : gFastThresh_LV) {
+
+    unsigned int Detector = entry.first;
+
+    TGraph* gLV = gFastThresh_LV[Detector];
+    TGraph* gHV = gFastThresh_HV[Detector];
+
+    cFastThresh_all->cd(fastPad);
+
+    // Draw LV first to establish axes
+    gLV->Draw("AP");
+
+    string detectorTitle;
+
+    auto info = DetectorInfo.find(Detector);
+
+    if (info != DetectorInfo.end()) {
+      detectorTitle =
+        info->second.first +
+        " - Det " + to_string(Detector) +
+        ": " + info->second.second;
+    } else {
+      detectorTitle =
+        "Detector " + to_string(Detector);
+    }
+
+    gLV->SetTitle(
+      (detectorTitle +
+       ";Strip;Threshold [keV]").c_str());
+    // Keep existing fast-threshold display range
+    gLV->GetYaxis()->SetRangeUser(0, 60);
+
+    // Overlay HV
+    gHV->Draw("P SAME");
+
+    // Compact text-only LV/HV labels
+    TLatex* labelLV = new TLatex();
+    labelLV->SetNDC();
+    labelLV->SetTextColor(kBlue);
+    labelLV->SetTextSize(0.04);
+    labelLV->SetTextAlign(12);
+    labelLV->DrawLatex(0.80, 0.54, "LV");
+
+    TLatex* labelHV = new TLatex();
+    labelHV->SetNDC();
+    labelHV->SetTextColor(kRed);
+    labelHV->SetTextSize(0.04);
+    labelHV->SetTextAlign(12);
+    labelHV->DrawLatex(0.80, 0.46, "HV");
+
+    ++fastPad;
+  }
+
+  cFastThresh_all->Modified();
+  cFastThresh_all->Update();
+  cFastThresh_all->Write();
 
 
   // -------------------------------------------------------------
