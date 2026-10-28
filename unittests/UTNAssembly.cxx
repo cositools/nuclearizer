@@ -23,7 +23,7 @@ using namespace std;
 
 // ROOT:
 #include "TSystem.h"
-#include "TGClient.h"
+#include "TRandom.h"
 
 // MEGAlib:
 #include "MGlobal.h"
@@ -56,15 +56,30 @@ class UTNAssembly : public MUnitTest
   bool TestConstruction(MAssembly& A);
   //! Test SetInterrupt()
   bool TestSetInterrupt(MAssembly& A);
-  //! Test the ParseCommandLine() paths which return before any analysis or GUI is started
-  bool TestParseCommandLineEarlyExits(MAssembly& A);
-  //! Test ParseCommandLine() with options missing their argument in a child process
+  //! Test the help options and the usage text
+  bool TestParseCommandLineHelp(MAssembly& A);
+  //! Test ParseCommandLine() with options missing their argument
   bool TestParseCommandLineMissingArguments(MAssembly& A);
+  //! Test ParseCommandLine() with invalid values for -v and -m
+  bool TestParseCommandLineInvalidValues(MAssembly& A);
+  //! Test the supervisor state set by accepted options
+  bool TestParseCommandLineOptions(MAssembly& A);
+  //! Test that a failed -c or -C stops the parser
+  bool TestParseCommandLineConfigurationErrors(MAssembly& A);
+  //! Test that a failed analysis (-a) or test run (-t) is reported as error
+  bool TestParseCommandLineAnalysisErrors(MAssembly& A);
 
-  //! Call ParseCommandLine() with the given arguments (without the program name), the usage output is discarded
-  bool CallParseCommandLine(MAssembly& A, const vector<MString>& Arguments);
-  //! Call ParseCommandLine() in a child process; returns true if the child exited normally and ParseCommandLine() returned false
-  bool CallParseCommandLineInChild(MAssembly& A, const vector<MString>& Arguments);
+  //! Call ParseCommandLine() with the given arguments (without the program name), the output is discarded
+  int CallParseCommandLine(MAssembly& A, const vector<MString>& Arguments);
+  //! Call ParseCommandLine() with the given arguments (without the program name), the output is returned in Output
+  int CallParseCommandLine(MAssembly& A, const vector<MString>& Arguments, MString& Output);
+  //! Call ParseCommandLine() in a child process and return its return value, or c_ChildFailed if the child did not exit normally
+  int CallParseCommandLineInChild(MAssembly& A, const vector<MString>& Arguments);
+
+  //! Return value of CallParseCommandLineInChild() if the child crashed, timed out, or could not be started
+  static const int c_ChildFailed = -2;
+  //! Write a configuration file with the given module sequence and geometry file name, return its name or "" on failure
+  MString WriteConfiguration(const MString& Name, const vector<MString>& Sequence, const MString& GeometryFileName);
 };
 
 
@@ -83,11 +98,24 @@ bool UTNAssembly::Run()
   int AssemblyVerbosity = g_Verbosity;
   g_Verbosity = OldVerbosity;
 
+  // The constructor seeds gRandom with a fixed value to reproduce DEE results
+  const unsigned int NumberOfDraws = 5;
+  vector<double> AfterConstruction;
+  for (unsigned int i = 0; i < NumberOfDraws; ++i) AfterConstruction.push_back(gRandom->Rndm());
+  gRandom->SetSeed(20170912);
+  for (unsigned int i = 0; i < NumberOfDraws; ++i) {
+    Passed = EvaluateNear("MAssembly()", MString("random draw ") + i, "The constructor seeds gRandom with 20170912", AfterConstruction[i], gRandom->Rndm(), 1e-12) && Passed;
+  }
+
   Passed = Evaluate("MAssembly()", "verbosity", "The constructor sets the verbosity to c_Error", AssemblyVerbosity, (int) c_Error) && Passed;
   Passed = TestConstruction(A) && Passed;
   Passed = TestSetInterrupt(A) && Passed;
-  Passed = TestParseCommandLineEarlyExits(A) && Passed;
+  Passed = TestParseCommandLineHelp(A) && Passed;
   Passed = TestParseCommandLineMissingArguments(A) && Passed;
+  Passed = TestParseCommandLineInvalidValues(A) && Passed;
+  Passed = TestParseCommandLineOptions(A) && Passed;
+  Passed = TestParseCommandLineConfigurationErrors(A) && Passed;
+  Passed = TestParseCommandLineAnalysisErrors(A) && Passed;
 
   Summarize();
 
@@ -98,7 +126,17 @@ bool UTNAssembly::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNAssembly::CallParseCommandLine(MAssembly& A, const vector<MString>& Arguments)
+int UTNAssembly::CallParseCommandLine(MAssembly& A, const vector<MString>& Arguments)
+{
+  MString Output;
+  return CallParseCommandLine(A, Arguments, Output);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int UTNAssembly::CallParseCommandLine(MAssembly& A, const vector<MString>& Arguments, MString& Output)
 {
   vector<MString> All;
   All.push_back("nuclearizer");
@@ -110,10 +148,11 @@ bool UTNAssembly::CallParseCommandLine(MAssembly& A, const vector<MString>& Argu
   }
   Argv.push_back(nullptr);
 
-  ostringstream Discard;
-  streambuf* Old = cout.rdbuf(Discard.rdbuf());
-  bool Result = A.ParseCommandLine((int) All.size(), Argv.data());
+  ostringstream Capture;
+  streambuf* Old = cout.rdbuf(Capture.rdbuf());
+  int Result = A.ParseCommandLine((int) All.size(), Argv.data());
   cout.rdbuf(Old);
+  Output = Capture.str().c_str();
 
   return Result;
 }
@@ -122,13 +161,18 @@ bool UTNAssembly::CallParseCommandLine(MAssembly& A, const vector<MString>& Argu
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNAssembly::CallParseCommandLineInChild(MAssembly& A, const vector<MString>& Arguments)
+int UTNAssembly::CallParseCommandLineInChild(MAssembly& A, const vector<MString>& Arguments)
 {
   cout.flush();
   mout.flush();
 
+  // Exit code of the child for the return value -1, which is no valid exit code
+  const int UILaunched = 2;
+  // Exit code if stdout cannot be redirected
+  const int RedirectFailed = 3;
+
   pid_t Pid = fork();
-  if (Pid < 0) return false;
+  if (Pid < 0) return c_ChildFailed;
 
   if (Pid == 0) {
     // A crash is a possible outcome here: without ROOT's handlers it ends the child without a stack trace
@@ -136,18 +180,39 @@ bool UTNAssembly::CallParseCommandLineInChild(MAssembly& A, const vector<MString
     // Child: never return into the test
     // Time-out of the child process in seconds
     const unsigned int ChildTimeout = 30;
-    // Exit code if stdout cannot be redirected
-    const int RedirectFailed = 3;
     alarm(ChildTimeout);
     if (freopen("/dev/null", "w", stdout) == nullptr) _exit(RedirectFailed);
-    bool Result = CallParseCommandLine(A, Arguments);
-    _exit(Result == false ? 0 : 1);
+    int Result = CallParseCommandLine(A, Arguments);
+    _exit(Result == -1 ? UILaunched : Result);
   }
 
   int Status = 0;
-  if (waitpid(Pid, &Status, 0) != Pid) return false;
-  if (WIFEXITED(Status) == false) return false;
-  return WEXITSTATUS(Status) == 0;
+  if (waitpid(Pid, &Status, 0) != Pid) return c_ChildFailed;
+  if (WIFEXITED(Status) == false) return c_ChildFailed;
+  if (WEXITSTATUS(Status) == RedirectFailed) return c_ChildFailed;
+  return WEXITSTATUS(Status) == UILaunched ? -1 : WEXITSTATUS(Status);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTNAssembly::WriteConfiguration(const MString& Name, const vector<MString>& Sequence, const MString& GeometryFileName)
+{
+  MString C;
+  C += "<NuclearizerData>\n";
+  C += "  <Version>1</Version>\n";
+  C += "  <ModuleSequence>\n";
+  for (const MString& Tag : Sequence) {
+    C += MString("    <ModuleSequenceItem>") + Tag + "</ModuleSequenceItem>\n";
+  }
+  C += "  </ModuleSequence>\n";
+  C += MString("  <GeometryFileName>") + GeometryFileName + "</GeometryFileName>\n";
+  C += "</NuclearizerData>\n";
+
+  MString FileName = GetTemporaryFileName(Name);
+  if (WriteTextFile(FileName, C) == false) return "";
+  return FileName;
 }
 
 
@@ -187,8 +252,19 @@ bool UTNAssembly::TestConstruction(MAssembly& A)
   Passed = EvaluateTrue("MAssembly()", "registry", "The read-out data 'flags' is registered", R.IsReadOutDataRegistered("flags")) && Passed;
   Passed = EvaluateTrue("MAssembly()", "registry", "The read-out element 'voxel3d' is registered", R.IsReadOutElementRegistered("voxel3d")) && Passed;
 
+  // All modules the constructor should register -- add new modules here
+  // Deliberately hard-coded: a list generated from the registry would not catch a module missing in the constructor
+  vector<MString> XmlTags = { "XmlTagLoaderSimulations", "XmlTagMeasurementLoaderROA", "XmlTagMeasurementLoaderTRA", "XmlTagMeasurementLoaderHDF",
+                              "XmlTagMeasurementLoaderFITS", "XmlTagMeasurementLoaderL0", "XmlTagDEESMEX", "XmlTagEventFilter",
+                              "XmlTagEnergyCalibration", "XmlTagStripPairingMultiRoundChiSquare", "XmlTagStripPairingChiSquare",
+                              "XmlTagDepthCalibration", "XmlTagTrappingCorrection", "XmlTagEventSaver", "XmlTagSaverMeasurementsL0",
+                              "XmlTagSaverMeasurementsFITSL1a", "XmlTagSaverMeasurementsFITSL1b", "XmlTagSaverMeasurementsFITSL2",
+                              "XmlTagTransmitterRealta", "XmlTagResponseGenerator", "XmlTagRevan", "XmlTagTACCalibration",
+                              "XmlTagDiagnostics", "XmlTagDiagnosticsEnergyPerStrip" };
+
   MSupervisor* S = MSupervisor::GetSupervisor();
-  Passed = Evaluate("MAssembly()", "available modules", "The constructor registers 24 available modules", S->GetNAvailableModules(), 24u) && Passed;
+  Passed = EvaluateSize("MAssembly()", "available modules", "The constructor registers exactly the listed modules", S->GetNAvailableModules(), XmlTags.size()) && Passed;
+  Passed = EvaluateTrue("MAssembly()", "default", "Multithreading is enabled by default", S->IsUsingMultiThreading()) && Passed;
 
   set<MString> Tags;
   set<MString> Names;
@@ -207,9 +283,20 @@ bool UTNAssembly::TestConstruction(MAssembly& A)
   }
   Passed = EvaluateTrue("MAssembly()", "available modules", "All available modules are non-null", AllValid) && Passed;
 
-  vector<MString> Expected = { "XmlTagSaverMeasurementsFITSL1a", "XmlTagSaverMeasurementsFITSL1b", "XmlTagSaverMeasurementsFITSL2" };
-  for (MString& Tag : Expected) {
-    Passed = EvaluateTrue("MAssembly()", Tag, "The FITS saver for this level is available", S->GetAvailableModuleByXmlTag(Tag) != nullptr) && Passed;
+  for (MString& Tag : XmlTags) {
+    Passed = EvaluateTrue("GetAvailableModuleByXmlTag()", Tag, "The module with this XML tag is available", S->GetAvailableModuleByXmlTag(Tag) != nullptr) && Passed;
+  }
+
+  // The nearest neighbor module is deliberately not registered in the constructor
+  Passed = EvaluateTrue("GetAvailableModuleByXmlTag()", "XmlTagNearestNeighbor", "The nearest neighbor module is not available", S->GetAvailableModuleByXmlTag("XmlTagNearestNeighbor") == nullptr) && Passed;
+  Passed = EvaluateTrue("GetAvailableModuleByXmlTag()", "XmlTagDoesNotExist", "An unknown XML tag is not found", S->GetAvailableModuleByXmlTag("XmlTagDoesNotExist") == nullptr) && Passed;
+  Passed = EvaluateFalse("MAssembly()", "registry", "An unknown read-out data type is not registered", R.IsReadOutDataRegistered("doesnotexist")) && Passed;
+
+  // Modules can also be found by their name, which is how old configuration files are read
+  MModule* EventFilter = S->GetAvailableModuleByName("Event Filter");
+  Passed = EvaluateTrue("GetAvailableModuleByName()", "Event Filter", "A module can be found by its name", EventFilter != nullptr) && Passed;
+  if (EventFilter != nullptr) {
+    Passed = Evaluate("GetAvailableModuleByName()", "Event Filter", "The module found by name has the matching XML tag", EventFilter->GetXmlTag(), MString("XmlTagEventFilter")) && Passed;
   }
 
   return Passed;
@@ -239,23 +326,28 @@ bool UTNAssembly::TestSetInterrupt(MAssembly& A)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNAssembly::TestParseCommandLineEarlyExits(MAssembly& A)
+bool UTNAssembly::TestParseCommandLineHelp(MAssembly& A)
 {
   bool Passed = true;
 
-  Passed = EvaluateFalse("ParseCommandLine()", "-h", "ParseCommandLine returns false for -h", CallParseCommandLine(A, { "-h" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "--help", "ParseCommandLine returns false for --help", CallParseCommandLine(A, { "--help" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "?", "ParseCommandLine returns false for ?", CallParseCommandLine(A, { "?" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "-?", "ParseCommandLine returns false for -?", CallParseCommandLine(A, { "-?" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "-a -h", "Help takes precedence over -a", CallParseCommandLine(A, { "-a", "-h" })) && Passed;
+  MString Output;
+  Passed = Evaluate("ParseCommandLine()", "-h", "ParseCommandLine returns 0 for -h: printing the help is no error", CallParseCommandLine(A, { "-h" }, Output), 0) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-h", "The help output contains the usage header", Output.Contains("Usage: Nuclearizer")) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-h", "The usage names ~/.nuclearizer.cfg as default configuration file", Output.Contains("If no configuration file is given ~/.nuclearizer.cfg is used")) && Passed;
+  Passed = EvaluateFalse("ParseCommandLine()", "-h", "The usage does not name the old ~/.nuclearizer.xml.cfg", Output.Contains(".nuclearizer.xml.cfg")) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-h", "The usage names multithreading as default, as set in the constructor", Output.Contains("0: false, else: true (default)")) && Passed;
 
-  Passed = EvaluateFalse("ParseCommandLine()", "-c", "ParseCommandLine returns false if -c has no argument", CallParseCommandLine(A, { "-c" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "--configuration", "ParseCommandLine returns false if --configuration has no argument", CallParseCommandLine(A, { "--configuration" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "-c -a", "ParseCommandLine returns false if the argument of -c is another option", CallParseCommandLine(A, { "-c", "-a" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "-g", "ParseCommandLine returns false if -g has no argument", CallParseCommandLine(A, { "-g" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "--geometry", "ParseCommandLine returns false if --geometry has no argument", CallParseCommandLine(A, { "--geometry" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "-m", "ParseCommandLine returns false if -m has no argument", CallParseCommandLine(A, { "-m" })) && Passed;
-  Passed = EvaluateFalse("ParseCommandLine()", "--multithreading", "ParseCommandLine returns false if --multithreading has no argument", CallParseCommandLine(A, { "--multithreading" })) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--help", "ParseCommandLine returns 0 for --help", CallParseCommandLine(A, { "--help" }), 0) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "?", "ParseCommandLine returns 0 for ?", CallParseCommandLine(A, { "?" }), 0) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-?", "ParseCommandLine returns 0 for -?", CallParseCommandLine(A, { "-?" }), 0) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-a -h", "Help takes precedence over -a", CallParseCommandLine(A, { "-a", "-h" }), 0) && Passed;
+
+  // Help is handled first, so no other option on the same command line reaches the supervisor
+  MSupervisor* S = MSupervisor::GetSupervisor();
+  MString OldGeometryFileName = S->GetGeometryFileName();
+  MString GeometryFileName = GetTemporaryFileName("help.geo.setup");
+  Passed = Evaluate("ParseCommandLine()", "-g <file> --help", "ParseCommandLine returns 0", CallParseCommandLine(A, { "-g", GeometryFileName, "--help" }), 0) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-g <file> --help", "Help returns before -g changes the supervisor", S->GetGeometryFileName(), OldGeometryFileName) && Passed;
 
   return Passed;
 }
@@ -268,25 +360,204 @@ bool UTNAssembly::TestParseCommandLineMissingArguments(MAssembly& A)
 {
   bool Passed = true;
 
-  // These options take an argument too, but are not part of the argument check
-  Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "-v", "ParseCommandLine rejects -v without argument without crashing", CallParseCommandLineInChild(A, { "-v" }))) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "--verbosity", "ParseCommandLine rejects --verbosity without argument without crashing", CallParseCommandLineInChild(A, { "--verbosity" }))) && Passed;
-#ifdef _LIBCPP_VERSION
-  // The parser does not check for the missing argument and streams the null argv[argc] into cout, which crashes with libc++
-  Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "-C", "ParseCommandLine rejects -C without argument without crashing", CallParseCommandLineInChild(A, { "-C" }))) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "--change-configuration", "ParseCommandLine rejects --change-configuration without argument without crashing", CallParseCommandLineInChild(A, { "--change-configuration" }))) && Passed;
-#else
-  // Other standard libraries (e.g. libstdc++) ignore a null char pointer in a stream, which hides the missing argument check:
-  // the parser continues and returns false only if LaunchUI() fails.
-  // Without a display ROOT starts in batch mode with a dummy gClient, which lets LaunchUI() succeed
-  if (gClient != nullptr) {
-    Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "-C", "ParseCommandLine rejects -C without argument without crashing", CallParseCommandLineInChild(A, { "-C" }))) && Passed;
-    Passed = ExpectedToFail(EvaluateTrue("ParseCommandLine()", "--change-configuration", "ParseCommandLine rejects --change-configuration without argument without crashing", CallParseCommandLineInChild(A, { "--change-configuration" }))) && Passed;
-  } else {
-    Passed = EvaluateTrue("ParseCommandLine()", "-C", "ParseCommandLine rejects -C without argument without crashing", CallParseCommandLineInChild(A, { "-C" })) && Passed;
-    Passed = EvaluateTrue("ParseCommandLine()", "--change-configuration", "ParseCommandLine rejects --change-configuration without argument without crashing", CallParseCommandLineInChild(A, { "--change-configuration" })) && Passed;
+  // A missing argument used to read argv[argc], i.e. a null pointer: run in a child process to survive a crash
+  vector<MString> Options = { "-c", "--configuration", "-C", "--change-configuration", "-g", "--geometry", "-m", "--multithreading", "-v", "--verbosity" };
+  for (const MString& O : Options) {
+    Passed = Evaluate("ParseCommandLine()", O, "ParseCommandLine returns 1 for the option without argument and does not crash", CallParseCommandLineInChild(A, { O }), 1) && Passed;
   }
-#endif
+
+  // An argument must not start with "-"
+  Passed = Evaluate("ParseCommandLine()", "-c -a", "ParseCommandLine returns 1 for another option as argument of -c", CallParseCommandLineInChild(A, { "-c", "-a" }), 1) && Passed;
+
+  MString Output;
+  Passed = Evaluate("ParseCommandLine()", "--geometry", "ParseCommandLine returns 1 if --geometry has no argument", CallParseCommandLine(A, { "--geometry" }, Output), 1) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "--geometry", "The error message names the whole option", Output.Contains("Option --geometry needs a second argument")) && Passed;
+
+  // A negative value starts with "-" and is therefore a missing argument
+  Passed = Evaluate("ParseCommandLine()", "-v -1", "ParseCommandLine returns 1 for a negative verbosity", CallParseCommandLine(A, { "-v", "-1" }, Output), 1) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-v -1", "A negative value is reported as missing argument", Output.Contains("Option -v needs a second argument")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNAssembly::TestParseCommandLineInvalidValues(MAssembly& A)
+{
+  bool Passed = true;
+
+  int OldVerbosity = g_Verbosity;
+
+  // Verbosity: whole numbers between c_Quiet and c_Info
+  vector<MString> InvalidVerbosities = { "abc", "4", "2.5", "2e0" };
+  for (const MString& V : InvalidVerbosities) {
+    MString Input = MString("-v ") + V;
+    Passed = Evaluate("ParseCommandLine()", Input, "ParseCommandLine returns 1 for an invalid verbosity", CallParseCommandLine(A, { "-v", V }), 1) && Passed;
+    Passed = Evaluate("ParseCommandLine()", Input, "An invalid verbosity does not change the verbosity", g_Verbosity, OldVerbosity) && Passed;
+  }
+
+  MString Output;
+  CallParseCommandLine(A, { "-v", "2.5" }, Output);
+  Passed = EvaluateTrue("ParseCommandLine()", "-v 2.5", "A decimal verbosity is reported as non-integer argument", Output.Contains("Option -v needs an integer argument, not \"2.5\"")) && Passed;
+  CallParseCommandLine(A, { "--verbosity", "4" }, Output);
+  Passed = EvaluateTrue("ParseCommandLine()", "--verbosity 4", "An out-of-range verbosity is reported with the valid range", Output.Contains("Option --verbosity needs an argument between 0 and 3")) && Passed;
+
+  // Multithreading: whole numbers
+  vector<MString> InvalidMultiThreading = { "abc", "0.4" };
+  for (const MString& V : InvalidMultiThreading) {
+    MString Input = MString("-m ") + V;
+    Passed = Evaluate("ParseCommandLine()", Input, "ParseCommandLine returns 1 for an invalid multithreading value", CallParseCommandLine(A, { "-m", V }), 1) && Passed;
+  }
+
+  g_Verbosity = OldVerbosity;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNAssembly::TestParseCommandLineOptions(MAssembly& A)
+{
+  bool Passed = true;
+
+  MSupervisor* S = MSupervisor::GetSupervisor();
+  int OldVerbosity = g_Verbosity;
+  MString OldGeometryFileName = S->GetGeometryFileName();
+
+  // An accepted command line without -a or -t launches the UI. Thus each command line ends with -t on a
+  // module sequence which cannot run: the analysis fails before the geometry is loaded, the parser returns
+  // without UI, and only the supervisor state is checked here. The geometry files are never opened
+  const MString GeometryFileName = GetTemporaryFileName("options.geo.setup");
+  const MString LongGeometryFileName = GetTemporaryFileName("options.long.geo.setup");
+  const MString ConfiguredGeometryFileName = GetTemporaryFileName("options.configured.geo.setup");
+  const MString ChangedGeometryFileName = GetTemporaryFileName("options.changed.geo.setup");
+
+  const MString Empty = WriteConfiguration("options.empty.cfg", { }, "");
+  Passed = EvaluateFalse("WriteConfiguration()", "options.empty.cfg", "The fixture file is written", Empty.IsEmpty()) && Passed;
+  const MString Configuration = WriteConfiguration("options.cfg", { "XmlTagLoaderSimulations", "XmlTagEventFilter" }, ConfiguredGeometryFileName);
+  Passed = EvaluateFalse("WriteConfiguration()", "options.cfg", "The fixture file is written", Configuration.IsEmpty()) && Passed;
+  if (Empty.IsEmpty() == true || Configuration.IsEmpty() == true) return false;
+
+  CallParseCommandLine(A, { "-c", Empty, "-g", GeometryFileName, "-t" });
+  Passed = Evaluate("ParseCommandLine()", "-g <file>", "-g stores the geometry file name in the supervisor", S->GetGeometryFileName(), GeometryFileName) && Passed;
+  CallParseCommandLine(A, { "-c", Empty, "--geometry", LongGeometryFileName, "-t" });
+  Passed = Evaluate("ParseCommandLine()", "--geometry <file>", "--geometry stores the geometry file name in the supervisor", S->GetGeometryFileName(), LongGeometryFileName) && Passed;
+
+  // -c loads the module sequence and the geometry file name
+  MString Output;
+  CallParseCommandLine(A, { "-c", Configuration, "-t" }, Output);
+  Passed = EvaluateTrue("ParseCommandLine()", "-c <file>", "-c reports the configuration file it uses", Output.Contains("Command-line parser: Use configuration file")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-c <file>", "-c loads the geometry file name", S->GetGeometryFileName(), ConfiguredGeometryFileName) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-c <file>", "-c loads the module sequence", S->GetNModules(), 2u) && Passed;
+  if (S->GetNModules() == 2) {
+    Passed = Evaluate("ParseCommandLine()", "-c <file>", "The first module is the simulation loader", S->GetModule(0)->GetXmlTag(), MString("XmlTagLoaderSimulations")) && Passed;
+    Passed = Evaluate("ParseCommandLine()", "-c <file>", "The second module is the event filter", S->GetModule(1)->GetXmlTag(), MString("XmlTagEventFilter")) && Passed;
+  }
+
+  // -c is always applied first and -C afterwards, independent of the order on the command line, thus the value of -C wins
+  CallParseCommandLine(A, { "-C", MString("GeometryFileName=") + ChangedGeometryFileName, "-c", Empty, "-t" }, Output);
+  Passed = EvaluateTrue("ParseCommandLine()", "-C <pattern>", "-C reports the configuration value it changes", Output.Contains("Command-line parser: Changing this configuration value")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-C <pattern> before -c <file>", "-c is applied before -C", S->GetGeometryFileName(), ChangedGeometryFileName) && Passed;
+
+  // -C can be given multiple times, the last one wins
+  CallParseCommandLine(A, { "-c", Empty, "-C", MString("GeometryFileName=") + ConfiguredGeometryFileName, "-C", MString("GeometryFileName=") + ChangedGeometryFileName, "-t" });
+  Passed = Evaluate("ParseCommandLine()", "two -C patterns", "The last -C wins", S->GetGeometryFileName(), ChangedGeometryFileName) && Passed;
+
+  // -g is applied after -C
+  CallParseCommandLine(A, { "-c", Empty, "-g", GeometryFileName, "-C", MString("GeometryFileName=") + ChangedGeometryFileName, "-t" });
+  Passed = Evaluate("ParseCommandLine()", "-C <pattern> and -g <file>", "-g overrides a geometry file name set with -C", S->GetGeometryFileName(), GeometryFileName) && Passed;
+
+  CallParseCommandLine(A, { "-c", Empty, "-m", "1", "-t" }, Output);
+  Passed = EvaluateTrue("ParseCommandLine()", "-m 1", "-m 1 enables multithreading", Output.Contains("Command-line parser: Using multithreading: yes")) && Passed;
+  CallParseCommandLine(A, { "-c", Empty, "-m", "2", "-t" }, Output);
+  Passed = EvaluateTrue("ParseCommandLine()", "-m 2", "Any non-zero value enables multithreading", Output.Contains("Command-line parser: Using multithreading: yes")) && Passed;
+  CallParseCommandLine(A, { "-c", Empty, "--multithreading", "0", "-t" }, Output);
+  Passed = EvaluateTrue("ParseCommandLine()", "--multithreading 0", "--multithreading 0 disables multithreading", Output.Contains("Command-line parser: Using multithreading: no")) && Passed;
+
+  CallParseCommandLine(A, { "-c", Empty, "-v", "0", "-t" });
+  int Verbosity = g_Verbosity;
+  g_Verbosity = OldVerbosity;
+  Passed = Evaluate("ParseCommandLine()", "-v 0", "-v 0 sets the verbosity to c_Quiet", Verbosity, (int) c_Quiet) && Passed;
+  CallParseCommandLine(A, { "-c", Empty, "--verbosity", "3", "-t" });
+  Verbosity = g_Verbosity;
+  g_Verbosity = OldVerbosity;
+  Passed = Evaluate("ParseCommandLine()", "--verbosity 3", "--verbosity 3 sets the verbosity to c_Info", Verbosity, (int) c_Info) && Passed;
+
+  // An unknown option gives a warning, but the options after it are still applied
+  CallParseCommandLine(A, { "-c", Empty, "--unknown-option", "-v", "3", "-t" }, Output);
+  Verbosity = g_Verbosity;
+  g_Verbosity = OldVerbosity;
+  Passed = EvaluateTrue("ParseCommandLine()", "--unknown-option", "An unknown option gives a warning", Output.Contains("WARNING: Command-line parser: Unknown option: --unknown-option")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--unknown-option -v 3", "Parsing continues after the warning and applies -v", Verbosity, (int) c_Info) && Passed;
+
+  // An argument which is not an option is ignored
+  CallParseCommandLine(A, { "-c", Empty, "SomeFile.roa", "-t" }, Output);
+  Passed = EvaluateFalse("ParseCommandLine()", "SomeFile.roa", "An argument which is not an option gives no unknown-option warning", Output.Contains("Unknown option")) && Passed;
+
+  g_Verbosity = OldVerbosity;
+  S->SetGeometryFileName(OldGeometryFileName);
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNAssembly::TestParseCommandLineConfigurationErrors(MAssembly& A)
+{
+  bool Passed = true;
+
+  const MString Missing = GetTemporaryFileName("does-not-exist.cfg");
+
+  // A configuration file which cannot be loaded stops the parser, i.e. no analysis with another configuration
+  MString Output;
+  Passed = Evaluate("ParseCommandLine()", "-c <missing file>", "ParseCommandLine returns 1: a configuration file which cannot be loaded is an error", CallParseCommandLine(A, { "-c", Missing }, Output), 1) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-c <missing file>", "The error is reported", Output.Contains("ERROR: Command-line parser: Unable to load configuration file")) && Passed;
+  Passed = EvaluateFalse("ParseCommandLine()", "-c <missing file>", "The file is not reported as used", Output.Contains("Command-line parser: Use configuration file")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-c <missing file> -a", "ParseCommandLine returns 1 without starting the analysis", CallParseCommandLineInChild(A, { "-c", Missing, "-a" }), 1) && Passed;
+  CallParseCommandLine(A, { "-c", Missing, "-a" }, Output);
+  Passed = EvaluateFalse("ParseCommandLine()", "-c <missing file> -a", "The analysis is not attempted", Output.Contains("The analysis failed")) && Passed;
+
+  // A field which cannot be changed stops the parser too
+  Passed = Evaluate("ParseCommandLine()", "-C <unknown field>", "ParseCommandLine returns 1: a configuration value which cannot be changed is an error", CallParseCommandLine(A, { "-C", "DoesNotExist=1" }, Output), 1) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-C <unknown field>", "The error is reported", Output.Contains("Unable to change this configuration value: DoesNotExist=1")) && Passed;
+  CallParseCommandLine(A, { "-C", "DoesNotExist=1", "-a" }, Output);
+  Passed = EvaluateFalse("ParseCommandLine()", "-C <unknown field> -a", "The analysis is not attempted", Output.Contains("The analysis failed")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTNAssembly::TestParseCommandLineAnalysisErrors(MAssembly& A)
+{
+  bool Passed = true;
+
+  // A successful -a or -t ends the program in MSupervisor::Exit(), thus only failures can be tested.
+  // Without the error handling Exit() would be called, which crashes without a TApplication: run in a child process
+  const MString Empty = WriteConfiguration("analysis.empty.cfg", { }, "");
+  Passed = EvaluateFalse("WriteConfiguration()", "analysis.empty.cfg", "The fixture file is written", Empty.IsEmpty()) && Passed;
+  const MString NoGeometry = WriteConfiguration("analysis.nogeometry.cfg", { "XmlTagLoaderSimulations" }, GetTemporaryFileName("does-not-exist.geo.setup"));
+  Passed = EvaluateFalse("WriteConfiguration()", "analysis.nogeometry.cfg", "The fixture file is written", NoGeometry.IsEmpty()) && Passed;
+  if (Empty.IsEmpty() == true || NoGeometry.IsEmpty() == true) return false;
+
+  Passed = Evaluate("ParseCommandLine()", "-a, no modules", "ParseCommandLine returns 1: a failed analysis is an error", CallParseCommandLineInChild(A, { "-c", Empty, "-a" }), 1) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--auto, missing geometry", "ParseCommandLine returns 1: a failed analysis is an error", CallParseCommandLineInChild(A, { "-c", NoGeometry, "--auto" }), 1) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-t, no modules", "ParseCommandLine returns 1: a failed test run is an error", CallParseCommandLineInChild(A, { "-c", Empty, "-t" }), 1) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--test, missing geometry", "ParseCommandLine returns 1: a failed test run is an error", CallParseCommandLineInChild(A, { "-c", NoGeometry, "--test" }), 1) && Passed;
+
+  MString Output;
+  Passed = Evaluate("ParseCommandLine()", "-a, no modules, in process", "ParseCommandLine returns 1 without calling Exit()", CallParseCommandLine(A, { "-c", Empty, "-a" }, Output), 1) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-a, no modules", "The failed analysis is reported", Output.Contains("ERROR: Command-line parser: The analysis failed")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-t, no modules, in process", "ParseCommandLine returns 1 without calling Exit()", CallParseCommandLine(A, { "-c", Empty, "-t" }, Output), 1) && Passed;
+  Passed = EvaluateTrue("ParseCommandLine()", "-t, no modules", "The failed test run is reported", Output.Contains("ERROR: Command-line parser: The test run failed")) && Passed;
 
   return Passed;
 }
