@@ -439,7 +439,6 @@ bool UTNSubModuleStripReadout::TestNearestNeighbors()
   Passed = EvaluateTrue("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor strip is kept", S11 != nullptr) && Passed;
   if (S11 != nullptr) {
     Passed = EvaluateTrue("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor strip is flagged as nearest neighbor", S11->m_IsNearestNeighbor) && Passed;
-    // TF1::GetX() returns 199.99999 and the cast truncates it (MSubModuleStripReadout.cxx:176); depends on the root finder precision
     Passed = Evaluate("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor ADC is 200", S11->m_ADC, 200u) && Passed;
   }
   Passed = EvaluateTrue("AnalyzeEvent()", "isolated sub-threshold strip 40", "An isolated sub-threshold strip is removed", FindStrip(LV, 40) == nullptr) && Passed;
