@@ -190,6 +190,7 @@ int MAssembly::ParseCommandLine(int argc, char** argv)
   Usage<<"             Automatically start analysis without GUI"<<endl;
   Usage<<"      -m --multithreading:"<<endl;
   Usage<<"             0: false, else: true (default)"<<endl;
+  Usage<<"             One thread per module plus additional instances of the slowest modules"<<endl;
   Usage<<"      -g --geometry:"<<endl;
   Usage<<"             Use this geometry file"<<endl;
   Usage<<"      -t --test:"<<endl;

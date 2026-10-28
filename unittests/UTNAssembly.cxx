@@ -252,8 +252,18 @@ bool UTNAssembly::TestConstruction(MAssembly& A)
   Passed = EvaluateTrue("MAssembly()", "registry", "The read-out data 'flags' is registered", R.IsReadOutDataRegistered("flags")) && Passed;
   Passed = EvaluateTrue("MAssembly()", "registry", "The read-out element 'voxel3d' is registered", R.IsReadOutElementRegistered("voxel3d")) && Passed;
 
+  // All modules the constructor should register -- add new modules here
+  // Deliberately hard-coded: a list generated from the registry would not catch a module missing in the constructor
+  vector<MString> XmlTags = { "XmlTagLoaderSimulations", "XmlTagMeasurementLoaderROA", "XmlTagMeasurementLoaderTRA", "XmlTagMeasurementLoaderHDF",
+                              "XmlTagMeasurementLoaderFITS", "XmlTagMeasurementLoaderL0", "XmlTagDEESMEX", "XmlTagEventFilter",
+                              "XmlTagEnergyCalibration", "XmlTagStripPairingMultiRoundChiSquare", "XmlTagStripPairingChiSquare",
+                              "XmlTagDepthCalibration", "XmlTagTrappingCorrection", "XmlTagEventSaver", "XmlTagSaverMeasurementsL0",
+                              "XmlTagSaverMeasurementsFITSL1a", "XmlTagSaverMeasurementsFITSL1b", "XmlTagSaverMeasurementsFITSL2",
+                              "XmlTagTransmitterRealta", "XmlTagResponseGenerator", "XmlTagRevan", "XmlTagTACCalibration",
+                              "XmlTagDiagnostics", "XmlTagDiagnosticsEnergyPerStrip" };
+
   MSupervisor* S = MSupervisor::GetSupervisor();
-  Passed = Evaluate("MAssembly()", "available modules", "The constructor registers 24 available modules", S->GetNAvailableModules(), 24u) && Passed;
+  Passed = EvaluateSize("MAssembly()", "available modules", "The constructor registers exactly the listed modules", S->GetNAvailableModules(), XmlTags.size()) && Passed;
 
   set<MString> Tags;
   set<MString> Names;
@@ -272,17 +282,6 @@ bool UTNAssembly::TestConstruction(MAssembly& A)
   }
   Passed = EvaluateTrue("MAssembly()", "available modules", "All available modules are non-null", AllValid) && Passed;
 
-  vector<MString> Expected = { "XmlTagSaverMeasurementsFITSL1a", "XmlTagSaverMeasurementsFITSL1b", "XmlTagSaverMeasurementsFITSL2" };
-  for (MString& Tag : Expected) {
-    Passed = EvaluateTrue("MAssembly()", Tag, "The FITS saver for this level is available", S->GetAvailableModuleByXmlTag(Tag) != nullptr) && Passed;
-  }
-
-  vector<MString> XmlTags = { "XmlTagLoaderSimulations", "XmlTagMeasurementLoaderROA", "XmlTagMeasurementLoaderTRA", "XmlTagMeasurementLoaderHDF",
-                              "XmlTagMeasurementLoaderFITS", "XmlTagMeasurementLoaderL0", "XmlTagDEESMEX", "XmlTagEventFilter",
-                              "XmlTagEnergyCalibration", "XmlTagStripPairingMultiRoundChiSquare", "XmlTagStripPairingChiSquare",
-                              "XmlTagDepthCalibration", "XmlTagTrappingCorrection", "XmlTagEventSaver", "XmlTagSaverMeasurementsL0",
-                              "XmlTagTransmitterRealta", "XmlTagResponseGenerator", "XmlTagRevan", "XmlTagTACCalibration",
-                              "XmlTagDiagnostics", "XmlTagDiagnosticsEnergyPerStrip" };
   for (MString& Tag : XmlTags) {
     Passed = EvaluateTrue("GetAvailableModuleByXmlTag()", Tag, "The module with this XML tag is available", S->GetAvailableModuleByXmlTag(Tag) != nullptr) && Passed;
   }
@@ -458,7 +457,7 @@ bool UTNAssembly::TestParseCommandLineOptions(MAssembly& A)
     Passed = Evaluate("ParseCommandLine()", "-c <file>", "The second module is the event filter", S->GetModule(1)->GetXmlTag(), MString("XmlTagEventFilter")) && Passed;
   }
 
-  // -c is applied before -C, independent of the order on the command line
+  // -c is always applied first and -C afterwards, independent of the order on the command line, thus the value of -C wins
   CallParseCommandLine(A, { "-C", MString("GeometryFileName=") + ChangedGeometryFileName, "-c", Empty, "-t" }, Output);
   Passed = EvaluateTrue("ParseCommandLine()", "-C <pattern>", "-C reports the configuration value it changes", Output.Contains("Command-line parser: Changing this configuration value")) && Passed;
   Passed = Evaluate("ParseCommandLine()", "-C <pattern> before -c <file>", "-c is applied before -C", S->GetGeometryFileName(), ChangedGeometryFileName) && Passed;
