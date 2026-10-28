@@ -55,7 +55,7 @@ ClassImp(MSubModuleChargeTransport)
 MSubModuleChargeTransport::MSubModuleChargeTransport() : MSubModule()
 {
   // Construct an instance of MSubModuleChargeTransport
-
+  m_Geometry = nullptr;
 
 }
 
@@ -74,6 +74,12 @@ MSubModuleChargeTransport::~MSubModuleChargeTransport()
 
 bool MSubModuleChargeTransport::Initialize()
 {
+  if (m_Geometry == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MSubModuleChargeTransport::Initialize: m_Geometry is a nullptr" << endl;
+    }
+    return false;
+  }
 
   // The DetID is taken from the detector name GeD_X, so detectors can be missing (e.g. no GeD_0).
   // Detectors not following this naming scheme get their DetID in the order of the detectors.
@@ -199,6 +205,19 @@ bool MSubModuleChargeTransport::Initialize()
     return false;
   }
 
+  // Warn about detectors without splines and remove them from DetIDs
+  for (auto Iter = m_DetectorIDs.begin(); Iter != m_DetectorIDs.end(); ) {
+    unsigned int DetID = *Iter;
+    if (m_ElectronDriftTimes.find(DetID) == m_ElectronDriftTimes.end() || m_HoleDriftTimes.find(DetID) == m_HoleDriftTimes.end()) {
+      if (g_Verbosity >= c_Warning){
+        cout << "WARNING in MSubModuleChargeTransport: Detector " << DetID << " does not have a depth spline - skipping" << endl;
+      }
+      Iter = m_DetectorIDs.erase(Iter);
+    } else {
+      ++Iter;
+    }
+  }
+
   // Load depth calibration coefficients
   DepthCalibration.SetCoeffsFileName(m_DepthCoefficientsFileName);
   if (DepthCalibration.LoadCoeffsFile(m_DepthCoefficientsFileName) == true) {
@@ -268,8 +287,9 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     auto IterLV2 = std::next(IterLV1);
     while (IterLV2 != LVHits.end()) {
       if (IterLV1->m_ROE == IterLV2->m_ROE) {
-        IterLV1->m_Energy += IterLV2->m_Energy;
         IterLV1->m_FastPeakTime = IterLV1->m_Energy > IterLV2->m_Energy ? IterLV1->m_FastPeakTime : IterLV2->m_FastPeakTime;
+        IterLV1->m_Energy += IterLV2->m_Energy;
+        IterLV1->m_SimulatedOrigins.splice(IterLV1->m_SimulatedOrigins.end(), IterLV2->m_SimulatedOrigins);
         IterLV2 = LVHits.erase(IterLV2);
       } else {
         ++IterLV2;
@@ -280,8 +300,9 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     auto IterHV2 = std::next(IterHV1);
     while (IterHV2 != HVHits.end()) {
       if (IterHV1->m_ROE == IterHV2->m_ROE) {
-        IterHV1->m_Energy += IterHV2->m_Energy;
         IterHV1->m_FastPeakTime = IterHV1->m_Energy > IterHV2->m_Energy ? IterHV1->m_FastPeakTime : IterHV2->m_FastPeakTime;
+        IterHV1->m_Energy += IterHV2->m_Energy;
+        IterHV1->m_SimulatedOrigins.splice(IterHV1->m_SimulatedOrigins.end(), IterHV2->m_SimulatedOrigins);
         IterHV2 = HVHits.erase(IterHV2);
       } else {
         ++IterHV2;
@@ -367,14 +388,20 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     // Apply stretch based on Eq. (3) in https://doi.org/10.1016/j.nima.2026.171332
     // Apply no offset to the electron drift time --> add it fully to the hole (LV) signal
     auto it = m_Coeffs.find(PixelCode);
-    if (it != m_Coeffs.end()) {
-      const vector<double>& Coeffs = it->second;
-      double Stretch = Coeffs[0];
-      double Offset = isLV ? Coeffs[1] : 0.0;
-      FastPeakTime = (DriftTimeSpline->Eval(Z) + Offset) * Stretch;
+    if (find(m_DetectorIDs.begin(), m_DetectorIDs.end(), DetID) != m_DetectorIDs.end()) {
+      if (it != m_Coeffs.end()) {
+        const vector<double>& Coeffs = it->second;
+        double Stretch = Coeffs[0];
+        double Offset = isLV ? Coeffs[1] : 0.0;
+        FastPeakTime = (DriftTimeSpline->Eval(Z) + Offset) * Stretch;
+      } else {
+        if (g_Verbosity >= c_Warning) {
+          cout << "No depth calibration coefficients for pixel in DetID " << DetID << " HV " << (isLV ? OppositeStripID : ID) << " LV " << (isLV ? ID : OppositeStripID) << endl;
+        }
+      }
     } else {
-      if (g_Verbosity >= c_Warning) {
-        cout << "No depth calibration coefficients for pixel in DetID " << DetID << " HV " << (isLV ? OppositeStripID : ID) << " LV " << (isLV ? ID : OppositeStripID) << endl;
+      if (g_Verbosity >= c_Info) {
+        cout << "No depth spline for pixel in DetID " << DetID << endl;
       }
     }
 

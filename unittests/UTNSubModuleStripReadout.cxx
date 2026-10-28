@@ -211,7 +211,7 @@ bool UTNSubModuleStripReadout::TestDefaults()
   MSubModuleStripReadout* B = new (Ones) MSubModuleStripReadout;
   bool ValueA = A->GetApplyResolutionCalibration();
   bool ValueB = B->GetApplyResolutionCalibration();
-  Passed = ExpectedToFail(EvaluateTrue("MSubModuleStripReadout()", "uninitialized memory", "The resolution flag has a defined default independent of the memory content", ValueA == ValueB)) && Passed;
+  Passed = EvaluateTrue("MSubModuleStripReadout()", "uninitialized memory", "The resolution flag has a defined default independent of the memory content", ValueA == ValueB) && Passed;
   A->~MSubModuleStripReadout();
   B->~MSubModuleStripReadout();
 #endif
@@ -316,7 +316,7 @@ bool UTNSubModuleStripReadout::TestADCAndThresholds()
   } else {
     Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 10", "The strip hit exists", false) && Passed;
   }
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "LV strip 30, 9000 keV", "The saturated strip hit exists", S30 != nullptr)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 30, 9000 keV", "The saturated strip hit exists", S30 != nullptr) && Passed;
   if (S30 != nullptr) {
     Passed = Evaluate("AnalyzeEvent()", "LV strip 30, 9000 keV", "The ADC value saturates at 16383", S30->m_ADC, 16383u) && Passed;
   }
@@ -368,10 +368,10 @@ bool UTNSubModuleStripReadout::TestNearestNeighborIdentifiers()
   Passed = EvaluateTrue("AnalyzeEvent()", "triggered LV strip 10", "An empty neighbor hit is added for strip 9", S9 != nullptr) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "triggered LV strip 10", "An empty neighbor hit is added for strip 11", S11 != nullptr) && Passed;
   if (S9 != nullptr) {
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "added neighbor strip 9", "The added hit has the opposite strip of its triggering strip 10", S9->m_OppositeStripID, 33)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "added neighbor strip 9", "The added hit has the opposite strip of its triggering strip 10", S9->m_OppositeStripID, 33) && Passed;
   }
   if (S11 != nullptr) {
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "added neighbor strip 11", "The added hit has the opposite strip of its triggering strip 10", S11->m_OppositeStripID, 33)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "added neighbor strip 11", "The added hit has the opposite strip of its triggering strip 10", S11->m_OppositeStripID, 33) && Passed;
   }
 
   M.Finalize();
@@ -407,7 +407,7 @@ bool UTNSubModuleStripReadout::TestGuardRingNeighbor()
   M.AnalyzeEvent(&E);
   list<MDEEStripHit>& LV = E.GetDEEStripHitLVListReference();
   Passed = EvaluateTrue("AnalyzeEvent()", "triggered LV strip 63", "The triggered strip 63 is kept", FindStrip(LV, 63) != nullptr) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "sub-threshold guard ring next to strip 63", "A sub-threshold guard ring hit is removed (a kept strip-64 hit raises the guard ring veto)", FindStrip(LV, 64) == nullptr)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "sub-threshold guard ring next to strip 63", "A sub-threshold guard ring hit is removed (a kept strip-64 hit raises the guard ring veto)", FindStrip(LV, 64) == nullptr) && Passed;
 
   M.Finalize();
 
@@ -439,8 +439,7 @@ bool UTNSubModuleStripReadout::TestNearestNeighbors()
   Passed = EvaluateTrue("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor strip is kept", S11 != nullptr) && Passed;
   if (S11 != nullptr) {
     Passed = EvaluateTrue("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor strip is flagged as nearest neighbor", S11->m_IsNearestNeighbor) && Passed;
-    // TF1::GetX() returns 199.99999 and the cast truncates it (MSubModuleStripReadout.cxx:176); depends on the root finder precision
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor ADC is 200", S11->m_ADC, 200u)) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "sub-threshold strip 11 next to 10", "The neighbor ADC is 200", S11->m_ADC, 200u) && Passed;
   }
   Passed = EvaluateTrue("AnalyzeEvent()", "isolated sub-threshold strip 40", "An isolated sub-threshold strip is removed", FindStrip(LV, 40) == nullptr) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "strip 9 next to 10", "An empty neighbor hit is added for strip 9", S9 != nullptr) && Passed;
