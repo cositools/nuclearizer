@@ -262,13 +262,20 @@ int main(int Argc, char** Argv)
   cout << "  cSlowHardwareThreshADC->Draw()" << endl;
   cout << endl;
   
-  cout << "Paneled raw ADC spectra with slow thresholds:" << endl;
+  cout << "Paneled raw ADC or Energy spectra with slow thresholds:" << endl;
   cout << "  One 8x8 canvas per detector and detector side (strips 0-63)" << endl;
   cout << "  Red solid line  = software slow threshold" << endl;
   cout << "  Blue dashed line = hardware slow threshold" << endl;
   cout << "  Examples:" << endl;
   cout << "    cSlowSpectraADC_Det1_LV->Draw()" << endl;
   cout << "    cSlowSpectraADC_Det1_HV->Draw()" << endl;
+  cout << "    cSlowSpectraEnergy_Det1_LV->Draw()" << endl;
+  cout << "    cSlowSpectraEnergy_Det1_HV->Draw()" << endl;
+  
+  cout << endl;
+  cout << "Paneled raw ADC or Energy guard-ring spectra:" << endl;
+  cout << "  cGuardRingSpectraADC->Draw()" << endl;
+  cout << "  cGuardRingSpectraEnergy->Draw()" << endl;
 
   cout << endl;
   cout << "FAST threshold diagnostics:" << endl;
@@ -3126,7 +3133,650 @@ void MStripThresholdFinder::WriteDiagnostics()
     kv.second->Update();
     kv.second->Write();
   }
+  
+  // -------------------------------------------------------------
+  // Paneled calibrated energy spectra by detector and detector side
+  // -------------------------------------------------------------
 
+  map<pair<unsigned int, bool>, TCanvas*> cSlowSpectraEnergy;
+
+  for (const auto& kv : energyHistograms) {
+
+    const MReadOutElementDoubleStrip& R = kv.first;
+    TH1D* hist = kv.second;
+
+    unsigned int Detector = R.GetDetectorID();
+    int Strip = R.GetStripID();
+    bool IsLV = R.IsLowVoltageStrip();
+
+    // Guard ring is not part of the 64-strip panel
+    if (Strip == GUARD_RING_STRIP_ID) {
+      continue;
+    }
+
+    pair<unsigned int, bool> key(Detector, IsLV);
+
+    // Create this detector/side canvas the first time it is encountered
+    if (cSlowSpectraEnergy.find(key) == cSlowSpectraEnergy.end()) {
+
+      string side = IsLV ? "LV" : "HV";
+
+      string canvasName =
+        "cSlowSpectraEnergy_Det" +
+        to_string(Detector) + "_" + side;
+
+      string detectorLabel;
+
+      auto info = DetectorInfo.find(Detector);
+
+      if (info != DetectorInfo.end()) {
+        detectorLabel =
+          info->second.first +
+          " - Det " + to_string(Detector) +
+          ": " + info->second.second;
+      } else {
+        detectorLabel =
+          "Detector " + to_string(Detector);
+      }
+
+      string canvasTitle =
+        detectorLabel + " - " + side +
+        " - Calibrated Energy Spectra with Slow Thresholds";
+
+      TCanvas* c =
+        new TCanvas(
+          canvasName.c_str(),
+          canvasTitle.c_str(),
+          2400,
+          2400);
+
+      c->Divide(8, 8, 0.001, 0.001);
+
+      for (int p = 1; p <= 64; ++p) {
+        c->cd(p);
+
+        gPad->SetLeftMargin(0.16);
+        gPad->SetRightMargin(0.03);
+        gPad->SetTopMargin(0.10);
+        gPad->SetBottomMargin(0.16);
+      }
+
+      cSlowSpectraEnergy[key] = c;
+    }
+
+    TCanvas* c = cSlowSpectraEnergy[key];
+
+    // Strip 0 -> pad 1, ... Strip 63 -> pad 64
+    c->cd(Strip + 1);
+
+    hist->SetTitle(";Energy (keV);Counts");
+
+    hist->GetXaxis()->SetTitleSize(0.08);
+    hist->GetYaxis()->SetTitleSize(0.08);
+
+    hist->GetXaxis()->SetLabelSize(0.10);
+    hist->GetYaxis()->SetLabelSize(0.08);
+
+    hist->GetXaxis()->SetTitleOffset(1.0);
+    hist->GetYaxis()->SetTitleOffset(1.1);
+
+    hist->GetXaxis()->SetNdivisions(505);
+    hist->GetYaxis()->SetNdivisions(505);
+
+    // -----------------------------------------------------------
+    // Threshold-centered energy range
+    // -----------------------------------------------------------
+
+    double xMin = 0.0;
+    double xMax = hist->GetXaxis()->GetXmax();
+
+    bool haveSoftware =
+      m_SlowThresholds.count(R) == 1 &&
+      m_SlowThresholds[R] >= 0.0;
+
+    bool haveHardware =
+      m_SlowHardwareThresholds.count(R) == 1 &&
+      m_SlowHardwareThresholds[R] >= 0.0;
+
+    if (haveSoftware || haveHardware) {
+
+      double lowThreshold;
+      double highThreshold;
+
+      if (haveSoftware && haveHardware) {
+
+        lowThreshold =
+          std::min(
+            m_SlowThresholds[R],
+            m_SlowHardwareThresholds[R]);
+
+        highThreshold =
+          std::max(
+            m_SlowThresholds[R],
+            m_SlowHardwareThresholds[R]);
+
+      } else if (haveSoftware) {
+
+        lowThreshold = highThreshold =
+          m_SlowThresholds[R];
+
+      } else {
+
+        lowThreshold = highThreshold =
+          m_SlowHardwareThresholds[R];
+      }
+
+      // Initial energy-space viewing window.
+      // We can tune this after inspecting the first plots.
+      xMin = std::max(0.0, lowThreshold - 10.0);
+
+      xMax = std::min(
+        hist->GetXaxis()->GetXmax(),
+        highThreshold + 20.0);
+    }
+
+    hist->GetXaxis()->SetRangeUser(xMin, xMax);
+
+    // Scale Y axis using only the displayed energy region
+    int firstBin =
+      hist->GetXaxis()->FindBin(xMin);
+
+    int lastBin =
+      hist->GetXaxis()->FindBin(xMax);
+
+    firstBin =
+      std::max(1, firstBin);
+
+    lastBin =
+      std::min(hist->GetNbinsX(), lastBin);
+
+    double localMax = 0.0;
+
+    for (int b = firstBin; b <= lastBin; ++b) {
+      localMax =
+        std::max(
+          localMax,
+          hist->GetBinContent(b));
+    }
+
+    if (localMax > 0.0) {
+      hist->SetMinimum(0.0);
+      hist->SetMaximum(1.15 * localMax);
+    }
+
+    hist->Draw("HIST");
+
+    // Strip label
+    TLatex* stripLabel = new TLatex();
+    stripLabel->SetNDC();
+    stripLabel->SetTextAlign(22);
+    stripLabel->SetTextSize(0.10);
+    stripLabel->DrawLatex(
+      0.55,
+      0.95,
+      Form("Strip %d", Strip));
+
+    // Software slow threshold in calibrated energy units
+    if (haveSoftware) {
+
+      double thresholdKeV =
+        m_SlowThresholds[R];
+
+      TLine* softwareLine =
+        new TLine(
+          thresholdKeV,
+          0,
+          thresholdKeV,
+          hist->GetMaximum());
+
+      softwareLine->SetLineColor(kRed);
+      softwareLine->SetLineWidth(2);
+      softwareLine->Draw("SAME");
+    }
+
+    // Hardware slow threshold in calibrated energy units
+    if (haveHardware) {
+
+      double thresholdKeV =
+        m_SlowHardwareThresholds[R];
+
+      TLine* hardwareLine =
+        new TLine(
+          thresholdKeV,
+          0,
+          thresholdKeV,
+          hist->GetMaximum());
+
+      hardwareLine->SetLineColor(kBlue);
+      hardwareLine->SetLineWidth(2);
+      hardwareLine->SetLineStyle(2);
+      hardwareLine->Draw("SAME");
+    }
+  }
+
+  // Write completed energy canvases
+  for (auto& kv : cSlowSpectraEnergy) {
+
+    kv.second->Modified();
+    kv.second->Update();
+    kv.second->Write();
+  }
+
+  // -------------------------------------------------------------
+  // Paneled raw ADC spectra for all guard-ring channels
+  // -------------------------------------------------------------
+
+  TCanvas* cGuardRingSpectraADC =
+    new TCanvas(
+      "cGuardRingSpectraADC",
+      "Guard Ring Raw ADC Spectra",
+      2400,
+      2400);
+
+  cGuardRingSpectraADC->Divide(4, 8, 0.001, 0.001);
+
+  // Format all 32 pads
+  for (int p = 1; p <= 32; ++p) {
+    cGuardRingSpectraADC->cd(p);
+
+    gPad->SetLeftMargin(0.16);
+    gPad->SetRightMargin(0.03);
+    gPad->SetTopMargin(0.10);
+    gPad->SetBottomMargin(0.16);
+  }
+
+  for (const auto& kv : m_ADCHistograms) {
+
+    const MReadOutElementDoubleStrip& R = kv.first;
+    TH1D* hist = kv.second;
+
+    unsigned int Detector = R.GetDetectorID();
+    int Strip = R.GetStripID();
+    bool IsLV = R.IsLowVoltageStrip();
+
+    // Guard-ring channels only
+    if (Strip != GUARD_RING_STRIP_ID) {
+      continue;
+    }
+
+    // Fixed detector/side mapping:
+    // Det 0 LV -> pad 1
+    // Det 0 HV -> pad 2
+    // Det 1 LV -> pad 3
+    // Det 1 HV -> pad 4
+    // ...
+    int padNumber =
+      2 * Detector + (IsLV ? 1 : 2);
+
+    cGuardRingSpectraADC->cd(padNumber);
+
+    hist->SetTitle(";ADC;Counts");
+
+    // Match the formatting of the 64-strip ADC canvases
+    hist->GetXaxis()->SetTitleSize(0.08);
+    hist->GetYaxis()->SetTitleSize(0.08);
+
+    hist->GetXaxis()->SetLabelSize(0.10);
+    hist->GetYaxis()->SetLabelSize(0.08);
+
+    hist->GetXaxis()->SetTitleOffset(1.0);
+    hist->GetYaxis()->SetTitleOffset(1.1);
+
+    hist->GetXaxis()->SetNdivisions(505);
+    hist->GetYaxis()->SetNdivisions(505);
+
+    // -----------------------------------------------------------
+    // Threshold-centered ADC range
+    // -----------------------------------------------------------
+
+    double xMin = 0.0;
+    double xMax = m_HistogramMaxADC;
+
+    bool haveSoftware =
+      m_SlowThresholdsADC.count(R) == 1 &&
+      m_SlowThresholdsADC[R] >= 0.0;
+
+    bool haveHardware =
+      m_SlowHardwareThresholdsADC.count(R) == 1 &&
+      m_SlowHardwareThresholdsADC[R] >= 0.0;
+
+    if (haveSoftware || haveHardware) {
+
+      double lowThreshold;
+      double highThreshold;
+
+      if (haveSoftware && haveHardware) {
+
+        lowThreshold =
+          std::min(
+            m_SlowThresholdsADC[R],
+            m_SlowHardwareThresholdsADC[R]);
+
+        highThreshold =
+          std::max(
+            m_SlowThresholdsADC[R],
+            m_SlowHardwareThresholdsADC[R]);
+
+      } else if (haveSoftware) {
+
+        lowThreshold = highThreshold =
+          m_SlowThresholdsADC[R];
+
+      } else {
+
+        lowThreshold = highThreshold =
+          m_SlowHardwareThresholdsADC[R];
+      }
+
+      xMin =
+        std::max(0.0, lowThreshold - 100.0);
+
+      xMax =
+        std::min(
+          m_HistogramMaxADC,
+          highThreshold + 200.0);
+    }
+
+    hist->GetXaxis()->SetRangeUser(xMin, xMax);
+
+    // -----------------------------------------------------------
+    // Scale Y axis using displayed ADC region only
+    // -----------------------------------------------------------
+
+    int firstBin =
+      hist->GetXaxis()->FindBin(xMin);
+
+    int lastBin =
+      hist->GetXaxis()->FindBin(xMax);
+
+    firstBin =
+      std::max(1, firstBin);
+
+    lastBin =
+      std::min(hist->GetNbinsX(), lastBin);
+
+    double localMax = 0.0;
+
+    for (int b = firstBin; b <= lastBin; ++b) {
+      localMax =
+        std::max(
+          localMax,
+          hist->GetBinContent(b));
+    }
+
+    if (localMax > 0.0) {
+      hist->SetMinimum(0.0);
+      hist->SetMaximum(1.15 * localMax);
+    }
+
+    hist->Draw("HIST");
+
+    // -----------------------------------------------------------
+    // Detector/side label
+    // -----------------------------------------------------------
+
+    string side = IsLV ? "LV" : "HV";
+
+    string label =
+      "Det " + to_string(Detector) +
+      " " + side + " - GR";
+
+    TLatex* grLabel = new TLatex();
+    grLabel->SetNDC();
+    grLabel->SetTextAlign(22);
+    grLabel->SetTextSize(0.10);
+    grLabel->DrawLatex(
+      0.55,
+      0.95,
+      label.c_str());
+
+    // -----------------------------------------------------------
+    // Software slow threshold - native ADC
+    // -----------------------------------------------------------
+
+    if (haveSoftware) {
+
+      double thresholdADC =
+        m_SlowThresholdsADC[R];
+
+      TLine* softwareLine =
+        new TLine(
+          thresholdADC,
+          0,
+          thresholdADC,
+          hist->GetMaximum());
+
+      softwareLine->SetLineColor(kRed);
+      softwareLine->SetLineWidth(2);
+      softwareLine->Draw("SAME");
+    }
+
+    // -----------------------------------------------------------
+    // Hardware slow threshold - native ADC
+    // -----------------------------------------------------------
+
+    if (haveHardware) {
+
+      double thresholdADC =
+        m_SlowHardwareThresholdsADC[R];
+
+      TLine* hardwareLine =
+        new TLine(
+          thresholdADC,
+          0,
+          thresholdADC,
+          hist->GetMaximum());
+
+      hardwareLine->SetLineColor(kBlue);
+      hardwareLine->SetLineWidth(2);
+      hardwareLine->SetLineStyle(2);
+      hardwareLine->Draw("SAME");
+    }
+  }
+
+  cGuardRingSpectraADC->Modified();
+  cGuardRingSpectraADC->Update();
+  cGuardRingSpectraADC->Write();
+  
+  
+  // -------------------------------------------------------------
+  // Paneled calibrated energy spectra for all guard-ring channels
+  // -------------------------------------------------------------
+
+  TCanvas* cGuardRingSpectraEnergy =
+    new TCanvas(
+      "cGuardRingSpectraEnergy",
+      "Guard Ring Calibrated Energy Spectra",
+      2400,
+      2400);
+
+  cGuardRingSpectraEnergy->Divide(4, 8, 0.001, 0.001);
+
+  // Format all 32 pads
+  for (int p = 1; p <= 32; ++p) {
+    cGuardRingSpectraEnergy->cd(p);
+
+    gPad->SetLeftMargin(0.16);
+    gPad->SetRightMargin(0.03);
+    gPad->SetTopMargin(0.10);
+    gPad->SetBottomMargin(0.16);
+  }
+
+  for (const auto& kv : energyHistograms) {
+
+    const MReadOutElementDoubleStrip& R = kv.first;
+    TH1D* hist = kv.second;
+
+    unsigned int Detector = R.GetDetectorID();
+    int Strip = R.GetStripID();
+    bool IsLV = R.IsLowVoltageStrip();
+
+    // Guard-ring channels only
+    if (Strip != GUARD_RING_STRIP_ID) {
+      continue;
+    }
+
+    int padNumber =
+      2 * Detector + (IsLV ? 1 : 2);
+
+    cGuardRingSpectraEnergy->cd(padNumber);
+
+    hist->SetTitle(";Energy (keV);Counts");
+
+    hist->GetXaxis()->SetTitleSize(0.08);
+    hist->GetYaxis()->SetTitleSize(0.08);
+
+    hist->GetXaxis()->SetLabelSize(0.10);
+    hist->GetYaxis()->SetLabelSize(0.08);
+
+    hist->GetXaxis()->SetTitleOffset(1.0);
+    hist->GetYaxis()->SetTitleOffset(1.1);
+
+    hist->GetXaxis()->SetNdivisions(505);
+    hist->GetYaxis()->SetNdivisions(505);
+
+    // -----------------------------------------------------------
+    // Threshold-centered energy range
+    // -----------------------------------------------------------
+
+    double xMin = 0.0;
+    double xMax = hist->GetXaxis()->GetXmax();
+
+    bool haveSoftware =
+      m_SlowThresholds.count(R) == 1 &&
+      m_SlowThresholds[R] >= 0.0;
+
+    bool haveHardware =
+      m_SlowHardwareThresholds.count(R) == 1 &&
+      m_SlowHardwareThresholds[R] >= 0.0;
+
+    if (haveSoftware || haveHardware) {
+
+      double lowThreshold;
+      double highThreshold;
+
+      if (haveSoftware && haveHardware) {
+
+        lowThreshold =
+          std::min(
+            m_SlowThresholds[R],
+            m_SlowHardwareThresholds[R]);
+
+        highThreshold =
+          std::max(
+            m_SlowThresholds[R],
+            m_SlowHardwareThresholds[R]);
+
+      } else if (haveSoftware) {
+
+        lowThreshold = highThreshold =
+          m_SlowThresholds[R];
+
+      } else {
+
+        lowThreshold = highThreshold =
+          m_SlowHardwareThresholds[R];
+      }
+
+      xMin = std::max(0.0, lowThreshold - 10.0);
+
+      xMax = std::min(
+        hist->GetXaxis()->GetXmax(),
+        highThreshold + 20.0);
+    }
+
+    hist->GetXaxis()->SetRangeUser(xMin, xMax);
+
+    // -----------------------------------------------------------
+    // Scale Y axis using displayed energy region only
+    // -----------------------------------------------------------
+
+    int firstBin =
+      hist->GetXaxis()->FindBin(xMin);
+
+    int lastBin =
+      hist->GetXaxis()->FindBin(xMax);
+
+    firstBin =
+      std::max(1, firstBin);
+
+    lastBin =
+      std::min(hist->GetNbinsX(), lastBin);
+
+    double localMax = 0.0;
+
+    for (int b = firstBin; b <= lastBin; ++b) {
+      localMax =
+        std::max(
+          localMax,
+          hist->GetBinContent(b));
+    }
+
+    if (localMax > 0.0) {
+      hist->SetMinimum(0.0);
+      hist->SetMaximum(1.15 * localMax);
+    }
+
+    hist->Draw("HIST");
+
+    // Detector/side label
+    string side = IsLV ? "LV" : "HV";
+
+    string label =
+      "Det " + to_string(Detector) +
+      " " + side + " - GR";
+
+    TLatex* grLabel = new TLatex();
+    grLabel->SetNDC();
+    grLabel->SetTextAlign(22);
+    grLabel->SetTextSize(0.10);
+    grLabel->DrawLatex(
+      0.55,
+      0.95,
+      label.c_str());
+
+    // Software slow threshold in calibrated energy units
+    if (haveSoftware) {
+
+      double thresholdKeV =
+        m_SlowThresholds[R];
+
+      TLine* softwareLine =
+        new TLine(
+          thresholdKeV,
+          0,
+          thresholdKeV,
+          hist->GetMaximum());
+
+      softwareLine->SetLineColor(kRed);
+      softwareLine->SetLineWidth(2);
+      softwareLine->Draw("SAME");
+    }
+
+    // Hardware slow threshold in calibrated energy units
+    if (haveHardware) {
+
+      double thresholdKeV =
+        m_SlowHardwareThresholds[R];
+
+      TLine* hardwareLine =
+        new TLine(
+          thresholdKeV,
+          0,
+          thresholdKeV,
+          hist->GetMaximum());
+
+      hardwareLine->SetLineColor(kBlue);
+      hardwareLine->SetLineWidth(2);
+      hardwareLine->SetLineStyle(2);
+      hardwareLine->Draw("SAME");
+    }
+  }
+
+  cGuardRingSpectraEnergy->Modified();
+  cGuardRingSpectraEnergy->Update();
+  cGuardRingSpectraEnergy->Write();
+  
 
   // -------------------------------------------------------------
   // FAST threshold distribution (HV vs LV separated)
