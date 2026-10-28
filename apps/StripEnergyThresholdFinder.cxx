@@ -261,6 +261,14 @@ int main(int Argc, char** Argv)
   cout << "Hardware threshold vs Strip (ADC):" << endl;
   cout << "  cSlowHardwareThreshADC->Draw()" << endl;
   cout << endl;
+  
+  cout << "Paneled raw ADC spectra with slow thresholds:" << endl;
+  cout << "  One 8x8 canvas per detector and detector side (strips 0-63)" << endl;
+  cout << "  Red solid line  = software slow threshold" << endl;
+  cout << "  Blue dashed line = hardware slow threshold" << endl;
+  cout << "  Examples:" << endl;
+  cout << "    cSlowSpectraADC_Det1_LV->Draw()" << endl;
+  cout << "    cSlowSpectraADC_Det1_HV->Draw()" << endl;
 
   cout << endl;
   cout << "FAST threshold diagnostics:" << endl;
@@ -2816,7 +2824,11 @@ void MStripThresholdFinder::WriteDiagnostics()
   // -------------------------------------------------------------
   // Write ADC spectra and create energy spectra with thresholds
   // -------------------------------------------------------------
-
+  
+  // Store calibrated energy histograms so they can also be used
+  // in detector/side summary canvases below
+  map<MReadOutElementDoubleStrip, TH1D*> energyHistograms;
+  
   for (auto& kv : m_ADCHistograms) {
     MReadOutElementDoubleStrip R = kv.first;
     TH1D* ADCHist = kv.second;
@@ -2899,7 +2911,220 @@ void MStripThresholdFinder::WriteDiagnostics()
 
       energyHist->GetListOfFunctions()->Add(hardwareLine);
     }
-    energyHist->Write();
+	
+  energyHistograms[R] = energyHist;
+  energyHist->Write();
+  }
+
+  // -------------------------------------------------------------
+  // Paneled raw ADC spectra by detector and detector side
+  // -------------------------------------------------------------
+
+  map<pair<unsigned int, bool>, TCanvas*> cSlowSpectraADC;
+
+  for (const auto& kv : m_ADCHistograms) {
+
+    const MReadOutElementDoubleStrip& R = kv.first;
+    TH1D* hist = kv.second;
+
+    unsigned int Detector = R.GetDetectorID();
+    int Strip = R.GetStripID();
+    bool IsLV = R.IsLowVoltageStrip();
+
+    // Guard ring is not part of the 64-strip panel
+    if (Strip == GUARD_RING_STRIP_ID) {
+      continue;
+    }
+
+    pair<unsigned int, bool> key(Detector, IsLV);
+
+    // Create this detector/side canvas the first time it is encountered
+    if (cSlowSpectraADC.find(key) == cSlowSpectraADC.end()) {
+
+      string side = IsLV ? "LV" : "HV";
+
+      string canvasName =
+        "cSlowSpectraADC_Det" +
+        to_string(Detector) + "_" + side;
+
+      string detectorLabel;
+
+      auto info = DetectorInfo.find(Detector);
+
+      if (info != DetectorInfo.end()) {
+        detectorLabel =
+          info->second.first +
+          " - Det " + to_string(Detector) +
+          ": " + info->second.second;
+      } else {
+        detectorLabel =
+          "Detector " + to_string(Detector);
+      }
+
+      string canvasTitle =
+        detectorLabel + " - " + side +
+        " - Raw ADC Spectra with Slow Thresholds";
+
+      TCanvas* c =
+        new TCanvas(
+          canvasName.c_str(),
+          canvasTitle.c_str(),
+          2400,
+          2400);
+
+      c->Divide(8, 8, 0.001, 0.001);
+	  
+	  for (int p = 1; p <= 64; ++p) {
+        c->cd(p);
+
+        gPad->SetLeftMargin(0.16);
+        gPad->SetRightMargin(0.03);
+        gPad->SetTopMargin(0.10);
+        gPad->SetBottomMargin(0.16);
+	  }
+
+      cSlowSpectraADC[key] = c;
+    }
+
+    TCanvas* c = cSlowSpectraADC[key];
+
+    // Strip 0 -> pad 1, ... Strip 63 -> pad 64
+    c->cd(Strip + 1);
+
+    hist->SetTitle(";ADC;Counts");
+	  
+	// Make text readable in the 8x8 summary canvas
+
+    hist->GetXaxis()->SetTitleSize(0.08);
+    hist->GetYaxis()->SetTitleSize(0.08);
+
+    hist->GetXaxis()->SetLabelSize(0.10);
+    hist->GetYaxis()->SetLabelSize(0.08);
+
+    hist->GetXaxis()->SetTitleOffset(1.0);
+    hist->GetYaxis()->SetTitleOffset(1.1);
+	
+	hist->GetXaxis()->SetNdivisions(505);
+    hist->GetYaxis()->SetNdivisions(505);
+    
+	double xMin = 0.0;
+    double xMax = m_HistogramMaxADC;
+
+    bool haveSoftware =
+      m_SlowThresholdsADC.count(R) == 1 &&
+      m_SlowThresholdsADC[R] >= 0.0;
+
+    bool haveHardware =
+      m_SlowHardwareThresholdsADC.count(R) == 1 &&
+      m_SlowHardwareThresholdsADC[R] >= 0.0;
+
+    if (haveSoftware || haveHardware) {
+
+      double lowThreshold;
+      double highThreshold;
+
+      if (haveSoftware && haveHardware) {
+        lowThreshold =
+          std::min(m_SlowThresholdsADC[R],
+                   m_SlowHardwareThresholdsADC[R]);
+
+        highThreshold =
+          std::max(m_SlowThresholdsADC[R],
+                   m_SlowHardwareThresholdsADC[R]);
+      }
+      else if (haveSoftware) {
+        lowThreshold = highThreshold =
+          m_SlowThresholdsADC[R];
+      }
+      else {
+        lowThreshold = highThreshold =
+          m_SlowHardwareThresholdsADC[R];
+      }
+
+      // Show useful context around the threshold region
+      xMin = std::max(0.0, lowThreshold - 100.0);
+      xMax = std::min(m_HistogramMaxADC,
+                  highThreshold + 200.0);
+    }
+
+    hist->GetXaxis()->SetRangeUser(xMin, xMax);
+	
+	// Scale Y axis using only the displayed ADC region
+	int firstBin = hist->FindBin(xMin);
+    int lastBin  = hist->FindBin(xMax);
+
+    double localMax = 0.0;
+
+    for (int b = firstBin; b <= lastBin; ++b) {
+      localMax = std::max(localMax, hist->GetBinContent(b));
+    }
+
+    if (localMax > 0.0) {
+      hist->SetMinimum(0.0);
+      hist->SetMaximum(1.15 * localMax);
+    }
+	
+    hist->Draw("HIST");
+	
+	// Strip label with explicit size and position
+    TLatex* stripLabel = new TLatex();
+    stripLabel->SetNDC();
+    stripLabel->SetTextAlign(22);
+    stripLabel->SetTextSize(0.10);
+    stripLabel->DrawLatex(
+      0.55,
+      0.95,
+      Form("Strip %d", Strip));
+
+    // Software slow threshold directly in native ADC units.
+    // Do NOT reconstruct it from the keV threshold.
+    auto thresholdIt = m_SlowThresholdsADC.find(R);
+
+    if (thresholdIt != m_SlowThresholdsADC.end() &&
+        thresholdIt->second >= 0.0) {
+
+      double thresholdADC = thresholdIt->second;
+
+      TLine* softwareLine =
+        new TLine(
+          thresholdADC,
+          0,
+          thresholdADC,
+          hist->GetMaximum());
+
+      softwareLine->SetLineColor(kRed);
+      softwareLine->SetLineWidth(2);
+      softwareLine->Draw("SAME");
+    }
+
+    // Hardware slow threshold directly in native ADC units
+    auto hardwareIt = m_SlowHardwareThresholdsADC.find(R);
+
+    if (hardwareIt != m_SlowHardwareThresholdsADC.end() &&
+        hardwareIt->second >= 0.0) {
+
+      double thresholdADC = hardwareIt->second;
+
+      TLine* hardwareLine =
+        new TLine(
+          thresholdADC,
+          0,
+          thresholdADC,
+          hist->GetMaximum());
+
+      hardwareLine->SetLineColor(kBlue);
+      hardwareLine->SetLineWidth(2);
+      hardwareLine->SetLineStyle(2);
+      hardwareLine->Draw("SAME");
+    }
+  }
+
+  // Write completed ADC canvases
+  for (auto& kv : cSlowSpectraADC) {
+
+    kv.second->Modified();
+    kv.second->Update();
+    kv.second->Write();
   }
 
 
