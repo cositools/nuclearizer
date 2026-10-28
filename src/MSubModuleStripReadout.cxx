@@ -99,6 +99,22 @@ bool MSubModuleStripReadout::Initialize()
     return false;
   }
 
+
+  // Determine the valid ADC and energy ranges to deal with saturation
+  m_MinimumADCs.clear();
+  m_MaximumADCs.clear();
+  m_MinimumEnergies.clear();
+  m_MaximumEnergies.clear();
+
+  for (auto& [ROE, Fit] : m_Calibration) {
+    if (Fit != nullptr) {
+      m_MinimumADCs[ROE] = Fit->GetMinimumX(0.0, m_MaxADCRange);
+      m_MaximumADCs[ROE] = Fit->GetMaximumX(0.0, m_MaxADCRange);
+      m_MinimumEnergies[ROE] = Fit->Eval(m_MinimumADCs[ROE]);
+      m_MaximumEnergies[ROE] = Fit->Eval(m_MaximumADCs[ROE]);
+    }
+  }
+
   if (EnergyCalibration.ReadSlowThresholdCutFile(m_HardwareThresholdFileName) == true) {
     // Copy the hardware threshold map
     m_HardwareThresholdMap = EnergyCalibration.GetHardwareThresholdMap();
@@ -167,21 +183,14 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       TF1* Fit = m_Calibration[SH->m_ROE];
 
       if (Fit != nullptr) {
-
-        // Find the range of allowed energies
-        double ADCMin = Fit->GetMinimumX(0.0, m_MaxADCRange);
-        double ADCMax = Fit->GetMaximumX(0.0, m_MaxADCRange);
-        double MinimumEnergy = Fit->Eval(ADCMin);
-        double MaximumEnergy = Fit->Eval(ADCMax);
-
         // Handle saturated energies, outside of the ADC range
-        if (SH->m_Energy < MinimumEnergy){
+        if (SH->m_Energy < m_MinimumEnergies[SH->m_ROE]){
           SH->m_ADC = 0;
-        } else if (SH->m_Energy >= MaximumEnergy) {
+        } else if (SH->m_Energy >= m_MaximumEnergies[SH->m_ROE]) {
           SH->m_ADC = m_MaxADCRange;
         } else {
           // Search in the monotonically increasing range only
-          double calculatedADC = Fit->GetX(SH->m_Energy, min(ADCMin, ADCMax), max(ADCMin, ADCMax));
+          double calculatedADC = Fit->GetX(SH->m_Energy, m_MinimumADCs[SH->m_ROE], m_MaximumADCs[SH->m_ROE]);
           SH->m_ADC = lround(clamp(calculatedADC, 0.0, m_MaxADCRange));
         }
 
@@ -305,8 +314,15 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       }
       
       // Apply the inverse energy calibration using ROOT's poly inverter (keV -> ADC) in the allowed ADC range
-      double calculatedADC = Fit->GetX(SH.m_Energy, 0., m_MaxADCRange);
-      SH.m_ADC = static_cast<unsigned int>(clamp(calculatedADC, 0.0, m_MaxADCRange));
+      if (SH.m_Energy < m_MinimumEnergies[SH.m_ROE]){
+        SH.m_ADC = 0;
+      } else if (SH.m_Energy >= m_MaximumEnergies[SH.m_ROE]) {
+        SH.m_ADC = m_MaxADCRange;
+      } else {
+        // Search in the monotonically increasing range only
+        double calculatedADC = Fit->GetX(SH.m_Energy, m_MinimumADCs[SH.m_ROE], m_MaximumADCs[SH.m_ROE]);
+        SH.m_ADC = lround(clamp(calculatedADC, 0.0, m_MaxADCRange));
+      }
 
       if (NSH.IsLowVoltageStrip() == true) {
         Event->AddDEEStripHitLV(SH);
