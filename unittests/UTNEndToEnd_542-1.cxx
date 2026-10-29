@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <fstream>
+#include <string>
+#include <vector>
 #include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
@@ -21,32 +23,29 @@ using namespace std;
 #include "MGlobal.h"
 #include "MFile.h"
 #include "MString.h"
-#include "MSystem.h"
 #include "MUnitTest.h"
 
 
 //! End-to-end test: run nuclearizer on 542-1 HDF5 data and verify the .tra and .roa output, and read the .roa output back
 class UTNEndToEnd_542_1 : public MUnitTest
 {
-public:
+ public:
+  //! Default constructor
   UTNEndToEnd_542_1() : MUnitTest("UTNEndToEnd_542-1") {}
+  //! Default destructor
   virtual ~UTNEndToEnd_542_1() {}
 
+  //! Run all tests
   virtual bool Run();
 
-private:
-  //! Run nuclearizer on the 542-1 HDF5 input and compare the output to the reference .tra file
-  bool TestHDF5ToTra();
-  //! Run nuclearizer on the 542-1 HDF5 input and compare the output to the reference .roa file
-  bool TestHDF5ToRoa();
-  //! Read the reference .roa file with nuclearizer, write it again, and compare it to itself
-  bool TestRoaToRoa();
-  //! Run nuclearizer with the configuration <Name>.nuclearizer.cfg, whose output is <Name>.<Suffix>, and compare it to ReferenceName
-  bool TestConfiguration(const MString& Name, const MString& Suffix, const MString& ReferenceName);
-  //! Run nuclearizer with arguments and capture stdout/stderr in a log file
+ private:
+  //! Run nuclearizer with the hdf5-to-tra, hdf5-to-roa, and roa-to-roa configurations and compare the output to the reference files
+  bool TestConfigurations();
+
+  //! Copy ConfigFile to TestConfigFile with OriginalOutputFile replaced by OutputFile; returns false if a file cannot be opened or nothing was replaced
+  bool WriteTestConfiguration(const MString& ConfigFile, const MString& OriginalOutputFile, const MString& OutputFile, const MString& TestConfigFile);
+  //! Run nuclearizer with arguments and capture stdout/stderr in a log file; returns the wait status
   int RunNuclearizer(const MString& Arguments, const MString& LogFile);
-  //! Compare generated output with the reference file
-  bool CompareOutputToReference(const MString& OutputFile, const MString& ReferenceFile);
 };
 
 
@@ -57,9 +56,7 @@ bool UTNEndToEnd_542_1::Run()
 {
   bool Passed = true;
 
-  Passed = TestHDF5ToTra() && Passed;
-  Passed = TestHDF5ToRoa() && Passed;
-  Passed = TestRoaToRoa() && Passed;
+  Passed = TestConfigurations() && Passed;
 
   Summarize();
 
@@ -70,117 +67,52 @@ bool UTNEndToEnd_542_1::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNEndToEnd_542_1::TestHDF5ToTra()
-{
-  return TestConfiguration("hdf5-to-tra", "tra", "hdf5-to-tra.reference.tra");
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTNEndToEnd_542_1::TestHDF5ToRoa()
-{
-  return TestConfiguration("hdf5-to-roa", "roa", "hdf5-to-roa.reference.roa");
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTNEndToEnd_542_1::TestRoaToRoa()
-{
-  // The configuration reads hdf5-to-roa.reference.roa, so writing it again has to reproduce it
-  return TestConfiguration("roa-to-roa", "roa", "hdf5-to-roa.reference.roa");
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTNEndToEnd_542_1::TestConfiguration(const MString& Name, const MString& Suffix, const MString& ReferenceName)
+bool UTNEndToEnd_542_1::TestConfigurations()
 {
   bool Passed = true;
 
-  // Require $NUCLEARIZER to locate data files
   const char* NuclearizerEnv = getenv("NUCLEARIZER");
-  Passed = EvaluateTrue("End-to-end test 542-1", "environment variable",
-                        "$NUCLEARIZER environment variable must be set",
-                        NuclearizerEnv != nullptr && NuclearizerEnv[0] != '\0') && Passed;
-  if (Passed == false) return Passed;
+  bool HasNuclearizer = (NuclearizerEnv != nullptr && NuclearizerEnv[0] != '\0');
+  Passed = EvaluateTrue("End-to-end test 542-1", "environment variable", "$NUCLEARIZER environment variable must be set", HasNuclearizer) && Passed;
+  if (HasNuclearizer == false) return Passed;
 
-  MString NuclearizerDir(NuclearizerEnv);
-  MString DataDir       = NuclearizerDir + "/resource/unittestdata/542-1";
-  MString ConfigFile    = DataDir + "/" + Name + ".nuclearizer.cfg";
-  MString OutputFile    = MString("/tmp/UTNEndToEnd_542-1_") + Name + "_" + (unsigned int) getpid() + "." + Suffix;
-  MString ReferenceFile = DataDir + "/" + ReferenceName;
-  MString TestConfigFile = MString("/tmp/UTNEndToEnd_542-1_") + Name + "_" + (unsigned int) getpid() + ".cfg";
+  MString DataDir = MString(NuclearizerEnv) + "/resource/unittestdata/542-1";
 
-  // The log file name carries the process ID so concurrent end-to-end tests
-  // (and repeated runs) never share or clobber the same log.
-  MString LogFile       = MString("/tmp/UTNEndToEnd_542-1_") + Name + "_" + (unsigned int) getpid() + ".log";
+  // Configuration name, output suffix, reference file; roa-to-roa reads hdf5-to-roa.reference.roa, thus writing it again has to reproduce it
+  vector<vector<MString>> Configurations = {
+    { "hdf5-to-tra", "tra", "hdf5-to-tra.reference.tra" },
+    { "hdf5-to-roa", "roa", "hdf5-to-roa.reference.roa" },
+    { "roa-to-roa", "roa", "hdf5-to-roa.reference.roa" }
+  };
 
-  // Verify that the config and reference files are present before running anything
-  Passed = EvaluateTrue("End-to-end test 542-1", Name + " config file",
-                        "The nuclearizer config file exists",
-                        MFile::Exists(ConfigFile)) && Passed;
-  Passed = EvaluateTrue("End-to-end test 542-1", Name + " reference file",
-                        "The reference file exists",
-                        MFile::Exists(ReferenceFile)) && Passed;
-  if (Passed == false) return Passed;
+  for (const vector<MString>& C : Configurations) {
+    MString Name = C[0];
+    MString ConfigFile = DataDir + "/" + Name + ".nuclearizer.cfg";
+    MString ReferenceFile = DataDir + "/" + C[2];
+    MString OriginalOutputFile = MString("$(NUCLEARIZER)/resource/unittestdata/542-1/") + Name + "." + C[1];
+    MString TestConfigFile = GetTemporaryFileName(Name + ".nuclearizer.cfg");
+    MString OutputFile = GetTemporaryFileName(Name + "." + C[1]);
+    MString LogFile = GetTemporaryFileName(Name + ".log");
 
-  ifstream ConfigIn(ConfigFile.Data());
-  Passed = EvaluateTrue("End-to-end test 542-1", Name + " temporary config input",
-                        "The nuclearizer config file can be opened for reading",
-                        ConfigIn.is_open()) && Passed;
-  ofstream ConfigOut(TestConfigFile.Data());
-  Passed = EvaluateTrue("End-to-end test 542-1", Name + " temporary config output",
-                        "The temporary nuclearizer config file can be opened for writing",
-                        ConfigOut.is_open()) && Passed;
-  if (Passed == false) return Passed;
+    bool ConfigExists = MFile::Exists(ConfigFile);
+    bool ReferenceExists = MFile::Exists(ReferenceFile);
+    Passed = EvaluateTrue("End-to-end test 542-1", Name + " config file", "The nuclearizer config file exists", ConfigExists) && Passed;
+    Passed = EvaluateTrue("End-to-end test 542-1", Name + " reference file", "The reference file exists", ReferenceExists) && Passed;
+    if (ConfigExists == false || ReferenceExists == false) continue;
 
-  const MString ConfigOutputFile = "$(NUCLEARIZER)/resource/unittestdata/542-1/" + Name + "." + Suffix;
-  string Line;
-  while (getline(ConfigIn, Line)) {
-    MString ConfigLine(Line.c_str());
-    ConfigLine.ReplaceAllInPlace(ConfigOutputFile, OutputFile);
-    ConfigOut << ConfigLine << endl;
+    bool ConfigWritten = WriteTestConfiguration(ConfigFile, OriginalOutputFile, OutputFile, TestConfigFile);
+    Passed = EvaluateTrue("End-to-end test 542-1", Name + " temporary config file", "The config file is copied into the temporary directory with the output file redirected", ConfigWritten) && Passed;
+    if (ConfigWritten == false) continue;
+
+    int Status = RunNuclearizer(MString("-c ") + TestConfigFile + " -a -n", LogFile);
+    Passed = Evaluate("End-to-end test 542-1", Name + " exit status", "nuclearizer exits with status 0 (log: " + LogFile + ")", Status, 0) && Passed;
+
+    bool OutputExists = MFile::Exists(OutputFile);
+    Passed = EvaluateTrue("End-to-end test 542-1", Name + " output file", "The output file was created", OutputExists) && Passed;
+    if (OutputExists == false) continue;
+
+    Passed = EvaluateFilesNumericallyEquivalent("End-to-end test 542-1", Name + " output file", "The generated output is numerically equivalent to the reference", OutputFile, ReferenceFile) && Passed;
   }
-  ConfigIn.close();
-  ConfigOut.close();
-
-  // Remove any stale output from a previous run so the checks below reflect
-  // strictly what this run produced.
-  if (MFile::Exists(OutputFile) == true) {
-    MFile::Remove(OutputFile);
-  }
-
-  // Run nuclearizer; stdout and stderr are captured to LogFile
-  MString NuclearizerArguments = MString("-c ") + TestConfigFile + " -a -n";
-  int Status = RunNuclearizer(NuclearizerArguments, LogFile);
-  Passed = EvaluateTrue("End-to-end test 542-1", Name + " exit status",
-                        "nuclearizer exits with status 0 (log: " + LogFile + ")",
-                        Status == 0) && Passed;
-  if (Passed == false) {
-    MFile::Remove(OutputFile);
-    MFile::Remove(TestConfigFile);
-    return Passed;
-  }
-
-  // Verify the output file was produced
-  Passed = EvaluateTrue("End-to-end test 542-1", Name + " output file",
-                        "The output file of " + Name + " was created",
-                        MFile::Exists(OutputFile)) && Passed;
-  if (Passed == false) {
-    MFile::Remove(TestConfigFile);
-    return Passed;
-  }
-
-  // Compare output to reference line by line
-  Passed = CompareOutputToReference(OutputFile, ReferenceFile) && Passed;
-
-  MFile::Remove(OutputFile);
-  MFile::Remove(TestConfigFile);
 
   return Passed;
 }
@@ -189,20 +121,55 @@ bool UTNEndToEnd_542_1::TestConfiguration(const MString& Name, const MString& Su
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool UTNEndToEnd_542_1::WriteTestConfiguration(const MString& ConfigFile, const MString& OriginalOutputFile, const MString& OutputFile, const MString& TestConfigFile)
+{
+  ifstream In(ConfigFile.Data());
+  if (In.is_open() == false) return false;
+
+  MString Content;
+  bool Replaced = false;
+  string Line;
+  while (getline(In, Line).fail() == false) {
+    MString ConfigLine(Line.c_str());
+    if (ConfigLine.Contains(OriginalOutputFile) == true) {
+      ConfigLine.ReplaceAllInPlace(OriginalOutputFile, OutputFile);
+      Replaced = true;
+    }
+    Content += ConfigLine + "\n";
+  }
+
+  if (Replaced == false) return false;
+
+  return WriteTextFile(TestConfigFile, Content);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 int UTNEndToEnd_542_1::RunNuclearizer(const MString& Arguments, const MString& LogFile)
 {
+  // Use the nuclearizer of the MEGAlib installation under test
+  const char* MEGAlibEnv = getenv("MEGALIB");
+  MString Program = (MEGAlibEnv != nullptr && MEGAlibEnv[0] != '\0') ? MString(MEGAlibEnv) + "/bin/nuclearizer" : MString("nuclearizer");
+  MString Command = Program + " " + Arguments;
+
+  // Access mode of the log file: read and write for everyone, reduced by the umask
+  const mode_t LogFileMode = 0666;
+  // Exit code if execl() fails, as the shell uses for a command not found
+  const int ExecFailed = 127;
+
   pid_t Child = fork();
   if (Child == 0) {
-    int Log = open(LogFile.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    int Log = open(LogFile.Data(), O_WRONLY | O_CREAT | O_TRUNC, LogFileMode);
     if (Log >= 0) {
       dup2(Log, STDOUT_FILENO);
       dup2(Log, STDERR_FILENO);
       close(Log);
     }
 
-    MString Command = MString("nuclearizer ") + Arguments;
-    execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
-    _exit(127);
+    execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(nullptr));
+    _exit(ExecFailed);
   }
 
   if (Child < 0) return -1;
@@ -217,23 +184,12 @@ int UTNEndToEnd_542_1::RunNuclearizer(const MString& Arguments, const MString& L
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNEndToEnd_542_1::CompareOutputToReference(const MString& OutputFile, const MString& ReferenceFile)
-{
-  bool Passed = true;
-
-  Passed = EvaluateFilesNumericallyEquivalent("End-to-end test 542-1", "output file",
-                                              "The generated output is numerically equivalent to the reference",
-                                              OutputFile, ReferenceFile) && Passed;
-
-  return Passed;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 int main()
 {
   UTNEndToEnd_542_1 Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNEndToEnd_542-1.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

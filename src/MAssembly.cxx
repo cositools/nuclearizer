@@ -29,26 +29,16 @@
 // Standard libs:
 #include <iostream>
 #include <sstream>
-#include <vector>
-#include <csignal>
 using namespace std;
 
 // ROOT libs:
 #include "TROOT.h"
-#include "TCanvas.h"
-#include "TView.h"
-#include "TGMsgBox.h"
-#include "TH2.h"
-#include "TCanvas.h"
-#include "TApplication.h"
 #include "TRandom.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MAssert.h"
 #include "MStreams.h"
 #include "MString.h"
-#include "MTimer.h"
 #include "MFile.h"
 
 // Nuclearizer libs:
@@ -57,9 +47,7 @@ using namespace std;
 #include "MReadOutDataEnergy.h"
 #include "MReadOutDataFlags.h"
 #include "MReadOutElementVoxel3D.h"
-#include "MReadOutAssembly.h"
 #include "MModule.h"
-#include "MGUIExpoCombinedViewer.h"
 #include "MModuleTransmitterRealta.h"
 #include "MModuleLoaderSimulationsCosima.h"
 #include "MModuleLoaderMeasurementsROA.h"
@@ -101,7 +89,6 @@ MAssembly::MAssembly()
 {
   // standard constructor
     
-  m_Interrupt = false;
   m_UseGui = true;
   
   g_Verbosity = c_Error;
@@ -186,15 +173,15 @@ MAssembly::~MAssembly()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MAssembly::ParseCommandLine(int argc, char** argv)
+int MAssembly::ParseCommandLine(int argc, char** argv)
 {
   ostringstream Usage;
   Usage<<endl;
   Usage<<"  Usage: Nuclearizer <options>"<<endl;
   Usage<<endl;
-  Usage<<"      -c --configuration <filename>.xml.cfg:"<<endl;
+  Usage<<"      -c --configuration <filename>.cfg:"<<endl;
   Usage<<"             Use this file as configuration file."<<endl;
-  Usage<<"             If no configuration file is give ~/.nuclearizer.xml.cfg is used"<<endl;
+  Usage<<"             If no configuration file is given ~/.nuclearizer.cfg is used"<<endl;
   Usage<<"      -C --change-configuration <pattern>:"<<endl;
   Usage<<"             Replace any value in the configuration file (-C can be used multiple times)"<<endl;
   Usage<<"             E.g. to change the roa file, one would set pattern to:"<<endl;
@@ -202,15 +189,17 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   Usage<<"      -a --auto:"<<endl;
   Usage<<"             Automatically start analysis without GUI"<<endl;
   Usage<<"      -m --multithreading:"<<endl;
-  Usage<<"             0: false (default), else: true"<<endl;
+  Usage<<"             0: false, else: true (default)"<<endl;
+  Usage<<"             One thread per module plus additional instances of the slowest modules"<<endl;
   Usage<<"      -g --geometry:"<<endl;
   Usage<<"             Use this geometry file"<<endl;
   Usage<<"      -t --test:"<<endl;
   Usage<<"             Perform a test run to see if nuclearizer can be started up correctly."<<endl;
   Usage<<"      -v --verbosity:"<<endl;
   Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info"<<endl;
-  Usage<<"      -h --help:"<<endl;
-  Usage<<"             You know the answer..."<<endl;
+  Usage<<"      -h --help -? ?:"<<endl;
+  Usage<<"             Print these command line options"<<endl;
+  Usage<<"             Help gets preference over all other options"<<endl;
   Usage<<endl;
   
   // Store some options temporarily:
@@ -221,7 +210,7 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     Option = argv[i];
     if (Option == "-h" || Option == "--help" || Option == "?" || Option == "-?") {
       cout<<Usage.str()<<endl;
-      return false;
+      return 0;
     }
   }
   
@@ -230,14 +219,26 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     Option = argv[i];
     
     // Single argument
-    if (Option == "-c" || Option == "--configuration" ||
-        Option == "-g" || Option == "--geometry" ||
-        Option == "-m" || Option == "--multithreading") {
-      if (!((argc > i+1) && argv[i+1][0] != '-')){
-        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+    if (Option == "--configuration" || Option == "-c" ||
+        Option == "--change-configuration" || Option == "-C" ||
+        Option == "--geometry" || Option == "-g" ||
+        Option == "--multithreading" || Option == "-m" ||
+        Option == "--verbosity" || Option == "-v") {
+      if (argc <= i + 1 || argv[i + 1][0] == '-') {
+        cout<<"ERROR: Command-line parser: Option "<<Option<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
-        return false;
+        return 1;
       }
+    }
+    // No argument
+    else if (Option == "--auto" || Option == "-a" ||
+             Option == "--test" || Option == "-t") {
+      // Nothing to check
+    }
+    // Anything else which looks like an option is unknown - the arguments of the
+    // above options never start with a "-", thus they cannot end up here
+    else if (Option.BeginsWith("-") == true) {
+      cout<<"WARNING: Command-line parser: Unknown option: "<<Option<<endl;
     }
   }
   
@@ -245,14 +246,36 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "--configuration" || Option == "-c") {
-      m_Supervisor->Load(argv[++i]);
+      if (m_Supervisor->Load(argv[++i]) == false) {
+        cout<<"ERROR: Command-line parser: Unable to load configuration file "<<argv[i]<<endl;
+        return 1;
+      }
       cout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
     } else if (Option == "--verbosity" || Option == "-v") {
-      g_Verbosity = atoi(argv[++i]);
+      const MString Value = argv[++i];
+      if (Value.Is<int>() == false) {
+        cout<<"ERROR: Command-line parser: Option "<<Option<<" needs an integer argument, not \""<<Value<<"\"!"<<endl;
+        cout<<Usage.str()<<endl;
+        return 1;
+      }
+      int Verbosity = Value.ToInt();
+      if (Verbosity < c_Quiet || Verbosity > c_Info) {
+        cout<<"ERROR: Command-line parser: Option "<<Option<<" needs an argument between "<<c_Quiet<<" and "<<c_Info<<", not \""<<Value<<"\"!"<<endl;
+        cout<<Usage.str()<<endl;
+        return 1;
+      }
+      g_Verbosity = Verbosity;
       cout<<"Command-line parser: Verbosity "<<g_Verbosity<<endl;
     } else if (Option == "--multithreading" || Option == "-m") {
-      m_Supervisor->UseMultiThreading((atoi(argv[++i]) != 0 ? true : false));
-      cout<<"Command-line parser: Using multithreading: "<<(atoi(argv[i]) != 0 ? "yes" : "no")<<endl;
+      const MString Value = argv[++i];
+      if (Value.Is<int>() == false) {
+        cout<<"ERROR: Command-line parser: Option "<<Option<<" needs an integer argument, not \""<<Value<<"\"!"<<endl;
+        cout<<Usage.str()<<endl;
+        return 1;
+      }
+      const bool UseMultiThreading = (Value.ToInt() != 0);
+      m_Supervisor->UseMultiThreading(UseMultiThreading);
+      cout<<"Command-line parser: Using multithreading: "<<(UseMultiThreading == true ? "yes" : "no")<<endl;
     } else if (Option == "--test" || Option == "-t") {
       // Parse later
     } else if (Option == "--auto" || Option == "-a") {
@@ -265,7 +288,8 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     Option = argv[i];
     if (Option == "--change-configuration" || Option == "-C") {
       if (m_Supervisor->ChangeConfiguration(argv[++i]) == false) {
-        cout<<"ERROR: Command-line parser: Unable to change this configuration value: "<<argv[i]<<endl;        
+        cout<<"ERROR: Command-line parser: Unable to change this configuration value: "<<argv[i]<<endl;
+        return 1;
       } else {
         cout<<"Command-line parser: Changing this configuration value: "<<argv[i]<<endl;
       }
@@ -287,26 +311,33 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
       m_UseGui = false;
       gROOT->SetBatch(true);
       m_Supervisor->UseUI(false);
-      m_Supervisor->Analyze();
-      m_Supervisor->Exit();
-      return false;
-    } else if (Option == "--test" || Option == "-t") {
-        m_UseGui = false;
-        gROOT->SetBatch(true);
-        m_Supervisor->UseUI(false);
-        m_Supervisor->Analyze(true);
-        m_Supervisor->Exit();
-        return false;
+      // Exit() ends the program with exit code 0, thus it is only called after a successful analysis
+      if (m_Supervisor->Analyze() == false) {
+        cout<<"ERROR: Command-line parser: The analysis failed"<<endl;
+        return 1;
       }
+      m_Supervisor->Exit();
+      return 0;
+    } else if (Option == "--test" || Option == "-t") {
+      m_UseGui = false;
+      gROOT->SetBatch(true);
+      m_Supervisor->UseUI(false);
+      if (m_Supervisor->Analyze(true) == false) {
+        cout<<"ERROR: Command-line parser: The test run failed"<<endl;
+        return 1;
+      }
+      m_Supervisor->Exit();
+      return 0;
+    }
   }
   
   if (m_UseGui == true) {
     if (m_Supervisor->LaunchUI() == false) {
-      return false; 
+      return 1;
     }
   }
   
-  return true;
+  return -1;
 }
 
 

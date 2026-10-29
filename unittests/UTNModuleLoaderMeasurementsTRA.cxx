@@ -10,8 +10,10 @@
 
 
 // Standard libs:
+#include <cstdint>
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include <vector>
 using namespace std;
 
@@ -36,13 +38,16 @@ using namespace std;
 //! Unit test class for MModuleLoaderMeasurementsTRA
 class UTNModuleLoaderMeasurementsTRA : public MUnitTest
 {
-public:
+ public:
+  //! Default constructor
   UTNModuleLoaderMeasurementsTRA() : MUnitTest("UTNModuleLoaderMeasurementsTRA") {}
+  //! Default destructor
   virtual ~UTNModuleLoaderMeasurementsTRA() {}
 
+  //! Run all tests
   virtual bool Run();
 
-private:
+ private:
   //! Test getter and setter methods, XML tag, clone, and module types
   bool TestGettersSetters();
   //! Test Initialize() fails when the tra file does not exist
@@ -259,7 +264,8 @@ bool UTNModuleLoaderMeasurementsTRA::TestGettersSetters()
   Passed = Evaluate("GetXmlTag()", "default", "The XML tag is XmlTagMeasurementLoaderTRA", Loader.GetXmlTag(), MString("XmlTagMeasurementLoaderTRA")) && Passed;
 
   MModuleLoaderMeasurementsTRA* Clone = Loader.Clone();
-  Passed = EvaluateTrue("Clone()", "default", "Clone returns a new object", Clone != nullptr && Clone != &Loader) && Passed;
+  Passed = EvaluateTrue("Clone()", "default", "Clone returns an object", Clone != nullptr) && Passed;
+  Passed = EvaluateTrue("Clone()", "default", "Clone returns a new object", Clone != &Loader) && Passed;
   delete Clone;
 
   // The tra file contains strip-paired, depth-calibrated, and reconstructed events
@@ -336,11 +342,11 @@ bool UTNModuleLoaderMeasurementsTRA::TestEvents()
 
   MString FileName = WriteFixture();
   Passed = EvaluateTrue("AnalyzeEvent()", "write fixture", "The fixture tra file can be created", FileName != "") && Passed;
-  if (Passed == false) return Passed;
+  if (FileName == "") return Passed;
 
   MModuleLoaderMeasurementsTRA* Loader = CreateLoader(FileName);
   Passed = EvaluateTrue("Initialize()", "fixture tra file", "Initialize() succeeds for an existing tra file", Loader != nullptr) && Passed;
-  if (Passed == false) return Passed;
+  if (Loader == nullptr) return Passed;
 
   // Event without ET line (ID 3) is skipped by MFileEventsTra
   const vector<unsigned long> IDs = { 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
@@ -403,7 +409,7 @@ bool UTNModuleLoaderMeasurementsTRA::TestHits()
   MString FileName = WriteFixture();
   MModuleLoaderMeasurementsTRA* Loader = CreateLoader(FileName);
   Passed = EvaluateTrue("Initialize()", "fixture tra file", "Initialize() succeeds for an existing tra file", Loader != nullptr) && Passed;
-  if (Passed == false) return Passed;
+  if (Loader == nullptr) return Passed;
 
   // ID 1: photo event -> one hit from PP and PE without uncertainties
   MReadOutAssembly* Event = new MReadOutAssembly();
@@ -443,7 +449,10 @@ bool UTNModuleLoaderMeasurementsTRA::TestHits()
     Passed = EvaluateNear("AnalyzeEvent()", "Compton event", "The second hit energy resolution is CH 1 energy uncertainty", Second->GetEnergyResolution(), 1.37268, 1e-9) && Passed;
   }
   // The stored copy of the physical event keeps its hits, so the savers can use the hit sequence
-  Passed = EvaluateTrue("AnalyzeEvent()", "Compton event", "The stored physical event has as many hits as the assembly", Event->GetPhysicalEvent() != nullptr && Event->GetPhysicalEvent()->GetNHits() == Event->GetNHits()) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "Compton event", "The assembly has a physical event", Event->GetPhysicalEvent() != nullptr) && Passed;
+  if (Event->GetPhysicalEvent() != nullptr) {
+    Passed = Evaluate("AnalyzeEvent()", "Compton event", "The stored physical event has as many hits as the assembly", Event->GetPhysicalEvent()->GetNHits(), Event->GetNHits()) && Passed;
+  }
   delete Event;
 
   // Skip IDs 5 to 11
@@ -482,7 +491,7 @@ bool UTNModuleLoaderMeasurementsTRA::TestFlags()
   MString FileName = WriteFixture();
   MModuleLoaderMeasurementsTRA* Loader = CreateLoader(FileName);
   Passed = EvaluateTrue("Initialize()", "fixture tra file", "Initialize() succeeds for an existing tra file", Loader != nullptr) && Passed;
-  if (Passed == false) return Passed;
+  if (Loader == nullptr) return Passed;
 
   vector<MReadOutAssembly*> Events;
   for (unsigned int e = 0; e < 14; ++e) {
@@ -498,7 +507,10 @@ bool UTNModuleLoaderMeasurementsTRA::TestFlags()
   // ID 2: depth calibration error
   Passed = EvaluateTrue("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "The depth calibration error is set", Events[1]->HasDepthCalibrationError()) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "The event is bad", Events[1]->IsBad()) && Passed;
-  Passed = EvaluateFalse("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "No other error flag is set", Events[1]->HasStripPairingError() || Events[1]->HasEnergyCalibrationError() || Events[1]->HasTACCalibrationError() || Events[1]->HasEventReconstructionError()) && Passed;
+  Passed = EvaluateFalse("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "No strip pairing error is set", Events[1]->HasStripPairingError()) && Passed;
+  Passed = EvaluateFalse("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "No energy calibration error is set", Events[1]->HasEnergyCalibrationError()) && Passed;
+  Passed = EvaluateFalse("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "No TAC calibration error is set", Events[1]->HasTACCalibrationError()) && Passed;
+  Passed = EvaluateFalse("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "No event reconstruction error is set", Events[1]->HasEventReconstructionError()) && Passed;
   ostringstream DepthOut;
   Events[1]->StreamBDFlags(DepthOut);
   Passed = EvaluateTrue("AnalyzeEvent()", "BD DepthCalibrationError (Out of Range)", "The reason is kept", MString(DepthOut.str()).Contains("BD DepthCalibrationError (Out of Range)\n")) && Passed;
@@ -514,7 +526,15 @@ bool UTNModuleLoaderMeasurementsTRA::TestFlags()
   // ID 6: bad string from revan -> no nuclearizer flag, but the physical event keeps it
   Passed = EvaluateTrue("AnalyzeEvent()", "BD ComptelTypeWithIncompatibleKinematics", "An unknown bad string does not make the assembly bad", Events[4]->IsGood()) && Passed;
   Passed = EvaluateFalse("AnalyzeEvent()", "BD ComptelTypeWithIncompatibleKinematics", "An unknown bad string sets no veto", Events[4]->IsVeto()) && Passed;
-  Passed = EvaluateTrue("AnalyzeEvent()", "BD ComptelTypeWithIncompatibleKinematics", "The physical event keeps its bad string", Events[4]->GetPhysicalEvent() != nullptr && Events[4]->GetPhysicalEvent()->IsBad() == true && Events[4]->GetPhysicalEvent()->GetNBadFlags() == 1 && Events[4]->GetPhysicalEvent()->GetBadFlag(0) == "ComptelTypeWithIncompatibleKinematics") && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "BD ComptelTypeWithIncompatibleKinematics", "The assembly has a physical event", Events[4]->GetPhysicalEvent() != nullptr) && Passed;
+  if (Events[4]->GetPhysicalEvent() != nullptr) {
+    MPhysicalEvent* Physical = Events[4]->GetPhysicalEvent();
+    Passed = EvaluateTrue("AnalyzeEvent()", "BD ComptelTypeWithIncompatibleKinematics", "The physical event is bad", Physical->IsBad()) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "BD ComptelTypeWithIncompatibleKinematics", "The physical event has one bad flag", Physical->GetNBadFlags(), 1u) && Passed;
+    if (Physical->GetNBadFlags() == 1) {
+      Passed = Evaluate("AnalyzeEvent()", "BD ComptelTypeWithIncompatibleKinematics", "The physical event keeps its bad string", Physical->GetBadFlag(0), MString("ComptelTypeWithIncompatibleKinematics")) && Passed;
+    }
+  }
 
   // ID 7: strip pairing error with two reasons
   Passed = EvaluateTrue("AnalyzeEvent()", "BD StripPairingError with two reasons", "The strip pairing error is set", Events[5]->HasStripPairingError()) && Passed;
@@ -553,12 +573,21 @@ bool UTNModuleLoaderMeasurementsTRA::TestFlags()
   Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "The depth calibration error of the second BD line is set", Events[13]->HasDepthCalibrationError()) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "The guard ring veto of the third BD line is set", Events[13]->GetGuardRingVeto()) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "The event is bad, so the L2 saver screens it out", Events[13]->IsBad()) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "several BD lines", "The physical event keeps every bad flag", Events[13]->GetPhysicalEvent()->GetNBadFlags(), 3u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "several BD lines", "The bad flags are kept in file order", Events[13]->GetPhysicalEvent()->GetBadFlag(0), MString("StripPairingError (No strip hits)")) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "several BD lines", "The last bad flag is the veto", Events[13]->GetPhysicalEvent()->GetBadFlag(2), MString("GR Veto")) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "The assembly has a physical event", Events[13]->GetPhysicalEvent() != nullptr) && Passed;
+  if (Events[13]->GetPhysicalEvent() != nullptr) {
+    MPhysicalEvent* Physical = Events[13]->GetPhysicalEvent();
+    Passed = Evaluate("AnalyzeEvent()", "several BD lines", "The physical event keeps every bad flag", Physical->GetNBadFlags(), 3u) && Passed;
+    if (Physical->GetNBadFlags() == 3) {
+      Passed = Evaluate("AnalyzeEvent()", "several BD lines", "The bad flags are kept in file order", Physical->GetBadFlag(0), MString("StripPairingError (No strip hits)")) && Passed;
+      Passed = Evaluate("AnalyzeEvent()", "several BD lines", "The last bad flag is the veto", Physical->GetBadFlag(2), MString("GR Veto")) && Passed;
+    }
+  }
   ostringstream SeveralOut;
   Events[13]->StreamBDFlags(SeveralOut);
-  Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "All three flags are streamed again", MString(SeveralOut.str()).Contains("BD StripPairingError (No strip hits)\n") == true && MString(SeveralOut.str()).Contains("BD DepthCalibrationError (GR Veto)\n") == true && MString(SeveralOut.str()).Contains("BD GR Veto\n") == true) && Passed;
+  MString Several(SeveralOut.str());
+  Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "The strip pairing error is streamed again", Several.Contains("BD StripPairingError (No strip hits)\n")) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "The depth calibration error is streamed again", Several.Contains("BD DepthCalibrationError (GR Veto)\n")) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "several BD lines", "The guard ring veto is streamed again", Several.Contains("BD GR Veto\n")) && Passed;
 
   for (MReadOutAssembly* Event : Events) {
     delete Event;
@@ -586,7 +615,7 @@ bool UTNModuleLoaderMeasurementsTRA::TestReinitialize()
   MString FileName = WriteFixture();
   MModuleLoaderMeasurementsTRA* Loader = CreateLoader(FileName);
   Passed = EvaluateTrue("Initialize()", "fixture tra file", "Initialize() succeeds for an existing tra file", Loader != nullptr) && Passed;
-  if (Passed == false) return Passed;
+  if (Loader == nullptr) return Passed;
 
   MReadOutAssembly Event;
   Loader->AnalyzeEvent(&Event);
@@ -629,7 +658,7 @@ bool UTNModuleLoaderMeasurementsTRA::TestSaverRequirements()
   MString FileName = WriteFixture();
   MModuleLoaderMeasurementsTRA* Loader = CreateLoader(FileName);
   Passed = EvaluateTrue("Initialize()", "fixture tra file", "Initialize() succeeds for an existing tra file", Loader != nullptr) && Passed;
-  if (Passed == false) return Passed;
+  if (Loader == nullptr) return Passed;
 
   // L1b and L2 need the analysis up to event reconstruction, L1a needs the measured read-outs,
   // which a tra file does not contain
@@ -694,11 +723,11 @@ bool UTNModuleLoaderMeasurementsTRA::TestCommittedData()
   MString FileName = MString(NuclearizerEnv) + "/resource/unittestdata/542-1/hdf5-to-tra.reference.tra";
 
   Passed = EvaluateTrue("Initialize()", "542-1 reference tra file", "The reference tra file exists", MFile::Exists(FileName)) && Passed;
-  if (Passed == false) return Passed;
+  if (MFile::Exists(FileName) == false) return Passed;
 
   MModuleLoaderMeasurementsTRA* Loader = CreateLoader(FileName);
   Passed = EvaluateTrue("Initialize()", "542-1 reference tra file", "Initialize() succeeds for the reference tra file", Loader != nullptr) && Passed;
-  if (Passed == false) return Passed;
+  if (Loader == nullptr) return Passed;
 
   // Reference values from the file: 6803 SE blocks, 5206 of them with an ET line (853 CO, 3252 PH, 1101 UN),
   // 1073 UN events carry nuclearizer error flags; the file IDs begin 1, 2, 4, 5, 6 since ID 3 has no ET line
@@ -774,7 +803,7 @@ bool UTNModuleLoaderMeasurementsTRA::TestRoundTripTra()
 
   Passed = EvaluateTrue("AnalyzeEvent()", "round trip", "The round trip configuration exists", MFile::Exists(ConfigFileName)) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "round trip", "The Compton-only tra file exists", MFile::Exists(InputFileName)) && Passed;
-  if (Passed == false) return Passed;
+  if (MFile::Exists(ConfigFileName) == false || MFile::Exists(InputFileName) == false) return Passed;
 
   // The module options are those of the configuration
   MXmlDocument Document;
@@ -782,8 +811,9 @@ bool UTNModuleLoaderMeasurementsTRA::TestRoundTripTra()
   MXmlNode* Options = Document.GetNode("ModuleOptions");
   MXmlNode* LoaderNode = (Options != nullptr) ? Options->GetNode("XmlTagMeasurementLoaderTRA") : nullptr;
   MXmlNode* SaverNode = (Options != nullptr) ? Options->GetNode("XmlTagEventSaver") : nullptr;
-  Passed = EvaluateTrue("ReadXmlConfiguration()", "round trip", "The configuration has options for the loader and the event saver", LoaderNode != nullptr && SaverNode != nullptr) && Passed;
-  if (Passed == false) return Passed;
+  Passed = EvaluateTrue("ReadXmlConfiguration()", "round trip", "The configuration has options for the loader", LoaderNode != nullptr) && Passed;
+  Passed = EvaluateTrue("ReadXmlConfiguration()", "round trip", "The configuration has options for the event saver", SaverNode != nullptr) && Passed;
+  if (LoaderNode == nullptr || SaverNode == nullptr) return Passed;
 
   MModuleLoaderMeasurementsTRA Loader;
   Loader.ReadXmlConfiguration(LoaderNode);
@@ -805,7 +835,13 @@ bool UTNModuleLoaderMeasurementsTRA::TestRoundTripTra()
 
   Passed = EvaluateTrue("Initialize()", "round trip", "The loader can be initialized with the configured file", LoaderInitialized) && Passed;
   Passed = EvaluateTrue("Initialize()", "round trip", "The event saver can be initialized for a tra file", SaverInitialized) && Passed;
-  if (Passed == false) return Passed;
+  if (LoaderInitialized == false || SaverInitialized == false) {
+    g_Verbosity = c_Quiet;
+    Loader.Finalize();
+    Saver.Finalize();
+    g_Verbosity = OldVerbosity;
+    return Passed;
+  }
 
   unsigned int NEvents = 0;
   MReadOutAssembly Event;
@@ -833,10 +869,12 @@ bool UTNModuleLoaderMeasurementsTRA::TestRoundTripTra()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleLoaderMeasurementsTRA", "Unit tests for MModuleLoaderMeasurementsTRA") == false) return 1;
-
   UTNModuleLoaderMeasurementsTRA Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNModuleLoaderMeasurementsTRA.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

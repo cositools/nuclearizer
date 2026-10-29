@@ -30,13 +30,16 @@ using namespace std;
 //! Unit test class for MModuleStripPairingMultiRoundChiSquare
 class UTNModuleStripPairingMultiRoundChiSquare : public MUnitTest
 {
-public:
+ public:
+  //! Default constructor
   UTNModuleStripPairingMultiRoundChiSquare() : MUnitTest("UTNModuleStripPairingMultiRoundChiSquare") {}
+  //! Default destructor
   virtual ~UTNModuleStripPairingMultiRoundChiSquare() {}
 
+  //! Run all tests
   virtual bool Run();
 
-private:
+ private:
   //! Test default values after construction
   bool TestDefaultConstruction();
   //! Test getter and setter methods
@@ -227,11 +230,11 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestXmlConfiguration()
   Passed = EvaluateTrue("CreateXmlConfiguration()", "representative values", "CreateXmlConfiguration() returns a non-null node", Node != nullptr) && Passed;
   if (Node == nullptr) return false;
 
-  Passed = Evaluate("CreateXmlConfiguration()", "node name", "CreateXmlConfiguration() names the node after the module XML tag", 
+  Passed = Evaluate("CreateXmlConfiguration()", "node name", "CreateXmlConfiguration() names the node after the module XML tag",
                     Node->GetName(), MString("XmlTagStripPairingMultiRoundChiSquare")) && Passed;
 
   MModuleStripPairingMultiRoundChiSquare Reader;
-  Passed = EvaluateTrue("ReadXmlConfiguration()", "representative values", "ReadXmlConfiguration() returns true for the node created by CreateXmlConfiguration()", 
+  Passed = EvaluateTrue("ReadXmlConfiguration()", "representative values", "ReadXmlConfiguration() returns true for the node created by CreateXmlConfiguration()",
                     Reader.ReadXmlConfiguration(Node)) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "MaximumStrips", "ReadXmlConfiguration() restores the representative MaximumStrips",
                     Reader.GetMaximumStrips(), 10u) && Passed;
@@ -475,10 +478,12 @@ bool UTNModuleStripPairingMultiRoundChiSquare::TestGuardRingQualityFlag()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main(int argc, char** argv)
+int main()
 {
-  if (MGlobal::Initialize("UTNModuleStripPairingMultiRoundChiSquare", "Unit tests for MModuleStripPairingMultiRoundChiSquare") == false) return 1;
-
   UTNModuleStripPairingMultiRoundChiSquare Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNModuleStripPairingMultiRoundChiSquare.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
