@@ -1,0 +1,33 @@
+<Settings>
+  <Analysis>
+    <Ecal>LBL-HP52301-1_am241_co57_cs137_linear</Ecal>
+    <Taccal>taccal_240225</Taccal>
+    <stripmap>sugarv5_sttc</stripmap>
+  </Analysis>
+  <Setup>
+    <asic>nrl4</asic>
+    <bias>600V</bias>
+    <detector>lbl_HP52301-1</detector>
+    <hZ>7.6</hZ>
+    <nStrip>64</nStrip>
+    <nearest_neighbors>true</nearest_neighbors>
+    <ramp>6</ramp>
+    <note>high_thresh_settings</note>
+  </Setup>
+  <DataSets>
+    <DataSet>
+      <Name>Am241</Name>
+      <Energy>59.5</Energy>
+      <Range>0.91</Range>
+      <LowVoltageFiles>
+        <File>asic_gse_240808193956</File>
+        <File>asic_gse_240808225023</File>
+      </LowVoltageFiles>
+      <HighVoltageFiles>
+        <File>asic_gse_240805192405</File>
+        <File>asic_gse_240806170949</File>
+        <File>asic_gse_240814180530</File>
+      </HighVoltageFiles>
+    </DataSet>
+  </DataSets>
+</Settings>
