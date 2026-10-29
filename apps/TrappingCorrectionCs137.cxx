@@ -93,6 +93,9 @@ int g_LVStrips = 64;
 
 double g_CsPhotopeak = 661.7;
 
+// Joint fits with a larger chi2 are flagged in the terminal, the fit results file and the CCE fit plot
+double g_MaxGoodChi2 = 100;
+
 // Number of depth bins at each detector face excluded from the joint fit (trim_index in depth_helpers.fit_CCE)
 int g_TrimBins = 1;
 
@@ -162,7 +165,9 @@ public:
   void PlotCCEFit(const vector<ExperimentalPoint>& ExpData,
                   const SimulatedCCE& Sim,
                   const vector<double>& TrappingParams,
-                  int DetID);
+                  int DetID,
+                  double Chi2,
+                  int NDF);
 
   // Output trapping parameters and simulated CCE into csv file
   void SaveTrappingParamFile(const string& OutputFilePath,
@@ -224,6 +229,7 @@ private:
   MString m_StripMapFile;
   MString m_OutFile;
   bool m_SaveProducts; // True if the intermediate products (everything but the final trapping parameter file) are saved
+  ofstream m_JointFitFile; // Joint fit results of all detectors, written in the products directory
   MString m_ProductsPrefix; // Prefix (directory + file name) for all intermediate products
   bool m_SavePlots; // True if the photopeak and CCE fit plots are saved
   MString m_PlotsPrefix; // Prefix (directory + file name) for all plots
@@ -515,8 +521,11 @@ bool TrappingCorrectionCs137::Analyze()
   } else {
     if (LoadHits(m_LoadHitsFile) == false) return false;
   }
+  // A failed save does not stop the analysis, since the calibrated hits are still in memory
   if (m_SaveCalibratedHitsFile.IsEmpty() == false) {
-    if (SaveCalibratedHits(m_SaveCalibratedHitsFile) == false) return false;
+    if (SaveCalibratedHits(m_SaveCalibratedHitsFile) == false) {
+      if (m_Verbosity >= c_Error) cout << "Error: Continuing the analysis without saving the calibrated hits" << endl;
+    }
   }
 
   // Enable sum of weights squared for TH1 by default
@@ -738,6 +747,14 @@ bool TrappingCorrectionCs137::Analyze()
   }
   int NFittedDetectors = 0;
 
+  // The joint fit results printed to the terminal are also written to a text file in the products directory
+  if (m_SaveProducts == true) {
+    m_JointFitFile.open(m_ProductsPrefix + MString("_JointFitResults.txt"));
+    if (m_JointFitFile.is_open() == false) {
+      if (m_Verbosity >= c_Error) cout << "Error: Unable to create the joint fit results file in " << m_ProductsPrefix << endl;
+    }
+  }
+
   for (int DetID : DetectorIDs) {
     string OutCSV   = string(m_ProductsPrefix.Data()) + "_Det_" + to_string(DetID) + "_sim_output.csv";
     string ParamCSV = string(m_ProductsPrefix.Data()) + "_Det_" + to_string(DetID) + "_trapping_params_" + to_string(m_NDepthBins) + "bins.csv";
@@ -766,6 +783,7 @@ bool TrappingCorrectionCs137::Analyze()
   }
 
   CombinedFile.close();
+  if (m_JointFitFile.is_open() == true) m_JointFitFile.close();
   if (m_Verbosity >= c_Info) cout << "Wrote trapping parameters for " << NFittedDetectors << " of " << DetectorIDs.size() << " detector(s) to " << CombinedCSV << endl;
 
   // Report elapsed time (signaling the end of the run) at the default verbosity setting
@@ -876,8 +894,8 @@ bool TrappingCorrectionCs137::CalibrateHits()
     EventFilter->SetMaximumHVStrips(3);
     EventFilter->SetMinimumHits(0);
     EventFilter->SetMaximumHits(100);
-    EventFilter->SetMinimumTotalEnergy(m_MinEnergy);
-    EventFilter->SetMaximumTotalEnergy(m_MaxEnergy ); // Multiply by 2 because this is the event-level energy, i.e. sum over both sides
+    EventFilter->SetMinimumTotalEnergy(m_MinEnergy*2);
+    EventFilter->SetMaximumTotalEnergy(m_MaxEnergy*2); // Multiply by 2 because this is the event-level energy, i.e. sum over both sides
     S->SetModule(EventFilter, MNumber);
     ++MNumber;
 
@@ -1013,12 +1031,17 @@ bool TrappingCorrectionCs137::SaveCalibratedHits(const MString& FileName)
   HitsTree->Branch("DepthCM", &DepthCM, "DepthCM/F");
   HitsTree->Branch("HVEnergy", &HVEnergy, "HVEnergy/F");
   HitsTree->Branch("LVEnergy", &LVEnergy, "LVEnergy/F");
+  // TTree::Fill returns a negative value if a basket could not be written to the file, e.g. if the disk is full
+  bool WriteFailed = false;
   for (const CalibratedHit& Hit : m_Hits) {
     DetID = Hit.DetID;
     DepthCM = Hit.DepthCM;
     HVEnergy = Hit.HVEnergy;
     LVEnergy = Hit.LVEnergy;
-    HitsTree->Fill();
+    if (HitsTree->Fill() < 0) {
+      WriteFailed = true;
+      break;
+    }
   }
 
   double MinDepthCM, MaxDepthCM;
@@ -1040,7 +1063,15 @@ bool TrappingCorrectionCs137::SaveCalibratedHits(const MString& FileName)
   MaxEnergy.Write();
 
   HitsFile.Write();
+  if (HitsFile.TestBit(TFile::kWriteError) == true) WriteFailed = true;
   HitsFile.Close();
+
+  // Remove an incomplete file, so that it cannot be loaded later by mistake
+  if (WriteFailed == true) {
+    gSystem->Unlink(FileName.Data());
+    if (m_Verbosity >= c_Error) cout << "Error: Writing the hits file " << FileName << " failed - check that the disk has enough free space and that the directory still exists. The incomplete file was removed." << endl;
+    return false;
+  }
 
   if (m_Verbosity >= c_Info) cout << "Saved " << m_Hits.size() << " calibrated hits to " << FileName << endl;
 
@@ -1423,22 +1454,35 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
   int NPoints = NHV + NLV; // Total data points (HV + LV)
   int NDF = NPoints - 4;
 
-  if (m_Verbosity >= c_Info) {
-    cout << "\n================ JOINT FIT RESULTS ================" << endl;
-    cout << "  Detector ID : " << DetID << endl;
-    cout << "  A_hv        : " << TrappingParams[0] << endl;
-    cout << "  A_lv        : " << TrappingParams[1] << endl;
-    cout << "  B (e-trap)  : " << TrappingParams[2] << endl;
-    cout << "  C (h-trap)  : " << TrappingParams[3] << endl;
-    cout << "  Chi2 (Calc) : " << CalculatedChi2 << endl;
-    cout << "  NDF         : " << NDF << endl;
-    cout << "  Chi2 / NDF  : " << (NDF > 0 ? CalculatedChi2 / NDF : -1) << endl;
-    cout << "====================================================\n" << endl;
+  // Flag fits with a large chi2
+  bool HighChi2 = (CalculatedChi2 > g_MaxGoodChi2);
+  if (HighChi2 == true) {
+    if (m_Verbosity >= c_Warning) cout << "Warning: The joint fit of Detector " << DetID << " has chi2 = " << CalculatedChi2 << " > " << g_MaxGoodChi2 << endl;
   }
+
+  // Summary of the fit, with the MINOS errors of the parameters
+  const char* ParNames[4] = {"A_hv        : ", "A_lv        : ", "B (e-trap)  : ", "C (h-trap)  : "};
+  ostringstream Summary;
+  Summary << "\n================ JOINT FIT RESULTS ================" << endl;
+  Summary << "  Detector ID : " << DetID << endl;
+  for (int i = 0; i < 4; ++i) {
+    Summary << "  " << ParNames[i] << TrappingParams[i] << "  (" << Result.LowerError(i) << " / +" << Result.UpperError(i) << ")" << endl;
+  }
+  Summary << "  Chi2 (Calc) : " << CalculatedChi2 << endl;
+  Summary << "  NDF         : " << NDF << endl;
+  Summary << "  Chi2 / NDF  : " << (NDF > 0 ? CalculatedChi2 / NDF : -1) << endl;
+  Summary << "  Fit status  : " << ((Result.IsValid() == true) ? "valid" : "NOT valid") << endl;
+  if (HighChi2 == true) {
+    Summary << "  FLAG        : chi2 > " << g_MaxGoodChi2 << endl;
+  }
+  Summary << "====================================================\n" << endl;
+
+  if (m_Verbosity >= c_Info) cout << Summary.str();
+  if (m_JointFitFile.is_open() == true) m_JointFitFile << Summary.str();
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   if (m_SavePlots == true) {
-    PlotCCEFit(ExpData, Sim, TrappingParams, DetID);
+    PlotCCEFit(ExpData, Sim, TrappingParams, DetID, CalculatedChi2, NDF);
   }
   if (m_SaveProducts == true) {
     SaveTrappingParamFile(OutputCSVPath, TrappingParamPath, TrappingParams, Sim, DetID);
@@ -1451,7 +1495,9 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
 void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpData,
                                          const SimulatedCCE& Sim,
                                          const vector<double>& TrappingParams,
-                                         int DetID)
+                                         int DetID,
+                                         double Chi2,
+                                         int NDF)
 {
   // Only draw into the png file, without opening a window
   bool WasBatch = gROOT->IsBatch();
@@ -1495,7 +1541,8 @@ void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpDat
       TGraphErrors* Graph = (IsTrimmedBin(Point.DepthBin) == false && IsValidCCEErr(CCEErr) == true) ? UsedGraph : ExcludedGraph;
       int N = Graph->GetN();
       Graph->SetPoint(N, Point.DepthMM, CCE);
-      Graph->SetPointError(N, 0.0, CCEErr);
+      // Error bars beyond the error cut of the fit are not drawn, since they would stretch the y axis
+      Graph->SetPointError(N, 0.0, (IsValidCCEErr(CCEErr) == true) ? CCEErr : 0.0);
     }
     UsedGraph->SetMarkerStyle(20);
     UsedGraph->SetMarkerColor(kBlack);
@@ -1510,7 +1557,7 @@ void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpDat
     MultiGraph->Add(SimGraph, "L");
     MultiGraph->Add(FitGraph, "L");
 
-    TLegend* Legend = new TLegend(0.40, 0.15, 0.85, 0.38);
+    TLegend* Legend = new TLegend(0.40, 0.15, 0.85, 0.43);
     Legend->SetBit(kCanDelete);
     Legend->AddEntry(SimGraph, "Simulated CCE", "l");
     Legend->AddEntry(FitGraph, Form("Fit: A=%.4f, B=%.3f, C=%.3f", A, B, C), "l");
@@ -1522,9 +1569,16 @@ void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpDat
     }
     if (ExcludedGraph->GetN() > 0) {
       MultiGraph->Add(ExcludedGraph, "P");
-      Legend->AddEntry(ExcludedGraph, "Measured (excluded)", "pe");
+      Legend->AddEntry(ExcludedGraph, "Measured (excluded, error bars > 6 keV hidden)", "pe");
     } else {
       delete ExcludedGraph;
+    }
+
+    // Chi2 of the joint fit, in red if the fit is flagged
+    TLegendEntry* Chi2Entry = Legend->AddEntry((TObject*) nullptr, Form("Joint fit #chi^{2}/NDF = %.1f / %d", Chi2, NDF), "");
+    if (Chi2 > g_MaxGoodChi2) {
+      Chi2Entry->SetLabel(Form("Joint fit #chi^{2}/NDF = %.1f / %d  (#chi^{2} > %.0f)", Chi2, NDF, g_MaxGoodChi2));
+      Chi2Entry->SetTextColor(kRed);
     }
 
     Canvas->cd(s + 1);
