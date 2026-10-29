@@ -136,9 +136,11 @@ class MStripThresholdFinder
   MString m_CalibrationFileName;
   MString m_StripMapFileName;
   MString m_OutputPrefix;
+  fs::path m_ConfigDirectory;
 
   unsigned int m_DetectorID = 0;
   bool m_ProcessAllDetectors = false;
+  bool m_SaveDiagnosticPlots = false;
   int m_MinEntries = 10;
   double m_FallbackThresholdKeV = 20.0;
   double m_FastFallbackThresholdKeV = 35.0;
@@ -335,6 +337,14 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
   MString configFile = argv[1];
 
+  // Remember where the configuration file is located.
+  // Exported diagnostic PNGs will be written here.
+  fs::path configPath =
+    fs::absolute(fs::path(configFile.Data()));
+
+  m_ConfigDirectory =
+    configPath.parent_path();
+
   MXmlDocument* Document = new MXmlDocument();
 
   if (Document->Load(configFile) == false) {
@@ -460,8 +470,37 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
     if (PrefixNode != nullptr) {
       m_OutputPrefix = PrefixNode->GetValue();
     }
-  }
 
+    MXmlNode* SavePlotsNode =
+      OutputNode->GetNode("SaveDiagnosticPlots");
+
+    if (SavePlotsNode != nullptr) {
+
+      string Value =
+        SavePlotsNode->GetValue().Data();
+
+      if (Value == "true" ||
+          Value == "True" ||
+          Value == "TRUE") {
+
+        m_SaveDiagnosticPlots = true;
+
+      } else if (Value == "false" ||
+                 Value == "False" ||
+                 Value == "FALSE") {
+
+        m_SaveDiagnosticPlots = false;
+
+      } else {
+
+        cerr << "Error: <SaveDiagnosticPlots> must be true or false."
+             << endl;
+
+        delete Document;
+        return false;
+      }
+    }
+  }
   // We have copied everything we need from the XML tree
   delete Document;
   Document = nullptr;
@@ -677,6 +716,10 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
   cout << "  histogram_max_ADC:        "
        << m_HistogramMaxADC << endl;
+	   
+  cout << "  save_diagnostic_plots:    "
+       << (m_SaveDiagnosticPlots ? "true" : "false")
+	   << endl;
 
   cout << endl;
 
@@ -1975,6 +2018,35 @@ void MStripThresholdFinder::WriteDiagnostics()
   
   
   // -------------------------------------------------------------
+  // Optional exported diagnostic plot directories
+  // -------------------------------------------------------------
+
+  fs::path diagnosticPlotDir;
+  fs::path summaryPlotDir;
+  fs::path centralStripPlotDir;
+
+  if (m_SaveDiagnosticPlots == true) {
+ 
+    diagnosticPlotDir =
+      m_ConfigDirectory /
+      "diagnostics_plots";
+
+    summaryPlotDir =
+      diagnosticPlotDir / "summary";
+
+    centralStripPlotDir =
+      diagnosticPlotDir /
+      "central_strip_spectra_keV";
+
+    fs::create_directories(summaryPlotDir);
+    fs::create_directories(centralStripPlotDir);
+
+    cout << "Diagnostic PNG directory: "
+         << diagnosticPlotDir.string()
+         << endl;
+  }
+  
+  // -------------------------------------------------------------
   // ROOT output
   // -------------------------------------------------------------
 
@@ -2244,6 +2316,15 @@ void MStripThresholdFinder::WriteDiagnostics()
   cSlowThresh_all->Update();
   cSlowThresh_all->Write();
   
+  if (m_SaveDiagnosticPlots == true) {
+
+    fs::path filename =
+      summaryPlotDir /
+      "slow_thresholds_all_keV.png";
+
+    cSlowThresh_all->SaveAs(
+      filename.string().c_str());
+  }
   
   
   // -------------------------------------------------------------
@@ -3357,9 +3438,73 @@ void MStripThresholdFinder::WriteDiagnostics()
   // Write completed energy canvases
   for (auto& kv : cSlowSpectraEnergy) {
 
+    unsigned int Detector =
+      kv.first.first;
+
+    bool IsLV =
+      kv.first.second;
+
     kv.second->Modified();
     kv.second->Update();
     kv.second->Write();
+
+    if (m_SaveDiagnosticPlots == true) {
+
+      string side =
+        IsLV ? "LV" : "HV";
+
+      string detectorPosition =
+        "Unknown";
+
+      string detectorSerial =
+        "Unknown";
+
+      auto info =
+        DetectorInfo.find(Detector);
+
+      if (info != DetectorInfo.end()) {
+        detectorPosition =
+          info->second.first;
+
+        detectorSerial =
+          info->second.second;
+      }
+
+      // Make the detector serial safe for filenames
+      for (char& c : detectorSerial) {
+        if (c == ' ' ||
+            c == '(' ||
+            c == ')') {
+          c = '_';
+        }
+      }
+
+      char detectorNumber[8];
+
+      snprintf(
+        detectorNumber,
+        sizeof(detectorNumber),
+        "%02u",
+        Detector);
+
+      string filename =
+        "Det" +
+        string(detectorNumber) +
+        "_" +
+        detectorPosition +
+        "_" +
+        detectorSerial +
+        "_" +
+        side +
+        ".png";
+
+      fs::path outputFile =
+        centralStripPlotDir /
+        filename;
+
+      kv.second->SaveAs(
+       outputFile.string().c_str());
+    }
   }
 
   // -------------------------------------------------------------
@@ -3777,6 +3922,16 @@ void MStripThresholdFinder::WriteDiagnostics()
   cGuardRingSpectraEnergy->Update();
   cGuardRingSpectraEnergy->Write();
   
+  if (m_SaveDiagnosticPlots == true) {
+
+    fs::path filename =
+      summaryPlotDir /
+      "guard_ring_spectra_keV.png";
+
+    cGuardRingSpectraEnergy->SaveAs(
+      filename.string().c_str());
+  }
+  
 
   // -------------------------------------------------------------
   // FAST threshold distribution (HV vs LV separated)
@@ -4068,7 +4223,16 @@ void MStripThresholdFinder::WriteDiagnostics()
   cFastThresh_all->Update();
   cFastThresh_all->Write();
 
+  if (m_SaveDiagnosticPlots == true) {
 
+    fs::path filename =
+      summaryPlotDir /
+      "fast_thresholds_all_keV.png";
+
+    cFastThresh_all->SaveAs(
+      filename.string().c_str());
+  }
+  
   // -------------------------------------------------------------
   // SLOW threshold pixel map (LV vs HV)
   // -------------------------------------------------------------

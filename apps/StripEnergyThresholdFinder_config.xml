@@ -11,6 +11,7 @@
 
   <Output>
     <Prefix>your_output_file_prefix</Prefix>
+    <SaveDiagnosticPlots>false</SaveDiagnosticPlots>
   </Output>
 
   <Analysis>
