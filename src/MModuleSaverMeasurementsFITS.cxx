@@ -137,6 +137,39 @@ bool MModuleSaverMeasurementsFITS::Initialize()
     return MModule::Initialize();
   }
 
+  // check if m_FITSFile is pointing to a FITS object, if yes, finalized the previous file
+  if (m_FITSFile != nullptr) Finalize();
+
+  // reset the states
+  m_PrimaryHDU = nullptr;
+  m_ScienceTable = nullptr;
+  m_TotalEventsWritten = 0;
+  m_TotalEventsSkipped = 0;
+  m_BatchStartRow = 1;
+  m_BatchEventCount = 0;
+  m_FirstEventTime_RTS = 0.0;
+  m_LastEventTime_RTS = 0.0;
+  m_HasEvents = false;
+  m_BatchTIME.clear();
+  m_BatchEVENTID.clear();
+  m_BatchEVENTTYPE.clear();
+  m_BatchEVENTCLASS.clear();
+  m_BatchNUMHIT.clear();
+  m_BatchVETO.clear();
+  m_BatchQUALITY_FLAG.clear();
+  m_BatchSTATTEST.clear();
+  m_BatchSEQHIT.clear();
+  m_BatchRECOILDIR.clear();
+  m_BatchRECOILDIR_ERR.clear();
+  m_BatchX.clear();
+  m_BatchY.clear();
+  m_BatchZ.clear();
+  m_BatchX_ERR.clear();
+  m_BatchY_ERR.clear();
+  m_BatchZ_ERR.clear();
+  m_BatchENERGY.clear();
+  m_BatchENERGY_ERR.clear();
+
   // Create the FITS file
   if (CreateFITSFile(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to create FITS file."<<endl;
@@ -179,8 +212,10 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     string levelStr = (m_OutputDataLevel == 2) ? "L2" : "L1b";
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Creating "<<levelStr<<" FITS file: "<<string(FileName)<<endl;
 
-    // Create new FITS file (overwrite if exists)
-    m_FITSFile = new FITS(string(FileName), RWmode::Write);
+    // Create new FITS file (overwrite if exists (! tells it to overwrite))
+    string FitsFileName = string(FileName);
+    if (FitsFileName[0] != '!') FitsFileName.insert(0, "!");
+    m_FITSFile = new FITS(FitsFileName, RWmode::Write);
 
     // Get pointer to Primary HDU
     m_PrimaryHDU = &m_FITSFile->pHDU();
@@ -322,8 +357,11 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
     return ok;
   }
 
-  // L2 mode: skip bad events (screening)
-  if (m_OutputDataLevel == 2 && Event->IsBad()) {
+  unsigned int numHits = Event->GetNHits();
+  const unsigned int L2_HIT_LEN = 10;
+
+  // L2 mode: skip bad events and events that have more than 10 HITS
+  if (m_OutputDataLevel == 2 && (Event->IsBad() || numHits > L2_HIT_LEN)) {
     m_TotalEventsSkipped++;
     Event->SetAnalysisProgress(MAssembly::c_EventSaver);
     return true;
@@ -339,7 +377,6 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   } else {
     time = Event->GetTimeRTS().GetAsDouble();
   }
-  unsigned int numHits = Event->GetNHits();
 
   // loop through all event, and record the start and end time for TSTART/TSTOP
   if (!m_HasEvents) {
@@ -359,11 +396,16 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   uint8_t eventClass = 5;   // 5 = unknown
   uint32_t eventID = (uint32_t)Event->GetID();
   
-  uint8_t veto = Event->IsVeto() ? 1 : 0;
+  // TODO: Determine how to distinguish between hard and soft ACS vetoes.
+  uint8_t veto = 0;
+  if (Event->GetShieldVeto() == true) {
+    veto = 1;
+  } else if (Event->GetGuardRingVeto() == true) {
+    veto = 3;
+  }
   std::string quality_flag;
 
   // L2: fixed-length 10 hit arrays, zero-padded 
-  const unsigned int L2_HIT_LEN = 10;
   bool isL2 = (m_OutputDataLevel == 2);
   unsigned int arrayLen = isL2 ? L2_HIT_LEN : numHits;
 
