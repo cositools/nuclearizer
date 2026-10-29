@@ -69,8 +69,7 @@ MFITSWriterL1a::MFITSWriterL1a()
 
 MFITSWriterL1a::~MFITSWriterL1a()
 {
-  delete m_FITSFile;
-  m_FITSFile = nullptr;
+  Close();
 }
 
 
@@ -80,8 +79,13 @@ MFITSWriterL1a::~MFITSWriterL1a()
 bool MFITSWriterL1a::Create(const MString& FileName)
 {
   // Create the FITS file with an empty primary HDU and the GED_L1A extension.
+  if (m_FITSFile != nullptr) Close();
+  if (FileName == "") return false;
+
   try {
-    m_FITSFile = new FITS(string(FileName), RWmode::Write);
+    string FitsFileName = string(FileName);
+    if (FitsFileName[0] != '!') FitsFileName.insert(0, "!");
+    m_FITSFile = new FITS(FitsFileName, RWmode::Write);
 
     // Primary header (Table 6.2d primary)
     PHDU& primary = m_FITSFile->pHDU();
@@ -180,6 +184,9 @@ bool MFITSWriterL1a::Create(const MString& FileName)
     return true;
   } catch (const FitsException& e) {
     if (g_Verbosity >= c_Error) cout << "MFITSWriterL1a: Create error: " << e.message() << endl;
+    delete m_FITSFile;
+    m_FITSFile = nullptr;
+    m_Table = nullptr;
     return false;
   }
 }
@@ -190,6 +197,19 @@ bool MFITSWriterL1a::Create(const MString& FileName)
 
 bool MFITSWriterL1a::Write(MReadOutAssembly* Event)
 {
+  if (m_FITSFile == nullptr || m_Table == nullptr || Event == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "MFITSWriterL1a: Write error:"
+           << (m_FITSFile == nullptr ? " m_FITSFile is null." : "")
+           << (m_Table == nullptr ? " m_Table is null." : "")
+           << (Event == nullptr ? " Event is null." : "") << endl;
+    }
+    return false;
+  }
+
+  if (Event->GetTimeRTS() == 0 && Event->GetTimeUTC() != 0) {
+    Event->SetTimeRTS(Event->ComputeRTSfromUTCTime(Event->GetTimeUTC()));
+  }
 
   double time = Event->GetTimeRTS().GetAsDouble();
   if (!m_HasEvents) {
@@ -245,6 +265,14 @@ bool MFITSWriterL1a::Write(MReadOutAssembly* Event)
 
 bool MFITSWriterL1a::FlushBatch()
 {
+  if (m_FITSFile == nullptr || m_Table == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "MFITSWriterL1a: FlushBatch error:"
+           << (m_FITSFile == nullptr ? " m_FITSFile is null." : "")
+           << (m_Table == nullptr ? " m_Table is null." : "") << endl;
+    }
+    return false;
+  }
   if (m_BatchEventCount == 0) return true;
   try {
     long firstRow = m_BatchStartRow;
@@ -332,6 +360,22 @@ void MFITSWriterL1a::Close()
   delete m_FITSFile;   // CCfits flushes + closes on destruction
   m_FITSFile = nullptr;
   m_Table = nullptr;
+  m_BatchStartRow = 1;
+  m_BatchEventCount = 0;
+  m_HasEvents = false;
+  m_FirstEventTime_RTS = 0;
+  m_LastEventTime_RTS = 0;
+  m_BatchTIME.clear();
+  m_BatchEVENTID.clear();
+  m_BatchEVENTTYPE.clear();
+  m_BatchNUMSTRIPHIT.clear();
+  m_BatchHITTYPE.clear();
+  m_BatchDETID.clear();
+  m_BatchSTRIPID.clear();
+  m_BatchSIDEID.clear();
+  m_BatchFASTTIME.clear();
+  m_BatchPHA.clear();
+  m_BatchTAC.clear();
 }
 
 
