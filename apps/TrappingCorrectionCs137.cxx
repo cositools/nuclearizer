@@ -59,6 +59,7 @@ using namespace std;
 #include <TFile.h>
 #include <TTree.h>
 #include <TParameter.h>
+#include <TLegendEntry.h>
 
 // ROOT Fitting Engines
 #include "Fit/Fitter.h"
@@ -95,6 +96,9 @@ double g_CsPhotopeak = 661.7;
 
 // Joint fits with a larger chi2 are flagged in the terminal, the fit results file and the CCE fit plot
 double g_MaxGoodChi2 = 100;
+
+// An outlier bin must also deviate from its neighbours by at least this much (keV), so normal scatter is never rejected
+double g_MinOutlierKeV = 0.5;
 
 // Number of depth bins at each detector face excluded from the joint fit (trim_index in depth_helpers.fit_CCE)
 int g_TrimBins = 1;
@@ -136,6 +140,8 @@ public:
     double HVCCEErr;
     double LVCCE;
     double LVCCEErr;
+    bool HVOutlier = false; // Set in the joint fit if the HV CCE deviates strongly from its neighbouring depth bins
+    bool LVOutlier = false; // Same for the LV CCE
   };
 
   // Helper method to look up the depth bin index for a given detector and depth (cm)
@@ -245,6 +251,11 @@ private:
   double m_MinEnergy;
   double m_MaxEnergy;
 
+  // Systematic floor (keV) added in quadrature to the CCE errors in the joint fit
+  double m_SysErrKeV;
+  // Bins deviating from their neighbours by more than this many errors / typical scatters are excluded from the joint fit; 0 disables
+  double m_OutlierSigma;
+
   // Verbosity of this app's own output, independent of the global verbosity used by the nuclearizer modules
   int m_Verbosity;
 };
@@ -287,6 +298,10 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"         --splines:   depth calibration CTD->depth splines file (.csv)"<<endl;
   Usage<<"         --sim :   simulated CCE file (.csv)"<<endl;
   Usage<<"         --trim :   number of depth bins at each face excluded from the trapping fit (default 1)"<<endl;
+  Usage<<"         --syserr :   systematic floor on the CCE errors in keV, added in quadrature in the trapping fit (default 0)"<<endl;
+  Usage<<"         --outlier :   exclude depth bins deviating from their neighbours by more than this many times the larger of"<<endl;
+  Usage<<"                       their error (statistical + --syserr) and the detector's bin-to-bin scatter, and by more than"<<endl;
+  Usage<<"                       0.5 keV, from the trapping fit; 0 disables (default 5)"<<endl;
   Usage<<"         --bins :   number of depth bins (default 20)"<<endl;
   Usage<<"         -v --verbosity:   app output 0: Quiet, 1: Errors, 2: Warnings, 3: Info incl. depth bin fits and module setup (default 1)"<<endl;
   Usage<<"         --products:   save the intermediate products (fit logs, CCE tables, per detector csv files) in the directory trapping_param_products"<<endl;
@@ -321,6 +336,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   m_NDepthBins = 20;
   m_SaveProducts = false;
   m_SavePlots = false;
+  m_SysErrKeV = 0.0;
+  m_OutlierSigma = 5.0;
 
   // Progress tracking
   time_t rawtime;
@@ -339,7 +356,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m") || (Option == "--geo") || (Option == "--coeffs") || (Option == "--splines") || (Option == "--sim") || (Option == "--trim") || (Option == "--bins") || (Option == "-v") || (Option == "--verbosity") || (Option == "--save-hits") || (Option == "--load-hits")) {
+    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m") || (Option == "--geo") || (Option == "--coeffs") || (Option == "--splines") || (Option == "--sim") || (Option == "--trim") || (Option == "--syserr") || (Option == "--outlier") || (Option == "--bins") || (Option == "-v") || (Option == "--verbosity") || (Option == "--save-hits") || (Option == "--load-hits")) {
       if (((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) == false) {
         if (m_Verbosity >= c_Error) {
           cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
@@ -403,6 +420,16 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
       if (m_Verbosity >= c_Info) cout<<"Accepting number of trimmed depth bins per face: "<<g_TrimBins<<endl;
     }
 
+    if (Option == "--syserr") {
+      m_SysErrKeV = stod(argv[++i]);
+      if (m_Verbosity >= c_Info) cout<<"Accepting systematic error floor: "<<m_SysErrKeV<<" keV"<<endl;
+    }
+
+    if (Option == "--outlier") {
+      m_OutlierSigma = stod(argv[++i]);
+      if (m_Verbosity >= c_Info) cout<<"Accepting outlier threshold: "<<m_OutlierSigma<<" sigma"<<endl;
+    }
+
     if (Option == "--bins") {
       m_NDepthBins = stoi(argv[++i]);
       if (m_Verbosity >= c_Info) cout<<"Accepting number of depth bins: "<<m_NDepthBins<<endl;
@@ -457,6 +484,11 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
       cout<<"Error: The depth calibration needs a geometry (--geo), coefficients (--coeffs) and splines (--splines) file!"<<endl;
       cout<<Usage.str()<<endl;
     }
+    return false;
+  }
+
+  if (m_SysErrKeV < 0.0 || m_OutlierSigma < 0.0) {
+    if (m_Verbosity >= c_Error) cout<<"Error: The systematic error floor (--syserr) and the outlier threshold (--outlier) must not be negative!"<<endl;
     return false;
   }
 
@@ -1315,20 +1347,91 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
 
   /////////////// Data Filters /////////////////////
 
-  // Reject data points with high error or zero error
+  // Systematic floor on the CCE errors, added in quadrature
+  const double SysCCE = m_SysErrKeV / g_CsPhotopeak;
+
+  // The points of this detector, sorted by depth bin, with outliers flagged
+  vector<ExperimentalPoint> AllDetData;
+  for (const auto& Point : ExpData) {
+    if (Point.DetID == DetID || DetID == -1) AllDetData.push_back(Point);
+  }
+  sort(AllDetData.begin(), AllDetData.end(), [](const ExperimentalPoint& A, const ExperimentalPoint& B) { return A.DepthBin < B.DepthBin; });
+
+  // Outliers, e.g. a photopeak fit that went wrong: a bin whose CCE deviates from the median of its up to 4 nearest
+  // neighbouring bins (2 on each side) by more than m_OutlierSigma times the larger of its total error and the typical
+  // bin-to-bin scatter of this detector side, and by more than g_MinOutlierKeV.
+  // Two passes: flagged bins are not used as neighbours in the second pass
+  int NHVOutliers = 0, NLVOutliers = 0;
+  if (m_OutlierSigma > 0.0) {
+    for (int Side = 0; Side < 2; ++Side) {
+      auto CCE = [Side](const ExperimentalPoint& P) { return (Side == 0) ? P.HVCCE : P.LVCCE; };
+      auto Err = [Side](const ExperimentalPoint& P) { return (Side == 0) ? P.HVCCEErr : P.LVCCEErr; };
+      vector<bool> IsOutlier(AllDetData.size(), false);
+
+      for (int Pass = 0; Pass < 2; ++Pass) {
+        // Indices of the points with a valid error on this side which are not flagged yet
+        vector<int> Candidates;
+        for (unsigned int i = 0; i < AllDetData.size(); ++i) {
+          if (IsValidCCEErr(Err(AllDetData[i])) == true && IsOutlier[i] == false) Candidates.push_back(i);
+        }
+
+        // Deviation of each candidate from the median of its neighbours
+        vector<pair<int, double>> Deviations;
+        vector<double> References(AllDetData.size(), 0.0);
+        for (int c = 0; c < int(Candidates.size()); ++c) {
+          vector<double> Neighbours;
+          for (int d = -2; d <= 2; ++d) {
+            if (d != 0 && c + d >= 0 && c + d < int(Candidates.size())) Neighbours.push_back(CCE(AllDetData[Candidates[c + d]]));
+          }
+          if (Neighbours.size() < 2) continue;
+          sort(Neighbours.begin(), Neighbours.end());
+          size_t M = Neighbours.size() / 2;
+          double Reference = (Neighbours.size() % 2 == 1) ? Neighbours[M] : 0.5 * (Neighbours[M - 1] + Neighbours[M]);
+          References[Candidates[c]] = Reference;
+          Deviations.push_back(make_pair(Candidates[c], fabs(CCE(AllDetData[Candidates[c]]) - Reference)));
+        }
+        if (Deviations.empty() == true) break;
+
+        // Typical bin-to-bin scatter: robust standard deviation (1.4826 x median absolute deviation)
+        vector<double> Absolute;
+        for (const auto& D : Deviations) Absolute.push_back(D.second);
+        sort(Absolute.begin(), Absolute.end());
+        double Scatter = 1.4826 * Absolute[Absolute.size() / 2];
+
+        for (const auto& [Index, Deviation] : Deviations) {
+          const ExperimentalPoint& Point = AllDetData[Index];
+          double Limit = m_OutlierSigma * max(hypot(Err(Point), SysCCE), Scatter);
+          if (Deviation > Limit && Deviation > g_MinOutlierKeV / g_CsPhotopeak) {
+            IsOutlier[Index] = true;
+            if (m_Verbosity >= c_Warning) {
+              cout << "Warning: Excluding the " << ((Side == 0) ? "HV" : "LV") << " CCE of depth bin " << Point.DepthBin << " of Detector " << DetID
+                   << " as outlier: " << CCE(Point) << " vs " << References[Index] << " of its neighbours (" << Deviation * g_CsPhotopeak << " keV)" << endl;
+            }
+          }
+        }
+      }
+
+      for (unsigned int i = 0; i < AllDetData.size(); ++i) {
+        if (IsOutlier[i] == false) continue;
+        if (Side == 0) { AllDetData[i].HVOutlier = true; ++NHVOutliers; }
+        else { AllDetData[i].LVOutlier = true; ++NLVOutliers; }
+      }
+    }
+  }
+
+  // Reject data points with high error or zero error, and outliers
   auto IsHVValid = [&](const ExperimentalPoint& P) {
-    return IsValidCCEErr(P.HVCCEErr);
+    return IsValidCCEErr(P.HVCCEErr) == true && P.HVOutlier == false;
   };
   auto IsLVValid = [&](const ExperimentalPoint& P) {
-    return IsValidCCEErr(P.LVCCEErr);
+    return IsValidCCEErr(P.LVCCEErr) == true && P.LVOutlier == false;
   };
 
   vector<ExperimentalPoint> DetExpData;
   int NRejected = 0, NTrimmed = 0, NHV = 0, NLV = 0;
 
   // Only retain HV or LV data points w acceptable errors
-  for (const auto& Point : ExpData) {
-    if (Point.DetID != DetID && DetID != -1) continue;
+  for (const auto& Point : AllDetData) {
     // Exclude the depth bins at the detector edges according toward inputted trim
     // This is to avoid fitting the trapping parameters in regions where the simulated CCE is not well characterized
     if (IsTrimmedBin(Point.DepthBin) == true) { NTrimmed++; continue; }
@@ -1387,11 +1490,11 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
 
       // For valid data points, find chi2
       if (IsHVValid(Point) == true) {
-        double Pull = (Point.HVCCE - PredHV) / Point.HVCCEErr;
+        double Pull = (Point.HVCCE - PredHV) / hypot(Point.HVCCEErr, SysCCE);
         Chi2 += Pull * Pull;
       }
       if (IsLVValid(Point) == true) {
-        double Pull = (Point.LVCCE - PredLV) / Point.LVCCEErr;
+        double Pull = (Point.LVCCE - PredLV) / hypot(Point.LVCCEErr, SysCCE);
         Chi2 += Pull * Pull;
       }
     }
@@ -1468,6 +1571,8 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
   for (int i = 0; i < 4; ++i) {
     Summary << "  " << ParNames[i] << TrappingParams[i] << "  (" << Result.LowerError(i) << " / +" << Result.UpperError(i) << ")" << endl;
   }
+  Summary << "  Sys. floor  : " << m_SysErrKeV << " keV" << endl;
+  Summary << "  Outliers    : " << NHVOutliers << " HV, " << NLVOutliers << " LV depth bins excluded" << endl;
   Summary << "  Chi2 (Calc) : " << CalculatedChi2 << endl;
   Summary << "  NDF         : " << NDF << endl;
   Summary << "  Chi2 / NDF  : " << (NDF > 0 ? CalculatedChi2 / NDF : -1) << endl;
@@ -1482,7 +1587,7 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   if (m_SavePlots == true) {
-    PlotCCEFit(ExpData, Sim, TrappingParams, DetID, CalculatedChi2, NDF);
+    PlotCCEFit(AllDetData, Sim, TrappingParams, DetID, CalculatedChi2, NDF);
   }
   if (m_SaveProducts == true) {
     SaveTrappingParamFile(OutputCSVPath, TrappingParamPath, TrappingParams, Sim, DetID);
@@ -1538,7 +1643,8 @@ void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpDat
       if (Point.DetID != DetID && DetID != -1) continue;
       double CCE = (IsHV == true) ? Point.HVCCE : Point.LVCCE;
       double CCEErr = (IsHV == true) ? Point.HVCCEErr : Point.LVCCEErr;
-      TGraphErrors* Graph = (IsTrimmedBin(Point.DepthBin) == false && IsValidCCEErr(CCEErr) == true) ? UsedGraph : ExcludedGraph;
+      bool Outlier = (IsHV == true) ? Point.HVOutlier : Point.LVOutlier;
+      TGraphErrors* Graph = (IsTrimmedBin(Point.DepthBin) == false && IsValidCCEErr(CCEErr) == true && Outlier == false) ? UsedGraph : ExcludedGraph;
       int N = Graph->GetN();
       Graph->SetPoint(N, Point.DepthMM, CCE);
       // Error bars beyond the error cut of the fit are not drawn, since they would stretch the y axis
@@ -1569,7 +1675,7 @@ void TrappingCorrectionCs137::PlotCCEFit(const vector<ExperimentalPoint>& ExpDat
     }
     if (ExcludedGraph->GetN() > 0) {
       MultiGraph->Add(ExcludedGraph, "P");
-      Legend->AddEntry(ExcludedGraph, "Measured (excluded, error bars > 6 keV hidden)", "pe");
+      Legend->AddEntry(ExcludedGraph, "Measured (excluded: trim, error cut or outlier; error bars > 6 keV hidden)", "pe");
     } else {
       delete ExcludedGraph;
     }
