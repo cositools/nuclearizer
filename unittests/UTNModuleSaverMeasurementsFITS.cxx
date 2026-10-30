@@ -538,7 +538,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   // VETO: 0 = none, 1 = hard ACD veto, 2 = soft ACD veto, 3 = guard ring veto
   Passed = Evaluate("AnalyzeEvent()", "L1b", "VETO has one element per event", ColumnShape(Veto), Scalar) && Passed;
   if (ColumnShape(Veto) == Scalar) {
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "L1b event 1 with guard ring veto", "VETO is 3 for a guard ring veto", Veto[0][0], 3.0, 1e-12)) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 1 with guard ring veto", "VETO is 3 for a guard ring veto", Veto[0][0], 3.0, 1e-12) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "L1b event 2 without veto", "VETO is 0 without veto", Veto[1][0], 0.0, 1e-12) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "L1b event 3 with shield veto", "VETO is an ACD veto (1 or 2) for a shield veto", Veto[2][0] == 1.0 || Veto[2][0] == 2.0) && Passed;
   }
@@ -617,7 +617,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL2()
     }
     return true;
   });
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "L2 event with 40 hits", "An event with more than 10 hits is handled without crashing and NUMHIT fits the 10-element arrays", NoCrash)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "L2 event with 40 hits", "An event with more than 10 hits is handled without crashing and NUMHIT fits the 10-element arrays", NoCrash) && Passed;
 
   return Passed;
 }
@@ -684,13 +684,13 @@ bool UTNModuleSaverMeasurementsFITS::TestRewrite()
 
   Passed = EvaluateTrue("Initialize()", "first run", "Initialize succeeds", Init[0]) && Passed;
   Passed = EvaluateTrue("Initialize()", "second run, same file", "Initialize succeeds again", Init[1]) && Passed;
-  Passed = ExpectedToFail(Evaluate("Finalize()", "second run, same file", "The file contains only the one event of the second run", CountRows(FileName), 1L)) && Passed;
+  Passed = Evaluate("Finalize()", "second run, same file", "The file contains only the one event of the second run", CountRows(FileName), 1L) && Passed;
   vector<vector<double>> ID;
   Passed = EvaluateTrue("Finalize()", "second run, same file", "The EVENTID column can be read", ReadNumericColumn(FileName, "EVENTID", ID)) && Passed;
   unsigned int FirstRowLength = (ID.size() >= 1) ? (unsigned int) ID[0].size() : 0;
   Passed = Evaluate("Finalize()", "second run, same file", "The first EVENTID row has one element", FirstRowLength, 1u) && Passed;
   if (ID.size() >= 1 && ID[0].size() == 1) {
-    Passed = ExpectedToFail(EvaluateNear("Finalize()", "second run, same file", "The first row is the event of the second run", ID[0][0], 101.0, 1e-12)) && Passed;
+    Passed = EvaluateNear("Finalize()", "second run, same file", "The first row is the event of the second run", ID[0][0], 101.0, 1e-12) && Passed;
   }
 
   return Passed;
