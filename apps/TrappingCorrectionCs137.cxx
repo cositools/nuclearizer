@@ -150,6 +150,10 @@ public:
   // Photopeak fitting function
   TF1* GeneratePhotopeakFunction();
 
+  // Fit the photopeak of one depth bin histogram, with the full peak + tail function or, with --peak-fit top,
+  // a Gaussian on the top of the peak only. Function returns the fitted function, its parameter 1 is the centroid
+  TFitResultPtr FitPhotopeak(TH1D* Hist, TF1*& Function, const char* FitOptions);
+
   // Load Sim CCE files
   // Lines after "### <detector_ID>" belong to that detector
   // Lines before any such header to detector 0
@@ -256,6 +260,12 @@ private:
   // Bins deviating from their neighbours by more than this many errors / typical scatters are excluded from the joint fit; 0 disables
   double m_OutlierSigma;
 
+  // Photopeak fit: false = full peak + low energy tail function, true = Gaussian on the top of the peak only
+  bool m_TopFit;
+  // Window of the top fit, in Gaussian sigmas below and above the centroid
+  double m_TopLowSigma;
+  double m_TopHighSigma;
+
   // Verbosity of this app's own output, independent of the global verbosity used by the nuclearizer modules
   int m_Verbosity;
 };
@@ -302,6 +312,8 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   Usage<<"         --outlier :   exclude depth bins deviating from their neighbours by more than this many times the larger of"<<endl;
   Usage<<"                       their error (statistical + --syserr) and the detector's bin-to-bin scatter, and by more than"<<endl;
   Usage<<"                       0.5 keV, from the trapping fit; 0 disables (default 5)"<<endl;
+  Usage<<"         --peak-fit :   photopeak fit: \"full\" (peak + low energy tail function) or \"top\" (Gaussian on the top of the peak only) (default full)"<<endl;
+  Usage<<"         --top-window :   window of the top fit as \"<sigmas below>,<sigmas above>\" the centroid (default 1,2)"<<endl;
   Usage<<"         --bins :   number of depth bins (default 20)"<<endl;
   Usage<<"         -v --verbosity:   app output 0: Quiet, 1: Errors, 2: Warnings, 3: Info incl. depth bin fits and module setup (default 1)"<<endl;
   Usage<<"         --products:   save the intermediate products (fit logs, CCE tables, per detector csv files) in the directory trapping_param_products"<<endl;
@@ -338,6 +350,9 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
   m_SavePlots = false;
   m_SysErrKeV = 0.0;
   m_OutlierSigma = 5.0;
+  m_TopFit = false;
+  m_TopLowSigma = 1.0;
+  m_TopHighSigma = 2.0;
 
   // Progress tracking
   time_t rawtime;
@@ -356,7 +371,7 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m") || (Option == "--geo") || (Option == "--coeffs") || (Option == "--splines") || (Option == "--sim") || (Option == "--trim") || (Option == "--syserr") || (Option == "--outlier") || (Option == "--bins") || (Option == "-v") || (Option == "--verbosity") || (Option == "--save-hits") || (Option == "--load-hits")) {
+    if ((Option == "-i") || (Option == "-o") || (Option == "--emin") || (Option == "--emax") || (Option == "--tcal") || (Option == "-m") || (Option == "--geo") || (Option == "--coeffs") || (Option == "--splines") || (Option == "--sim") || (Option == "--trim") || (Option == "--syserr") || (Option == "--outlier") || (Option == "--peak-fit") || (Option == "--top-window") || (Option == "--bins") || (Option == "-v") || (Option == "--verbosity") || (Option == "--save-hits") || (Option == "--load-hits")) {
       if (((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) == false) {
         if (m_Verbosity >= c_Error) {
           cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
@@ -430,6 +445,30 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
       if (m_Verbosity >= c_Info) cout<<"Accepting outlier threshold: "<<m_OutlierSigma<<" sigma"<<endl;
     }
 
+    if (Option == "--peak-fit") {
+      string Mode = argv[++i];
+      if (Mode == "full") {
+        m_TopFit = false;
+      } else if (Mode == "top") {
+        m_TopFit = true;
+      } else {
+        if (m_Verbosity >= c_Error) cout<<"Error: --peak-fit must be \"full\" or \"top\", not \""<<Mode<<"\""<<endl;
+        return false;
+      }
+      if (m_Verbosity >= c_Info) cout<<"Accepting photopeak fit: "<<Mode<<endl;
+    }
+
+    if (Option == "--top-window") {
+      string Window = argv[++i];
+      char Comma = ' ';
+      stringstream WindowStream(Window);
+      if ((WindowStream >> m_TopLowSigma >> Comma >> m_TopHighSigma).fail() == true || Comma != ',') {
+        if (m_Verbosity >= c_Error) cout<<"Error: --top-window must be \"<sigmas below>,<sigmas above>\", e.g. 1,2"<<endl;
+        return false;
+      }
+      if (m_Verbosity >= c_Info) cout<<"Accepting top fit window: -"<<m_TopLowSigma<<" to +"<<m_TopHighSigma<<" sigma"<<endl;
+    }
+
     if (Option == "--bins") {
       m_NDepthBins = stoi(argv[++i]);
       if (m_Verbosity >= c_Info) cout<<"Accepting number of depth bins: "<<m_NDepthBins<<endl;
@@ -484,6 +523,11 @@ bool TrappingCorrectionCs137::ParseCommandLine(int argc, char** argv)
       cout<<"Error: The depth calibration needs a geometry (--geo), coefficients (--coeffs) and splines (--splines) file!"<<endl;
       cout<<Usage.str()<<endl;
     }
+    return false;
+  }
+
+  if (m_TopLowSigma <= 0.0 || m_TopHighSigma <= 0.0) {
+    if (m_Verbosity >= c_Error) cout<<"Error: Both sides of the top fit window (--top-window) must be positive!"<<endl;
     return false;
   }
 
@@ -625,11 +669,11 @@ bool TrappingCorrectionCs137::Analyze()
 
         const char* FitOptions = (m_Verbosity >= c_Info) ? "S" : "SQ";
 
-        TF1* PhotopeakFunctionHV = GeneratePhotopeakFunction();
-        TFitResultPtr HVFit = HVHist->Fit(PhotopeakFunctionHV, FitOptions, "", 645, 675);
+        TF1* PhotopeakFunctionHV = nullptr;
+        TFitResultPtr HVFit = FitPhotopeak(HVHist, PhotopeakFunctionHV, FitOptions);
 
-        TF1* PhotopeakFunctionLV = GeneratePhotopeakFunction();
-        TFitResultPtr LVFit = LVHist->Fit(PhotopeakFunctionLV, FitOptions, "", 645, 675);
+        TF1* PhotopeakFunctionLV = nullptr;
+        TFitResultPtr LVFit = FitPhotopeak(LVHist, PhotopeakFunctionLV, FitOptions);
 
         if ((HVFit >= 0) && (LVFit >= 0)) {
 
@@ -1261,6 +1305,56 @@ TF1* TrappingCorrectionCs137::GeneratePhotopeakFunction()
   return PhotopeakFunction;
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+
+TFitResultPtr TrappingCorrectionCs137::FitPhotopeak(TH1D* Hist, TF1*& Function, const char* FitOptions)
+{
+  // Full photopeak function: Gaussian + exponential and linear low energy tails
+  if (m_TopFit == false) {
+    Function = GeneratePhotopeakFunction();
+    return Hist->Fit(Function, FitOptions, "", 645, 675);
+  }
+
+  // Top fit: a Gaussian fitted only from m_TopLowSigma below to m_TopHighSigma above the centroid, so the low energy
+  // tail does not influence the centroid. Start at the highest bin in the fit range, then refit with the window
+  // updated to the fitted centroid and sigma
+  Hist->GetXaxis()->SetRange(Hist->GetXaxis()->FindBin(645.0), Hist->GetXaxis()->FindBin(675.0));
+  double Centroid = Hist->GetBinCenter(Hist->GetMaximumBin());
+  double Height = Hist->GetMaximum();
+  Hist->GetXaxis()->SetRange(0, 0);
+  double Sigma = 2.0;
+
+  // Parameter names as for the full function, so that the fit log looks the same
+  Function = new TF1("PhotopeakTopFunction", "gaus", 645, 675);
+  Function->SetParName(0, "Amplitude");
+  Function->SetParName(1, "x0 (Mu)");
+  Function->SetParName(2, "Sigma Gauss");
+  Function->SetParLimits(1, 645, 675);
+  Function->SetParLimits(2, 0.5, 10);
+
+  TFitResultPtr Result;
+  for (int Iteration = 0; Iteration < 3; ++Iteration) {
+    double Low = max(Centroid - m_TopLowSigma * Sigma, 645.0);
+    double High = min(Centroid + m_TopHighSigma * Sigma, 675.0);
+    // Keep at least 5 bins in the window, so a narrow first guess cannot make the fit fail
+    double MinWidth = 5 * Hist->GetBinWidth(1);
+    if (High - Low < MinWidth) {
+      Low = max(Centroid - MinWidth / 2, 645.0);
+      High = min(Centroid + MinWidth / 2, 675.0);
+    }
+    Function->SetRange(Low, High);
+    Function->SetParameters(Height, Centroid, Sigma);
+    // "R": use the function range as the fit range
+    Result = Hist->Fit(Function, (string(FitOptions) + "R").c_str());
+    if (int(Result) < 0) break;
+    Height = Result->Parameter(0);
+    Centroid = Result->Parameter(1);
+    Sigma = Result->Parameter(2);
+  }
+
+  return Result;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 map<int, TrappingCorrectionCs137::SimulatedCCE> TrappingCorrectionCs137::LoadSimulatedCCE(const string& SimCSVPath, bool& HasDetectorHeaders)
@@ -1570,6 +1664,11 @@ bool TrappingCorrectionCs137::FitTrappingParameters(const vector<ExperimentalPoi
   Summary << "  Detector ID : " << DetID << endl;
   for (int i = 0; i < 4; ++i) {
     Summary << "  " << ParNames[i] << TrappingParams[i] << "  (" << Result.LowerError(i) << " / +" << Result.UpperError(i) << ")" << endl;
+  }
+  if (m_TopFit == true) {
+    Summary << "  Peak fit    : top (" << m_TopLowSigma << " sigma below to " << m_TopHighSigma << " sigma above the centroid)" << endl;
+  } else {
+    Summary << "  Peak fit    : full" << endl;
   }
   Summary << "  Sys. floor  : " << m_SysErrKeV << " keV" << endl;
   Summary << "  Outliers    : " << NHVOutliers << " HV, " << NLVOutliers << " LV depth bins excluded" << endl;
