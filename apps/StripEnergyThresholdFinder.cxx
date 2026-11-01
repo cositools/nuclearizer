@@ -107,7 +107,7 @@ constexpr double FAST_MIN_DT1_FRACTION = 0.05;
 constexpr int FAST_FIRST_ADC_OFFSET = 20;
 constexpr int FAST_MIN_CROSSOVER_COUNTS = 50;
 constexpr int FAST_CROSSOVER_WINDOW_BINS = 21;
-constexpr int FAST_SEARCH_RANGE_ADC = 800;
+//constexpr int FAST_SEARCH_RANGE_ADC = 800;
 
 
 //! Class for determining strip energy thresholds from histogrammed data
@@ -148,6 +148,7 @@ class MStripThresholdFinder
   double m_HistogramMaxADC = 4096.0;
   double m_NoiseSearchMaxKeV = 40.0;
   double m_NoiseStartMinCounts = 50.0;
+  int m_FastSearchRangeADC = 800;
 
   long m_MaxEvents = -1;
 
@@ -401,6 +402,16 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
       m_NoiseSearchMaxKeV = Node->GetValueAsDouble();
     }
 
+    Node = AnalysisNode->GetNode("NoiseStartMinCounts");
+    if (Node != nullptr) {
+      m_NoiseStartMinCounts = Node->GetValueAsDouble();
+    }
+
+    Node = AnalysisNode->GetNode("FastSearchRangeADC");
+    if (Node != nullptr) {
+      m_FastSearchRangeADC = Node->GetValueAsInt();
+    }
+	
     Node = AnalysisNode->GetNode("FastFallbackKeV");
     if (Node != nullptr) {
       m_FastFallbackThresholdKeV = Node->GetValueAsDouble();
@@ -710,6 +721,12 @@ bool MStripThresholdFinder::ParseCommandLine(int argc, char** argv)
 
   cout << "  noise_search_max_keV:     "
        << m_NoiseSearchMaxKeV << endl;
+
+  cout << "  noise_start_min_counts:   "
+       << m_NoiseStartMinCounts << endl;
+
+  cout << "  fast_search_range_ADC:    "
+       << m_FastSearchRangeADC << endl;
 
   cout << "  histogram_bins:           "
        << m_HistogramBins << endl;
@@ -1782,7 +1799,7 @@ void MStripThresholdFinder::FindFastThresholds()
     const int nbins = FAST_CROSSOVER_WINDOW_BINS;
 
     // Extend search window for stability
-    int searchMax = m_SlowThresholdsADC[R] + FAST_SEARCH_RANGE_ADC;
+    int searchMax = m_SlowThresholdsADC[R] + m_FastSearchRangeADC;
 
     for (int ADC = m_SlowThresholdsADC[R] ; ADC < searchMax; ADC++) {
       int n_dt0 = 0;
