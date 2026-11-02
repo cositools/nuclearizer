@@ -298,8 +298,32 @@ bool UTNModuleTACCalibration::TestLoadWithStripMap()
     Passed = EvaluateNear("LoadTACCalFile()", "read-out ID 13", "The TAC calibration slope of read-out ID 13 is 0.48", Table[7][1][41][0], 0.48, 1e-9) && Passed;
   }
 
+  // Reload a partial TAC calibration and check that the previous TAC calibration table was cleared
+  const MString PartialTACCalFile = GetFixturePath("_partial.csv");
+  vector<MString> PartialTACCalLines = { "12,7,0,40,0.5,0.005,-1000.0,10.0"};
+  Passed = EvaluateTrue("LoadTACCalFile()", "write fixtures", "Partial TAC calibration fixtures can be created", WriteFixture(PartialTACCalFile, PartialTACCalLines)) && Passed;
+
+  g_Verbosity = c_Quiet;
+  bool PartialResult = Module.LoadTACCalFile(PartialTACCalFile, &StripMap);
+  g_Verbosity = OldVerbosity;
+  Passed = EvaluateTrue("LoadTACCalFile()", "reloading partial TAC calibration file", "LoadTACCalFile() succeeds when reloading another TAC calibration file", PartialResult) && Passed;
+
+  TACCalTable PartialTable = Module.GetTACCalParameters();
+  Passed = ExpectedToFail(Evaluate("LoadTACCalFile()", "reloading partial TAC calibration file", "The table contains exactly one entry", (unsigned int) PartialTable.size(), 1U)) && Passed;
+  Passed = ExpectedToFail(EvaluateTrue("LoadTACCalFile()", "reloading partial TAC calibration file", "No entry is stored under the file's detector 3", PartialTable.count(3) == 0)) && Passed;
+
+  bool PartialHasDet7 = PartialTable.count(7) == 1 && PartialTable[7].size() > 0;
+  Passed = EvaluateTrue("LoadTACCalFile()", "reloading partial TAC calibration file", "Read-out ID 12 is stored under strip-map detector 7, LV, strip 40", PartialHasDet7 && PartialTable[7][0].count(40) == 1) && Passed;
+  if (PartialHasDet7 && PartialTable[7][0].count(40) == 1 && PartialTable[7][0][40].size() == 4) {
+    Passed = EvaluateNear("LoadTACCalFile()", "read-out ID 12", "The TAC calibration slope of read-out ID 12 is 0.5", PartialTable[7][0][40][0], 0.5, 1e-9) && Passed;
+    Passed = EvaluateNear("LoadTACCalFile()", "read-out ID 12", "The TAC calibration offset of read-out ID 12 is -1000.0", PartialTable[7][0][40][1], -1000.0, 1e-9) && Passed;
+    Passed = EvaluateNear("LoadTACCalFile()", "read-out ID 12", "The TAC calibration slope error of read-out ID 12 is 0.005", PartialTable[7][0][40][2], 0.005, 1e-9) && Passed;
+    Passed = EvaluateNear("LoadTACCalFile()", "read-out ID 12", "The TAC calibration offset error of read-out ID 12 is 10.0", PartialTable[7][0][40][3], 10.0, 1e-9) && Passed;
+  }
+
   MFile::Remove(StripMapFile);
   MFile::Remove(TACCalFile);
+  MFile::Remove(PartialTACCalFile);
 
   return Passed;
 }
