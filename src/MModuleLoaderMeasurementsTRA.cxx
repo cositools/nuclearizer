@@ -101,7 +101,7 @@ bool MModuleLoaderMeasurementsTRA::Initialize()
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
 
-  return MModule::Initialize();
+  return MModuleLoaderMeasurements::Initialize();
 }
 
 

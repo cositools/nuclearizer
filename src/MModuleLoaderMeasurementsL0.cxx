@@ -173,7 +173,7 @@ bool MModuleLoaderMeasurementsL0::Initialize()
     return false;
   }
 
-  return MModule::Initialize();
+  return MModuleLoaderMeasurements::Initialize();
 }
 
 
