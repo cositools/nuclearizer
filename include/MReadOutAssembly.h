@@ -250,6 +250,11 @@ class MReadOutAssembly : public MReadOutSequence
   //! Return all the reduced chi^2 values (one for each detector)
   vector<double> GetStripPairingReducedChiSquare() const { return m_StripPairingReducedChiSquare; }
 
+  //! Set the Unknown Detector quality flag for strip hits from a detector not in the geometry
+  void SetUnknownDetector_QualityFlag(const MString& Text = "") { m_UnknownDetector_QualityFlag = true; if (Text != "") m_UnknownDetectorString_QualityFlag.push_back(Text); }
+  //! Get the Unknown Detector quality flag
+  bool HasUnknownDetector_QualityFlag() const { return m_UnknownDetector_QualityFlag; }
+
 
   // Track vetoes
 
@@ -291,6 +296,9 @@ class MReadOutAssembly : public MReadOutSequence
   void StreamTra(ostream& S);
   //! Stream the read-out assembly in MEGAlib's ROA format
   void StreamRoa(ostream& S, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithTemperatures = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
+  //! Stream the read-out assembly in MEGAlib's ROA format, but only with the strip hits of the given detector side - crystal hits are omitted
+  //! Nothing is streamed and false is returned if the event has no such strip hits
+  bool StreamRoaDetectorSide(ostream& S, unsigned int DetectorID, bool LowVoltageSide, bool WithADCs = true, bool WithTACs = true, bool WithEnergies = false, bool WithTimings = false, bool WithFlags = false, bool WithOrigins = false, bool WithNearestNeighbors = false);
 
   //! Stream the BD flags
   void StreamBDFlags(ostream& S);
@@ -317,6 +325,11 @@ class MReadOutAssembly : public MReadOutSequence
 
   // protected methods:
  protected:
+  //! Shared implementation of StreamRoa and StreamRoaDetectorSide
+  //! If OnlyDetectorSide is true, only the strip hits of the given detector side are streamed, crystal hits are omitted,
+  //! and nothing is streamed and false is returned if there are no such strip hits
+  bool StreamRoaSelection(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors,
+                          bool OnlyDetectorSide, unsigned int DetectorID, bool LowVoltageSide);
 
   // private methods:
  private:
@@ -439,6 +452,11 @@ class MReadOutAssembly : public MReadOutSequence
   bool m_StripPairing_QualityFlag;
   //! Strip pairing quality string
   vector<MString> m_StripPairingString_QualityFlag;
+
+  //! Unknown detector quality flag
+  bool m_UnknownDetector_QualityFlag;
+  //! Unknown detector quality string
+  vector<MString> m_UnknownDetectorString_QualityFlag;
 
   //! The reduced chi^2 values of the strip-paired event
   vector<double> m_StripPairingReducedChiSquare;

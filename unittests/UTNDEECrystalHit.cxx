@@ -14,6 +14,7 @@
 using namespace std;
 
 // MEGAlib:
+#include "MGlobal.h"
 #include "MUnitTest.h"
 
 // Nuclearizer:
@@ -24,14 +25,12 @@ using namespace std;
 class UTNDEECrystalHit : public MUnitTest
 {
  public:
-  UTNDEECrystalHit()
-      : MUnitTest("UTNDEECrystalHit")
-  {
-  }
-  virtual ~UTNDEECrystalHit()
-  {
-  }
+  //! Default constructor
+  UTNDEECrystalHit() : MUnitTest("UTNDEECrystalHit") {}
+  //! Default destructor
+  virtual ~UTNDEECrystalHit() {}
 
+  //! Run all tests
   virtual bool Run();
 
  private:
@@ -160,8 +159,9 @@ bool UTNDEECrystalHit::TestConvertFalsePaths()
     Passed = EvaluateFalse("Convert()", "false-path veto flag", "Convert() transfers HasVetoed false", Converted->HasVetoed()) && Passed;
     Passed = EvaluateSize("Convert()", "false-path origins", "A hit without simulated origins has no origins", Converted->GetOrigins().size(), 0) && Passed;
     Passed = Evaluate("Convert()", "false-path crystal ID", "Convert() transfers crystal ID 0 instead of the undefined default", Converted->GetCrystalID(), (unsigned int) 0) && Passed;
-    Passed = Evaluate("Convert()", "false-path voxel IDs", "Convert() transfers the voxel IDs 0 instead of the undefined defaults",
-                      Converted->GetReadOutElement()->GetVoxelXID() + Converted->GetReadOutElement()->GetVoxelYID() + Converted->GetReadOutElement()->GetVoxelZID(), (unsigned int) 0) && Passed;
+    Passed = Evaluate("Convert()", "false-path voxel X ID", "Convert() transfers the voxel X ID 0 instead of the undefined default", Converted->GetReadOutElement()->GetVoxelXID(), (unsigned int) 0) && Passed;
+    Passed = Evaluate("Convert()", "false-path voxel Y ID", "Convert() transfers the voxel Y ID 0 instead of the undefined default", Converted->GetReadOutElement()->GetVoxelYID(), (unsigned int) 0) && Passed;
+    Passed = Evaluate("Convert()", "false-path voxel Z ID", "Convert() transfers the voxel Z ID 0 instead of the undefined default", Converted->GetReadOutElement()->GetVoxelZID(), (unsigned int) 0) && Passed;
   }
 
   delete Converted;
@@ -232,13 +232,11 @@ bool UTNDEECrystalHit::TestConvertedRoaLine()
   // The read-out element of the roa line needs all five IDs, not only the detector ID
   ostringstream Out;
   Converted->StreamRoa(Out, true, true, false, false);
-  Passed = Evaluate("StreamRoa()", "converted crystal hit", "The converted crystal hit is written with all five read-out element values",
-                    MString(Out.str()), MString("UC X0 2 0 1 3 812 511.5 \n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "converted crystal hit", "The converted crystal hit is written with all five read-out element values", MString(Out.str()), MString("UC X0 2 0 1 3 812 511.5 \n")) && Passed;
 
   ostringstream OutWithOrigins;
   Converted->StreamRoa(OutWithOrigins, true, true, false, true);
-  Passed = Evaluate("StreamRoa()", "converted crystal hit with origins", "The simulated origins are written as the read-out data of the roa line",
-                    MString(OutWithOrigins.str()), MString("UC X0 2 0 1 3 812 511.5 1;3\n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "converted crystal hit with origins", "The simulated origins are written as the read-out data of the roa line", MString(OutWithOrigins.str()), MString("UC X0 2 0 1 3 812 511.5 1;3\n")) && Passed;
 
   delete Converted;
 
@@ -254,3 +252,7 @@ int main()
   UTNDEECrystalHit Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNDEECrystalHit.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

@@ -152,8 +152,9 @@ bool MStripMap::Open(const MString& FileName)
 
       MSingleStripMapping SM;
       SM.m_ReadOutID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(0);
-      SM.m_RTB = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1);
-      SM.m_DRM = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2);
+      const unsigned int RTB = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(1);
+      const unsigned int DRM = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(2);
+      SM.m_DIB = (RTB << 3) + DRM;
       SM.m_IsPrimary = Parser.GetTokenizerAt(i)->GetTokenAtAsBoolean(3);
       SM.m_ASICID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(4);
       SM.m_ChannelID = Parser.GetTokenizerAt(i)->GetTokenAtAsUnsignedInt(5);
@@ -214,15 +215,13 @@ bool MStripMap::Open(const MString& FileName)
       // Infer the rest of the information from the ReadOutID
       if (SM.m_ReadOutID < 2048) {
         // Regular strip contacts
-        SM.m_RTB = (SM.m_ReadOutID >> 10) & 0x01;
-        SM.m_DRM = (SM.m_ReadOutID >> 7) & 0x07;
+        SM.m_DIB = (SM.m_ReadOutID >> 7) & 0x0F;
         SM.m_IsPrimary = (SM.m_ReadOutID >> 6) & 0x01;
         SM.m_ASICID = (SM.m_ReadOutID >> 5) & 0x01;
         SM.m_ChannelID = SM.m_ReadOutID & 0x1F;
       } else {
         // Guard ring contacts (always channel 15 on ASIC 2)
-        SM.m_RTB = (SM.m_ReadOutID >> 4) & 0x01;
-        SM.m_DRM = (SM.m_ReadOutID >> 1) & 0x07;
+        SM.m_DIB = (SM.m_ReadOutID >> 1) & 0x0F;
         SM.m_IsPrimary = SM.m_ReadOutID & 0x01;
         SM.m_ASICID = 2;
         SM.m_ChannelID = 15;
@@ -236,7 +235,7 @@ bool MStripMap::Open(const MString& FileName)
     }
   }
 
-  if (m_StripMappings.empty()) {
+  if (m_StripMappings.empty() == true) {
     if (g_Verbosity >= c_Error) cout << "MStripMap: No mapping entries found in " << FileName << endl;
     return false;
   }
@@ -279,12 +278,12 @@ bool MStripMap::Open(const MString& FileName)
 
 
 //! Keep only the mappings belonging to the given detectors
-bool MStripMap::RestrictToEnabledDetectors(const vector<unsigned int>& DetectorIDs)
+bool MStripMap::RestrictToEnabledDIBs(const vector<unsigned int>& DIBs)
 {
   vector<MSingleStripMapping> Kept;
   Kept.reserve(m_StripMappings.size());
   for (const MSingleStripMapping& SM : m_StripMappings) {
-    if (find(DetectorIDs.begin(), DetectorIDs.end(), SM.m_DetectorID) != DetectorIDs.end()) {
+    if (find(DIBs.begin(), DIBs.end(), SM.m_DIB) != DIBs.end()) {
       Kept.push_back(SM);
     }
   }
@@ -317,10 +316,10 @@ bool MStripMap::RestrictToEnabledDetectors(const vector<unsigned int>& DetectorI
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Update which ASICs are LV/HV depending on their polarities
+//! Update which ASICs are LV/HV depending on their polarities, sorted by DIB ID!! (not Detector ID)
 bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASICPolarities)
 {
-  if (m_StripMappings.empty()) return true;
+  if (m_StripMappings.empty() == true) return true;
 
   vector<bool> IsLowVoltageSide(m_StripMappings.size());
   unordered_map<unsigned int, unsigned int> UpdatedDetSideStripToROI;
@@ -329,19 +328,21 @@ bool MStripMap::UpdateASICPolarities(const vector<map<bool, vector<bool>>>& ASIC
   for (unsigned int i = 0; i < m_StripMappings.size(); ++i) {
     const MSingleStripMapping& S = m_StripMappings[i];
 
-    if (S.m_DetectorID >= ASICPolarities.size()) {
+    if (S.m_DIB >= ASICPolarities.size()) {
       if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for detector " << S.m_DetectorID << endl;
       return false;
     }
 
-    map<bool, vector<bool>>::const_iterator Primary = ASICPolarities[S.m_DetectorID].find(S.m_IsPrimary);
-    if (Primary == ASICPolarities[S.m_DetectorID].end()) {
-      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for detector " << S.m_DetectorID << " primary " << S.m_IsPrimary << endl;
+    // The ASIC polarities in the JSON config are saved in order of DIB IDs, not Detector IDs
+    // Therefore, access the ASICPolarities with the DIB ID as index, NOT the DetectorID
+    map<bool, vector<bool>>::const_iterator Primary = ASICPolarities[S.m_DIB].find(S.m_IsPrimary);
+    if (Primary == ASICPolarities[S.m_DIB].end()) {
+      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for DIB " << S.m_DIB << " primary " << S.m_IsPrimary << endl;
       return false;
     }
 
     if (S.m_ASICID >= Primary->second.size()) {
-      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for detector " << S.m_DetectorID << " primary " << S.m_IsPrimary << " ASIC " << S.m_ASICID << endl;
+      if (g_Verbosity >= c_Error) cout << "MStripMap: No ASIC polarity data for DIB " << S.m_DIB << " primary " << S.m_IsPrimary << " ASIC " << S.m_ASICID << endl;
       return false;
     }
 

@@ -42,6 +42,8 @@ using namespace std;
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
+#include "MDGeometryQuest.h"
+#include "MDDetector.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,9 +131,12 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_CurrentBatchIndex = 0;
   m_MinHitIndex = 0;
 
-  // Clear ASIC polarities and the enabled detectors
+  // As default, assume that the data was NOT taken through the RTB
+  m_DataTakenThroughRTB = false;
+
+  // Clear ASIC polarities and the enabled DIBs
   m_ASICPolarities.clear();
-  m_EnabledDetectors.clear();
+  m_EnabledDIBs.clear();
 
   if (MFile::Exists(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file "<<m_FileName<<" does not exist."<<endl;
@@ -154,22 +159,26 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
     return false;
   }
 
-  // Drop the detectors which were not enabled during the run: strip maps normally cover all detectors,
+  // Drop the DIBs from the strip map that were not enabled during the run: strip maps normally cover all detectors,
   // but a detector which was never configured still carries a full set of default ASIC polarities, and
   // applying those would put both of its sides on the same polarity
-  if (m_EnabledDetectors.empty() == false && m_StripMap.RestrictToEnabledDetectors(m_EnabledDetectors) == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The strip map contains none of the detectors enabled during the run."<<endl;
+  if (m_EnabledDIBs.empty() == false && m_StripMap.RestrictToEnabledDIBs(m_EnabledDIBs) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The strip map contains none of the DIBs enabled during the run."<<endl;
     return false;
   }
 
   // Update the ASIC polarities in the strip map (only if existent)
-  if (!m_ASICPolarities.empty() && m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
+  if (m_ASICPolarities.empty() == false && m_StripMap.UpdateASICPolarities(m_ASICPolarities) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to update ASIC polarities based on the config JSON."<<endl;
     return false;
   }
 
+  LoadDetectorIDsFromGeometry();
+
   m_NEventsInFile = 0;
+  m_NEventsOnlyUnknownDetectors = 0;
   m_NGoodEventsInFile = 0;
+  m_RTBEventCounter = 0;
     
   return MModule::Initialize();
 }
@@ -268,16 +277,44 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
 
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": HDF5 hit version found: "<<m_HDFStripHitVersion<<endl;
 
+    // Determine if the data was taken through the RTB (RTB/rtb) or not (DIB/dib)
+    
+    // If m_DataTakenThroughRTB was already set to true, do not default back
+    if (m_DataTakenThroughRTB == false) {
+      smatch BoardMatch;
+      regex BoardPattern(R"(\"board\"\s*:\s*\"(\w+)\")", regex::icase);
+      if (regex_search(ConfigJSON, BoardMatch, BoardPattern) == true) {
+        MString Board = MString(BoardMatch[1].str()).ToLower();
+        if (Board == "rtb") {
+          if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data taken through the RTB" << endl;
+          m_DataTakenThroughRTB = true;
+        } else if (Board == "dib") {
+          if (g_Verbosity >= c_Info) cout << m_XmlTag << ": Data not taken through the RTB" << endl;
+          m_DataTakenThroughRTB = false;
+        } else {
+          if (g_Verbosity >= c_Error) {
+            cout << m_XmlTag << ": ERROR: Unknown board type \"" << Board << "\"" << endl;
+          }
+          return false;
+        }
+      } else {
+        if (g_Verbosity >= c_Info) {
+          cout << m_XmlTag << ": No information on if the HDF5 data was taken through the RTB. Assuming that it was not." << endl;
+        }
+        m_DataTakenThroughRTB = false;
+      }
+    }
+
     // Read ASIC polarities from the JSON config string (if existent)
     m_ASICPolarities.clear();
-    m_EnabledDetectors.clear();
-    if (!ConfigJSON.empty()) {
+    m_EnabledDIBs.clear();
+    if (ConfigJSON.empty() == false) {
       bool ASICIsPrimary;
 
-      // Whether each detector was enabled during the run - a detector counts as enabled if either of
-      // its two ASIC sections is. Detectors which were never configured still carry a full set of
+      // Whether each DIB was enabled during the run - a DIB counts as enabled if either of
+      // its two ASIC sections is. DIBs which were never configured still carry a full set of
       // default polarities, so only the enabled ones may be used.
-      vector<bool> DetectorIsEnabled;
+      vector<bool> DIBIsEnabled;
 
       // Regex to match "primary"/"secondary", the "enabled" flag of the section, or the polarity in "SP"
       regex pattern(R"(\"(primary|secondary)\"|\"enabled\"\s*:\s*(true|false)|\"SP\"\s*:\s*(\d+))");
@@ -286,14 +323,14 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         smatch match = *i;
 
         // Check Group 1: Marker (primary/secondary)
-        if (match[1].matched) {
+        if (match[1].matched == true) {
 
           ASICIsPrimary = match[1].str() == "primary";
 
-          if (m_ASICPolarities.empty() || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
+          if (m_ASICPolarities.empty() == true || m_ASICPolarities.back().find(ASICIsPrimary) != m_ASICPolarities.back().end()) {
 
             // Check that the previous entry has both primary or secondary before creating a new one
-            if (!m_ASICPolarities.empty() && (
+            if (m_ASICPolarities.empty() == false && (
                  m_ASICPolarities.back().find(true) == m_ASICPolarities.back().end() || 
                  m_ASICPolarities.back().find(false) == m_ASICPolarities.back().end())
             ) {
@@ -302,7 +339,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
             }
 
             m_ASICPolarities.push_back(map<bool, vector<bool>>());
-            DetectorIsEnabled.push_back(false);
+            DIBIsEnabled.push_back(false);
           }
 
           // Initialize the vector for this ASIC key if it doesn't exist
@@ -310,18 +347,18 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         }
 
         // Check Group 2: the enabled flag of the current section
-        else if (match[2].matched) {
-          if (DetectorIsEnabled.empty()) {
+        else if (match[2].matched == true) {
+          if (DIBIsEnabled.empty() == true) {
             if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Enabled flag found without active ASIC section"<<endl;
             return false;
           }
 
-          if (match[2].str() == "true") DetectorIsEnabled.back() = true;
+          if (match[2].str() == "true") DIBIsEnabled.back() = true;
         }
 
         // Check Group 3: SP value
-        else if (match[3].matched) {
-          if (m_ASICPolarities.empty()) {
+        else if (match[3].matched == true) {
+          if (m_ASICPolarities.empty() == true) {
             if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": SP found without active ASIC section"<<endl;
             return false;
           }
@@ -337,14 +374,14 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         }
       }
 
-      for (size_t i = 0; i < DetectorIsEnabled.size(); ++i) {
-        if (DetectorIsEnabled[i] == true) m_EnabledDetectors.push_back((unsigned int) i);
+      for (size_t i = 0; i < DIBIsEnabled.size(); ++i) {
+        if (DIBIsEnabled[i] == true) m_EnabledDIBs.push_back((unsigned int) i);
       }
 
       // Output results for verification
       if (g_Verbosity >= c_Info) {
         for (size_t i = 0; i < m_ASICPolarities.size(); ++i) {
-          cout << "Detector ID " << i << (i < DetectorIsEnabled.size() && DetectorIsEnabled[i] ? " (enabled)" : " (disabled)") << ":" << endl;
+          cout << "DIB ID " << i << (i < DIBIsEnabled.size() && DIBIsEnabled[i] ? " (enabled)" : " (disabled)") << ":" << endl;
           for (bool key : {true, false} ) {
             cout << "  " << (key ? "Primary" : "Secondary") << ": ";
             for (bool s : m_ASICPolarities[i][key]) cout << (s ? "LV" : "HV") << " ";
@@ -380,7 +417,7 @@ bool MModuleLoaderMeasurementsHDF::OpenHDF5File(MString FileName)
         cout<<endl;
       }
     } else {
-      if (g_Verbosity > c_Info) {
+      if (g_Verbosity >= c_Info) {
         cout<<"Dataset is not chunked (layout is not H5D_CHUNKED)."<<endl;
       }
     }
@@ -612,6 +649,67 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MModuleLoaderMeasurementsHDF::LoadDetectorIDsFromGeometry()
+{
+  // Collect the detector IDs of all GeDs in the geometry
+
+  m_DetectorIDsInGeometry.clear();
+
+  if (m_Geometry == nullptr) return;
+
+  for (MDDetector* Detector : m_Geometry->GetDetectorList()) {
+    MString Name = Detector->GetName();
+    if (Detector->GetTypeName() == "Strip3D" && Name.BeginsWith("GeD_") == true) {
+      Name.RemoveAllInPlace("GeD_");
+      m_DetectorIDsInGeometry.insert(Name.ToUnsignedInt());
+    }
+  }
+
+  // Keep all strip hits if the detector names don't follow convention
+  if (m_DetectorIDsInGeometry.empty() == true && g_Verbosity >= c_Warning) {
+    cout<<m_XmlTag<<": No GeD_X detectors found in the geometry - keeping strip hits from all detectors"<<endl;
+  }
+
+  if (g_Verbosity >= c_Info) {
+    cout<<m_XmlTag<<": Detector IDs in the geometry:";
+    for (unsigned int DetID : m_DetectorIDsInGeometry) cout<<" "<<DetID;
+    cout<<endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleLoaderMeasurementsHDF::RemoveStripHitsFromUnknownDetectors(MReadOutAssembly* Event)
+{
+  // If there are not GeD_X detectors in the geometry, don't remove strip hits
+  if (m_DetectorIDsInGeometry.empty() == true) return;
+
+  set<unsigned int> RemovedDetectorIDs;
+
+  // Remove strip hits
+  // and go backwards, so removing a strip hit does not shift the ones we still have to check
+  for (int i = (int) Event->GetNStripHits() - 1; i >= 0; --i) {
+    MStripHit* SH = Event->GetStripHit(i);
+    unsigned int DetID = SH->GetDetectorID();
+    if (m_DetectorIDsInGeometry.count(DetID) == 0) {
+      RemovedDetectorIDs.insert(DetID);
+      delete SH;
+      Event->RemoveStripHit(i);
+    }
+  }
+
+  // Add a quality-flag for events with striphits from detector not in the mass model
+  for (unsigned int DetID : RemovedDetectorIDs) {
+    Event->SetUnknownDetector_QualityFlag("Strip hits removed from unknown detector ID " + to_string(DetID));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level:
@@ -801,10 +899,11 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       }
 
       MHDFEventIndices_V2& EventIndices = m_EventIndices_2[m_CurrentBatchIndex];
+      ++m_RTBEventCounter;
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
-      if (m_Buffer_2.empty()) {
+      if (m_Buffer_2.empty() == true) {
         if (g_Verbosity >= c_Error) cout << "Buffer is empty or null!" << endl;
         return false;
       }
@@ -857,14 +956,22 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       return false;
     }
 
-    if (EventID < m_LastEventID) {
-      m_NumberOfEventIDRollOvers++;
+    if (m_DataTakenThroughRTB == true) {
+      // Data taken through the RTB does not have native event IDs,
+      // which is why we assign event IDs here
+      Event->SetID(m_RTBEventCounter);
+
+    } else {
+      // Data not going through the RTB has event IDs in uint16 format,
+      // which is why we check for event ID rollovers to reconstruct the correct event ID
+      if (EventID < m_LastEventID) {
+        m_NumberOfEventIDRollOvers++;
+      }
+      m_LastEventID = EventID;
+
+      unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
+      Event->SetID(LongEventID);
     }
-    m_LastEventID = EventID;
-
-    unsigned long LongEventID = EventID + m_NumberOfEventIDRollOvers*(numeric_limits<uint16_t>::max() + 1);
-
-    Event->SetID(LongEventID);
 
     // Define event time based on the timecode within the HDF versions
     if (m_HDFStripHitVersion <= MHDFStripHitVersion::V2_0) {
@@ -879,9 +986,17 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
+
+  // Drop strip hits from detectors that are not in the geometry
+  RemoveStripHitsFromUnknownDetectors(Event);
+
+
   // Remove all Events with no (valid) strip hits
   if (Event->GetNStripHits() == 0){
-    if (g_Verbosity >= c_Error) {
+    if (Event->HasUnknownDetector_QualityFlag() == true) {
+      // Expected: all strip hits were on detectors that are not in the geometry
+      m_NEventsOnlyUnknownDetectors++;
+    } else if (g_Verbosity >= c_Error) {
       cout<<m_XmlTag<<": Event had no (valid) strip hits"<< endl;
     }
     return false;
@@ -908,6 +1023,7 @@ void MModuleLoaderMeasurementsHDF::Finalize()
   if (g_Verbosity >= c_Info) {
     cout<<"MModuleLoaderMeasurementsHDF: "<<endl;
     cout<<"  * all events on file:  "<<m_NEventsInFile<<endl;
+    cout<<"  * events with only unknown detectors: "<<m_NEventsOnlyUnknownDetectors<<endl;
     cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
   }
 

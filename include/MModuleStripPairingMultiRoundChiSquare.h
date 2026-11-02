@@ -46,7 +46,7 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   // public interface:
  public:
   //! Default constructor
-    MModuleStripPairingMultiRoundChiSquare();
+  MModuleStripPairingMultiRoundChiSquare();
   //! Default destructor
   virtual ~MModuleStripPairingMultiRoundChiSquare();
   
@@ -74,17 +74,14 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   virtual MXmlNode* CreateXmlConfiguration();
     
   //! Set the maximum number of strips
-  void SetMaximumStrips(double MaximumStrips) { m_MaximumStrips = MaximumStrips; }
+  void SetMaximumStrips(unsigned int MaximumStrips) { m_MaximumStrips = MaximumStrips; }
   //! Get the maximum number of strips
-  double GetMaximumStrips() const { return m_MaximumStrips; }
+  unsigned int GetMaximumStrips() const { return m_MaximumStrips; }
 
   // protected methods:
  protected:
   //! Find a new set of combinations giving the existing gone
     vector<vector<vector<unsigned int>>> FindNewCombinations(const vector<vector<vector<unsigned int>>>& OldOnes, const vector<MStripHit*>& StripHits, bool RoundTwo);
-    
-  //! Function to apply charge trapping correction
-    float ChargeTrappingCorrection(unsigned int d, const vector<vector<MStripHit*>>& StripHits);
     
   //! Divide an event's triggered strip hits by detector and LV/HV side
     vector<vector<vector<MStripHit*>>> CollectTriggeredStripHits(MReadOutAssembly* Event);

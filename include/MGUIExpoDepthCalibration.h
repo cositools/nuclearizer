@@ -67,10 +67,12 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   //! Export the data in the UI
   virtual void Export(const MString& FileName);
 
-  //! Set the arrangment of the depth histogram
-  //!  0    1    2    3 
-  //!  4    5    6    7
-  //!  8    9   10   11
+  //! Set the arrangment of the depth histogram by detector ID, four detectors per column
+  //!  -    4    8   12
+  //!  1    5    9   13
+  //!  2    6   10   14
+  //!  3    7   11   15
+  //! Slots of missing detectors stay empty, rows and columns without any detector are dropped
   void SetDepthHistogramArrangement(vector<unsigned int>* DetIDs);
   
   //! Set the energy histogram parameters 
@@ -79,10 +81,7 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   //! Set the energy histogram parameters 
   void SetDepthHistogramName(unsigned int DetID, MString Name);
 
-  //! Add data to the depth histogram
-  //!  0    1    2    3 
-  //!  4    5    6    7
-  //!  8    9   10   11
+  //! Add data to the depth histogram of the given detector ID
   void AddDepth(unsigned int DetID, double Depth);
 
   // protected methods:
@@ -104,7 +103,7 @@ class MGUIExpoDepthCalibration : public MGUIExpo
   //! Detectors in y direction
   unsigned int m_NRows;
 
-  // Map the detector ID to the x,y position of histograms.
+  // The detector ID at each [row][column] position of the histograms, g_UnsignedIntNotDefined for empty slots
   vector<vector<unsigned int>> m_DetectorMap;
   
   //! The number of bins of the histogram

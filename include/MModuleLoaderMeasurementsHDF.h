@@ -175,6 +175,8 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   MString GetFileNameStripMap() const { return m_FileNameStripMap; }
   //! Set the file name of the strip map
   void SetFileNameStripMap(const MString& Name) { m_FileNameStripMap = Name; }
+  //! Get the strip map, restricted to the enabled DIBs and updated with the ASIC polarities - only valid after Initialize()
+  const MStripMap& GetStripMap() const { return m_StripMap; }
 
 
   //! Enable/Disable loading continuation files
@@ -207,10 +209,16 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
 
   // protected methods:
  protected:
+
   //! Convert more data from raw to intermediate format - return false if no more data can be converted
   bool OpenHDF5File(MString FileName);
   //! Read a batch of hits using a hyperslab
   bool ReadBatchHits();
+
+  //! Collect the detector IDs from the geometry
+  void LoadDetectorIDsFromGeometry();
+  //! Remove strip hits from detectors that are not in the geometry, and flag the event
+  void RemoveStripHitsFromUnknownDetectors(MReadOutAssembly* Event);
 
   // private methods:
  private:
@@ -260,6 +268,9 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! The version of the strip hit structure
   MHDFStripHitVersion m_HDFStripHitVersion;
 
+  //! True if the data was taken through the RTB
+  bool m_DataTakenThroughRTB;
+
   //! The default batch size
   static constexpr unsigned int m_DefaultBatchSize = 10000;
 
@@ -299,13 +310,19 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! The map which ASICs are HV/LV for HDFv2
   vector<map<bool, vector<bool>>> m_ASICPolarities;
 
-  //! The detector IDs which were enabled during the run, read from the config JSON
+  //! The IDs of the DIBS that were enabled during the run, read from the config JSON
   //! Empty if the config JSON does not contain the enabled flags
-  vector<unsigned int> m_EnabledDetectors;
+  vector<unsigned int> m_EnabledDIBs;
 
   //! The strip map
   MStripMap m_StripMap;
+
+  //! Detector IDs of the GeD_X detectors in the geometry
+  set<unsigned int> m_DetectorIDsInGeometry;
   
+  //! Number of events removed because all strip hits were on detectors not in the geometry
+  unsigned int m_NEventsOnlyUnknownDetectors;
+
   //! Variable that deteremines if the user wants to include Nearest Neighbors
   bool m_IncludeNearestNeighbor;
 

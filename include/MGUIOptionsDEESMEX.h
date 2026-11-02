@@ -89,6 +89,8 @@ class MGUIOptionsDEESMEX : public MGUIOptions
   MGUIEFileSelector* m_DepthCalibrationSplinesFileSelector;
   //! Depth calibration splines file name
   MGUIEFileSelector* m_TACCalFileSelector;
+  //! Strip map file name
+  MGUIEFileSelector* m_StripMapFileSelector;
   //! Apply fudge factor
   TGCheckButton* m_ApplyFudgeFactorSelector;
   //! Use stop after a maximum number of events

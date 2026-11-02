@@ -55,6 +55,9 @@ MSubModuleDepthReadout::MSubModuleDepthReadout() : MSubModule()
   // Construct an instance of MSubModuleDepthReadout
 
   m_Name = "DEE depth readout module";
+
+  m_StripMapFileName = "";
+  m_StripMapLoaded = false;
 }
 
 
@@ -97,10 +100,22 @@ bool MSubModuleDepthReadout::Initialize()
     return false;
   }
 
+  // Load the strip map, which assigns detector, side, and strip to the TAC calibration entries
+  m_StripMapLoaded = false;
+  if (m_StripMapFileName == "") {
+    if (g_Verbosity >= c_Error) cout<<m_Name<<": Error: No strip map file given - it is required to assign detector, side, and strip to the TAC calibration entries"<<endl;
+    return false;
+  }
+  if (m_StripMap.Open(m_StripMapFileName) == false) {
+    if (g_Verbosity >= c_Error) cout<<m_Name<<": Error: Unable to read strip map "<<m_StripMapFileName<<endl;
+    return false;
+  }
+  m_StripMapLoaded = true;
+
   // Load TAC calibration parameters
   MModuleTACCalibration TACCalibration;
   TACCalibration.SetTACCalFileName(m_TACCalFileName);
-  if (TACCalibration.LoadTACCalFile(m_TACCalFileName) == true) {
+  if (TACCalibration.LoadTACCalFile(m_TACCalFileName, &m_StripMap) == true) {
     // Copy TAC cal parameters
     m_TACCal = TACCalibration.GetTACCalParameters();
   } else {
@@ -262,6 +277,7 @@ void MSubModuleDepthReadout::Finalize()
   // Finalize the analysis - do all cleanup, i.e., undo Initialize()
   m_Coeffs.clear();
   m_TACCal.clear();
+  m_StripMapLoaded = false;
 
   MSubModule::Finalize();
 }
@@ -278,6 +294,11 @@ bool MSubModuleDepthReadout::ReadXmlConfiguration(MXmlNode* Node)
     m_TACCalFileName = TACCalFileName->GetValue();
   }
 
+  MXmlNode* StripMapFileName = Node->GetNode("StripMapFileName");
+  if (StripMapFileName != nullptr) {
+    m_StripMapFileName = StripMapFileName->GetValue();
+  }
+
   return true;
 }
 
@@ -289,6 +310,7 @@ MXmlNode* MSubModuleDepthReadout::CreateXmlConfiguration(MXmlNode* Node)
 {
   //! Create an XML node tree from the configuration
   new MXmlNode(Node, "TACCalFileName", m_TACCalFileName);
+  new MXmlNode(Node, "StripMapFileName", m_StripMapFileName);
 
   return Node;
 }

@@ -128,6 +128,14 @@ X, DataPoint, IsNonZero
   }
   ```
 
+- **Between Top-Level Blocks**: The same separating block follows every class definition and every function, i.e. it also separates two classes, and a class from the first function.
+
+- **End of File**: Every source file ends with two blank lines and the closing block:
+  ```cpp
+  // MFoo.cxx: the end...
+  ////////////////////////////////////////////////////////////////////////////////
+  ```
+
 - **Within Functions**: Use blank lines to separate logical blocks of code within a function. For example, separate initialization, computation, and return statements:
   ```cpp
     void SetMagThetaPhi(double mag, double theta, double phi)
@@ -224,6 +232,14 @@ contains multiple statements or the longer form materially improves clarity.
   ```cpp
     cout<<"Var: "<<V<<endl;        // OK
     cout << "Var: " << V << endl;  // OK
+  ```
+
+- **Boolean conditions**: Prefer an explicit comparison with true or false over the bare value or the negation operator. This is a preference, not a requirement - existing code which does without it is fine, but mixing both forms within one function is not.
+  ```cpp
+    if (Line.BeginsWith("BD") == true) {   // Preferred
+    if (IsOpen() == false) {               // Preferred
+    if (Line.BeginsWith("BD")) {           // OK
+    if (!IsOpen()) {                       // OK
   ```
 
 ### 7. **Trailing Whitespace**
