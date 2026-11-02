@@ -309,8 +309,8 @@ bool UTNModuleTACCalibration::TestLoadWithStripMap()
   Passed = EvaluateTrue("LoadTACCalFile()", "reloading partial TAC calibration file", "LoadTACCalFile() succeeds when reloading another TAC calibration file", PartialResult) && Passed;
 
   TACCalTable PartialTable = Module.GetTACCalParameters();
-  Passed = ExpectedToFail(Evaluate("LoadTACCalFile()", "reloading partial TAC calibration file", "The table contains exactly one entry", (unsigned int) PartialTable.size(), 1U)) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("LoadTACCalFile()", "reloading partial TAC calibration file", "No entry is stored under the file's detector 3", PartialTable.count(3) == 0)) && Passed;
+  Passed = Evaluate("LoadTACCalFile()", "reloading partial TAC calibration file", "The table contains exactly one entry", (unsigned int) PartialTable.size(), 1U) && Passed;
+  Passed = EvaluateTrue("LoadTACCalFile()", "reloading partial TAC calibration file", "No entry is stored under the file's detector 3", PartialTable.count(3) == 0) && Passed;
 
   bool PartialHasDet7 = PartialTable.count(7) == 1 && PartialTable[7].size() > 0;
   Passed = EvaluateTrue("LoadTACCalFile()", "reloading partial TAC calibration file", "Read-out ID 12 is stored under strip-map detector 7, LV, strip 40", PartialHasDet7 && PartialTable[7][0].count(40) == 1) && Passed;
