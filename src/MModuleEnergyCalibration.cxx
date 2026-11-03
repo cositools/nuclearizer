@@ -178,7 +178,10 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
       if (g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Error: Energy-fit not found for read-out element " << R << endl;
       }
-      Event->SetEnergyCalibrationError("calibration not found for " + R.ToString());
+      // only assign a BD flag if it's an actual triggered strip, otherwise, the event is still able to be calibrated
+      if (SH->IsNearestNeighbor() == false) {
+        Event->SetEnergyCalibrationError("calibration not found for triggered " + R.ToString());
+      }
       ++i; // iterate to next SH
       continue;
 
@@ -249,7 +252,12 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           if (g_Verbosity >= c_Error) {
             cout << m_XmlTag << ": Error: Energy Resolution fit not found for read-out element " << R << endl;
           }
-	  // There is not expected to be a time in which the energy resolution calibration is not defined when the energy calibration itself is. Therefore, don't need a seperate BD flag for this.
+          // only assign a BD flag if it's an actual triggered strip, otherwise, the event is still able to be calibrated
+          if (SH->IsNearestNeighbor() == false) {
+            Event->SetEnergyCalibrationError("Energy resolution calibration not found for triggered " + R.ToString());
+          }
+          continue;
+
         } else {
           double EnergyResolution = FitRes->Eval(Energy);
           SH->SetEnergyResolution(EnergyResolution);
