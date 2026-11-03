@@ -70,6 +70,7 @@ void MGuardringHit::Clear()
 
   m_DetectorID = g_UnsignedIntNotDefined;
   m_ADCUnits = g_DoubleNotDefined;
+  m_Position = MVector(0, 0, 0);
 }
 
 
