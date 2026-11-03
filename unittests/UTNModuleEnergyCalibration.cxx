@@ -537,10 +537,11 @@ bool UTNModuleEnergyCalibration::TestAnalyzeEventCalibration()
     return EvaluateTrue("Initialize()", "standard file", "Initialize succeeds for the calibration test", false);
   }
 
+  // Fully calibrated triggered strips, plus nearest neighbor without resolution calibration: no error
   MReadOutAssembly E;
   E.AddStripHit(CreateStripHit(0, 1, true, 1000));
   E.AddStripHit(CreateStripHit(0, 2, false, 1000));
-  E.AddStripHit(CreateStripHit(0, 3, true, 1000));
+  E.AddStripHit(CreateStripHit(0, 3, true, 1000, true));
 
   Passed = EvaluateTrue("AnalyzeEvent()", "calibrated strips", "AnalyzeEvent returns true", M.AnalyzeEvent(&E)) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "calibrated strips", "The c_EnergyCalibration analysis progress is set", E.HasAnalysisProgress(MAssembly::c_EnergyCalibration)) && Passed;
@@ -551,7 +552,7 @@ bool UTNModuleEnergyCalibration::TestAnalyzeEventCalibration()
   MStripHit* S3 = FindStripHit(E, 3, true);
   Passed = EvaluateTrue("AnalyzeEvent()", "calibrated strips", "Strip hit LV 1 is found", S1 != nullptr) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "calibrated strips", "Strip hit HV 2 is found", S2 != nullptr) && Passed;
-  Passed = EvaluateTrue("AnalyzeEvent()", "calibrated strips", "Strip hit LV 3 is found", S3 != nullptr) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "calibrated strips", "NN strip hit LV 3 is found", S3 != nullptr) && Passed;
   if (S1 != nullptr) {
     Passed = EvaluateNear("AnalyzeEvent()", "strip 1, ADC 1000", "The energy is 500 keV", S1->GetEnergy(), 500.0, 1e-9) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "strip 1, ADC 1000", "The energy resolution is (1 + 0.002 * 500) / 2.355", S1->GetEnergyResolution(), 2.0/2.355, 1e-9) && Passed;
@@ -562,7 +563,7 @@ bool UTNModuleEnergyCalibration::TestAnalyzeEventCalibration()
     Passed = EvaluateNear("AnalyzeEvent()", "strip 2, ADC 1000", "The energy resolution is (2 + 0.00001 * 601^2) / 2.355", S2->GetEnergyResolution(), (2 + 0.00001*601*601)/2.355, 1e-9) && Passed;
   }
   if (S3 != nullptr) {
-    Passed = EvaluateNear("AnalyzeEvent()", "strip 3, ADC 1000", "The energy is 250 keV", S3->GetEnergy(), 250.0, 1e-9) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "nearest neighbor strip 3, ADC 1000", "The energy is 250 keV", S3->GetEnergy(), 250.0, 1e-9) && Passed;
   }
 
   // Uncalibrated strip: error, but the strip hit is kept
@@ -579,6 +580,19 @@ bool UTNModuleEnergyCalibration::TestAnalyzeEventCalibration()
   MStripHit* U1 = FindStripHit(U, 1, true);
   Passed = EvaluateTrue("AnalyzeEvent()", "uncalibrated strip 33", "The calibrated strip hit LV 1 is found", U1 != nullptr) && Passed;
   if (U1 != nullptr) Passed = EvaluateNear("AnalyzeEvent()", "uncalibrated strip 33", "The calibrated strip in the same event is calibrated", U1->GetEnergy(), 500.0, 1e-9) && Passed;
+
+  // Triggered strip with an energy but without a resolution calibration: the energy is set, but the event is flagged
+  g_Verbosity = c_Quiet;
+  MReadOutAssembly R;
+  R.AddStripHit(CreateStripHit(0, 3, true, 1000));
+  M.AnalyzeEvent(&R);
+  g_Verbosity = OldVerbosity;
+  Passed = EvaluateTrue("AnalyzeEvent()", "triggered strip 3 without resolution calibration", "An energy calibration error is set", R.HasEnergyCalibrationError()) && Passed;
+  MStripHit* R1 = FindStripHit(R, 3, true);
+  Passed = EvaluateTrue("AnalyzeEvent()", "triggered strip 3 without resolution calibration", "The strip hit is kept", R1 != nullptr) && Passed;
+  if (R1 != nullptr) {
+    Passed = EvaluateNear("AnalyzeEvent()", "triggered strip 3 without resolution calibration", "The energy is 250 keV", R1->GetEnergy(), 250.0, 1e-9) && Passed;
+  }
 
   // High ADC values are flagged but kept
   g_Verbosity = c_Quiet;
