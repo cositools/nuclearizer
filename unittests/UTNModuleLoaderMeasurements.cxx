@@ -111,7 +111,7 @@ bool UTNModuleLoaderMeasurements::TestLifecycle()
   UTNModuleLoaderMeasurementsStub M;
   M.Pause(true);
   Passed = EvaluateTrue("Initialize()", "base class", "Initialize returns true", M.Initialize()) && Passed;
-  Passed = ExpectedToFail(EvaluateFalse("Initialize()", "paused module", "Initialize calls the base class initialization which resets the paused state", M.IsPaused())) && Passed;
+  Passed = EvaluateFalse("Initialize()", "paused module", "Initialize calls the base class initialization which resets the paused state", M.IsPaused()) && Passed;
 
   MReadOutAssembly E;
   Passed = EvaluateTrue("AnalyzeEvent()", "base class", "AnalyzeEvent returns true", M.AnalyzeEvent(&E)) && Passed;
