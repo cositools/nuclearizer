@@ -281,7 +281,7 @@ bool UTNSubModuleDepthReadout::TestConfiguration()
   MSubModuleDepthReadout* B = new (Ones) MSubModuleDepthReadout;
   bool ValueA = A->GetApplyTimingResolutionCalibration();
   bool ValueB = B->GetApplyTimingResolutionCalibration();
-  Passed = ExpectedToFail(EvaluateTrue("MSubModuleDepthReadout()", "uninitialized memory", "The timing resolution flag has a defined default independent of the memory content", ValueA == ValueB)) && Passed;
+  Passed = EvaluateTrue("MSubModuleDepthReadout()", "uninitialized memory", "The timing resolution flag has a defined default independent of the memory content", ValueA == ValueB) && Passed;
   A->~MSubModuleDepthReadout();
   B->~MSubModuleDepthReadout();
 #endif
@@ -459,13 +459,7 @@ bool UTNSubModuleDepthReadout::TestTACLimits()
   }
   if (HV.size() == 2) {
     Passed = Evaluate("AnalyzeEvent()", "HV TAC above range", "The HV TAC saturates at 16383", HV.front().m_TAC, 16383u) && Passed;
-#if defined(__x86_64__) || defined(__i386__)
-    // The HV side does not clamp negative TACs (MSubModuleDepthReadout::AnalyzeEvent()): the undefined double to unsigned conversion wraps on x86
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "HV TAC below zero", "A negative HV TAC is set to 0", HV.back().m_TAC, 0u)) && Passed;
-#else
-    // On other architectures (e.g. arm64) the undefined conversion happens to saturate to 0, which hides the missing clamp
     Passed = Evaluate("AnalyzeEvent()", "HV TAC below zero", "A negative HV TAC is set to 0", HV.back().m_TAC, 0u) && Passed;
-#endif
   }
 
   M.Finalize();
@@ -481,11 +475,12 @@ bool UTNSubModuleDepthReadout::TestPartialTACCalibration()
 {
   bool Passed = true;
 
-  // Real TAC calibrations cover all strips; this is an incomplete file, which only covers LV strips 32-63 of
+  // Real TAC calibrations cover all strips; this is an incomplete file, which only covers LV and HV strips 32-63 of
   // detector 0 (on DIB 4), to test the look-up by strip ID and the handling of strips without calibration
   MString C = "#STRIP_ID,DIB,Side,Strip,TAC_calibration,TAC_calibration_error,TAC_offset,TAC_offset_error\n";
   for (unsigned int s = 32; s < 64; ++s) {
     C += MString("") + GetReadOutID(0, true, s) + "," + GetDIB(0) + ",0," + s + ",0.5,0.001,-500.0,1.0\n";
+    C += MString("") + GetReadOutID(0, false, s) + "," + GetDIB(0) + ",0," + s + ",0.5,0.001,-500.0,1.0\n";
   }
   MString TACFile = GetTemporaryFileName("dr.partial.taccal.csv");
   Passed = EvaluateTrue("WriteTextFile()", "dr.partial.taccal.csv", "The fixture file is written", WriteTextFile(TACFile, C)) && Passed;
@@ -494,15 +489,29 @@ bool UTNSubModuleDepthReadout::TestPartialTACCalibration()
   if (InitializeStandard(M, false, TACFile) == false) {
     return EvaluateTrue("Initialize()", "partial TAC calibration", "Initialize succeeds", false);
   }
+
   int OldVerbosity = g_Verbosity;
+
+  // LV hit
   g_Verbosity = c_Quiet;
-  MReadOutAssembly E;
-  E.AddDEEStripHitLV(CreateHit(0, 40, true, 100.0, 1200.0));
-  M.AnalyzeEvent(&E);
+  MReadOutAssembly ELV;
+  ELV.AddDEEStripHitLV(CreateHit(0, 40, true, 100.0, 1200.0));
+  M.AnalyzeEvent(&ELV);
   g_Verbosity = OldVerbosity;
-  Passed = EvaluateSize("AnalyzeEvent()", "LV strip 40 with TAC calibration", "The LV hit is kept", E.GetDEEStripHitLVListReference().size(), 1) && Passed;
-  if (E.GetDEEStripHitLVListReference().size() == 1) {
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "LV strip 40 with TAC calibration", "The calibrated strip 40 gets the TAC (3000 + 500) / 0.5 = 7000", E.GetDEEStripHitLVListReference().front().m_TAC, 7000u)) && Passed;
+  Passed = EvaluateSize("AnalyzeEvent()", "LV strip 40 with TAC calibration", "The LV hit is kept", ELV.GetDEEStripHitLVListReference().size(), 1) && Passed;
+  if (ELV.GetDEEStripHitLVListReference().size() == 1) {
+    Passed = Evaluate("AnalyzeEvent()", "LV strip 40 with TAC calibration", "The calibrated strip 40 gets the TAC (3000 + 500) / 0.5 = 7000", ELV.GetDEEStripHitLVListReference().front().m_TAC, 7000u) && Passed;
+  }
+
+  // HV hit
+  g_Verbosity = c_Quiet;
+  MReadOutAssembly EHV;
+  EHV.AddDEEStripHitHV(CreateHit(0, 40, false, 100.0, 1200.0));
+  M.AnalyzeEvent(&EHV);
+  g_Verbosity = OldVerbosity;
+  Passed = EvaluateSize("AnalyzeEvent()", "HV strip 40 with TAC calibration", "The HV hit is kept", EHV.GetDEEStripHitHVListReference().size(), 1) && Passed;
+  if (EHV.GetDEEStripHitHVListReference().size() == 1) {
+    Passed = Evaluate("AnalyzeEvent()", "HV strip 40 with TAC calibration", "The calibrated strip 40 gets the TAC (3000 + 500) / 0.5 = 7000", EHV.GetDEEStripHitHVListReference().front().m_TAC, 7000u) && Passed;
   }
   M.Finalize();
 
@@ -516,7 +525,7 @@ bool UTNSubModuleDepthReadout::TestPartialTACCalibration()
     if (F.GetDEEStripHitLVListReference().size() != 1) return false;
     return F.GetDEEStripHitLVListReference().front().m_TAC == 0;
   });
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "LV strip 5 without TAC calibration", "An uncalibrated strip gets TAC 0 without crashing", NoCrash)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "LV strip 5 without TAC calibration", "An uncalibrated strip gets TAC 0 without crashing", NoCrash) && Passed;
 
   return Passed;
 }

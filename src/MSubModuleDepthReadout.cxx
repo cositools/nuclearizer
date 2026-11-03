@@ -54,6 +54,7 @@ MSubModuleDepthReadout::MSubModuleDepthReadout() : MSubModule()
 {
   // Construct an instance of MSubModuleDepthReadout
 
+  m_ApplyTimingResolutionCalibration = true;
   m_Name = "DEE depth readout module";
 
   m_StripMapFileName = "";
@@ -177,7 +178,7 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
         }
 
         // Apply the inverse TAC cal to obtain TAC in ADC units
-        if (m_TACCal.count(DetID) == 1 && m_TACCal[DetID].size() >= 1 && StripID < m_TACCal[DetID][0].size()) {
+        if (m_TACCal.count(DetID) == 1 && m_TACCal[DetID].size() >= 1 && m_TACCal[DetID][0].find(StripID) != m_TACCal[DetID][0].end()) {
           vector<double> TACCal = m_TACCal[DetID][0][StripID];
           double TACCalSlope = TACCal[0];
           double TACCalOffset = TACCal[1];
@@ -241,11 +242,18 @@ bool MSubModuleDepthReadout::AnalyzeEvent(MReadOutAssembly* Event)
         }
 
         // Apply the inverse TAC cal to obtain TAC in ADC units
-        if (m_TACCal.count(DetID) == 1 && m_TACCal[DetID].size() >= 2 && StripID < m_TACCal[DetID][1].size()) {
+        if (m_TACCal.count(DetID) == 1 && m_TACCal[DetID].size() >= 2 && m_TACCal[DetID][1].find(StripID) != m_TACCal[DetID][1].end()) {
           vector<double> TACCal = m_TACCal[DetID][1][StripID];
           double TACCalSlope = TACCal[0];
           double TACCalOffset = TACCal[1];
-          SH.m_TAC = (SH.m_Timing - TACCalOffset) / TACCalSlope;
+          if ((SH.m_Timing - TACCalOffset) / TACCalSlope >= 0) {
+            SH.m_TAC = (SH.m_Timing - TACCalOffset) / TACCalSlope;
+          } else {
+            if (g_Verbosity >= c_Info) {
+              cout<<"MSubModuleDepthReadout::AnalyzeEvent: Simulated TAC value would be negative, setting it to zero."<<endl;
+            }
+            SH.m_TAC = 0;
+          }
         } else {
           if (g_Verbosity >= c_Error) {
             cout<<"ERROR in MSubModuleDepthReadout::AnalyzeEvent: No TAC calibration found for HV strip "<<SH.m_ROE.GetStripID()<<endl;

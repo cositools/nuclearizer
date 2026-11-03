@@ -56,6 +56,7 @@ MSubModuleStripReadout::MSubModuleStripReadout() : MSubModule()
   m_Name = "DEE strip readout module";
 
   m_EnergyCalibrationFileName = "";
+  m_ApplyResolutionCalibration = true;
 
 }
 
@@ -98,6 +99,22 @@ bool MSubModuleStripReadout::Initialize()
     return false;
   }
 
+
+  // Determine the valid ADC and energy ranges to deal with saturation
+  m_MinimumADCs.clear();
+  m_MaximumADCs.clear();
+  m_MinimumEnergies.clear();
+  m_MaximumEnergies.clear();
+
+  for (auto& [ROE, Fit] : m_Calibration) {
+    if (Fit != nullptr) {
+      m_MinimumADCs[ROE] = Fit->GetMinimumX(0.0, m_MaxADCRange);
+      m_MaximumADCs[ROE] = Fit->GetMaximumX(0.0, m_MaxADCRange);
+      m_MinimumEnergies[ROE] = Fit->Eval(m_MinimumADCs[ROE]);
+      m_MaximumEnergies[ROE] = Fit->Eval(m_MaximumADCs[ROE]);
+    }
+  }
+
   if (EnergyCalibration.ReadSlowThresholdCutFile(m_HardwareThresholdFileName) == true) {
     // Copy the hardware threshold map
     m_HardwareThresholdMap = EnergyCalibration.GetHardwareThresholdMap();
@@ -131,7 +148,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
   for (auto* Hits : { &Event->GetDEEStripHitLVListReference(), &Event->GetDEEStripHitHVListReference() }) {
 
     set<MReadOutElementDoubleStrip> TriggeredStripHits;
-    set<MReadOutElementDoubleStrip> NeighborCandidateStripHits;
+    map<MReadOutElementDoubleStrip, int> NeighborCandidateStripHits;
     set<MReadOutElementDoubleStrip> NeighborStripHits;
     set<MReadOutElementDoubleStrip> DeadStrips;
     
@@ -166,17 +183,30 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       TF1* Fit = m_Calibration[SH->m_ROE];
 
       if (Fit != nullptr) {
-        // Apply the inverse energy calibration using ROOT's poly inverter (keV -> ADC) in the allowed ADC range
-        double calculatedADC = Fit->GetX(SH->m_Energy, 0., m_MaxADCRange);
-        
-        // Apply hardware limits
-        if (calculatedADC > m_MaxADCRange) calculatedADC = m_MaxADCRange;
-        if (calculatedADC < 0) calculatedADC = 0;
-        
-        SH->m_ADC = static_cast<unsigned int>(calculatedADC);
+        // Handle saturated energies, outside of the ADC range
+        if (SH->m_Energy < m_MinimumEnergies[SH->m_ROE]){
+          SH->m_ADC = 0;
+        } else if (SH->m_Energy >= m_MaximumEnergies[SH->m_ROE]) {
+          SH->m_ADC = m_MaxADCRange;
+        } else {
+          // Search in the monotonically increasing range only
+          double calculatedADC = Fit->GetX(SH->m_Energy, m_MinimumADCs[SH->m_ROE], m_MaximumADCs[SH->m_ROE]);
+          SH->m_ADC = lround(clamp(calculatedADC, 0.0, m_MaxADCRange));
+        }
 
-        // Apply the hardware threshold to determine if a strip hit is a nearest-neighbor strip or not
-        SH->m_IsNearestNeighbor = SH->m_ADC < m_HardwareThresholdMap[SH->m_ROE];
+        // Apply the hardware threshold to determine if a strip hit is below the trigger threshold
+        if (SH->m_ADC < m_HardwareThresholdMap[SH->m_ROE]) {
+          if (SH->m_IsGuardRing == true) {
+            // Sub-threshold guard-ring hits are removed
+            SH = Hits->erase(SH);
+            continue;
+          } else {
+            // Sub-threshold strip hits are marked as "nearest neighbor"
+            SH->m_IsNearestNeighbor = true;
+          }
+        } else {
+          SH->m_IsNearestNeighbor = false;
+        }
 
         // Keep track of all triggered strips and their nearest neighbors
         if (SH->m_IsNearestNeighbor == false) {
@@ -187,12 +217,12 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
             if (SH->m_ROE.GetStripID() > 0) {
               MReadOutElementDoubleStrip Left = SH->m_ROE;
               Left.SetStripID(Left.GetStripID() - 1);
-              NeighborCandidateStripHits.insert(Left);
+              NeighborCandidateStripHits[Left] = SH->m_OppositeStripID;
             }
             if (SH->m_ROE.GetStripID() < 63) {
               MReadOutElementDoubleStrip Right = SH->m_ROE;
               Right.SetStripID(Right.GetStripID() + 1);
-              NeighborCandidateStripHits.insert(Right);
+              NeighborCandidateStripHits[Right] = SH->m_OppositeStripID;
             }
           }
         }
@@ -245,7 +275,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
 
     // Add "empty" strip hits for neighbors that did not trigger
     // Assume an empty baseline (Energy == 0) and no timing (Timing == 0)
-    for (const auto& NSH : NeighborCandidateStripHits) {
+    for (const auto& [NSH, OppositeStripID] : NeighborCandidateStripHits) {
 
       // Skip dead strips and triggered strips
       if (DeadStrips.count(NSH) > 0) continue;
@@ -273,6 +303,7 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       SH.m_HasFastTiming = false;
       SH.m_IsNearestNeighbor = true;
       SH.m_IsGuardRing = false;
+      SH.m_OppositeStripID = OppositeStripID;
 
       // Note, if no resolution calibration is found then the energy remains unsmeared
       if (m_ApplyResolutionCalibration == true) {
@@ -283,8 +314,15 @@ bool MSubModuleStripReadout::AnalyzeEvent(MReadOutAssembly* Event)
       }
       
       // Apply the inverse energy calibration using ROOT's poly inverter (keV -> ADC) in the allowed ADC range
-      double calculatedADC = Fit->GetX(SH.m_Energy, 0., m_MaxADCRange);
-      SH.m_ADC = static_cast<unsigned int>(clamp(calculatedADC, 0.0, m_MaxADCRange));
+      if (SH.m_Energy < m_MinimumEnergies[SH.m_ROE]){
+        SH.m_ADC = 0;
+      } else if (SH.m_Energy >= m_MaximumEnergies[SH.m_ROE]) {
+        SH.m_ADC = m_MaxADCRange;
+      } else {
+        // Search in the monotonically increasing range only
+        double calculatedADC = Fit->GetX(SH.m_Energy, m_MinimumADCs[SH.m_ROE], m_MaximumADCs[SH.m_ROE]);
+        SH.m_ADC = lround(clamp(calculatedADC, 0.0, m_MaxADCRange));
+      }
 
       if (NSH.IsLowVoltageStrip() == true) {
         Event->AddDEEStripHitLV(SH);

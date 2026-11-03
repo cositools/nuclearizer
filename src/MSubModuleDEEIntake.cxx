@@ -94,6 +94,12 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
 
+  if (Event->GetSimulatedEvent() == nullptr) {
+    if (g_Verbosity >= c_Error)
+      cout << "ERROR in MSubModuleDEEIntake: No simulated event found in event." << endl;
+    return false;
+  }
+
   Event->SetID(Event->GetSimulatedEvent()->GetID());
   Event->SetTimeUTC(Event->GetSimulatedEvent()->GetTime());
 
@@ -138,7 +144,8 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
         cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
       continue;
     }
-    double DetectorDepth = Shape->GetSizeZ();
+    // MDShapeBRIK::GetSizeZ() returns the half-size, multiply by 2 to get the full detector depth
+    double DetectorDepth = 2*Shape->GetSizeZ();
 
     MString DetectorName = Detector->GetName();
     if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing") == true) {
