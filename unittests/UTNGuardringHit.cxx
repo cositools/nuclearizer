@@ -62,8 +62,7 @@ bool UTNGuardringHit::TestDefaultConstruction()
   bool Passed = true;
 
   MGuardringHit H;
-  // The detector ID is a signed int, thus its "not defined" sentinel is g_IntNotDefined
-  Passed = ExpectedToFail(Evaluate("MGuardringHit()", "default", "The default detector ID is g_IntNotDefined", H.GetDetectorID(), g_IntNotDefined)) && Passed;
+  Passed = Evaluate("MGuardringHit()", "default", "The default detector ID is g_UnsignedIntNotDefined", H.GetDetectorID(), g_UnsignedIntNotDefined) && Passed;
   Passed = EvaluateTrue("MGuardringHit()", "default", "The default ADC units are g_DoubleNotDefined", H.GetADCUnits() == g_DoubleNotDefined) && Passed;
   MVector DefaultPosition = H.GetPosition();
 
@@ -72,9 +71,9 @@ bool UTNGuardringHit::TestDefaultConstruction()
   H.SetPosition(MVector(1.0, 2.0, 3.0));
   H.Clear();
 
-  Passed = ExpectedToFail(Evaluate("Clear()", "all fields set", "Clear() resets the detector ID", H.GetDetectorID(), g_IntNotDefined)) && Passed;
+  Passed = Evaluate("Clear()", "all fields set", "Clear() resets the detector ID", H.GetDetectorID(), g_UnsignedIntNotDefined) && Passed;
   Passed = EvaluateTrue("Clear()", "all fields set", "Clear() resets the ADC units", H.GetADCUnits() == g_DoubleNotDefined) && Passed;
-  Passed = ExpectedToFail(EvaluateVectorNear("Clear()", "all fields set", "Clear() resets the position to its default", H.GetPosition(), DefaultPosition, 1e-12)) && Passed;
+  Passed = EvaluateVectorNear("Clear()", "all fields set", "Clear() resets the position to its default", H.GetPosition(), DefaultPosition, 1e-12) && Passed;
 
   return Passed;
 }
@@ -89,9 +88,9 @@ bool UTNGuardringHit::TestGettersSetters()
 
   MGuardringHit H;
   H.SetDetectorID(11);
-  Passed = Evaluate("SetDetectorID/GetDetectorID", "11", "GetDetectorID returns 11", H.GetDetectorID(), 11) && Passed;
+  Passed = Evaluate("SetDetectorID/GetDetectorID", "11", "GetDetectorID returns 11", H.GetDetectorID(), 11u) && Passed;
   H.SetDetectorID(0);
-  Passed = Evaluate("SetDetectorID/GetDetectorID", "0", "GetDetectorID returns 0", H.GetDetectorID(), 0) && Passed;
+  Passed = Evaluate("SetDetectorID/GetDetectorID", "0", "GetDetectorID returns 0", H.GetDetectorID(), 0u) && Passed;
 
   H.SetADCUnits(4053.5);
   Passed = EvaluateNear("SetADCUnits/GetADCUnits", "4053.5", "GetADCUnits returns 4053.5", H.GetADCUnits(), 4053.5, 1e-12) && Passed;
