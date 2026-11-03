@@ -931,13 +931,13 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
       return -1;
     }
     if (SH->GetEnergy() == 0) { 
-      // Usually a strip without energy calibration: report each strip only once, all cases are counted in m_ErrorNoE
+      // Usually a strip without energy calibration: report each strip only once
       MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
       m_MissingCalibrationCounts[R]++;
       if (m_MissingCalibrationCounts[R] == 1 && g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": ERROR: Got strip without energy (" << R << ")" << endl; 
       }
-      return -3;
+      return -1;
     }
     if (SH->IsLowVoltageStrip()) {
       LVStrips.push_back(SH); 
