@@ -122,7 +122,8 @@ void MGUIExpoTACcut::SetTACHistogramArrangement(const vector<unsigned int> DetID
     // Make the map from ID to plot position, and initialize the histograms
     m_DetectorMap[Rows[DetID % DetectorsPerColumn]][Columns[DetID / DetectorsPerColumn]] = DetID;
 
-    TH1D* TAC = new TH1D("", MString("Detector ") + DetID, m_NBins[DetID], m_Min[DetID], m_Max[DetID]);
+    // The real binning is set afterwards in SetTACHistogramParameters(), so start with a single placeholder bin
+    TH1D* TAC = new TH1D("", MString("Detector ") + DetID, 1, 0, 1);
     TAC->SetXTitle("Calibrated TAC (ns)");
     TAC->SetYTitle("counts");
     TAC->SetFillColor(kAzure+7);

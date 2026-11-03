@@ -142,6 +142,10 @@ bool MModuleDepthCalibration::Initialize()
       return false;
     }
   }
+  
+  // Clear the counter for number of strip hits/pixels without calibration
+  m_MissingCalibrationCounts.clear();
+  m_MissingPixelCoeffsCounts.clear();
 
   if (m_MaskMetrologyEnabled == true) {
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
@@ -323,6 +327,11 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           H->SetNoDepth();
           Event->SetDepthCalibrationError("Strip hit on disabled HV strip");
         } else if (Coeffs == nullptr){
+          // No stretch and offset for this pixel: print the warning only the first time we see this pixel
+          m_MissingPixelCoeffsCounts[PixelCode]++;
+          if (m_MissingPixelCoeffsCounts[PixelCode] == 1 && g_Verbosity >= c_Warning) {
+            cout << m_XmlTag << ": No stretch and offset for pixel code " << PixelCode << " (detector " << DetID << ", LV strip " << LVStripID << ", HV strip " << HVStripID << ")" << endl;
+          }
           // Set the bad flag for depth
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
@@ -714,9 +723,6 @@ std::vector<double>* MModuleDepthCalibration::GetPixelCoeffs(int PixelCode)
     if (m_Coeffs.count(PixelCode) > 0) {
       return &m_Coeffs[PixelCode];
     } else {
-      if (g_Verbosity >= c_Warning) {
-        cout << m_XmlTag << ": GetPixelCoeffs cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
-      }
       return nullptr;
     }
   } else {
@@ -928,7 +934,12 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
       return -1;
     }
     if (SH->GetEnergy() == 0) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Got strip without energy :( " << endl; 
+      // Usually a strip without energy calibration: report each strip only once
+      MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
+      m_MissingCalibrationCounts[R]++;
+      if (m_MissingCalibrationCounts[R] == 1 && g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": ERROR: Got strip without energy (" << R << ")" << endl; 
+      }
       return -1;
     }
     if (SH->IsLowVoltageStrip()) {

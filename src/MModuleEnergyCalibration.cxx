@@ -146,6 +146,9 @@ bool MModuleEnergyCalibration::Initialize()
     }
   }
 
+  // Clear the counter for number of strip hits without calibration
+  m_MissingCalibrationCounts.clear();
+
   return MModule::Initialize();
 }
 
@@ -175,7 +178,9 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     TF1* FitRes = m_ResolutionCalibration[R];
 
     if (Fit == nullptr) {
-      if (g_Verbosity >= c_Error) {
+      // Print the error only the first time we see this strip
+      m_MissingCalibrationCounts[R]++;
+      if (m_MissingCalibrationCounts[R] == 1 && g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Error: Energy-fit not found for read-out element " << R << endl;
       }
       // only assign a BD flag if it's an actual triggered strip, otherwise, the event is still able to be calibrated
@@ -235,7 +240,7 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
       // Remove SH for any energy value below the established threshold (0 is default)
       if (Energy < Threshold) {
-        if (g_Verbosity >= c_Warning) {
+        if (g_Verbosity >= c_Info) {
           cout << m_XmlTag << ": Strip Hit below threshold, deleting SH with Energy " << Energy << " keV " << endl;
         }
         Event->SetStripHitBelowThreshold_QualityFlag("Strip hit removed with energy " + to_string(Energy));
@@ -335,6 +340,14 @@ void MModuleEnergyCalibration::Finalize()
 
   m_ThresholdMap.clear();
   m_HardwareThresholdMap.clear();
+
+  // Summary of the strips without energy calibration
+  if (m_MissingCalibrationCounts.empty() == false && g_Verbosity >= c_Info) {
+    cout << m_XmlTag << ": Strip hits without energy calibration:" << endl;
+    for (const auto& Entry : m_MissingCalibrationCounts) {
+      cout << "  * " << Entry.first << ": " << Entry.second << " strip hits" << endl;
+    }
+  }
 
   return;
 }

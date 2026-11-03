@@ -19,6 +19,7 @@
 // Standard libs:
 #include <unordered_map>
 #include <vector>
+#include <map>
 #include <numeric>
 #include <cmath>
 
@@ -218,6 +219,12 @@ class MModuleDepthCalibration : public MModule
   MString m_DisabledStripsFileName;
 
   bool m_AccountForDisabledStrips;
+
+  //! Count each instance of strip without energy: error is only printed the first time
+  map<MReadOutElementDoubleStrip, unsigned long> m_MissingCalibrationCounts;
+
+  //! Count each instance of pixel without calibration coeffs: warning is only printed the first time
+  map<int, unsigned long> m_MissingPixelCoeffsCounts;
 
   //! The Mask Metrology file name
   MString m_MaskMetrologyFileName;
