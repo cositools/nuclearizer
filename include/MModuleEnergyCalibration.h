@@ -201,6 +201,9 @@ class MModuleEnergyCalibration : public MModule
   //! Map between read-out element and hardware thresholds on the slow shaper
   map<MReadOutElementDoubleStrip, double> m_HardwareThresholdMap;
 
+  //! How often each strip without an energy calibration was seen - error is only printed first time
+  map<MReadOutElementDoubleStrip, unsigned long> m_MissingCalibrationCounts;
+
   //! Max value of the ADC units
   static constexpr double m_MaxADCRange = 16383;
   //! ADC value above which a strip hit is flagged as having a high ADC value
