@@ -142,6 +142,9 @@ bool MModuleDepthCalibration::Initialize()
       return false;
     }
   }
+  
+  // Clear the counter for number of strip hits without calibration
+  m_MissingCalibrationCounts.clear();
 
   if (m_MaskMetrologyEnabled == true) {
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;
@@ -928,8 +931,13 @@ int MModuleDepthCalibration::GetHitGrade(MHit* H){
       return -1;
     }
     if (SH->GetEnergy() == 0) { 
-      if (g_Verbosity >= c_Error) cout << m_XmlTag << ": ERROR: Got strip without energy :( " << endl; 
-      return -1;
+      // Usually a strip without energy calibration: report each strip only once, all cases are counted in m_ErrorNoE
+      MReadOutElementDoubleStrip R = *dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
+      m_MissingCalibrationCounts[R]++;
+      if (m_MissingCalibrationCounts[R] == 1 && g_Verbosity >= c_Error) {
+        cout << m_XmlTag << ": ERROR: Got strip without energy (" << R << ")" << endl; 
+      }
+      return -3;
     }
     if (SH->IsLowVoltageStrip()) {
       LVStrips.push_back(SH); 

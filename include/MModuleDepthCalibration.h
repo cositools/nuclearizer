@@ -219,6 +219,10 @@ class MModuleDepthCalibration : public MModule
 
   bool m_AccountForDisabledStrips;
 
+  //! Count each instance of strip without energy: error is only printed the first time
+  map<MReadOutElementDoubleStrip, unsigned long> m_MissingCalibrationCounts;
+
+
   //! The Mask Metrology file name
   MString m_MaskMetrologyFileName;
 
