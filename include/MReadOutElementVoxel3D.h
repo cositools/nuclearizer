@@ -56,8 +56,15 @@ class MReadOutElementVoxel3D : public MReadOutElement
   //! Compare two read-out elements
   virtual bool operator==(const MReadOutElement& R) const;
 
+  //! Compare two voxel read-out elements directly
+  //! (exact-match overload: avoids the C++20 "ambiguous with reversed operator" warning)
+  bool operator==(const MReadOutElementVoxel3D& R) const
+  {
+    return operator==(static_cast<const MReadOutElement&>(R));
+  }
+    
   //! Compare two voxel read-out elements for ordered containers
-  bool operator<(const MReadOutElementVoxel3D& R) const;
+  virtual bool operator<(const MReadOutElement& R) const;
 
   //! Return true if this read-out element is of the given type
   virtual bool IsOfType(const MString& String) const;
@@ -141,11 +148,16 @@ class MReadOutElementVoxel3D : public MReadOutElement
   //! Dump a string
   virtual MString ToString() const;
 
-
+  //! Return true if the detector ID can be written as one parsable token
+  //! (no whitespace, does not start with '#' or "//", is not the empty-ID placeholder)
+  static bool IsWritableDetectorID(const MString& DetectorID);
+  
   // protected methods:
  protected:
   // private methods:
  private:
+  //! Convert a token to an unsigned int, return false if it is not a plain decimal number in range
+  static bool ParseUnsignedInt(const MString& Token, unsigned int& Value);
   // protected members:
  protected:
   //! Detector ID as string e.g. "ACS_X0_0", "ACS_Y1_3"
@@ -159,7 +171,10 @@ class MReadOutElementVoxel3D : public MReadOutElement
   unsigned int m_VoxelYID;
   //! Voxel index Z as int
   unsigned int m_VoxelZID;
-
+  
+  //! Token written for an empty detector ID
+  static const char* const c_EmptyDetectorIDToken;
+    
   // private members:
  private:
 #ifdef ___CLING___
