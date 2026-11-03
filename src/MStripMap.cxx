@@ -281,10 +281,15 @@ bool MStripMap::Open(const MString& FileName)
 bool MStripMap::RestrictToEnabledDIBs(const vector<unsigned int>& DIBs)
 {
   vector<MSingleStripMapping> Kept;
+  m_DisabledDIBReadOutIDs.clear();
   Kept.reserve(m_StripMappings.size());
+
   for (const MSingleStripMapping& SM : m_StripMappings) {
     if (find(DIBs.begin(), DIBs.end(), SM.m_DIB) != DIBs.end()) {
       Kept.push_back(SM);
+    } else {
+      // Remember the read-out IDs of DIBs which were not enabled, so their strip hits can be recognized later
+      m_DisabledDIBReadOutIDs.insert(SM.m_ReadOutID);
     }
   }
 

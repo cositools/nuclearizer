@@ -717,6 +717,9 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
 
   bool IsZeroDataBug = false;
 
+  // True if this event contained strip hits on a DIB that was not enabled during the run
+  bool HasHitsOnDisabledDIB = false;
+
   unsigned int NStripHits = 1;
   unsigned int StripHitIndex = 0;
   while (StripHitIndex < NStripHits) {
@@ -860,6 +863,10 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         } else {
           Event->AddStripHit(H);
         }
+      } else if (m_StripMap.IsOnDisabledDIB(StripID) == true) {
+        // Strip on disabled DIB: skip the strip hit, keep the event, and count the instances
+        m_NStripHitsOnDisabledDIBs++;
+        HasHitsOnDisabledDIB = true;
       } else {
         if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<StripID<<" not found in strip map"<<endl;
         return false;
@@ -943,6 +950,10 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
           } else {
             Event->AddStripHit(H);
           }
+        } else if (m_StripMap.IsOnDisabledDIB(Hit.m_StripID) == true) {
+          // Strip on disabled DIB: skip the hit, keep the event, and count the instances
+          m_NStripHitsOnDisabledDIBs++;
+          HasHitsOnDisabledDIB = true;
         } else {
           if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Read-out ID "<<Hit.m_StripID<<" not found in strip map"<<endl;
           return false;
@@ -996,6 +1007,8 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     if (Event->HasUnknownDetector_QualityFlag() == true) {
       // Expected: all strip hits were on detectors that are not in the geometry
       m_NEventsOnlyUnknownDetectors++;
+    } else if (HasHitsOnDisabledDIB == true) {
+      // Expected: all strip hits were on a DIB that was not enabled during the run (counted per strip hit)
     } else if (g_Verbosity >= c_Error) {
       cout<<m_XmlTag<<": Event had no (valid) strip hits"<< endl;
     }
@@ -1024,6 +1037,7 @@ void MModuleLoaderMeasurementsHDF::Finalize()
     cout<<"MModuleLoaderMeasurementsHDF: "<<endl;
     cout<<"  * all events on file:  "<<m_NEventsInFile<<endl;
     cout<<"  * events with only unknown detectors: "<<m_NEventsOnlyUnknownDetectors<<endl;
+    cout<<"  * events with strips hits on disabled DIBs: "<<m_NStripHitsOnDisabledDIBs<<endl;
     cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
   }
 
