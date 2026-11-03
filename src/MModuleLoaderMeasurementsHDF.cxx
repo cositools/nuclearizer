@@ -1008,9 +1008,7 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
     if (Event->HasUnknownDetector_QualityFlag() == true) {
       // Expected: all strip hits were on detectors that are not in the geometry
       m_NEventsOnlyUnknownDetectors++;
-    } else if (HasHitsOnDisabledDIB == true) {
-      // Expected: all strip hits were on a DIB that was not enabled during the run (counted per strip hit)
-    } else if (g_Verbosity >= c_Error) {
+    } else if (HasHitsOnDisabledDIB == false && g_Verbosity >= c_Error) {
       cout<<m_XmlTag<<": Event had no (valid) strip hits"<< endl;
     }
     return false;
