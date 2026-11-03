@@ -326,6 +326,11 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           H->SetNoDepth();
           Event->SetDepthCalibrationError("Strip hit on disabled HV strip");
         } else if (Coeffs == nullptr){
+          // No stretch and offset for this pixel: print the warning only the first time we see this pixel
+          m_MissingPixelCoeffsCounts[PixelCode]++;
+          if (m_MissingPixelCoeffsCounts[PixelCode] == 1 && g_Verbosity >= c_Warning) {
+            cout << m_XmlTag << ": No stretch and offset for pixel code " << PixelCode << " (detector " << DetID << ", LV strip " << LVStripID << ", HV strip " << HVStripID << ")" << endl;
+          }
           // Set the bad flag for depth
           H->SetNoDepth();
           Event->SetDepthCalibrationError("No calibration coefficients");
@@ -717,9 +722,6 @@ std::vector<double>* MModuleDepthCalibration::GetPixelCoeffs(int PixelCode)
     if (m_Coeffs.count(PixelCode) > 0) {
       return &m_Coeffs[PixelCode];
     } else {
-      if (g_Verbosity >= c_Warning) {
-        cout << m_XmlTag << ": GetPixelCoeffs cannot get stretch and offset; pixel code " << PixelCode << " not found." << endl;
-      }
       return nullptr;
     }
   } else {

@@ -240,7 +240,7 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
       // Remove SH for any energy value below the established threshold (0 is default)
       if (Energy < Threshold) {
-        if (g_Verbosity >= c_Warning) {
+        if (g_Verbosity >= c_Info) {
           cout << m_XmlTag << ": Strip Hit below threshold, deleting SH with Energy " << Energy << " keV " << endl;
         }
         Event->SetStripHitBelowThreshold_QualityFlag("Strip hit removed with energy " + to_string(Energy));
