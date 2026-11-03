@@ -177,6 +177,7 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
 
   m_NEventsInFile = 0;
   m_NEventsOnlyUnknownDetectors = 0;
+  m_NStripHitsOnDisabledDIBs = 0;
   m_NGoodEventsInFile = 0;
   m_RTBEventCounter = 0;
     
@@ -1037,7 +1038,7 @@ void MModuleLoaderMeasurementsHDF::Finalize()
     cout<<"MModuleLoaderMeasurementsHDF: "<<endl;
     cout<<"  * all events on file:  "<<m_NEventsInFile<<endl;
     cout<<"  * events with only unknown detectors: "<<m_NEventsOnlyUnknownDetectors<<endl;
-    cout<<"  * events with strips hits on disabled DIBs: "<<m_NStripHitsOnDisabledDIBs<<endl;
+    cout<<"  * strips hits on disabled DIBs: "<<m_NStripHitsOnDisabledDIBs<<endl;
     cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
   }
 

@@ -90,6 +90,7 @@ bool MStripMap::Open(const MString& FileName)
 {
   m_StripMappings.clear();
   m_DetSideStripToROI.clear();
+  m_DisabledDIBReadOutIDs.clear();
 
   auto IsUnsignedInteger = [](const MString& Token) {
     if (Token.IsEmpty() == true) return false;

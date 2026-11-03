@@ -143,8 +143,9 @@ bool MModuleDepthCalibration::Initialize()
     }
   }
   
-  // Clear the counter for number of strip hits without calibration
+  // Clear the counter for number of strip hits/pixels without calibration
   m_MissingCalibrationCounts.clear();
+  m_MissingPixelCoeffsCounts.clear();
 
   if (m_MaskMetrologyEnabled == true) {
     if (g_Verbosity >= c_Info) cout << m_XmlTag << ": !!! Mask Metrology Enabled !!!" << endl;

@@ -323,7 +323,7 @@ class MModuleLoaderMeasurementsHDF : public MModuleLoaderMeasurements
   //! Number of events removed because all strip hits were on detectors not in the geometry
   unsigned int m_NEventsOnlyUnknownDetectors;
 
-   //! Number of strip hits skipped because their DIB was diabled (likely garbage)
+  //! Number of strip hits skipped because their DIB was disabled (likely garbage)
   unsigned int m_NStripHitsOnDisabledDIBs;
 
   //! Variable that deteremines if the user wants to include Nearest Neighbors
