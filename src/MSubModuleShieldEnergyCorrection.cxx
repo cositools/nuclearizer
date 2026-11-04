@@ -160,6 +160,8 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       cout << "DEE shield energy correction:" << endl;
       cout << "DetectorID: " << DetectorID << " CrystalID: " << CrystalID << " Voxel_ID: " << VoxelInDetector << endl;
       cout << "Simulated energy: " << SimulatedEnergy << endl;
+      cout << "Correction FWHM: " << ShieldFWHMValue << endl;
+      cout << "Correction centroid: " << ShieldCorrectedCentroid << endl;
       cout << "Corrected energy: " << CorrectedEnergy << endl;
     }
 

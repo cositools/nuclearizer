@@ -30,15 +30,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! The read-out element of a BGO voxel. It reads the detector name and the voxel x, y, z, ID
+//! Read-out element identified by detector/crystal ID and optionally by 3D voxel IDs
 class MReadOutElementVoxel3D : public MReadOutElement
 {
   // public interface:
  public:
-  //! default constructor - Read out element of a voxel 3D
+  //! Default constructor
   MReadOutElementVoxel3D();
 
-  //! full constructor - Read out element of a voxel 3D
+  //! Constructor for a crystal-only read-out element
+  MReadOutElementVoxel3D(const MString& DetectorID, unsigned int CrystalID);
+
+  //! Constructor for a fully specified 3D voxel read-out element
   MReadOutElementVoxel3D(const MString& DetectorID, unsigned int CrystalID, unsigned int VoxelXID, unsigned int VoxelYID, unsigned int VoxelZID);
 
   //! Simple default destructor
@@ -52,6 +55,16 @@ class MReadOutElementVoxel3D : public MReadOutElement
 
   //! Compare two read-out elements
   virtual bool operator==(const MReadOutElement& R) const;
+
+  //! Compare two voxel read-out elements directly
+  //! (exact-match overload: avoids the C++20 "ambiguous with reversed operator" warning)
+  bool operator==(const MReadOutElementVoxel3D& R) const
+  {
+    return operator==(static_cast<const MReadOutElement&>(R));
+  }
+    
+  //! Compare two voxel read-out elements for ordered containers
+  virtual bool operator<(const MReadOutElement& R) const;
 
   //! Return true if this read-out element is of the given type
   virtual bool IsOfType(const MString& String) const;
@@ -80,6 +93,18 @@ class MReadOutElementVoxel3D : public MReadOutElement
     return m_CrystalID;
   }
 
+  //! Return true if all voxel IDs are defined
+  bool HasVoxelIDs() const;
+
+  //! Return true if only detector and crystal IDs are defined
+  bool IsCrystalOnly() const;
+
+  //! Clear voxel IDs and keep only detector and crystal identification
+  void ClearVoxelIDs();
+
+  //! Set all voxel IDs
+  void SetVoxelIDs(unsigned int VoxelXID, unsigned int VoxelYID, unsigned int VoxelZID);
+
   //! Set Voxel X ID as int
   void SetVoxelXID(unsigned int VoxelXID)
   {
@@ -96,7 +121,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
   {
     m_VoxelYID = VoxelYID;
   }
-  //! Set Voxel Y ID as int
+  //! Get Voxel Y ID as int
   unsigned int GetVoxelYID() const
   {
     return m_VoxelYID;
@@ -123,11 +148,16 @@ class MReadOutElementVoxel3D : public MReadOutElement
   //! Dump a string
   virtual MString ToString() const;
 
-
+  //! Return true if the detector ID can be written as one parsable token
+  //! (no whitespace, does not start with '#' or "//", is not the empty-ID placeholder)
+  static bool IsWritableDetectorID(const MString& DetectorID);
+  
   // protected methods:
  protected:
   // private methods:
  private:
+  //! Convert a token to an unsigned int, return false if it is not a plain decimal number in range
+  static bool ParseUnsignedInt(const MString& Token, unsigned int& Value);
   // protected members:
  protected:
   //! Detector ID as string e.g. "ACS_X0_0", "ACS_Y1_3"
@@ -141,7 +171,10 @@ class MReadOutElementVoxel3D : public MReadOutElement
   unsigned int m_VoxelYID;
   //! Voxel index Z as int
   unsigned int m_VoxelZID;
-
+  
+  //! Token written for an empty detector ID
+  static const char* const c_EmptyDetectorIDToken;
+    
   // private members:
  private:
 #ifdef ___CLING___
@@ -157,3 +190,4 @@ ostream& operator<<(ostream& os, const MReadOutElementVoxel3D& R);
 
 
 ////////////////////////////////////////////////////////////////////////////////
+

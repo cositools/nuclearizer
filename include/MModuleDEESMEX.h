@@ -1,3 +1,4 @@
+
 /*
  * MModuleDEESMEX.h
  *
@@ -153,6 +154,17 @@ class MModuleDEESMEX : public MModule
     return m_ShieldEnergyCorrection.GetShieldEnergyCorrectionFileName();
   }
 
+  //! Set shield energy calibration file name
+  void SetShieldEnergyCalibrationFileName(const MString& FileName)
+  {
+    m_ShieldReadout.SetShieldEnergyCalibrationFileName(FileName);
+  }
+  //! Get shield energy calibration file name
+  MString GetShieldEnergyCalibrationFileName() const
+  {
+    return m_ShieldReadout.GetShieldEnergyCalibrationFileName();
+  }
+    
   //! Set hardware threshold file name
   void SetHardwareThresholdFileName(const MString& FileName)
   {
