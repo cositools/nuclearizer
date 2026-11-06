@@ -374,7 +374,9 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
 
   // Set event-level properties
   Event->SetID(static_cast<unsigned long>(m_BatchEVENTID[idx]));
-  Event->SetTimeRTS(MTime(eventTime) + MTime(m_TimeReferenceOffsetRTS));
+  MTime TimeRTS = MTime(eventTime) + MTime(m_TimeReferenceOffsetRTS);
+  Event->SetTimeRTS(TimeRTS);
+  Event->SetTimeUTC(Event->ComputeUTCfromRTSTime(TimeRTS));
 
   // Loop through strip hits and create MStripHit objects
   for (uint16_t hitIdx = 0; hitIdx < numStripHit; ++hitIdx) {

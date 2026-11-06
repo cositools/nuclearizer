@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <cmath>
 #include <ctime>
 #include <sstream>
 using namespace std;
@@ -99,8 +100,8 @@ MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS(MString XmlTag, int O
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
   m_OutputDataLevel = OutputDataLevel; // 0 = L1a, 1 = L1b, 2 = L2
-  m_FirstEventTime_RTS = 0.0;
-  m_LastEventTime_RTS = 0.0;
+  m_FirstEventTime = 0.0;
+  m_LastEventTime = 0.0;
   m_HasEvents = false;
 
   ConfigurePreceedingModules();
@@ -147,8 +148,8 @@ bool MModuleSaverMeasurementsFITS::Initialize()
   m_TotalEventsSkipped = 0;
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
-  m_FirstEventTime_RTS = 0.0;
-  m_LastEventTime_RTS = 0.0;
+  m_FirstEventTime = 0.0;
+  m_LastEventTime = 0.0;
   m_HasEvents = false;
   m_BatchTIME.clear();
   m_BatchEVENTID.clear();
@@ -368,24 +369,21 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Extract event-level data
-  double time = 0;
-  if (Event->GetTimeRTS() == 0 && Event->GetTimeUTC() != 0) {
-    // If UTC time is defined, calculate RTS
-    MTime RTS = Event->ComputeRTSfromUTCTime(Event->GetTimeUTC());
-    Event->SetTimeRTS(RTS);
-    time = RTS.GetAsDouble();
-  } else {
-    time = Event->GetTimeRTS().GetAsDouble();
+  MTime TimeUTC = Event->GetTimeUTC();
+  if (TimeUTC == 0) {
+    TimeUTC = Event->ComputeUTCfromRTSTime(Event->GetTimeRTS());
   }
+  const MTime FITSEpochUTC(2025, 1, 1, 0, 0, 0, 0);
+  double secSince2025UTC = (TimeUTC - FITSEpochUTC).GetAsDouble();
 
   // loop through all event, and record the start and end time for TSTART/TSTOP
   if (!m_HasEvents) {
-    m_FirstEventTime_RTS = time;
-    m_LastEventTime_RTS = time;
+    m_FirstEventTime = secSince2025UTC;
+    m_LastEventTime = secSince2025UTC;
     m_HasEvents = true;
   } else {
-    if (time < m_FirstEventTime_RTS) m_FirstEventTime_RTS = time;
-    if (time > m_LastEventTime_RTS) m_LastEventTime_RTS = time;
+    if (secSince2025UTC < m_FirstEventTime) m_FirstEventTime = secSince2025UTC;
+    if (secSince2025UTC > m_LastEventTime) m_LastEventTime = secSince2025UTC;
   }
 
   // Event-level metadata defaults
@@ -512,7 +510,7 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Add to batch
-  m_BatchTIME.push_back(time);
+  m_BatchTIME.push_back(secSince2025UTC);
   m_BatchEVENTID.push_back(eventID);
   m_BatchEVENTCLASS.push_back(eventClass);
   m_BatchNUMHIT.push_back((uint8_t)numHits);
@@ -660,8 +658,8 @@ void MModuleSaverMeasurementsFITS::Finalize()
       // Mission epoch is 2025-01-01 00:00:00 UTC
       const time_t MISSION_EPOCH_UNIX = 1735689600;
 
-      time_t startUnix = MISSION_EPOCH_UNIX + (time_t)m_FirstEventTime_RTS;
-      time_t stopUnix = MISSION_EPOCH_UNIX + (time_t)m_LastEventTime_RTS;
+      time_t startUnix = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_FirstEventTime));
+      time_t stopUnix = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_LastEventTime));
 
       //convert to ISO string
       char startBuf[32], stopBuf[32];
@@ -675,8 +673,8 @@ void MModuleSaverMeasurementsFITS::Finalize()
       // Update science table HDU
       m_ScienceTable->addKey("DATE-OBS", string(startBuf), "Start Date");
       m_ScienceTable->addKey("DATE-END", string(stopBuf), "Stop Date");
-      m_ScienceTable->addKey("TSTART", m_FirstEventTime_RTS, "[s] Observation start");
-      m_ScienceTable->addKey("TSTOP", m_LastEventTime_RTS, "[s] Observation stop");
+      m_ScienceTable->addKey("TSTART", m_FirstEventTime, "[s] Observation start");
+      m_ScienceTable->addKey("TSTOP", m_LastEventTime, "[s] Observation stop");
 
       // Also update OBS_ID to match the start date (YYYYMMDD format)
       char obsIdBuf[16];
@@ -686,8 +684,8 @@ void MModuleSaverMeasurementsFITS::Finalize()
 
       if (g_Verbosity >= c_Info) {
         cout<<m_XmlTag<<": Updated time headers — DATE-OBS="<<startBuf
-            <<", DATE-END="<<stopBuf<<", TSTART="<<m_FirstEventTime_RTS
-            <<", TSTOP="<<m_LastEventTime_RTS<<endl;
+            <<", DATE-END="<<stopBuf<<", TSTART="<<m_FirstEventTime
+            <<", TSTOP="<<m_LastEventTime<<endl;
       }
     } catch (const CCfits::FitsException& e) {
       if (g_Verbosity >= c_Error) {

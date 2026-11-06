@@ -60,8 +60,8 @@ MFITSWriterL1a::MFITSWriterL1a()
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
   m_HasEvents = false;
-  m_FirstEventTime_RTS = 0;
-  m_LastEventTime_RTS = 0;
+  m_FirstEventTime = 0;
+  m_LastEventTime = 0;
 }
 
 
@@ -208,20 +208,20 @@ bool MFITSWriterL1a::Write(MReadOutAssembly* Event)
     return false;
   }
 
-  if (Event->GetTimeRTS() == 0 && Event->GetTimeUTC() != 0) {
-    Event->SetTimeRTS(Event->ComputeRTSfromUTCTime(Event->GetTimeUTC()));
+  // Set Time
+  MTime TimeUTC = Event->GetTimeUTC();
+  if (TimeUTC == 0) {
+    TimeUTC = Event->ComputeUTCfromRTSTime(Event->GetTimeRTS());
   }
-
   const MTime FITSEpochUTC(2025, 1, 1, 0, 0, 0, 0);
-  const MTime FITSEpochRTS = Event->ComputeRTSfromUTCTime(FITSEpochUTC);
-  double time = (Event->GetTimeRTS() - FITSEpochRTS).GetAsDouble();
+  double secSince2025UTC = (TimeUTC - FITSEpochUTC).GetAsDouble();
   if (!m_HasEvents) {
-    m_FirstEventTime_RTS = time;
-    m_LastEventTime_RTS = time;
+    m_FirstEventTime = secSince2025UTC;
+    m_LastEventTime = secSince2025UTC;
     m_HasEvents = true;
   } else {
-    if (time < m_FirstEventTime_RTS) m_FirstEventTime_RTS = time;
-    if (time > m_LastEventTime_RTS) m_LastEventTime_RTS = time;
+    if (secSince2025UTC < m_FirstEventTime) m_FirstEventTime = secSince2025UTC;
+    if (secSince2025UTC > m_LastEventTime) m_LastEventTime = secSince2025UTC;
   }
 
   unsigned int nStripHits = Event->GetNStripHits();
@@ -243,7 +243,7 @@ bool MFITSWriterL1a::Write(MReadOutAssembly* Event)
     tac[i]      = hit->GetTAC();
   }
 
-  m_BatchTIME.push_back(time);
+  m_BatchTIME.push_back(secSince2025UTC);
   m_BatchEVENTID.push_back((uint32_t)Event->GetID());
   m_BatchEVENTTYPE.push_back(0);            // TODO
   m_BatchNUMSTRIPHIT.push_back(nStripHits);
@@ -324,12 +324,12 @@ void MFITSWriterL1a::Close()
 
   if (m_HasEvents && m_Table != nullptr) {
     try {
-      m_Table->addKey("TSTART", m_FirstEventTime_RTS, "[s] Observation start");
-      m_Table->addKey("TSTOP", m_LastEventTime_RTS, "[s] Observation stop");  // "stopsince" is verbatim from Table 6.2d (doc typo)
+      m_Table->addKey("TSTART", m_FirstEventTime, "[s] Observation start");
+      m_Table->addKey("TSTOP", m_LastEventTime, "[s] Observation stop");  // "stopsince" is verbatim from Table 6.2d (doc typo)
 
       constexpr time_t MISSION_EPOCH_UNIX = 1735689600;  // 2025-01-01T00:00:00 UTC
-      time_t startUnix = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_FirstEventTime_RTS));
-      time_t stopUnix  = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_LastEventTime_RTS));
+      time_t startUnix = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_FirstEventTime));
+      time_t stopUnix  = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_LastEventTime));
       char startBuf[32], stopBuf[32];
       strftime(startBuf, sizeof(startBuf), "%Y-%m-%dT%H:%M:%S", gmtime(&startUnix));
       strftime(stopBuf,  sizeof(stopBuf),  "%Y-%m-%dT%H:%M:%S", gmtime(&stopUnix));
@@ -366,8 +366,8 @@ void MFITSWriterL1a::Close()
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
   m_HasEvents = false;
-  m_FirstEventTime_RTS = 0;
-  m_LastEventTime_RTS = 0;
+  m_FirstEventTime = 0;
+  m_LastEventTime = 0;
   m_BatchTIME.clear();
   m_BatchEVENTID.clear();
   m_BatchEVENTTYPE.clear();

@@ -460,9 +460,11 @@ bool UTNFITSWriterL1a::TestTimeKeywords()
     return EvaluateTrue("Create()", "time keywords", "Create succeeds", false);
   }
   // Out of order times: the minimum and maximum are used
-  MReadOutAssembly* E1 = CreateEvent(1, 90000.0, 1);
-  MReadOutAssembly* E2 = CreateEvent(2, 86400.0, 1);
-  MReadOutAssembly* E3 = CreateEvent(3, 172800.5, 1);
+  MReadOutAssembly Reference;
+  double EpochRTS = Reference.ComputeRTSfromUTCTime(MTime(1735689600)).GetAsDouble();
+  MReadOutAssembly* E1 = CreateEvent(1, 90000.0 + EpochRTS, 1);
+  MReadOutAssembly* E2 = CreateEvent(2, 86400.0 + EpochRTS, 1);
+  MReadOutAssembly* E3 = CreateEvent(3, 172800.5 + EpochRTS, 1);
   Passed = EvaluateTrue("Write()", "event at 90000 s", "Write returns true", W.Write(E1)) && Passed;
   Passed = EvaluateTrue("Write()", "event at 86400 s", "Write returns true", W.Write(E2)) && Passed;
   Passed = EvaluateTrue("Write()", "event at 172800.5 s", "Write returns true", W.Write(E3)) && Passed;

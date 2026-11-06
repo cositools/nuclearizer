@@ -121,11 +121,11 @@ class MModuleSaverMeasurementsFITS : public MModule
   //! Total number of events skipped (L2 screening)
   long m_TotalEventsSkipped;
 
-  //! First event time seen, RTS (mission seconds since 2025-01-01)
-  double m_FirstEventTime_RTS;
+  //! First event time seen, FITS TIME (elapsed seconds from 2025-01-01T00:00:00 UTC)
+  double m_FirstEventTime;
 
-  //! Last event time seen, RTS (mission seconds since 2025-01-01)
-  double m_LastEventTime_RTS;
+  //! Last event time seen, FITS TIME (elapsed seconds from 2025-01-01T00:00:00 UTC)
+  double m_LastEventTime;
 
   //! Whether any events have been processed yet
   bool m_HasEvents;

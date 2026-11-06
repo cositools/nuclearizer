@@ -490,7 +490,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   MReadOutAssembly* E4 = CreateEvent(4, 0.0, 1);
   E4->SetTimeRTS(MTime(0));
   E4->SetTimeUTC(MTime(1735689600 + 86430));
-  double E4Expected = E4->ComputeRTSfromUTCTime(E4->GetTimeUTC()).GetAsDouble();
+  double E4Expected = 86430.0;
   vector<MReadOutAssembly*> Events = { E1, E2, E3, E4 };
   MString File = WriteEvents("l1b.fits", 1, Events);
   for (MReadOutAssembly* E : Events) delete E;
@@ -499,7 +499,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   Passed = Evaluate("Finalize()", "L1b", "Four rows are written", CountRows(File), 4L) && Passed;
   Passed = EvaluateTrue("Finalize()", "L1b", "The L1b-only column VETO exists", HasColumn(File, "VETO")) && Passed;
   Passed = EvaluateTrue("Finalize()", "L1b", "The L1b-only column QUALITY_FLAG exists", HasColumn(File, "QUALITY_FLAG")) && Passed;
-  Passed = EvaluateNear("Finalize()", "L1b", "TSTART is the first event time", ReadDoubleKey(File, "TSTART"), 86400.0, 1e-3) && Passed;
+  Passed = EvaluateNear("Finalize()", "L1b", "TSTART is the first event time, counted from 2025-01-01 UTC ", ReadDoubleKey(File, "TSTART"), 86400.0 - 69.184, 1e-3) && Passed;
 
   vector<vector<double>> Time, NumHit, Energy, EnergyErr, X, Veto, Class, SeqHit;
   Passed = EvaluateTrue("AnalyzeEvent()", "L1b", "The TIME column can be read", ReadNumericColumn(File, "TIME", Time)) && Passed;
@@ -516,8 +516,8 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   const MString PerHit = "2 1 3 1";
   Passed = Evaluate("AnalyzeEvent()", "L1b", "TIME has one element per event", ColumnShape(Time), Scalar) && Passed;
   if (ColumnShape(Time) == Scalar) {
-    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 1", "TIME is the RTS time", Time[0][0], 86400.0, 1e-6) && Passed;
-    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 4", "TIME is computed from the UTC time if there is no RTS time", Time[3][0], E4Expected, 1e-6) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 1", "TIME is the RTS time counted from 2025-01-01 UTC", Time[0][0], 86400.0 - 69.184, 1e-6) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 4", "TIME is the UTC time counted from 2025-01-01 UTC", Time[3][0], E4Expected, 1e-6) && Passed;
   }
   Passed = Evaluate("AnalyzeEvent()", "L1b", "NUMHIT has one element per event", ColumnShape(NumHit), Scalar) && Passed;
   if (ColumnShape(NumHit) == Scalar) {
@@ -649,7 +649,7 @@ bool UTNModuleSaverMeasurementsFITS::TestBatches()
     }
     Passed = EvaluateTrue("AnalyzeEvent()", "230 events", "The event IDs are in order across batches", InOrder) && Passed;
   }
-  Passed = EvaluateNear("Finalize()", "230 events", "TSTOP is the last event time", ReadDoubleKey(File, "TSTOP"), 240.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Finalize()", "230 events", "TSTOP is the last event time", ReadDoubleKey(File, "TSTOP"), 240.0 - 69.184, 1e-6) && Passed;
 
   return Passed;
 }
