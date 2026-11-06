@@ -490,7 +490,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   MReadOutAssembly* E4 = CreateEvent(4, 0.0, 1);
   E4->SetTimeRTS(MTime(0));
   E4->SetTimeUTC(MTime(1735689600 + 86430));
-  double E4Expected = E4->ComputeRTSfromUTCTime(E4->GetTimeUTC()).GetAsDouble();
+  double E4Expected = 86430.0;
   vector<MReadOutAssembly*> Events = { E1, E2, E3, E4 };
   MString File = WriteEvents("l1b.fits", 1, Events);
   for (MReadOutAssembly* E : Events) delete E;
@@ -499,7 +499,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   Passed = Evaluate("Finalize()", "L1b", "Four rows are written", CountRows(File), 4L) && Passed;
   Passed = EvaluateTrue("Finalize()", "L1b", "The L1b-only column VETO exists", HasColumn(File, "VETO")) && Passed;
   Passed = EvaluateTrue("Finalize()", "L1b", "The L1b-only column QUALITY_FLAG exists", HasColumn(File, "QUALITY_FLAG")) && Passed;
-  Passed = EvaluateNear("Finalize()", "L1b", "TSTART is the first event time", ReadDoubleKey(File, "TSTART"), 86400.0, 1e-3) && Passed;
+  Passed = EvaluateNear("Finalize()", "L1b", "TSTART is the first event time, counted from 2025-01-01 UTC ", ReadDoubleKey(File, "TSTART"), 86400.0 - 69.184, 1e-3) && Passed;
 
   vector<vector<double>> Time, NumHit, Energy, EnergyErr, X, Veto, Class, SeqHit;
   Passed = EvaluateTrue("AnalyzeEvent()", "L1b", "The TIME column can be read", ReadNumericColumn(File, "TIME", Time)) && Passed;
@@ -516,8 +516,8 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   const MString PerHit = "2 1 3 1";
   Passed = Evaluate("AnalyzeEvent()", "L1b", "TIME has one element per event", ColumnShape(Time), Scalar) && Passed;
   if (ColumnShape(Time) == Scalar) {
-    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 1", "TIME is the RTS time", Time[0][0], 86400.0, 1e-6) && Passed;
-    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 4", "TIME is computed from the UTC time if there is no RTS time", Time[3][0], E4Expected, 1e-6) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 1", "TIME is the RTS time counted from 2025-01-01 UTC", Time[0][0], 86400.0 - 69.184, 1e-6) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 4", "TIME is the UTC time counted from 2025-01-01 UTC", Time[3][0], E4Expected, 1e-6) && Passed;
   }
   Passed = Evaluate("AnalyzeEvent()", "L1b", "NUMHIT has one element per event", ColumnShape(NumHit), Scalar) && Passed;
   if (ColumnShape(NumHit) == Scalar) {
@@ -538,7 +538,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   // VETO: 0 = none, 1 = hard ACD veto, 2 = soft ACD veto, 3 = guard ring veto
   Passed = Evaluate("AnalyzeEvent()", "L1b", "VETO has one element per event", ColumnShape(Veto), Scalar) && Passed;
   if (ColumnShape(Veto) == Scalar) {
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "L1b event 1 with guard ring veto", "VETO is 3 for a guard ring veto", Veto[0][0], 3.0, 1e-12)) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 1 with guard ring veto", "VETO is 3 for a guard ring veto", Veto[0][0], 3.0, 1e-12) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "L1b event 2 without veto", "VETO is 0 without veto", Veto[1][0], 0.0, 1e-12) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "L1b event 3 with shield veto", "VETO is an ACD veto (1 or 2) for a shield veto", Veto[2][0] == 1.0 || Veto[2][0] == 2.0) && Passed;
   }
@@ -617,7 +617,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL2()
     }
     return true;
   });
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "L2 event with 40 hits", "An event with more than 10 hits is handled without crashing and NUMHIT fits the 10-element arrays", NoCrash)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "L2 event with 40 hits", "An event with more than 10 hits is handled without crashing and NUMHIT fits the 10-element arrays", NoCrash) && Passed;
 
   return Passed;
 }
@@ -649,7 +649,7 @@ bool UTNModuleSaverMeasurementsFITS::TestBatches()
     }
     Passed = EvaluateTrue("AnalyzeEvent()", "230 events", "The event IDs are in order across batches", InOrder) && Passed;
   }
-  Passed = EvaluateNear("Finalize()", "230 events", "TSTOP is the last event time", ReadDoubleKey(File, "TSTOP"), 240.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Finalize()", "230 events", "TSTOP is the last event time", ReadDoubleKey(File, "TSTOP"), 240.0 - 69.184, 1e-6) && Passed;
 
   return Passed;
 }
@@ -684,13 +684,13 @@ bool UTNModuleSaverMeasurementsFITS::TestRewrite()
 
   Passed = EvaluateTrue("Initialize()", "first run", "Initialize succeeds", Init[0]) && Passed;
   Passed = EvaluateTrue("Initialize()", "second run, same file", "Initialize succeeds again", Init[1]) && Passed;
-  Passed = ExpectedToFail(Evaluate("Finalize()", "second run, same file", "The file contains only the one event of the second run", CountRows(FileName), 1L)) && Passed;
+  Passed = Evaluate("Finalize()", "second run, same file", "The file contains only the one event of the second run", CountRows(FileName), 1L) && Passed;
   vector<vector<double>> ID;
   Passed = EvaluateTrue("Finalize()", "second run, same file", "The EVENTID column can be read", ReadNumericColumn(FileName, "EVENTID", ID)) && Passed;
   unsigned int FirstRowLength = (ID.size() >= 1) ? (unsigned int) ID[0].size() : 0;
   Passed = Evaluate("Finalize()", "second run, same file", "The first EVENTID row has one element", FirstRowLength, 1u) && Passed;
   if (ID.size() >= 1 && ID[0].size() == 1) {
-    Passed = ExpectedToFail(EvaluateNear("Finalize()", "second run, same file", "The first row is the event of the second run", ID[0][0], 101.0, 1e-12)) && Passed;
+    Passed = EvaluateNear("Finalize()", "second run, same file", "The first row is the event of the second run", ID[0][0], 101.0, 1e-12) && Passed;
   }
 
   return Passed;

@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <cmath>
 #include <ctime>
 #include <sstream>
 using namespace std;
@@ -99,8 +100,8 @@ MModuleSaverMeasurementsFITS::MModuleSaverMeasurementsFITS(MString XmlTag, int O
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
   m_OutputDataLevel = OutputDataLevel; // 0 = L1a, 1 = L1b, 2 = L2
-  m_FirstEventTime_RTS = 0.0;
-  m_LastEventTime_RTS = 0.0;
+  m_FirstEventTime = 0.0;
+  m_LastEventTime = 0.0;
   m_HasEvents = false;
 
   ConfigurePreceedingModules();
@@ -136,6 +137,39 @@ bool MModuleSaverMeasurementsFITS::Initialize()
     }
     return MModule::Initialize();
   }
+
+  // check if m_FITSFile is pointing to a FITS object, if yes, finalized the previous file
+  if (m_FITSFile != nullptr) Finalize();
+
+  // reset the states
+  m_PrimaryHDU = nullptr;
+  m_ScienceTable = nullptr;
+  m_TotalEventsWritten = 0;
+  m_TotalEventsSkipped = 0;
+  m_BatchStartRow = 1;
+  m_BatchEventCount = 0;
+  m_FirstEventTime = 0.0;
+  m_LastEventTime = 0.0;
+  m_HasEvents = false;
+  m_BatchTIME.clear();
+  m_BatchEVENTID.clear();
+  m_BatchEVENTTYPE.clear();
+  m_BatchEVENTCLASS.clear();
+  m_BatchNUMHIT.clear();
+  m_BatchVETO.clear();
+  m_BatchQUALITY_FLAG.clear();
+  m_BatchSTATTEST.clear();
+  m_BatchSEQHIT.clear();
+  m_BatchRECOILDIR.clear();
+  m_BatchRECOILDIR_ERR.clear();
+  m_BatchX.clear();
+  m_BatchY.clear();
+  m_BatchZ.clear();
+  m_BatchX_ERR.clear();
+  m_BatchY_ERR.clear();
+  m_BatchZ_ERR.clear();
+  m_BatchENERGY.clear();
+  m_BatchENERGY_ERR.clear();
 
   // Create the FITS file
   if (CreateFITSFile(m_FileName) == false) {
@@ -179,8 +213,10 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
     string levelStr = (m_OutputDataLevel == 2) ? "L2" : "L1b";
     if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": Creating "<<levelStr<<" FITS file: "<<string(FileName)<<endl;
 
-    // Create new FITS file (overwrite if exists)
-    m_FITSFile = new FITS(string(FileName), RWmode::Write);
+    // Create new FITS file (overwrite if exists (! tells it to overwrite))
+    string FitsFileName = string(FileName);
+    if (FitsFileName[0] != '!') FitsFileName.insert(0, "!");
+    m_FITSFile = new FITS(FitsFileName, RWmode::Write);
 
     // Get pointer to Primary HDU
     m_PrimaryHDU = &m_FITSFile->pHDU();
@@ -322,33 +358,32 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
     return ok;
   }
 
-  // L2 mode: skip bad events (screening)
-  if (m_OutputDataLevel == 2 && Event->IsBad()) {
+  unsigned int numHits = Event->GetNHits();
+  const unsigned int L2_HIT_LEN = 10;
+
+  // L2 mode: skip bad events and events that have more than 10 HITS
+  if (m_OutputDataLevel == 2 && (Event->IsBad() || numHits > L2_HIT_LEN)) {
     m_TotalEventsSkipped++;
     Event->SetAnalysisProgress(MAssembly::c_EventSaver);
     return true;
   }
 
   // Extract event-level data
-  double time = 0;
-  if (Event->GetTimeRTS() == 0 && Event->GetTimeUTC() != 0) {
-    // If UTC time is defined, calculate RTS
-    MTime RTS = Event->ComputeRTSfromUTCTime(Event->GetTimeUTC());
-    Event->SetTimeRTS(RTS);
-    time = RTS.GetAsDouble();
-  } else {
-    time = Event->GetTimeRTS().GetAsDouble();
+  MTime TimeUTC = Event->GetTimeUTC();
+  if (TimeUTC == 0) {
+    TimeUTC = Event->ComputeUTCfromRTSTime(Event->GetTimeRTS());
   }
-  unsigned int numHits = Event->GetNHits();
+  const MTime FITSEpochUTC(2025, 1, 1, 0, 0, 0, 0);
+  double secSince2025UTC = (TimeUTC - FITSEpochUTC).GetAsDouble();
 
   // loop through all event, and record the start and end time for TSTART/TSTOP
   if (!m_HasEvents) {
-    m_FirstEventTime_RTS = time;
-    m_LastEventTime_RTS = time;
+    m_FirstEventTime = secSince2025UTC;
+    m_LastEventTime = secSince2025UTC;
     m_HasEvents = true;
   } else {
-    if (time < m_FirstEventTime_RTS) m_FirstEventTime_RTS = time;
-    if (time > m_LastEventTime_RTS) m_LastEventTime_RTS = time;
+    if (secSince2025UTC < m_FirstEventTime) m_FirstEventTime = secSince2025UTC;
+    if (secSince2025UTC > m_LastEventTime) m_LastEventTime = secSince2025UTC;
   }
 
   // Event-level metadata defaults
@@ -359,11 +394,16 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   uint8_t eventClass = 5;   // 5 = unknown
   uint32_t eventID = (uint32_t)Event->GetID();
   
-  uint8_t veto = Event->IsVeto() ? 1 : 0;
+  // TODO: Determine how to distinguish between hard and soft ACS vetoes.
+  uint8_t veto = 0;
+  if (Event->GetShieldVeto() == true) {
+    veto = 1;
+  } else if (Event->GetGuardRingVeto() == true) {
+    veto = 3;
+  }
   std::string quality_flag;
 
   // L2: fixed-length 10 hit arrays, zero-padded 
-  const unsigned int L2_HIT_LEN = 10;
   bool isL2 = (m_OutputDataLevel == 2);
   unsigned int arrayLen = isL2 ? L2_HIT_LEN : numHits;
 
@@ -470,7 +510,7 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Add to batch
-  m_BatchTIME.push_back(time);
+  m_BatchTIME.push_back(secSince2025UTC);
   m_BatchEVENTID.push_back(eventID);
   m_BatchEVENTCLASS.push_back(eventClass);
   m_BatchNUMHIT.push_back((uint8_t)numHits);
@@ -618,8 +658,8 @@ void MModuleSaverMeasurementsFITS::Finalize()
       // Mission epoch is 2025-01-01 00:00:00 UTC
       const time_t MISSION_EPOCH_UNIX = 1735689600;
 
-      time_t startUnix = MISSION_EPOCH_UNIX + (time_t)m_FirstEventTime_RTS;
-      time_t stopUnix = MISSION_EPOCH_UNIX + (time_t)m_LastEventTime_RTS;
+      time_t startUnix = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_FirstEventTime));
+      time_t stopUnix = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_LastEventTime));
 
       //convert to ISO string
       char startBuf[32], stopBuf[32];
@@ -633,8 +673,8 @@ void MModuleSaverMeasurementsFITS::Finalize()
       // Update science table HDU
       m_ScienceTable->addKey("DATE-OBS", string(startBuf), "Start Date");
       m_ScienceTable->addKey("DATE-END", string(stopBuf), "Stop Date");
-      m_ScienceTable->addKey("TSTART", m_FirstEventTime_RTS, "[s] Observation start");
-      m_ScienceTable->addKey("TSTOP", m_LastEventTime_RTS, "[s] Observation stop");
+      m_ScienceTable->addKey("TSTART", m_FirstEventTime, "[s] Observation start");
+      m_ScienceTable->addKey("TSTOP", m_LastEventTime, "[s] Observation stop");
 
       // Also update OBS_ID to match the start date (YYYYMMDD format)
       char obsIdBuf[16];
@@ -644,8 +684,8 @@ void MModuleSaverMeasurementsFITS::Finalize()
 
       if (g_Verbosity >= c_Info) {
         cout<<m_XmlTag<<": Updated time headers — DATE-OBS="<<startBuf
-            <<", DATE-END="<<stopBuf<<", TSTART="<<m_FirstEventTime_RTS
-            <<", TSTOP="<<m_LastEventTime_RTS<<endl;
+            <<", DATE-END="<<stopBuf<<", TSTART="<<m_FirstEventTime
+            <<", TSTOP="<<m_LastEventTime<<endl;
       }
     } catch (const CCfits::FitsException& e) {
       if (g_Verbosity >= c_Error) {

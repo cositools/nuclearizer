@@ -460,9 +460,11 @@ bool UTNFITSWriterL1a::TestTimeKeywords()
     return EvaluateTrue("Create()", "time keywords", "Create succeeds", false);
   }
   // Out of order times: the minimum and maximum are used
-  MReadOutAssembly* E1 = CreateEvent(1, 90000.0, 1);
-  MReadOutAssembly* E2 = CreateEvent(2, 86400.0, 1);
-  MReadOutAssembly* E3 = CreateEvent(3, 172800.5, 1);
+  MReadOutAssembly Reference;
+  double EpochRTS = Reference.ComputeRTSfromUTCTime(MTime(1735689600)).GetAsDouble();
+  MReadOutAssembly* E1 = CreateEvent(1, 90000.0 + EpochRTS, 1);
+  MReadOutAssembly* E2 = CreateEvent(2, 86400.0 + EpochRTS, 1);
+  MReadOutAssembly* E3 = CreateEvent(3, 172800.5 + EpochRTS, 1);
   Passed = EvaluateTrue("Write()", "event at 90000 s", "Write returns true", W.Write(E1)) && Passed;
   Passed = EvaluateTrue("Write()", "event at 86400 s", "Write returns true", W.Write(E2)) && Passed;
   Passed = EvaluateTrue("Write()", "event at 172800.5 s", "Write returns true", W.Write(E3)) && Passed;
@@ -506,8 +508,8 @@ bool UTNFITSWriterL1a::TestUTCOnlyEvents()
 
   vector<MReadOutAssembly*> R = ReadWithLoader(FileName);
   if (R.size() == 1) {
-    Passed = ExpectedToFail(EvaluateTrue("Write()", "UTC time only", "The TIME column is not 0", R[0]->GetTimeRTS().GetAsDouble() != 0.0)) && Passed;
-    Passed = ExpectedToFail(EvaluateNear("Write()", "UTC time only", "The TIME column is the RTS computed from the UTC time", R[0]->GetTimeRTS().GetAsDouble(), Expected, 1e-6)) && Passed;
+    Passed = EvaluateTrue("Write()", "UTC time only", "The TIME column is not 0", R[0]->GetTimeRTS().GetAsDouble() != 0.0) && Passed;
+    Passed = EvaluateNear("Write()", "UTC time only", "The TIME column is the RTS computed from the UTC time", R[0]->GetTimeRTS().GetAsDouble(), Expected, 1e-6) && Passed;
   } else {
     Passed = Evaluate("Write()", "UTC time only", "One event can be read back", (unsigned int) R.size(), 1u) && Passed;
   }
@@ -552,7 +554,7 @@ bool UTNFITSWriterL1a::TestOverwrite()
   Passed = EvaluateTrue("Create()", "existing file", "Creating over an existing file succeeds", Second) && Passed;
   Passed = Evaluate("Create()", "existing file", "There is exactly one extension", CountExtensions(FileName), 1L) && Passed;
   vector<MReadOutAssembly*> R = ReadWithLoader(FileName);
-  Passed = ExpectedToFail(Evaluate("Create()", "existing file", "Only the new event is read back", (unsigned int) R.size(), 1u)) && Passed;
+  Passed = Evaluate("Create()", "existing file", "Only the new event is read back", (unsigned int) R.size(), 1u) && Passed;
   if (R.size() >= 1) {
     Passed = Evaluate("Create()", "existing file", "The event read back is the new event 99", R[0]->GetID(), (unsigned long) 99) && Passed;
   }
@@ -598,7 +600,7 @@ bool UTNFITSWriterL1a::TestErrors()
     X.Close();
     return true;
   });
-  Passed = ExpectedToFail(EvaluateTrue("Write()", "without Create()", "Writing and closing without a file does not crash", NoFile)) && Passed;
+  Passed = EvaluateTrue("Write()", "without Create()", "Writing and closing without a file does not crash", NoFile) && Passed;
 
   return Passed;
 }
