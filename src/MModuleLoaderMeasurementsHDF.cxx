@@ -180,7 +180,7 @@ bool MModuleLoaderMeasurementsHDF::Initialize()
   m_NGoodEventsInFile = 0;
   m_RTBEventCounter = 0;
     
-  return MModule::Initialize();
+  return MModuleLoaderMeasurements::Initialize();
 }
 
 

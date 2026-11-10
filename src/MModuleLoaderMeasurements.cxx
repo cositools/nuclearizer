@@ -80,7 +80,7 @@ bool MModuleLoaderMeasurements::Initialize()
 {
   // Initialize the module 
 
-  return true;
+  return MModule::Initialize();
 }
 
 

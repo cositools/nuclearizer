@@ -111,7 +111,7 @@ bool MModuleLoaderMeasurementsFITS::Initialize()
     return false;
   }
 
-  return MModule::Initialize();
+  return MModuleLoaderMeasurements::Initialize();
 }
 
 
