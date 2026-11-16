@@ -549,6 +549,10 @@ bool MModuleTACCalibration::LoadTACCalFile(MString FName, const MStripMap* Strip
   // Detector, side, and strip are taken from the strip map via the read-out ID:
   // The detector column natively holds the DIB ID, and the side column does not account for the ASIC polarities,
   // thus both are ignored and only the strip column is cross-checked
+
+  m_TACCal.clear();
+  m_DetectorIDs.clear();
+
   if (StripMap == nullptr) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Error: A strip map is required to assign detector, side, and strip to the entries of the TAC calibration file "<<FName<<endl;
     return false;
