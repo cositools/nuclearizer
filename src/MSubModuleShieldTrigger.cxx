@@ -77,17 +77,6 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_TotalShieldDeadtime = vector<double>(nShieldPanels, 0.0);
   m_ShieldHitCrystalID = vector<vector<int>>(nShieldPanels);
   m_DetectorsHitForShieldVeto = vector<int>(nDets, 0);
-
-  // Initialize shield panel groups (based on detector IDs)
-  // These map crystal IDs to panel groups
-  m_ShieldPanelGroups = {
-    { 0, 1, 2},      // Panel 0: Detectors 0-3
-    { 0, 1, 2},      // Panel 1: Detectors 4-7
-    { 0, 1, 2, 4 },    // Panel 2: Detectors 8-11
-    { 0, 1, 2, 4 },  // Panel 3: Detectors 12-15
-    { 0, 1, 2, 3 },      // Panel 4: Detectors 16-18
-    { 0, 1, 2, 3 }       // Panel 5: Detectors 19-21
-  };
 }
 
 
@@ -200,23 +189,23 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
       // Find which panel group this detector belongs to
       int ShieldDetGroup = -1;
 
-      if (DetectorID == "Z0" && CrystalID == 4) {
-        ShieldDetGroup = 2;
-      }
-      else if (DetectorID == "Z1" && CrystalID == 4) {
-        ShieldDetGroup = 3;
-      }
-      else if (DetectorID == "X0") {
+      if (DetectorID == "X0") {
         ShieldDetGroup = 0;
       }
-      else if(DetectorID == "X1") {
+      else if (DetectorID == "X1") {
         ShieldDetGroup = 1;
       }
-      else if (DetectorID == "Y0") {
+      else if (DetectorID == "Y0" || (DetectorID == "Z0" && CrystalID == 4)) {
         ShieldDetGroup = 2;
       }
-      else if(DetectorID == "Y1") {
+      else if (DetectorID == "Y1" || (DetectorID == "Z1" && CrystalID == 0)) {
         ShieldDetGroup = 3;
+      }
+      else if (DetectorID == "Z0" && CrystalID >= 0 && CrystalID <= 3) {
+        ShieldDetGroup = 4;
+      }
+      else if (DetectorID == "Z1" && CrystalID >= 1 && CrystalID <= 4) {
+        ShieldDetGroup = 5;
       }
       else {
         if (g_Verbosity >= c_Warning) {

@@ -359,13 +359,42 @@ bool UTNSubModuleShieldTrigger::TestPanels()
       MSubModuleShieldTrigger Z;
       Passed = EvaluateTrue("Initialize()", MString("valid file, shield detector ") + D + " crystal " + Crystal, "Initialize succeeds", InitializeStandard(Z)) && Passed;
       Analyze(Z, 300.0, D, Crystal);
-      if (Crystal < 4) {
-        // Known bug: only crystal 4 of the bottom shield vetoes
-        Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", MString("shield detector ") + D + " crystal " + Crystal, "A hit creates a veto", Z.HasShieldVeto())) && Passed;
-      } else {
-        Passed = EvaluateTrue("AnalyzeEvent()", MString("shield detector ") + D + " crystal " + Crystal, "A hit creates a veto", Z.HasShieldVeto()) && Passed;
-      }
+      Passed = EvaluateTrue("AnalyzeEvent()", MString("shield detector ") + D + " crystal " + Crystal, "A hit creates a veto", Z.HasShieldVeto()) && Passed;
     }
+  }
+
+  // Electronics sharing from the shield channel distribution: Y0 shares Z0-4,
+  // Y1 shares Z1-0, and the remaining Z0/Z1 crystals form separate groups.
+  struct PanelPair {
+    MString FirstDetector;
+    int FirstCrystal;
+    MString SecondDetector;
+    int SecondCrystal;
+    bool SharesDeadTime;
+  };
+  vector<PanelPair> Pairs = {
+    { "Y0", 0, "Z0", 4, true },
+    { "Y1", 2, "Z1", 0, true },
+    { "Z0", 0, "Z0", 3, true },
+    { "Z1", 1, "Z1", 4, true },
+    { "Y0", 0, "Z0", 0, false },
+    { "Y1", 2, "Z1", 1, false },
+    { "Y1", 2, "Z1", 4, false },
+    { "Z0", 0, "Z1", 1, false }
+  };
+  for (const PanelPair& Pair : Pairs) {
+    MSubModuleShieldTrigger M;
+    MString Scenario = Pair.FirstDetector + " crystal " + Pair.FirstCrystal +
+      " followed by " + Pair.SecondDetector + " crystal " + Pair.SecondCrystal;
+    if (InitializeStandard(M) == false) {
+      Passed = EvaluateTrue("Initialize()", Scenario, "Initialize succeeds", false) && Passed;
+      continue;
+    }
+    Analyze(M, 300.0, Pair.FirstDetector, Pair.FirstCrystal);
+    // 3 us is after the 1 us coincidence window, but inside the 5 us dead time.
+    Analyze(M, 300.000003, Pair.SecondDetector, Pair.SecondCrystal);
+    Passed = Evaluate("IsShieldDead()", Scenario, "Only a hit sharing the busy electronics is rejected", M.IsShieldDead(), Pair.SharesDeadTime) && Passed;
+    Passed = EvaluateNear("GetShieldDeadTimeEnd()", Scenario, "An independent group starts its own dead time", M.GetShieldDeadTimeEnd().GetAsDouble(), 300.0 + (Pair.SharesDeadTime ? 5e-6 : 8e-6), 2e-9) && Passed;
   }
 
   // A panel's dead time from an earlier window must not veto a later event after a short window on another panel

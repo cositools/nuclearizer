@@ -176,8 +176,6 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Total Deadtime (added up over time) for each shield panel
   vector<double> m_TotalShieldDeadtime;
   
-  //! Group of shield numbers per panel
-  vector<vector<int>> m_ShieldPanelGroups;
   //! Shield crystal IDs for particular hits
   vector<vector<int>> m_ShieldHitCrystalID;
 
