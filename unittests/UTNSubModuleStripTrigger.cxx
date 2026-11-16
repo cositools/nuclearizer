@@ -216,7 +216,7 @@ bool UTNSubModuleStripTrigger::TestInitialize()
     ShortFile.SetDeadtimeFileName(Short);
     return ShortFile.Initialize() == false;
   });
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "dead time file with only a header", "Initialize returns false without crashing", ShortRejected)) && Passed;
+  Passed = EvaluateTrue("Initialize()", "dead time file with only a header", "Initialize returns false without crashing", ShortRejected) && Passed;
 
   MString FewValues = GetTemporaryFileName("fewvalues.txt");
   Passed = EvaluateTrue("WriteTextFile()", "fewvalues.txt", "The fixture file is written", WriteTextFile(FewValues, "# window, per channel, delay 1, delay 2, fast clear\n1e-6 2e-6\n")) && Passed;
@@ -225,7 +225,7 @@ bool UTNSubModuleStripTrigger::TestInitialize()
     FewFile.SetDeadtimeFileName(FewValues);
     return FewFile.Initialize() == false;
   });
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "dead time file with two of five values", "Initialize returns false without crashing", FewRejected)) && Passed;
+  Passed = EvaluateTrue("Initialize()", "dead time file with two of five values", "Initialize returns false without crashing", FewRejected) && Passed;
 
   MSubModuleStripTrigger Good;
   Passed = EvaluateTrue("Initialize()", "dead time file", "Initialize succeeds", InitializeModule(Good)) && Passed;

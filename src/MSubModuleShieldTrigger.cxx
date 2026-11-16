@@ -101,7 +101,7 @@ bool MSubModuleShieldTrigger::Initialize()
     return false;
   }
   if (ParseDeadtimeFile() == false) {
-    if (g_Verbosity >= c_Error) cout<<"Error: Deadtime parameters file not found"<<endl;
+    if (g_Verbosity >= c_Error) cout<<"Error: Unable to read deadtime parameters file"<<endl;
     return false;
   }
 

@@ -101,7 +101,7 @@ bool MSubModuleStripTrigger::Initialize()
     return false;
   }
   if (ParseDeadtimeFile() == false) {
-    if (g_Verbosity >= c_Error) cout<<"Error: Deadtime parameters file not found"<<endl;
+    if (g_Verbosity >= c_Error) cout<<"Error: Unable to read deadtime parameters file"<<endl;
     return false;
   }
 
@@ -471,11 +471,17 @@ bool MSubModuleStripTrigger::ParseDeadtimeFile()
     return false;
   }
 
-  m_StripCoincidenceWindowFromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(0);
-  m_ASICDeadTimePerChannelFromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(1);
-  m_StripDelayAfter1FromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(2);
-  m_StripDelayAfter2FromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(3);
-  m_FastClearDeadTimeFromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(4);
+  MTokenizer* StripTokenizer = Parser.GetTokenizerAt(1);
+  if (StripTokenizer->GetNTokens() != 5) {
+    if (g_Verbosity >= c_Error) cout << m_Name << ": Strip deadtime row must contain exactly 5 values" << endl;
+    return false;
+  }
+
+  m_StripCoincidenceWindowFromFile = StripTokenizer->GetTokenAtAsDouble(0);
+  m_ASICDeadTimePerChannelFromFile = StripTokenizer->GetTokenAtAsDouble(1);
+  m_StripDelayAfter1FromFile = StripTokenizer->GetTokenAtAsDouble(2);
+  m_StripDelayAfter2FromFile = StripTokenizer->GetTokenAtAsDouble(3);
+  m_FastClearDeadTimeFromFile = StripTokenizer->GetTokenAtAsDouble(4);
 
   return true;
 }
