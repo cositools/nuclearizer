@@ -30,6 +30,7 @@
 #include "MFITSWriterL1a.h"
 
 // Standard libs:
+#include <cmath>
 
 // MEGAlib libs:
 #include "MStripHit.h"
@@ -59,8 +60,8 @@ MFITSWriterL1a::MFITSWriterL1a()
   m_BatchStartRow = 1;
   m_BatchEventCount = 0;
   m_HasEvents = false;
-  m_FirstEventTime_RTS = 0;
-  m_LastEventTime_RTS = 0;
+  m_FirstEventTime = 0;
+  m_LastEventTime = 0;
 }
 
 
@@ -69,8 +70,7 @@ MFITSWriterL1a::MFITSWriterL1a()
 
 MFITSWriterL1a::~MFITSWriterL1a()
 {
-  delete m_FITSFile;
-  m_FITSFile = nullptr;
+  Close();
 }
 
 
@@ -80,8 +80,13 @@ MFITSWriterL1a::~MFITSWriterL1a()
 bool MFITSWriterL1a::Create(const MString& FileName)
 {
   // Create the FITS file with an empty primary HDU and the GED_L1A extension.
+  if (m_FITSFile != nullptr) Close();
+  if (FileName == "") return false;
+
   try {
-    m_FITSFile = new FITS(string(FileName), RWmode::Write);
+    string FitsFileName = string(FileName);
+    if (FitsFileName[0] != '!') FitsFileName.insert(0, "!");
+    m_FITSFile = new FITS(FitsFileName, RWmode::Write);
 
     // Primary header (Table 6.2d primary)
     PHDU& primary = m_FITSFile->pHDU();
@@ -180,6 +185,9 @@ bool MFITSWriterL1a::Create(const MString& FileName)
     return true;
   } catch (const FitsException& e) {
     if (g_Verbosity >= c_Error) cout << "MFITSWriterL1a: Create error: " << e.message() << endl;
+    delete m_FITSFile;
+    m_FITSFile = nullptr;
+    m_Table = nullptr;
     return false;
   }
 }
@@ -190,15 +198,30 @@ bool MFITSWriterL1a::Create(const MString& FileName)
 
 bool MFITSWriterL1a::Write(MReadOutAssembly* Event)
 {
+  if (m_FITSFile == nullptr || m_Table == nullptr || Event == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "MFITSWriterL1a: Write error:"
+           << (m_FITSFile == nullptr ? " m_FITSFile is null." : "")
+           << (m_Table == nullptr ? " m_Table is null." : "")
+           << (Event == nullptr ? " Event is null." : "") << endl;
+    }
+    return false;
+  }
 
-  double time = Event->GetTimeRTS().GetAsDouble();
+  // Set Time
+  MTime TimeUTC = Event->GetTimeUTC();
+  if (TimeUTC == 0) {
+    TimeUTC = Event->ComputeUTCfromRTSTime(Event->GetTimeRTS());
+  }
+  const MTime FITSEpochUTC(2025, 1, 1, 0, 0, 0, 0);
+  double secSince2025UTC = (TimeUTC - FITSEpochUTC).GetAsDouble();
   if (!m_HasEvents) {
-    m_FirstEventTime_RTS = time;
-    m_LastEventTime_RTS = time;
+    m_FirstEventTime = secSince2025UTC;
+    m_LastEventTime = secSince2025UTC;
     m_HasEvents = true;
   } else {
-    if (time < m_FirstEventTime_RTS) m_FirstEventTime_RTS = time;
-    if (time > m_LastEventTime_RTS) m_LastEventTime_RTS = time;
+    if (secSince2025UTC < m_FirstEventTime) m_FirstEventTime = secSince2025UTC;
+    if (secSince2025UTC > m_LastEventTime) m_LastEventTime = secSince2025UTC;
   }
 
   unsigned int nStripHits = Event->GetNStripHits();
@@ -220,7 +243,7 @@ bool MFITSWriterL1a::Write(MReadOutAssembly* Event)
     tac[i]      = hit->GetTAC();
   }
 
-  m_BatchTIME.push_back(time);
+  m_BatchTIME.push_back(secSince2025UTC);
   m_BatchEVENTID.push_back((uint32_t)Event->GetID());
   m_BatchEVENTTYPE.push_back(0);            // TODO
   m_BatchNUMSTRIPHIT.push_back(nStripHits);
@@ -245,6 +268,14 @@ bool MFITSWriterL1a::Write(MReadOutAssembly* Event)
 
 bool MFITSWriterL1a::FlushBatch()
 {
+  if (m_FITSFile == nullptr || m_Table == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "MFITSWriterL1a: FlushBatch error:"
+           << (m_FITSFile == nullptr ? " m_FITSFile is null." : "")
+           << (m_Table == nullptr ? " m_Table is null." : "") << endl;
+    }
+    return false;
+  }
   if (m_BatchEventCount == 0) return true;
   try {
     long firstRow = m_BatchStartRow;
@@ -293,12 +324,12 @@ void MFITSWriterL1a::Close()
 
   if (m_HasEvents && m_Table != nullptr) {
     try {
-      m_Table->addKey("TSTART", m_FirstEventTime_RTS, "[s] Observation start");
-      m_Table->addKey("TSTOP", m_LastEventTime_RTS, "[s] Observation stop");  // "stopsince" is verbatim from Table 6.2d (doc typo)
+      m_Table->addKey("TSTART", m_FirstEventTime, "[s] Observation start");
+      m_Table->addKey("TSTOP", m_LastEventTime, "[s] Observation stop");  // "stopsince" is verbatim from Table 6.2d (doc typo)
 
       constexpr time_t MISSION_EPOCH_UNIX = 1735689600;  // 2025-01-01T00:00:00 UTC
-      time_t startUnix = MISSION_EPOCH_UNIX + (time_t)m_FirstEventTime_RTS;
-      time_t stopUnix  = MISSION_EPOCH_UNIX + (time_t)m_LastEventTime_RTS;
+      time_t startUnix = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_FirstEventTime));
+      time_t stopUnix  = MISSION_EPOCH_UNIX + static_cast<time_t>(std::floor(m_LastEventTime));
       char startBuf[32], stopBuf[32];
       strftime(startBuf, sizeof(startBuf), "%Y-%m-%dT%H:%M:%S", gmtime(&startUnix));
       strftime(stopBuf,  sizeof(stopBuf),  "%Y-%m-%dT%H:%M:%S", gmtime(&stopUnix));
@@ -332,6 +363,22 @@ void MFITSWriterL1a::Close()
   delete m_FITSFile;   // CCfits flushes + closes on destruction
   m_FITSFile = nullptr;
   m_Table = nullptr;
+  m_BatchStartRow = 1;
+  m_BatchEventCount = 0;
+  m_HasEvents = false;
+  m_FirstEventTime = 0;
+  m_LastEventTime = 0;
+  m_BatchTIME.clear();
+  m_BatchEVENTID.clear();
+  m_BatchEVENTTYPE.clear();
+  m_BatchNUMSTRIPHIT.clear();
+  m_BatchHITTYPE.clear();
+  m_BatchDETID.clear();
+  m_BatchSTRIPID.clear();
+  m_BatchSIDEID.clear();
+  m_BatchFASTTIME.clear();
+  m_BatchPHA.clear();
+  m_BatchTAC.clear();
 }
 
 
