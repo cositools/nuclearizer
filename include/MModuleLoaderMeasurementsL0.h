@@ -115,7 +115,7 @@ class MModuleLoaderMeasurementsL0 : public MModuleLoaderMeasurements
   unsigned long m_PacketsRead;
 
   //! Detector IDs of the GeD_X detectors in the geometry
-  std::set<unsigned int> m_DetectorIDsInGeometry;
+  set<unsigned int> m_DetectorIDsInGeometry;
   //! Number of events skipped because all their strip hits were on detectors not in the geometry
   unsigned long m_NEventsOnlyUnknownDetectors;
 
