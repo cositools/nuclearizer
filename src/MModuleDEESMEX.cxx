@@ -177,13 +177,8 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_ShieldReadout.AnalyzeEvent(Event);
 
 
-  bool HasShieldHit = Event->GetDEECrystalHitListReference().empty() == false;
-  if (HasShieldHit == true && Event->GetTimeUTC() < m_ShieldTrigger.GetShieldDeadTimeEnd()) {
-    Event->GetDEECrystalHitListReference().clear();
-  }
-
-
   // Step (6): the shield veto / trigger, handle pre-scalers, calculate dead-time, calculate random coincidence time
+  // Let the shield module accept coincident hits and reject hits on busy panels.
   m_ShieldTrigger.Clear();
   m_ShieldTrigger.AnalyzeEvent(Event);
   if (m_EnableShieldVeto == true && m_ShieldTrigger.HasShieldVeto() == true) {

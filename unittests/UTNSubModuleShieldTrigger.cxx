@@ -155,7 +155,6 @@ bool UTNSubModuleShieldTrigger::TestDefaults()
   bool Passed = true;
 
   MSubModuleShieldTrigger M;
-  Passed = EvaluateFalse("HasTrigger()", "default", "No trigger by default", M.HasTrigger()) && Passed;
   Passed = EvaluateFalse("HasShieldVeto()", "default", "No veto by default", M.HasShieldVeto()) && Passed;
   Passed = EvaluateFalse("IsShieldDead()", "default", "The shield is not dead by default", M.IsShieldDead()) && Passed;
   Passed = Evaluate("GetShieldHitCounts()", "default", "No shield hits", M.GetShieldHitCounts(), 0) && Passed;
@@ -232,7 +231,6 @@ bool UTNSubModuleShieldTrigger::TestVeto()
 
   // Shield hit at 100 s in X0 crystal 3: dead time 1 + 2 * 1 + 2 = 5 us (equal to the pulse duration)
   Analyze(M, 100.0, "X0", 3);
-  Passed = ExpectedToFail(EvaluateTrue("HasTrigger()", "shield hit", "A shield hit above threshold raises a shield trigger", M.HasTrigger())) && Passed;
   Passed = EvaluateTrue("HasShieldVeto()", "shield hit", "The shield hit vetoes its own event", M.HasShieldVeto()) && Passed;
   Passed = EvaluateNear("GetShieldVetoTime()", "shield hit", "The veto time is the shield hit time", M.GetShieldVetoTime().GetAsDouble(), 100.0, 1e-9) && Passed;
   Passed = EvaluateNear("GetShieldDeadTimeEnd()", "shield hit", "The shield dead time ends 5 us after the hit", M.GetShieldDeadTimeEnd().GetAsDouble(), 100.0 + 5e-6, 2e-9) && Passed;
@@ -241,7 +239,6 @@ bool UTNSubModuleShieldTrigger::TestVeto()
   // GeD event 3 us later: within dead time + veto window extension
   Analyze(M, 100.000003);
   Passed = EvaluateTrue("HasShieldVeto()", "GeD event 3 us after the shield hit", "The event is vetoed", M.HasShieldVeto()) && Passed;
-  Passed = EvaluateFalse("HasTrigger()", "GeD event 3 us after the shield hit", "There is no shield trigger without shield hit", M.HasTrigger()) && Passed;
 
   // GeD event 5.2 us later: still within the 0.5 us veto window extension
   Analyze(M, 100.0000052);
@@ -251,7 +248,7 @@ bool UTNSubModuleShieldTrigger::TestVeto()
   Analyze(M, 100.00001);
   Passed = EvaluateFalse("HasShieldVeto()", "GeD event 10 us after the shield hit", "The event is not vetoed", M.HasShieldVeto()) && Passed;
 
-  // Shield hit below the threshold does not create a trigger
+  // Shield hit below the threshold does not create a veto
   MSubModuleShieldTrigger T;
   Passed = EvaluateTrue("Initialize()", "valid file, below threshold test", "Initialize succeeds", InitializeStandard(T)) && Passed;
   Analyze(T, 200.0, "X0", 3, -5.0);
@@ -283,6 +280,11 @@ bool UTNSubModuleShieldTrigger::TestDeadTime()
   Analyze(M, 100.000003, "X0", 5);
   Passed = EvaluateTrue("IsShieldDead()", "hit within dead time", "The shield is dead", M.IsShieldDead()) && Passed;
   Passed = Evaluate("GetBGOHitsErased()", "hit within dead time", "One hit is erased", M.GetBGOHitsErased(), 1) && Passed;
+
+  Analyze(M, 100.0000065);
+  Passed = EvaluateTrue("HasShieldVeto()", "6.5 us after the first hit", "The extended window still vetoes", M.HasShieldVeto()) && Passed;
+  Analyze(M, 100.0000076);
+  Passed = EvaluateFalse("HasShieldVeto()", "after the extended window", "The veto expires", M.HasShieldVeto()) && Passed;
 
   // Fourth hit after the dead time: the previous 7 us are accumulated
   Analyze(M, 100.001, "X0", 3);
@@ -409,7 +411,7 @@ bool UTNSubModuleShieldTrigger::TestPanels()
   if (LongWindow > ShortWindow + 1e-6) {
     // GeD-only event after the X1 window (and its 0.5 us extension), but within the old X0 window length
     Analyze(P, 200.0 + LongWindow, "");
-    Passed = ExpectedToFail(EvaluateFalse("HasShieldVeto()", "GeD-only event after the X1 window, within the length of an old X0 window", "No panel is busy, thus the event is not vetoed", P.HasShieldVeto())) && Passed;
+    Passed = EvaluateFalse("HasShieldVeto()", "GeD-only event after the X1 window, within the length of an old X0 window", "No panel is busy, thus the event is not vetoed", P.HasShieldVeto()) && Passed;
   }
 
   // An unknown detector is ignored

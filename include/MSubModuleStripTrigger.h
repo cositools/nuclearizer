@@ -76,9 +76,6 @@ class MSubModuleStripTrigger : public MSubModule
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
-  //! Return true if we have a trigger - filled after AnalyzeEvent
-  bool HasTrigger() const { return m_HasTrigger; }
-
   //! Return true if we have a Guard Ring veto - filled after AnalyzeEvent
   bool HasGuardRingVeto() const { return m_HasGuardRingVeto; }
 
@@ -134,9 +131,6 @@ class MSubModuleStripTrigger : public MSubModule
  private:
   //! Current event time
   double m_EventTime;
-
-  //! Flag indicating that a trigger has been raised
-  bool m_HasTrigger;
 
   //! Flag indicating that a Guard Ring veto has been raised
   bool m_HasGuardRingVeto;

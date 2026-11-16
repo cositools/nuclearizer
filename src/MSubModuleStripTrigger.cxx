@@ -54,7 +54,6 @@ MSubModuleStripTrigger::MSubModuleStripTrigger() : MSubModule()
   m_Name = "DEE strip trigger module";
 
   m_EventTime = 0.0;
-  m_HasTrigger = false;
   m_HasGuardRingVeto = false;
   m_DeadTimeEnd = MTime(0.0);
   m_IsGeDDead = false;
@@ -121,7 +120,6 @@ void MSubModuleStripTrigger::Clear()
 {
   // Clear for the next event
 
-  m_HasTrigger = false;
   m_HasGuardRingVeto = false;
   // m_DeadTimeEnd = MTime(0.0);
 
@@ -360,7 +358,6 @@ bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine for strip trigger
 
-  m_HasTrigger = false;
   m_HasGuardRingVeto = false;
 
   // Process strip hits and calculate deadtime
@@ -387,9 +384,6 @@ bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   for (int detID : detectorsHit) {
     m_NumStripTriggers[detID]++;
   }
-
-  // We have a valid trigger
-  m_HasTrigger = true;
 
   // Update time tracking
   if (m_EventTime < m_FirstTime) {

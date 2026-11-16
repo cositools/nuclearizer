@@ -79,9 +79,6 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Main data analysis routine
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
-  //! Return true if we have a trigger - filled after AnalyzeEvent
-  bool HasTrigger() const { return m_HasTrigger; }
-
   //! Return true if we have a shield veto - filled after AnalyzeEvent
   bool HasShieldVeto() const { return m_HasShieldVeto; }
 
@@ -132,8 +129,6 @@ class MSubModuleShieldTrigger : public MSubModule
   //! Current event time
   double m_EventTime;
 
-  //! Flag indicating that a trigger has been raised
-  bool m_HasTrigger;
   //! Flag indicating that a shield veto has been raised
   bool m_HasShieldVeto;
   //! Time when the shield dead time ends

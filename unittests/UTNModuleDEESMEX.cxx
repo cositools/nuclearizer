@@ -148,11 +148,14 @@ MDGeometryQuest* UTNModuleDEESMEX::GetGeometry()
   G += "Volume WorldVolume\nWorldVolume.Material Vacuum\nWorldVolume.Visibility 0\nWorldVolume.Shape Sphere 0.0 100\nWorldVolume.Mother 0\n\n";
   G += "Volume Wafer\nWafer.Material Germanium\nWafer.Shape BRIK 4.0 4.0 0.75\nWafer.Position 0.0 0.0 0.0\nWafer.Mother WorldVolume\n\n";
   G += "Volume Shield\nShield.Material BGO\nShield.Shape BRIK 2.0 2.0 2.0\nShield.Position 0.0 0.0 10.0\nShield.Mother WorldVolume\n\n";
+  G += "Volume Shield2\nShield2.Material BGO\nShield2.Shape BRIK 2.0 2.0 2.0\nShield2.Position -6.0 0.0 10.0\nShield2.Mother WorldVolume\n\n";
   G += "MDStrip3D GeD_0\nGeD_0.DetectorVolume Wafer\nGeD_0.SensitiveVolume Wafer\nGeD_0.Offset 0.0 0.0\nGeD_0.StripNumber 64 64\n";
   G += "GeD_0.NoiseThreshold 15\nGeD_0.TriggerThreshold 30\nGeD_0.DepthResolution 100 0.02\nGeD_0.DepthResolution 1000 0.02\n";
   G += "GeD_0.EnergyResolution Gaus 100 100 1\nGeD_0.EnergyResolution Gaus 1000 1000 2\nGeD_0.FailureRate 0.0\n\n";
   G += "Voxel3D ACS_X0_3\nACS_X0_3.DetectorVolume Shield\nACS_X0_3.SensitiveVolume Shield\nACS_X0_3.Offset 0.0 0.0 0.0\nACS_X0_3.VoxelNumber 2 2 2\n";
   G += "ACS_X0_3.NoiseThreshold 10\nACS_X0_3.TriggerThreshold 20\nACS_X0_3.EnergyResolution Gaus 100 100 5\nACS_X0_3.EnergyResolution Gaus 1000 1000 10\nACS_X0_3.FailureRate 0.0\n\n";
+  G += "Voxel3D ACS_X0_2\nACS_X0_2.DetectorVolume Shield2\nACS_X0_2.SensitiveVolume Shield2\nACS_X0_2.Offset 0.0 0.0 0.0\nACS_X0_2.VoxelNumber 2 2 2\n";
+  G += "ACS_X0_2.NoiseThreshold 10\nACS_X0_2.TriggerThreshold 20\nACS_X0_2.EnergyResolution Gaus 100 100 5\nACS_X0_2.EnergyResolution Gaus 1000 1000 10\nACS_X0_2.FailureRate 0.0\n\n";
   G += "Trigger T1\nT1.Veto false\nT1.TriggerByChannel true\nT1.Detector GeD_0 1\n\n";
   G += "Trigger T2\nT2.Veto false\nT2.TriggerByChannel true\nT2.Detector ACS_X0_3 1\n";
 
@@ -245,9 +248,9 @@ bool UTNModuleDEESMEX::WriteFiles()
   m_TACCalFileName = GetTemporaryFileName("deesmex.taccal.csv");
   Written = WriteTextFile(m_TACCalFileName, TAC) && Written;
 
-  // Shield energy correction for X0 crystal 3
+  // Shield energy correction for the two X0 crystals
   m_ShieldCorrectionFileName = GetTemporaryFileName("deesmex.shield.txt");
-  Written = WriteTextFile(m_ShieldCorrectionFileName, "X0 3 1 1 1 0 0 1.0 0.0 1.0 0.0 0.0\n") && Written;
+  Written = WriteTextFile(m_ShieldCorrectionFileName, "X0 3 1 1 1 0 0 1.0 0.0 1.0 0.0 0.0\nX0 2 1 1 1 0 0 1.0 0.0 1.0 0.0 0.0\n") && Written;
 
   // Dead times
   m_DeadtimeFileName = GetTemporaryFileName("deesmex.deadtime.txt");
@@ -636,6 +639,25 @@ bool UTNModuleDEESMEX::TestShieldVeto()
   Passed = EvaluateTrue("AnalyzeEvent()", "GeD and shield hit", "The shield veto is set", E.GetShieldVeto()) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "GeD and shield hit", "The c_DetectorEffectsEngine analysis progress is set", E.HasAnalysisProgress(MAssembly::c_DetectorEffectsEngine)) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "GeD and shield hit", "No strip hits are created for a vetoed event", E.GetNStripHits(), 0u) && Passed;
+
+  // A second crystal extends the veto from 5 to 7 us; strip processing then resumes.
+  vector<MSimEvent*> Later = ReadSimEvents(
+    "SE\nID 2 2\nTI 20.0000005\nHTsim 8;-5.5;0.5;10.5;300.0;0.0;1\n"
+    "SE\nID 3 3\nTI 20.0000065\nHTsim 3;0.0625;0.1875;0.0;500.0;0.0;1\n"
+    "SE\nID 4 4\nTI 20.000008\nHTsim 3;0.0625;0.1875;0.0;500.0;0.0;1\n");
+  Passed = EvaluateSize("ReadSimEvents()", "shield coincidence", "Three follow-up events are read", Later.size(), 3) && Passed;
+  for (unsigned int i = 0; i < Later.size(); ++i) {
+    MReadOutAssembly FollowUp;
+    FollowUp.SetSimulatedEvent(Later[i]);
+    if (Init == false) continue;
+    g_Verbosity = c_Quiet;
+    DisableDefaultStreams();
+    M.AnalyzeEvent(&FollowUp);
+    EnableDefaultStreams();
+    g_Verbosity = OldVerbosity;
+    Passed = Evaluate("GetShieldVeto()", i, "Coincident hits extend the veto, which then expires", FollowUp.GetShieldVeto(), i < 2) && Passed;
+    if (i == 2) Passed = EvaluateTrue("AnalyzeEvent()", "after the extended veto", "Strip processing resumes", FollowUp.GetNStripHits() > 0) && Passed;
+  }
 
   // With the shield veto disabled the GeD hit is processed
   vector<MSimEvent*> Sim2 = ReadSimEvents("SE\nID 1 1\nTI 20.0\nHTsim 3;0.0625;0.1875;0.0;500.0;0.0;1\nHTsim 8;0.5;0.5;10.5;300.0;0.0;1\n");
