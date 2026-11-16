@@ -193,8 +193,9 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
 
   bool HasStripHit = Event->GetDEEStripHitLVListReference().empty() == false ||
                      Event->GetDEEStripHitHVListReference().empty() == false;
-  if (HasStripHit == true && Event->GetTimeUTC() < m_StripTrigger.GetStripDeadTimeEnd()) {
-    // Strip/GeD deadtime only gates the strip path. Shield processing above still runs.
+  if (HasStripHit == true && Event->GetTimeUTC() < m_StripTrigger.GetStripDeadTimeEnd() &&
+      m_StripTrigger.IsInCoincidenceWindow(Event->GetTimeUTC()) == false) {
+    // Coincident hits can extend readout; fast clear and later busy hits still gate strips.
     return true;
   }
 

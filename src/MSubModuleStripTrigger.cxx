@@ -27,6 +27,7 @@
 #include "MSubModuleStripTrigger.h"
 
 // Standard libs:
+#include <algorithm>
 #include <limits>
 
 // ROOT libs:
@@ -58,6 +59,7 @@ MSubModuleStripTrigger::MSubModuleStripTrigger() : MSubModule()
   m_DeadTimeEnd = MTime(0.0);
   m_IsGeDDead = false;
   m_FastClearDeadTime = 1e-6;
+  m_FastClearDeadTimeEnd = MTime(0.0);
   m_FastClearDeadTimeFromFile = 1e-6;
 
   m_StripsCurrentDeadtime = 0.0;
@@ -113,6 +115,25 @@ bool MSubModuleStripTrigger::Initialize()
   m_StripDelayAfter2 = m_StripDelayAfter2FromFile;
   m_StripDelayAfter = m_StripDelayAfter1 + m_StripDelayAfter2;
 
+  // Start each run with fresh timing, channel history, and statistics.
+  m_EventTime = 0.0;
+  m_DeadTimeEnd = MTime(0.0);
+  m_IsGeDDead = false;
+  m_FastClearDeadTimeEnd = MTime(0.0);
+  m_ASICLastHitTime = -10.0;
+  m_StripsCurrentDeadtime = 0.0;
+  m_StripsTotalDeadtime = 0.0;
+  m_TotalStripHitsCounter = 0;
+  m_TotalGuardRingHitsCounter = 0;
+  m_FirstTime = std::numeric_limits<double>::max();
+  m_LastTime = 0.0;
+  m_ASICDeadTime.assign(nDets, vector<double>(nASICs, 0.0));
+  m_ASICHitStripID.assign(nDets, vector<vector<int>>(nASICs));
+  m_ASICHitStripID_noDT.assign(nDets, vector<vector<int>>(nASICs));
+  m_TempEvtTimes.assign(nDets, vector<vector<double>>(nASICs));
+  m_NumStripTriggers.assign(nDets, 0);
+  Clear();
+
   return MSubModule::Initialize();
 }
 
@@ -138,8 +159,21 @@ void MSubModuleStripTrigger::ApplyFastClearDeadtime(const MTime& ShieldVetoTime)
 {
   // Apply GeD deadtime cause by shield hard veto
 
-  m_DeadTimeEnd = MTime(ShieldVetoTime.GetAsSeconds() + m_FastClearDeadTime);
-  m_StripsTotalDeadtime += m_FastClearDeadTime;
+  double Start = ShieldVetoTime.GetAsSeconds();
+  MTime End = ShieldVetoTime;
+  End += MTime(m_FastClearDeadTime);
+
+  // A shield veto interrupts any pending strip readout at the veto time.
+  if (m_StripsCurrentDeadtime > 0.0) {
+    double ReadoutEnd = m_ASICLastHitTime + m_StripsCurrentDeadtime;
+    m_StripsTotalDeadtime += std::max(0.0, std::min(Start, ReadoutEnd) - m_ASICLastHitTime);
+  }
+
+  // Repeated or overlapping vetoes add only time not already counted.
+  MTime UncountedStart = std::max(ShieldVetoTime, m_FastClearDeadTimeEnd);
+  if (End > UncountedStart) m_StripsTotalDeadtime += (End - UncountedStart).GetAsSeconds();
+  m_FastClearDeadTimeEnd = std::max(m_FastClearDeadTimeEnd, End);
+  m_DeadTimeEnd = m_FastClearDeadTimeEnd;
   m_StripsCurrentDeadtime = 0.0;
 }
 

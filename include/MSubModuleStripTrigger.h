@@ -82,6 +82,13 @@ class MSubModuleStripTrigger : public MSubModule
   //! Return the time when the dead time ends - filled after AnalyzeEvent
   MTime GetStripDeadTimeEnd() const { return m_DeadTimeEnd; }
 
+  //! Check whether a hit can join the current strip readout window
+  bool IsInCoincidenceWindow(const MTime& Time) const {
+    double EventTime = Time.GetAsSeconds();
+    return m_StripsCurrentDeadtime > 0.0 && EventTime >= m_ASICLastHitTime &&
+      EventTime <= m_ASICLastHitTime + m_StripCoincidenceWindow;
+  }
+
   //! Apply GeD deadtime cause by shield hard veto
   void ApplyFastClearDeadtime(const MTime& ShieldVetoTime);
 
@@ -147,6 +154,8 @@ class MSubModuleStripTrigger : public MSubModule
   double m_ASICDeadTimePerChannel;
   //! Fast-clear deadtime after a shield veto
   double m_FastClearDeadTime;
+  //! End of the last fast-clear interval already included in the statistics
+  MTime m_FastClearDeadTimeEnd;
   //! Strip delay before readout
   double m_StripDelayAfter1;
   //! Strip delay for output to settle

@@ -731,11 +731,14 @@ bool UTNModuleDEESMEX::TestDeadTime()
 {
   bool Passed = true;
 
-  // Second event 3 us after the first one: the GeDs are dead (dead time ~ 1 + 2 + 7 us)
-  vector<MSimEvent*> Sim = ReadSimEvents("SE\nID 1 1\nTI 40.0\nHTsim 3;0.0625;0.1875;0.0;500.0;0.0;1\nSE\nID 2 2\nTI 40.000003\nHTsim 3;1.0625;0.1875;0.0;500.0;0.0;2\n");
-  if (Sim.size() != 2) {
+  // A coincident event extends readout from 14 to 18 us; the third event is rejected.
+  vector<MSimEvent*> Sim = ReadSimEvents(
+    "SE\nID 1 1\nTI 40.0\nHTsim 3;0.0625;0.1875;0.0;500.0;0.0;1\n"
+    "SE\nID 2 2\nTI 40.0000005\nHTsim 3;1.0625;0.1875;0.0;500.0;0.0;2\n"
+    "SE\nID 3 3\nTI 40.000015\nHTsim 3;2.0625;0.1875;0.0;500.0;0.0;3\n");
+  if (Sim.size() != 3) {
     for (MSimEvent* S : Sim) delete S;
-    return EvaluateTrue("MFileEventsSim::GetNextEvent()", "two events", "The simulated events can be read", false);
+    return EvaluateTrue("MFileEventsSim::GetNextEvent()", "three events", "The simulated events can be read", false);
   }
 
   MModuleDEESMEX M;
@@ -748,15 +751,19 @@ bool UTNModuleDEESMEX::TestDeadTime()
   E1.SetSimulatedEvent(Sim[0]);
   MReadOutAssembly E2;
   E2.SetSimulatedEvent(Sim[1]);
+  MReadOutAssembly E3;
+  E3.SetSimulatedEvent(Sim[2]);
   if (Init == true) {
     M.AnalyzeEvent(&E1);
     M.AnalyzeEvent(&E2);
+    M.AnalyzeEvent(&E3);
   }
   EnableDefaultStreams();
   g_Verbosity = OldVerbosity;
 
   Passed = EvaluateTrue("AnalyzeEvent()", "first event", "The first event has strip hits", E1.GetNStripHits() > 0) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "second event in dead time", "The second event has no strip hits", E2.GetNStripHits(), 0u) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "second event in coincidence", "Coincident strip hits reach the trigger module", E2.GetNStripHits() > 0) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "third event in extended dead time", "The third event has no strip hits", E3.GetNStripHits(), 0u) && Passed;
 
   if (Init == true) M.Finalize();
 

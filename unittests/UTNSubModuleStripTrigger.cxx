@@ -389,6 +389,12 @@ bool UTNSubModuleStripTrigger::TestDeadTime()
   Passed = Evaluate("GetTriggerRate()", "detector 0", "Three events triggered detector 0", M.GetTriggerRate(0), 3) && Passed;
 
   M.Finalize();
+  Passed = EvaluateTrue("Initialize()", "new run", "Reinitialization succeeds", M.Initialize()) && Passed;
+  Passed = Evaluate("GetTriggerRate()", "new run", "Previous trigger counts are cleared", M.GetTriggerRate(0), 0) && Passed;
+  D.SetTimeUTC(MTime(100.001003));
+  M.AnalyzeEvent(&D);
+  Passed = Evaluate("AnalyzeEvent()", "first event of new run", "Previous dead time does not reject the hits", D.GetNDEEStripHitsLV() + D.GetNDEEStripHitsHV(), 2u) && Passed;
+  Passed = EvaluateNear("GetStripsTotalDeadtime()", "new run", "Previous dead time statistics are cleared", M.GetStripsTotalDeadtime(), 0.0, 1e-15) && Passed;
 
   return Passed;
 }
@@ -409,6 +415,11 @@ bool UTNSubModuleStripTrigger::TestFastClear()
   M.ApplyFastClearDeadtime(MTime(200.25));
   Passed = EvaluateNear("ApplyFastClearDeadtime()", "veto at 200.25 s", "The dead time ends 5 us after the veto", M.GetStripDeadTimeEnd().GetAsDouble(), 200.25 + 5e-6, 1e-9) && Passed;
   Passed = EvaluateNear("ApplyFastClearDeadtime()", "veto at 200.25 s", "The fast clear dead time is added to the total", M.GetStripsTotalDeadtime(), 5e-6, 1e-12) && Passed;
+
+  M.ApplyFastClearDeadtime(MTime(200.25));
+  Passed = EvaluateNear("ApplyFastClearDeadtime()", "same veto again", "The interval is counted only once", M.GetStripsTotalDeadtime(), 5e-6, 1e-12) && Passed;
+  M.ApplyFastClearDeadtime(MTime(200, 250002000));
+  Passed = EvaluateNear("ApplyFastClearDeadtime()", "overlapping veto", "Only the 2 us extension is added", M.GetStripsTotalDeadtime(), 7e-6, 1e-12) && Passed;
 
   M.Finalize();
 
