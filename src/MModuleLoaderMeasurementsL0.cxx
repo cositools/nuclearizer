@@ -272,10 +272,10 @@ bool MModuleLoaderMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
   if (Event->GetNStripHits() == 0) {
     if (Event->HasUnknownDetector_QualityFlag() == true) {
       m_NEventsOnlyUnknownDetectors++;
+      return false;
     } else if (g_Verbosity >= c_Error) {
       cout<<m_XmlTag<<": Event "<<Event->GetID()<<" had no (valid) strip hits"<<endl;
     }
-    return false;
   }
 
   Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
