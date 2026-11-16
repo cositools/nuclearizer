@@ -11,9 +11,7 @@
 
 // Standard libs:
 #include <cmath>
-#include <cstring>
 #include <functional>
-#include <new>
 #include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
@@ -58,8 +56,6 @@ class UTNSubModuleStripTrigger : public MUnitTest
   bool TestDeadTime();
   //! Test the fast-clear dead time after a shield veto
   bool TestFastClear();
-  //! Test the dead time without dead time file (the MModuleDEESMEX default)
-  bool TestWithoutDeadtimeFile();
 
   //! Write the dead time file and return its name, or an empty string on failure
   MString WriteDeadtimeFile();
@@ -85,7 +81,6 @@ bool UTNSubModuleStripTrigger::Run()
   Passed = TestGuardRingVeto() && Passed;
   Passed = TestDeadTime() && Passed;
   Passed = TestFastClear() && Passed;
-  Passed = TestWithoutDeadtimeFile() && Passed;
 
   Summarize();
 
@@ -131,7 +126,7 @@ void UTNSubModuleStripTrigger::AddHit(MReadOutAssembly& Event, unsigned int DetI
 
 bool UTNSubModuleStripTrigger::InitializeModule(MSubModuleStripTrigger& M)
 {
-  // An empty dead time file name would silently select the built-in defaults
+  // Do not initialize if writing the required deadtime file failed.
   MString FileName = WriteDeadtimeFile();
   if (FileName.IsEmpty() == true) return false;
   M.SetDeadtimeFileName(FileName);
@@ -180,7 +175,6 @@ bool UTNSubModuleStripTrigger::TestDefaults()
   bool Passed = true;
 
   MSubModuleStripTrigger M;
-  Passed = EvaluateFalse("HasTrigger()", "default", "No trigger by default", M.HasTrigger()) && Passed;
   Passed = EvaluateFalse("HasGuardRingVeto()", "default", "No guard ring veto by default", M.HasGuardRingVeto()) && Passed;
   Passed = EvaluateFalse("IsGeDDead()", "default", "The detectors are not dead by default", M.IsGeDDead()) && Passed;
   Passed = EvaluateNear("GetStripsTotalDeadtime()", "default", "The total dead time is 0", M.GetStripsTotalDeadtime(), 0.0, 1e-15) && Passed;
@@ -205,10 +199,13 @@ bool UTNSubModuleStripTrigger::TestInitialize()
 
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
+  MSubModuleStripTrigger NoFile;
+  bool NoFileResult = NoFile.Initialize();
   MSubModuleStripTrigger Missing;
   Missing.SetDeadtimeFileName(GetTemporaryFileName("missing.txt"));
   bool MissingResult = Missing.Initialize();
   g_Verbosity = OldVerbosity;
+  Passed = EvaluateFalse("Initialize()", "no dead time file configured", "Initialize returns false", NoFileResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing dead time file", "Initialize returns false", MissingResult) && Passed;
 
   // A file without value line must be rejected, not crash the program
@@ -219,7 +216,7 @@ bool UTNSubModuleStripTrigger::TestInitialize()
     ShortFile.SetDeadtimeFileName(Short);
     return ShortFile.Initialize() == false;
   });
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "dead time file with only a header", "Initialize returns false without crashing", ShortRejected)) && Passed;
+  Passed = EvaluateTrue("Initialize()", "dead time file with only a header", "Initialize returns false without crashing", ShortRejected) && Passed;
 
   MString FewValues = GetTemporaryFileName("fewvalues.txt");
   Passed = EvaluateTrue("WriteTextFile()", "fewvalues.txt", "The fixture file is written", WriteTextFile(FewValues, "# window, per channel, delay 1, delay 2, fast clear\n1e-6 2e-6\n")) && Passed;
@@ -228,7 +225,7 @@ bool UTNSubModuleStripTrigger::TestInitialize()
     FewFile.SetDeadtimeFileName(FewValues);
     return FewFile.Initialize() == false;
   });
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "dead time file with two of five values", "Initialize returns false without crashing", FewRejected)) && Passed;
+  Passed = EvaluateTrue("Initialize()", "dead time file with two of five values", "Initialize returns false without crashing", FewRejected) && Passed;
 
   MSubModuleStripTrigger Good;
   Passed = EvaluateTrue("Initialize()", "dead time file", "Initialize succeeds", InitializeModule(Good)) && Passed;
@@ -260,7 +257,6 @@ bool UTNSubModuleStripTrigger::TestTriggerCondition()
   AddHit(E, 0, 40, false);
   AddHit(E, 1, 7, true);
   Passed = EvaluateTrue("AnalyzeEvent()", "detector 0 both sides, detector 1 LV only", "AnalyzeEvent returns true", M.AnalyzeEvent(&E)) && Passed;
-  Passed = EvaluateTrue("HasTrigger()", "detector 0 both sides", "The event triggers", M.HasTrigger()) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "detector 1 LV only", "The single-sided detector 1 hit is removed", E.GetNDEEStripHitsLV(), 1u) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "detector 0 both sides", "The HV hit is kept", E.GetNDEEStripHitsHV(), 1u) && Passed;
   Passed = Evaluate("GetTriggerRate()", "detector 0", "Detector 0 has one trigger", M.GetTriggerRate(0), 1) && Passed;
@@ -275,12 +271,7 @@ bool UTNSubModuleStripTrigger::TestTriggerCondition()
   AddHit(F, 2, 6, true);
   N.Clear();
   N.AnalyzeEvent(&F);
-  Passed = EvaluateFalse("HasTrigger()", "LV only", "An event with only LV strips does not trigger", N.HasTrigger()) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "LV only", "All hits are removed", F.GetNDEEStripHitsLV() + F.GetNDEEStripHitsHV(), 0u) && Passed;
-
-  // Clear() resets the flags
-  M.Clear();
-  Passed = EvaluateFalse("Clear()", "after trigger", "Clear resets the trigger flag", M.HasTrigger()) && Passed;
 
   M.Finalize();
   N.Finalize();
@@ -305,7 +296,7 @@ bool UTNSubModuleStripTrigger::TestGuardRingVeto()
   AddHit(E, 0, 64, false, true);
   M.AnalyzeEvent(&E);
   Passed = EvaluateTrue("HasGuardRingVeto()", "strip 64 hit", "A hit on strip 64 raises the guard ring veto", M.HasGuardRingVeto()) && Passed;
-  Passed = EvaluateTrue("HasTrigger()", "strip 64 hit", "The event still triggers", M.HasTrigger()) && Passed;
+  Passed = Evaluate("GetTriggerRate()", "strip 64 hit", "The event still triggers detector 0", M.GetTriggerRate(0), 1) && Passed;
 
   // A guard ring hit alone does not make a side trigger
   MSubModuleStripTrigger N;
@@ -315,7 +306,7 @@ bool UTNSubModuleStripTrigger::TestGuardRingVeto()
   AddHit(F, 0, 5, true);
   AddHit(F, 0, 64, false, true);
   N.AnalyzeEvent(&F);
-  Passed = EvaluateFalse("HasTrigger()", "LV strip and HV guard ring", "A guard ring hit does not count as an HV strip", N.HasTrigger()) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "LV strip and HV guard ring", "A guard ring hit does not count as an HV strip: all hits are removed", F.GetNDEEStripHitsLV() + F.GetNDEEStripHitsHV(), 0u) && Passed;
 
   // A sub-threshold guard ring neighbor of a triggered strip 63 (created by the charge transport) is no guard ring trigger
   MSubModuleStripTrigger O;
@@ -346,53 +337,6 @@ bool UTNSubModuleStripTrigger::TestGuardRingVeto()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTNSubModuleStripTrigger::TestWithoutDeadtimeFile()
-{
-  bool Passed = true;
-
-  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
-#if !defined(__GNUC__) || defined(__clang__)
-  // MModuleDEESMEX passes an empty dead time file name by default: all timing parameters must have defined defaults
-  alignas(MSubModuleStripTrigger) unsigned char Zero[sizeof(MSubModuleStripTrigger)];
-  alignas(MSubModuleStripTrigger) unsigned char Ones[sizeof(MSubModuleStripTrigger)];
-  memset(Zero, 0x00, sizeof(Zero));
-  memset(Ones, 0xFF, sizeof(Ones));
-  MSubModuleStripTrigger* A = new (Zero) MSubModuleStripTrigger;
-  MSubModuleStripTrigger* B = new (Ones) MSubModuleStripTrigger;
-  int OldVerbosity = g_Verbosity;
-  g_Verbosity = c_Quiet;
-  bool InitA = A->Initialize();
-  bool InitB = B->Initialize();
-  MReadOutAssembly EA;
-  EA.SetTimeUTC(MTime(100.0));
-  AddHit(EA, 0, 5, true);
-  AddHit(EA, 0, 40, false);
-  A->AnalyzeEvent(&EA);
-  MReadOutAssembly EB;
-  EB.SetTimeUTC(MTime(100.0));
-  AddHit(EB, 0, 5, true);
-  AddHit(EB, 0, 40, false);
-  B->AnalyzeEvent(&EB);
-  g_Verbosity = OldVerbosity;
-
-  // Both memory contents give the dead time end 0 (with 0xFF the NaN dead time never exceeds 0), so only the absolute value detects the missing defaults
-  double EndA = A->GetStripDeadTimeEnd().GetAsDouble();
-  double EndB = B->GetStripDeadTimeEnd().GetAsDouble();
-  Passed = EvaluateTrue("Initialize()", "no dead time file, 0x00 memory", "Initialize succeeds without dead time file", InitA) && Passed;
-  Passed = EvaluateTrue("Initialize()", "no dead time file, 0xFF memory", "Initialize succeeds without dead time file", InitB) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "no dead time file, 0x00 memory, event at 100 s", "The dead time ends after the event and within 1 ms", EndA, 100.0005, 0.0005)) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "no dead time file, 0xFF memory, event at 100 s", "The dead time ends after the event and within 1 ms", EndB, 100.0005, 0.0005)) && Passed;
-  A->~MSubModuleStripTrigger();
-  B->~MSubModuleStripTrigger();
-#endif
-
-  return Passed;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool UTNSubModuleStripTrigger::TestDeadTime()
 {
   bool Passed = true;
@@ -409,7 +353,6 @@ bool UTNSubModuleStripTrigger::TestDeadTime()
   AddHit(A, 0, 40, false);
   M.Clear();
   M.AnalyzeEvent(&A);
-  Passed = EvaluateTrue("HasTrigger()", "event A", "Event A triggers", M.HasTrigger()) && Passed;
   Passed = EvaluateFalse("IsGeDDead()", "event A", "The detector is not dead for event A", M.IsGeDDead()) && Passed;
   Passed = EvaluateNear("GetStripDeadTimeEnd()", "event A", "The dead time ends 10 us after event A", M.GetStripDeadTimeEnd().GetAsDouble(), 100.0 + 10e-6, 1e-9) && Passed;
 
@@ -420,7 +363,6 @@ bool UTNSubModuleStripTrigger::TestDeadTime()
   AddHit(B, 0, 41, false);
   M.Clear();
   M.AnalyzeEvent(&B);
-  Passed = EvaluateTrue("HasTrigger()", "event B in coincidence window", "Event B triggers", M.HasTrigger()) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "event B in coincidence window", "The hits of event B are kept", B.GetNDEEStripHitsLV() + B.GetNDEEStripHitsHV(), 2u) && Passed;
   Passed = EvaluateNear("GetStripDeadTimeEnd()", "event B in coincidence window", "The dead time is extended to 12 us after event A (MTime has ns resolution)", M.GetStripDeadTimeEnd().GetAsDouble(), 100.0 + 12e-6, 2e-9) && Passed;
 
@@ -432,7 +374,6 @@ bool UTNSubModuleStripTrigger::TestDeadTime()
   M.Clear();
   M.AnalyzeEvent(&C);
   Passed = EvaluateTrue("IsGeDDead()", "event C in dead time", "The detector is dead for event C", M.IsGeDDead()) && Passed;
-  Passed = EvaluateFalse("HasTrigger()", "event C in dead time", "Event C does not trigger", M.HasTrigger()) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "event C in dead time", "The hits of event C are removed", C.GetNDEEStripHitsLV() + C.GetNDEEStripHitsHV(), 0u) && Passed;
 
   // Event D after the dead time: the dead time of the previous period is accumulated
@@ -442,13 +383,18 @@ bool UTNSubModuleStripTrigger::TestDeadTime()
   AddHit(D, 0, 43, false);
   M.Clear();
   M.AnalyzeEvent(&D);
-  Passed = EvaluateTrue("HasTrigger()", "event D after dead time", "Event D triggers", M.HasTrigger()) && Passed;
   Passed = EvaluateFalse("IsGeDDead()", "event D after dead time", "The detector is alive for event D", M.IsGeDDead()) && Passed;
   Passed = EvaluateNear("GetStripsTotalDeadtime()", "after event D", "The total dead time is the 12 us of the first period", M.GetStripsTotalDeadtime(), 12e-6, 1e-12) && Passed;
   Passed = EvaluateNear("GetStripDeadTimeEnd()", "event D", "The new dead time ends 10 us after event D", M.GetStripDeadTimeEnd().GetAsDouble(), 100.001 + 10e-6, 1e-9) && Passed;
   Passed = Evaluate("GetTriggerRate()", "detector 0", "Three events triggered detector 0", M.GetTriggerRate(0), 3) && Passed;
 
   M.Finalize();
+  Passed = EvaluateTrue("Initialize()", "new run", "Reinitialization succeeds", M.Initialize()) && Passed;
+  Passed = Evaluate("GetTriggerRate()", "new run", "Previous trigger counts are cleared", M.GetTriggerRate(0), 0) && Passed;
+  D.SetTimeUTC(MTime(100.001003));
+  M.AnalyzeEvent(&D);
+  Passed = Evaluate("AnalyzeEvent()", "first event of new run", "Previous dead time does not reject the hits", D.GetNDEEStripHitsLV() + D.GetNDEEStripHitsHV(), 2u) && Passed;
+  Passed = EvaluateNear("GetStripsTotalDeadtime()", "new run", "Previous dead time statistics are cleared", M.GetStripsTotalDeadtime(), 0.0, 1e-15) && Passed;
 
   return Passed;
 }
@@ -469,6 +415,11 @@ bool UTNSubModuleStripTrigger::TestFastClear()
   M.ApplyFastClearDeadtime(MTime(200.25));
   Passed = EvaluateNear("ApplyFastClearDeadtime()", "veto at 200.25 s", "The dead time ends 5 us after the veto", M.GetStripDeadTimeEnd().GetAsDouble(), 200.25 + 5e-6, 1e-9) && Passed;
   Passed = EvaluateNear("ApplyFastClearDeadtime()", "veto at 200.25 s", "The fast clear dead time is added to the total", M.GetStripsTotalDeadtime(), 5e-6, 1e-12) && Passed;
+
+  M.ApplyFastClearDeadtime(MTime(200.25));
+  Passed = EvaluateNear("ApplyFastClearDeadtime()", "same veto again", "The interval is counted only once", M.GetStripsTotalDeadtime(), 5e-6, 1e-12) && Passed;
+  M.ApplyFastClearDeadtime(MTime(200, 250002000));
+  Passed = EvaluateNear("ApplyFastClearDeadtime()", "overlapping veto", "Only the 2 us extension is added", M.GetStripsTotalDeadtime(), 7e-6, 1e-12) && Passed;
 
   M.Finalize();
 

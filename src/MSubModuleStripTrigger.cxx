@@ -27,6 +27,7 @@
 #include "MSubModuleStripTrigger.h"
 
 // Standard libs:
+#include <algorithm>
 #include <limits>
 
 // ROOT libs:
@@ -54,11 +55,11 @@ MSubModuleStripTrigger::MSubModuleStripTrigger() : MSubModule()
   m_Name = "DEE strip trigger module";
 
   m_EventTime = 0.0;
-  m_HasTrigger = false;
   m_HasGuardRingVeto = false;
   m_DeadTimeEnd = MTime(0.0);
   m_IsGeDDead = false;
   m_FastClearDeadTime = 1e-6;
+  m_FastClearDeadTimeEnd = MTime(0.0);
   m_FastClearDeadTimeFromFile = 1e-6;
 
   m_StripsCurrentDeadtime = 0.0;
@@ -96,9 +97,13 @@ bool MSubModuleStripTrigger::Initialize()
 {
   // Initialize the module
 
-  // Read deadtime parameters from file
-  if (m_DeadtimeFileName != "" && ParseDeadtimeFile() == false) {
-    if (g_Verbosity >= c_Error) cout<<"Error: Deadtime parameters file not found"<<endl;
+  // Timing parameters must be supplied by a deadtime file.
+  if (m_DeadtimeFileName.IsEmpty()) {
+    if (g_Verbosity >= c_Error) cout << m_Name << ": A deadtime parameters file is required" << endl;
+    return false;
+  }
+  if (ParseDeadtimeFile() == false) {
+    if (g_Verbosity >= c_Error) cout<<"Error: Unable to read deadtime parameters file"<<endl;
     return false;
   }
 
@@ -109,6 +114,25 @@ bool MSubModuleStripTrigger::Initialize()
   m_StripDelayAfter1 = m_StripDelayAfter1FromFile;
   m_StripDelayAfter2 = m_StripDelayAfter2FromFile;
   m_StripDelayAfter = m_StripDelayAfter1 + m_StripDelayAfter2;
+
+  // Start each run with fresh timing, channel history, and statistics.
+  m_EventTime = 0.0;
+  m_DeadTimeEnd = MTime(0.0);
+  m_IsGeDDead = false;
+  m_FastClearDeadTimeEnd = MTime(0.0);
+  m_ASICLastHitTime = -10.0;
+  m_StripsCurrentDeadtime = 0.0;
+  m_StripsTotalDeadtime = 0.0;
+  m_TotalStripHitsCounter = 0;
+  m_TotalGuardRingHitsCounter = 0;
+  m_FirstTime = std::numeric_limits<double>::max();
+  m_LastTime = 0.0;
+  m_ASICDeadTime.assign(nDets, vector<double>(nASICs, 0.0));
+  m_ASICHitStripID.assign(nDets, vector<vector<int>>(nASICs));
+  m_ASICHitStripID_noDT.assign(nDets, vector<vector<int>>(nASICs));
+  m_TempEvtTimes.assign(nDets, vector<vector<double>>(nASICs));
+  m_NumStripTriggers.assign(nDets, 0);
+  Clear();
 
   return MSubModule::Initialize();
 }
@@ -121,7 +145,6 @@ void MSubModuleStripTrigger::Clear()
 {
   // Clear for the next event
 
-  m_HasTrigger = false;
   m_HasGuardRingVeto = false;
   // m_DeadTimeEnd = MTime(0.0);
 
@@ -136,8 +159,21 @@ void MSubModuleStripTrigger::ApplyFastClearDeadtime(const MTime& ShieldVetoTime)
 {
   // Apply GeD deadtime cause by shield hard veto
 
-  m_DeadTimeEnd = MTime(ShieldVetoTime.GetAsSeconds() + m_FastClearDeadTime);
-  m_StripsTotalDeadtime += m_FastClearDeadTime;
+  double Start = ShieldVetoTime.GetAsSeconds();
+  MTime End = ShieldVetoTime;
+  End += MTime(m_FastClearDeadTime);
+
+  // A shield veto interrupts any pending strip readout at the veto time.
+  if (m_StripsCurrentDeadtime > 0.0) {
+    double ReadoutEnd = m_ASICLastHitTime + m_StripsCurrentDeadtime;
+    m_StripsTotalDeadtime += std::max(0.0, std::min(Start, ReadoutEnd) - m_ASICLastHitTime);
+  }
+
+  // Repeated or overlapping vetoes add only time not already counted.
+  MTime UncountedStart = std::max(ShieldVetoTime, m_FastClearDeadTimeEnd);
+  if (End > UncountedStart) m_StripsTotalDeadtime += (End - UncountedStart).GetAsSeconds();
+  m_FastClearDeadTimeEnd = std::max(m_FastClearDeadTimeEnd, End);
+  m_DeadTimeEnd = m_FastClearDeadTimeEnd;
   m_StripsCurrentDeadtime = 0.0;
 }
 
@@ -360,7 +396,6 @@ bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine for strip trigger
 
-  m_HasTrigger = false;
   m_HasGuardRingVeto = false;
 
   // Process strip hits and calculate deadtime
@@ -387,9 +422,6 @@ bool MSubModuleStripTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   for (int detID : detectorsHit) {
     m_NumStripTriggers[detID]++;
   }
-
-  // We have a valid trigger
-  m_HasTrigger = true;
 
   // Update time tracking
   if (m_EventTime < m_FirstTime) {
@@ -473,11 +505,17 @@ bool MSubModuleStripTrigger::ParseDeadtimeFile()
     return false;
   }
 
-  m_StripCoincidenceWindowFromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(0);
-  m_ASICDeadTimePerChannelFromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(1);
-  m_StripDelayAfter1FromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(2);
-  m_StripDelayAfter2FromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(3);
-  m_FastClearDeadTimeFromFile = Parser.GetTokenizerAt(1)->GetTokenAtAsDouble(4);
+  MTokenizer* StripTokenizer = Parser.GetTokenizerAt(1);
+  if (StripTokenizer->GetNTokens() != 5) {
+    if (g_Verbosity >= c_Error) cout << m_Name << ": Strip deadtime row must contain exactly 5 values" << endl;
+    return false;
+  }
+
+  m_StripCoincidenceWindowFromFile = StripTokenizer->GetTokenAtAsDouble(0);
+  m_ASICDeadTimePerChannelFromFile = StripTokenizer->GetTokenAtAsDouble(1);
+  m_StripDelayAfter1FromFile = StripTokenizer->GetTokenAtAsDouble(2);
+  m_StripDelayAfter2FromFile = StripTokenizer->GetTokenAtAsDouble(3);
+  m_FastClearDeadTimeFromFile = StripTokenizer->GetTokenAtAsDouble(4);
 
   return true;
 }

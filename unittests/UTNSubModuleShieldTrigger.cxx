@@ -11,9 +11,7 @@
 
 // Standard libs:
 #include <cstdio>
-#include <cstring>
 #include <functional>
-#include <new>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
@@ -57,8 +55,6 @@ class UTNSubModuleShieldTrigger : public MUnitTest
   bool TestDeadTime();
   //! Test the shield detector to panel assignment
   bool TestPanels();
-  //! Test the behavior without dead time file
-  bool TestWithoutDeadtimeFile();
 
   //! Write the dead time file and return its name
   MString WriteDeadtimeFile();
@@ -83,7 +79,6 @@ bool UTNSubModuleShieldTrigger::Run()
   Passed = TestVeto() && Passed;
   Passed = TestDeadTime() && Passed;
   Passed = TestPanels() && Passed;
-  Passed = TestWithoutDeadtimeFile() && Passed;
 
   Summarize();
 
@@ -155,7 +150,6 @@ bool UTNSubModuleShieldTrigger::TestDefaults()
   bool Passed = true;
 
   MSubModuleShieldTrigger M;
-  Passed = EvaluateFalse("HasTrigger()", "default", "No trigger by default", M.HasTrigger()) && Passed;
   Passed = EvaluateFalse("HasShieldVeto()", "default", "No veto by default", M.HasShieldVeto()) && Passed;
   Passed = EvaluateFalse("IsShieldDead()", "default", "The shield is not dead by default", M.IsShieldDead()) && Passed;
   Passed = Evaluate("GetShieldHitCounts()", "default", "No shield hits", M.GetShieldHitCounts(), 0) && Passed;
@@ -195,6 +189,8 @@ bool UTNSubModuleShieldTrigger::TestInitialize()
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
   DisableDefaultStreams();
+  MSubModuleShieldTrigger NoFile;
+  bool NoFileResult = NoFile.Initialize();
   MSubModuleShieldTrigger Missing;
   Missing.SetDeadtimeFileName(GetTemporaryFileName("missing.txt"));
   bool MissingResult = Missing.Initialize();
@@ -207,6 +203,7 @@ bool UTNSubModuleShieldTrigger::TestInitialize()
   EnableDefaultStreams();
   g_Verbosity = OldVerbosity;
 
+  Passed = EvaluateFalse("Initialize()", "no dead time file configured", "Initialize returns false", NoFileResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing file", "Initialize returns false", MissingResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "file without shield rows", "Initialize returns false", ShortResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "shield row with 3 values", "Initialize returns false", WrongResult) && Passed;
@@ -232,7 +229,6 @@ bool UTNSubModuleShieldTrigger::TestVeto()
 
   // Shield hit at 100 s in X0 crystal 3: dead time 1 + 2 * 1 + 2 = 5 us (equal to the pulse duration)
   Analyze(M, 100.0, "X0", 3);
-  Passed = ExpectedToFail(EvaluateTrue("HasTrigger()", "shield hit", "A shield hit above threshold raises a shield trigger", M.HasTrigger())) && Passed;
   Passed = EvaluateTrue("HasShieldVeto()", "shield hit", "The shield hit vetoes its own event", M.HasShieldVeto()) && Passed;
   Passed = EvaluateNear("GetShieldVetoTime()", "shield hit", "The veto time is the shield hit time", M.GetShieldVetoTime().GetAsDouble(), 100.0, 1e-9) && Passed;
   Passed = EvaluateNear("GetShieldDeadTimeEnd()", "shield hit", "The shield dead time ends 5 us after the hit", M.GetShieldDeadTimeEnd().GetAsDouble(), 100.0 + 5e-6, 2e-9) && Passed;
@@ -241,7 +237,6 @@ bool UTNSubModuleShieldTrigger::TestVeto()
   // GeD event 3 us later: within dead time + veto window extension
   Analyze(M, 100.000003);
   Passed = EvaluateTrue("HasShieldVeto()", "GeD event 3 us after the shield hit", "The event is vetoed", M.HasShieldVeto()) && Passed;
-  Passed = EvaluateFalse("HasTrigger()", "GeD event 3 us after the shield hit", "There is no shield trigger without shield hit", M.HasTrigger()) && Passed;
 
   // GeD event 5.2 us later: still within the 0.5 us veto window extension
   Analyze(M, 100.0000052);
@@ -251,7 +246,7 @@ bool UTNSubModuleShieldTrigger::TestVeto()
   Analyze(M, 100.00001);
   Passed = EvaluateFalse("HasShieldVeto()", "GeD event 10 us after the shield hit", "The event is not vetoed", M.HasShieldVeto()) && Passed;
 
-  // Shield hit below the threshold does not create a trigger
+  // Shield hit below the threshold does not create a veto
   MSubModuleShieldTrigger T;
   Passed = EvaluateTrue("Initialize()", "valid file, below threshold test", "Initialize succeeds", InitializeStandard(T)) && Passed;
   Analyze(T, 200.0, "X0", 3, -5.0);
@@ -283,6 +278,11 @@ bool UTNSubModuleShieldTrigger::TestDeadTime()
   Analyze(M, 100.000003, "X0", 5);
   Passed = EvaluateTrue("IsShieldDead()", "hit within dead time", "The shield is dead", M.IsShieldDead()) && Passed;
   Passed = Evaluate("GetBGOHitsErased()", "hit within dead time", "One hit is erased", M.GetBGOHitsErased(), 1) && Passed;
+
+  Analyze(M, 100.0000065);
+  Passed = EvaluateTrue("HasShieldVeto()", "6.5 us after the first hit", "The extended window still vetoes", M.HasShieldVeto()) && Passed;
+  Analyze(M, 100.0000076);
+  Passed = EvaluateFalse("HasShieldVeto()", "after the extended window", "The veto expires", M.HasShieldVeto()) && Passed;
 
   // Fourth hit after the dead time: the previous 7 us are accumulated
   Analyze(M, 100.001, "X0", 3);
@@ -359,13 +359,42 @@ bool UTNSubModuleShieldTrigger::TestPanels()
       MSubModuleShieldTrigger Z;
       Passed = EvaluateTrue("Initialize()", MString("valid file, shield detector ") + D + " crystal " + Crystal, "Initialize succeeds", InitializeStandard(Z)) && Passed;
       Analyze(Z, 300.0, D, Crystal);
-      if (Crystal < 4) {
-        // Known bug: only crystal 4 of the bottom shield vetoes
-        Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", MString("shield detector ") + D + " crystal " + Crystal, "A hit creates a veto", Z.HasShieldVeto())) && Passed;
-      } else {
-        Passed = EvaluateTrue("AnalyzeEvent()", MString("shield detector ") + D + " crystal " + Crystal, "A hit creates a veto", Z.HasShieldVeto()) && Passed;
-      }
+      Passed = EvaluateTrue("AnalyzeEvent()", MString("shield detector ") + D + " crystal " + Crystal, "A hit creates a veto", Z.HasShieldVeto()) && Passed;
     }
+  }
+
+  // Electronics sharing from the shield channel distribution: Y0 shares Z0-4,
+  // Y1 shares Z1-0, and the remaining Z0/Z1 crystals form separate groups.
+  struct PanelPair {
+    MString FirstDetector;
+    int FirstCrystal;
+    MString SecondDetector;
+    int SecondCrystal;
+    bool SharesDeadTime;
+  };
+  vector<PanelPair> Pairs = {
+    { "Y0", 0, "Z0", 4, true },
+    { "Y1", 2, "Z1", 0, true },
+    { "Z0", 0, "Z0", 3, true },
+    { "Z1", 1, "Z1", 4, true },
+    { "Y0", 0, "Z0", 0, false },
+    { "Y1", 2, "Z1", 1, false },
+    { "Y1", 2, "Z1", 4, false },
+    { "Z0", 0, "Z1", 1, false }
+  };
+  for (const PanelPair& Pair : Pairs) {
+    MSubModuleShieldTrigger M;
+    MString Scenario = Pair.FirstDetector + " crystal " + Pair.FirstCrystal +
+      " followed by " + Pair.SecondDetector + " crystal " + Pair.SecondCrystal;
+    if (InitializeStandard(M) == false) {
+      Passed = EvaluateTrue("Initialize()", Scenario, "Initialize succeeds", false) && Passed;
+      continue;
+    }
+    Analyze(M, 300.0, Pair.FirstDetector, Pair.FirstCrystal);
+    // 3 us is after the 1 us coincidence window, but inside the 5 us dead time.
+    Analyze(M, 300.000003, Pair.SecondDetector, Pair.SecondCrystal);
+    Passed = Evaluate("IsShieldDead()", Scenario, "Only a hit sharing the busy electronics is rejected", M.IsShieldDead(), Pair.SharesDeadTime) && Passed;
+    Passed = EvaluateNear("GetShieldDeadTimeEnd()", Scenario, "An independent group starts its own dead time", M.GetShieldDeadTimeEnd().GetAsDouble(), 300.0 + (Pair.SharesDeadTime ? 5e-6 : 8e-6), 2e-9) && Passed;
   }
 
   // A panel's dead time from an earlier window must not veto a later event after a short window on another panel
@@ -380,7 +409,7 @@ bool UTNSubModuleShieldTrigger::TestPanels()
   if (LongWindow > ShortWindow + 1e-6) {
     // GeD-only event after the X1 window (and its 0.5 us extension), but within the old X0 window length
     Analyze(P, 200.0 + LongWindow, "");
-    Passed = ExpectedToFail(EvaluateFalse("HasShieldVeto()", "GeD-only event after the X1 window, within the length of an old X0 window", "No panel is busy, thus the event is not vetoed", P.HasShieldVeto())) && Passed;
+    Passed = EvaluateFalse("HasShieldVeto()", "GeD-only event after the X1 window, within the length of an old X0 window", "No panel is busy, thus the event is not vetoed", P.HasShieldVeto()) && Passed;
   }
 
   // An unknown detector is ignored
@@ -388,37 +417,6 @@ bool UTNSubModuleShieldTrigger::TestPanels()
   Passed = EvaluateTrue("Initialize()", "valid file, unknown detector", "Initialize succeeds", InitializeStandard(U)) && Passed;
   Analyze(U, 300.0, "Q9", 1);
   Passed = EvaluateFalse("AnalyzeEvent()", "unknown shield detector Q9", "No veto is created", U.HasShieldVeto()) && Passed;
-
-  return Passed;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTNSubModuleShieldTrigger::TestWithoutDeadtimeFile()
-{
-  bool Passed = true;
-
-  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
-#if !defined(__GNUC__) || defined(__clang__)
-  // MModuleDEESMEX passes an empty dead time file name by default: the timing parameters must have defined defaults
-  alignas(MSubModuleShieldTrigger) unsigned char Zero[sizeof(MSubModuleShieldTrigger)];
-  alignas(MSubModuleShieldTrigger) unsigned char Ones[sizeof(MSubModuleShieldTrigger)];
-  memset(Zero, 0x00, sizeof(Zero));
-  memset(Ones, 0xFF, sizeof(Ones));
-  MSubModuleShieldTrigger* A = new (Zero) MSubModuleShieldTrigger;
-  MSubModuleShieldTrigger* B = new (Ones) MSubModuleShieldTrigger;
-  A->Initialize();
-  B->Initialize();
-  Analyze(*A, 100.0, "X0", 3);
-  Analyze(*B, 100.0, "X0", 3);
-  double EndA = A->GetShieldDeadTimeEnd().GetAsDouble();
-  double EndB = B->GetShieldDeadTimeEnd().GetAsDouble();
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "no dead time file", "The dead time is independent of the memory content (all parameters initialized)", EndA == EndB)) && Passed;
-  A->~MSubModuleShieldTrigger();
-  B->~MSubModuleShieldTrigger();
-#endif
 
   return Passed;
 }

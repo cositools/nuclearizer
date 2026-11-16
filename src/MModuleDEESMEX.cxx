@@ -177,13 +177,8 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
   m_ShieldReadout.AnalyzeEvent(Event);
 
 
-  bool HasShieldHit = Event->GetDEECrystalHitListReference().empty() == false;
-  if (HasShieldHit == true && Event->GetTimeUTC() < m_ShieldTrigger.GetShieldDeadTimeEnd()) {
-    Event->GetDEECrystalHitListReference().clear();
-  }
-
-
   // Step (6): the shield veto / trigger, handle pre-scalers, calculate dead-time, calculate random coincidence time
+  // Let the shield module accept coincident hits and reject hits on busy panels.
   m_ShieldTrigger.Clear();
   m_ShieldTrigger.AnalyzeEvent(Event);
   if (m_EnableShieldVeto == true && m_ShieldTrigger.HasShieldVeto() == true) {
@@ -198,8 +193,9 @@ bool MModuleDEESMEX::AnalyzeEvent(MReadOutAssembly* Event)
 
   bool HasStripHit = Event->GetDEEStripHitLVListReference().empty() == false ||
                      Event->GetDEEStripHitHVListReference().empty() == false;
-  if (HasStripHit == true && Event->GetTimeUTC() < m_StripTrigger.GetStripDeadTimeEnd()) {
-    // Strip/GeD deadtime only gates the strip path. Shield processing above still runs.
+  if (HasStripHit == true && Event->GetTimeUTC() < m_StripTrigger.GetStripDeadTimeEnd() &&
+      m_StripTrigger.IsInCoincidenceWindow(Event->GetTimeUTC()) == false) {
+    // Coincident hits can extend readout; fast clear and later busy hits still gate strips.
     return true;
   }
 
