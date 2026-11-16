@@ -11,9 +11,7 @@
 
 // Standard libs:
 #include <cstdio>
-#include <cstring>
 #include <functional>
-#include <new>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
@@ -57,8 +55,6 @@ class UTNSubModuleShieldTrigger : public MUnitTest
   bool TestDeadTime();
   //! Test the shield detector to panel assignment
   bool TestPanels();
-  //! Test the behavior without dead time file
-  bool TestWithoutDeadtimeFile();
 
   //! Write the dead time file and return its name
   MString WriteDeadtimeFile();
@@ -83,7 +79,6 @@ bool UTNSubModuleShieldTrigger::Run()
   Passed = TestVeto() && Passed;
   Passed = TestDeadTime() && Passed;
   Passed = TestPanels() && Passed;
-  Passed = TestWithoutDeadtimeFile() && Passed;
 
   Summarize();
 
@@ -194,6 +189,8 @@ bool UTNSubModuleShieldTrigger::TestInitialize()
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
   DisableDefaultStreams();
+  MSubModuleShieldTrigger NoFile;
+  bool NoFileResult = NoFile.Initialize();
   MSubModuleShieldTrigger Missing;
   Missing.SetDeadtimeFileName(GetTemporaryFileName("missing.txt"));
   bool MissingResult = Missing.Initialize();
@@ -206,6 +203,7 @@ bool UTNSubModuleShieldTrigger::TestInitialize()
   EnableDefaultStreams();
   g_Verbosity = OldVerbosity;
 
+  Passed = EvaluateFalse("Initialize()", "no dead time file configured", "Initialize returns false", NoFileResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing file", "Initialize returns false", MissingResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "file without shield rows", "Initialize returns false", ShortResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "shield row with 3 values", "Initialize returns false", WrongResult) && Passed;
@@ -419,37 +417,6 @@ bool UTNSubModuleShieldTrigger::TestPanels()
   Passed = EvaluateTrue("Initialize()", "valid file, unknown detector", "Initialize succeeds", InitializeStandard(U)) && Passed;
   Analyze(U, 300.0, "Q9", 1);
   Passed = EvaluateFalse("AnalyzeEvent()", "unknown shield detector Q9", "No veto is created", U.HasShieldVeto()) && Passed;
-
-  return Passed;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTNSubModuleShieldTrigger::TestWithoutDeadtimeFile()
-{
-  bool Passed = true;
-
-  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
-#if !defined(__GNUC__) || defined(__clang__)
-  // MModuleDEESMEX passes an empty dead time file name by default: the timing parameters must have defined defaults
-  alignas(MSubModuleShieldTrigger) unsigned char Zero[sizeof(MSubModuleShieldTrigger)];
-  alignas(MSubModuleShieldTrigger) unsigned char Ones[sizeof(MSubModuleShieldTrigger)];
-  memset(Zero, 0x00, sizeof(Zero));
-  memset(Ones, 0xFF, sizeof(Ones));
-  MSubModuleShieldTrigger* A = new (Zero) MSubModuleShieldTrigger;
-  MSubModuleShieldTrigger* B = new (Ones) MSubModuleShieldTrigger;
-  A->Initialize();
-  B->Initialize();
-  Analyze(*A, 100.0, "X0", 3);
-  Analyze(*B, 100.0, "X0", 3);
-  double EndA = A->GetShieldDeadTimeEnd().GetAsDouble();
-  double EndB = B->GetShieldDeadTimeEnd().GetAsDouble();
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "no dead time file", "The dead time is independent of the memory content (all parameters initialized)", EndA == EndB)) && Passed;
-  A->~MSubModuleShieldTrigger();
-  B->~MSubModuleShieldTrigger();
-#endif
 
   return Passed;
 }

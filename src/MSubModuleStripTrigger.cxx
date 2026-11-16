@@ -95,8 +95,12 @@ bool MSubModuleStripTrigger::Initialize()
 {
   // Initialize the module
 
-  // Read deadtime parameters from file
-  if (m_DeadtimeFileName != "" && ParseDeadtimeFile() == false) {
+  // Timing parameters must be supplied by a deadtime file.
+  if (m_DeadtimeFileName.IsEmpty()) {
+    if (g_Verbosity >= c_Error) cout << m_Name << ": A deadtime parameters file is required" << endl;
+    return false;
+  }
+  if (ParseDeadtimeFile() == false) {
     if (g_Verbosity >= c_Error) cout<<"Error: Deadtime parameters file not found"<<endl;
     return false;
   }

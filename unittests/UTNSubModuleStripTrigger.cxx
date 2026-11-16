@@ -11,9 +11,7 @@
 
 // Standard libs:
 #include <cmath>
-#include <cstring>
 #include <functional>
-#include <new>
 #include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
@@ -58,8 +56,6 @@ class UTNSubModuleStripTrigger : public MUnitTest
   bool TestDeadTime();
   //! Test the fast-clear dead time after a shield veto
   bool TestFastClear();
-  //! Test the dead time without dead time file (the MModuleDEESMEX default)
-  bool TestWithoutDeadtimeFile();
 
   //! Write the dead time file and return its name, or an empty string on failure
   MString WriteDeadtimeFile();
@@ -85,7 +81,6 @@ bool UTNSubModuleStripTrigger::Run()
   Passed = TestGuardRingVeto() && Passed;
   Passed = TestDeadTime() && Passed;
   Passed = TestFastClear() && Passed;
-  Passed = TestWithoutDeadtimeFile() && Passed;
 
   Summarize();
 
@@ -131,7 +126,7 @@ void UTNSubModuleStripTrigger::AddHit(MReadOutAssembly& Event, unsigned int DetI
 
 bool UTNSubModuleStripTrigger::InitializeModule(MSubModuleStripTrigger& M)
 {
-  // An empty dead time file name would silently select the built-in defaults
+  // Do not initialize if writing the required deadtime file failed.
   MString FileName = WriteDeadtimeFile();
   if (FileName.IsEmpty() == true) return false;
   M.SetDeadtimeFileName(FileName);
@@ -204,10 +199,13 @@ bool UTNSubModuleStripTrigger::TestInitialize()
 
   int OldVerbosity = g_Verbosity;
   g_Verbosity = c_Quiet;
+  MSubModuleStripTrigger NoFile;
+  bool NoFileResult = NoFile.Initialize();
   MSubModuleStripTrigger Missing;
   Missing.SetDeadtimeFileName(GetTemporaryFileName("missing.txt"));
   bool MissingResult = Missing.Initialize();
   g_Verbosity = OldVerbosity;
+  Passed = EvaluateFalse("Initialize()", "no dead time file configured", "Initialize returns false", NoFileResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing dead time file", "Initialize returns false", MissingResult) && Passed;
 
   // A file without value line must be rejected, not crash the program
@@ -331,53 +329,6 @@ bool UTNSubModuleStripTrigger::TestGuardRingVeto()
   M.Finalize();
   N.Finalize();
   O.Finalize();
-
-  return Passed;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTNSubModuleStripTrigger::TestWithoutDeadtimeFile()
-{
-  bool Passed = true;
-
-  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
-#if !defined(__GNUC__) || defined(__clang__)
-  // MModuleDEESMEX passes an empty dead time file name by default: all timing parameters must have defined defaults
-  alignas(MSubModuleStripTrigger) unsigned char Zero[sizeof(MSubModuleStripTrigger)];
-  alignas(MSubModuleStripTrigger) unsigned char Ones[sizeof(MSubModuleStripTrigger)];
-  memset(Zero, 0x00, sizeof(Zero));
-  memset(Ones, 0xFF, sizeof(Ones));
-  MSubModuleStripTrigger* A = new (Zero) MSubModuleStripTrigger;
-  MSubModuleStripTrigger* B = new (Ones) MSubModuleStripTrigger;
-  int OldVerbosity = g_Verbosity;
-  g_Verbosity = c_Quiet;
-  bool InitA = A->Initialize();
-  bool InitB = B->Initialize();
-  MReadOutAssembly EA;
-  EA.SetTimeUTC(MTime(100.0));
-  AddHit(EA, 0, 5, true);
-  AddHit(EA, 0, 40, false);
-  A->AnalyzeEvent(&EA);
-  MReadOutAssembly EB;
-  EB.SetTimeUTC(MTime(100.0));
-  AddHit(EB, 0, 5, true);
-  AddHit(EB, 0, 40, false);
-  B->AnalyzeEvent(&EB);
-  g_Verbosity = OldVerbosity;
-
-  // Both memory contents give the dead time end 0 (with 0xFF the NaN dead time never exceeds 0), so only the absolute value detects the missing defaults
-  double EndA = A->GetStripDeadTimeEnd().GetAsDouble();
-  double EndB = B->GetStripDeadTimeEnd().GetAsDouble();
-  Passed = EvaluateTrue("Initialize()", "no dead time file, 0x00 memory", "Initialize succeeds without dead time file", InitA) && Passed;
-  Passed = EvaluateTrue("Initialize()", "no dead time file, 0xFF memory", "Initialize succeeds without dead time file", InitB) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "no dead time file, 0x00 memory, event at 100 s", "The dead time ends after the event and within 1 ms", EndA, 100.0005, 0.0005)) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "no dead time file, 0xFF memory, event at 100 s", "The dead time ends after the event and within 1 ms", EndB, 100.0005, 0.0005)) && Passed;
-  A->~MSubModuleStripTrigger();
-  B->~MSubModuleStripTrigger();
-#endif
 
   return Passed;
 }
