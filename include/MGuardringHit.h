@@ -42,9 +42,9 @@ class MGuardringHit
   void Clear();
 
   //! Set the Detector ID
-  void SetDetectorID(int DetectorID) { m_DetectorID = DetectorID; }
+  void SetDetectorID(unsigned int DetectorID) { m_DetectorID = DetectorID; }
   //! Return the Detector ID
-  int GetDetectorID() const { return m_DetectorID; }
+  unsigned int GetDetectorID() const { return m_DetectorID; }
 
   //! Set the ADCUnits of the top side
   void SetADCUnits(double ADCUnits) { m_ADCUnits = ADCUnits; }
@@ -74,7 +74,7 @@ class MGuardringHit
   // private members:
  private:
   //! Detector ID
-  int m_DetectorID;
+  unsigned int m_DetectorID;
   //! ADCUnits of the top side
   double m_ADCUnits;
   //! Position of the guardring
