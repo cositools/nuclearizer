@@ -538,7 +538,7 @@ bool UTNModuleSaverMeasurementsFITS::TestL1b()
   // VETO: 0 = none, 1 = hard ACD veto, 2 = soft ACD veto, 3 = guard ring veto
   Passed = Evaluate("AnalyzeEvent()", "L1b", "VETO has one element per event", ColumnShape(Veto), Scalar) && Passed;
   if (ColumnShape(Veto) == Scalar) {
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "L1b event 1 with guard ring veto", "VETO is 3 for a guard ring veto", Veto[0][0], 3.0, 1e-12)) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "L1b event 1 with guard ring veto", "VETO is 3 for a guard ring veto", Veto[0][0], 3.0, 1e-12) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "L1b event 2 without veto", "VETO is 0 without veto", Veto[1][0], 0.0, 1e-12) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "L1b event 3 with shield veto", "VETO is an ACD veto (1 or 2) for a shield veto", Veto[2][0] == 1.0 || Veto[2][0] == 2.0) && Passed;
   }

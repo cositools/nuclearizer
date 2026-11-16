@@ -27,9 +27,7 @@
 #include "MModuleSaverMeasurementsL0.h"
 
 // Standard libs:
-#include <algorithm>
 #include <cstring>
-#include <set>
 using namespace std;
 
 // ROOT libs:
@@ -40,6 +38,7 @@ using namespace std;
 
 // Nuclearizer libs:
 #include "MGUIOptionsSaverMeasurementsL0.h"
+#include "MEventTypeClassifier.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -296,103 +295,7 @@ uint32_t MModuleSaverMeasurementsL0::EncodeGuardRingHit(int stripID, int adc)
 
 uint8_t MModuleSaverMeasurementsL0::GetEventType(MReadOutAssembly* Event)
 {
-  // Compute event type based on Table 32 from COSI-ICD-011-FEE PL-REV-A
-
-  // Event type depends on: number of detectors hit + veto status
-  // Type Value (hex) | Type Description
-  //     0x00         | Multi-detector Compton, no veto
-  //     0x01         | Single-detector Compton, no veto  
-  //     0x02         | Single-site, no veto
-  //     0x03         | Multi-detector event with GR veto
-  //     0x04         | Single-detector event with GR veto
-  //     0x05         | Single site with GR veto
-  //     0x06         | Multi-detector event with hard Shield veto
-  //     0x07         | Single-detector event with hard Shield veto
-  //     0x08         | Single site with hard Shield veto
-  //     0x09         | Multi-detector event with soft Shield veto
-  //     0x0A         | Single-detector event with soft Shield veto
-  //     0x0B         | Single site with soft Shield veto
-  //     0x0C         | GR event
-  //     0x0D         | FEE debug event
-
-  // Count unique detectors and collect strip IDs by side
-  set<int> uniqueDetectors;
-  vector<int> lvStrips;  // LV side strip IDs
-  vector<int> hvStrips;  // HV side strip IDs
-
-  unsigned int numHits = Event->GetNStripHits();
-  for (unsigned int i = 0; i < numHits; ++i) {
-    MStripHit* hit = Event->GetStripHit(i);
-    uniqueDetectors.insert(hit->GetDetectorID());
-
-    if (hit->IsLowVoltageStrip()) {
-      lvStrips.push_back(hit->GetStripID());
-    } else {
-      hvStrips.push_back(hit->GetStripID());
-    }
-  }
-  int nDetectors = uniqueDetectors.size();
-
-  // Determine detector category:
-  // 0 = multi-detector (Multi-detector Compton event is at least two simultaneous hits in different detectors, 
-  //     but not more than a programmable maximum number, nominally 20 (all hits, >20 is a shower))
-  // 1 = single-detector Compton (Single-detector Compton event is two triggered strips on one side of the detector that are 
-  //     separated by at least 2 (TBD, but programmable) strips, and at least 1 strip on the other side. Event type 0x15 counts 
-  //     events with multiple triggered strips on one detector that are not neighboring and also don’t meet the minimum separation.)
-  // 2 = single-site (Single-site is >=1 triggered strip on each side of a detector, multiple triggered strips are allowed if they’re neighboring)
-  // Note: 
-  //      * Soft Guard ring (GR) veto, any hit or event that has a simultaneous hit on the guard ring in any detector (no hard veto possible)
-  //      * Hard veto from shields, interrupts GeD data taking when simultaneous hit is measured in BGO
-  //      * Soft veto from shields, when at least one ACS ASIC is busy, any new GeD events are flagged to be filtered out
-
-  int detectorCategory;
-  if (nDetectors >= 2) {
-    detectorCategory = 0;  // Multi-detector
-  } else if (nDetectors == 1) {
-    // Check if any strips on same side are separated by >= 2
-    // Single-detector Compton: two triggered strips separated by at least 2 strips
-    // Single-site: all strips neighboring
-
-    bool hasComptonGap = false;
-
-    // Check LV side for gaps
-    if (lvStrips.size() >= 2) {
-      sort(lvStrips.begin(), lvStrips.end());
-      for (size_t i = 1; i < lvStrips.size(); ++i) {
-        if (lvStrips[i] - lvStrips[i-1] >= 2) {
-          hasComptonGap = true;
-          break;
-        }
-      }
-    }
-
-    // Check HV side for gaps
-    if (!hasComptonGap && hvStrips.size() >= 2) {
-      sort(hvStrips.begin(), hvStrips.end());
-      for (size_t i = 1; i < hvStrips.size(); ++i) {
-        if (hvStrips[i] - hvStrips[i-1] >= 2) {
-          hasComptonGap = true;
-          break;
-        }
-      }
-    }
-
-    detectorCategory = hasComptonGap ? 1 : 2;
-  } else {
-    detectorCategory = 2;  // detector == 0, default to single-site
-  }
-
-  // Determine veto status and return event type
-  if (Event->GetGuardRingVeto()) {
-    // GR veto: 0x03, 0x04, 0x05
-    return 0x03 + detectorCategory;
-  } else if (Event->GetShieldVeto()) {
-    // Shield veto (using soft veto codes): 0x09, 0x0A, 0x0B
-    return 0x09 + detectorCategory;
-  } else {
-    // No veto: 0x00, 0x01, 0x02
-    return 0x00 + detectorCategory;
-  }
+  return MEventTypeClassifier::Classify(Event);
 }
 
 
@@ -430,18 +333,32 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
   std::vector<uint8_t> hitData;
   int bitOffset = 0;
   int totalBits = 0;
+  unsigned int numWrittenHits = 0;
 
   for (unsigned int i = 0; i < numHits; ++i) {
     MStripHit* hit = Event->GetStripHit(i);
 
     // Get strip info
-    int detID = hit->GetDetectorID() & 0xF;     // 4 bits (0-15)
-    int side = hit->IsLowVoltageStrip() ? 0 : 1; // 1 bit
-    int stripNum = hit->GetStripID() & 0x3F;     // 6 bits (0-63)
-    int stripID = 0;
-    if (m_StripMap.HasROIDetSideStrip(detID, hit->IsLowVoltageStrip(), stripNum)) {
-      stripID = (int)m_StripMap.GetReadOutID(detID, hit->IsLowVoltageStrip(), stripNum);
+    unsigned int detID = hit->GetDetectorID();
+    unsigned int stripNum = hit->GetStripID();
+
+    if (detID > 15) {
+      if (g_Verbosity >= c_Error) {
+        cout<<m_XmlTag<<": Event "<<Event->GetID()<<": hit has invalid detector ID "<<detID<<"; skipping this hit"<<endl;
+      }
+      continue;
     }
+
+    // if no read-out ID in the strip map, the hit is not valid
+    if (m_StripMap.HasROIDetSideStrip(detID, hit->IsLowVoltageStrip(), stripNum) == false) {
+      if (g_Verbosity >= c_Warning) {
+        cout<<m_XmlTag<<": Event "<<Event->GetID()<<": detector "<<detID<<(hit->IsLowVoltageStrip() ? " LV" : " HV")
+            <<" strip "<<stripNum<<" is not in the strip map; skipping this hit"<<endl;
+      }
+      continue;
+    }
+    int stripID = (int)m_StripMap.GetReadOutID(detID, hit->IsLowVoltageStrip(), stripNum);
+    ++numWrittenHits;
     bool fastTiming = hit->HasFastTiming();
     int adc = (int)hit->GetADCUnits();
     int tac = (int)hit->GetTAC();
@@ -461,12 +378,20 @@ bool MModuleSaverMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
     }
   }
 
+  // The HITS field has only 6 bits: if an event has more than 63 hits, it cannot fit in one event
+  if (numWrittenHits > 63) {
+    if (g_Verbosity >= c_Error) {
+      cout<<m_XmlTag<<": Event "<<Event->GetID()<<" has "<<numWrittenHits<<" strip hits, but an L0 packet holds at most 63; the event is not written"<<endl;
+    }
+    return false;
+  }
+
   // get the length of hitData in bytes
   uint16_t hlen = (totalBits + 7) / 8;
 
   // Build packet data: TRUNC_TIME: 4 bytes + NumHits: 6 bits, HLEN(Lenght of the hit data): 10 bits, ETYPE: 8 bits 
   //                    = 4 bytes + 3 bytes(6+10+8 bits) = 7 bytes + HLEN bytes
-  uint8_t hits6 = numHits & 0x3F;  // 6 bits
+  uint8_t hits6 = numWrittenHits;  // at most 63, i.e. 6 bits
   uint16_t hlen10 = hlen & 0x3FF;  // 10 bits
   uint8_t etype = GetEventType(Event);
 

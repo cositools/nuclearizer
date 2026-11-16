@@ -98,6 +98,7 @@ void MReadOutAssembly::Clear()
 
   m_ShieldVeto = false;
   m_GuardRingVeto = false;
+  m_OnboardEventType = g_UnsignedIntNotDefined;
   m_Trigger = true;
   m_InDetector.fill(false);
 

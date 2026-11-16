@@ -42,6 +42,7 @@ using namespace std;
 #include "MPhysicalEventHit.h"
 #include "MComptonEvent.h"
 #include "MPhotoEvent.h"
+#include "MEventTypeClassifier.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -212,7 +213,7 @@ bool MModuleSaverMeasurementsFITS::CreateFITSFile(MString FileName)
       {"TIME",          "1D",         "s",   "Mission Time in sec since 01 Jan 2025 00:00:00",                                      false},
       {"EVENTID",       "1J",         "",    "Event ID, unique number that starts at 1 each day",                                   false},
       {"EVENTTYPE",     "1B",         "",    "Type of event",                                                                       true },
-      {"EVENTCLASS",    "1B",         "",    "0=Compton, 1=photoabsor, 2=charge particle, 4=pair, 5=unknown",                       false},
+      {"EVENTCLASS",    "1B",         "",    "0=Compton, 1=photoabsor, 2=tracked Compton, 3=charge particle, 4=pair, 5=unknown",    false},
       {"NUMHIT",        "1B",         "",    "Number of Hits",                                                                      false},
       {"STATTEST",      "8E",         "",    "Statistical Test",                                                                    true },
       {"VETO",          "1B",         "",    "Veto flag: 0=none, 1=hard ACD veto, 2=soft ACD veto, 3=guard ring veto",              true },
@@ -352,14 +353,21 @@ bool MModuleSaverMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Event-level metadata defaults
-  uint8_t eventType = 0;    // TODO: 0 = unknown/default
+  uint8_t eventType = MEventTypeClassifier::Classify(Event);
 
   // EVENTCLASS per HEASARC Tech Agreement v1.1
   //   0 = Compton, 1 = photoabsorption, 2 = tracked Compton, 3 = charge particle, 4 = pair, 5 = unknown.
   uint8_t eventClass = 5;   // 5 = unknown
   uint32_t eventID = (uint32_t)Event->GetID();
   
-  uint8_t veto = Event->IsVeto() ? 1 : 0;
+  // VETO: 0 = none, 1 = hard ACD veto, 2 = soft ACD veto, 3 = guard ring veto
+  // Hard and soft shield veto are told apart by the event type (0x06-0x08 hard, 0x09-0x0B soft)
+  uint8_t veto = 0;
+  if (Event->GetGuardRingVeto() == true) {
+    veto = 3;
+  } else if (Event->GetShieldVeto() == true) {
+    veto = (eventType >= 0x06 && eventType <= 0x08) ? 1 : 2;
+  }
   std::string quality_flag;
 
   // L2: fixed-length 10 hit arrays, zero-padded 

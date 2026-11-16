@@ -144,6 +144,9 @@ MModuleLoaderMeasurementsL0::~MModuleLoaderMeasurementsL0()
 
 bool MModuleLoaderMeasurementsL0::Initialize()
 {
+  if (m_InFile.is_open()) m_InFile.close();
+  m_InFile.clear();
+  m_StripMapLoaded = false;
   m_PacketsRead = 0;
 
   if (m_FileName == "") {
@@ -319,6 +322,11 @@ bool MModuleLoaderMeasurementsL0::ReadNextPacket(MReadOutAssembly* Event)
   MTime gpsTime((long int)pktSeconds, pktNanoseconds);
   Event->SetTimeRTS(Event->ComputeRTSfromGPSTime(gpsTime));
 
+  // event types distinguish guard-ring, hard shield, and soft shield vetoes.
+  Event->SetGuardRingVeto((etype >= 0x03 && etype <= 0x05) || etype == 0x0C);
+  Event->SetShieldVeto(etype >= 0x06 && etype <= 0x0B);
+  Event->SetOnboardEventType(etype);
+
   // Decode the bit-packed HIT_DATA into individual MStripHit objects on the event
   if (DecodeHitData(hitData, hits, Event) == false) {
     return false;
@@ -370,9 +378,9 @@ bool MModuleLoaderMeasurementsL0::DecodeHitData(const std::vector<uint8_t>& hitD
         tac = br.ReadBits(10);
         isNeighbor = true;
       } else if (hitType == 0x2) {
-        // Guard ring: 5 + 14 + 1(pad) = 20 more bits
+        // Guard ring: 5-bit strip id + 14-bit energy + 1 pad bit.
         if (br.BitsRemaining() < 20) break;
-        stripID = br.ReadBits(5);
+        stripID = 2048 + br.ReadBits(5);
         adc = br.ReadBits(14);
         (void)br.ReadBits(1); // pad
         isGuardRing = true;
