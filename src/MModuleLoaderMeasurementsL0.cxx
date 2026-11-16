@@ -269,9 +269,12 @@ bool MModuleLoaderMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
   // set the current packet # as the event ID
   Event->SetID(m_PacketsRead);
 
-  // Skip the event if all its strip hits were on detectors which are not in the geometry
-  if (Event->GetNStripHits() == 0 && Event->HasUnknownDetector_QualityFlag() == true) {
-    ++m_NEventsOnlyUnknownDetectors;
+  if (Event->GetNStripHits() == 0) {
+    if (Event->HasUnknownDetector_QualityFlag() == true) {
+      m_NEventsOnlyUnknownDetectors++;
+    } else if (g_Verbosity >= c_Error) {
+      cout<<m_XmlTag<<": Event "<<Event->GetID()<<" had no (valid) strip hits"<<endl;
+    }
     return false;
   }
 
