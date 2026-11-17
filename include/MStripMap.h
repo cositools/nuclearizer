@@ -21,6 +21,7 @@
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
+#include <set>
 using namespace std;
 
 // ROOT libs:
@@ -53,7 +54,7 @@ class MStripMap
 
   //! Remove all mappings whose detector is not in the given list, e.g. the detectors which were enabled
   //! during the run - return false and leave the map unchanged if no mapping would remain
-  bool RestrictToEnabledDetectors(const vector<unsigned int>& DetectorIDs);
+  bool RestrictToEnabledDIBs(const vector<unsigned int>& DIBs);
 
   //! Update which ASICs are LV/HV depending on their polarities, indexed by [detector][is-primary][ASIC]
   //! Return false and leave the map unchanged if the data is missing for any ASIC, or if the update
@@ -62,6 +63,9 @@ class MStripMap
 
   //! Check if we have a certain read-out ID
   bool HasReadOutID(unsigned int ROI) const;
+
+  //! Check if a read-out ID belongs to a DIB that was not enabled during the run (removed by RestrictToEnabledDIBs())
+  bool IsOnDisabledDIB(unsigned int ROI) const { return m_DisabledDIBReadOutIDs.count(ROI) > 0; }
 
   //! Get detector by read out ID - check with HasReadOutID(ROI) first
   unsigned int GetDetectorID(unsigned int ROI) const;
@@ -101,8 +105,7 @@ class MStripMap
   //! The internal struct for the strip map
   struct MSingleStripMapping {
     unsigned int m_ReadOutID;
-    unsigned int m_RTB;
-    unsigned int m_DRM;
+    unsigned int m_DIB;
     bool m_IsPrimary;
     unsigned int m_ASICID;
     unsigned int m_ChannelID;
@@ -127,6 +130,8 @@ class MStripMap
   //! det 0-15 (4 bits), side 0/1 (1 bit), strip 0-64 (7 bits - guard-ring strip 64)
   unordered_map<unsigned int, unsigned int> m_DetSideStripToROI;
 
+  //! Read-out IDs removed by RestrictToEnabledDIBs() because their DIB was not enabled during the run
+  set<unsigned int> m_DisabledDIBReadOutIDs;
 
 #ifdef ___CLING___
  public:

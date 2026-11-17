@@ -125,6 +125,22 @@ class MModuleDEESMEX : public MModule
     return m_DepthReadout.GetTACCalFileName();
   }
 
+  //! Set strip map file name
+  void SetStripMapFileName(const MString& FileName)
+  {
+    m_DepthReadout.SetStripMapFileName(FileName);
+  }
+  //! Get strip map file name
+  MString GetStripMapFileName() const
+  {
+    return m_DepthReadout.GetStripMapFileName();
+  }
+  //! Get the strip map, or nullptr if it has not been loaded - only valid after Initialize()
+  const MStripMap* GetStripMap() const
+  {
+    return m_DepthReadout.GetStripMap();
+  }
+
 
   //! Set shield energy correction file name
   void SetShieldEnergyCorrectionFileName(const MString& FileName)
@@ -137,16 +153,21 @@ class MModuleDEESMEX : public MModule
     return m_ShieldEnergyCorrection.GetShieldEnergyCorrectionFileName();
   }
 
+  //! Set hardware threshold file name
+  void SetHardwareThresholdFileName(const MString& FileName)
+  {
+    m_StripReadout.SetHardwareThresholdFileName(FileName);
+  }
+  //! Get hardware threshold file name
+  MString GetHardwareThresholdFileName() const
+  {
+    return m_StripReadout.GetHardwareThresholdFileName();
+  }
+
   //! Set dead time file name
-  void SetDeadtimeFileName(const MString& FileName)
-  {
-    m_StripTrigger.SetDeadtimeFileName(FileName);
-  }
+  void SetDeadtimeFileName(const MString& FileName) { m_DeadtimeFileName = FileName; }
   //! Get dead time file name
-  MString GetDeadtimeFileName() const
-  {
-    return m_StripTrigger.GetDeadtimeFileName();
-  }
+  MString GetDeadtimeFileName() const { return m_DeadtimeFileName; }
   
   //! Button to apply the FWHM energy resolution to the energies
   bool GetApplyResolutionCalibration() const { return m_ApplyResolutionCalibration; }
@@ -216,6 +237,9 @@ class MModuleDEESMEX : public MModule
 
   //! The file name of the depth-calibration coefficients
   MString m_DepthCoefficientsFileName;
+
+  //! The file name of the dead time parameters
+  MString m_DeadtimeFileName;
 
   //! Option to add noise to the strip energies
   bool m_ApplyResolutionCalibration; 

@@ -46,7 +46,7 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   // public interface:
  public:
   //! Default constructor
-    MModuleStripPairingMultiRoundChiSquare();
+  MModuleStripPairingMultiRoundChiSquare();
   //! Default destructor
   virtual ~MModuleStripPairingMultiRoundChiSquare();
   
@@ -74,20 +74,23 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
   virtual MXmlNode* CreateXmlConfiguration();
     
   //! Set the maximum number of strips
-  void SetMaximumStrips(double MaximumStrips) { m_MaximumStrips = MaximumStrips; }
+  void SetMaximumStrips(unsigned int MaximumStrips) { m_MaximumStrips = MaximumStrips; }
   //! Get the maximum number of strips
-  double GetMaximumStrips() const { return m_MaximumStrips; }
+  unsigned int GetMaximumStrips() const { return m_MaximumStrips; }
 
   // protected methods:
  protected:
   //! Find a new set of combinations giving the existing gone
     vector<vector<vector<unsigned int>>> FindNewCombinations(const vector<vector<vector<unsigned int>>>& OldOnes, const vector<MStripHit*>& StripHits, bool RoundTwo);
     
-  //! Function to apply charge trapping correction
-    float ChargeTrappingCorrection(unsigned int d, const vector<vector<MStripHit*>>& StripHits);
-    
-  //! Divide an event's strip hits by detector and LV/HV side
-    vector<vector<vector<MStripHit*>>> CollectStripHits(MReadOutAssembly* Event);
+  //! Divide an event's triggered strip hits by detector and LV/HV side
+    vector<vector<vector<MStripHit*>>> CollectTriggeredStripHits(MReadOutAssembly* Event);
+  
+  //! Divide an event's nearest neighbor strip hits by detector and LV/HV side
+    vector<vector<vector<MStripHit*>>> CollectNearestNeighborStripHits(MReadOutAssembly* Event);
+  
+  //! Assign nearest neighbor strip hits to their associated hits
+    void AssignNearestNeighbors(MReadOutAssembly* Event);
 
   //! Read in strip hits on each side for each detector and perform quality selections
     bool EventSelection(MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits);
@@ -97,6 +100,7 @@ class MModuleStripPairingMultiRoundChiSquare : public MModule
 
   //! Evaluate the reduced chi square for all possible strip pairings
     tuple<vector<vector<unsigned int>>, vector<vector<unsigned int>>, double> EvaluateAllCombinations(unsigned int d, const vector<vector<vector<vector<vector<unsigned int>>>>>& Combinations, const vector<vector<vector<MStripHit*>>>& StripHits);
+  
   //! Create hits
     bool CreateHits(unsigned int d, MReadOutAssembly* Event, const vector<vector<vector<MStripHit*>>>& StripHits, const vector<vector<unsigned int>>& BestLVSideCombo, const vector<vector<unsigned int>>& BestHVSideCombo);
     //! Return the order of indices resulting from sorting a vector

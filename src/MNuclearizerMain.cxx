@@ -82,11 +82,12 @@ int main(int argc, char** argv)
 
   MAssembly Nuclearizer;
   g_Prg = &Nuclearizer;
-  if (Nuclearizer.ParseCommandLine(argc, argv) == false) {
-    return 0;
+  int ExitCode = Nuclearizer.ParseCommandLine(argc, argv);
+  if (ExitCode >= 0) {
+    return ExitCode;
   } else {
     AppNuclearizer->Run();
-  }  
+  }
 
   return 0;
 }

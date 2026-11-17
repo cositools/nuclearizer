@@ -55,7 +55,7 @@ ClassImp(MSubModuleChargeTransport)
 MSubModuleChargeTransport::MSubModuleChargeTransport() : MSubModule()
 {
   // Construct an instance of MSubModuleChargeTransport
-
+  m_Geometry = nullptr;
 
 }
 
@@ -74,15 +74,21 @@ MSubModuleChargeTransport::~MSubModuleChargeTransport()
 
 bool MSubModuleChargeTransport::Initialize()
 {
+  if (m_Geometry == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout << "ERROR in MSubModuleChargeTransport::Initialize: m_Geometry is a nullptr" << endl;
+    }
+    return false;
+  }
 
-  // The detectors need to be in the same order as DetIDs.
-  // ie DetID=0 should be the 0th detector in m_Detectors, DetID=1 should the 1st, etc.
+  // The DetID is taken from the detector name GeD_X, so detectors can be missing (e.g. no GeD_0).
+  // Detectors not following this naming scheme get their DetID in the order of the detectors.
   vector<MDDetector*> DetList = m_Geometry->GetDetectorList();
 
   // Look through the Geometry and get the names and thicknesses of all Strip3D detectors.
   vector<string> DetectorNames;
-  unsigned int DetID = 0;
-  
+  unsigned int NextDetID = 0;
+
   for(unsigned int i = 0; i < DetList.size(); ++i){
     MDDetector* det = DetList[i];
     if (det->GetTypeName() == "Strip3D") {
@@ -90,22 +96,15 @@ bool MSubModuleChargeTransport::Initialize()
         MDVolume* vol = det->GetSensitiveVolume(0);
         MString DetectorName = det->GetName();
         string DetName = DetectorName.GetString();
-        
-        // Check that the DetID agrees with the naming scheme GeD_X
+        unsigned int DetID = NextDetID;
+
+        // Get the DetID from the naming scheme GeD_X
         if (DetectorName.BeginsWith("GeD_") == true) {
           DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
-          if (DetID != DetectorName.ToUnsignedInt()) {
-            if (g_Verbosity >= c_Error) {
-              cout << "ERROR in MModuleDepthCalibration::Initialize: Non-matching DetID="<<DetID<<" for detector "<<DetName<<endl;
-            }
-            // Return false if this is running with the COSI SMEX payload mass model
-            if (m_Geometry->GetName() == "COSI-SMEX-Payload"){
-              return false;
-            }
-          }
+          DetID = DetectorName.ToUnsignedInt();
         } else if (m_Geometry->GetName() == "COSI-SMEX-Payload") {
           if (g_Verbosity >= c_Error) {
-            cout << "ERROR in MModuleDepthCalibration::Initialize: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
+            cout << "ERROR in MSubModuleChargeTransport::Initialize: COSI-SMEX-Payload expects all Strip3D detectors to follow the name scheme GeD_X"<<endl;
           }
           return false;
         }
@@ -145,18 +144,22 @@ bool MSubModuleChargeTransport::Initialize()
           }
           m_DetectorIDs.push_back(DetID);
           m_Detectors[DetID] = det;
-          DetID += 1;
+          NextDetID = DetID + 1;
         } else {
-          cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << DetName << endl;
+          if (g_Verbosity >= c_Error) {
+            cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a duplicate detector: " << DetName << endl;
+          }
         }
       } else {
-        cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
+        if (g_Verbosity >= c_Error) {
+          cout << "ERROR in MSubModuleChargeTransport::Initialize: Found a Strip3D detector with " << det->GetNSensitiveVolumes() << " Sensitive Volumes." << endl;
+        }
       }
     }
   }
 
   if (m_DetectorIDs.size() == 0) {
-    cout<<"No Strip3D detectors were found."<<endl;
+    if (g_Verbosity >= c_Error) cout<<"ERROR in MSubModuleChargeTransport::Initialize: No Strip3D detectors were found in the geometry."<<endl;
     return false; 
   }
 
@@ -200,6 +203,19 @@ bool MSubModuleChargeTransport::Initialize()
 
   } else {
     return false;
+  }
+
+  // Warn about detectors without splines and remove them from DetIDs
+  for (auto Iter = m_DetectorIDs.begin(); Iter != m_DetectorIDs.end(); ) {
+    unsigned int DetID = *Iter;
+    if (m_ElectronDriftTimes.find(DetID) == m_ElectronDriftTimes.end() || m_HoleDriftTimes.find(DetID) == m_HoleDriftTimes.end()) {
+      if (g_Verbosity >= c_Warning){
+        cout << "WARNING in MSubModuleChargeTransport: Detector " << DetID << " does not have a depth spline - skipping" << endl;
+      }
+      Iter = m_DetectorIDs.erase(Iter);
+    } else {
+      ++Iter;
+    }
   }
 
   // Load depth calibration coefficients
@@ -271,8 +287,9 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     auto IterLV2 = std::next(IterLV1);
     while (IterLV2 != LVHits.end()) {
       if (IterLV1->m_ROE == IterLV2->m_ROE) {
-        IterLV1->m_Energy += IterLV2->m_Energy;
         IterLV1->m_FastPeakTime = IterLV1->m_Energy > IterLV2->m_Energy ? IterLV1->m_FastPeakTime : IterLV2->m_FastPeakTime;
+        IterLV1->m_Energy += IterLV2->m_Energy;
+        IterLV1->m_SimulatedOrigins.splice(IterLV1->m_SimulatedOrigins.end(), IterLV2->m_SimulatedOrigins);
         IterLV2 = LVHits.erase(IterLV2);
       } else {
         ++IterLV2;
@@ -283,8 +300,9 @@ bool MSubModuleChargeTransport::AnalyzeEvent(MReadOutAssembly* Event)
     auto IterHV2 = std::next(IterHV1);
     while (IterHV2 != HVHits.end()) {
       if (IterHV1->m_ROE == IterHV2->m_ROE) {
-        IterHV1->m_Energy += IterHV2->m_Energy;
         IterHV1->m_FastPeakTime = IterHV1->m_Energy > IterHV2->m_Energy ? IterHV1->m_FastPeakTime : IterHV2->m_FastPeakTime;
+        IterHV1->m_Energy += IterHV2->m_Energy;
+        IterHV1->m_SimulatedOrigins.splice(IterHV1->m_SimulatedOrigins.end(), IterHV2->m_SimulatedOrigins);
         IterHV2 = HVHits.erase(IterHV2);
       } else {
         ++IterHV2;
@@ -370,14 +388,20 @@ void MSubModuleChargeTransport::RunChargeTransportForHit(MDEEStripHit& SH, bool 
     // Apply stretch based on Eq. (3) in https://doi.org/10.1016/j.nima.2026.171332
     // Apply no offset to the electron drift time --> add it fully to the hole (LV) signal
     auto it = m_Coeffs.find(PixelCode);
-    if (it != m_Coeffs.end()) {
-      const vector<double>& Coeffs = it->second;
-      double Stretch = Coeffs[0];
-      double Offset = isLV ? Coeffs[1] : 0.0;
-      FastPeakTime = (DriftTimeSpline->Eval(Z) + Offset) * Stretch;
+    if (find(m_DetectorIDs.begin(), m_DetectorIDs.end(), DetID) != m_DetectorIDs.end()) {
+      if (it != m_Coeffs.end()) {
+        const vector<double>& Coeffs = it->second;
+        double Stretch = Coeffs[0];
+        double Offset = isLV ? Coeffs[1] : 0.0;
+        FastPeakTime = (DriftTimeSpline->Eval(Z) + Offset) * Stretch;
+      } else {
+        if (g_Verbosity >= c_Warning) {
+          cout << "No depth calibration coefficients for pixel in DetID " << DetID << " HV " << (isLV ? OppositeStripID : ID) << " LV " << (isLV ? ID : OppositeStripID) << endl;
+        }
+      }
     } else {
-      if (g_Verbosity >= c_Warning) {
-        cout << "No depth calibration coefficients for pixel in DetID " << DetID << " HV " << (isLV ? OppositeStripID : ID) << " LV " << (isLV ? ID : OppositeStripID) << endl;
+      if (g_Verbosity >= c_Info) {
+        cout << "No depth spline for pixel in DetID " << DetID << endl;
       }
     }
 

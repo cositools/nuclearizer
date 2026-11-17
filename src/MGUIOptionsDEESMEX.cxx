@@ -100,12 +100,12 @@ void MGUIOptionsDEESMEX::Create()
     dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadStripFileName());
   m_DeadStripFileSelector->SetFileType("Dead strips file", "*.txt");
   m_OptionsFrame->AddFrame(m_DeadStripFileSelector, LabelLayout);
-
-  m_ThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a thresholds file:",
-    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetThresholdFileName());
-  m_ThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
+  */
+  m_ThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a hardware thresholds file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetHardwareThresholdFileName());
+  m_ThresholdFileSelector->SetFileType("Hardware thresholds file", "*.csv");
   m_OptionsFrame->AddFrame(m_ThresholdFileSelector, LabelLayout);
-
+  /*
   m_GuardRingThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a guard ring thresholds file:",
   dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetGuardRingThresholdFileName());
   m_GuardRingThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
@@ -151,6 +151,11 @@ void MGUIOptionsDEESMEX::Create()
     dynamic_cast<MModuleDEESMEX*>(m_Module)->GetTACCalFileName());
   m_TACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
   m_OptionsFrame->AddFrame(m_TACCalFileSelector, LabelLayout);
+
+  m_StripMapFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a strip map file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetStripMapFileName());
+  m_StripMapFileSelector->SetFileType("Strip map file", "*.map");
+  m_OptionsFrame->AddFrame(m_StripMapFileSelector, LabelLayout);
 
   // shield energy correction file
   m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
@@ -217,6 +222,7 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthCoefficientsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetStripMapFileName(m_StripMapFileSelector->GetFileName());
 
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
   
@@ -224,7 +230,8 @@ bool MGUIOptionsDEESMEX::OnApply()
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableShieldVeto(m_EnableShieldVetoButton->IsOn());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableGuardRingVeto(m_EnableGuardRingVetoButton->IsOn());
   dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyTimingResolutionCalibration(m_TimingResolutionCalibrationButton->IsOn());
-  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetThresholdFileName(m_ThresholdFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetHardwareThresholdFileName(m_ThresholdFileSelector->GetFileName());
+
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
   //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());

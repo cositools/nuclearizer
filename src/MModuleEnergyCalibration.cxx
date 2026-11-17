@@ -146,6 +146,9 @@ bool MModuleEnergyCalibration::Initialize()
     }
   }
 
+  // Clear the counter for number of strip hits without calibration
+  m_MissingCalibrationCounts.clear();
+
   return MModule::Initialize();
 }
 
@@ -175,10 +178,15 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
     TF1* FitRes = m_ResolutionCalibration[R];
 
     if (Fit == nullptr) {
-      if (g_Verbosity >= c_Error) {
+      // Print the error only the first time we see this strip
+      m_MissingCalibrationCounts[R]++;
+      if (m_MissingCalibrationCounts[R] == 1 && g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Error: Energy-fit not found for read-out element " << R << endl;
       }
-      Event->SetEnergyCalibrationError("calibration not found for " + R.ToString());
+      // only assign a BD flag if it's an actual triggered strip, otherwise, the event is still able to be calibrated
+      if (SH->IsNearestNeighbor() == false) {
+        Event->SetEnergyCalibrationError("calibration not found for triggered " + R.ToString());
+      }
       ++i; // iterate to next SH
       continue;
 
@@ -232,7 +240,7 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
 
       // Remove SH for any energy value below the established threshold (0 is default)
       if (Energy < Threshold) {
-        if (g_Verbosity >= c_Warning) {
+        if (g_Verbosity >= c_Info) {
           cout << m_XmlTag << ": Strip Hit below threshold, deleting SH with Energy " << Energy << " keV " << endl;
         }
         Event->SetStripHitBelowThreshold_QualityFlag("Strip hit removed with energy " + to_string(Energy));
@@ -249,7 +257,12 @@ bool MModuleEnergyCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           if (g_Verbosity >= c_Error) {
             cout << m_XmlTag << ": Error: Energy Resolution fit not found for read-out element " << R << endl;
           }
-	  // There is not expected to be a time in which the energy resolution calibration is not defined when the energy calibration itself is. Therefore, don't need a seperate BD flag for this.
+          // only assign a BD flag if it's an actual triggered strip, otherwise, the event is still able to be calibrated
+          if (SH->IsNearestNeighbor() == false) {
+            Event->SetEnergyCalibrationError("Energy resolution calibration not found for triggered " + R.ToString());
+          }
+          continue;
+
         } else {
           double EnergyResolution = FitRes->Eval(Energy);
           SH->SetEnergyResolution(EnergyResolution);
@@ -284,7 +297,7 @@ double MModuleEnergyCalibration::GetEnergy(MReadOutElementDoubleStrip R, double 
       Energy = 0.0;
     }
   } else {
-    cout << m_Name << ": GetEnergy: Error unable to find calibration" << endl;
+    if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": GetEnergy: Error unable to find calibration" << endl;
     return 0;
   }
 
@@ -303,7 +316,7 @@ double MModuleEnergyCalibration::GetADC(MReadOutElementDoubleStrip R, double Ene
   if (Fit != nullptr) {
     return Fit->GetX(Energy);
   } else {
-    cout << m_Name << ": GetADC: Error unable to find calibration" << endl;
+    if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": GetADC: Error unable to find calibration" << endl;
     return 0;
   }
 }
@@ -323,6 +336,17 @@ void MModuleEnergyCalibration::Finalize()
   }
   for (auto& F : m_ResolutionCalibration) {
     delete F.second;
+  }
+
+  m_ThresholdMap.clear();
+  m_HardwareThresholdMap.clear();
+
+  // Summary of the strips without energy calibration
+  if (m_MissingCalibrationCounts.empty() == false && g_Verbosity >= c_Info) {
+    cout << m_XmlTag << ": Strip hits without energy calibration:" << endl;
+    for (const auto& Entry : m_MissingCalibrationCounts) {
+      cout << "  * " << Entry.first << ": " << Entry.second << " strip hits" << endl;
+    }
   }
 
   return;
@@ -509,6 +533,18 @@ bool MModuleEnergyCalibration::ReadEnergyCalibrationFile(MString FileName) {
       resolutionfit->FixParameter(1, f1);
       resolutionfit->FixParameter(2, f2);
       m_ResolutionCalibration[CR.first] = resolutionfit;
+      
+    } else if (CalibratorType == "p3" || CalibratorType == "poly3") {
+      double f0 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f1 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f2 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      double f3 = Parser.GetTokenizerAt(CR.second)->GetTokenAtAsDouble(++Pos);
+      TF1* resolutionfit = new TF1("P3", "([0]+[1]*x+[2]*x*x+[3]*x*x*x) / 2.355", 0., 2000.);
+      resolutionfit->FixParameter(0, f0);
+      resolutionfit->FixParameter(1, f1);
+      resolutionfit->FixParameter(2, f2);
+      resolutionfit->FixParameter(3, f3);
+      m_ResolutionCalibration[CR.first] = resolutionfit;
     } else {
       if (g_Verbosity >= c_Error) {
         cout << m_XmlTag << ": Line parser: Unknown resolution calibrator type (" << CalibratorType << ") for strip" << CR.first << endl;
@@ -543,7 +579,7 @@ bool MModuleEnergyCalibration::ReadSlowThresholdCutFile(MString FileName) {
         int DetID = Tokens[1 + IndexOffset].ToInt(); // Detector ID
         MString Side = Tokens[2 + IndexOffset].ToString(); // side is a string, either 'l' or 'h'
         int StripID = Tokens[3 + IndexOffset].ToInt(); // stripID
-        //int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
+        int ThresholdADC = Tokens[4 + IndexOffset].ToInt(); // energy threshold in ADC
         double ThresholdKeVFile = Tokens[5 + IndexOffset].ToDouble(); //energy threshold in keV
 
         MReadOutElementDoubleStrip R;
@@ -551,7 +587,8 @@ bool MModuleEnergyCalibration::ReadSlowThresholdCutFile(MString FileName) {
         R.SetStripID(StripID);
         R.IsLowVoltageStrip(Side == "l");
 
-        // map detectorID, strip number, and voltage side to the threshold (keV)
+        // map detectorID, strip number, and voltage side to the threshold (both ADC and keV)
+        m_HardwareThresholdMap[R] = ThresholdADC;
         m_ThresholdMap[R] = ThresholdKeVFile;
       }
     }
@@ -638,12 +675,12 @@ double MModuleEnergyCalibration::LookupEnergyResolution(MStripHit* SH, double En
 
   MReadOutElementDoubleStrip* ROE = dynamic_cast<MReadOutElementDoubleStrip*>(SH->GetReadOutElement());
   if (ROE == nullptr) {
-    cout << m_Name << ": LookupEnergyResolution: Error unable to get read-out element" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: LookupEnergyResolution unable to get read-out element" << endl;
     return -1;
   }
   TF1* FitRes = m_ResolutionCalibration[*ROE];
   if (FitRes == nullptr) {
-    cout << m_Name << ": LookupEnergyResolutio: Error: Couldn't locate energy resolution" << endl;
+    if (g_Verbosity >= c_Error) cout << m_Name << ": ERROR: LookupEnergyResolution couldn't locate energy resolution" << endl;
     return -1.0;
   } else {
     return FitRes->Eval(Energy);

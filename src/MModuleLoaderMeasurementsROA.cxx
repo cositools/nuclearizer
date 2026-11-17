@@ -41,6 +41,8 @@
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataTAC.h"
 #include "MReadOutDataEnergy.h"
+#include "MReadOutDataFlags.h"
+#include "MReadOutElementVoxel3D.h"
 #include "MReadOutDataOrigins.h"
 
 
@@ -106,7 +108,7 @@ bool MModuleLoaderMeasurementsROA::Initialize()
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
     
-  return MModule::Initialize();
+  return MModuleLoaderMeasurements::Initialize();
 }
 
 
@@ -119,7 +121,7 @@ bool MModuleLoaderMeasurementsROA::AnalyzeEvent(MReadOutAssembly* Event)
   // Here: Just read it.
     
   if (ReadNextEvent(Event) == false) {
-    cout<<m_Name<<": No more events!"<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events!"<<endl;
     m_IsFinished = true;
     return false;
   }
@@ -139,10 +141,12 @@ void MModuleLoaderMeasurementsROA::Finalize()
   
   MModule::Finalize();
   
-  cout<<"MModuleLoaderMeasurementsROA: "<<endl;
-  cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
-  cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
-
+  if (g_Verbosity >= c_Info) {
+    cout<<"MModuleLoaderMeasurementsROA: "<<endl;
+    cout<<"  * all events on file: "<<m_NEventsInFile<<endl;
+    cout<<"  * good events on file: "<<m_NGoodEventsInFile<<endl;
+  }
+  
   m_ROAFile.Close();  
 }
 
@@ -170,14 +174,12 @@ bool MModuleLoaderMeasurementsROA::Open(MString FileName, unsigned int Way)
 
 bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
 {
-  // Return next single event from file... or 0 if there are no more.
+  // Populate next single event with ROA elements from file... or return false if there are no more.
   
   Event->Clear();
 
-  m_ROAFile.ReadNext(*Event);
-  
-  if (Event->GetNumberOfReadOuts() == 0) {
-    cout<<m_Name<<": No more read-outs available in File"<<endl;
+  if (m_ROAFile.ReadNext(*Event) == false) {
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more events available in File"<<endl;
     return false;
   }
   
@@ -187,10 +189,8 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
   
   for (unsigned int r = 0; r < Event->GetNumberOfReadOuts(); ++r) {
     MReadOut RO = Event->GetReadOut(r);
-    const MReadOutElementDoubleStrip* Strip = 
-      dynamic_cast<const MReadOutElementDoubleStrip*>(&(RO.GetReadOutElement()));
-      
-    const MReadOutDataADCValue* ADC = 
+
+    const MReadOutDataADCValue* ADC =
       dynamic_cast<const MReadOutDataADCValue*>(RO.GetReadOutData().Get(MReadOutDataADCValue::m_TypeID));
     const MReadOutDataTiming* Timing =
       dynamic_cast<const MReadOutDataTiming*>(RO.GetReadOutData().Get(MReadOutDataTiming::m_TypeID));
@@ -198,32 +198,67 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
       dynamic_cast<const MReadOutDataTAC*>(RO.GetReadOutData().Get(MReadOutDataTAC::m_TypeID));
     const MReadOutDataEnergy* Energy =
       dynamic_cast<const MReadOutDataEnergy*>(RO.GetReadOutData().Get(MReadOutDataEnergy::m_TypeID));
+    const MReadOutDataFlags* Flags =
+      dynamic_cast<const MReadOutDataFlags*>(RO.GetReadOutData().Get(MReadOutDataFlags::m_TypeID));
     const MReadOutDataOrigins* Origins =
       dynamic_cast<const MReadOutDataOrigins*>(RO.GetReadOutData().Get(MReadOutDataOrigins::m_TypeID));
-    
-    
-    MStripHit* SH = new MStripHit();
-    SH->SetDetectorID(Strip->GetDetectorID());
-    SH->IsXStrip(Strip->IsLowVoltageStrip());
-    SH->SetStripID(Strip->GetStripID());
-    
-    if (Timing != nullptr) {
-      SH->SetTiming(Timing->GetTiming());
+
+    const MReadOutElementDoubleStrip* Strip =
+      dynamic_cast<const MReadOutElementDoubleStrip*>(&(RO.GetReadOutElement()));
+    const MReadOutElementVoxel3D* Voxel =
+      dynamic_cast<const MReadOutElementVoxel3D*>(&(RO.GetReadOutElement()));
+
+    if (Strip != nullptr) {
+      MStripHit* SH = new MStripHit();
+      SH->SetDetectorID(Strip->GetDetectorID());
+      SH->IsXStrip(Strip->IsLowVoltageStrip());
+      SH->SetStripID(Strip->GetStripID());
+
+      if (Timing != nullptr) {
+        SH->SetTiming(Timing->GetTiming());
+      }
+      if (TAC != nullptr) {
+        SH->SetTAC(TAC->GetTAC());
+      }
+      if (Energy != nullptr) {
+        SH->SetEnergy(Energy->GetEnergy());
+      }
+      if (ADC != nullptr) {
+        SH->SetADCUnits(ADC->GetADCValue());
+      }
+      if (Flags != nullptr) {
+        SH->ParseFlags(Flags->GetFlags());
+      }
+      if (Origins != nullptr) {
+        SH->AddOrigins(Origins->GetOrigins());
+      }
+
+      Event->AddStripHit(SH);
+    } else if (Voxel != nullptr) {
+      MCrystalHit* CH = new MCrystalHit();
+      CH->SetDetectorID(Voxel->GetDetectorID());
+      CH->SetCrystalID(Voxel->GetCrystalID());
+      CH->SetVoxelXID(Voxel->GetVoxelXID());
+      CH->SetVoxelYID(Voxel->GetVoxelYID());
+      CH->SetVoxelZID(Voxel->GetVoxelZID());
+
+      if (Energy != nullptr) {
+        CH->SetEnergy(Energy->GetEnergy());
+      }
+      if (ADC != nullptr) {
+        CH->SetADCUnits(ADC->GetADCValue());
+      }
+      if (Flags != nullptr) {
+        CH->ParseFlags(Flags->GetFlags());
+      }
+      if (Origins != nullptr) {
+        CH->AddOrigins(Origins->GetOrigins());
+      }
+
+      Event->AddCrystalHit(CH);
+    } else {
+      if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported read-out element \""<<RO.GetReadOutElement().GetType()<<"\" - read-out skipped"<<endl;
     }
-    if (TAC != nullptr) {
-      SH->SetTAC(TAC->GetTAC());
-    }
-    if (Energy != nullptr) {
-      SH->SetEnergy(Energy->GetEnergy());
-    }
-    if (ADC != nullptr) {
-      SH->SetADCUnits(ADC->GetADCValue());
-    }
-    if (Origins != nullptr) {
-      SH->AddOrigins(Origins->GetOrigins());
-    }
-    
-    Event->AddStripHit(SH);
   }
   
   Event->SetTimeUTC(Event->GetTime());

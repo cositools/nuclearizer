@@ -173,7 +173,7 @@ bool MModuleLoaderMeasurementsL0::Initialize()
     return false;
   }
 
-  return MModule::Initialize();
+  return MModuleLoaderMeasurements::Initialize();
 }
 
 
@@ -221,7 +221,7 @@ bool MModuleLoaderMeasurementsL0::OpenL0File(MString FileName)
 bool MModuleLoaderMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
 {
   if (ReadNextPacket(Event) == false) {
-    if (g_Verbosity >= c_Info) cout<<m_Name<<": No more packets!"<<endl;
+    if (g_Verbosity >= c_Info) cout<<m_XmlTag<<": No more packets!"<<endl;
     m_IsFinished = true;
     return false;
   }

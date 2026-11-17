@@ -111,6 +111,8 @@ class MGUIOptionsEventSaver : public MGUIOptions
   TGCheckButton* m_RoaWithOrigins;
   //! Checkbutton to include or exclude nearest neighbor hits in the roa file
   TGCheckButton* m_RoaWithNearestNeighbors;
+  //! Checkbutton to split the roa file into one file per detector and side
+  TGCheckButton* m_SplitByDetectorSide;
 
 #ifdef ___CLING___
  public:

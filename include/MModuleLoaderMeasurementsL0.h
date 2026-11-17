@@ -72,6 +72,8 @@ class MModuleLoaderMeasurementsL0 : public MModuleLoaderMeasurements
   void SetFileNameStripMap(const MString& FileName) { m_FileNameStripMap = FileName; }
   //! Get the strip map file name
   MString GetFileNameStripMap() const { return m_FileNameStripMap; }
+  //! Get the strip map - only valid after Initialize()
+  const MStripMap& GetStripMap() const { return m_StripMap; }
 
 
   // protected methods:

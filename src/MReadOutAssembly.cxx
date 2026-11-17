@@ -33,6 +33,7 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MTokenizer.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -146,6 +147,9 @@ void MReadOutAssembly::Clear()
 
   m_StripPairing_QualityFlag = false;
   m_StripPairingString_QualityFlag.clear();
+
+  m_UnknownDetector_QualityFlag = false;
+  m_UnknownDetectorString_QualityFlag.clear();
 
   m_FilteredOut = false;
   m_AnalysisProgress = 0;
@@ -442,7 +446,7 @@ MTime MReadOutAssembly::ComputeGPSfromRTSTime(MTime RTSTime) const
 
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
-  // HT, SH, and BD are handled here; malformed HT or SH lines return false
+  // HT, SH, BD, QA, and PQ are handled here; malformed HT or SH lines and unknown flags return false
 
   if (Line.BeginsWith("TI")) {
     MTime T(0);
@@ -476,10 +480,8 @@ bool MReadOutAssembly::Parse(MString& Line, int Version)
       return false;
     }
   }
-  if (Line.BeginsWith("BD")) {
-    // Mark the event as filtered out
-    m_FilteredOut = true;
-    return true;
+  if (Line.BeginsWith("BD") == true || Line.BeginsWith("QA") == true || Line.BeginsWith("PQ") == true) {
+    return ParseBDFlags(Line);
   }
 
   // Everything else goes to the tolerant base parser, which also consumes unrecognized lines and returns true
@@ -547,9 +549,9 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
       } else {
         delete sh;
       }
-    } else if (Line.BeginsWith("BD")) {
+    } else if (Line.BeginsWith("BD") == true || Line.BeginsWith("QA") == true || Line.BeginsWith("PQ") == true) {
       EventRead = true;
-      SetFilteredOut(true);
+      ParseBDFlags(Line);
     }
 
   }
@@ -662,6 +664,39 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
   //
   // WithTemperatures is currently not used, since we don't have that housekeeping info at the moment
 
+  StreamRoaSelection(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins, WithNearestNeighbors, false, 0, false);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::StreamRoaDetectorSide(ostream& S, unsigned int DetectorID, bool LowVoltageSide, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
+{
+  // Stream the read-out assembly in MEGAlib's ROA format, but only with the strip hits of the given detector side
+
+  return StreamRoaSelection(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins, WithNearestNeighbors, true, DetectorID, LowVoltageSide);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::StreamRoaSelection(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors,
+                                          bool OnlyDetectorSide, unsigned int DetectorID, bool LowVoltageSide)
+{
+  // Shared implementation of StreamRoa and StreamRoaDetectorSide
+
+  vector<MStripHit*> SelectedStripHits;
+  for (MStripHit* SH: m_StripHits) {
+    if (WithNearestNeighbors == false && SH->IsNearestNeighbor() == true) continue;
+    if (OnlyDetectorSide == true && (SH->GetDetectorID() != DetectorID || SH->IsLowVoltageStrip() != LowVoltageSide)) continue;
+    SelectedStripHits.push_back(SH);
+  }
+  if (OnlyDetectorSide == true && SelectedStripHits.size() == 0) {
+    return false;
+  }
+
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
 
@@ -676,22 +711,23 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool 
   }
 
   unsigned int Counter = 0;
-  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    if (WithNearestNeighbors == false && m_StripHits[h]->IsNearestNeighbor() == true) {
-      continue;
-    }
-    m_StripHits[h]->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
+  for (MStripHit* SH: SelectedStripHits) {
+    SH->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
     ++Counter;
   }
-  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
-    m_CrystalHits[h]->StreamRoa(S, WithADCs, WithEnergies, WithFlags, WithOrigins);
-    ++Counter;
+  if (OnlyDetectorSide == false) {
+    for (MCrystalHit* CH: m_CrystalHits) {
+      CH->StreamRoa(S, WithADCs, WithEnergies, WithFlags, WithOrigins);
+      ++Counter;
+    }
   }
   if (Counter == 0) {
     S<<"BD No hits"<<endl;
   }
 
   StreamBDFlags(S);
+
+  return true;
 }
 
 
@@ -804,6 +840,18 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     S<<endl;
   }
 
+  if (m_UnknownDetector_QualityFlag == true) {
+    S<<"QA UnknownDetector";
+    if (m_UnknownDetectorString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_UnknownDetectorString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+
   if (m_GuardRingVeto == true) {
     S<<"BD GR Veto"<<endl;
   }
@@ -817,6 +865,90 @@ void MReadOutAssembly::StreamBDFlags(ostream& S)
     S<<" "<<i;
   }
   S<<endl;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse a BD, QA, or PQ line as written by StreamBDFlags
+//! Return false if the flag is unknown
+bool MReadOutAssembly::ParseBDFlags(const MString& Line)
+{
+  // "PQ <chi square> <chi square> ..."
+  if (Line.BeginsWith("PQ") == true) {
+    MTokenizer T;
+    T.Analyze(Line);
+    for (unsigned int t = 1; t < T.GetNTokens(); ++t) {
+      SetStripPairingReducedChiSquare(T.GetTokenAtAsDouble(t));
+    }
+    return true;
+  }
+
+  // "BD <Flag> (<Text>) (<Text>) ..." and "QA <Flag> (<Text>) ..."
+  const MString Rest = Line.GetSubString(3);
+  size_t Bracket = Rest.Index(" (");
+  const MString Flag = Rest.GetSubString(0, Bracket);
+  vector<MString> Texts;
+  while (Bracket != MString::npos) {
+    size_t Start = Bracket + 2;
+    size_t End = Rest.Index(") (", Start);
+    if (End == MString::npos) {
+      End = Rest.Last(')');
+      if (End == MString::npos || End < Start) End = Rest.Length();
+      Texts.push_back(Rest.GetSubString(Start, End - Start));
+      break;
+    }
+    Texts.push_back(Rest.GetSubString(Start, End - Start));
+    Bracket = End + 1;
+  }
+  // The setters ignore an empty text
+  if (Texts.empty() == true) Texts.push_back("");
+
+  if (Line.BeginsWith("BD") == true) {
+    if (Flag == "EnergyCalibrationError") {
+      for (const MString& T: Texts) SetEnergyCalibrationError(T);
+    } else if (Flag == "TACCalibrationError") {
+      for (const MString& T: Texts) SetTACCalibrationError(T);
+    } else if (Flag == "StripPairingError") {
+      for (const MString& T: Texts) SetStripPairingError(T);
+    } else if (Flag == "DepthCalibrationError") {
+      for (const MString& T: Texts) SetDepthCalibrationError(T);
+    } else if (Flag == "EventReconstructionError") {
+      for (const MString& T: Texts) SetEventReconstructionError(T);
+    } else if (Flag == "GR Veto") {
+      SetGuardRingVeto();
+    } else if (Flag == "Shield Veto") {
+      SetShieldVeto();
+    } else if (Flag == "No hits") {
+      // Written by StreamRoa for events without hits, nothing to set
+    } else {
+      if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Unknown BD flag: "<<Line<<endl;
+      return false;
+    }
+    return true;
+  }
+
+  if (Line.BeginsWith("QA") == true) {
+    if (Flag == "StripHitBelowThreshold") {
+      for (const MString& T: Texts) SetStripHitBelowThreshold_QualityFlag(T);
+    } else if (Flag == "HighADC") {
+      for (const MString& T: Texts) SetHighADC_QualityFlag(T);
+    } else if (Flag == "StripPairing") {
+      for (const MString& T: Texts) SetStripPairing_QualityFlag(T);
+    } else if (Flag == "UnknownDetector") {
+      for (const MString& T: Texts) SetUnknownDetector_QualityFlag(T);
+    } else {
+      if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Unknown QA flag: "<<Line<<endl;
+      return false;
+    }
+    return true;
+  }
+
+  // Both callers check the keyword first, so this only happens if the function is used elsewhere
+  if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Not a BD, QA, or PQ line: "<<Line<<endl;
+
+  return false;
 }
 
 

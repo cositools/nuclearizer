@@ -90,15 +90,23 @@ bool MSubModuleDEEOutput::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level 
 
-  // Convert the DEE strip hits to standard strip hits
+  // Sort and convert the DEE strip hits to standard strip hits
   list<MDEEStripHit>& LVHits = Event->GetDEEStripHitLVListReference();
+  LVHits.sort([](const MDEEStripHit& a, const MDEEStripHit& b) {
+    return a.m_ROE < b.m_ROE;
+  });
   for (MDEEStripHit& SH: LVHits) {
     Event->AddStripHit(SH.Convert());
   }
+
   list<MDEEStripHit>& HVHits = Event->GetDEEStripHitHVListReference();
+  HVHits.sort([](const MDEEStripHit& a, const MDEEStripHit& b) {
+    return a.m_ROE < b.m_ROE;
+  });
   for (MDEEStripHit& SH: HVHits) {
     Event->AddStripHit(SH.Convert());
   }
+  
   list<MDEECrystalHit>& CHits = Event->GetDEECrystalHitListReference();
   for (MDEECrystalHit& CH: CHits) {
     Event->AddCrystalHit(CH.Convert());

@@ -99,7 +99,7 @@ bool MModuleLoaderSimulationsCosima::Initialize()
 
   m_Reader = new MFileEventsSim(m_Geometry);
   if (m_Reader->Open(m_SimulationFileName) == false) {
-    cout<<"Unable to open sim file "<<m_SimulationFileName<<" - Aborting!"<<endl;
+    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open sim file "<<m_SimulationFileName<<" - Aborting!"<<endl;
     return false;
   }
   m_StartAreaFarField = m_Reader->GetSimulationStartAreaFarField();

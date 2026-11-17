@@ -10,6 +10,8 @@
 
 
 // Standard libs:
+#include <cstring>
+#include <new>
 #include <vector>
 using namespace std;
 
@@ -24,19 +26,19 @@ using namespace std;
 class UTNDEEStripHit : public MUnitTest
 {
  public:
-  UTNDEEStripHit()
-      : MUnitTest("UTNDEEStripHit")
-  {
-  }
-  virtual ~UTNDEEStripHit()
-  {
-  }
+  //! Default constructor
+  UTNDEEStripHit() : MUnitTest("UTNDEEStripHit") {}
+  //! Default destructor
+  virtual ~UTNDEEStripHit() {}
 
+  //! Run all tests
   virtual bool Run();
 
  private:
   //! Test default-construction state for reliably defaulted fields
   bool TestDefaultConstruction();
+  //! Test that the constructor defines all identifiers and timing fields independent of the memory content
+  bool TestUninitializedMembers();
   //! Test Convert() with representative values
   bool TestConvertRepresentativeValues();
   //! Test Convert() false-path booleans
@@ -54,6 +56,7 @@ bool UTNDEEStripHit::Run()
   bool Passed = true;
 
   Passed = TestDefaultConstruction() && Passed;
+  Passed = TestUninitializedMembers() && Passed;
   Passed = TestConvertRepresentativeValues() && Passed;
   Passed = TestConvertFalsePaths() && Passed;
   Passed = TestConvertLifecycleIndependence() && Passed;
@@ -102,6 +105,37 @@ bool UTNDEEStripHit::TestDefaultConstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool UTNDEEStripHit::TestUninitializedMembers()
+{
+  bool Passed = true;
+
+  // GCC removes the memory fills before the constructor as dead stores (-flifetime-dse), which leaves random bytes: not checked with GCC
+#if !defined(__GNUC__) || defined(__clang__)
+  // Construct into memory filled with 0x00 and with 0xFF: a member without default differs between both
+  // MSubModuleDepthReadout builds the pixel code of every hit from m_OppositeStripID, also for added nearest neighbors
+  alignas(MDEEStripHit) unsigned char Zero[sizeof(MDEEStripHit)];
+  alignas(MDEEStripHit) unsigned char Ones[sizeof(MDEEStripHit)];
+  memset(Zero, 0x00, sizeof(Zero));
+  memset(Ones, 0xFF, sizeof(Ones));
+  MDEEStripHit* A = new (Zero) MDEEStripHit;
+  MDEEStripHit* B = new (Ones) MDEEStripHit;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_OppositeStripID has a defined default", A->m_OppositeStripID == B->m_OppositeStripID)) && Passed;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_ID has a defined default", A->m_ID == B->m_ID)) && Passed;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_OppositeSideID has a defined default", A->m_OppositeSideID == B->m_OppositeSideID)) && Passed;
+  // With 0xFF memory an undefined double is NaN, so the comparison fails
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_Timing has a defined default", A->m_Timing == B->m_Timing)) && Passed;
+  Passed = ExpectedToFail(EvaluateTrue("MDEEStripHit()", "uninitialized memory", "m_FastPeakTime has a defined default", A->m_FastPeakTime == B->m_FastPeakTime)) && Passed;
+  A->~MDEEStripHit();
+  B->~MDEEStripHit();
+#endif
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool UTNDEEStripHit::TestConvertRepresentativeValues()
 {
   bool Passed = true;
@@ -116,6 +150,7 @@ bool UTNDEEStripHit::TestConvertRepresentativeValues()
   H.m_ADC = 4053;
   H.m_TAC = 10452;
   H.m_IsGuardRing = true;
+  H.m_SimulatedOrigins = { 5, 2, 5 };
 
   MStripHit* Converted = H.Convert();
 
@@ -130,6 +165,11 @@ bool UTNDEEStripHit::TestConvertRepresentativeValues()
     Passed = EvaluateNear("Convert()", "representative ADC", "Convert() transfers ADC value 4053", Converted->GetADCUnits(), 4053.0, 1e-9) && Passed;
     Passed = EvaluateNear("Convert()", "representative TAC", "Convert() transfers TAC value 10452", Converted->GetTAC(), 10452.0, 1e-9) && Passed;
     Passed = EvaluateTrue("Convert()", "representative guard ring", "Convert() transfers IsGuardRing true", Converted->IsGuardRing()) && Passed;
+    Passed = Evaluate("Convert()", "representative origins", "Convert() transfers the simulated origins without duplicates", (unsigned int) Converted->GetOrigins().size(), (unsigned int) 2) && Passed;
+    if (Converted->GetOrigins().size() == 2) {
+      Passed = Evaluate("Convert()", "representative origins", "The origins are sorted", Converted->GetOrigins()[0], 2) && Passed;
+      Passed = Evaluate("Convert()", "representative origins", "Both origins are kept", Converted->GetOrigins()[1], 5) && Passed;
+    }
   }
 
   delete Converted;
@@ -221,3 +261,7 @@ int main()
   UTNDEEStripHit Test;
   return Test.Run() == true ? 0 : 1;
 }
+
+
+// UTNDEEStripHit.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

@@ -62,6 +62,11 @@ class MSubModuleStripReadout : public MSubModule
   //! Get energy calibration file name
   MString GetEnergyCalibrationFileName() const { return m_EnergyCalibrationFileName; }
 
+  //! Set hardware threshold file name
+  void SetHardwareThresholdFileName(const MString& FileName) { m_HardwareThresholdFileName = FileName; }
+  //! Get hardware threshold file name
+  MString GetHardwareThresholdFileName() const { return m_HardwareThresholdFileName; }
+
   //! Initialize the module
   virtual bool Initialize();
 
@@ -95,15 +100,29 @@ class MSubModuleStripReadout : public MSubModule
  private:
   //! Energy calibration file name
   MString m_EnergyCalibrationFileName;
+
+  //! Hardware threshold file name
+  MString m_HardwareThresholdFileName;
   
-  //! Name of the strip map
-  std::map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
+  //! Map storing the energy calibration fits for each strip
+  map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
+
+  //! Maps storing the range of ADC values (minimum and maximum) in a monotonic range
+  map<MReadOutElementDoubleStrip, double> m_MinimumADCs;
+  map<MReadOutElementDoubleStrip, double> m_MaximumADCs;
+
+  //! Maps storing the energy range (minimum and maximum) covered by the ADC range
+  map<MReadOutElementDoubleStrip, double> m_MinimumEnergies;
+  map<MReadOutElementDoubleStrip, double> m_MaximumEnergies;
   
   //! Flag to determine if resolution calibration should be applied
   bool m_ApplyResolutionCalibration;
   
   //! Map storing the FWHM fits for each strip
-  std::map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
+  map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
+
+  //! Map storing the hardware thresholds of the slow shaper for each strip
+  map<MReadOutElementDoubleStrip, double> m_HardwareThresholdMap;
   
   //! Max value of the ADC units
   static constexpr double m_MaxADCRange = 16383;

@@ -47,14 +47,19 @@ class MHit
 
   // Strip hits:
 
-  //! Return the number of strip hits
+  //! Return the number of triggered strip hits
   unsigned int GetNStripHits() const { return m_StripHits.size(); }
   //! Return strip hit i or nullptr if i is out of bounds
   //! Ownership stays elsewhere
+  //! This includes only triggered strip hits
   MStripHit* GetStripHit(unsigned int i);
-  //! Add a strip hit
+  //! Return nearest neighbor strip hit i or nullptr if i is out of bounds
+  MStripHit* GetNearestNeighborStripHit(unsigned int i);
+  //! Add a triggered strip hit
   //! Ownership stays elsewhere
   void AddStripHit(MStripHit* StripHit);
+  //! Add a nearest neighbor strip hit
+  void AddNearestNeighborStripHit(MStripHit* StripHit);
   //! Remove strip hit i without deleting it
   void RemoveStripHit(unsigned int i);
   //! Remove a strip hit without deleting it
@@ -72,6 +77,14 @@ class MHit
   void SetPositionResolution(const MVector& PositionResolution) { m_PositionResolution = PositionResolution; }
   //! Return the position resolution of the hit
   MVector GetPositionResolution() const { return m_PositionResolution; }
+
+
+  // Local Position:
+
+  //! Set the position of the hit in local detector coordinates 
+  void SetLocalPosition(const MVector& Position) { m_LocalPosition = Position; }
+  //! Return the position of the hit in local detector coordinates
+  MVector GetLocalPosition() const { return m_LocalPosition; }
 
 
   // Energy:
@@ -172,11 +185,18 @@ class MHit
   //! List of strip hits contributing to this hit
   //! Ownership stays elsewhere
   vector<MStripHit*> m_StripHits;
+  
+  //! List of nearest neighbor strip hits associated with this hit
+  vector<MStripHit*> m_NearestNeighborStripHits;
 
   //! Position of the hit
   MVector m_Position;
   //! Position resolution of the hit
   MVector m_PositionResolution;
+
+
+  //! Position of the hit in local detector coordinates
+  MVector m_LocalPosition;
 
   //! Energy of the hit
   double m_Energy;

@@ -122,9 +122,6 @@ class MSubModuleStripTrigger : public MSubModule
   //! Process strip hits for deadtime and trigger determination
   bool ProcessStripHits(MReadOutAssembly* Event);
 
-  //! Helper function for getting count rate (including nearest neighbor)
-  bool CountRate(vector<int> ASICChannels, vector<double> CountTime);
-
   //! Check if at least one strip exists on each side of each detector
   bool CheckTriggerConditions(MReadOutAssembly* Event);
 
@@ -208,11 +205,6 @@ class MSubModuleStripTrigger : public MSubModule
 
   //! Stores trigger counts for each detector
   vector<int> m_NumStripTriggers;
-
-  //! Event strip times for counting (should be removed later)
-  vector<double> m_EventStripTimes;
-  //! Event strip IDs for counting (should be removed later)
-  vector<double> m_EventStripIDs;
 
 #ifdef ___CLING___
  public:
