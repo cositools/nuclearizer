@@ -242,7 +242,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestCalibratedVoxel()
 {
   bool Passed = true;
 
-  // The module's private random generator cannot be seeded (see TestReproducibility):
+  // The module draws its random numbers from gRandom, which is not reseeded here:
   // all statistical tolerances are at least 6 sigma of the correct result
   MSubModuleShieldEnergyCorrection M;
   if (InitializeStandard(M) == false) {
@@ -376,7 +376,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
   }
   Passed = Evaluate("AnalyzeEvent()", "500 x two hits in the same voxel", "All pairs are merged", NMerged, 500u) && Passed;
   if (NMerged > 0) {
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "500 x 100 + 200 keV in the same voxel", "The merged energy is centered on the correction of the summed deposit, 1.1 * 300 + 2 = 332 keV", Sum/NMerged, 332.0, 0.2)) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "500 x 100 + 200 keV in the same voxel", "The merged energy is centered on the correction of the summed deposit, 1.1 * 300 + 2 = 332 keV", Sum/NMerged, 332.0, 0.2) && Passed;
   }
 
   // Hits in different crystals of the same shield detector must not be merged
@@ -384,7 +384,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
   Different.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
   Different.AddDEECrystalHit(CreateHit("X0", 5, MVector(0, 0, 0), 300.0));
   M.AnalyzeEvent(&Different);
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "Hits in different crystals are not merged", Different.GetNDEECrystalHits(), 2u)) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "Hits in different crystals are not merged", Different.GetNDEECrystalHits(), 2u) && Passed;
 
   // Hits in different voxels of the same crystal must not be merged
   MReadOutAssembly Voxels;
@@ -394,7 +394,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
   g_Verbosity = c_Quiet;
   M.AnalyzeEvent(&Voxels);
   g_Verbosity = OldVerbosity;
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "hits in two voxels of crystal 3", "Hits in different voxels are not merged", Voxels.GetNDEECrystalHits(), 2u)) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "hits in two voxels of crystal 3", "Hits in different voxels are not merged", Voxels.GetNDEECrystalHits(), 2u) && Passed;
 
   M.Finalize();
 
@@ -458,7 +458,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestReproducibility()
   vector<double> Second = RunSeededSequence(10);
   Passed = EvaluateSize("AnalyzeEvent()", "seeded run", "Every event of the first run has one crystal hit", First.size(), 10) && Passed;
   Passed = EvaluateSize("AnalyzeEvent()", "seeded run", "Every event of the second run has one crystal hit", Second.size(), 10) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "two runs with the gRandom seed of MAssembly", "Reseeding gRandom reproduces the corrected energies", First == Second)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "two runs with the gRandom seed of MAssembly", "Reseeding gRandom reproduces the corrected energies", First == Second) && Passed;
 
   return Passed;
 }
