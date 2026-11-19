@@ -271,8 +271,8 @@ bool UTNSubModuleShieldEnergyCorrection::TestCalibratedVoxel()
   double Sigma = sqrt(Sum2/N - Mean*Mean);
   Passed = EvaluateTrue("AnalyzeEvent()", "calibrated voxel", "AnalyzeEvent returns true", AllTrue) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "calibrated voxel", "Every event keeps its crystal hit", NMissing, 0u) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The corrected energies are centered on 1.1 * 100 + 2 = 112 keV", Mean, 112.0, 0.05)) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The width is FWHM / 2.3548 = 0.4247 keV", Sigma, 1.0/2.354820045, 0.03)) && Passed;
+  Passed = EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The corrected energies are centered on 1.1 * 100 + 2 = 112 keV", Mean, 112.0, 0.05) && Passed;
+  Passed = EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The width is FWHM / 2.3548 = 0.4247 keV", Sigma, 1.0/2.354820045, 0.03) && Passed;
 
   M.Finalize();
 
@@ -316,7 +316,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestUncalibratedVoxel()
   double Sigma = sqrt(Sum2/N - Mean*Mean);
   Passed = Evaluate("AnalyzeEvent()", "uncalibrated voxel", "Every event keeps its crystal hit", NMissing, 0u) && Passed;
   Passed = EvaluateNear("AnalyzeEvent()", "uncalibrated voxel, 500 keV", "The energies are centered on the simulated energy", Mean, 500.0, 1.0) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "uncalibrated voxel, 500 keV", "The default width is 10 keV", Sigma, 10.0, 0.7)) && Passed;
+  Passed = EvaluateNear("AnalyzeEvent()", "uncalibrated voxel, 500 keV", "The default width is 10 keV", Sigma, 10.0, 0.7) && Passed;
 
   // Energies are never negative
   g_Verbosity = c_Quiet;
