@@ -62,7 +62,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
   {
     return operator==(static_cast<const MReadOutElement&>(R));
   }
-    
+
   //! Compare two voxel read-out elements for ordered containers
   virtual bool operator<(const MReadOutElement& R) const;
 
@@ -72,26 +72,14 @@ class MReadOutElementVoxel3D : public MReadOutElement
   virtual MString GetType() const;
 
   //! Set detector ID as string
-  void SetDetectorID(const MString& DetectorID)
-  {
-    m_DetectorID = DetectorID;
-  }
+  void SetDetectorID(const MString& DetectorID) { m_DetectorName = DetectorID; }
   //! Get detector ID as string
-  MString GetDetectorID() const
-  {
-    return m_DetectorID;
-  }
+  MString GetDetectorID() const { return m_DetectorName; }
 
   //! Set crystal ID as int
-  void SetCrystalID(unsigned int CrystalID)
-  {
-    m_CrystalID = CrystalID;
-  }
+  void SetCrystalID(unsigned int CrystalID) { m_CrystalID = CrystalID; }
   //! Get crystal ID as int
-  unsigned int GetCrystalID() const
-  {
-    return m_CrystalID;
-  }
+  unsigned int GetCrystalID() const { return m_CrystalID; }
 
   //! Return true if all voxel IDs are defined
   bool HasVoxelIDs() const;
@@ -106,37 +94,19 @@ class MReadOutElementVoxel3D : public MReadOutElement
   void SetVoxelIDs(unsigned int VoxelXID, unsigned int VoxelYID, unsigned int VoxelZID);
 
   //! Set Voxel X ID as int
-  void SetVoxelXID(unsigned int VoxelXID)
-  {
-    m_VoxelXID = VoxelXID;
-  }
+  void SetVoxelXID(unsigned int VoxelXID) { m_VoxelXID = VoxelXID; }
   //! Get Voxel X ID as int
-  unsigned int GetVoxelXID() const
-  {
-    return m_VoxelXID;
-  }
+  unsigned int GetVoxelXID() const { return m_VoxelXID; }
 
   //! Set Voxel Y ID as int
-  void SetVoxelYID(unsigned int VoxelYID)
-  {
-    m_VoxelYID = VoxelYID;
-  }
+  void SetVoxelYID(unsigned int VoxelYID) { m_VoxelYID = VoxelYID; }
   //! Get Voxel Y ID as int
-  unsigned int GetVoxelYID() const
-  {
-    return m_VoxelYID;
-  }
+  unsigned int GetVoxelYID() const { return m_VoxelYID; }
 
   //! Set Voxel Z ID as int
-  void SetVoxelZID(unsigned int VoxelZID)
-  {
-    m_VoxelZID = VoxelZID;
-  }
+  void SetVoxelZID(unsigned int VoxelZID) { m_VoxelZID = VoxelZID; }
   //! Get Voxel Z ID as int
-  unsigned int GetVoxelZID() const
-  {
-    return m_VoxelZID;
-  }
+  unsigned int GetVoxelZID() const { return m_VoxelZID; }
 
   //! Return the number of parsable elements
   virtual unsigned int GetNumberOfParsableElements() const;
@@ -151,7 +121,7 @@ class MReadOutElementVoxel3D : public MReadOutElement
   //! Return true if the detector ID can be written as one parsable token
   //! (no whitespace, does not start with '#' or "//", is not the empty-ID placeholder)
   static bool IsWritableDetectorID(const MString& DetectorID);
-  
+
   // protected methods:
  protected:
   // private methods:
@@ -160,8 +130,8 @@ class MReadOutElementVoxel3D : public MReadOutElement
   static bool ParseUnsignedInt(const MString& Token, unsigned int& Value);
   // protected members:
  protected:
-  //! Detector ID as string e.g. "ACS_X0_0", "ACS_Y1_3"
-  MString m_DetectorID;
+  //! Detector name: the string identifier of the detector, e.g. "ACS_X0_0", "ACS_Y1_3"
+  MString m_DetectorName;
   //! Crystal ID as int
   unsigned int m_CrystalID;
 
@@ -171,10 +141,10 @@ class MReadOutElementVoxel3D : public MReadOutElement
   unsigned int m_VoxelYID;
   //! Voxel index Z as int
   unsigned int m_VoxelZID;
-  
+
   //! Token written for an empty detector ID
   static const char* const c_EmptyDetectorIDToken;
-    
+
   // private members:
  private:
 #ifdef ___CLING___
@@ -190,4 +160,3 @@ ostream& operator<<(ostream& os, const MReadOutElementVoxel3D& R);
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
