@@ -252,26 +252,34 @@ unsigned int MReadOutElementVoxel3D::GetNumberOfParsableElements() const
 //! Placeholder token written for an empty detector ID, so that the parsable string always has 5 tokens
 const char* const MReadOutElementVoxel3D::c_EmptyDetectorIDToken = "-";
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Return true if the detector ID can be written as a single parsable token
 bool MReadOutElementVoxel3D::IsWritableDetectorID(const MString& DetectorID)
 {
-  const char* C = DetectorID.Data();
-  if (C[0] == '#' || (C[0] == '/' && C[1] == '/')) {
-    return false; // would start a comment in MTokenizer
+  // MTokenizer treats a token starting with "#" or "//" as the start of a comment
+  if (DetectorID.BeginsWith("#") == true || DetectorID.BeginsWith("//") == true) {
+    return false;
   }
+
+  // The placeholder token is read back as an empty detector ID
   if (DetectorID == c_EmptyDetectorIDToken) {
-    return false; // would be read back as empty
+    return false;
   }
-  for (; *C != '\0'; ++C) {
-    if (isspace(static_cast<unsigned char>(*C)) != 0) {
+
+  // White space would split the detector ID into several tokens
+  for (size_t Position = 0; Position < DetectorID.Length(); ++Position) {
+    // isspace() requires an unsigned char value
+    if (isspace(static_cast<unsigned char>(DetectorID[Position])) != 0) {
       return false;
     }
   }
+
   return true;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -279,25 +287,33 @@ bool MReadOutElementVoxel3D::IsWritableDetectorID(const MString& DetectorID)
 //! Convert a token into an unsigned int - return false if it is not a plain decimal number in range
 bool MReadOutElementVoxel3D::ParseUnsignedInt(const MString& Token, unsigned int& Value)
 {
-  const char* C = Token.Data();
-  if (*C == '\0') {
+  // Only a non-empty sequence of decimal digits is accepted: no sign, no white space, no exponent
+  if (Token.IsEmpty() == true) {
     return false;
   }
 
-  unsigned long long V = 0;
-  for (; *C != '\0'; ++C) {
-    if (*C < '0' || *C > '9') {
+  // The number is accumulated in a wider type, so that values too large for an unsigned int are detected
+  const unsigned long long DecimalBase = 10;
+  unsigned long long Number = 0;
+  for (size_t Position = 0; Position < Token.Length(); ++Position) {
+    const char Digit = Token[Position];
+    // isdigit() requires an unsigned char value
+    if (isdigit(static_cast<unsigned char>(Digit)) == 0) {
       return false;
     }
-    V = 10 * V + static_cast<unsigned long long>(*C - '0');
-    if (V > numeric_limits<unsigned int>::max()) {
+
+    Number = DecimalBase * Number + static_cast<unsigned long long>(Digit - '0');
+    if (Number > numeric_limits<unsigned int>::max()) {
       return false;
     }
   }
 
-  Value = static_cast<unsigned int>(V);
+  // Value is only changed if the whole token is valid
+  Value = static_cast<unsigned int>(Number);
+
   return true;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
