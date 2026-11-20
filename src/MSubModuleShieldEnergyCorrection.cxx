@@ -29,6 +29,7 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TRandom.h"
 
 // MEGAlib libs:
 #include "MSubModule.h"
@@ -46,8 +47,7 @@ ClassImp(MSubModuleShieldEnergyCorrection)
 
 
 MSubModuleShieldEnergyCorrection::MSubModuleShieldEnergyCorrection()
-    : MSubModule(),
-      m_Random(0)
+    : MSubModule()
 {
   // Construct an instance of MSubModuleShieldEnergyCorrection
 
@@ -140,13 +140,13 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       if (g_Verbosity >= c_Warning) {
         cout << "WARNING: Non-positive FWHM (" << ShieldFWHMValue << ") for DetectorID = " << DetectorID << " CrystalID = " << CrystalID << " Voxel_ID = " << VoxelInDetector[0] << "," << VoxelInDetector[1] << "," << VoxelInDetector[2] << " -> applying default" << endl;
       }
-      CorrectedEnergyDefault = m_Random.Gaus(SimulatedEnergy, SigmaNoiseDefault);
+      CorrectedEnergyDefault = gRandom->Gaus(SimulatedEnergy, SigmaNoiseDefault);
       CH.m_Energy = CorrectedEnergyDefault;
       continue;
     }
 
     double ShieldSigma = ShieldFWHMValue / FWHM_TO_SIGMA;
-    double CorrectedEnergy = m_Random.Gaus(ShieldCorrectedCentroid, ShieldSigma);
+    double CorrectedEnergy = gRandom->Gaus(ShieldCorrectedCentroid, ShieldSigma);
 
     if (CorrectedEnergy < 0) {
       if (g_Verbosity >= c_Warning) {
@@ -160,6 +160,8 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       cout << "DEE shield energy correction:" << endl;
       cout << "DetectorID: " << DetectorID << " CrystalID: " << CrystalID << " Voxel_ID: " << VoxelInDetector << endl;
       cout << "Simulated energy: " << SimulatedEnergy << endl;
+      cout << "Correction FWHM: " << ShieldFWHMValue << endl;
+      cout << "Correction centroid: " << ShieldCorrectedCentroid << endl;
       cout << "Corrected energy: " << CorrectedEnergy << endl;
     }
 
