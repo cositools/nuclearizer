@@ -383,7 +383,7 @@ bool UTNSubModuleChargeTransport::TestInitializeErrors()
     M.SetDepthCoefficientsFileName(WriteCoeffs());
     return M.Initialize() == false;
   });
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "no geometry", "Initialize returns false without a geometry and without crashing", NoGeometry)) && Passed;
+  Passed = EvaluateTrue("Initialize()", "no geometry", "Initialize returns false without a geometry and without crashing", NoGeometry) && Passed;
 
   // Two detectors with depth coefficients, but drift splines only for detector 0
   MDGeometryQuest* TwoDetectors = GetTwoDetectorGeometry();
@@ -414,7 +414,7 @@ bool UTNSubModuleChargeTransport::TestInitializeErrors()
       M.AnalyzeEvent(&E);
       return true;
     });
-    Passed = ExpectedToFail(EvaluateTrue("Initialize()/AnalyzeEvent()", "hit in detector 1 without drift splines", "A detector without drift splines is rejected or skipped, without crashing", MissingSpline)) && Passed;
+    Passed = EvaluateTrue("Initialize()/AnalyzeEvent()", "hit in detector 1 without drift splines", "A detector without drift splines is rejected or skipped, without crashing", MissingSpline) && Passed;
     delete TwoDetectors;
   }
 
@@ -616,9 +616,9 @@ bool UTNSubModuleChargeTransport::TestMerging()
   MDEEStripHit* S = FindStrip(LV, 32);
   if (S != nullptr) {
     Passed = EvaluateNear("AnalyzeEvent()", "two interactions in strip 32", "The merged energy is the sum", S->m_Energy, 500.0, 0.5) && Passed;
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "two interactions in strip 32", "The merged hit has the fast peak time of the more energetic interaction", S->m_FastPeakTime, 250.0, 0.5)) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "two interactions in strip 32", "The merged hit has the fast peak time of the more energetic interaction", S->m_FastPeakTime, 250.0, 0.5) && Passed;
     bool HasBothOrigins = (find(S->m_SimulatedOrigins.begin(), S->m_SimulatedOrigins.end(), 3) != S->m_SimulatedOrigins.end()) && (find(S->m_SimulatedOrigins.begin(), S->m_SimulatedOrigins.end(), 7) != S->m_SimulatedOrigins.end());
-    Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "two interactions in strip 32", "The merged hit keeps the origins of both interactions", HasBothOrigins)) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "two interactions in strip 32", "The merged hit keeps the origins of both interactions", HasBothOrigins) && Passed;
   }
   Passed = EvaluateNear("AnalyzeEvent()", "two interactions in strip 32", "The total energy is conserved", SumEnergy(LV), 500.0, 1e-3) && Passed;
 

@@ -94,6 +94,12 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine, which updates the event to a new level
 
+  if (Event->GetSimulatedEvent() == nullptr) {
+    if (g_Verbosity >= c_Error)
+      cout << "ERROR in MSubModuleDEEIntake: No simulated event found in event." << endl;
+    return false;
+  }
+
   Event->SetID(Event->GetSimulatedEvent()->GetID());
   Event->SetTimeUTC(Event->GetSimulatedEvent()->GetTime());
 
@@ -128,21 +134,22 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
       MDShapeBRIK* Shape = nullptr;
       if (SensitiveVolume->GetShape()->GetType() == "BRIK") {
-          Shape = dynamic_cast<MDShapeBRIK*>(SensitiveVolume->GetShape());
+        Shape = dynamic_cast<MDShapeBRIK*>(SensitiveVolume->GetShape());
       } else if (SensitiveVolume->GetShape()->GetType() == "Intersection") {
-          if (dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA()->GetType() == "BRIK") {
-            Shape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA());
-          } else {
-            if (g_Verbosity >= c_Error)
-              cout << m_Name << ": GeD - No box-shaped sensitive volume found for this simulated hit" << endl;
-            continue;
-          }
-      } else {
+        if (dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA()->GetType() == "BRIK") {
+          Shape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA());
+        } else {
           if (g_Verbosity >= c_Error)
-            cout << m_Name << ": GeD - No box-shaped sensitive volume found for this simulated hit" << endl;
+            cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
           continue;
+        }
+      } else {
+        if (g_Verbosity >= c_Error)
+          cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
+        continue;
       }
-      double DetectorDepth = Shape->GetSizeZ();  
+      // MDShapeBRIK::GetSizeZ() returns the half-size, multiply by 2 to get the full detector depth
+      double DetectorDepth = 2*Shape->GetSizeZ();
         
       DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // Remove prefix GuardRing if existent
       DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID

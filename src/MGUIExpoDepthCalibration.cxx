@@ -122,7 +122,8 @@ void MGUIExpoDepthCalibration::SetDepthHistogramArrangement(vector<unsigned int>
     // Make the map from ID to plot position, and initialize the histograms
     m_DetectorMap[Rows[DetID % DetectorsPerColumn]][Columns[DetID / DetectorsPerColumn]] = DetID;
 
-    TH1D* Depth = new TH1D("", MString("Detector ") + DetID, m_NBins[DetID], m_Min[DetID], m_Max[DetID]);
+    // The real binning is set afterwards in SetDepthHistogramParameters(), so start with a single placeholder bin
+    TH1D* Depth = new TH1D("", MString("Detector ") + DetID, 1, 0, 1);
     Depth->SetXTitle("Depth [cm]");
     Depth->SetYTitle("counts");
     Depth->SetFillColor(kAzure+7);
