@@ -1170,10 +1170,10 @@ bool UTNModuleDepthCalibration::TestAnalyzeEventDepth()
     }
   }
 
-  // Stretch and offset: pixel 202 has CTD_measured = 2 * CTD + 10
+  // Stretch and offset: pixel 202 has CTD_measured = 2 * (CTD + 10)
   {
     MReadOutAssembly E;
-    MHit* H = AddSimpleHit(E, 2, 2, 2.0*60.0 + 10.0);
+    MHit* H = AddSimpleHit(E, 2, 2, 2.0*(60.0 + 10.0));
     M.AnalyzeEvent(&E);
     Passed = EvaluateNear("AnalyzeEvent()", "pixel 202 with stretch 2, offset 10", "The stretch and offset are inverted before the depth lookup", H->GetLocalPosition().Z(), 0.3, 2e-3) && Passed;
   }
