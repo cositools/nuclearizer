@@ -19,7 +19,6 @@
 // Standard libs:
 #include <fstream>
 #include <vector>
-#include <set>
 #include <cstdint>
 
 // MEGAlib libs:
@@ -90,8 +89,6 @@ class MModuleLoaderMeasurementsL0 : public MModuleLoaderMeasurements
   //! Returns false on parsing error.
   bool DecodeHitData(const std::vector<uint8_t>& hitData, unsigned int expectedHits, MReadOutAssembly* Event);
 
-  //! Collect the detector IDs of the GeD_X detectors in the geometry
-  void LoadDetectorIDsFromGeometry();
 
 
   // private members:
@@ -114,8 +111,6 @@ class MModuleLoaderMeasurementsL0 : public MModuleLoaderMeasurements
   //! Total number of packets read so far
   unsigned long m_PacketsRead;
 
-  //! Detector IDs of the GeD_X detectors in the geometry
-  set<unsigned int> m_DetectorIDsInGeometry;
   //! Number of events skipped because all their strip hits were on detectors not in the geometry
   unsigned long m_NEventsOnlyUnknownDetectors;
 

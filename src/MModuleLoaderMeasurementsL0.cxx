@@ -40,8 +40,6 @@ using namespace std;
 #include "MFile.h"
 #include "MStripHit.h"
 #include "MTime.h"
-#include "MDGeometryQuest.h"
-#include "MDDetector.h"
 
 // Nuclearizer libs:
 #include "MGUIOptionsLoaderMeasurementsL0.h"
@@ -218,38 +216,6 @@ bool MModuleLoaderMeasurementsL0::OpenL0File(MString FileName)
   }
 
   return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MModuleLoaderMeasurementsL0::LoadDetectorIDsFromGeometry()
-{
-  // Collect the detector IDs of all GeDs in the geometry (same way as MModuleLoaderMeasurementsHDF)
-
-  m_DetectorIDsInGeometry.clear();
-
-  if (m_Geometry == nullptr) return;
-
-  for (MDDetector* Detector : m_Geometry->GetDetectorList()) {
-    MString Name = Detector->GetName();
-    if (Detector->GetTypeName() == "Strip3D" && Name.BeginsWith("GeD_") == true) {
-      Name.RemoveAllInPlace("GeD_");
-      m_DetectorIDsInGeometry.insert(Name.ToUnsignedInt());
-    }
-  }
-
-  // Keep all strip hits if the detector names don't follow the convention
-  if (m_DetectorIDsInGeometry.empty() == true && g_Verbosity >= c_Warning) {
-    cout<<m_XmlTag<<": No GeD_X detectors found in the geometry - keeping strip hits from all detectors"<<endl;
-  }
-
-  if (g_Verbosity >= c_Info) {
-    cout<<m_XmlTag<<": Detector IDs in the geometry:";
-    for (unsigned int DetID : m_DetectorIDsInGeometry) cout<<" "<<DetID;
-    cout<<endl;
-  }
 }
 
 
