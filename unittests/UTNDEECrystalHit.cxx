@@ -96,7 +96,10 @@ bool UTNDEECrystalHit::TestConvertRepresentativeValues()
 
   MDEECrystalHit H;
 
+  // The read-out element is filled on voxel level, as MSubModuleDEEIntake does
   H.m_ROE.SetDetectorID("X0");
+  H.m_ROE.SetCrystalID(2);
+  H.m_ROE.SetVoxelIDs(0, 1, 3);
   H.m_CrystalID = 2;
   H.m_VoxelInDetector = MVector(0, 1, 3);
   H.m_ADC = 812;
@@ -112,9 +115,8 @@ bool UTNDEECrystalHit::TestConvertRepresentativeValues()
   if (Converted != nullptr) {
     Passed = Evaluate("Convert()", "representative detector ID", "Convert() transfers detector ID X0", Converted->GetDetectorID(), MString("X0")) && Passed;
     Passed = Evaluate("Convert()", "representative crystal ID", "Convert() transfers crystal ID 2", Converted->GetCrystalID(), (unsigned int) 2) && Passed;
-    Passed = Evaluate("Convert()", "representative voxel X ID", "Convert() transfers voxel X ID 0", Converted->GetReadOutElement()->GetVoxelXID(), (unsigned int) 0) && Passed;
-    Passed = Evaluate("Convert()", "representative voxel Y ID", "Convert() transfers voxel Y ID 1", Converted->GetReadOutElement()->GetVoxelYID(), (unsigned int) 1) && Passed;
-    Passed = Evaluate("Convert()", "representative voxel Z ID", "Convert() transfers voxel Z ID 3", Converted->GetReadOutElement()->GetVoxelZID(), (unsigned int) 3) && Passed;
+    // The crystal hit is read out per crystal, thus the voxel of the DEE crystal hit is not transferred
+    Passed = EvaluateTrue("Convert()", "representative voxel (0, 1, 3)", "Convert() creates a crystal-only read-out element without the voxel", Converted->GetReadOutElement()->IsCrystalOnly()) && Passed;
     Passed = EvaluateNear("Convert()", "representative ADC", "Convert() transfers ADC value 812", Converted->GetADCUnits(), 812.0, 1e-9) && Passed;
     Passed = EvaluateNear("Convert()", "representative energy", "Convert() transfers energy 511.5", Converted->GetEnergy(), 511.5, 1e-9) && Passed;
     Passed = EvaluateTrue("Convert()", "representative trigger flag", "Convert() transfers HasTriggered true", Converted->HasTriggered()) && Passed;
@@ -142,6 +144,8 @@ bool UTNDEECrystalHit::TestConvertFalsePaths()
   MDEECrystalHit H;
 
   H.m_ROE.SetDetectorID("Y1");
+  H.m_ROE.SetCrystalID(0);
+  H.m_ROE.SetVoxelIDs(0, 0, 0);
   H.m_CrystalID = 0;
   H.m_VoxelInDetector = MVector(0, 0, 0);
   H.m_ADC = 0;
@@ -159,9 +163,8 @@ bool UTNDEECrystalHit::TestConvertFalsePaths()
     Passed = EvaluateFalse("Convert()", "false-path veto flag", "Convert() transfers HasVetoed false", Converted->HasVetoed()) && Passed;
     Passed = EvaluateSize("Convert()", "false-path origins", "A hit without simulated origins has no origins", Converted->GetOrigins().size(), 0) && Passed;
     Passed = Evaluate("Convert()", "false-path crystal ID", "Convert() transfers crystal ID 0 instead of the undefined default", Converted->GetCrystalID(), (unsigned int) 0) && Passed;
-    Passed = Evaluate("Convert()", "false-path voxel X ID", "Convert() transfers the voxel X ID 0 instead of the undefined default", Converted->GetReadOutElement()->GetVoxelXID(), (unsigned int) 0) && Passed;
-    Passed = Evaluate("Convert()", "false-path voxel Y ID", "Convert() transfers the voxel Y ID 0 instead of the undefined default", Converted->GetReadOutElement()->GetVoxelYID(), (unsigned int) 0) && Passed;
-    Passed = Evaluate("Convert()", "false-path voxel Z ID", "Convert() transfers the voxel Z ID 0 instead of the undefined default", Converted->GetReadOutElement()->GetVoxelZID(), (unsigned int) 0) && Passed;
+    // Voxel (0, 0, 0) is a real voxel ID (and the fake voxel of D0/D1), it must not be transferred either
+    Passed = EvaluateTrue("Convert()", "false-path voxel (0, 0, 0)", "Convert() creates a crystal-only read-out element without the voxel", Converted->GetReadOutElement()->IsCrystalOnly()) && Passed;
   }
 
   delete Converted;
@@ -218,6 +221,8 @@ bool UTNDEECrystalHit::TestConvertedRoaLine()
   MDEECrystalHit H;
 
   H.m_ROE.SetDetectorID("X0");
+  H.m_ROE.SetCrystalID(2);
+  H.m_ROE.SetVoxelIDs(0, 1, 3);
   H.m_CrystalID = 2;
   H.m_VoxelInDetector = MVector(0, 1, 3);
   H.m_ADC = 812;
@@ -229,14 +234,19 @@ bool UTNDEECrystalHit::TestConvertedRoaLine()
   Passed = EvaluateTrue("Convert()", "roa line allocation", "Convert() returns a non-null pointer", Converted != nullptr) && Passed;
   if (Converted == nullptr) return Passed;
 
-  // The read-out element of the roa line needs all five IDs, not only the detector ID
+  // The read-out element of the roa line always has five values: the converted crystal hit has no voxel,
+  // thus its three voxel IDs are written as g_UnsignedIntNotDefined
+  MString NoVoxel;
+  NoVoxel += g_UnsignedIntNotDefined;
+  const MString NoVoxels = NoVoxel + " " + NoVoxel + " " + NoVoxel;
+
   ostringstream Out;
   Converted->StreamRoa(Out, true, true, false, false);
-  Passed = Evaluate("StreamRoa()", "converted crystal hit", "The converted crystal hit is written with all five read-out element values", MString(Out.str()), MString("UC X0 2 0 1 3 812 511.5 \n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "converted crystal hit", "The converted crystal hit is written with five read-out element values and undefined voxel IDs", MString(Out.str()), MString("UC X0 2 ") + NoVoxels + " 812 511.5 \n") && Passed;
 
   ostringstream OutWithOrigins;
   Converted->StreamRoa(OutWithOrigins, true, true, false, true);
-  Passed = Evaluate("StreamRoa()", "converted crystal hit with origins", "The simulated origins are written as the read-out data of the roa line", MString(OutWithOrigins.str()), MString("UC X0 2 0 1 3 812 511.5 1;3\n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "converted crystal hit with origins", "The simulated origins are written as the read-out data of the roa line", MString(OutWithOrigins.str()), MString("UC X0 2 ") + NoVoxels + " 812 511.5 1;3\n") && Passed;
 
   delete Converted;
 

@@ -169,16 +169,20 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Merge hits:
-  for (auto IterLV1 = Hits.begin(); IterLV1 != Hits.end(); ++IterLV1) {
-    auto IterLV2 = std::next(IterLV1);
-    while (IterLV2 != Hits.end()) {
-      if (IterLV1->m_ROE == IterLV2->m_ROE) {
-        IterLV1->m_Energy += IterLV2->m_Energy;
-        IterLV2 = Hits.erase(IterLV2);
+  // The shield is read out per crystal, thus the corrected energies of all voxels of the same crystal are summed:
+  for (auto IterCH1 = Hits.begin(); IterCH1 != Hits.end(); ++IterCH1) {
+    auto IterCH2 = std::next(IterCH1);
+    while (IterCH2 != Hits.end()) {
+      if (IterCH1->m_ROE.GetDetectorID() == IterCH2->m_ROE.GetDetectorID() && IterCH1->m_ROE.GetCrystalID() == IterCH2->m_ROE.GetCrystalID()) {
+        IterCH1->m_Energy += IterCH2->m_Energy;
+        IterCH1->m_SimulatedEnergy += IterCH2->m_SimulatedEnergy;
+        IterCH1->m_SimulatedOrigins.splice(IterCH1->m_SimulatedOrigins.end(), IterCH2->m_SimulatedOrigins);
+        IterCH2 = Hits.erase(IterCH2);
       } else {
-        ++IterLV2;
-      }
+          ++IterCH2;
+      }   
     }
+    IterCH1->m_ROE.ClearVoxelIDs();
   }
 
   return true;

@@ -152,6 +152,11 @@ bool UTNEndToEnd_RoaRoundTrip::TestStripAndCrystalHits()
     "UF UC voxel3d adc-energy-flags-origins\n"
     "\n";
   // Strip hits with and without origins, a crystal hit in the same event, an event with only a crystal hit, and an event without hits
+  // The crystal hits in the input have voxel IDs: crystal hits are crystal-only, thus the loader does not use them
+  // and the saver writes the undefined voxel IDs as g_UnsignedIntNotDefined
+  MString NoVoxel;
+  NoVoxel += g_UnsignedIntNotDefined;
+  const MString NoVoxels = NoVoxel + " " + NoVoxel + " " + NoVoxel;
   const MString Input = Header +
     "SE\nID 1\nTI 1.500000000\n"
     "UH 0 41 l 4053 10452 59.5 12.25 4 1;2\n"
@@ -167,10 +172,10 @@ bool UTNEndToEnd_RoaRoundTrip::TestStripAndCrystalHits()
     "SE\nID 1\nTI 1.500000000\n"
     "UH 0 41 l 4053 10452 59.5 12.25 4 1;2\n"
     "UH 0 49 h 1780 10251 33.25 11.5 0 -\n"
-    "UC BGO1 2 0 1 3 812 511.5 0 3\n"
+    "UC BGO1 2 " + NoVoxels + " 812 511.5 0 3\n"
     "PQ\n"
     "SE\nID 2\nTI 2.250000000\n"
-    "UC BGO2 0 1 1 1 900 600.25 0 -\n"
+    "UC BGO2 0 " + NoVoxels + " 900 600.25 0 -\n"
     "PQ\n"
     "SE\nID 3\nTI 4.000000000\n"
     "BD No hits\n"

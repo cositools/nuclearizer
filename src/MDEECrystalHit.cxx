@@ -65,16 +65,14 @@ MDEECrystalHit::MDEECrystalHit()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Create new real strip hit
+//! Create new real ACS hit
 MCrystalHit* MDEECrystalHit::Convert()
 {
   MCrystalHit* CH = new MCrystalHit();
-
+  
+  // The crystal hit is crystal-only: the energy of all voxels of the crystal has been summed, thus no voxel is meaningful
   CH->SetDetectorID(m_ROE.GetDetectorID());
   CH->SetCrystalID(m_CrystalID);
-  CH->SetVoxelXID((unsigned int) m_VoxelInDetector.X());
-  CH->SetVoxelYID((unsigned int) m_VoxelInDetector.Y());
-  CH->SetVoxelZID((unsigned int) m_VoxelInDetector.Z());
   CH->HasTriggered(m_HasTriggered);
   CH->HasVetoed(m_HasVetoed);
   CH->SetADCUnits(m_ADC);
@@ -83,6 +81,7 @@ MCrystalHit* MDEECrystalHit::Convert()
 
   return CH;
 }
+
 
 // MDEECrystalHit.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
