@@ -8,7 +8,7 @@ This masterfile describes which calibration files should be used together in the
 - `ecal/full-ecal-poly2-FM-config2b-20261020.ecal`
 - `taccal/taccal-FM-config2b-20261005.csv`
 - `simulations/depth-splines-FM-config2b-20261006.csv`
-- `depth`: MISSING DEPTH COEFFICIENTS
+- `depth/depth-coeffs-FM-config2b-20261026.csv`
 - `thresholds/hardware-thresholds-FM-config2b-20261120.csv`
 
 
