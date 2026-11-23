@@ -5,7 +5,7 @@ This masterfile describes which calibration files should be used together in the
 `v1 (latest)`:
 - `stripmap/strip-map-FM-config2b-20261002.map`
 - `stripmap/disabled-strips-FM-config2b-20261002.csv`
-- `ecal`: MISSING ECAL
+- `ecal/full-ecal-poly2-FM-config2b-20261020.ecal`
 - `taccal/taccal-FM-config2b-20261005.csv`
 - `simulations/depth-splines-FM-config2b-20261006.csv`
 - `depth`: MISSING DEPTH COEFFICIENTS
