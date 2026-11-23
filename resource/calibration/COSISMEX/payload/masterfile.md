@@ -12,7 +12,7 @@ This masterfile describes which calibration files should be used together in the
 
 
 `derived-from-unitlevel`:
-- `stripmap`: MISSING STRIPMAP
+- `stripmap/strip-map-derived-from-unitlevel.map`
 - `stripmap/disabled-strips-derived-from-unitlevel.csv`
 - `ecal/full-ecal-derived-from-unitlevel.ecal`
 - `taccal/taccal-derived-from-unitlevel.csv`
