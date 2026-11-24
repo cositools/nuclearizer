@@ -258,17 +258,22 @@ bool UTNSubModuleShieldReadout::TestADCConversion()
   // ADC = A*Energy^2 + B*Energy + C, with the coefficients of each channel from the calibration file:
   // X0 crystal 3: A = -2^-10, B = 8, C = 1600
   // Y1 crystal 2: A = -2^-10, B = 14, C = 784
-  // The coefficients are close to the NRL fits (small negative A) and exact binary values, thus the ADC values are exact
+  // The coefficients are close to the NRL fits (small negative A) and exact binary values, thus the ADC values are exact.
+  // Two more channels test the conversion of the ADC value to an integer:
+  // Z0 crystal 1: A = 0, B = 0.5, C = 1000, which gives ADC values with a fraction
+  // Z0 crystal 2: A = 0, B = -1, C = 100, which gives negative ADC values above 100 keV
   MString FileName = GetTemporaryFileName("shield.calibration.csv");
   MString Content = CalibrationHeader();
   Content += CalibrationLine("X0-3", "-0.0009765625", "8", "1600");
   Content += CalibrationLine("Y1-2", "-0.0009765625", "14", "784");
+  Content += CalibrationLine("Z0-1", "0", "0.5", "1000");
+  Content += CalibrationLine("Z0-2", "0", "-1", "100");
   Passed = EvaluateTrue("Initialize()", "write fixture", "The calibration fixture file can be created", WriteTextFile(FileName, Content)) && Passed;
 
   MSubModuleShieldReadout M;
   M.SetShieldEnergyCalibrationFileName(FileName);
   bool Init = M.Initialize();
-  Passed = EvaluateTrue("Initialize()", "two channels", "Initialize returns true", Init) && Passed;
+  Passed = EvaluateTrue("Initialize()", "four channels", "Initialize returns true", Init) && Passed;
   if (Init == false) return Passed;
 
   int OldVerbosity = g_Verbosity;
@@ -288,6 +293,19 @@ bool UTNSubModuleShieldReadout::TestADCConversion()
   vector<unsigned int> Y1ADC;
   for (double Energy : Y1Energies) {
     Y1ADC.push_back(ConvertEnergy(M, "Y1", 2, Energy));
+  }
+
+  // Z0 crystal 1: the ADC value is rounded to the nearest channel, not truncated:
+  // at 0.5 keV the ADC value is 1000.25 -> 1000, at 1.5 keV 1000.75 -> 1001 (truncation would give 1000 for both)
+  unsigned int RoundDownADC = ConvertEnergy(M, "Z0", 1, 0.5);
+  unsigned int RoundUpADC = ConvertEnergy(M, "Z0", 1, 1.5);
+
+  // Z0 crystal 2: a negative ADC value is set to 0, at 100 keV the ADC value is exactly 0
+  vector<double> Z0Energies = { 50.0, 100.0, 200.0 };
+  vector<unsigned int> Z0Expected = { 50, 0, 0 };
+  vector<unsigned int> Z0ADC;
+  for (double Energy : Z0Energies) {
+    Z0ADC.push_back(ConvertEnergy(M, "Z0", 2, Energy));
   }
 
   // Crystals without calibration
@@ -315,6 +333,11 @@ bool UTNSubModuleShieldReadout::TestADCConversion()
   }
   for (unsigned int i = 0; i < Y1Energies.size(); ++i) {
     Passed = Evaluate("AnalyzeEvent()", MString("Y1 crystal 2, energy ") + Y1Energies[i], "The ADC value is A*E^2 + B*E + C with the coefficients of Y1 crystal 2", Y1ADC[i], Y1Expected[i]) && Passed;
+  }
+  Passed = Evaluate("AnalyzeEvent()", "Z0 crystal 1, ADC value 1000.25", "The ADC value is rounded down to 1000", RoundDownADC, 1000u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "Z0 crystal 1, ADC value 1000.75", "The ADC value is rounded up to 1001, not truncated", RoundUpADC, 1001u) && Passed;
+  for (unsigned int i = 0; i < Z0Energies.size(); ++i) {
+    Passed = Evaluate("AnalyzeEvent()", MString("Z0 crystal 2, energy ") + Z0Energies[i], "The ADC value is A*E^2 + B*E + C with the coefficients of Z0 crystal 2, a negative value is set to 0", Z0ADC[i], Z0Expected[i]) && Passed;
   }
   Passed = Evaluate("AnalyzeEvent()", "X0 crystal 0 without calibration", "The ADC value is 0", OtherCrystalADC, 0u) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "Z1 crystal 3 without calibration", "The ADC value is 0", OtherDetectorADC, 0u) && Passed;

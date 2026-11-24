@@ -27,6 +27,7 @@
 #include "MSubModuleShieldReadout.h"
 
 // Standard libs:
+#include <cmath>
 #include <list>
 
 // ROOT libs:
@@ -111,18 +112,23 @@ bool MSubModuleShieldReadout::AnalyzeEvent(MReadOutAssembly* Event)
   std::list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
 
   for (MDEECrystalHit& CrystalHit: Hits) {
-    CrystalHit.m_ADC = GetADC(CrystalHit.m_Energy, CrystalHit.m_DetectorID, CrystalHit.m_CrystalID);
+    // GetADC() returns a double while m_ADC is an unsigned int: the range checks are done on the double,
+    // since a negative double can't be converted to an unsigned int
+    double ADC = GetADC(CrystalHit.m_Energy, CrystalHit.m_DetectorID, CrystalHit.m_CrystalID);
 
-    if (CrystalHit.m_ADC > m_MaxADCRange) {
+    if (ADC > m_MaxADCRange) {
       if (g_Verbosity >= c_Warning) cout << "Shield ADC value above the maximum range defined as "
                                           << m_MaxADCRange << endl;
-      CrystalHit.m_ADC = m_MaxADCRange;
+      ADC = m_MaxADCRange;
     }
 
-    if (CrystalHit.m_ADC < 0.0) {
+    if (ADC < 0.0) {
       if (g_Verbosity >= c_Warning) cout << "Shield ADC value below 0, set to 0" << endl;
-      CrystalHit.m_ADC = 0.0;
+      ADC = 0.0;
     }
+
+    // Round to the nearest ADC channel, as MSubModuleStripReadout does
+    CrystalHit.m_ADC = static_cast<unsigned int>(lround(ADC));
   }
 
   return true;
