@@ -1,0 +1,88 @@
+/*
+ * MDEECrystalHit.cxx
+ *
+ *
+ * Copyright (C) by YOUR NAME HERE.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MDEECrystalHit
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MDEECrystalHit.h"
+
+// Standard libs:
+
+// ROOT libs:
+
+// MEGAlib libs:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CLING___
+ClassImp(MDEECrystalHit)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDEECrystalHit::MDEECrystalHit()
+    : m_SimulatedEventID(0),
+      m_SimulatedPosition(0, 0, 0),
+      m_SimulatedPositionInDetector(0, 0, 0),
+      m_DetectorID(""),
+      m_CrystalID(0),
+      m_VoxelInDetector(0, 0, 0),
+      m_SimulatedEnergy(0),
+      m_SimulatedHitIndex(0),
+      m_Energy(0),
+      m_ADC(0),
+      m_HasTriggered(false),
+      m_HasVetoed(false)
+{
+  // Construct an instance of MDEECrystalHit
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Create new real strip hit
+MCrystalHit* MDEECrystalHit::Convert()
+{
+  MCrystalHit* CH = new MCrystalHit();
+
+  CH->SetDetectorID(m_ROE.GetDetectorID());
+  CH->SetCrystalID(m_CrystalID);
+  CH->SetVoxelXID((unsigned int) m_VoxelInDetector.X());
+  CH->SetVoxelYID((unsigned int) m_VoxelInDetector.Y());
+  CH->SetVoxelZID((unsigned int) m_VoxelInDetector.Z());
+  CH->HasTriggered(m_HasTriggered);
+  CH->HasVetoed(m_HasVetoed);
+  CH->SetADCUnits(m_ADC);
+  CH->SetEnergy(m_Energy);
+  CH->AddOrigins(vector<int>(m_SimulatedOrigins.begin(), m_SimulatedOrigins.end()));
+
+  return CH;
+}
+
+// MDEECrystalHit.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

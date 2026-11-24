@@ -1,0 +1,151 @@
+# Simplified mass model for COSI STTC HP52406-1
+# Single germanium detector: active wafer + guard ring only.
+
+SurroundingSphere 20 0.0 0.0 0.0 20
+ShowSurroundingSphere False
+
+# -------------------------------------------------------
+# Constants
+
+Constant DetectorHalfHeight  {1.6/2}
+Constant DetectorHalfWidth   4.025
+Constant GuardRingSize       0.3
+Constant IngotRadius         {2 * 2.54}
+
+Constant Xshift  1.342
+Constant Yshift  0.991
+Constant Zshift -0.4
+
+# -------------------------------------------------------
+# Materials
+
+Material Vacuum
+Vacuum.Density    1E-12
+Vacuum.Component  H 1
+
+Material active_ge_recoil
+active_ge_recoil.Density          5.323
+active_ge_recoil.ComponentByMass  Ge 1
+
+# -------------------------------------------------------
+# World volume
+
+Volume WorldVolume
+WorldVolume.Material    Vacuum
+WorldVolume.Visibility  0
+WorldVolume.Shape       Sphere 0.0 100
+WorldVolume.Mother      0
+
+# -------------------------------------------------------
+# Detector geometry
+
+Volume SingleDetector
+SingleDetector.Material   Vacuum
+SingleDetector.Shape      BRIK  6.1225  5.791  {DetectorHalfHeight+.9}
+SingleDetector.Visibility 0
+SingleDetector.Virtual    true
+SingleDetector.Rotation  -90.0 0.0 0.0
+SingleDetector.Position    0.0  0.0  0.0
+SingleDetector.Mother     WorldVolume
+
+Shape BRIK ActiveWaferOuterBox
+ActiveWaferOuterBox.Parameters { DetectorHalfWidth - GuardRingSize }  { DetectorHalfWidth - GuardRingSize }  DetectorHalfHeight
+
+Shape TUBE ActiveWaferCutDisk
+ActiveWaferCutDisk.Parameters 0.0 { IngotRadius - GuardRingSize } DetectorHalfHeight
+
+Shape Intersection ActiveWafer
+ActiveWafer.Parameters ActiveWaferOuterBox ActiveWaferCutDisk
+
+Shape BRIK WaferOuterBox
+WaferOuterBox.Parameters DetectorHalfWidth  DetectorHalfWidth  DetectorHalfHeight
+
+Shape TUBE WaferCutDisk
+WaferCutDisk.Parameters 0.0 IngotRadius DetectorHalfHeight
+
+Shape Intersection WholeWafer
+WholeWafer.Parameters WaferOuterBox WaferCutDisk
+
+Shape Subtraction GuardRing_AlmostThere
+GuardRing_AlmostThere.Parameters WholeWafer ActiveWafer
+
+Shape Intersection GuardRing
+GuardRing.Parameters WaferOuterBox GuardRing_AlmostThere
+
+Volume D1_GeWafer
+D1_GeWafer.Material   active_ge_recoil
+D1_GeWafer.Visibility 1
+D1_GeWafer.Color      4
+D1_GeWafer.Shape      ActiveWafer
+D1_GeWafer.Position   {-0.6555+Xshift}  {0.0+Yshift}  {Zshift}
+D1_GeWafer.Mother     SingleDetector
+
+Volume GeWaferGuardRing
+GeWaferGuardRing.Material   active_ge_recoil
+GeWaferGuardRing.Visibility 1
+GeWaferGuardRing.Color      3
+GeWaferGuardRing.Shape      GuardRing
+GeWaferGuardRing.Position   {-0.6555+Xshift}  {0.0+Yshift}  {Zshift}
+GeWaferGuardRing.Mother     SingleDetector
+
+# -------------------------------------------------------
+# Detector definitions
+
+MDStrip3D GeD_0
+
+GeD_0.DetectorVolume   D1_GeWafer
+GeD_0.SensitiveVolume  D1_GeWafer
+
+GeD_0.Offset       0.0  0.0
+GeD_0.StripNumber  64   64
+
+GeD_0.NoiseThreshold    15
+GeD_0.TriggerThreshold  30
+
+GeD_0.DepthResolution  10    0.02
+GeD_0.DepthResolution  100   0.02
+GeD_0.DepthResolution  1000  0.02
+
+GeD_0.EnergyResolution Gaus 10      10        0.417
+GeD_0.EnergyResolution Gaus 20      20        0.425
+GeD_0.EnergyResolution Gaus 50      50        0.4375
+GeD_0.EnergyResolution Gaus 100     100       0.454
+GeD_0.EnergyResolution Gaus 200     200       0.492
+GeD_0.EnergyResolution Gaus 500     500       0.5875
+GeD_0.EnergyResolution Gaus 1000    1000      0.7217
+GeD_0.EnergyResolution Gaus 2000    2000      0.9317
+GeD_0.EnergyResolution Gaus 5000    5000      1.3819
+GeD_0.EnergyResolution Gaus 10000   10000     1.9094
+GeD_0.EnergyResolution Gaus 100000  100000    5.907
+
+GeD_0.FailureRate 0.0
+
+
+Simple GuardRingDetector
+
+GuardRingDetector.DetectorVolume   GeWaferGuardRing
+GuardRingDetector.SensitiveVolume  GeWaferGuardRing
+
+GuardRingDetector.TriggerThreshold                     40
+GuardRingDetector.NoiseThresholdEqualsTriggerThreshold true
+
+GuardRingDetector.EnergyResolution Gaus 10    10    3
+GuardRingDetector.EnergyResolution Gaus 20    20    3
+GuardRingDetector.EnergyResolution Gaus 50    50    3
+GuardRingDetector.EnergyResolution Gaus 100   100   3
+GuardRingDetector.EnergyResolution Gaus 200   200   3
+GuardRingDetector.EnergyResolution Gaus 500   500   3
+GuardRingDetector.EnergyResolution Gaus 1000  1000  3
+GuardRingDetector.EnergyResolution Gaus 2000  2000  3
+GuardRingDetector.EnergyResolution Gaus 5000  5000  3
+
+
+Trigger GeD_0Trigger
+GeD_0Trigger.Veto             false
+GeD_0Trigger.TriggerByChannel true
+GeD_0Trigger.Detector         GeD_0 1
+
+Trigger GuardRingVeto
+GuardRingVeto.Veto             true
+GuardRingVeto.TriggerByChannel true
+GuardRingVeto.Detector         GuardRingDetector 1

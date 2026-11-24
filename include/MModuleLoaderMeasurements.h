@@ -51,9 +51,6 @@ class MModuleLoaderMeasurements : public MModule, public MFileEvents
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
 
-  //! Show the options GUI
-  virtual void ShowOptionsGUI();
-
   //! Read the configuration data from an XML node
   virtual bool ReadXmlConfiguration(MXmlNode* Node) = 0;
   //! Create an XML node tree from the configuration
@@ -76,6 +73,8 @@ class MModuleLoaderMeasurements : public MModule, public MFileEvents
   unsigned int m_NEventsInFile;
   //! The number of good events in file
   unsigned int m_NGoodEventsInFile;
+  //! The counter to assign event IDs for data taken through the RTB
+  unsigned int m_RTBEventCounter;
 
   // private members:
  private:

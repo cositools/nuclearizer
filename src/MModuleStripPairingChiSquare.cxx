@@ -62,6 +62,7 @@ MModuleStripPairingChiSquare::MModuleStripPairingChiSquare() : MModule()
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
+  AddPreceedingModuleType(MAssembly::c_TACCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_StripPairing);
@@ -105,6 +106,14 @@ void MModuleStripPairingChiSquare::CreateExpos()
   m_ExpoStripPairing = new MGUIExpoStripPairing(this);
   m_ExpoStripPairing->SetEnergiesHistogramParameters(1500, 0, 1500);
   m_Expos.push_back(m_ExpoStripPairing);
+  
+  m_ExpoStripPairingHits = new MGUIExpoStripPairingHits(this);
+  m_ExpoStripPairingHits->SetHitsHistogramParameters(5, 0.5, 5.5);
+  m_Expos.push_back(m_ExpoStripPairingHits);
+
+  m_ExpoStripPairingStripHits = new MGUIExpoStripPairingStripHits(this);
+  m_ExpoStripPairingStripHits->SetStripHitsHistogramParameters(10, 0.5, 10.5);
+  m_Expos.push_back(m_ExpoStripPairingStripHits);
 }
 
 
@@ -181,7 +190,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
   unsigned int MaxCombinations = 5;
 
   if (Event->GetNStripHits() == 0) {
-    Event->SetStripPairingIncomplete(true, "No strip hits");
+    Event->SetStripPairingError("No strip hits");
     Event->SetAnalysisProgress(MAssembly::c_StripPairing);
     return false;
   }
@@ -221,7 +230,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
     for (unsigned int side = 0; side <=1; ++side) { // side loop
       if (StripHits[d][side].size() > MaxStripHits) {
-        Event->SetStripPairingIncomplete(true, "More than 6 hit strIps on one side");
+        Event->SetStripPairingError("More than 6 hit strIps on one side");
         Event->SetAnalysisProgress(MAssembly::c_StripPairing);
         return false;
       }
@@ -251,7 +260,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
   for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
 
     if (StripHits[d][0].size() == 0 || StripHits[d][1].size() == 0) {
-      Event->SetStripPairingIncomplete(true, "One detector side has not strip hits");
+      Event->SetStripPairingError("One detector side has not strip hits");
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
@@ -461,7 +470,7 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
 
     // Now create hits:
     if (BestChiSquare == numeric_limits<double>::max()) {
-      Event->SetStripPairingIncomplete(true, "Pairing did not find a single match");
+      Event->SetStripPairingError("Pairing did not find a single match");
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
@@ -479,7 +488,11 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
     double XEnergyTotal = 0;
     double YEnergyTotal = 0;
     double EnergyTotal = 0;
-
+      
+    // Create a list for plotting X and Y energies
+    vector<double> XEnergies;
+    vector<double> YEnergies;
+      
     for (unsigned int h = 0; h < min(BestXSideCombo.size(), BestYSideCombo.size()); ++h) {
       XPos = 0;
       YPos = 0;
@@ -514,9 +527,8 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
       }
       EnergyTotal += Energy;
 
-      if (HasExpos() == true) {
-        m_ExpoStripPairing->AddEnergies(XEnergy, YEnergy);
-      }
+      XEnergies.push_back(XEnergy);
+      YEnergies.push_back(YEnergy);
 
       MHit* Hit = new MHit();
       Hit->SetEnergy(Energy);
@@ -531,10 +543,29 @@ bool MModuleStripPairingChiSquare::AnalyzeEvent(MReadOutAssembly* Event)
     }
 
     if (EnergyTotal > max(XEnergyTotal, YEnergyTotal) + 2.5*max(XEnergyRes, YEnergyRes) || EnergyTotal < min(XEnergyTotal, YEnergyTotal) - 2.5*max(XEnergyRes, YEnergyRes)) {
-      Event->SetStripPairingIncomplete(true, "Strips not pairable wihin 2.5 sigma of measure denergy");
+      Event->SetStripPairingError("Strips not pairable wihin 2.5 sigma of measure denergy");
       Event->SetAnalysisProgress(MAssembly::c_StripPairing);
       return false;
     }
+    else if (HasExpos() == true){
+          m_ExpoStripPairingHits->AddHits(Event->GetNHits());
+          for (unsigned int i = 0; i < XEnergies.size(); ++i){
+            m_ExpoStripPairing->AddEnergies(XEnergies[i], YEnergies[i]);
+          }
+          for (unsigned int h = 0; h<Event->GetNHits(); h++){
+            double HVStrips = 0;
+            double LVStrips = 0;
+            for (unsigned int sh=0; sh<Event->GetHit(h)->GetNStripHits(); sh++){
+              if (Event->GetHit(h)->GetStripHit(sh)->IsLowVoltageStrip()==true){
+                LVStrips++;
+              }
+              else{
+                HVStrips++;
+              }
+            }
+            m_ExpoStripPairingStripHits->AddStripHits(LVStrips, HVStrips);
+          }
+        }
 
     //
 

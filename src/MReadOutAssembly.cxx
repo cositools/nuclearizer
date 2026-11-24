@@ -33,6 +33,7 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MTokenizer.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,10 +57,10 @@ MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_AssemblyID(++s_Next
 {
   // Construct an instance of MReadOutAssembly
 
-  m_PhysicalEvent = 0; // Set pointer to zero before delete
-  m_Aspect = 0;
- 	m_HasSimAspectInfo = false;
- 
+  m_PhysicalEvent = nullptr;
+  m_SimEvent = nullptr;
+  m_HasSimAspectInfo = false;
+
   Clear();
 }
 
@@ -69,42 +70,10 @@ MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_AssemblyID(++s_Next
 
 MReadOutAssembly::~MReadOutAssembly()
 {
-  // Delete all strip hits
-  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    delete m_StripHits[h];
-  }
-  m_StripHits.clear();
+  // Destruct an instance of MReadOutAssembly
 
-  // Delete all TOnly strip hits
-  for (unsigned int h = 0; h < m_StripHitsTOnly.size(); ++h) {
-    delete m_StripHitsTOnly[h];
-  }
-  m_StripHitsTOnly.clear();
-
-  // Delete all hits
-  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    delete m_Hits[h];
-  }
-  m_Hits.clear();
-
-  // Delete all hits from simulation
-  for (unsigned int h = 0; h < m_HitsSim.size(); ++h) {
-    delete m_HitsSim[h];
-  }
-  m_HitsSim.clear();
-
-
-  // Delete all guardring hits
-  for (unsigned int h = 0; h < m_GuardringHits.size(); ++h) {
-    delete m_GuardringHits[h];
-  }
-  m_GuardringHits.clear();
-
-  // Delete this instance of MReadOutAssembly
-  delete m_PhysicalEvent;
-  
-  delete m_Aspect;
-//  mout<<"delete MReadOutAssembly!!\n" ;//debug
+  // Clear() also resets state, not just owned memory, but the overhead is small compared to the code duplication it removes
+  Clear();
 }
 
 
@@ -113,24 +82,24 @@ MReadOutAssembly::~MReadOutAssembly()
 
 void MReadOutAssembly::Clear()
 {
-  //! Reset all data
+  // Reset all data
 
   MReadOutSequence::Clear();
-  
+
   m_ID = g_UnsignedIntNotDefined;
-  m_TI = 0;
-  m_CL = 0;
-  m_FC = 0;
-  m_Time = 0;
+  m_EventTimeRTS = 0;
   m_EventTimeUTC = 0;
-  m_MJD = 0.0;
 
-  m_Veto = false;
+  m_HasSimAspectInfo = false;
+  m_GalacticPointingXAxisTheta = 0.0;
+  m_GalacticPointingXAxisPhi = 0.0;
+  m_GalacticPointingZAxisTheta = 0.0;
+  m_GalacticPointingZAxisPhi = 0.0;
+
+  m_ShieldVeto = false;
+  m_GuardRingVeto = false;
   m_Trigger = true;
-
-  for (int DetectorID = 0; DetectorID <= 11; DetectorID++) {
-    m_InDetector[DetectorID] = false;
-  }
+  m_InDetector.fill(false);
 
   // Delete all strip hits
   for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
@@ -138,10 +107,11 @@ void MReadOutAssembly::Clear()
   }
   m_StripHits.clear();
 
-  for (unsigned int h = 0; h < m_StripHitsTOnly.size(); ++h) {
-    delete m_StripHitsTOnly[h];
+  for (unsigned int h = 0; h < m_CrystalHits.size(); ++h) {
+    delete m_CrystalHits[h];
   }
-  m_StripHitsTOnly.clear();
+  m_CrystalHits.clear();
+
 
   // Delete all hits
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
@@ -149,45 +119,50 @@ void MReadOutAssembly::Clear()
   }
   m_Hits.clear();
 
- // Delete all hits from simulation
-  for (unsigned int h = 0; h < m_HitsSim.size(); ++h) {
-    delete m_HitsSim[h];
-  }
-  m_HitsSim.clear();
-
   // Delete all guardring hits
   for (unsigned int h = 0; h < m_GuardringHits.size(); ++h) {
     delete m_GuardringHits[h];
   }
   m_GuardringHits.clear();
 
-  m_AspectIncomplete = false;
-  m_AspectIncompleteString = "";
-  m_TimeIncomplete = false;
-  m_TimeIncompleteString = "";
-  m_EnergyCalibrationIncomplete_BadStrip = false;
-  m_EnergyCalibrationIncomplete_BadStripString = "";
-  m_EnergyCalibrationIncomplete = false;
-  m_EnergyCalibrationIncompleteString = "";
-  m_EnergyResolutionCalibrationIncomplete = false;
-  m_EnergyResolutionCalibrationIncompleteString = "";
-  m_StripPairingIncomplete = false;
-  m_StripPairingIncompleteString = "";
-  m_LLDEvent = false;
-  m_LLDEventString = "";
-  m_DepthCalibrationIncomplete = false;
-  m_DepthCalibrationIncompleteString = "";
-  m_DepthCalibration_OutofRange = false;
-  m_DepthCalibration_OutofRangeString = ""; 
+  // Delete all event flags and associated variables
+  m_EnergyCalibrationError = false;
+  m_EnergyCalibrationErrorString.clear();
+  m_TACCalibrationError = false;
+  m_TACCalibrationErrorString.clear();
+  m_StripPairingError = false;
+  m_StripPairingErrorString.clear();
+  m_DepthCalibrationError = false;
+  m_DepthCalibrationErrorString.clear();
+  m_EventReconstructionError = false;
+  m_EventReconstructionErrorString.clear();
 
-  
+  m_StripPairingReducedChiSquare.clear();
+
+  m_StripHitBelowThreshold_QualityFlag = false;
+  m_StripHitBelowThresholdString_QualityFlag.clear();
+
+  m_HighADC_QualityFlag = false;
+  m_HighADCString_QualityFlag.clear();
+
+  m_StripPairing_QualityFlag = false;
+  m_StripPairingString_QualityFlag.clear();
+
+  m_UnknownDetector_QualityFlag = false;
+  m_UnknownDetectorString_QualityFlag.clear();
+
   m_FilteredOut = false;
+  m_AnalysisProgress = 0;
 
   delete m_PhysicalEvent;
-  m_PhysicalEvent = 0;
-  
-  delete m_Aspect;
-  m_Aspect = 0;
+  m_PhysicalEvent = nullptr;
+
+  m_DEEStripHitsLV.clear();
+  m_DEEStripHitsHV.clear();
+  m_DEECrystalHits.clear();
+
+  delete m_SimEvent;
+  m_SimEvent = nullptr;
 }
 
 
@@ -196,8 +171,10 @@ void MReadOutAssembly::Clear()
 
 void MReadOutAssembly::DeleteHits()
 {
-  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    delete m_Hits[h];
+  // Delete all MHit objects
+
+  for (auto* Hit : m_Hits) {
+    delete Hit;
   }
   m_Hits.clear();
 }
@@ -206,17 +183,20 @@ void MReadOutAssembly::DeleteHits()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MReadOutAssembly::InDetector(int DetectorID)
+bool MReadOutAssembly::InDetector(int DetectorID) const
 {
-  //! Find out if the event contains strip hits in a given detector
-  if ( (DetectorID>=0) && (DetectorID<=11) )
-    {
-      return m_InDetector[DetectorID];
-    }
-  else
-    {
-      return false;
-    }
+  // Find out if the event contains strip hits in a given detector
+
+  if (DetectorID >= 0 && DetectorID <= 15) {
+    return m_InDetector[DetectorID];
+  }
+
+  if (g_Verbosity >= c_Error) {
+    cout<<"Error in MReadOutAssembly::InDetector: detector ID "<<DetectorID
+        <<" out of bounds (valid range: 0-15)"<<endl;
+  }
+
+  return false;
 }
 
 
@@ -225,37 +205,51 @@ bool MReadOutAssembly::InDetector(int DetectorID)
 
 void MReadOutAssembly::SetPhysicalEvent(MPhysicalEvent* Event)
 {
-  //! Set the physical event from event reconstruction
+  // Set the physical event from event reconstruction
   // We make our own local copy here
 
-  m_PhysicalEvent = Event->Duplicate();
+  // Guard against self-assignment: deleting m_PhysicalEvent first would leave
+  // Event dangling before Duplicate() could be called on it
+  if (Event == m_PhysicalEvent) return;
+
+  delete m_PhysicalEvent;
+  if (Event != nullptr) {
+    m_PhysicalEvent = Event->Duplicate();
+  } else {
+    m_PhysicalEvent = nullptr;
+  }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MStripHit* MReadOutAssembly::GetStripHit(unsigned int i) 
-{ 
-  //! Return strip hit i
+MStripHit* MReadOutAssembly::GetStripHit(unsigned int i)
+{
+  // Return strip hit i
 
   if (i < m_StripHits.size()) {
     return m_StripHits[i];
   }
 
-  merr<<"Index out of bounds!"<<show;
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetStripHit: index "<<i<<" out of bounds (size "<<m_StripHits.size()<<")"<<endl;
 
-  return 0;
+  return nullptr;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 {
-  //! Add a strip hit
-  int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) ) {
-    m_InDetector[DetectorID]=true;
+  // Add a strip hit
+
+  if (StripHit == nullptr) return;
+
+  unsigned int DetectorID = StripHit->GetDetectorID();
+  if (DetectorID <= 15) {
+    m_InDetector[DetectorID] = true;
   }
   m_StripHits.push_back(StripHit);
 }
@@ -266,11 +260,24 @@ void MReadOutAssembly::AddStripHit(MStripHit* StripHit)
 
 void MReadOutAssembly::RemoveStripHit(unsigned int i)
 {
-  //! Remove a strip hit
+  // Remove a strip hit
+
   if (i < m_StripHits.size()) {
+    // BUG: MHit objects retain non-owning references to this strip hit if the caller deletes it
     vector<MStripHit*>::iterator it;
-    it = m_StripHits.begin()+i;
+    it = m_StripHits.begin() + i;
     m_StripHits.erase(it);
+
+    // Recompute the per-detector flags from the remaining strip hits
+    for (unsigned int DetectorID = 0; DetectorID < 16; ++DetectorID) {
+      m_InDetector[DetectorID] = false;
+    }
+    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+      unsigned int DetectorID = m_StripHits[h]->GetDetectorID();
+      if (DetectorID <= 15) {
+        m_InDetector[DetectorID] = true;
+      }
+    }
   }
 }
 
@@ -278,45 +285,49 @@ void MReadOutAssembly::RemoveStripHit(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MStripHit* MReadOutAssembly::GetStripHitTOnly(unsigned int i) 
-{ 
-  //! Return strip hit i
-
-  if (i < m_StripHitsTOnly.size()) {
-    return m_StripHitsTOnly[i];
-  }
-
-  merr<<"Index out of bounds!"<<show;
-
-  return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void MReadOutAssembly::AddStripHitTOnly(MStripHit* StripHit)
+MCrystalHit* MReadOutAssembly::GetCrystalHit(unsigned int i)
 {
-  //! Add a strip hit
-	//comment this out for now since it might mess with other stuff
-	/*
-  int DetectorID = StripHit->GetDetectorID();
-  if ( (DetectorID>=0) && (DetectorID<=11) )
-    {
-      m_InDetector[DetectorID]=true;
-    }*/
-  m_StripHitsTOnly.push_back(StripHit);
+  // Return crystal hit i
+
+  if (i < m_CrystalHits.size()) {
+    return m_CrystalHits[i];
+  }
+
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetCrystalHit: index "<<i<<" out of bounds (size "<<m_CrystalHits.size()<<")"<<endl;
+
+  return nullptr;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
+void MReadOutAssembly::AddCrystalHit(MCrystalHit* CrystalHit)
 {
-  //! Remove a strip hit
-  if (i < m_StripHitsTOnly.size()) {
-    vector<MStripHit*>::iterator it;
-    it = m_StripHitsTOnly.begin()+i;
-    m_StripHitsTOnly.erase(it);
+  // Add a crystal hit
+
+  if (CrystalHit == nullptr) return;
+
+  // Note: For ACS detectors, DetectorID is a string (e.g., "X0", "X1", "Y0", "Y1", "Z0", "Z1")
+  // so we can't use it with m_InDetector array which expects numeric indices 0-15.
+  // The m_InDetector tracking is primarily for GeD detectors which have numeric IDs.
+  // We skip the m_InDetector tracking for crystal hits.
+
+  m_CrystalHits.push_back(CrystalHit);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::RemoveCrystalHit(unsigned int i)
+{
+  // Remove a crystal hit
+
+  if (i < m_CrystalHits.size()) {
+    vector<MCrystalHit*>::iterator it;
+    it = m_CrystalHits.begin() + i;
+    m_CrystalHits.erase(it);
   }
 }
 
@@ -324,17 +335,34 @@ void MReadOutAssembly::RemoveStripHitTOnly(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MHit* MReadOutAssembly::GetHit(unsigned int i) 
-{ 
-  //! Return hit i
-  
+MGuardringHit* MReadOutAssembly::GetGuardringHit(unsigned int i)
+{
+  // Return guardring hit i
+
+  if (i < m_GuardringHits.size()) {
+    return m_GuardringHits[i];
+  }
+
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetGuardringHit: index "<<i<<" out of bounds (size "<<m_GuardringHits.size()<<")"<<endl;
+
+  return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MHit* MReadOutAssembly::GetHit(unsigned int i)
+{
+  // Return hit i
+
   if (i < m_Hits.size()) {
-    return m_Hits[i]; 
+    return m_Hits[i];
   }
 
-  merr<<"Index out of bounds!"<<show;
+  if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetHit: index "<<i<<" out of bounds (size "<<m_Hits.size()<<")"<<endl;
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -343,10 +371,73 @@ MHit* MReadOutAssembly::GetHit(unsigned int i)
 
 void MReadOutAssembly::RemoveHit(unsigned int i)
 {
-  //! Remove a strip hit
+  // Remove a hit
+
   if (i < m_Hits.size()) {
-    m_Hits.erase(m_Hits.begin()+i);
+    m_Hits.erase(m_Hits.begin() + i);
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeRTSfromUTCTime(MTime UTCTime) const
+{
+  // Compute the RTS time if the event only has UTC time defined
+  // RTS is elapsed time since January 1, 2025 in TT (terrestrial time)
+  // TT (terrestrial time) = TAI (international atomic time) + 32.184 seconds, and TAI = UTC + 37 leap seconds
+
+  MTime RTS_Unix = MTime(2025, 1, 1, 0, 0, 0, 0);
+  MTime RTS_TT = UTCTime - RTS_Unix + 37 + 32.184;
+
+  return RTS_TT;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeUTCfromRTSTime(MTime RTSTime) const
+{
+  // Compute the UTC time if the event only has RTS time defined
+  // RTS is elapsed time since January 1, 2025 in TT (terrestrial time)
+  // TT (terrestrial time) = TAI (international atomic time) + 32.184 seconds, and TAI = UTC + 37 leap seconds
+
+  MTime RTS_Unix = MTime(2025, 1, 1, 0, 0, 0, 0);
+  MTime UTCTime = RTSTime + RTS_Unix - 37 - 32.184;
+
+  return UTCTime;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeRTSfromGPSTime(MTime GPSTime) const
+{
+  // Compute RTS time from GPS by converting to UTC, then call ComputeRTSfromUTCTime
+  // UTC = GPS - 18 seconds (GPS time is currently 18 leap seconds ahead of UTC)
+
+  MTime GPS_Unix = MTime(1980, 1, 6, 0, 0, 0, 0);
+  MTime UTCTime = GPS_Unix + GPSTime - 18;
+
+  return ComputeRTSfromUTCTime(UTCTime);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MReadOutAssembly::ComputeGPSfromRTSTime(MTime RTSTime) const
+{
+  // Compute GPS time from RTS by calling ComputeUTCfromRTSTime then converting UTC to GPS
+  // GPS = UTC + 18
+
+  MTime GPS_Unix = MTime(1980, 1, 6, 0, 0, 0, 0);
+  MTime UTCTime = ComputeUTCfromRTSTime(RTSTime);
+
+  return UTCTime - GPS_Unix + 18;
 }
 
 
@@ -354,110 +445,123 @@ void MReadOutAssembly::RemoveHit(unsigned int i)
 
 
 bool MReadOutAssembly::Parse(MString& Line, int Version)
-{  
-  // Handles SE, TI, RO, IA
-  if (MReadOutSequence::Parse(Line) == true) return true;
-  
-  /* In base class
-  if (Line.BeginsWith("SE")) return true;
+{
+  // HT, SH, BD, QA, and PQ are handled here; malformed HT or SH lines and unknown flags return false
+
   if (Line.BeginsWith("TI")) {
-    m_Time.Set(Line);
+    MTime T(0);
+    if (T.Set(Line) == false) return false;
+    SetTime(T);
+    SetTimeUTC(T);
     return true;
   }
-  */
-  // skipping aspect for now
+
   if (Line.BeginsWith("HT")) {
     MHit* h = new MHit();
-    if( h->Parse(Line,1) ){
+    if (h->Parse(Line, Version) == true) {
       AddHit(h);
       return true;
     } else {
+      delete h;
       return false;
     }
   }
   if (Line.BeginsWith("SH")) {
-    // assuming that the SHs belong to the last read hit
+    // Assume that the SH line belongs to the last read hit
+    if (m_Hits.empty() == true) return false;
     MHit* h = m_Hits.back();
-    if (h != nullptr) {
-      MStripHit* SH = new MStripHit();
-      if (SH->Parse(Line, 2)) {
-        h->AddStripHit(SH);
-        return true;
-      } else {
-        delete SH;
-        return false;
-      }
+    MStripHit* SH = new MStripHit();
+    if (SH->Parse(Line, 2) == true) {
+      AddStripHit(SH);
+      h->AddStripHit(SH);
+      return true;
     } else {
+      delete SH;
       return false;
     }
   }
-  if (Line.BeginsWith("BD")) {
-    // set a bad flag
-    // too lazy RN to go thru each flag.  the following should do::
-    m_FilteredOut = true;
-    return true;
+  if (Line.BeginsWith("BD") == true || Line.BeginsWith("QA") == true || Line.BeginsWith("PQ") == true) {
+    return ParseBDFlags(Line);
   }
 
-
-  return false;
+  // Everything else goes to the tolerant base parser, which also consumes unrecognized lines and returns true
+  return MReadOutSequence::Parse(Line);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
+bool MReadOutAssembly::GetNextFromDatFile(MFile& F)
+{
+  // Read data from a .dat file
 
   MString Line;
-  int i;
-  int MaxIter = 1000;
+  bool EventRead = false;
 
-	Clear();
-	for( i = 0; i < MaxIter; i++ ){
-		//try 1000 times to get the complete event
-		F.ReadLine(Line);
-		const char* line = Line.Data();
-		//vector<MString> tokens = Line.Tokenize(" ");
-		if( Line.BeginsWith("SE") ){
-			if( i != 0 ){
-				//we read the full event in, break now
-				break;
-			}
-		}else if( Line.BeginsWith("ID") ){
-			unsigned int ID;
-			sscanf(&line[3],"%u",&ID);
-			SetID( ID );
-		} else if( Line.BeginsWith("TI") ){
-			MTime T = MTime();
-			T.Set(Line);
-			SetTime( T );
-		} else if( Line.BeginsWith("HT") ){
-			MHit* h = new MHit();
-			h->Parse(Line);
-			AddHit(h);
-		} else if( Line.BeginsWith("SH") ){
-			MStripHit* sh = new MStripHit();
-			sh->Parse(Line);
-			AddStripHit(sh);
-			if( m_Hits.size() > 0 ){
-				//add this SH to the last read in HT
-				MHit* h = m_Hits.back();
-				h->AddStripHit(sh);
-			}
-		} else if( Line.BeginsWith("BD") ){
-			SetFilteredOut(true);
-		}
-		//ignoring ASPECT info for right now
+  int i = 0;
+  int MaxLinesToRead = 1000;
+
+  Clear();
+  for (i = 0; i < MaxLinesToRead; ++i) {
+    // Try up to "MaxLinesToRead" lines to read the next complete event
+    if (F.ReadLine(Line) == false) {
+      // End of file reached
+      break;
+    }
+    const char* LineData = Line.Data();
+    if (Line.BeginsWith("SE")) {
+      if (i != 0) {
+        // We read the full event in, break now
+        break;
+      }
+    } else if (Line.BeginsWith("ID")) {
+      unsigned int ID = 0;
+      if (sscanf(&LineData[3], "%u", &ID) == 1) {
+        SetID(ID);
+        EventRead = true;
+      } else {
+        if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetNextFromDatFile(): Error parsing ID line"<<endl;
+      }
+    } else if (Line.BeginsWith("TI")) {
+      EventRead = true;
+      MTime T = MTime();
+      T.Set(Line);
+      SetTimeUTC(T);
+    } else if (Line.BeginsWith("HT")) {
+      MHit* h = new MHit();
+      if (h->Parse(Line) == true) {
+        AddHit(h);
+        EventRead = true;
+      } else {
+        delete h;
+      }
+    } else if (Line.BeginsWith("SH")) {
+      MStripHit* sh = new MStripHit();
+      if (sh->Parse(Line) == true) {
+        AddStripHit(sh);
+        EventRead = true;
+        if (m_Hits.size() > 0) {
+          // Add this SH to the last read HT
+          MHit* h = m_Hits.back();
+          h->AddStripHit(sh);
+        }
+      } else {
+        delete sh;
+      }
+    } else if (Line.BeginsWith("BD") == true || Line.BeginsWith("QA") == true || Line.BeginsWith("PQ") == true) {
+      EventRead = true;
+      ParseBDFlags(Line);
+    }
 
   }
 
-  if( i == MaxIter ){
-    cout<<"MReadoutAssembly::GetNextFromFile(): reached MaxIter"<<endl;
+  if (i == MaxLinesToRead) {
+    if (g_Verbosity >= c_Error) cout<<"Error in MReadOutAssembly::GetNextFromDatFile(): Event not fully read after "<<MaxLinesToRead<<" lines"<<endl;
     return false;
-  } else {
-    return true;
   }
 
+  return EventRead;
 }
 
 
@@ -466,84 +570,46 @@ bool MReadOutAssembly::GetNextFromDatFile(MFile &F){
 
 bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 {
-  //! Stream the content to an ASCII file 
+  // Stream the read-out assembly to an ASCII `.dat` file
 
-  S<<"SE"<<endl;
-  S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
+  if (Version >= 1 && Version <= 3) {
+    S<<"SE"<<endl;
+    S<<"ID "<<m_ID<<endl;
 
-  for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
-  }
-  
-  if (m_Aspect != 0) {
-    m_Aspect->StreamDat(S, Version);
-  }
-  
-  if (Version == 1) {
-    for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-      m_StripHits[h]->StreamDat(S, Version);  
+    if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+      S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+    } else {
+      S<<"TI "<<m_EventTimeUTC<<endl;
     }
 
-    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-      m_Hits[h]->StreamDat(S, Version);  
+    for (MSimIA& IA: m_SimIAs) {
+      S<<IA.ToSimString()<<endl;
     }
-  } else if (Version == 2) {
-    for (auto H : m_Hits) {
-      H->StreamDat(S, 2);
+
+    if (Version == 1) {
+      for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
+        m_StripHits[h]->StreamDat(S, Version);
+      }
+
+      for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+        m_Hits[h]->StreamDat(S, Version);
+      }
+    } else if (Version == 2) {
+      for (auto H : m_Hits) {
+        H->StreamDat(S, 2);
+      }
+    } else if (Version == 3) {
+      for (auto H : m_Hits) {
+        H->StreamDat(S, 3);
+      }
     }
-  }
 
-  if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete";
-    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete";
-    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) {
-    S<<"BD EnergyCalibrationIncomplete_BadStrip";
-    if (m_EnergyCalibrationIncomplete_BadStripString != "") S<<" ("<<m_EnergyCalibrationIncomplete_BadStripString<<")";
-    S<<endl;
-  }
-  if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete";
-    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_EnergyResolutionCalibrationIncomplete == true) {
-    S<<"BD EnergyResolutionCalibrationIncomplete";
-    if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_StripPairingIncomplete == true) {
-    S<<"BD StripPairingIncomplete";
-    if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_LLDEvent == true) {
-    S<<"BD LLDEvent";
-    if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
-    S<<endl;
-  }
-  if (m_DepthCalibrationIncomplete == true) {
-    S<<"BD DepthCalibrationIncomplete";
-    if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_DepthCalibration_OutofRange == true) {
-    S<<"BD DepthCalibration_OutofRange";
-    if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
-    S<<endl;
-  }
+    StreamBDFlags(S);
 
-
-  
-  return true;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 
@@ -552,76 +618,133 @@ bool MReadOutAssembly::StreamDat(ostream& S, int Version)
 
 void MReadOutAssembly::StreamEvta(ostream& S)
 {
-  //! Stream the content in MEGAlib's evta format 
+  // Stream the read-out assembly in MEGAlib's EVTA format
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
 
-  if (m_Aspect != 0) {
-    m_Aspect->StreamEvta(S);
+  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  } else {
+    S<<"TI "<<m_EventTimeUTC<<endl;
   }
 
-	if (m_HasSimAspectInfo){
-		S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
-		S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
-	}
+  if (m_HasSimAspectInfo){
+    S<<"GX "<<m_GalacticPointingXAxisPhi<<" "<<m_GalacticPointingXAxisTheta<<endl;
+    S<<"GZ "<<m_GalacticPointingZAxisPhi<<" "<<m_GalacticPointingZAxisTheta<<endl;
+  }
 
   for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
+    S<<IA.ToSimString()<<endl;
   }
-  
+
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-    m_Hits[h]->StreamEvta(S);  
+
+    // Don't print Guard Ring hits as normal strip hits as they don't have positions defined
+    // the corresponding energy is saved in the StripPairing QA message
+    if (m_Hits[h]->GetGuardRingHitFlag() == true) {
+	continue;
+    } else {
+      m_Hits[h]->StreamEvta(S);  
+    }
   }
-  
+
   S<<"CC NStripHits "<<m_StripHits.size()<<endl;
-  
-  if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete";
-    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
-    S<<endl;
+
+  StreamBDFlags(S);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::StreamRoa(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithTemperatures, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
+{
+  // Stream the read-out assembly in MEGAlib's ROA format
+  //
+  // WithTemperatures is currently not used, since we don't have that housekeeping info at the moment
+
+  StreamRoaSelection(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins, WithNearestNeighbors, false, 0, false);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::StreamRoaDetectorSide(ostream& S, unsigned int DetectorID, bool LowVoltageSide, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors)
+{
+  // Stream the read-out assembly in MEGAlib's ROA format, but only with the strip hits of the given detector side
+
+  return StreamRoaSelection(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins, WithNearestNeighbors, true, DetectorID, LowVoltageSide);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::StreamRoaSelection(ostream& S, bool WithADCs, bool WithTACs, bool WithEnergies, bool WithTimings, bool WithFlags, bool WithOrigins, bool WithNearestNeighbors,
+                                          bool OnlyDetectorSide, unsigned int DetectorID, bool LowVoltageSide)
+{
+  // Shared implementation of StreamRoa and StreamRoaDetectorSide
+
+  vector<MStripHit*> SelectedStripHits;
+  for (MStripHit* SH: m_StripHits) {
+    if (WithNearestNeighbors == false && SH->IsNearestNeighbor() == true) continue;
+    if (OnlyDetectorSide == true && (SH->GetDetectorID() != DetectorID || SH->IsLowVoltageStrip() != LowVoltageSide)) continue;
+    SelectedStripHits.push_back(SH);
   }
-  if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete";
-    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
-    S<<endl;
+  if (OnlyDetectorSide == true && SelectedStripHits.size() == 0) {
+    return false;
   }
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) {
-    S<<"BD EnergyCalibrationIncomplete_BadStrip";
-    if (m_EnergyCalibrationIncomplete_BadStripString != "") S<<" ("<<m_EnergyCalibrationIncomplete_BadStripString<<")";
-    S<<endl;
+
+  S<<"SE"<<endl;
+  S<<"ID "<<m_ID<<endl;
+
+  if (m_EventTimeUTC == 0 && m_EventTimeRTS != 0) {
+    S<<"TI "<<ComputeUTCfromRTSTime(m_EventTimeRTS)<<endl;
+  } else {
+    S<<"TI "<<m_EventTimeUTC<<endl;
   }
-  if (m_EnergyCalibrationIncomplete == true) {
-    S<<"BD EnergyCalibrationIncomplete";
-    if (m_EnergyCalibrationIncompleteString != "") S<<" ("<<m_EnergyCalibrationIncompleteString<<")";
-    S<<endl;
+
+  for (MSimIA& IA: m_SimIAs) {
+    S<<IA.ToSimString()<<endl;
   }
-  if (m_EnergyResolutionCalibrationIncomplete == true) {
-    S<<"BD EnergyResolutionCalibrationIncomplete";
-    if (m_EnergyResolutionCalibrationIncompleteString != "") S<<" ("<<m_EnergyResolutionCalibrationIncompleteString<<")";
-    S<<endl;
+
+  unsigned int Counter = 0;
+  for (MStripHit* SH: SelectedStripHits) {
+    SH->StreamRoa(S, WithADCs, WithTACs, WithEnergies, WithTimings, WithFlags, WithOrigins);
+    ++Counter;
   }
-  if (m_StripPairingIncomplete == true) {
-    S<<"BD StripPairingIncomplete";
-    if (m_StripPairingIncompleteString != "") S<<" ("<<m_StripPairingIncompleteString<<")";
-    S<<endl;
+  if (OnlyDetectorSide == false) {
+    for (MCrystalHit* CH: m_CrystalHits) {
+      CH->StreamRoa(S, WithADCs, WithEnergies, WithFlags, WithOrigins);
+      ++Counter;
+    }
   }
-  if (m_LLDEvent == true) {
-    S<<"BD LLDEvent";
-    if (m_LLDEventString != "") S<<" ("<<m_LLDEventString<<")";
-    S<<endl;
+  if (Counter == 0) {
+    S<<"BD No hits"<<endl;
   }
-  if (m_DepthCalibrationIncomplete == true) {
-    S<<"BD DepthCalibrationIncomplete";
-    if (m_DepthCalibrationIncompleteString != "") S<<" ("<<m_DepthCalibrationIncompleteString<<")";
-    S<<endl;
-  }
-  if (m_DepthCalibration_OutofRange == true) { 
-    S<<"BD DepthCalibration_OutofRange";
-    if (m_DepthCalibration_OutofRangeString != "") S<<" ("<<m_DepthCalibration_OutofRangeString<<")";
-    S<<endl;
+
+  StreamBDFlags(S);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::StreamTra(ostream& S)
+{
+  // Stream the read-out assembly in MEGAlib's TRA format
+
+  S<<"SE"<<endl;
+
+  if (m_PhysicalEvent != nullptr) {
+    S<<m_PhysicalEvent->ToTraString();
+  } else {
+    S<<"ID "<<m_ID<<endl;
+    StreamBDFlags(S);
   }
 }
 
@@ -629,38 +752,203 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MReadOutAssembly::StreamRoa(ostream& S, bool)
+void MReadOutAssembly::StreamBDFlags(ostream& S)
 {
-  //! Stream the content in MEGAlib's evta format 
+  // Stream the BD and QA flags for this assembly
 
-  S<<"SE"<<endl;
-  S<<"ID "<<m_ID<<endl;
-  S<<"CL "<<m_Time<<endl;
-  S<<"TI "<<m_EventTimeUTC<<endl;
-
-  if (m_Aspect != 0) {
-    m_Aspect->StreamEvta(S);
-  }
-
-  for (MSimIA& IA: m_SimIAs) {
-    S<<IA.ToSimString()<<endl; 
-  }
-
-  for (unsigned int h = 0; h < m_StripHits.size(); ++h) {
-    m_StripHits[h]->StreamRoa(S);  
-  }
-  
-  // Those are the only BD's relevant for the roa format
-  if (m_AspectIncomplete == true) {
-    S<<"BD AspectIncomplete";
-    if (m_AspectIncompleteString != "") S<<" ("<<m_AspectIncompleteString<<")";
+  if (m_EnergyCalibrationError == true) {
+    S<<"BD EnergyCalibrationError";
+    if (m_EnergyCalibrationErrorString.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_EnergyCalibrationErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
     S<<endl;
   }
-  if (m_TimeIncomplete == true) {
-    S<<"BD TimeIncomplete";
-    if (m_TimeIncompleteString != "") S<<" ("<<m_TimeIncompleteString<<")";
+  if (m_TACCalibrationError == true) {
+    S<<"BD TACCalibrationError";
+    if (m_TACCalibrationErrorString.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_TACCalibrationErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
     S<<endl;
   }
+  if (m_StripPairingError == true) {
+    S<<"BD StripPairingError";
+    if (m_StripPairingErrorString.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_StripPairingErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+  if (m_DepthCalibrationError == true) {
+    S<<"BD DepthCalibrationError";
+    if (m_DepthCalibrationErrorString.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_DepthCalibrationErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+  if (m_EventReconstructionError == true) {
+    S<<"BD EventReconstructionError";
+    if (m_EventReconstructionErrorString.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_EventReconstructionErrorString) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+  if (m_StripHitBelowThreshold_QualityFlag == true) {
+    S<<"QA StripHitBelowThreshold";
+    if (m_StripHitBelowThresholdString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_StripHitBelowThresholdString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+  if (m_HighADC_QualityFlag == true) {
+    S<<"QA HighADC";
+    if (m_HighADCString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_HighADCString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+  if (m_StripPairing_QualityFlag == true) {
+    S<<"QA StripPairing";
+    if (m_StripPairingString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_StripPairingString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+  if (m_UnknownDetector_QualityFlag == true) {
+    S<<"QA UnknownDetector";
+    if (m_UnknownDetectorString_QualityFlag.empty() == false) {
+      // Append any associated error text
+      for (auto i : m_UnknownDetectorString_QualityFlag) {
+        S<<" ("<<i<<")";
+      }
+    }
+    S<<endl;
+  }
+
+
+  if (m_GuardRingVeto == true) {
+    S<<"BD GR Veto"<<endl;
+  }
+  if (m_ShieldVeto == true) {
+    S<<"BD Shield Veto"<<endl;
+  }
+
+  S<<"PQ";
+  // Append the strip pairing reduced chi^2 values
+  for (auto i : m_StripPairingReducedChiSquare) {
+    S<<" "<<i;
+  }
+  S<<endl;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse a BD, QA, or PQ line as written by StreamBDFlags
+//! Return false if the flag is unknown
+bool MReadOutAssembly::ParseBDFlags(const MString& Line)
+{
+  // "PQ <chi square> <chi square> ..."
+  if (Line.BeginsWith("PQ") == true) {
+    MTokenizer T;
+    T.Analyze(Line);
+    for (unsigned int t = 1; t < T.GetNTokens(); ++t) {
+      SetStripPairingReducedChiSquare(T.GetTokenAtAsDouble(t));
+    }
+    return true;
+  }
+
+  // "BD <Flag> (<Text>) (<Text>) ..." and "QA <Flag> (<Text>) ..."
+  const MString Rest = Line.GetSubString(3);
+  size_t Bracket = Rest.Index(" (");
+  const MString Flag = Rest.GetSubString(0, Bracket);
+  vector<MString> Texts;
+  while (Bracket != MString::npos) {
+    size_t Start = Bracket + 2;
+    size_t End = Rest.Index(") (", Start);
+    if (End == MString::npos) {
+      End = Rest.Last(')');
+      if (End == MString::npos || End < Start) End = Rest.Length();
+      Texts.push_back(Rest.GetSubString(Start, End - Start));
+      break;
+    }
+    Texts.push_back(Rest.GetSubString(Start, End - Start));
+    Bracket = End + 1;
+  }
+  // The setters ignore an empty text
+  if (Texts.empty() == true) Texts.push_back("");
+
+  if (Line.BeginsWith("BD") == true) {
+    if (Flag == "EnergyCalibrationError") {
+      for (const MString& T: Texts) SetEnergyCalibrationError(T);
+    } else if (Flag == "TACCalibrationError") {
+      for (const MString& T: Texts) SetTACCalibrationError(T);
+    } else if (Flag == "StripPairingError") {
+      for (const MString& T: Texts) SetStripPairingError(T);
+    } else if (Flag == "DepthCalibrationError") {
+      for (const MString& T: Texts) SetDepthCalibrationError(T);
+    } else if (Flag == "EventReconstructionError") {
+      for (const MString& T: Texts) SetEventReconstructionError(T);
+    } else if (Flag == "GR Veto") {
+      SetGuardRingVeto();
+    } else if (Flag == "Shield Veto") {
+      SetShieldVeto();
+    } else if (Flag == "No hits") {
+      // Written by StreamRoa for events without hits, nothing to set
+    } else {
+      if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Unknown BD flag: "<<Line<<endl;
+      return false;
+    }
+    return true;
+  }
+
+  if (Line.BeginsWith("QA") == true) {
+    if (Flag == "StripHitBelowThreshold") {
+      for (const MString& T: Texts) SetStripHitBelowThreshold_QualityFlag(T);
+    } else if (Flag == "HighADC") {
+      for (const MString& T: Texts) SetHighADC_QualityFlag(T);
+    } else if (Flag == "StripPairing") {
+      for (const MString& T: Texts) SetStripPairing_QualityFlag(T);
+    } else if (Flag == "UnknownDetector") {
+      for (const MString& T: Texts) SetUnknownDetector_QualityFlag(T);
+    } else {
+      if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Unknown QA flag: "<<Line<<endl;
+      return false;
+    }
+    return true;
+  }
+
+  // Both callers check the keyword first, so this only happens if the function is used elsewhere
+  if (g_Verbosity >= c_Error) cout<<"MReadOutAssembly: Not a BD, QA, or PQ line: "<<Line<<endl;
+
+  return false;
 }
 
 
@@ -669,21 +957,17 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool)
 
 bool MReadOutAssembly::IsGood() const
 {
-  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+  // Return true if no error flag is set and the event has not been filtered out
+  // Veto and quality flags do not affect this result
 
-  if (m_AspectIncomplete == true) return false;
-  if (m_TimeIncomplete == true) return false;
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) return false;
-  if (m_EnergyCalibrationIncomplete == true) return false;
-  if (m_EnergyResolutionCalibrationIncomplete == true) return false;
-  if (m_StripPairingIncomplete == true) return false;
-  if (m_LLDEvent == true) return false;
-  if (m_DepthCalibrationIncomplete == true) return false;
-  if (m_DepthCalibration_OutofRange == true) return false;
-
+  if (m_EnergyCalibrationError == true) return false;
+  if (m_TACCalibrationError == true) return false;
+  if (m_StripPairingError == true) return false;
+  if (m_DepthCalibrationError == true) return false;
+  if (m_EventReconstructionError == true) return false;
 
   if (m_FilteredOut == true) return false;
-  
+
   return true;
 }
 
@@ -693,60 +977,50 @@ bool MReadOutAssembly::IsGood() const
 
 bool MReadOutAssembly::IsBad() const
 {
-  //! Returns true if none of the "bad" or "incomplete" falgs has been set
+  // Return true if any error flag is set or the event has been filtered out
+  // Veto and quality flags do not affect this result
 
-  if (m_AspectIncomplete == true) return true;
-  if (m_TimeIncomplete == true) return true;
-  if (m_EnergyCalibrationIncomplete_BadStrip == true) return true;
-  if (m_EnergyCalibrationIncomplete == true) return true;
-  if (m_EnergyResolutionCalibrationIncomplete == true) return true;
-  if (m_StripPairingIncomplete == true) return true;
-  if (m_LLDEvent == true) return true;
-  if (m_DepthCalibrationIncomplete == true) return true;
-  if (m_DepthCalibration_OutofRange == true) return true;
+  if (m_EnergyCalibrationError == true) return true;
+  if (m_TACCalibrationError == true) return true;
+  if (m_StripPairingError == true) return true;
+  if (m_DepthCalibrationError == true) return true;
+  if (m_EventReconstructionError == true) return true;
 
   if (m_FilteredOut == true) return true;
 
   return false;
 }
-  
-bool MReadOutAssembly::ComputeAbsoluteTime()
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::IsPoorQuality() const
 {
+  //! Returns true if none of the Quality flag has been set
 
-	//the following code assumes that the clock board oscillator is exactly 10 MHz.
-	//in reality there is a +/- 25 ppm tolerance on the frequency, so worst case this
-	//would give an absolute timing error of 25 us.  This can be corrected for by 
-	//comparing the difference between PPS values from sample to sample. The GPS
-	//PPS timing error is much smaller (it is specd at 200 ns )
+  // Let's not filter out the strips below threshold events since these aren't less quality
+  //if (m_StripHitBelowThreshold_QualityFlag == true) return true;
+  if (m_StripPairing_QualityFlag == true) return true;
 
-	/*
+  if (m_FilteredOut == true) return true;
 
-	int64_t dt = m_CL - PPS;
-	MTime dT;
-	dT.Set((int)(dt/10000000),(int)((dt % 10000000)*100));
-	MTime UTC(UTCSecond,(long int)0);
-	UTC += dT; //dT can be positive or negative, += operator calls Normalize()
-	m_EventTimeUTC.Set(UTC);
-	return true;
-
-	*/
-
-	if(m_Aspect != 0){
-		int64_t dt = m_CL - m_Aspect->GetPPS();
-		MTime dT;
-		dT.Set((int)(dt/10000000),(int)((dt % 10000000)*100));
-		MTime UTCTimeTrunc = m_Aspect->GetUTCTime();
-		UTCTimeTrunc.Set(UTCTimeTrunc.GetAsSystemSeconds(), (long int)0);
-		UTCTimeTrunc += dT; //dT can be positive or negative, += operator calls Normalize()
-		m_EventTimeUTC.Set(UTCTimeTrunc);
-		//cout << "m_Time = " << m_Time << ", m_EventTimeUTC = " << m_EventTimeUTC << ", dT = " << dT << endl;
-		return true;
-	} else {
-		return false;
-	}
-
+  return false;
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+bool MReadOutAssembly::IsVeto() const
+{
+  // Return true if one of the veto flags has been set
+
+  if (m_ShieldVeto == true) return true;
+  if (m_GuardRingVeto == true) return true;
+
+  return false;
+}
 
 
 // MReadOutAssembly.cxx: the end...

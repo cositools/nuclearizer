@@ -1,0 +1,7 @@
+# Det ID, Side, Disabled Strip, [Read-out via]
+# double-wide strips
+0 l 40 39
+0 l 44 43
+0 l 50 49
+# tested with fauly NICEv1 board (disabled HV31)
+0 h 31

@@ -74,6 +74,25 @@ class MGUIOptionsDepthCalibration : public MGUIOptions
   //! Select spline file to load, splines will convert CTD->Depth
   MGUIEFileSelector* m_SplinesFileSelector;
 
+  //! Account for disabled strips
+  bool m_AccountForDisabledStrips;
+  //! Check button to account for disabled strips
+  TGCheckButton* m_DisabledStripsCB;
+  //! Select disabled strips file to load
+  MGUIEFileSelector* m_DisabledStripsFileSelector;
+
+  //! Use metrology correction
+  bool m_UseMaskMetCorr;
+  //! Check button to use metrology correction
+  TGCheckButton* m_MaskMetModeCB;
+  //! Select mask metrology file to load. This gives the translation and rotation for each strip in the detector frame.
+  MGUIEFileSelector* m_MaskMetrologyFileSelector;
+
+  //! Check button if working with the Card Cage at UCSD
+  TGCheckButton* m_UCSDOverride;
+
+  //! IDs of check buttons
+  enum ButtonIDs {c_MetrologyFile, c_DisabledStripsFile};
 
 #ifdef ___CLING___
  public:

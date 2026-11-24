@@ -1,0 +1,253 @@
+/*
+ * MGUIOptionsDEESMEX.cxx
+ *
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+// Include the header:
+#include "MGUIOptionsDEESMEX.h"
+
+// Standard libs:
+
+// ROOT libs:
+#include <TSystem.h>
+#include <MString.h>
+#include <TGLabel.h>
+#include <TGResourcePool.h>
+
+// MEGAlib libs:
+#include "MStreams.h"
+#include "MModuleDEESMEX.h"
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CLING___
+ClassImp(MGUIOptionsDEESMEX)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MGUIOptionsDEESMEX::MGUIOptionsDEESMEX(MModule* Module)
+    : MGUIOptions(Module)
+{
+  // standard constructor
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MGUIOptionsDEESMEX::~MGUIOptionsDEESMEX()
+{
+  // kDeepCleanup is activated
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIOptionsDEESMEX::Create()
+{
+  PreCreate();
+
+  TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
+
+  m_EnergyCalibrationFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select an energy calibration file:",
+                                                          dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnergyCalibrationFileName());
+  m_EnergyCalibrationFileSelector->SetFileType("Ecal file", "*.ecal");
+  m_OptionsFrame->AddFrame(m_EnergyCalibrationFileSelector, LabelLayout);
+  
+  m_ResolutionCalibrationButton = new TGCheckButton(m_OptionsFrame, "Smear energies based on FWHM");
+  m_ResolutionCalibrationButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetApplyResolutionCalibration());
+  m_OptionsFrame->AddFrame(m_ResolutionCalibrationButton, LabelLayout);
+
+  m_DeadtimeFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a deadtime parameters file:",
+                                                          dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDeadtimeFileName());
+  m_DeadtimeFileSelector->SetFileType("Deadtime file", "*.txt");
+  m_OptionsFrame->AddFrame(m_DeadtimeFileSelector, LabelLayout);
+
+  TGHorizontalFrame* VetoButtonFrame = new TGHorizontalFrame(m_OptionsFrame);
+  TGLayoutHints* VetoButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 30, 0, 0);
+
+  m_EnableShieldVetoButton = new TGCheckButton(VetoButtonFrame, "Enable Shield veto");
+  m_EnableShieldVetoButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnableShieldVeto());
+  VetoButtonFrame->AddFrame(m_EnableShieldVetoButton, VetoButtonLayout);
+
+  m_EnableGuardRingVetoButton = new TGCheckButton(VetoButtonFrame, "Enable Guard Ring veto");
+  m_EnableGuardRingVetoButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetEnableGuardRingVeto());
+  VetoButtonFrame->AddFrame(m_EnableGuardRingVetoButton, VetoButtonLayout);
+
+  m_OptionsFrame->AddFrame(VetoButtonFrame, LabelLayout);
+
+  /*
+  m_DeadStripFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a dead strip file:",
+    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDeadStripFileName());
+  m_DeadStripFileSelector->SetFileType("Dead strips file", "*.txt");
+  m_OptionsFrame->AddFrame(m_DeadStripFileSelector, LabelLayout);
+  */
+  m_ThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a hardware thresholds file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetHardwareThresholdFileName());
+  m_ThresholdFileSelector->SetFileType("Hardware thresholds file", "*.csv");
+  m_OptionsFrame->AddFrame(m_ThresholdFileSelector, LabelLayout);
+  /*
+  m_GuardRingThresholdFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a guard ring thresholds file:",
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetGuardRingThresholdFileName());
+  m_GuardRingThresholdFileSelector->SetFileType("Thresholds file", "*.dat");
+  m_OptionsFrame->AddFrame(m_GuardRingThresholdFileSelector, LabelLayout);
+
+  m_ChargeSharingFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge sharing factor file:",
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetChargeSharingFileName());
+  m_ChargeSharingFileSelector->SetFileType("Charge sharing file", "*.txt");
+  m_OptionsFrame->AddFrame(m_ChargeSharingFileSelector, LabelLayout);
+
+  m_CrosstalkFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a crosstalk coefficients file:",
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetCrosstalkFileName());
+  m_CrosstalkFileSelector->SetFileType("Crosstalk file", "*.txt");
+  m_OptionsFrame->AddFrame(m_CrosstalkFileSelector, LabelLayout);
+
+  m_ChargeLossFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a charge loss coefficients file:",
+  dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetChargeLossFileName());
+  m_ChargeLossFileSelector->SetFileType("Charge loss file", "*.log");
+  m_OptionsFrame->AddFrame(m_ChargeLossFileSelector, LabelLayout);
+
+  m_DepthCalibrationTACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a TAC calibration parameters file:",
+    dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetDepthCalibrationTACCalFileName());
+  m_DepthCalibrationTACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationTACCalFileSelector, LabelLayout);
+  */
+
+  // inverse depth calibration files
+  m_DepthCalibrationSplinesFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration splines file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthSplinesFileName());
+  m_DepthCalibrationSplinesFileSelector->SetFileType("Splines file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationSplinesFileSelector, LabelLayout);
+
+  m_DepthCalibrationCoeffsFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a depth calibration coefficients file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetDepthCoefficientsFileName());
+  m_DepthCalibrationCoeffsFileSelector->SetFileType("Coefficients file", "*.csv");
+  m_OptionsFrame->AddFrame(m_DepthCalibrationCoeffsFileSelector, LabelLayout);
+
+  m_TimingResolutionCalibrationButton = new TGCheckButton(m_OptionsFrame, "Smear timing values based on FWHM");
+  m_TimingResolutionCalibrationButton->SetOn(dynamic_cast<MModuleDEESMEX*>(m_Module)->GetApplyTimingResolutionCalibration());
+  m_OptionsFrame->AddFrame(m_TimingResolutionCalibrationButton, LabelLayout);
+
+  m_TACCalFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a TAC calibration file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetTACCalFileName());
+  m_TACCalFileSelector->SetFileType("TAC calibration file", "*.csv");
+  m_OptionsFrame->AddFrame(m_TACCalFileSelector, LabelLayout);
+
+  m_StripMapFileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a strip map file:",
+    dynamic_cast<MModuleDEESMEX*>(m_Module)->GetStripMapFileName());
+  m_StripMapFileSelector->SetFileType("Strip map file", "*.map");
+  m_OptionsFrame->AddFrame(m_StripMapFileSelector, LabelLayout);
+
+  // shield energy correction file
+  m_ShieldEnergyCorrectionFileSelector = new MGUIEFileSelector(m_OptionsFrame,
+                                                               "Please select an energy correction file for the Shield DEE:",
+                                                               dynamic_cast<MModuleDEESMEX*>(m_Module)->GetShieldEnergyCorrectionFileName());
+  m_ShieldEnergyCorrectionFileSelector->SetFileType("Shield DEE energy correction file", "*.csv");
+  m_OptionsFrame->AddFrame(m_ShieldEnergyCorrectionFileSelector, LabelLayout);
+
+  /*
+  m_ApplyFudgeFactorSelector = new TGCheckButton(m_OptionsFrame, "Apply fudge factor to better match fluxes", 1);
+  m_ApplyFudgeFactorSelector->SetOn(dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->GetApplyFudgeFactor());
+  m_OptionsFrame->AddFrame(m_ApplyFudgeFactorSelector, LabelLayout);
+  */
+
+  PostCreate();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUIOptionsDEESMEX::ProcessMessage(long Message, long Parameter1, long Parameter2)
+{
+  // Modify here if you have more buttons
+
+  bool Status = true;
+
+  switch (GET_MSG(Message)) {
+  case kC_COMMAND:
+    switch (GET_SUBMSG(Message)) {
+    case kCM_BUTTON:
+      break;
+    case kCM_CHECKBUTTON:
+      break;
+    default:
+      break;
+    }
+    break;
+  default:
+    break;
+  }
+
+  if (Status == false) {
+    return false;
+  }
+
+  // Call also base class
+  return MGUIOptions::ProcessMessage(Message, Parameter1, Parameter2);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUIOptionsDEESMEX::OnApply()
+{
+  // Modify this to store the data in the module!
+
+  // Shield options:
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetShieldEnergyCorrectionFileName(m_ShieldEnergyCorrectionFileSelector->GetFileName());
+
+  // GeD options:
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnergyCalibrationFileName(m_EnergyCalibrationFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthCoefficientsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDepthSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetTACCalFileName(m_TACCalFileSelector->GetFileName());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetStripMapFileName(m_StripMapFileSelector->GetFileName());
+
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetDeadtimeFileName(m_DeadtimeFileSelector->GetFileName());
+  
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyResolutionCalibration(m_ResolutionCalibrationButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableShieldVeto(m_EnableShieldVetoButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetEnableGuardRingVeto(m_EnableGuardRingVetoButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetApplyTimingResolutionCalibration(m_TimingResolutionCalibrationButton->IsOn());
+  dynamic_cast<MModuleDEESMEX*>(m_Module)->SetHardwareThresholdFileName(m_ThresholdFileSelector->GetFileName());
+
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetGuardRingThresholdFileName(m_GuardRingThresholdFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeSharingFileName(m_ChargeSharingFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetCrosstalkFileName(m_CrosstalkFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetChargeLossFileName(m_ChargeLossFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDeadStripFileName(m_DeadStripFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationCoeffsFileName(m_DepthCalibrationCoeffsFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationTACCalFileName(m_DepthCalibrationTACCalFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetDepthCalibrationSplinesFileName(m_DepthCalibrationSplinesFileSelector->GetFileName());
+  // ACS DEE energy correction
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetACSEnergyCorrectionFileName(m_ACSEnergyCorrectionFileSelector->GetFileName());
+  //dynamic_cast<MModuleLoaderSimulationsSingleDet*>(m_Module)->SetApplyFudgeFactor(m_ApplyFudgeFactorSelector->IsOn());
+
+
+  return true;
+}
+
+
+// MGUIOptionsDEESMEX: the end...
+////////////////////////////////////////////////////////////////////////////////

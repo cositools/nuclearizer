@@ -80,7 +80,7 @@ bool MModuleLoaderMeasurements::Initialize()
 {
   // Initialize the module 
 
-  return true;
+  return MModule::Initialize();
 }
 
 
@@ -92,19 +92,6 @@ bool MModuleLoaderMeasurements::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level 
 
   return true;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-
-void MModuleLoaderMeasurements::ShowOptionsGUI()
-{
-  //! Show the options GUI
-
-  MGUIOptionsLoaderMeasurements* Options = new MGUIOptionsLoaderMeasurements(this);
-  Options->Create();
-  gClient->WaitForUnmap(Options);
 }
 
 

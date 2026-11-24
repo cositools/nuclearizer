@@ -86,11 +86,6 @@ class MTimeAndCoordinate
   void SetUnixTime(double time){m_TimeSinceMJDZero = time - c_LeapSeconds - (m_MJDZero-c_UnixTimeMJD)*c_Day2Second;}
   double GetUnixTime(){return m_TimeSinceMJDZero + c_LeapSeconds + (m_MJDZero-c_UnixTimeMJD)*c_Day2Second;}
 
-  //!
-  //void Date(string date);
-  //void Date(vector<double> date);
-  //vector<double> Date();
-
   //! set or get time as MJD
   void SetMJD(double mjd){m_TimeSinceMJDZero = (mjd - m_MJDZero) * c_Day2Second;}
   double GetMJD(){return (m_TimeSinceMJDZero * c_Second2Day)+m_MJDZero;}
@@ -121,31 +116,10 @@ class MTimeAndCoordinate
 
   //! astronomical coordinates conversion
   vector<double> Equatorial2Galactic(vector<double> radec);
-  vector<double> Equatorial2Galactic2(vector<double> radec);
   vector<double> Horizon2Galactic(double azi, double alt){return Equatorial2Galactic(Horizon2Equatorial(azi, alt));}
   vector<double> Horizon2Equatorial(double azi, double alt);
-  vector<double> Horizon2Equatorial2(double azi, double alt);	
 
-
-  //! Coordinate transformations from dGPS angles (pitch, roll, yaw) to Horizon coordinates
-  // rotation matrix to convert vector in dGPS frame to vector in horizon coordinates
-  TMatrixD dGPS_to_Horizon_Rotation(double pitch_deg, double roll_deg, double yaw_deg);
-  // rotation matrix to convert vector in cryostat frame to vector in horizon coordinates
-  TMatrixD Cryo_to_Horizon_Rotation(double pitch_deg, double roll_deg, double yaw_deg);
-  // convert cryostat vector into Horizon (azi, alt) coordinates
-  vector<double> CryoVector_to_Horizon(TMatrixD Vector_cryo, double pitch_deg, double roll_deg, double yaw_deg);
-  // convert cryostat X axis into Horizon (azi, alt) coordinates
-  vector<double> CryoX_to_Horizon(double pitch_deg, double roll_deg, double yaw_deg);
-  // convert cryostat Z axis into Horizon (azi, alt) coordinates
-  vector<double> CryoZ_to_Horizon(double pitch_deg, double roll_deg, double yaw_deg);
-
-  //!
-  //vector<double> Decimal2Sexagesimal(double d);
-  //vector<double> Decimal2hhmmss(double d);
-  //double Sexagesimal2Desimal(vector<double> dms);
-  //double hhmmss2Decimal(vector<double>);
-  
-  //! conversion between elevation and azimuthal angle
+    //! conversion between elevation and azimuthal angle
   double ELV2Zenith(double ELV){return (90.0-ELV);}
   double Zenith2ELV(double azi){return (90.0-azi);}
 
@@ -170,8 +144,6 @@ class MTimeAndCoordinate
   double m_Longitude;
   double m_Latitude;
 
-  // Rotation matrix for converting a vector in cryostat coordinates to dGPS coordinates
-  TMatrixD m_Cryo_to_dGPS_Rotation;
   
 #ifdef ___CLING___
  public:

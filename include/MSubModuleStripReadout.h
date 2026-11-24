@@ -1,0 +1,142 @@
+/*
+ * MSubModuleStripReadout.h
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
+#ifndef __MSubModuleStripReadout__
+#define __MSubModuleStripReadout__
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Standard libs:
+#include <map>
+
+// ROOT libs:
+#include "TF1.h"
+
+// MEGAlib libs:
+#include "MGlobal.h"
+#include "MSubModule.h"
+#include "MReadOutElementDoubleStrip.h"
+
+// Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+class MSubModuleStripReadout : public MSubModule
+{
+  // public interface:
+ public:
+  //! Default constructor
+  MSubModuleStripReadout();
+
+  //! No copy constructor
+  MSubModuleStripReadout(const MSubModuleStripReadout&) = delete;
+  //! No copy assignment
+  MSubModuleStripReadout& operator=(const MSubModuleStripReadout&) = delete;
+  //! No move constructors
+  MSubModuleStripReadout(MSubModuleStripReadout&&) = delete;
+  //! No move operators
+  MSubModuleStripReadout& operator=(MSubModuleStripReadout&&) = delete;
+
+  //! Default destructor
+  virtual ~MSubModuleStripReadout();
+
+  //! Set if energies should be smeared based on FWHM
+  void SetApplyResolutionCalibration(bool ApplyResolutionCalibration) { m_ApplyResolutionCalibration = ApplyResolutionCalibration; }
+  //! Get if energies should be smeared based on FWHM
+  bool GetApplyResolutionCalibration() { return m_ApplyResolutionCalibration; }
+
+  //! Set energy calibration file name
+  void SetEnergyCalibrationFileName(const MString& FileName) { m_EnergyCalibrationFileName = FileName; }
+  //! Get energy calibration file name
+  MString GetEnergyCalibrationFileName() const { return m_EnergyCalibrationFileName; }
+
+  //! Set hardware threshold file name
+  void SetHardwareThresholdFileName(const MString& FileName) { m_HardwareThresholdFileName = FileName; }
+  //! Get hardware threshold file name
+  MString GetHardwareThresholdFileName() const { return m_HardwareThresholdFileName; }
+
+  //! Initialize the module
+  virtual bool Initialize();
+
+  //! Clear event data from the module
+  virtual void Clear();
+
+  //! Main data analysis routine, which updates the event to a new level 
+  virtual bool AnalyzeEvent(MReadOutAssembly* Event);
+
+  //! Finalize the module
+  virtual void Finalize();
+
+  //! Read the configuration data from an XML node
+  virtual bool ReadXmlConfiguration(MXmlNode* Node);
+  //! Create an XML node tree from the configuration
+  virtual MXmlNode* CreateXmlConfiguration(MXmlNode* Node);
+
+  // protected methods:
+ protected:
+
+  // private methods:
+ private:
+
+
+
+  // protected members:
+ protected:
+
+
+  // private members:
+ private:
+  //! Energy calibration file name
+  MString m_EnergyCalibrationFileName;
+
+  //! Hardware threshold file name
+  MString m_HardwareThresholdFileName;
+  
+  //! Map storing the energy calibration fits for each strip
+  map<MReadOutElementDoubleStrip, TF1*> m_Calibration;
+
+  //! Maps storing the range of ADC values (minimum and maximum) in a monotonic range
+  map<MReadOutElementDoubleStrip, double> m_MinimumADCs;
+  map<MReadOutElementDoubleStrip, double> m_MaximumADCs;
+
+  //! Maps storing the energy range (minimum and maximum) covered by the ADC range
+  map<MReadOutElementDoubleStrip, double> m_MinimumEnergies;
+  map<MReadOutElementDoubleStrip, double> m_MaximumEnergies;
+  
+  //! Flag to determine if resolution calibration should be applied
+  bool m_ApplyResolutionCalibration;
+  
+  //! Map storing the FWHM fits for each strip
+  map<MReadOutElementDoubleStrip, TF1*> m_ResolutionCalibration;
+
+  //! Map storing the hardware thresholds of the slow shaper for each strip
+  map<MReadOutElementDoubleStrip, double> m_HardwareThresholdMap;
+  
+  //! Max value of the ADC units
+  static constexpr double m_MaxADCRange = 16383;
+
+
+
+#ifdef ___CLING___
+ public:
+  ClassDef(MSubModuleStripReadout, 0) // no description
+#endif
+
+};
+
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////

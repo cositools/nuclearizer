@@ -49,12 +49,12 @@ MGUIExpoStripPairing::MGUIExpoStripPairing(MModule* Module) : MGUIExpo(Module)
   // standard constructor
 
   // Set the new title of the tab here:
-  m_TabTitle = "Strip Pairing";
+  m_TabTitle = "Strip Pairing Energies";
 
   // Add all histograms and canvases below
-  m_Energies = new TH2D("", "Strip pairing: energy distribution p vs. n side", 1000, 0, 1000, 1000, 0, 1000);
-  m_Energies->SetXTitle("Energy p-Side [keV]");
-  m_Energies->SetYTitle("Energy n-Side [keV]");
+  m_Energies = new TH2D("", "Strip pairing: energy distribution LV vs. HV side", 1000, 0, 1000, 1000, 0, 1000);
+  m_Energies->SetXTitle("Energy LV Side [keV]");
+  m_Energies->SetYTitle("Energy HV Side [keV]");
   m_Energies->SetZTitle("counts");
   m_Energies->SetFillColor(kAzure+7);
 

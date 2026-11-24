@@ -2,16 +2,49 @@
 
 by Andreas & ChatGPT
 
+## Automatic formatting
+
+Nuclearizer uses clang-format to automatically format the code:
+
+To format a file do the following:
+
+1. Check if the changes looks OK.
+   ```
+   clang-format MSubModuleDEEIntake.cxx > /tmp/Reformated.cxx
+   diff MSubModuleDEEIntake.cxx /tmp/Reformated.cpp
+   ```
+
+2. Actually change the file
+   ```
+   clang-format -i MSubModuleDEEIntake.cxx
+   ```
+3. Recompile and test your code again
+
+4. Do your pull request / check it in
+
+## How to handle future ToDo's in the code
+
+1. Mark them clearly in a way that IDE's can parse them. Choose one of:
+   ```
+   // TODO:
+   or
+   // FIXME:
+   or
+   // HACK:
+   ```
+2. Open an issue for each of them to keep track of them
+
+
 ## New classes
 
-For new classes, copy and modify an existing one, or use the MModuleTemplate class as tempplate.
+For new classes, copy and modify an existing one, or use the MModuleTemplate class as template.
 
 ## Naming
 
 ### Classes
 
 * Due to historic reasons, all classes start with M.
-* Modules start with MModule
+* Modules start with MModule, with XML tags starting with XmlTag
 * Option GUI's start with MGUIOptions
 * Expo (= data display) GUI's start with MGUIExpo
 
@@ -95,6 +128,14 @@ X, DataPoint, IsNonZero
   }
   ```
 
+- **Between Top-Level Blocks**: The same separating block follows every class definition and every function, i.e. it also separates two classes, and a class from the first function.
+
+- **End of File**: Every source file ends with two blank lines and the closing block:
+  ```cpp
+  // MFoo.cxx: the end...
+  ////////////////////////////////////////////////////////////////////////////////
+  ```
+
 - **Within Functions**: Use blank lines to separate logical blocks of code within a function. For example, separate initialization, computation, and return statements:
   ```cpp
     void SetMagThetaPhi(double mag, double theta, double phi)
@@ -102,9 +143,9 @@ X, DataPoint, IsNonZero
       double r = Mag();
       double t = Theta();
 
-      m_X = r*sin(t)*cos(p);
-      m_Y = r*sin(t)*sin(p);
-      m_Z = r*cos(t);
+      m_X = r * sin(t) * cos(p);
+      m_Y = r * sin(t) * sin(p);
+      m_Z = r * cos(t);
     }
   ```
 
@@ -154,13 +195,23 @@ X, DataPoint, IsNonZero
   ```
 
 
+For a simple one-statement diagnostic guard, prefer the compact form used
+throughout the project:
+
+```cpp
+if (g_Verbosity >= c_Error) cout << "Error: Unable to open file" << endl;
+```
+
+Do not expand this form to a multi-line braced block unless the guarded code
+contains multiple statements or the longer form materially improves clarity.
+
 ### 6. **Whitespace in Expressions**
 
 - **Space Around Operators**: Always add a space before and after most binary operators (=, +, -, &&, etc.). The exce[tion are * and / in math expresions, to visualize the order of operations.
   ```cpp
-  double x = 5 + 3*2;    // Correct
+  double x = 5 + 3*2;    // Incorrect
   double x = 5+3*2;      // Incorrect
-  double x = 5 + 3 * 2;  // Incorrect
+  double x = 5 + 3 * 2;  // Correct
   ```
 
 - **Function Calls**: No spaces between the function name and the opening parenthesis. Add spaces between arguments if needed, but avoid excessive whitespace.
@@ -177,10 +228,18 @@ X, DataPoint, IsNonZero
     m_X ++;  // Incorrect
   ```
 
-- **cout etc.**: There are no white spaces before and after <<, >>
+- **cout etc.**: White spaces before and after <<, >> are OK but not enforced
   ```cpp
-    cout<<"Var: "<<V<<endl;        // Correct
-    cout << "Var: " << V << endl;  // Incorrect
+    cout<<"Var: "<<V<<endl;        // OK
+    cout << "Var: " << V << endl;  // OK
+  ```
+
+- **Boolean conditions**: Prefer an explicit comparison with true or false over the bare value or the negation operator. This is a preference, not a requirement - existing code which does without it is fine, but mixing both forms within one function is not.
+  ```cpp
+    if (Line.BeginsWith("BD") == true) {   // Preferred
+    if (IsOpen() == false) {               // Preferred
+    if (Line.BeginsWith("BD")) {           // OK
+    if (!IsOpen()) {                       // OK
   ```
 
 ### 7. **Trailing Whitespace**
@@ -196,7 +255,7 @@ X, DataPoint, IsNonZero
    - Example:  
      ```cpp
      unsigned int NumberOfComptonEvents = 0; // Good  
-     unsigned int N - 0; // Bad  
+     unsigned int N = 0; // Bad
      ```
 
 ### 2. **Use Comments Wisely**
@@ -205,7 +264,7 @@ X, DataPoint, IsNonZero
    - Example:
      ```cpp
      // Calculate the Compton scatter angle from recoil electron Ee and scattered gamma-ray energy Eg
-     m_Phi = acos(1 - c_E0 * (1/m_Eg - 1/(m_Ee + m_Eg)));
+     m_Phi = acos(1 - c_E0 * (1 / m_Eg - 1 / (m_Ee + m_Eg)));
      ```
 
 ### 3. **Always Initialize Your Variables**
@@ -231,7 +290,7 @@ X, DataPoint, IsNonZero
      ```cpp
      const double XGuardringSize = 0.3;
      const double ActiveDetectorSize = 7.4;
-     double Size = 2*XGuardringSize + ActiveDetectorSize;
+     double Size = 2 * XGuardringSize + ActiveDetectorSize;
      ```
 
 ### 6. **Use Functions to Avoid Repetition**
@@ -240,7 +299,7 @@ X, DataPoint, IsNonZero
      ```cpp
      double AverageOffsetCalculation(double XOffset, double YOffset)
      {
-         return 0.5*(XOffset + YOffset);
+       return 0.5*(XOffset + YOffset);
      }
      ```
 
@@ -253,7 +312,7 @@ X, DataPoint, IsNonZero
    - Arrays in C++ are fixed in size and can be cumbersome. Use `std::vector` for dynamic arrays, as it automatically resizes.
    - Example:
      ```cpp
-     vector<int> Numbers = {1, 2, 3, 4, 5};
+     vector<int> Numbers = { 1, 2, 3, 4, 5 };
      Numbers.push_back(6); // Adds 6 to the end
      ```
 

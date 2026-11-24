@@ -1,0 +1,18 @@
+#! /bin/bash
+
+FILELIST=/tmp/doxygen_filelist.txt
+
+if [ -f ${FILELIST} ]; then
+  rm ${FILELIST}
+fi
+touch ${FILELIST} 
+
+find ${NUCLEARIZER}/src -follow -name 'M*.cxx' >> ${FILELIST} 
+find ${NUCLEARIZER}/include -follow -name 'M*.h' >> ${FILELIST}
+
+find ${MEGALIB}/src/fretalon -follow -name 'M*.cxx' >> ${FILELIST}
+find ${MEGALIB}/src/fretalon -follow -name 'M*.h' >> ${FILELIST}
+
+exit 0
+
+#! end

@@ -66,7 +66,6 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
 
   // Set all modules, which have to be done before this module
   AddPreceedingModuleType(MAssembly::c_EventLoader);
-  AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
 
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventFilter);
@@ -79,9 +78,6 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
   m_HasOptionsGUI = true;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
-
-  m_AllowMultiThreading = true;
-  m_AllowMultipleInstances = true;
   
   m_MinimumTotalEnergy = 0;
   m_MaximumTotalEnergy = 10000;
@@ -94,6 +90,9 @@ MModuleEventFilter::MModuleEventFilter() : MModule()
 
   m_MinimumHits = 0;
   m_MaximumHits = 100;
+    
+  m_MinimumStripPairingReducedChiSquare = -1;
+  m_MaximumStripPairingReducedChiSquare = numeric_limits<double>::max();
 }
 
 
@@ -174,12 +173,23 @@ bool MModuleEventFilter::AnalyzeEvent(MReadOutAssembly* Event)
   if (Event->GetNHits() < m_MinimumHits || Event->GetNHits() > m_MaximumHits) {
     FilteredOut = true;
   }
-
+    
+  // Apply Chi^2 filter (as calculated in strip pairing)
+  
+  // Make sure there are actually reduced chi squares to filter on
+  const auto& ReducedChiSquareVector = Event->GetStripPairingReducedChiSquare();
+  if (ReducedChiSquareVector.size() > 0) {
+    double Maximum = *max_element(ReducedChiSquareVector.begin(), ReducedChiSquareVector.end());
+    double Minimum = *min_element(ReducedChiSquareVector.begin(), ReducedChiSquareVector.end());
+    
+    // Filter based on the minimum and maximum reduced chi square in list
+    if (Minimum < m_MinimumStripPairingReducedChiSquare || Maximum > m_MaximumStripPairingReducedChiSquare) {
+      FilteredOut = true;
+    }
+  }
 
   if (FilteredOut == true) {
     Event->SetFilteredOut(true);
-    Event->SetAnalysisProgress(MAssembly::c_EventFilter);
-    return false;
   }
   
   Event->SetAnalysisProgress(MAssembly::c_EventFilter);
@@ -198,6 +208,7 @@ void MModuleEventFilter::ShowOptionsGUI()
   MGUIOptionsEventFilter* Options = new MGUIOptionsEventFilter(this);
   Options->Create();
   gClient->WaitForUnmap(Options);
+  
 }
 
 
@@ -207,7 +218,7 @@ void MModuleEventFilter::ShowOptionsGUI()
 bool MModuleEventFilter::ReadXmlConfiguration(MXmlNode* Node)
 {
   //! Read the configuration data from an XML node
-
+  
   MXmlNode* MinimumTotalEnergyNode = Node->GetNode("MinimumTotalEnergy");
   if (MinimumTotalEnergyNode != 0) {
     m_MinimumTotalEnergy = MinimumTotalEnergyNode->GetValueAsDouble();
@@ -243,6 +254,15 @@ bool MModuleEventFilter::ReadXmlConfiguration(MXmlNode* Node)
   if (MaximumHitsNode != 0) {
     m_MaximumHits = MaximumHitsNode->GetValueAsUnsignedInt();
   }
+    
+  MXmlNode* MinimumStripPairingReducedChiSquareNode = Node->GetNode("MinimumStripPairingReducedChiSquare");
+  if (MinimumStripPairingReducedChiSquareNode != 0) {
+    m_MinimumStripPairingReducedChiSquare = MinimumStripPairingReducedChiSquareNode->GetValueAsDouble();
+  }
+  MXmlNode* MaximumStripPairingReducedChiSquareNode = Node->GetNode("MaximumStripPairingReducedChiSquare");
+  if (MaximumStripPairingReducedChiSquareNode != 0) {
+    m_MaximumStripPairingReducedChiSquare = MaximumStripPairingReducedChiSquareNode->GetValueAsDouble();
+  }
 
   return true;
 }
@@ -268,6 +288,9 @@ MXmlNode* MModuleEventFilter::CreateXmlConfiguration()
 
   new MXmlNode(Node, "MinimumHits", m_MinimumHits);
   new MXmlNode(Node, "MaximumHits", m_MaximumHits);
+    
+  new MXmlNode(Node, "MinimumStripPairingReducedChiSquare", m_MinimumStripPairingReducedChiSquare);
+  new MXmlNode(Node, "MaximumStripPairingReducedChiSquare", m_MaximumStripPairingReducedChiSquare);
 
   return Node;
 }

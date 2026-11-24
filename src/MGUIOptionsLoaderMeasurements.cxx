@@ -43,8 +43,8 @@ ClassImp(MGUIOptionsLoaderMeasurements)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsLoaderMeasurements::MGUIOptionsLoaderMeasurements(MModule* Module) 
-  : MGUIOptions(Module)
+MGUIOptionsLoaderMeasurements::MGUIOptionsLoaderMeasurements(MModule* Module, MString FileType)
+  : MGUIOptions(Module), m_FileType(FileType)
 {
   // standard constructor
 }
@@ -66,12 +66,12 @@ void MGUIOptionsLoaderMeasurements::Create()
 {
   PreCreate();
 
-  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, "Please select a data file:",
+  m_FileSelector = new MGUIEFileSelector(m_OptionsFrame, MString("Please select a ") + m_FileType + " file:",
     dynamic_cast<MModuleLoaderMeasurements*>(m_Module)->GetFileName());
-  m_FileSelector->SetFileType("Roa file", "*.roa");
-  m_FileSelector->SetFileType("Roa file", "*.roa.gz");
-  m_FileSelector->SetFileType("Data file", "*.dat");
-  m_FileSelector->SetFileType("Data file", "*.dat.gz");
+  m_FileSelector->SetFileType(m_FileType + " file", MString("*.") + m_FileType);
+  if (m_FileType == "roa") {
+    m_FileSelector->SetFileType(m_FileType + " file", MString("*.") + m_FileType + ".gz");
+  }
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   m_OptionsFrame->AddFrame(m_FileSelector, LabelLayout);
 
