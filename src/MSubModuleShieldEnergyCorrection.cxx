@@ -111,7 +111,12 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     return false;
   }
 
-  // DEE shield energy correction: for each voxel of the shield crystal, the deposited energy is corrected following a gaussian distribution. The energy centroid and the fwhm are computed using the formula in (Ciabattoni et al. 2025) using a set of 5 parameters, defined in the shield energy correction file. Each voxel has different parameters.
+  // DEE shield energy correction: for each voxel of the shield crystal, the deposited energy is corrected following a gaussian distribution.
+  // The energy centroid and the FWHM are computed with the formulas in Ciabattoni et al. 2025, using the parameters
+  // of the voxel, defined in the shield energy correction file. Each voxel has different parameters.
+  // Cosima already sums the deposits in the same voxel, thus each hit is one voxel. Each voxel is corrected individually,
+  // since the parameters were derived for single energy deposits:
+  // offset and noise are applied once per voxel, and the corrected energies are summed per crystal afterwards
 
   // Energy correction
   list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();

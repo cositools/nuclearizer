@@ -101,12 +101,12 @@ MString UTNSubModuleShieldEnergyCorrection::WriteCorrectionFile()
 {
   // Columns: detector, crystal, voxel x, y, z, (2 unused), m, q, a, b, c
   // X0 crystal 3 voxel (1, 1, 1): centroid = 1.1 * E + 2, FWHM = sqrt(1^2) = 1 keV
-  // X0 crystal 3 voxel (0, 1, 1): centroid = E, FWHM = sqrt(1^2) = 1 keV
+  // X0 crystal 3 voxel (0, 1, 1): centroid = E + 3, FWHM = sqrt(1^2) = 1 keV
   // X0 crystal 5 voxel (0, 0, 0): centroid = E, FWHM = sqrt(4 + 0.01 E) keV
   MString C;
   C += "# Shield energy correction\n";
   C += "X0 3 1 1 1 0 0 1.1 2.0 1.0 0.0 0.0\n";
-  C += "X0 3 0 1 1 0 0 1.0 0.0 1.0 0.0 0.0\n";
+  C += "X0 3 0 1 1 0 0 1.0 3.0 1.0 0.0 0.0\n";
   C += "X0 5 0 0 0 0 0 1.0 0.0 2.0 0.1 0.0\n";
   C += "this line has too few tokens\n";
   MString FileName = GetTemporaryFileName("shieldcorrection.txt");
@@ -371,34 +371,6 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
     Passed = Evaluate("AnalyzeEvent()", "one hit", "The read-out element keeps the crystal ID 3", H.m_ROE.GetCrystalID(), 3u) && Passed;
   }
 
-  // Two hits in the same voxel are merged
-  MReadOutAssembly Same;
-  Same.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
-  Same.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 200.0));
-  M.AnalyzeEvent(&Same);
-  Passed = Evaluate("AnalyzeEvent()", "two hits in the same voxel", "The hits are merged", Same.GetNDEECrystalHits(), 1u) && Passed;
-  if (Same.GetNDEECrystalHits() == 1) {
-    Passed = EvaluateTrue("AnalyzeEvent()", "two hits in the same voxel", "The read-out element of the merged hit is crystal-only", Same.GetDEECrystalHitListReference().front().m_ROE.IsCrystalOnly()) && Passed;
-  }
-  // The correction (centroid 1.1 * E + 2, FWHM 1 keV) applies to the deposit of the voxel, i.e. to the summed 300 keV:
-  // 1.1 * 300 + 2 = 332 keV; correcting each sub-hit before merging would add the offset twice (334 keV)
-  double Sum = 0.0;
-  unsigned int NMerged = 0;
-  for (unsigned int i = 0; i < 500; ++i) {
-    MReadOutAssembly Pair;
-    Pair.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
-    Pair.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 200.0));
-    M.AnalyzeEvent(&Pair);
-    if (Pair.GetNDEECrystalHits() == 1) {
-      Sum += Pair.GetDEECrystalHitListReference().front().m_Energy;
-      ++NMerged;
-    }
-  }
-  Passed = Evaluate("AnalyzeEvent()", "500 x two hits in the same voxel", "All pairs are merged", NMerged, 500u) && Passed;
-  if (NMerged > 0) {
-    Passed = EvaluateNear("AnalyzeEvent()", "500 x 100 + 200 keV in the same voxel", "The merged energy is centered on the correction of the summed deposit, 1.1 * 300 + 2 = 332 keV", Sum/NMerged, 332.0, 0.2) && Passed;
-  }
-
   // Hits in different crystals of the same shield detector must not be merged
   MReadOutAssembly Different;
   Different.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
@@ -416,7 +388,8 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
   }
 
   // Hits in different voxels of the same crystal are merged: the shield is read out per crystal,
-  // thus the corrected energies of all voxels of the crystal are summed
+  // thus the corrected energies of all voxels of the crystal are summed.
+  // Cosima already sums the deposits in the same voxel into one hit, thus the hits of one crystal are always in different voxels
   MReadOutAssembly Voxels;
   Voxels.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
   Voxels.AddDEECrystalHit(CreateHit("X0", 3, MVector(0, 1, 1), 100.0));
@@ -429,8 +402,9 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
     Passed = Evaluate("AnalyzeEvent()", "hits in two voxels of crystal 3", "The read-out element keeps the crystal ID 3", H.m_ROE.GetCrystalID(), 3u) && Passed;
   }
 
-  // Each voxel is corrected with its own parameters before the sum:
-  // voxel (1, 1, 1): 1.1 * 100 + 2 = 112 keV, voxel (0, 1, 1): 100 keV, thus the sum is centered on 212 keV.
+  // Each voxel is corrected with its own parameters before the sum, with its own offset:
+  // voxel (1, 1, 1): 1.1 * 100 + 2 = 112 keV, voxel (0, 1, 1): 100 + 3 = 103 keV, thus the sum is centered on 215 keV.
+  // Correcting the summed 200 keV with the parameters of one voxel would give 1.1 * 200 + 2 = 222 keV or 200 + 3 = 203 keV
   // Both FWHMs are 1 keV, thus the sum has a sigma of sqrt(2) * 0.4247 = 0.60 keV, and the mean of 500 sums is known to 0.03 keV
   double VoxelSum = 0.0;
   unsigned int NVoxelMerged = 0;
@@ -446,7 +420,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
   }
   Passed = Evaluate("AnalyzeEvent()", "500 x hits in two voxels of crystal 3", "All pairs are merged", NVoxelMerged, 500u) && Passed;
   if (NVoxelMerged > 0) {
-    Passed = EvaluateNear("AnalyzeEvent()", "500 x 100 keV in voxels (1, 1, 1) and (0, 1, 1)", "The merged energy is the sum of the voxel corrections, 112 + 100 = 212 keV", VoxelSum/NVoxelMerged, 212.0, 0.2) && Passed;
+    Passed = EvaluateNear("AnalyzeEvent()", "500 x 100 keV in voxels (1, 1, 1) and (0, 1, 1)", "The merged energy is the sum of the voxel corrections, 112 + 103 = 215 keV", VoxelSum/NVoxelMerged, 215.0, 0.2) && Passed;
   }
 
   // The simulation truth of the merged hits is kept: the simulated energies are summed, and the origins of all hits are kept
