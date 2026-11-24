@@ -236,11 +236,9 @@ bool MModuleLoaderMeasurementsROA::ReadNextEvent(MReadOutAssembly* Event)
       Event->AddStripHit(SH);
     } else if (Voxel != nullptr) {
       MCrystalHit* CH = new MCrystalHit();
+      // Crystal hits are crystal-only: voxel IDs in the file (e.g. from older roa files) are not used
       CH->SetDetectorID(Voxel->GetDetectorID());
       CH->SetCrystalID(Voxel->GetCrystalID());
-      CH->SetVoxelXID(Voxel->GetVoxelXID());
-      CH->SetVoxelYID(Voxel->GetVoxelYID());
-      CH->SetVoxelZID(Voxel->GetVoxelZID());
 
       if (Energy != nullptr) {
         CH->SetEnergy(Energy->GetEnergy());

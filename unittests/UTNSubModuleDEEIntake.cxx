@@ -325,6 +325,11 @@ bool UTNSubModuleDEEIntake::TestShieldHit()
     Passed = Evaluate("AnalyzeEvent()", "shield hit", "The simulated hit index is 1", C.m_SimulatedHitIndex, 1u) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "shield hit", "Both origins are copied", (unsigned int) C.m_SimulatedOrigins.size(), 2u) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "shield hit", "The read-out element has the detector ID", C.m_ROE.GetDetectorID(), MString("X0")) && Passed;
+    // The DEE crystal hit is voxel-level: the voxel-dependent shield energy correction needs the voxel IDs
+    Passed = Evaluate("AnalyzeEvent()", "shield hit", "The read-out element has the crystal ID 3", C.m_ROE.GetCrystalID(), 3u) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "shield hit", "The read-out element has the voxel X ID 1", C.m_ROE.GetVoxelXID(), 1u) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "shield hit", "The read-out element has the voxel Y ID 1", C.m_ROE.GetVoxelYID(), 1u) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "shield hit", "The read-out element has the voxel Z ID 1", C.m_ROE.GetVoxelZID(), 1u) && Passed;
   }
 
   delete SimEvents[0];

@@ -19,7 +19,6 @@
 // Standard libs:
 
 // ROOT libs:
-#include "TRandom3.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -106,9 +105,6 @@ class MSubModuleShieldEnergyCorrection : public MSubModule
   //! Calibration map between Voxel3D read-out element and the energy resolution parameters
   map<MReadOutElementVoxel3D, unique_ptr<TF1>> m_Centroid;
   map<MReadOutElementVoxel3D, unique_ptr<TF1>> m_FWHM;
-
-  //! The DEE internal random number generator
-  TRandom3 m_Random;
 
 #ifdef ___CLING___
  public:

@@ -71,7 +71,8 @@ struct MDEECrystalHit {
 
   // The shield data - which can be in process of being created
 
-  //! The read-out element
+  //! The read-out element on voxel level: detector ID, crystal ID and voxel IDs
+  //! (becomes crystal-only after the voxels of the same crystal are merged in MSubModuleShieldEnergyCorrection)
   MReadOutElementVoxel3D m_ROE;
 
   //! A unique lookup ID of the crystal hit

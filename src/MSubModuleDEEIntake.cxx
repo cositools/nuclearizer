@@ -128,27 +128,29 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
         cout << m_Name << ": No sensitive volume found for this simulated hit" << endl;
       continue;
     }
-    MDShapeBRIK* Shape = nullptr;
-    if (SensitiveVolume->GetShape()->GetType() == "BRIK") {
-      Shape = dynamic_cast<MDShapeBRIK*>(SensitiveVolume->GetShape());
-    } else if (SensitiveVolume->GetShape()->GetType() == "Intersection") {
-      if (dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA()->GetType() == "BRIK") {
-        Shape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA());
+
+    MString DetectorName = Detector->GetName();
+    if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing") == true) {
+
+      MDShapeBRIK* Shape = nullptr;
+      if (SensitiveVolume->GetShape()->GetType() == "BRIK") {
+        Shape = dynamic_cast<MDShapeBRIK*>(SensitiveVolume->GetShape());
+      } else if (SensitiveVolume->GetShape()->GetType() == "Intersection") {
+        if (dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA()->GetType() == "BRIK") {
+          Shape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(SensitiveVolume->GetShape())->GetShapeA());
+        } else {
+          if (g_Verbosity >= c_Error)
+            cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
+          continue;
+        }
       } else {
         if (g_Verbosity >= c_Error)
           cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
         continue;
       }
-    } else {
-      if (g_Verbosity >= c_Error)
-        cout << m_Name << ": No box-shaped sensitive volume found for this simulated hit" << endl;
-      continue;
-    }
-    // MDShapeBRIK::GetSizeZ() returns the half-size, multiply by 2 to get the full detector depth
-    double DetectorDepth = 2*Shape->GetSizeZ();
-
-    MString DetectorName = Detector->GetName();
-    if (DetectorName.BeginsWith("GeD") == true || DetectorName.BeginsWith("GuardRing") == true) {
+      // MDShapeBRIK::GetSizeZ() returns the half-size, multiply by 2 to get the full detector depth
+      double DetectorDepth = 2*Shape->GetSizeZ();
+        
       DetectorName.RemoveAllInPlace("GuardRingDetector_GeD_"); // Remove prefix GuardRing if existent
       DetectorName.RemoveAllInPlace("GeD_"); // The number after GeD is the COSI detector ID
       int DetectorID = DetectorName.ToInt();
@@ -219,13 +221,28 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       MString DetectorID = Tokens[1];
       int CrystalID = Tokens[2].ToInt();
 
-      MDGridPoint P = VS->GetGridPoint();
       MVector Voxel_ID;
-      Voxel_ID[0] = P.GetXGrid();
-      Voxel_ID[1] = P.GetYGrid();
-      Voxel_ID[2] = P.GetZGrid();
 
+      // The DEE crystal hit is a voxel-level hit, since the shield energy correction depends on the voxel:
+      // detector ID and crystal ID of the read-out element are set here, the voxel IDs below
       MDEECrystalHit CHit;
+      CHit.m_ROE.SetDetectorID(DetectorID);
+      CHit.m_ROE.SetCrystalID(CrystalID);
+
+      if (DetectorID == "D0" || DetectorID == "D1") {
+        // Fake unique voxel ID for ACS_D0 / ACS_D1 since they are implemented as scintillators
+        Voxel_ID[0] = 0;
+        Voxel_ID[1] = 0;
+        Voxel_ID[2] = 0;
+        CHit.m_ROE.SetVoxelIDs(0, 0, 0);
+      } else {
+        MDGridPoint P = VS->GetGridPoint();
+        Voxel_ID[0] = P.GetXGrid();
+        Voxel_ID[1] = P.GetYGrid();
+        Voxel_ID[2] = P.GetZGrid();
+        CHit.m_ROE.SetVoxelIDs(P.GetXGrid(), P.GetYGrid(), P.GetZGrid());
+      }
+
       CHit.m_SimulatedEventID = Event->GetSimulatedEvent()->GetID();
 
       CHit.m_DetectorID = DetectorID;
@@ -244,10 +261,6 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       CHit.m_SimulatedEnergy = HT->GetEnergy();
 
       CHit.m_ID = 1000 + (2 * h);
-
-      CHit.m_ROE.SetDetectorID(DetectorID);
-
-      // The rest will be filled in later
 
       Event->AddDEECrystalHit(CHit);
 

@@ -101,10 +101,12 @@ MString UTNSubModuleShieldEnergyCorrection::WriteCorrectionFile()
 {
   // Columns: detector, crystal, voxel x, y, z, (2 unused), m, q, a, b, c
   // X0 crystal 3 voxel (1, 1, 1): centroid = 1.1 * E + 2, FWHM = sqrt(1^2) = 1 keV
+  // X0 crystal 3 voxel (0, 1, 1): centroid = E + 3, FWHM = sqrt(1^2) = 1 keV
   // X0 crystal 5 voxel (0, 0, 0): centroid = E, FWHM = sqrt(4 + 0.01 E) keV
   MString C;
   C += "# Shield energy correction\n";
   C += "X0 3 1 1 1 0 0 1.1 2.0 1.0 0.0 0.0\n";
+  C += "X0 3 0 1 1 0 0 1.0 3.0 1.0 0.0 0.0\n";
   C += "X0 5 0 0 0 0 0 1.0 0.0 2.0 0.1 0.0\n";
   C += "this line has too few tokens\n";
   MString FileName = GetTemporaryFileName("shieldcorrection.txt");
@@ -137,7 +139,10 @@ MDEECrystalHit UTNSubModuleShieldEnergyCorrection::CreateHit(const MString& Dete
   H.m_CrystalID = CrystalID;
   H.m_VoxelInDetector = Voxel;
   H.m_SimulatedEnergy = Energy;
+  // The read-out element of a DEE crystal hit is voxel-level: detector ID, crystal ID and voxel IDs
   H.m_ROE.SetDetectorID(DetectorID);
+  H.m_ROE.SetCrystalID(CrystalID);
+  H.m_ROE.SetVoxelIDs(static_cast<unsigned int>(Voxel.X()), static_cast<unsigned int>(Voxel.Y()), static_cast<unsigned int>(Voxel.Z()));
   return H;
 }
 
@@ -242,7 +247,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestCalibratedVoxel()
 {
   bool Passed = true;
 
-  // The module's private random generator cannot be seeded (see TestReproducibility):
+  // The module draws its random numbers from gRandom, which is not reseeded here:
   // all statistical tolerances are at least 6 sigma of the correct result
   MSubModuleShieldEnergyCorrection M;
   if (InitializeStandard(M) == false) {
@@ -271,8 +276,8 @@ bool UTNSubModuleShieldEnergyCorrection::TestCalibratedVoxel()
   double Sigma = sqrt(Sum2/N - Mean*Mean);
   Passed = EvaluateTrue("AnalyzeEvent()", "calibrated voxel", "AnalyzeEvent returns true", AllTrue) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "calibrated voxel", "Every event keeps its crystal hit", NMissing, 0u) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The corrected energies are centered on 1.1 * 100 + 2 = 112 keV", Mean, 112.0, 0.05)) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The width is FWHM / 2.3548 = 0.4247 keV", Sigma, 1.0/2.354820045, 0.03)) && Passed;
+  Passed = EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The corrected energies are centered on 1.1 * 100 + 2 = 112 keV", Mean, 112.0, 0.05) && Passed;
+  Passed = EvaluateNear("AnalyzeEvent()", "calibrated voxel, 100 keV", "The width is FWHM / 2.3548 = 0.4247 keV", Sigma, 1.0/2.354820045, 0.03) && Passed;
 
   M.Finalize();
 
@@ -316,7 +321,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestUncalibratedVoxel()
   double Sigma = sqrt(Sum2/N - Mean*Mean);
   Passed = Evaluate("AnalyzeEvent()", "uncalibrated voxel", "Every event keeps its crystal hit", NMissing, 0u) && Passed;
   Passed = EvaluateNear("AnalyzeEvent()", "uncalibrated voxel, 500 keV", "The energies are centered on the simulated energy", Mean, 500.0, 1.0) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "uncalibrated voxel, 500 keV", "The default width is 10 keV", Sigma, 10.0, 0.7)) && Passed;
+  Passed = EvaluateNear("AnalyzeEvent()", "uncalibrated voxel, 500 keV", "The default width is 10 keV", Sigma, 10.0, 0.7) && Passed;
 
   // Energies are never negative
   g_Verbosity = c_Quiet;
@@ -354,29 +359,16 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
     return EvaluateTrue("Initialize()", "standard file", "Initialize succeeds", false);
   }
 
-  // Two hits in the same voxel are merged
-  MReadOutAssembly Same;
-  Same.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
-  Same.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 200.0));
-  M.AnalyzeEvent(&Same);
-  Passed = Evaluate("AnalyzeEvent()", "two hits in the same voxel", "The hits are merged", Same.GetNDEECrystalHits(), 1u) && Passed;
-  // The correction (centroid 1.1 * E + 2, FWHM 1 keV) applies to the deposit of the voxel, i.e. to the summed 300 keV:
-  // 1.1 * 300 + 2 = 332 keV; correcting each sub-hit before merging would add the offset twice (334 keV)
-  double Sum = 0.0;
-  unsigned int NMerged = 0;
-  for (unsigned int i = 0; i < 500; ++i) {
-    MReadOutAssembly Pair;
-    Pair.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
-    Pair.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 200.0));
-    M.AnalyzeEvent(&Pair);
-    if (Pair.GetNDEECrystalHits() == 1) {
-      Sum += Pair.GetDEECrystalHitListReference().front().m_Energy;
-      ++NMerged;
-    }
-  }
-  Passed = Evaluate("AnalyzeEvent()", "500 x two hits in the same voxel", "All pairs are merged", NMerged, 500u) && Passed;
-  if (NMerged > 0) {
-    Passed = ExpectedToFail(EvaluateNear("AnalyzeEvent()", "500 x 100 + 200 keV in the same voxel", "The merged energy is centered on the correction of the summed deposit, 1.1 * 300 + 2 = 332 keV", Sum/NMerged, 332.0, 0.2)) && Passed;
+  // The shield is read out per crystal: every hit which leaves the module is crystal-only, also a single hit
+  MReadOutAssembly Single;
+  Single.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
+  M.AnalyzeEvent(&Single);
+  Passed = Evaluate("AnalyzeEvent()", "one hit", "The hit is kept", Single.GetNDEECrystalHits(), 1u) && Passed;
+  if (Single.GetNDEECrystalHits() == 1) {
+    const MDEECrystalHit& H = Single.GetDEECrystalHitListReference().front();
+    Passed = EvaluateTrue("AnalyzeEvent()", "one hit", "The read-out element of a single hit becomes crystal-only", H.m_ROE.IsCrystalOnly()) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "one hit", "The read-out element keeps the detector ID X0", H.m_ROE.GetDetectorID(), MString("X0")) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "one hit", "The read-out element keeps the crystal ID 3", H.m_ROE.GetCrystalID(), 3u) && Passed;
   }
 
   // Hits in different crystals of the same shield detector must not be merged
@@ -384,17 +376,70 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
   Different.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
   Different.AddDEECrystalHit(CreateHit("X0", 5, MVector(0, 0, 0), 300.0));
   M.AnalyzeEvent(&Different);
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "Hits in different crystals are not merged", Different.GetNDEECrystalHits(), 2u)) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "Hits in different crystals are not merged", Different.GetNDEECrystalHits(), 2u) && Passed;
+  if (Different.GetNDEECrystalHits() == 2) {
+    // The merging erases only later hits, thus the order of the hits is kept
+    const MDEECrystalHit& First = Different.GetDEECrystalHitListReference().front();
+    const MDEECrystalHit& Second = Different.GetDEECrystalHitListReference().back();
+    Passed = Evaluate("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "The first hit keeps the crystal ID 3", First.m_ROE.GetCrystalID(), 3u) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "The second hit keeps the crystal ID 5", Second.m_ROE.GetCrystalID(), 5u) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "The read-out element of the first hit is crystal-only", First.m_ROE.IsCrystalOnly()) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "hits in crystals 3 and 5 of X0", "The read-out element of the second hit is crystal-only", Second.m_ROE.IsCrystalOnly()) && Passed;
+  }
 
-  // Hits in different voxels of the same crystal must not be merged
+  // Hits in different voxels of the same crystal are merged: the shield is read out per crystal,
+  // thus the corrected energies of all voxels of the crystal are summed.
+  // Cosima already sums the deposits in the same voxel into one hit, thus the hits of one crystal are always in different voxels
   MReadOutAssembly Voxels;
   Voxels.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
   Voxels.AddDEECrystalHit(CreateHit("X0", 3, MVector(0, 1, 1), 100.0));
-  int OldVerbosity = g_Verbosity;
-  g_Verbosity = c_Quiet;
   M.AnalyzeEvent(&Voxels);
-  g_Verbosity = OldVerbosity;
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "hits in two voxels of crystal 3", "Hits in different voxels are not merged", Voxels.GetNDEECrystalHits(), 2u)) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "hits in two voxels of crystal 3", "Hits in different voxels of the same crystal are merged", Voxels.GetNDEECrystalHits(), 1u) && Passed;
+  if (Voxels.GetNDEECrystalHits() == 1) {
+    const MDEECrystalHit& H = Voxels.GetDEECrystalHitListReference().front();
+    Passed = EvaluateTrue("AnalyzeEvent()", "hits in two voxels of crystal 3", "The read-out element of the merged hit is crystal-only", H.m_ROE.IsCrystalOnly()) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "hits in two voxels of crystal 3", "The read-out element keeps the detector ID X0", H.m_ROE.GetDetectorID(), MString("X0")) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "hits in two voxels of crystal 3", "The read-out element keeps the crystal ID 3", H.m_ROE.GetCrystalID(), 3u) && Passed;
+  }
+
+  // Each voxel is corrected with its own parameters before the sum, with its own offset:
+  // voxel (1, 1, 1): 1.1 * 100 + 2 = 112 keV, voxel (0, 1, 1): 100 + 3 = 103 keV, thus the sum is centered on 215 keV.
+  // Correcting the summed 200 keV with the parameters of one voxel would give 1.1 * 200 + 2 = 222 keV or 200 + 3 = 203 keV
+  // Both FWHMs are 1 keV, thus the sum has a sigma of sqrt(2) * 0.4247 = 0.60 keV, and the mean of 500 sums is known to 0.03 keV
+  double VoxelSum = 0.0;
+  unsigned int NVoxelMerged = 0;
+  for (unsigned int i = 0; i < 500; ++i) {
+    MReadOutAssembly Pair;
+    Pair.AddDEECrystalHit(CreateHit("X0", 3, MVector(1, 1, 1), 100.0));
+    Pair.AddDEECrystalHit(CreateHit("X0", 3, MVector(0, 1, 1), 100.0));
+    M.AnalyzeEvent(&Pair);
+    if (Pair.GetNDEECrystalHits() == 1) {
+      VoxelSum += Pair.GetDEECrystalHitListReference().front().m_Energy;
+      ++NVoxelMerged;
+    }
+  }
+  Passed = Evaluate("AnalyzeEvent()", "500 x hits in two voxels of crystal 3", "All pairs are merged", NVoxelMerged, 500u) && Passed;
+  if (NVoxelMerged > 0) {
+    Passed = EvaluateNear("AnalyzeEvent()", "500 x 100 keV in voxels (1, 1, 1) and (0, 1, 1)", "The merged energy is the sum of the voxel corrections, 112 + 103 = 215 keV", VoxelSum/NVoxelMerged, 215.0, 0.2) && Passed;
+  }
+
+  // The simulation truth of the merged hits is kept: the simulated energies are summed, and the origins of all hits are kept
+  MDEECrystalHit TruthHit1 = CreateHit("X0", 3, MVector(1, 1, 1), 100.0);
+  TruthHit1.m_SimulatedOrigins = { 2 };
+  MDEECrystalHit TruthHit2 = CreateHit("X0", 3, MVector(0, 1, 1), 100.0);
+  TruthHit2.m_SimulatedOrigins = { 5 };
+  MReadOutAssembly Truth;
+  Truth.AddDEECrystalHit(TruthHit1);
+  Truth.AddDEECrystalHit(TruthHit2);
+  M.AnalyzeEvent(&Truth);
+  Passed = Evaluate("AnalyzeEvent()", "hits with origins 2 and 5 in two voxels of crystal 3", "The hits are merged", Truth.GetNDEECrystalHits(), 1u) && Passed;
+  if (Truth.GetNDEECrystalHits() == 1) {
+    const MDEECrystalHit& H = Truth.GetDEECrystalHitListReference().front();
+    // The simulated energy is not smeared, thus the sum is exact
+    Passed = EvaluateNear("AnalyzeEvent()", "hits with 100 keV simulated energy each", "The simulated energies are summed, 100 + 100 = 200 keV", H.m_SimulatedEnergy, 200.0, 1e-9) && Passed;
+    // The origins of the second hit are appended to the origins of the first hit
+    Passed = EvaluateTrue("AnalyzeEvent()", "hits with origins 2 and 5 in two voxels of crystal 3", "The origins of both hits are kept: {2, 5}", H.m_SimulatedOrigins == list<int>{ 2, 5 }) && Passed;
+  }
 
   M.Finalize();
 
@@ -458,7 +503,7 @@ bool UTNSubModuleShieldEnergyCorrection::TestReproducibility()
   vector<double> Second = RunSeededSequence(10);
   Passed = EvaluateSize("AnalyzeEvent()", "seeded run", "Every event of the first run has one crystal hit", First.size(), 10) && Passed;
   Passed = EvaluateSize("AnalyzeEvent()", "seeded run", "Every event of the second run has one crystal hit", Second.size(), 10) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "two runs with the gRandom seed of MAssembly", "Reseeding gRandom reproduces the corrected energies", First == Second)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "two runs with the gRandom seed of MAssembly", "Reseeding gRandom reproduces the corrected energies", First == Second) && Passed;
 
   return Passed;
 }

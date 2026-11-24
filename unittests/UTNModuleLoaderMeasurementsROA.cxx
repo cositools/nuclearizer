@@ -251,7 +251,8 @@ bool UTNModuleLoaderMeasurementsROA::TestReadHandWritten()
     MCrystalHit* CH = E1->GetCrystalHit(0);
     Passed = Evaluate("AnalyzeEvent()", "event 1 crystal hit", "The detector ID is ACS_X0_0", CH->GetDetectorID(), MString("ACS_X0_0")) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "event 1 crystal hit", "The crystal ID is 3", CH->GetCrystalID(), 3u) && Passed;
-    Passed = Evaluate("AnalyzeEvent()", "event 1 crystal hit", "The voxel Z ID is 6", CH->GetReadOutElement()->GetVoxelZID(), 6u) && Passed;
+    // Crystal hits are crystal-only: the voxel IDs (4, 5, 6) in the file are not used
+    Passed = EvaluateTrue("AnalyzeEvent()", "event 1 crystal hit", "The read-out element is crystal-only although the file contains voxel IDs", CH->GetReadOutElement()->IsCrystalOnly()) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "event 1 crystal hit", "The ADC value is 2000", CH->GetADCUnits(), 2000.0, 0.5) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "event 1 crystal hit", "The energy is 150.5 keV", CH->GetEnergy(), 150.5, 1e-4) && Passed;
   }
@@ -326,9 +327,6 @@ bool UTNModuleLoaderMeasurementsROA::TestRoundTrip()
   MCrystalHit* CH = new MCrystalHit();
   CH->SetDetectorID("ACS_Y1_2");
   CH->SetCrystalID(7);
-  CH->SetVoxelXID(1);
-  CH->SetVoxelYID(2);
-  CH->SetVoxelZID(3);
   CH->SetADCUnits(3000);
   CH->SetEnergy(250.5);
   CH->AddOrigins({ 4 });
@@ -368,7 +366,8 @@ bool UTNModuleLoaderMeasurementsROA::TestRoundTrip()
     MCrystalHit* C = R->GetCrystalHit(0);
     Passed = Evaluate("AnalyzeEvent()", "round trip crystal hit", "The detector ID survives", C->GetDetectorID(), MString("ACS_Y1_2")) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "round trip crystal hit", "The crystal ID survives", C->GetCrystalID(), 7u) && Passed;
-    Passed = Evaluate("AnalyzeEvent()", "round trip crystal hit", "The voxel Y ID survives", C->GetReadOutElement()->GetVoxelYID(), 2u) && Passed;
+    // The saver writes the undefined voxel IDs as g_UnsignedIntNotDefined, which the loader must accept
+    Passed = EvaluateTrue("AnalyzeEvent()", "round trip crystal hit", "The read-out element is still crystal-only", C->GetReadOutElement()->IsCrystalOnly()) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "round trip crystal hit", "The ADC value survives", C->GetADCUnits(), 3000.0, 0.5) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "round trip crystal hit", "The energy survives", C->GetEnergy(), 250.5, 1e-4) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "round trip crystal hit", "The origins survive", (unsigned int) C->GetOrigins().size(), 1u) && Passed;

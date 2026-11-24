@@ -219,11 +219,11 @@ bool UTNReadOutElementVoxel3D::TestComparison()
 
   // A strict weak ordering is required when read-out elements are used as sorted keys
   Passed = EvaluateFalse("operator<", "identical", "An element is not smaller than an identical element", A < B) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("operator<", "different crystal ID", "Elements with different crystal IDs are ordered", (A < D2) != (D2 < A))) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("operator<", "different detector ID", "Elements with different detector IDs are ordered", (A < D1) != (D1 < A))) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("operator<", "different voxel X", "Elements with different voxel X IDs are ordered", (A < D3) != (D3 < A))) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("operator<", "different voxel Y", "Elements with different voxel Y IDs are ordered", (A < D4) != (D4 < A))) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("operator<", "different voxel Z", "Elements with different voxel Z IDs are ordered", (A < D5) != (D5 < A))) && Passed;
+  Passed = EvaluateTrue("operator<", "different crystal ID", "Elements with different crystal IDs are ordered", (A < D2) != (D2 < A)) && Passed;
+  Passed = EvaluateTrue("operator<", "different detector ID", "Elements with different detector IDs are ordered", (A < D1) != (D1 < A)) && Passed;
+  Passed = EvaluateTrue("operator<", "different voxel X", "Elements with different voxel X IDs are ordered", (A < D3) != (D3 < A)) && Passed;
+  Passed = EvaluateTrue("operator<", "different voxel Y", "Elements with different voxel Y IDs are ordered", (A < D4) != (D4 < A)) && Passed;
+  Passed = EvaluateTrue("operator<", "different voxel Z", "Elements with different voxel Z IDs are ordered", (A < D5) != (D5 < A)) && Passed;
 
   // For every pair exactly one of a < b, b < a, a == b holds, and the order is transitive
   vector<MReadOutElementVoxel3D> All = { A, D1, D2, D3, D4, D5 };
@@ -238,17 +238,17 @@ bool UTNReadOutElementVoxel3D::TestComparison()
       }
     }
   }
-  Passed = ExpectedToFail(EvaluateTrue("operator<", "detector, crystal, X, Y, Z variations", "Exactly one of a < b, b < a, a == b holds for every pair", Trichotomy)) && Passed;
+  Passed = EvaluateTrue("operator<", "detector, crystal, X, Y, Z variations", "Exactly one of a < b, b < a, a == b holds for every pair", Trichotomy) && Passed;
   Passed = EvaluateTrue("operator<", "detector, crystal, X, Y, Z variations", "The order is transitive", Transitive) && Passed;
 
   map<MReadOutElementVoxel3D, int> Map;
   Map[A] = 1;
   Map[D2] = 2;
   Map[D5] = 3;
-  Passed = ExpectedToFail(Evaluate("operator<", "std::map keys", "Three distinct voxel elements create three map entries", (unsigned int) Map.size(), 3u)) && Passed;
+  Passed = Evaluate("operator<", "std::map keys", "Three distinct voxel elements create three map entries", (unsigned int) Map.size(), 3u) && Passed;
   map<MReadOutElementVoxel3D, int> AllMap;
   for (unsigned int i = 0; i < All.size(); ++i) AllMap[All[i]] = i;
-  Passed = ExpectedToFail(Evaluate("operator<", "std::map keys", "Elements differing in any of detector, crystal, X, Y, Z are distinct map keys", (unsigned int) AllMap.size(), 6u)) && Passed;
+  Passed = Evaluate("operator<", "std::map keys", "Elements differing in any of detector, crystal, X, Y, Z are distinct map keys", (unsigned int) AllMap.size(), 6u) && Passed;
 
   return Passed;
 }

@@ -84,6 +84,8 @@ bool UTNCrystalHit::TestDefaultConstruction()
   Passed = EvaluateTrue("MCrystalHit()", "default", "The read-out element exists", H.GetReadOutElement() != nullptr) && Passed;
   Passed = Evaluate("MCrystalHit()", "default", "The default detector ID is empty", H.GetDetectorID(), MString("")) && Passed;
   Passed = Evaluate("MCrystalHit()", "default", "The default crystal ID is not defined", H.GetCrystalID(), g_UnsignedIntNotDefined) && Passed;
+  // A crystal hit has no voxel: its read-out element only identifies detector and crystal
+  Passed = EvaluateTrue("MCrystalHit()", "default", "The read-out element is crystal-only", H.GetReadOutElement()->IsCrystalOnly()) && Passed;
   Passed = EvaluateFalse("MCrystalHit()", "default", "The default HasTriggered is false", H.HasTriggered()) && Passed;
   Passed = EvaluateFalse("MCrystalHit()", "default", "The default HasVetoed is false", H.HasVetoed()) && Passed;
   Passed = EvaluateNear("MCrystalHit()", "default", "The default ADC units are 0", H.GetADCUnits(), 0.0, 1e-12) && Passed;
@@ -93,9 +95,6 @@ bool UTNCrystalHit::TestDefaultConstruction()
 
   H.SetDetectorID("ACS_X0_0");
   H.SetCrystalID(4);
-  H.SetVoxelXID(1);
-  H.SetVoxelYID(2);
-  H.SetVoxelZID(3);
   H.HasTriggered(true);
   H.HasVetoed(true);
   H.SetADCUnits(1000);
@@ -108,9 +107,7 @@ bool UTNCrystalHit::TestDefaultConstruction()
   Passed = EvaluateTrue("Clear()", "all fields set", "Clear() keeps the same read-out element object", H.GetReadOutElement() == ROE) && Passed;
   Passed = Evaluate("Clear()", "all fields set", "Clear() resets the detector ID", H.GetDetectorID(), MString("")) && Passed;
   Passed = Evaluate("Clear()", "all fields set", "Clear() resets the crystal ID", H.GetCrystalID(), g_UnsignedIntNotDefined) && Passed;
-  Passed = Evaluate("Clear()", "all fields set", "Clear() resets the voxel X ID", H.GetReadOutElement()->GetVoxelXID(), g_UnsignedIntNotDefined) && Passed;
-  Passed = Evaluate("Clear()", "all fields set", "Clear() resets the voxel Y ID", H.GetReadOutElement()->GetVoxelYID(), g_UnsignedIntNotDefined) && Passed;
-  Passed = Evaluate("Clear()", "all fields set", "Clear() resets the voxel Z ID", H.GetReadOutElement()->GetVoxelZID(), g_UnsignedIntNotDefined) && Passed;
+  Passed = EvaluateTrue("Clear()", "all fields set", "The read-out element stays crystal-only after Clear()", H.GetReadOutElement()->IsCrystalOnly()) && Passed;
   Passed = EvaluateFalse("Clear()", "all fields set", "Clear() resets HasTriggered", H.HasTriggered()) && Passed;
   Passed = EvaluateFalse("Clear()", "all fields set", "Clear() resets HasVetoed", H.HasVetoed()) && Passed;
   Passed = EvaluateNear("Clear()", "all fields set", "Clear() resets the ADC units", H.GetADCUnits(), 0.0, 1e-12) && Passed;
@@ -132,19 +129,15 @@ bool UTNCrystalHit::TestGettersSetters()
   MCrystalHit H;
   H.SetDetectorID("ACS_Y1_3");
   H.SetCrystalID(17);
-  H.SetVoxelXID(2);
-  H.SetVoxelYID(5);
-  H.SetVoxelZID(9);
   H.SetADCUnits(2345.5);
   H.SetEnergy(662.0);
   H.SetEnergyResolution(4.5);
 
   Passed = Evaluate("SetDetectorID/GetDetectorID", "ACS_Y1_3", "GetDetectorID returns ACS_Y1_3", H.GetDetectorID(), MString("ACS_Y1_3")) && Passed;
   Passed = Evaluate("SetCrystalID/GetCrystalID", "17", "GetCrystalID returns 17", H.GetCrystalID(), 17u) && Passed;
-  Passed = Evaluate("SetVoxelXID()", "2", "The read-out element voxel X ID is 2", H.GetReadOutElement()->GetVoxelXID(), 2u) && Passed;
-  Passed = Evaluate("SetVoxelYID()", "5", "The read-out element voxel Y ID is 5", H.GetReadOutElement()->GetVoxelYID(), 5u) && Passed;
-  Passed = Evaluate("SetVoxelZID()", "9", "The read-out element voxel Z ID is 9", H.GetReadOutElement()->GetVoxelZID(), 9u) && Passed;
   Passed = Evaluate("SetDetectorID()", "read-out element", "The detector ID is stored in the read-out element", H.GetReadOutElement()->GetDetectorID(), MString("ACS_Y1_3")) && Passed;
+  Passed = Evaluate("SetCrystalID()", "read-out element", "The crystal ID is stored in the read-out element", H.GetReadOutElement()->GetCrystalID(), 17u) && Passed;
+  Passed = EvaluateTrue("SetDetectorID/SetCrystalID", "read-out element", "The read-out element stays crystal-only", H.GetReadOutElement()->IsCrystalOnly()) && Passed;
   Passed = EvaluateNear("SetADCUnits/GetADCUnits", "2345.5", "GetADCUnits returns 2345.5", H.GetADCUnits(), 2345.5, 1e-12) && Passed;
   Passed = EvaluateNear("SetEnergy/GetEnergy", "662 keV", "GetEnergy returns 662 keV", H.GetEnergy(), 662.0, 1e-12) && Passed;
   Passed = EvaluateNear("SetEnergyResolution/GetEnergyResolution", "4.5 keV", "GetEnergyResolution returns 4.5 keV", H.GetEnergyResolution(), 4.5, 1e-12) && Passed;
@@ -271,37 +264,37 @@ bool UTNCrystalHit::TestStreamRoa()
 {
   bool Passed = true;
 
+  // The voxel3d read-out element always has five values: a crystal hit has no voxel,
+  // thus its three voxel IDs are written as g_UnsignedIntNotDefined
+  MString NoVoxel;
+  NoVoxel += g_UnsignedIntNotDefined;
+  const MString NoVoxels = NoVoxel + " " + NoVoxel + " " + NoVoxel;
+
   MCrystalHit H;
   H.SetDetectorID("ACS_X0_0");
   H.SetCrystalID(3);
-  H.SetVoxelXID(4);
-  H.SetVoxelYID(5);
-  H.SetVoxelZID(6);
   H.SetADCUnits(4053);
   H.SetEnergy(511);
 
   ostringstream Default;
   H.StreamRoa(Default);
-  Passed = Evaluate("StreamRoa()", "default options", "StreamRoa writes the read-out element and the ADC value", MString(Default.str()), MString("UC ACS_X0_0 3 4 5 6 4053 \n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "default options", "StreamRoa writes the crystal-only read-out element and the ADC value", MString(Default.str()), MString("UC ACS_X0_0 3 ") + NoVoxels + " 4053 \n") && Passed;
 
   ostringstream All;
   H.AddOrigins({ 9, 2 });
   H.StreamRoa(All, true, true, true, true);
-  Passed = Evaluate("StreamRoa()", "all options", "StreamRoa writes ADC, energy, flags and origins", MString(All.str()), MString("UC ACS_X0_0 3 4 5 6 4053 511 0 2;9\n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "all options", "StreamRoa writes ADC, energy, flags and origins", MString(All.str()), MString("UC ACS_X0_0 3 ") + NoVoxels + " 4053 511 0 2;9\n") && Passed;
 
   ostringstream EnergyOnly;
   H.StreamRoa(EnergyOnly, false, true, false, false);
-  Passed = Evaluate("StreamRoa()", "energy only", "StreamRoa writes only the energy", MString(EnergyOnly.str()), MString("UC ACS_X0_0 3 4 5 6 511 \n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "energy only", "StreamRoa writes only the energy", MString(EnergyOnly.str()), MString("UC ACS_X0_0 3 ") + NoVoxels + " 511 \n") && Passed;
 
   ostringstream NoOrigins;
   MCrystalHit Empty;
   Empty.SetDetectorID("ACS_X0_0");
   Empty.SetCrystalID(0);
-  Empty.SetVoxelXID(0);
-  Empty.SetVoxelYID(0);
-  Empty.SetVoxelZID(0);
   Empty.StreamRoa(NoOrigins, false, false, false, true);
-  Passed = Evaluate("StreamRoa()", "empty origins", "StreamRoa writes '-' for empty origins", MString(NoOrigins.str()), MString("UC ACS_X0_0 0 0 0 0 - \n")) && Passed;
+  Passed = Evaluate("StreamRoa()", "empty origins", "StreamRoa writes '-' for empty origins", MString(NoOrigins.str()), MString("UC ACS_X0_0 0 ") + NoVoxels + " - \n") && Passed;
 
   return Passed;
 }

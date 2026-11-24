@@ -26,6 +26,8 @@
 #include "MReadOutElementVoxel3D.h"
 
 // Standard libs:
+#include <cctype>
+#include <limits>
 
 // ROOT libs:
 
@@ -47,8 +49,25 @@ ClassImp(MReadOutElementVoxel3D)
 //! Default constructor
 MReadOutElementVoxel3D::MReadOutElementVoxel3D()
     : MReadOutElement(),
-      m_DetectorID(""),
+      m_DetectorName(""),
       m_CrystalID(g_UnsignedIntNotDefined),
+      m_VoxelXID(g_UnsignedIntNotDefined),
+      m_VoxelYID(g_UnsignedIntNotDefined),
+      m_VoxelZID(g_UnsignedIntNotDefined)
+{
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Constructor for a crystal-only read-out element
+MReadOutElementVoxel3D::MReadOutElementVoxel3D(
+  const MString& DetectorID,
+  unsigned int CrystalID)
+    : MReadOutElement(),
+      m_DetectorName(DetectorID),
+      m_CrystalID(CrystalID),
       m_VoxelXID(g_UnsignedIntNotDefined),
       m_VoxelYID(g_UnsignedIntNotDefined),
       m_VoxelZID(g_UnsignedIntNotDefined)
@@ -65,7 +84,7 @@ MReadOutElementVoxel3D::MReadOutElementVoxel3D(
   unsigned int VoxelYID,
   unsigned int VoxelZID)
     : MReadOutElement(),
-      m_DetectorID(DetectorID),
+      m_DetectorName(DetectorID),
       m_CrystalID(CrystalID),
       m_VoxelXID(VoxelXID),
       m_VoxelYID(VoxelYID),
@@ -88,14 +107,10 @@ MReadOutElementVoxel3D::~MReadOutElementVoxel3D()
 //! Clone this read-out element - the returned element must be deleted!
 MReadOutElementVoxel3D* MReadOutElementVoxel3D::Clone() const
 {
-  MReadOutElementVoxel3D* R = new MReadOutElementVoxel3D(
-    m_DetectorID,
-    m_CrystalID,
-    m_VoxelXID,
-    m_VoxelYID,
-    m_VoxelZID);
-  return R;
+  return new MReadOutElementVoxel3D(*this);
 }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -103,7 +118,7 @@ MReadOutElementVoxel3D* MReadOutElementVoxel3D::Clone() const
 void MReadOutElementVoxel3D::Clear()
 {
   MReadOutElement::Clear();
-  m_DetectorID = "";
+  m_DetectorName = "";
   m_CrystalID = g_UnsignedIntNotDefined;
   m_VoxelXID = g_UnsignedIntNotDefined;
   m_VoxelYID = g_UnsignedIntNotDefined;
@@ -113,11 +128,63 @@ void MReadOutElementVoxel3D::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if all voxel IDs are defined
+bool MReadOutElementVoxel3D::HasVoxelIDs() const
+{
+  return m_VoxelXID != g_UnsignedIntNotDefined &&
+         m_VoxelYID != g_UnsignedIntNotDefined &&
+         m_VoxelZID != g_UnsignedIntNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if only detector and crystal IDs are defined
+bool MReadOutElementVoxel3D::IsCrystalOnly() const
+{
+  return m_VoxelXID == g_UnsignedIntNotDefined &&
+         m_VoxelYID == g_UnsignedIntNotDefined &&
+         m_VoxelZID == g_UnsignedIntNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Clear voxel IDs and keep detector and crystal identification
+void MReadOutElementVoxel3D::ClearVoxelIDs()
+{
+  m_VoxelXID = g_UnsignedIntNotDefined;
+  m_VoxelYID = g_UnsignedIntNotDefined;
+  m_VoxelZID = g_UnsignedIntNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set all voxel IDs
+void MReadOutElementVoxel3D::SetVoxelIDs(
+  unsigned int VoxelXID,
+  unsigned int VoxelYID,
+  unsigned int VoxelZID)
+{
+  m_VoxelXID = VoxelXID;
+  m_VoxelYID = VoxelYID;
+  m_VoxelZID = VoxelZID;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return true if this read-out element is of the given type
 bool MReadOutElementVoxel3D::IsOfType(const MString& String) const
 {
-  if (String == "voxel3d")
+  if (String == "voxel3d") {
     return true;
+  }
 
   return false;
 }
@@ -133,30 +200,39 @@ MString MReadOutElementVoxel3D::GetType() const
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
 //! Test for equality
 bool MReadOutElementVoxel3D::operator==(const MReadOutElement& R) const
 {
-  const MReadOutElementVoxel3D* Other = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
-  if (Other == nullptr) {
-      if (g_Verbosity >= c_Error) {
-          cout << "ERROR: Comparison with different read-out element type" << endl;
-      }
+  const MReadOutElementVoxel3D* O = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
+  if (O == nullptr) {
     return false;
   }
+  return m_DetectorName == O->m_DetectorName && m_CrystalID == O->m_CrystalID &&
+         m_VoxelXID == O->m_VoxelXID && m_VoxelYID == O->m_VoxelYID && m_VoxelZID == O->m_VoxelZID;
+}
 
-  if (m_DetectorID != Other->m_DetectorID)
-    return false;
-  if (m_CrystalID != Other->m_CrystalID)
-    return false;
-
-  if (m_VoxelXID != Other->m_VoxelXID)
-    return false;
-  if (m_VoxelYID != Other->m_VoxelYID)
-    return false;
-  if (m_VoxelZID != Other->m_VoxelZID)
-    return false;
-
-  return true;
+//! Compare two voxel read-out elements for ordered containers
+bool MReadOutElementVoxel3D::operator<(const MReadOutElement& R) const
+{
+  const MReadOutElementVoxel3D* O = dynamic_cast<const MReadOutElementVoxel3D*>(&R);
+  if (O == nullptr) {
+    return GetType() < R.GetType(); // keeps ordering across types consistent
+  }
+  if (m_DetectorName != O->m_DetectorName) {
+    return m_DetectorName < O->m_DetectorName;
+  }
+  if (m_CrystalID != O->m_CrystalID) {
+    return m_CrystalID < O->m_CrystalID;
+  }
+  if (m_VoxelXID != O->m_VoxelXID) {
+    return m_VoxelXID < O->m_VoxelXID;
+  }
+  if (m_VoxelYID != O->m_VoxelYID) {
+    return m_VoxelYID < O->m_VoxelYID;
+  }
+  return m_VoxelZID < O->m_VoxelZID;
 }
 
 
@@ -173,44 +249,111 @@ unsigned int MReadOutElementVoxel3D::GetNumberOfParsableElements() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Parse the data from the tokenizer
-bool MReadOutElementVoxel3D::Parse(const MTokenizer& T, unsigned int StartElement)
+//! Placeholder token written for an empty detector ID, so that the parsable string always has 5 tokens
+const char* const MReadOutElementVoxel3D::c_EmptyDetectorIDToken = "-";
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if the detector ID can be written as a single parsable token
+bool MReadOutElementVoxel3D::IsWritableDetectorID(const MString& DetectorID)
 {
-  if (T.GetNTokens() < StartElement + GetNumberOfParsableElements()) {
-      if (g_Verbosity >= c_Error) {
-          cout << "ERROR: Not enough elements to parse. Number of tokens is " << T.GetNTokens() << " and less than 5" << endl;
-      }
+  // MTokenizer treats a token starting with "#" or "//" as the start of a comment
+  if (DetectorID.BeginsWith("#") == true || DetectorID.BeginsWith("//") == true) {
     return false;
   }
 
-  m_DetectorID = T.GetTokenAtAsString(StartElement);
-  m_CrystalID = T.GetTokenAtAsUnsignedIntFast(StartElement + 1);
-  m_VoxelXID = T.GetTokenAtAsUnsignedIntFast(StartElement + 2);
-  m_VoxelYID = T.GetTokenAtAsUnsignedIntFast(StartElement + 3);
-  m_VoxelZID = T.GetTokenAtAsUnsignedIntFast(StartElement + 4);
-
-  if (m_DetectorID == "") {
-    if (g_Verbosity >= c_Warning)
-      cout << "WARNING: Parsed empty DetectorID (token index "
-           << StartElement << ")." << endl;
+  // The placeholder token is read back as an empty detector ID
+  if (DetectorID == c_EmptyDetectorIDToken) {
+    return false;
   }
 
-  if (m_CrystalID == g_UnsignedIntNotDefined ||
-      m_VoxelXID == g_UnsignedIntNotDefined ||
-      m_VoxelYID == g_UnsignedIntNotDefined ||
-      m_VoxelZID == g_UnsignedIntNotDefined) {
-
-    if (g_Verbosity >= c_Warning)
-      cout << "WARNING: Parsed undefined ID(s): "
-           << "Crystal = " << m_CrystalID
-           << " Vx = " << m_VoxelXID
-           << " Vy = " << m_VoxelYID
-           << " Vz = " << m_VoxelZID << endl;
+  // White space would split the detector ID into several tokens
+  for (size_t Position = 0; Position < DetectorID.Length(); ++Position) {
+    // isspace() requires an unsigned char value
+    if (isspace(static_cast<unsigned char>(DetectorID[Position])) != 0) {
+      return false;
+    }
   }
 
   return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Convert a token into an unsigned int - return false if it is not a plain decimal number in range
+bool MReadOutElementVoxel3D::ParseUnsignedInt(const MString& Token, unsigned int& Value)
+{
+  // Only a non-empty sequence of decimal digits is accepted: no sign, no white space, no exponent
+  if (Token.IsEmpty() == true) {
+    return false;
+  }
+
+  // The number is accumulated in a wider type, so that values too large for an unsigned int are detected
+  const unsigned long long DecimalBase = 10;
+  unsigned long long Number = 0;
+  for (size_t Position = 0; Position < Token.Length(); ++Position) {
+    const char Digit = Token[Position];
+    // isdigit() requires an unsigned char value
+    if (isdigit(static_cast<unsigned char>(Digit)) == 0) {
+      return false;
+    }
+
+    Number = DecimalBase * Number + static_cast<unsigned long long>(Digit - '0');
+    if (Number > numeric_limits<unsigned int>::max()) {
+      return false;
+    }
+  }
+
+  // Value is only changed if the whole token is valid
+  Value = static_cast<unsigned int>(Number);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse the data from the tokenizer
+bool MReadOutElementVoxel3D::Parse(const MTokenizer& T, unsigned int StartElement)
+{
+  const unsigned int Required = StartElement + GetNumberOfParsableElements();
+  if (T.GetNTokens() < Required) {
+    if (g_Verbosity >= c_Error) cout << "ERROR: Not enough elements to parse a voxel3d read-out element: "
+                                     << "need " << Required << " tokens (start element " << StartElement << " + "
+                                     << GetNumberOfParsableElements() << "), but got " << T.GetNTokens() << endl;
+    return false;
+  }
+
+  // Parse into temporaries first, so that a failed parse leaves this element unchanged
+  MString DetectorID = T.GetTokenAtAsString(StartElement);
+  if (DetectorID == c_EmptyDetectorIDToken) {
+    DetectorID = "";
+  }
+
+  unsigned int IDs[4];
+  const char* Names[4] = { "crystal", "voxel X", "voxel Y", "voxel Z" };
+  for (unsigned int i = 0; i < 4; ++i) {
+    MString Token = T.GetTokenAtAsString(StartElement + 1 + i);
+    if (ParseUnsignedInt(Token, IDs[i]) == false) {
+      if (g_Verbosity >= c_Error) cout << "ERROR: The " << Names[i] << " ID \"" << Token
+                                       << "\" (token " << StartElement + 1 + i << ") is not an unsigned integer" << endl;
+      return false;
+    }
+  }
+
+  m_DetectorName = DetectorID;
+  m_CrystalID = IDs[0];
+  m_VoxelXID = IDs[1];
+  m_VoxelYID = IDs[2];
+  m_VoxelZID = IDs[3];
+
+  return true;
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -221,7 +364,15 @@ MString MReadOutElementVoxel3D::ToParsableString(bool WithDescriptor) const
   if (WithDescriptor == true) {
     Return += "voxel3d ";
   }
-  Return += m_DetectorID;
+
+  if (m_DetectorName == "") {
+    Return += c_EmptyDetectorIDToken;
+  } else {
+    if (IsWritableDetectorID(m_DetectorName) == false && g_Verbosity >= c_Error) {
+      cout << "ERROR: Detector ID \"" << m_DetectorName << "\" cannot be parsed back correctly (whitespace, comment start or placeholder)" << endl;
+    }
+    Return += m_DetectorName;
+  }
   Return += " ";
   Return += m_CrystalID;
   Return += " ";
@@ -234,38 +385,36 @@ MString MReadOutElementVoxel3D::ToParsableString(bool WithDescriptor) const
   return Return;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Convert content to a string
+//! Convert content to a string - undefined IDs are shown as "?"
 MString MReadOutElementVoxel3D::ToString() const
 {
-
-  if (m_DetectorID == "") {
-      if (g_Verbosity >= c_Warning) {
-          cout << "WARNING: called an element with empty DetectorID" << endl;
-      }
-  }
-
-  if (m_CrystalID == g_UnsignedIntNotDefined ||
-      m_VoxelXID == g_UnsignedIntNotDefined ||
-      m_VoxelYID == g_UnsignedIntNotDefined ||
-      m_VoxelZID == g_UnsignedIntNotDefined) {
-
-      if (g_Verbosity >= c_Warning) {
-          cout << "WARNING: called undefined ID(s): "
-          << "Crystal = " << m_CrystalID
-          << " Vx = " << m_VoxelXID
-          << " Vy = " << m_VoxelYID
-          << " Vz = " << m_VoxelZID << endl;
-      }
-  }
+  auto ID = [](ostringstream& OS, unsigned int Value) -> ostringstream& {
+    if (Value == g_UnsignedIntNotDefined) {
+      OS << "?";
+    } else {
+      OS << Value;
+    }
+    return OS;
+  };
 
   ostringstream OS;
-  OS << "DetectorID: " << m_DetectorID << ", CrystalID: " << m_CrystalID << ", VoxelID: (" << m_VoxelXID << ", " << m_VoxelYID << ", " << m_VoxelZID << ")";
+  OS << "DetectorID: " << (m_DetectorName == "" ? MString("?") : m_DetectorName) << ", CrystalID: ";
+  ID(OS, m_CrystalID);
+
+  if (IsCrystalOnly() == false) {
+    OS << ", VoxelID: (";
+    ID(OS, m_VoxelXID) << ", ";
+    ID(OS, m_VoxelYID) << ", ";
+    ID(OS, m_VoxelZID) << ")";
+  }
 
   return OS.str();
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

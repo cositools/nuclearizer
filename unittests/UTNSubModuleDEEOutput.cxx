@@ -162,12 +162,14 @@ bool UTNSubModuleDEEOutput::TestCrystalHits()
   Passed = EvaluateTrue("Initialize()", "crystal hits", "Initialize returns true", M.Initialize()) && Passed;
 
   MReadOutAssembly E;
-  // Filled the same way as MSubModuleDEEIntake does
+  // Filled the same way as MSubModuleDEEIntake does, i.e. with a voxel-level read-out element
   MDEECrystalHit C;
   C.m_DetectorID = "X0";
   C.m_CrystalID = 3;
   C.m_VoxelInDetector = MVector(1, 0, 1);
   C.m_ROE.SetDetectorID("X0");
+  C.m_ROE.SetCrystalID(3);
+  C.m_ROE.SetVoxelIDs(1, 0, 1);
   C.m_Energy = 250.0;
   C.m_ADC = 1234;
   C.m_HasTriggered = true;
@@ -182,9 +184,8 @@ bool UTNSubModuleDEEOutput::TestCrystalHits()
     Passed = Evaluate("AnalyzeEvent()", "one crystal hit", "The detector ID is converted", E.GetCrystalHit(0)->GetDetectorID(), MString("X0")) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "one crystal hit", "The crystal ID is converted", E.GetCrystalHit(0)->GetCrystalID(), 3u) && Passed;
     MCrystalHit* CH = E.GetCrystalHit(0);
-    Passed = Evaluate("AnalyzeEvent()", "one crystal hit", "The voxel X ID is converted", CH->GetReadOutElement()->GetVoxelXID(), 1u) && Passed;
-    Passed = Evaluate("AnalyzeEvent()", "one crystal hit", "The voxel Y ID is converted", CH->GetReadOutElement()->GetVoxelYID(), 0u) && Passed;
-    Passed = Evaluate("AnalyzeEvent()", "one crystal hit", "The voxel Z ID is converted", CH->GetReadOutElement()->GetVoxelZID(), 1u) && Passed;
+    // The shield is read out per crystal, thus the voxel does not reach the crystal hit
+    Passed = EvaluateTrue("AnalyzeEvent()", "one crystal hit", "The read-out element of the crystal hit is crystal-only", CH->GetReadOutElement()->IsCrystalOnly()) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "one crystal hit", "The energy is converted", CH->GetEnergy(), 250.0, 1e-12) && Passed;
     Passed = EvaluateNear("AnalyzeEvent()", "one crystal hit", "The ADC value is converted", CH->GetADCUnits(), 1234.0, 1e-12) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "one crystal hit", "The trigger flag is converted", CH->HasTriggered()) && Passed;

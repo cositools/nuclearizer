@@ -44,17 +44,11 @@ class MCrystalHit
   //! Reset all data
   void Clear();
 
-  //! Get the read-out element
+  //! Get the crystal-only read-out element (detector ID and crystal ID, the voxel IDs are not defined)
   MReadOutElementVoxel3D* GetReadOutElement() const { return m_ReadOutElement; }
 
   //! Set the Crystal ID
   void SetCrystalID(unsigned int CrystalID) { m_ReadOutElement->SetCrystalID(CrystalID); }
-  //! Set the voxel X ID
-  void SetVoxelXID(unsigned int VoxelXID) { m_ReadOutElement->SetVoxelXID(VoxelXID); }
-  //! Set the voxel Y ID
-  void SetVoxelYID(unsigned int VoxelYID) { m_ReadOutElement->SetVoxelYID(VoxelYID); }
-  //! Set the voxel Z ID
-  void SetVoxelZID(unsigned int VoxelZID) { m_ReadOutElement->SetVoxelZID(VoxelZID); }
   //! Return the Crystal ID
   unsigned int GetCrystalID() const { return m_ReadOutElement->GetCrystalID(); }
 
@@ -120,7 +114,7 @@ class MCrystalHit
 
   // private members:
  private:
-  //! The read-out element with a single ID (representing the crystal ID)
+  //! The crystal-only read-out element (detector ID and crystal ID, the voxel IDs are not defined)
   MReadOutElementVoxel3D* m_ReadOutElement;
   //! Crystal has triggered
   bool m_HasTriggered;

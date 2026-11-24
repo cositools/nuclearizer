@@ -29,6 +29,7 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TRandom.h"
 
 // MEGAlib libs:
 #include "MSubModule.h"
@@ -46,8 +47,7 @@ ClassImp(MSubModuleShieldEnergyCorrection)
 
 
 MSubModuleShieldEnergyCorrection::MSubModuleShieldEnergyCorrection()
-    : MSubModule(),
-      m_Random(0)
+    : MSubModule()
 {
   // Construct an instance of MSubModuleShieldEnergyCorrection
 
@@ -111,7 +111,12 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
     return false;
   }
 
-  // DEE shield energy correction: for each voxel of the shield crystal, the deposited energy is corrected following a gaussian distribution. The energy centroid and the fwhm are computed using the formula in (Ciabattoni et al. 2025) using a set of 5 parameters, defined in the shield energy correction file. Each voxel has different parameters.
+  // DEE shield energy correction: for each voxel of the shield crystal, the deposited energy is corrected following a gaussian distribution.
+  // The energy centroid and the FWHM are computed with the formulas in Ciabattoni et al. 2025, using the parameters
+  // of the voxel, defined in the shield energy correction file. Each voxel has different parameters.
+  // Cosima already sums the deposits in the same voxel, thus each hit is one voxel. Each voxel is corrected individually,
+  // since the parameters were derived for single energy deposits:
+  // offset and noise are applied once per voxel, and the corrected energies are summed per crystal afterwards
 
   // Energy correction
   list<MDEECrystalHit>& Hits = Event->GetDEECrystalHitListReference();
@@ -140,13 +145,13 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       if (g_Verbosity >= c_Warning) {
         cout << "WARNING: Non-positive FWHM (" << ShieldFWHMValue << ") for DetectorID = " << DetectorID << " CrystalID = " << CrystalID << " Voxel_ID = " << VoxelInDetector[0] << "," << VoxelInDetector[1] << "," << VoxelInDetector[2] << " -> applying default" << endl;
       }
-      CorrectedEnergyDefault = m_Random.Gaus(SimulatedEnergy, SigmaNoiseDefault);
+      CorrectedEnergyDefault = gRandom->Gaus(SimulatedEnergy, SigmaNoiseDefault);
       CH.m_Energy = CorrectedEnergyDefault;
       continue;
     }
 
     double ShieldSigma = ShieldFWHMValue / FWHM_TO_SIGMA;
-    double CorrectedEnergy = m_Random.Gaus(ShieldCorrectedCentroid, ShieldSigma);
+    double CorrectedEnergy = gRandom->Gaus(ShieldCorrectedCentroid, ShieldSigma);
 
     if (CorrectedEnergy < 0) {
       if (g_Verbosity >= c_Warning) {
@@ -160,6 +165,8 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
       cout << "DEE shield energy correction:" << endl;
       cout << "DetectorID: " << DetectorID << " CrystalID: " << CrystalID << " Voxel_ID: " << VoxelInDetector << endl;
       cout << "Simulated energy: " << SimulatedEnergy << endl;
+      cout << "Correction FWHM: " << ShieldFWHMValue << endl;
+      cout << "Correction centroid: " << ShieldCorrectedCentroid << endl;
       cout << "Corrected energy: " << CorrectedEnergy << endl;
     }
 
@@ -167,16 +174,22 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Merge hits:
-  for (auto IterLV1 = Hits.begin(); IterLV1 != Hits.end(); ++IterLV1) {
-    auto IterLV2 = std::next(IterLV1);
-    while (IterLV2 != Hits.end()) {
-      if (IterLV1->m_ROE == IterLV2->m_ROE) {
-        IterLV1->m_Energy += IterLV2->m_Energy;
-        IterLV2 = Hits.erase(IterLV2);
+  // The shield is read out per crystal, thus the corrected energies of all voxels of the same crystal are summed.
+  // The simulated energies are summed and the simulated origins of all hits are kept, the merged hit becomes crystal-only.
+  // Voxel, position and hit index of the simulated deposit can't be summed: they remain those of the first hit.
+  for (auto IterCH1 = Hits.begin(); IterCH1 != Hits.end(); ++IterCH1) {
+    auto IterCH2 = std::next(IterCH1);
+    while (IterCH2 != Hits.end()) {
+      if (IterCH1->m_ROE.GetDetectorID() == IterCH2->m_ROE.GetDetectorID() && IterCH1->m_ROE.GetCrystalID() == IterCH2->m_ROE.GetCrystalID()) {
+        IterCH1->m_Energy += IterCH2->m_Energy;
+        IterCH1->m_SimulatedEnergy += IterCH2->m_SimulatedEnergy;
+        IterCH1->m_SimulatedOrigins.splice(IterCH1->m_SimulatedOrigins.end(), IterCH2->m_SimulatedOrigins);
+        IterCH2 = Hits.erase(IterCH2);
       } else {
-        ++IterLV2;
+        ++IterCH2;
       }
     }
+    IterCH1->m_ROE.ClearVoxelIDs();
   }
 
   return true;

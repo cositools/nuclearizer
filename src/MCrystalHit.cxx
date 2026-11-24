@@ -160,6 +160,8 @@ void MCrystalHit::StreamRoa(ostream& S, bool WithADC, bool WithEnergy, bool With
 {
   //! Stream the content in MEGAlib's roa format
 
+  // The voxel3d read-out element always has five values: a crystal hit is crystal-only,
+  // thus its three voxel IDs are written as g_UnsignedIntNotDefined
   S<<"UC "<<m_ReadOutElement->ToParsableString()<<" ";
   if (WithADC == true) {
     S<<m_ADCUnits<<" ";
