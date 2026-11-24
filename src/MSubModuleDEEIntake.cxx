@@ -222,9 +222,13 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
       int CrystalID = Tokens[2].ToInt();
 
       MVector Voxel_ID;
+
+      // The DEE crystal hit is a voxel-level hit, since the shield energy correction depends on the voxel:
+      // detector ID and crystal ID of the read-out element are set here, the voxel IDs below
       MDEECrystalHit CHit;
-      
-      // The DEE crystal hit is a voxel-level hit, since the shield energy correction depends on the voxel. The DEE crystal ROE voxels are defined below.
+      CHit.m_ROE.SetDetectorID(DetectorID);
+      CHit.m_ROE.SetCrystalID(CrystalID);
+
       if (DetectorID == "D0" || DetectorID == "D1") {
         // Fake unique voxel ID for ACS_D0 / ACS_D1 since they are implemented as scintillators
         Voxel_ID[0] = 0;
@@ -236,9 +240,9 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
         Voxel_ID[0] = P.GetXGrid();
         Voxel_ID[1] = P.GetYGrid();
         Voxel_ID[2] = P.GetZGrid();
-        CHit.m_ROE.SetVoxelIDs(P.GetXGrid(), P.GetYGrid(), P.GetZGrid());  
+        CHit.m_ROE.SetVoxelIDs(P.GetXGrid(), P.GetYGrid(), P.GetZGrid());
       }
-      
+
       CHit.m_SimulatedEventID = Event->GetSimulatedEvent()->GetID();
 
       CHit.m_DetectorID = DetectorID;
@@ -258,10 +262,6 @@ bool MSubModuleDEEIntake::AnalyzeEvent(MReadOutAssembly* Event)
 
       CHit.m_ID = 1000 + (2 * h);
 
-      // DEE crystal hit ROE Detector ID and Crystal ID definition
-      CHit.m_ROE.SetDetectorID(DetectorID);
-      CHit.m_ROE.SetCrystalID(CrystalID);
-      
       Event->AddDEECrystalHit(CHit);
 
     } else {

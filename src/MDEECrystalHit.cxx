@@ -69,7 +69,7 @@ MDEECrystalHit::MDEECrystalHit()
 MCrystalHit* MDEECrystalHit::Convert()
 {
   MCrystalHit* CH = new MCrystalHit();
-  
+
   // The crystal hit is crystal-only: the energy of all voxels of the crystal has been summed, thus no voxel is meaningful
   CH->SetDetectorID(m_ROE.GetDetectorID());
   CH->SetCrystalID(m_CrystalID);

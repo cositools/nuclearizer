@@ -449,6 +449,24 @@ bool UTNSubModuleShieldEnergyCorrection::TestMerging()
     Passed = EvaluateNear("AnalyzeEvent()", "500 x 100 keV in voxels (1, 1, 1) and (0, 1, 1)", "The merged energy is the sum of the voxel corrections, 112 + 100 = 212 keV", VoxelSum/NVoxelMerged, 212.0, 0.2) && Passed;
   }
 
+  // The simulation truth of the merged hits is kept: the simulated energies are summed, and the origins of all hits are kept
+  MDEECrystalHit TruthHit1 = CreateHit("X0", 3, MVector(1, 1, 1), 100.0);
+  TruthHit1.m_SimulatedOrigins = { 2 };
+  MDEECrystalHit TruthHit2 = CreateHit("X0", 3, MVector(0, 1, 1), 100.0);
+  TruthHit2.m_SimulatedOrigins = { 5 };
+  MReadOutAssembly Truth;
+  Truth.AddDEECrystalHit(TruthHit1);
+  Truth.AddDEECrystalHit(TruthHit2);
+  M.AnalyzeEvent(&Truth);
+  Passed = Evaluate("AnalyzeEvent()", "hits with origins 2 and 5 in two voxels of crystal 3", "The hits are merged", Truth.GetNDEECrystalHits(), 1u) && Passed;
+  if (Truth.GetNDEECrystalHits() == 1) {
+    const MDEECrystalHit& H = Truth.GetDEECrystalHitListReference().front();
+    // The simulated energy is not smeared, thus the sum is exact
+    Passed = EvaluateNear("AnalyzeEvent()", "hits with 100 keV simulated energy each", "The simulated energies are summed, 100 + 100 = 200 keV", H.m_SimulatedEnergy, 200.0, 1e-9) && Passed;
+    // The origins of the second hit are appended to the origins of the first hit
+    Passed = EvaluateTrue("AnalyzeEvent()", "hits with origins 2 and 5 in two voxels of crystal 3", "The origins of both hits are kept: {2, 5}", H.m_SimulatedOrigins == list<int>{ 2, 5 }) && Passed;
+  }
+
   M.Finalize();
 
   return Passed;

@@ -169,7 +169,9 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
   }
 
   // Merge hits:
-  // The shield is read out per crystal, thus the corrected energies of all voxels of the same crystal are summed:
+  // The shield is read out per crystal, thus the corrected energies of all voxels of the same crystal are summed.
+  // The simulated energies are summed and the simulated origins of all hits are kept, the merged hit becomes crystal-only.
+  // Voxel, position and hit index of the simulated deposit can't be summed: they remain those of the first hit.
   for (auto IterCH1 = Hits.begin(); IterCH1 != Hits.end(); ++IterCH1) {
     auto IterCH2 = std::next(IterCH1);
     while (IterCH2 != Hits.end()) {
@@ -179,8 +181,8 @@ bool MSubModuleShieldEnergyCorrection::AnalyzeEvent(MReadOutAssembly* Event)
         IterCH1->m_SimulatedOrigins.splice(IterCH1->m_SimulatedOrigins.end(), IterCH2->m_SimulatedOrigins);
         IterCH2 = Hits.erase(IterCH2);
       } else {
-          ++IterCH2;
-      }   
+        ++IterCH2;
+      }
     }
     IterCH1->m_ROE.ClearVoxelIDs();
   }
