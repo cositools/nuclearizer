@@ -28,6 +28,7 @@ using namespace std;
 #include "MModuleDEESMEX.h"
 #include "MReadOutAssembly.h"
 #include "MStripHit.h"
+#include "MCrystalHit.h"
 
 
 //! Unit test class for MModuleDEESMEX
@@ -98,6 +99,8 @@ class UTNModuleDEESMEX : public MUnitTest
   MString m_StripMapFileName;
   //! The shield energy correction file name
   MString m_ShieldCorrectionFileName;
+  //! The shield energy calibration (energy to ADC) file name
+  MString m_ShieldCalibrationFileName;
   //! The dead time file name
   MString m_DeadtimeFileName;
 };
@@ -249,6 +252,15 @@ bool UTNModuleDEESMEX::WriteFiles()
   m_ShieldCorrectionFileName = GetTemporaryFileName("deesmex.shield.txt");
   Written = WriteTextFile(m_ShieldCorrectionFileName, "X0 3 1 1 1 0 0 1.0 0.0 1.0 0.0 0.0\n") && Written;
 
+  // Shield energy calibration for X0 crystal 3 in the format of the NRL calibration CSV:
+  // ADC = A*Energy^2 + B*Energy + C with A = -2^-10, B = 8, C = 1600.
+  // The committed NRL file is not used: it has no X0 crystal 3, and the test must not depend on its fit values
+  MString Calibration = "Detector Meta Data,,,,,,,,ADC to Energy Fit Parameters (ax^2 + bx + c),,,,,,Resolution,\n";
+  Calibration += "scb,gamma_channel,sipm_crystal,dac_id,cathod,asic,pannel,measured_cathod_voltage,a,a_err,b,b_err,c,c_err,Resolution @ 662 keV,Resolution Err @ 662 keV\n";
+  Calibration += "C,8,X0-3,7,1,1,X0,27.5,-0.0009765625,0,8,0,1600,0,15.0,0.1\n";
+  m_ShieldCalibrationFileName = GetTemporaryFileName("deesmex.shieldcalibration.csv");
+  Written = WriteTextFile(m_ShieldCalibrationFileName, Calibration) && Written;
+
   // Dead times
   m_DeadtimeFileName = GetTemporaryFileName("deesmex.deadtime.txt");
   Written = WriteTextFile(m_DeadtimeFileName, "# strip\n1e-6 2e-6 3e-6 4e-6 5e-6\n# shield\n1e-6 5e-6 1e-6 2e-6 0.5e-6\n") && Written;
@@ -279,6 +291,7 @@ void UTNModuleDEESMEX::ConfigureFiles(MModuleDEESMEX& M)
   M.SetTACCalFileName(m_TACCalFileName);
   M.SetStripMapFileName(m_StripMapFileName);
   M.SetShieldEnergyCorrectionFileName(m_ShieldCorrectionFileName);
+  M.SetShieldEnergyCalibrationFileName(m_ShieldCalibrationFileName);
   M.SetDeadtimeFileName(m_DeadtimeFileName);
   M.SetApplyResolutionCalibration(false);
   M.SetApplyTimingResolutionCalibration(false);
@@ -426,6 +439,7 @@ bool UTNModuleDEESMEX::TestGettersSetters()
   M.SetTACCalFileName("tac.csv");
   M.SetStripMapFileName("m.map");
   M.SetShieldEnergyCorrectionFileName("sh.txt");
+  M.SetShieldEnergyCalibrationFileName("cal.csv");
   M.SetDeadtimeFileName("dt.txt");
   Passed = Evaluate("SetEnergyCalibrationFileName/GetEnergyCalibrationFileName", "e.ecal", "Returns the set name", M.GetEnergyCalibrationFileName(), MString("e.ecal")) && Passed;
   Passed = Evaluate("SetHardwareThresholdFileName/GetHardwareThresholdFileName", "t.csv", "Returns the set name", M.GetHardwareThresholdFileName(), MString("t.csv")) && Passed;
@@ -435,6 +449,7 @@ bool UTNModuleDEESMEX::TestGettersSetters()
   Passed = Evaluate("SetStripMapFileName/GetStripMapFileName", "m.map", "Returns the set name", M.GetStripMapFileName(), MString("m.map")) && Passed;
   Passed = EvaluateTrue("GetStripMap()", "before Initialize()", "No strip map is available", M.GetStripMap() == nullptr) && Passed;
   Passed = Evaluate("SetShieldEnergyCorrectionFileName/GetShieldEnergyCorrectionFileName", "sh.txt", "Returns the set name", M.GetShieldEnergyCorrectionFileName(), MString("sh.txt")) && Passed;
+  Passed = Evaluate("SetShieldEnergyCalibrationFileName/GetShieldEnergyCalibrationFileName", "cal.csv", "Returns the set name", M.GetShieldEnergyCalibrationFileName(), MString("cal.csv")) && Passed;
   Passed = Evaluate("SetDeadtimeFileName/GetDeadtimeFileName", "dt.txt", "Returns the set name", M.GetDeadtimeFileName(), MString("dt.txt")) && Passed;
   M.SetApplyResolutionCalibration(false);
   M.SetApplyTimingResolutionCalibration(false);
@@ -464,6 +479,7 @@ bool UTNModuleDEESMEX::TestXmlRoundTrip()
   Writer.SetTACCalFileName("/d/tac.csv");
   Writer.SetStripMapFileName("/d/m.map");
   Writer.SetShieldEnergyCorrectionFileName("/d/sh.txt");
+  Writer.SetShieldEnergyCalibrationFileName("/d/cal.csv");
   Writer.SetDeadtimeFileName("/d/dt.txt");
   Writer.SetApplyResolutionCalibration(false);
   Writer.SetApplyTimingResolutionCalibration(false);
@@ -480,6 +496,7 @@ bool UTNModuleDEESMEX::TestXmlRoundTrip()
   Passed = Evaluate("ReadXmlConfiguration()", "TACCalFileName", "Survives", Reader.GetTACCalFileName(), MString("/d/tac.csv")) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "StripMapFileName", "Survives", Reader.GetStripMapFileName(), MString("/d/m.map")) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "ShieldEnergyCorrectionFileName", "Survives", Reader.GetShieldEnergyCorrectionFileName(), MString("/d/sh.txt")) && Passed;
+  Passed = Evaluate("ReadXmlConfiguration()", "ShieldEnergyCalibrationFileName", "Survives", Reader.GetShieldEnergyCalibrationFileName(), MString("/d/cal.csv")) && Passed;
   Passed = Evaluate("ReadXmlConfiguration()", "DeadtimeFileName", "Survives", Reader.GetDeadtimeFileName(), MString("/d/dt.txt")) && Passed;
   Passed = EvaluateFalse("ReadXmlConfiguration()", "ApplyResolutionCalibration", "Survives", Reader.GetApplyResolutionCalibration()) && Passed;
   Passed = EvaluateFalse("ReadXmlConfiguration()", "ApplyTimingResolutionCalibration", "Survives", Reader.GetApplyTimingResolutionCalibration()) && Passed;
@@ -517,6 +534,11 @@ bool UTNModuleDEESMEX::TestInitialize()
   NoShield.SetShieldEnergyCorrectionFileName(GetTemporaryFileName("missing.shield.txt"));
   bool NoShieldResult = NoShield.Initialize();
 
+  MModuleDEESMEX NoShieldCalibration;
+  Configure(NoShieldCalibration);
+  NoShieldCalibration.SetShieldEnergyCalibrationFileName(GetTemporaryFileName("missing.shieldcalibration.csv"));
+  bool NoShieldCalibrationResult = NoShieldCalibration.Initialize();
+
   MModuleDEESMEX NoStripMap;
   Configure(NoStripMap);
   NoStripMap.SetStripMapFileName("");
@@ -534,6 +556,7 @@ bool UTNModuleDEESMEX::TestInitialize()
   Passed = EvaluateFalse("Initialize()", "no geometry", "Initialize returns false", NoGeometryResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing energy calibration", "Initialize returns false", NoCalibrationResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "missing shield correction", "Initialize returns false", NoShieldResult) && Passed;
+  Passed = EvaluateFalse("Initialize()", "missing shield calibration", "Initialize returns false", NoShieldCalibrationResult) && Passed;
   Passed = EvaluateFalse("Initialize()", "no strip map", "Initialize returns false", NoStripMapResult) && Passed;
   Passed = EvaluateTrue("Initialize()", "all files", "Initialize succeeds", GoodResult) && Passed;
   Passed = EvaluateTrue("GetStripMap()", "after Initialize()", "The strip map of the depth readout is available", GoodHasStripMap) && Passed;
@@ -655,6 +678,16 @@ bool UTNModuleDEESMEX::TestShieldVeto()
     Passed = EvaluateFalse("AnalyzeEvent()", "shield veto disabled", "The shield veto is not set", F.GetShieldVeto()) && Passed;
     Passed = EvaluateTrue("AnalyzeEvent()", "shield veto disabled", "Strip hits are created", F.GetNStripHits() > 0) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "shield veto disabled", "The shield hit is converted into a crystal hit", F.GetNCrystalHits(), 1u) && Passed;
+    if (F.GetNCrystalHits() == 1) {
+      // The energy is smeared by the shield energy correction, but the ADC value follows from the corrected energy
+      // with the coefficients of X0 crystal 3, ADC = A*E^2 + B*E + C; the ADC value is an integer, thus the tolerance of 1
+      MCrystalHit* CH = F.GetCrystalHit(0);
+      const double A = -0.0009765625;
+      const double B = 8.0;
+      const double C = 1600.0;
+      const double CorrectedEnergy = CH->GetEnergy();
+      Passed = EvaluateNear("AnalyzeEvent()", "shield veto disabled", "The ADC value of the crystal hit follows from the coefficients of X0 crystal 3 in the shield calibration file", CH->GetADCUnits(), A * CorrectedEnergy * CorrectedEnergy + B * CorrectedEnergy + C, 1.0) && Passed;
+    }
     if (InitN == true) N.Finalize();
   }
   if (Sim2.size() != 1) {
