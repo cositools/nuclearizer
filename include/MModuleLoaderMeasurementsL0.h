@@ -90,6 +90,7 @@ class MModuleLoaderMeasurementsL0 : public MModuleLoaderMeasurements
   bool DecodeHitData(const std::vector<uint8_t>& hitData, unsigned int expectedHits, MReadOutAssembly* Event);
 
 
+
   // private members:
  private:
   //! Input L0 binary file name (.dat or .bin)
@@ -109,6 +110,9 @@ class MModuleLoaderMeasurementsL0 : public MModuleLoaderMeasurements
 
   //! Total number of packets read so far
   unsigned long m_PacketsRead;
+
+  //! Number of events skipped because all their strip hits were on detectors not in the geometry
+  unsigned long m_NEventsOnlyUnknownDetectors;
 
 
 #ifdef ___CLING___

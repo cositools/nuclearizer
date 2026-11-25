@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <set>
 
 // ROOT libs:
 
@@ -60,6 +61,9 @@ class MModuleLoaderMeasurements : public MModule, public MFileEvents
   // protected methods:
  protected:
 
+  //! Collect the detector IDs from the geometry
+  void LoadDetectorIDsFromGeometry();
+
   // private methods:
  private:
 
@@ -67,6 +71,9 @@ class MModuleLoaderMeasurements : public MModule, public MFileEvents
 
   // protected members:
  protected:
+
+  //! Detector IDs of the GeD_X detectors in the geometry
+  set<unsigned int> m_DetectorIDsInGeometry;
   //! Name of the detector which we are reading
   MString m_Detector;
   //! The number of events in the file

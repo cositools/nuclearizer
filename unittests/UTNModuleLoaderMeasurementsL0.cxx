@@ -493,7 +493,7 @@ bool UTNModuleLoaderMeasurementsL0::TestHandCraftedPackets()
   for (MReadOutAssembly* E : Read) delete E;
 
   // Unexpected APID: stop reading
-  vector<uint8_t> Good = CreatePacket(0x0DD, 0, {});
+  vector<uint8_t> Good = CreatePacket(0x0DD, 2, HitData);
   vector<uint8_t> Bad = CreatePacket(0x123, 0, {});
   vector<uint8_t> Mixed = Good;
   Mixed.insert(Mixed.end(), Bad.begin(), Bad.end());

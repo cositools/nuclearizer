@@ -127,6 +127,7 @@ MModuleLoaderMeasurementsL0::MModuleLoaderMeasurementsL0() : MModuleLoaderMeasur
 
   m_StripMapLoaded = false;
   m_PacketsRead = 0;
+  m_NEventsOnlyUnknownDetectors = 0;
 }
 
 
@@ -145,6 +146,7 @@ MModuleLoaderMeasurementsL0::~MModuleLoaderMeasurementsL0()
 bool MModuleLoaderMeasurementsL0::Initialize()
 {
   m_PacketsRead = 0;
+  m_NEventsOnlyUnknownDetectors = 0;
 
   if (m_FileName == "") {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": No L0 file name specified."<<endl;
@@ -167,6 +169,8 @@ bool MModuleLoaderMeasurementsL0::Initialize()
     return false;
   }
   m_StripMapLoaded = true;
+
+  LoadDetectorIDsFromGeometry();
 
   if (OpenL0File(m_FileName) == false) {
     if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Failed to open L0 file."<<endl;
@@ -226,12 +230,22 @@ bool MModuleLoaderMeasurementsL0::AnalyzeEvent(MReadOutAssembly* Event)
     return false;
   }
 
-  Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
-
   ++m_PacketsRead;
 
   // set the current packet # as the event ID
   Event->SetID(m_PacketsRead);
+
+  if (Event->GetNStripHits() == 0) {
+    if (Event->HasUnknownDetector_QualityFlag() == true) {
+      m_NEventsOnlyUnknownDetectors++;
+      return false;
+    } else if (g_Verbosity >= c_Error) {
+      cout<<m_XmlTag<<": Event "<<Event->GetID()<<" had no (valid) strip hits"<<endl;
+    }
+  }
+
+  Event->SetAnalysisProgress(MAssembly::c_EventLoader | MAssembly::c_EventLoaderMeasurement);
+
   return true;
 }
 
@@ -337,6 +351,7 @@ bool MModuleLoaderMeasurementsL0::DecodeHitData(const std::vector<uint8_t>& hitD
 {
   BitReader br(hitData);
   unsigned int parsed = 0;
+  set<unsigned int> UnknownDetectorIDs;
 
   while (br.BitsRemaining() >= 4 && parsed < expectedHits) {
     uint32_t hitType = 0;
@@ -413,6 +428,13 @@ bool MModuleLoaderMeasurementsL0::DecodeHitData(const std::vector<uint8_t>& hitD
       continue;
     }
 
+    // Skip hits on detectors which are not in the geometry
+    if (m_DetectorIDsInGeometry.empty() == false && m_DetectorIDsInGeometry.count(detectorID) == 0) {
+      UnknownDetectorIDs.insert(detectorID);
+      ++parsed;
+      continue;
+    }
+
     // Build the MStripHit and add it to the event
     MStripHit* SH = new MStripHit();
     SH->SetDetectorID(detectorID);
@@ -436,6 +458,10 @@ bool MModuleLoaderMeasurementsL0::DecodeHitData(const std::vector<uint8_t>& hitD
     cout<<m_XmlTag<<": Expected "<<expectedHits<<" hits but parsed "<<parsed<<endl;
   }
 
+  for (unsigned int DetID : UnknownDetectorIDs) {
+    Event->SetUnknownDetector_QualityFlag(MString("Strip hits removed from unknown detector ID ") + DetID);
+  }
+
   return true;
 }
 
@@ -454,6 +480,7 @@ void MModuleLoaderMeasurementsL0::Finalize()
   if (g_Verbosity >= c_Info) {
     cout<<m_XmlTag<<": MModuleLoaderMeasurementsL0"<<endl;
     cout<<m_XmlTag<<":   * total packets read: "<<m_PacketsRead<<endl;
+    cout<<m_XmlTag<<":   * events with only unknown detectors: "<<m_NEventsOnlyUnknownDetectors<<endl;
   }
 }
 

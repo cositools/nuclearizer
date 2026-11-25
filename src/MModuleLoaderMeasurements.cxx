@@ -32,6 +32,8 @@
 #include "TGClient.h"
 
 // MEGAlib libs:
+#include "MDGeometryQuest.h"
+#include "MDDetector.h"
 #include "MGUIOptionsLoaderMeasurements.h"
 
 
@@ -59,7 +61,9 @@ MModuleLoaderMeasurements::MModuleLoaderMeasurements() : MModule()
 
   // Set all modules, which can follow this module
   AddSucceedingModuleType(MAssembly::c_NoRestriction);
-  
+
+  m_XmlTag = "XmlTagMeasurementLoader";
+
   m_HasOptionsGUI = true;
 }
 
@@ -92,6 +96,38 @@ bool MModuleLoaderMeasurements::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level 
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModuleLoaderMeasurements::LoadDetectorIDsFromGeometry()
+{
+  // Collect the detector IDs of all GeDs in the geometry
+
+  m_DetectorIDsInGeometry.clear();
+
+  if (m_Geometry == nullptr) return;
+
+  for (MDDetector* Detector : m_Geometry->GetDetectorList()) {
+    MString Name = Detector->GetName();
+    if (Detector->GetTypeName() == "Strip3D" && Name.BeginsWith("GeD_") == true) {
+      Name.RemoveAllInPlace("GeD_");
+      m_DetectorIDsInGeometry.insert(Name.ToUnsignedInt());
+    }
+  }
+
+  // Keep all strip hits if the detector names don't follow convention
+  if (m_DetectorIDsInGeometry.empty() == true && g_Verbosity >= c_Warning) {
+    cout<<m_XmlTag<<": No GeD_X detectors found in the geometry - keeping strip hits from all detectors"<<endl;
+  }
+
+  if (g_Verbosity >= c_Info) {
+    cout<<m_XmlTag<<": Detector IDs in the geometry:";
+    for (unsigned int DetID : m_DetectorIDsInGeometry) cout<<" "<<DetID;
+    cout<<endl;
+  }
 }
 
 

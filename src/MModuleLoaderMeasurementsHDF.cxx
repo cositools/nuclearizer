@@ -42,8 +42,6 @@ using namespace std;
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataOrigins.h"
-#include "MDGeometryQuest.h"
-#include "MDDetector.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -644,38 +642,6 @@ bool MModuleLoaderMeasurementsHDF::ReadBatchHits()
   }
 
   return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MModuleLoaderMeasurementsHDF::LoadDetectorIDsFromGeometry()
-{
-  // Collect the detector IDs of all GeDs in the geometry
-
-  m_DetectorIDsInGeometry.clear();
-
-  if (m_Geometry == nullptr) return;
-
-  for (MDDetector* Detector : m_Geometry->GetDetectorList()) {
-    MString Name = Detector->GetName();
-    if (Detector->GetTypeName() == "Strip3D" && Name.BeginsWith("GeD_") == true) {
-      Name.RemoveAllInPlace("GeD_");
-      m_DetectorIDsInGeometry.insert(Name.ToUnsignedInt());
-    }
-  }
-
-  // Keep all strip hits if the detector names don't follow convention
-  if (m_DetectorIDsInGeometry.empty() == true && g_Verbosity >= c_Warning) {
-    cout<<m_XmlTag<<": No GeD_X detectors found in the geometry - keeping strip hits from all detectors"<<endl;
-  }
-
-  if (g_Verbosity >= c_Info) {
-    cout<<m_XmlTag<<": Detector IDs in the geometry:";
-    for (unsigned int DetID : m_DetectorIDsInGeometry) cout<<" "<<DetID;
-    cout<<endl;
-  }
 }
 
 
