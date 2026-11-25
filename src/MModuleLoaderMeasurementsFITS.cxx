@@ -325,12 +325,17 @@ bool MModuleLoaderMeasurementsFITS::AnalyzeEvent(MReadOutAssembly* Event)
 
   // Extract event-level data
   double eventTime = m_BatchTIME[idx];
-  // uint8_t eventType = m_BatchEVENTTYPE[idx]; //unused variable
+  uint8_t eventType = m_BatchEVENTTYPE[idx];
   uint8_t numStripHit = m_BatchNUMSTRIPHIT[idx];
 
   // Set event-level properties
   Event->SetID(static_cast<unsigned long>(m_BatchEVENTID[idx]));
   Event->SetTimeRTS(eventTime);     // Mission time in seconds since Jan 1, 2025
+
+  // determine guard-ring, hard shield, and soft shield vetoes from event types
+  Event->SetGuardRingVeto((eventType >= 0x03 && eventType <= 0x05) || eventType == 0x0C);
+  Event->SetShieldVeto(eventType >= 0x06 && eventType <= 0x0B);
+  Event->SetOnboardEventType(eventType);
 
   // Loop through strip hits and create MStripHit objects
   for (uint8_t hitIdx = 0; hitIdx < numStripHit; ++hitIdx) {

@@ -103,7 +103,7 @@ bool UTNModuleLoaderMeasurementsL0::Run()
 
 MString UTNModuleLoaderMeasurementsL0::WriteStripMap()
 {
-  // Detector 0: LV strips 0-9 = ROI 100-109, HV strips 0-9 = ROI 200-209, LV guard ring strip 64 = ROI 300
+  // Detector 0: LV strips 0-9 = ROI 100-109, HV strips 0-9 = ROI 200-209, LV guard ring strip 64 = ROI 2049
   // Detector 1: LV strips 0-9 = ROI 400-409, HV strips 0-9 = ROI 500-509
   MString C = "# Columns are strip_id, detector, side (0=LV, 1=HV), strip\n";
   for (unsigned int s = 0; s < 10; ++s) {
@@ -112,7 +112,7 @@ MString UTNModuleLoaderMeasurementsL0::WriteStripMap()
     C += MString("") + (400 + s) + " 1 0 " + s + "\n";
     C += MString("") + (500 + s) + " 1 1 " + s + "\n";
   }
-  C += "300 0 0 64\n";
+  C += "2049 0 0 64\n";
 
   MString FileName = GetTemporaryFileName("l0.stripmap.map");
   if (WriteTextFile(FileName, C) == false) return "";
@@ -405,18 +405,18 @@ bool UTNModuleLoaderMeasurementsL0::TestRoundTrip()
     if (R->GetNStripHits() == 2) {
       Passed = Evaluate("AnalyzeEvent()", "event 2", "The strip hits are in detector 1", R->GetStripHit(0)->GetDetectorID(), 1u) && Passed;
     }
-    Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "event 2", "The shield veto encoded in the event type survives", R->GetShieldVeto())) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "event 2", "The shield veto encoded in the event type survives", R->GetShieldVeto()) && Passed;
   }
   if (Read.size() >= 3) {
     MReadOutAssembly* R = Read[2];
-    Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "event 3", "The guard ring veto survives", R->GetGuardRingVeto())) && Passed;
-    Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "event 3", "Both strip hits survive including the guard ring hit", R->GetNStripHits(), 2u)) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "event 3", "The guard ring veto survives", R->GetGuardRingVeto()) && Passed;
+    Passed = Evaluate("AnalyzeEvent()", "event 3", "Both strip hits survive including the guard ring hit", R->GetNStripHits(), 2u) && Passed;
     bool FoundGR = false;
     for (unsigned int i = 0; i < R->GetNStripHits(); ++i) {
       MStripHit* S = R->GetStripHit(i);
       if (S->IsGuardRing() == true && S->GetDetectorID() == 0 && S->GetStripID() == 64) FoundGR = true;
     }
-    Passed = ExpectedToFail(EvaluateTrue("AnalyzeEvent()", "event 3", "The guard ring hit keeps its detector and strip ID", FoundGR)) && Passed;
+    Passed = EvaluateTrue("AnalyzeEvent()", "event 3", "The guard ring hit keeps its detector and strip ID", FoundGR) && Passed;
   }
 
   for (MReadOutAssembly* E : Written) delete E;
@@ -560,9 +560,9 @@ bool UTNModuleLoaderMeasurementsL0::TestReinitialize()
 
   Passed = EvaluateTrue("Initialize()", "first time", "Initialize succeeds", Init[0]) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "first pass", "Two events are read", Counts[0], 2u) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("Initialize()", "second time without Finalize", "Initialize succeeds again", Init[1])) && Passed;
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "second pass", "Two events are read again", Counts[1], 2u)) && Passed;
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "second pass", "The event IDs restart at 1", LastID[1], (unsigned long) 2)) && Passed;
+  Passed = EvaluateTrue("Initialize()", "second time without Finalize", "Initialize succeeds again", Init[1]) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "second pass", "Two events are read again", Counts[1], 2u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "second pass", "The event IDs restart at 1", LastID[1], (unsigned long) 2) && Passed;
 
   return Passed;
 }

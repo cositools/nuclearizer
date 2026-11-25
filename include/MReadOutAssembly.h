@@ -114,6 +114,13 @@ class MReadOutAssembly : public MReadOutSequence
   //! Get the shield veto flag
   bool GetShieldVeto() const { return m_ShieldVeto; }
 
+  //! Set the event type (ETYPE)
+  void SetOnboardEventType(unsigned int EventType) { m_OnboardEventType = EventType; }
+  //! Get the event type (ETYPE), g_UnsignedIntNotDefined if not available
+  unsigned int GetOnboardEventType() const { return m_OnboardEventType; }
+  //! Return true if the event type (ETYPE) is available
+  bool HasOnboardEventType() const { return m_OnboardEventType != g_UnsignedIntNotDefined; }
+
   //! Set the triggered flag
   void SetTrigger(bool Trigger = true) { m_Trigger = Trigger; }
   //! Return the trigger flag
@@ -371,6 +378,9 @@ class MReadOutAssembly : public MReadOutSequence
 
   //! Shield veto flag
   bool m_ShieldVeto;
+
+  //! event type (ETYPE), g_UnsignedIntNotDefined if not available
+  unsigned int m_OnboardEventType;
 
   //! Trigger flag of this event
   bool m_Trigger;
