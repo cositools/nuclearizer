@@ -359,8 +359,9 @@ bool MModuleDepthCalibration::AnalyzeEvent(MReadOutAssembly* Event)
           // If there are coefficients and timing information is loaded, try calculating the CTD and depth
           double CTD = (HVTiming - LVTiming);
 
-          // Confirmed that this matches SP's python code.
-          CTD_s = (CTD - Coeffs->at(1))/(Coeffs->at(0)); //apply inverse stretch and offset
+          // Confirmed that this matches the depth calibration paper:
+          // https://doi.org/10.1016/j.nima.2026.171332, Eq. (3)
+          CTD_s = CTD / Coeffs->at(0) - Coeffs->at(1); // apply inverse stretch and offset
 
           double Xmin = * std::min_element(CTDVec.begin(), CTDVec.end());
           double Xmax = * std::max_element(CTDVec.begin(), CTDVec.end());

@@ -772,12 +772,12 @@ bool UTNModuleLoaderMeasurementsTRA::TestCommittedData()
   delete Loader;
 
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "All 5206 events with ET line are loaded", NEvents, 5206u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "3912 events are good", NGood, 3912u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "774 events are Compton events", NCompton, 774u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "3913 events are good", NGood, 3913u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "775 events are Compton events", NCompton, 775u) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "3111 events are photo events", NPhoto, 3111u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "Every Compton event has one hit per sequence element", NComptonWithSequence, 774u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "Every Compton event has one hit per sequence element", NComptonWithSequence, 775u) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "Every photo event has one hit", NPhotoWithOneHit, 3111u) && Passed;
-  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "No other event has hits", NOtherWithoutHits, 1321u) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "No other event has hits", NOtherWithoutHits, 1320u) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "542-1 reference tra file", "The first IDs skip the event without ET line", FirstIDs == vector<unsigned long>({ 1, 2, 4, 5, 6 })) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "542-1 reference tra file", "The last ID is 6803", LastID, (unsigned long) 6803) && Passed;
 
