@@ -61,7 +61,9 @@ MModuleLoaderMeasurements::MModuleLoaderMeasurements() : MModule()
 
   // Set all modules, which can follow this module
   AddSucceedingModuleType(MAssembly::c_NoRestriction);
-  
+
+  m_XmlTag = "XmlTagMeasurementLoader";
+
   m_HasOptionsGUI = true;
 }
 
