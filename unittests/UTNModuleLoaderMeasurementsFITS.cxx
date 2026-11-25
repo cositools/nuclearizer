@@ -179,7 +179,7 @@ bool UTNModuleLoaderMeasurementsFITS::TestManyStripHits()
 
   Passed = EvaluateTrue("Initialize()", "300 strip hits", "Initialize succeeds", Init) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "event with 300 strip hits", "The event is read", Read1) && Passed;
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "event with 300 strip hits", "All 300 strip hits are read", E1.GetNStripHits(), 300u)) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "event with 300 strip hits", "All 300 strip hits are read", E1.GetNStripHits(), 300u) && Passed;
   if (E1.GetNStripHits() == 300) {
     Passed = Evaluate("AnalyzeEvent()", "event with 300 strip hits, hit 300", "The last hit is in detector 4", E1.GetStripHit(299)->GetDetectorID(), 4u) && Passed;
     Passed = Evaluate("AnalyzeEvent()", "event with 300 strip hits, hit 300", "The last hit is on strip 43", E1.GetStripHit(299)->GetStripID(), 43u) && Passed;
@@ -400,7 +400,7 @@ bool UTNModuleLoaderMeasurementsFITS::TestReinitialize()
   g_Verbosity = OldVerbosity;
 
   Passed = Evaluate("AnalyzeEvent()", "first pass", "Four events are read", Counts[0], 4u) && Passed;
-  Passed = ExpectedToFail(Evaluate("AnalyzeEvent()", "second pass after Finalize", "Four events are read again after re-initialization", Counts[1], 4u)) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "second pass after Finalize", "Four events are read again after re-initialization", Counts[1], 4u) && Passed;
 
   return Passed;
 }

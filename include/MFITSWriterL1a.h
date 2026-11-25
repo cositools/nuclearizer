@@ -68,9 +68,9 @@ class MFITSWriterL1a
 
   bool m_HasEvents;
 
-  //! First / last event time seen, RTS (mission seconds since 2025-01-01)
-  double m_FirstEventTime_RTS;
-  double m_LastEventTime_RTS;
+  //! First / last FITS time, elapsed seconds from 2025-01-01T00:00:00 UTC
+  double m_FirstEventTime;
+  double m_LastEventTime;
 
   std::vector<double>   m_BatchTIME;    
   std::vector<uint32_t> m_BatchEVENTID;

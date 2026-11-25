@@ -99,6 +99,9 @@ class MModuleLoaderMeasurementsFITS : public MModuleLoaderMeasurements
   //! Total number of rows in the FITS table
   long m_TotalRows;
 
+  //! Offset from the FITS reference epoch to the internal RTS epoch, in seconds
+  double m_TimeReferenceOffsetRTS = 0.0;
+
   //! Batch size for reading FITS data
   const long m_BatchSize = 100;
 
@@ -115,7 +118,7 @@ class MModuleLoaderMeasurementsFITS : public MModuleLoaderMeasurements
   std::vector<double> m_BatchTIME;
   std::vector<uint32_t> m_BatchEVENTID;
   std::vector<uint8_t> m_BatchEVENTTYPE;
-  std::vector<uint8_t> m_BatchNUMSTRIPHIT;
+  std::vector<uint16_t> m_BatchNUMSTRIPHIT;
 
   //! Batch data storage for variable-length array columns
   std::vector<std::valarray<uint8_t>> m_BatchHITTYPE;
