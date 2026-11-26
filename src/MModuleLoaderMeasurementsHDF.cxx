@@ -914,6 +914,13 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
+      // Remove events where the number of expected hits does not match the number of parsed hits
+      if (NumberOfHits < 2 || NumberOfHits != EventIndices.m_FEEHits[1] - EventIndices.m_FEEHits[0]) {
+        if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": WARNING: Number of expected hits does not match number of parsed hits" << endl;
+        return false;
+      }
+
+      // Remove events with no entries in the buffer
       if (m_Buffer_2.empty() == true) {
         if (g_Verbosity >= c_Error) cout << "Buffer is empty or null!" << endl;
         return false;
