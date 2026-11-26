@@ -716,6 +716,9 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
   // Main data analysis routine, which updates the event to a new level:
   // Here: Just read it.
 
+  uint16_t SeenOnce = 0;
+  uint16_t SeenMultiple = 0;
+
   bool IsZeroDataBug = false;
 
   // True if this event contained strip hits on a DIB that was not enabled during the run
@@ -911,6 +914,13 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       ++m_CurrentBatchIndex;
       ++m_CurrentHit;
 
+      // Remove events where the number of expected hits does not match the number of parsed hits
+      if (NumberOfHits < 2 || NumberOfHits != EventIndices.m_FEEHits[1] - EventIndices.m_FEEHits[0]) {
+        if (g_Verbosity >= c_Warning) cout << m_XmlTag << ": WARNING: Number of expected hits does not match number of parsed hits" << endl;
+        return false;
+      }
+
+      // Remove events with no entries in the buffer
       if (m_Buffer_2.empty() == true) {
         if (g_Verbosity >= c_Error) cout << "Buffer is empty or null!" << endl;
         return false;
@@ -927,6 +937,14 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
         uint32_t IndexInBatch = i - m_MinHitIndex;
         
         MHDFStripHit_V2& Hit = m_Buffer_2[IndexInBatch];
+
+        // Keep track of in which DIBs the hit was registered to remove events 
+        // with exactly one hit in a DIB (usually arising from faulty buffers)
+        unsigned int DIBID =  Hit.m_StripID >> (Hit.m_StripID >= 2048 ? 1 : 7) & 0x0F;
+        uint16_t Bit = 1u << DIBID;
+        SeenMultiple |= (SeenOnce & Bit);
+        SeenOnce = (SeenOnce ^ Bit) & ~SeenMultiple;
+
         if (m_StripMap.HasReadOutID(Hit.m_StripID) == true) {
           MStripHit* H = new MStripHit();
           H->SetDetectorID(m_StripMap.GetDetectorID(Hit.m_StripID));
@@ -1010,6 +1028,14 @@ bool MModuleLoaderMeasurementsHDF::AnalyzeEvent(MReadOutAssembly* Event)
       m_NEventsOnlyUnknownDetectors++;
     } else if (HasHitsOnDisabledDIB == false && g_Verbosity >= c_Error) {
       cout<<m_XmlTag<<": Event had no (valid) strip hits"<< endl;
+    }
+    return false;
+  }
+
+  // Remove events with exactly one hit in a DIB (usually arising from faulty buffers)
+  if (SeenOnce != 0){
+    if (g_Verbosity >= c_Warning) {
+      cout << m_XmlTag << ": Event only had one hit on one detector" << endl;
     }
     return false;
   }
