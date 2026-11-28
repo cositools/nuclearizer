@@ -55,7 +55,6 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_Name = "DEE shield trigger module";
 
   m_EventTime = 0.0;
-  m_HasTrigger = false;
   m_HasShieldVeto = false;
   m_IsShieldDead = false;
   m_ShieldVetoTime = 0.0;
@@ -77,17 +76,6 @@ MSubModuleShieldTrigger::MSubModuleShieldTrigger() : MSubModule()
   m_TotalShieldDeadtime = vector<double>(nShieldPanels, 0.0);
   m_ShieldHitCrystalID = vector<vector<int>>(nShieldPanels);
   m_DetectorsHitForShieldVeto = vector<int>(nDets, 0);
-
-  // Initialize shield panel groups (based on detector IDs)
-  // These map crystal IDs to panel groups
-  m_ShieldPanelGroups = {
-    { 0, 1, 2},      // Panel 0: Detectors 0-3
-    { 0, 1, 2},      // Panel 1: Detectors 4-7
-    { 0, 1, 2, 4 },    // Panel 2: Detectors 8-11
-    { 0, 1, 2, 4 },  // Panel 3: Detectors 12-15
-    { 0, 1, 2, 3 },      // Panel 4: Detectors 16-18
-    { 0, 1, 2, 3 }       // Panel 5: Detectors 19-21
-  };
 }
 
 
@@ -107,11 +95,27 @@ bool MSubModuleShieldTrigger::Initialize()
 {
   // Initialize the module
 
-  // Read deadtime parameters from file if provided
-  if (m_DeadtimeFileName != "" && ParseDeadtimeFile() == false) {
-    if (g_Verbosity >= c_Error) cout<<"Error: Deadtime parameters file not found"<<endl;
+  // Timing parameters must be supplied by a deadtime file.
+  if (m_DeadtimeFileName.IsEmpty()) {
+    if (g_Verbosity >= c_Error) cout << m_Name << ": A deadtime parameters file is required" << endl;
     return false;
   }
+  if (ParseDeadtimeFile() == false) {
+    if (g_Verbosity >= c_Error) cout<<"Error: Unable to read deadtime parameters file"<<endl;
+    return false;
+  }
+
+  // A new run must not inherit a previous run's windows or statistics.
+  m_ShieldLastHitTime.assign(nShieldPanels, -10.0);
+  m_ShieldDeadtime.assign(nShieldPanels, 0.0);
+  m_ShieldHitCrystalID.assign(nShieldPanels, vector<int>());
+  m_TotalShieldDeadtime.assign(nShieldPanels, 0.0);
+  m_NumShieldHitCounts = 0;
+  m_NumBGOHitsErased = 0;
+  m_FirstTime = std::numeric_limits<double>::max();
+  m_LastTime = 0.0;
+  m_DeadTimeEnd = MTime(0.0);
+  Clear();
 
   return MSubModule::Initialize();
 }
@@ -124,16 +128,10 @@ void MSubModuleShieldTrigger::Clear()
 {
   // Clear for the next event
 
-  m_HasTrigger = false;
   m_HasShieldVeto = false;
   m_IsShieldDead = false;
   m_ShieldVetoTime = 0.0;
-  // m_DeadTimeEnd = MTime(0.0);
-  
-  // // Clear per-event data
-  // for (int i = 0; i < nShieldPanels; i++) {
-  //   m_ShieldHitCrystalID[i].clear();
-  // }
+  // Keep panel windows and their accepted channels until they expire.
   
   m_DetectorsHitForShieldVeto = vector<int>(nDets, 0);
 
@@ -189,7 +187,8 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
   // Process shield crystal hits
   list<MDEECrystalHit>& CrystalHits = Event->GetDEECrystalHitListReference();
   
-  for (MDEECrystalHit& CHit : CrystalHits) {
+  for (auto Hit = CrystalHits.begin(); Hit != CrystalHits.end(); ) {
+    MDEECrystalHit& CHit = *Hit;
     m_NumShieldHitCounts += 1;
     
     MString DetectorID = CHit.m_DetectorID;
@@ -199,56 +198,62 @@ bool MSubModuleShieldTrigger::ProcessShieldHits(MReadOutAssembly* Event)
     if (energy > m_ShieldThreshold) {
       // Find which panel group this detector belongs to
       int ShieldDetGroup = -1;
+      int ReadoutCrystalID = CrystalID;
 
-      if (DetectorID == "Z0" && CrystalID == 4) {
-        ShieldDetGroup = 2;
-      }
-      else if (DetectorID == "Z1" && CrystalID == 4) {
-        ShieldDetGroup = 3;
-      }
-      else if (DetectorID == "X0") {
+      if (DetectorID == "X0") {
         ShieldDetGroup = 0;
       }
-      else if(DetectorID == "X1") {
+      else if (DetectorID == "X1") {
         ShieldDetGroup = 1;
       }
-      else if (DetectorID == "Y0") {
+      else if (DetectorID == "Y0" || (DetectorID == "Z0" && CrystalID == 4)) {
         ShieldDetGroup = 2;
       }
-      else if(DetectorID == "Y1") {
+      else if (DetectorID == "Y1" || (DetectorID == "Z1" && CrystalID == 0)) {
         ShieldDetGroup = 3;
+        // Y1-0 and Z1-0 are distinct crystals on this group's electronics.
+        if (DetectorID == "Z1") ReadoutCrystalID = 3;
+      }
+      else if (DetectorID == "Z0" && CrystalID >= 0 && CrystalID <= 3) {
+        ShieldDetGroup = 4;
+      }
+      else if (DetectorID == "Z1" && CrystalID >= 1 && CrystalID <= 4) {
+        ShieldDetGroup = 5;
       }
       else {
         if (g_Verbosity >= c_Warning) {
           cout << m_Name << ": Warning - shield detector " << DetectorID 
                 << " not found in any panel group" << endl;
         }
+        ++Hit;
         continue;
       }
 
       // Check deadtime conditions
-      if (m_EventTime > (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup])) {
+      if (m_ShieldHitCrystalID[ShieldDetGroup].empty() ||
+          m_EventTime > (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDeadtime[ShieldDetGroup])) {
         // Event occurred after deadtime - start new veto window
         m_ShieldHitCrystalID[ShieldDetGroup].clear();
         m_ShieldLastHitTime[ShieldDetGroup] = m_EventTime;
-        m_ShieldHitCrystalID[ShieldDetGroup].push_back(CrystalID);
+        m_ShieldHitCrystalID[ShieldDetGroup].push_back(ReadoutCrystalID);
         m_TotalShieldDeadtime[ShieldDetGroup] += m_ShieldDeadtime[ShieldDetGroup];
       }
       else if (m_EventTime <= (m_ShieldLastHitTime[ShieldDetGroup] + m_ShieldDelayBefore)) {
         // Event occurred within coincidence window - add to existing veto
-        m_ShieldHitCrystalID[ShieldDetGroup].push_back(CrystalID);
+        m_ShieldHitCrystalID[ShieldDetGroup].push_back(ReadoutCrystalID);
       }
       else {
         // Event occurred within deadtime
         m_IsShieldDead = true;
         m_NumBGOHitsErased += 1;
+        Hit = CrystalHits.erase(Hit);
+        continue;
       }
-    }
-  }
 
-  // Calculate deadtime for each panel group after processing all hits
-  for (int group = 0; group < nShieldPanels; group++) {
-      m_ShieldDeadtime[group] = CalculateASICDeadtime(m_ShieldHitCrystalID[group]);
+      // Update immediately: subsequent hits can extend this same window.
+      m_ShieldDeadtime[ShieldDetGroup] = CalculateASICDeadtime(m_ShieldHitCrystalID[ShieldDetGroup]);
+    }
+    ++Hit;
   }
 
   return true;
@@ -301,37 +306,45 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
 {
   // Main data analysis routine for shield trigger and veto
 
-  m_HasTrigger = false;
   m_HasShieldVeto = false;
   m_IsShieldDead = false;
   m_ShieldVetoTime = 0.0;
 
   m_EventTime = Event->GetTimeUTC().GetAsSeconds();
 
+  // Retain a panel's channels through its complete readout and veto window.
+  // Once expired, account for its dead time exactly once and discard its state.
+  for (int group = 0; group < nShieldPanels; ++group) {
+    if (!m_ShieldHitCrystalID[group].empty() &&
+        m_EventTime > m_ShieldLastHitTime[group] + m_ShieldDeadtime[group] +
+          std::max(0.0, m_ShieldVetoWindowDelta)) {
+      m_TotalShieldDeadtime[group] += m_ShieldDeadtime[group];
+      m_ShieldHitCrystalID[group].clear();
+      m_ShieldDeadtime[group] = 0.0;
+      m_ShieldLastHitTime[group] = -10.0;
+    }
+  }
+
   ProcessShieldHits(Event);
 
-  double maxShieldDeadtime = 0.0;
+  // The global veto lasts until the latest active panel window ends. Keep each
+  // duration paired with its own start, including any coincident-hit extension.
+  double maxDeadTimeEnd = 0.0;
+  double maxVetoEnd = -std::numeric_limits<double>::infinity();
   for (int group = 0; group < nShieldPanels; ++group) {
-    if (m_ShieldDeadtime[group] > maxShieldDeadtime) {
-      maxShieldDeadtime = m_ShieldDeadtime[group];
-    }
-  }
+    if (m_ShieldHitCrystalID[group].empty()) continue;
 
-  // First: find the shield hit time that starts the current veto window
-  bool HasShieldVetoStart = false;
-  for (int group = 0; group < nShieldPanels; ++group) {
-    if (m_EventTime >= m_ShieldLastHitTime[group] &&
-        (HasShieldVetoStart == false || m_ShieldLastHitTime[group] > m_ShieldVetoTime)) {
+    double DeadTimeEnd = m_ShieldLastHitTime[group] + m_ShieldDeadtime[group];
+    maxDeadTimeEnd = std::max(maxDeadTimeEnd, DeadTimeEnd);
+    double VetoEnd = DeadTimeEnd + m_ShieldVetoWindowDelta;
+    if (m_EventTime >= m_ShieldLastHitTime[group] && m_EventTime <= VetoEnd &&
+        VetoEnd > maxVetoEnd) {
+      maxVetoEnd = VetoEnd;
       m_ShieldVetoTime = m_ShieldLastHitTime[group];
-      HasShieldVetoStart = true;
+      m_HasShieldVeto = true;
     }
   }
-
-  // Then veto events based on the max shield deadtime from that start time
-  if (HasShieldVetoStart == true &&
-      m_EventTime <= m_ShieldVetoTime + maxShieldDeadtime + m_ShieldVetoWindowDelta) {
-    m_HasShieldVeto = true;
-  }
+  m_DeadTimeEnd = MTime(maxDeadTimeEnd);
 
   if (m_EventTime < m_FirstTime) {
     m_FirstTime = m_EventTime;
@@ -339,16 +352,6 @@ bool MSubModuleShieldTrigger::AnalyzeEvent(MReadOutAssembly* Event)
   if (m_EventTime > m_LastTime) {
     m_LastTime = m_EventTime;
   }
-
-  // Calculate the maximum deadtime end across all panels
-  double maxDeadTimeEnd = 0.0;
-  for (int i = 0; i < nShieldPanels; i++) {
-    double thisEnd = m_ShieldLastHitTime[i] + m_ShieldDeadtime[i];
-    if (thisEnd > maxDeadTimeEnd) {
-      maxDeadTimeEnd = thisEnd;
-    }
-  }
-  m_DeadTimeEnd = MTime(maxDeadTimeEnd);
 
   return true;
 }
