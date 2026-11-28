@@ -1,12 +1,14 @@
-name: Nuclearizer Tests for develop/em
+name: Nuclearizer Tests
 
 on:
   push:
     branches:
-      - develop/em
+      - main
+      - develop
   pull_request:
     branches:
-      - develop/em
+      - main
+      - develop
 
 permissions:
   contents: read

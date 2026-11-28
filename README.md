@@ -1,6 +1,6 @@
 # COSI's calibration tool nuclearizer
 
-[![Codecov](https://codecov.io/gh/cositools/nuclearizer/branch/develop/em/graph/badge.svg)](https://codecov.io/gh/cositools/nuclearizer)
+[![Codecov](https://codecov.io/gh/cositools/nuclearizer/branch/main/graph/badge.svg)](https://codecov.io/gh/cositools/nuclearizer)
 
 ## What is nuclearizer?
 
